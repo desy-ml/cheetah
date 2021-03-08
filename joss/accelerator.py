@@ -9,7 +9,6 @@ def ocelot_lattice_2_transfer_matrix(lattice):
         if element.__class__ is oc.Drift:
             transfer_map = np.matmul(drift(element.l), transfer_map)
         elif element.__class__ is oc.Quadrupole:
-            print(f"JOSS: k1 = {element.k1}")
             transfer_map = np.matmul(quadrupole(element.l, element.k1), transfer_map)
         else:
             transfer_map = np.matmul(drift(element.l), transfer_map)
