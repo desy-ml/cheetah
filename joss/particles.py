@@ -14,3 +14,8 @@ def generate_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=1
 
     particles = np.random.multivariate_normal(mean=mean, cov=cov, size=n)
     return particles
+
+
+def track(particles, transfer_map):
+    """Track particles through a given transfer map."""
+    return np.dot(particles, transfer_map)
