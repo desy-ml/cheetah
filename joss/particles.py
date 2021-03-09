@@ -20,6 +20,4 @@ def generate_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=1
 
 def track(particles, transfer_map):
     """Track particles through a given transfer map."""
-    print(f"Multiply {particles.shape[0]}x{particles.shape[1]} with {transfer_map.shape[0]}x{transfer_map.shape[1]}")
     return np.matmul(particles, transfer_map.transpose())
-    # return np.matmul(transfer_map, particles.transpose()).transpose()

@@ -1,5 +1,9 @@
 import numpy as np
 import ocelot as oc
+from scipy import constants
+
+
+REST_ENERGY = constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
 
 
 def ocelot_lattice_2_transfer_matrix(lattice):
@@ -8,7 +12,6 @@ def ocelot_lattice_2_transfer_matrix(lattice):
     for element in lattice:
         if element.__class__ is oc.Drift:
             transfer_map = np.matmul(drift(element.l), transfer_map)
-            # transfer_map = np.matmul(quadrupole(element.l, 0.0), transfer_map)
         elif element.__class__ is oc.Quadrupole:
             transfer_map = np.matmul(quadrupole(element.l, element.k1), transfer_map)
         else:
@@ -17,19 +20,10 @@ def ocelot_lattice_2_transfer_matrix(lattice):
     return transfer_map
 
 
-def drift(l):
+def drift(l, energy=1e+8):
     """Create the transfer matrix of a drift section of given length."""
-    
-    m_e_kg = 9.10938215e-31      # kg
-    speed_of_light = 299792458.0 # m/s
-    q_e = 1.6021766208e-19       # C - Elementary charge
-    m_e_eV = m_e_kg * speed_of_light**2 / q_e  # eV (510998.8671)
-    m_e_GeV = m_e_eV / 1e+9                    # GeV
-
-    energy = 0.1    # GeV
-    gamma = energy / m_e_GeV
-    
-    igamma2 = 1. / gamma**2 if gamma != 0 else 0
+    gamma = energy / REST_ENERGY
+    igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
     transfer_map = np.array([[1, l, 0, 0, 0, 0],
                              [0, 1, 0, 0, 0, 0],
@@ -40,27 +34,15 @@ def drift(l):
     return transfer_map
 
 
-def quadrupole(l, k1):
+def quadrupole(l, k1, energy=1e+8):
     """Create the transfer matrix of a quadrupole magnet of the given parameters."""
-    
-    m_e_kg = 9.10938215e-31      # kg
-    speed_of_light = 299792458.0 # m/s
-    q_e = 1.6021766208e-19       # C - Elementary charge
-    m_e_eV = m_e_kg * speed_of_light**2 / q_e  # eV (510998.8671)
-    m_e_GeV = m_e_eV / 1e+9  
+    gamma = energy / REST_ENERGY
+    igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
-    energy = 0.1    # GeV
-    gamma = energy / m_e_GeV
-
-    igamma2 = 0.
-
-    if gamma != 0:
-        igamma2 = 1. / (gamma * gamma)
-
-    beta = np.sqrt(1. - igamma2)
+    beta = np.sqrt(1 - igamma2)
     
     hx = 0
-    kx2 = (k1+hx*hx)
+    kx2 = k1 + hx**2
     ky2 = -k1
     kx = np.sqrt(kx2 + 0.j)
     ky = np.sqrt(ky2 + 0.j)
@@ -71,16 +53,16 @@ def quadrupole(l, k1):
     if kx != 0:
         sx = (np.sin(kx * l) / kx).real
         dx = hx / kx2 * (1. - cx)
-        r56 = hx * hx * (l - sx) / kx2 / beta ** 2
+        r56 = hx**2 * (l - sx) / kx2 / beta**2
     else:
         sx = l
-        dx = l * l * hx / 2.
-        r56 = hx * hx * l ** 3 / 6. / beta ** 2
+        dx = l**2 * hx / 2
+        r56 = hx**2 * l**3 / 6 / beta**2
     
-    r56 -= l / (beta * beta) * igamma2
+    r56 -= l / beta**2 * igamma2
 
     transfer_map = np.array([[            cx,        sx,        0., 0., 0.,      dx / beta],
-                             [-kx2 * sx,             cx,        0., 0., 0., sx * hx / beta],
+                             [     -kx2 * sx,        cx,        0., 0., 0., sx * hx / beta],
                              [            0.,        0.,        cy, sy, 0.,             0.],
                              [            0.,        0., -ky2 * sy, cy, 0.,             0.],
                              [sx * hx / beta, dx / beta,        0., 0., 1.,            r56],
