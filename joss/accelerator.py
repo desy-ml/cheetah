@@ -8,12 +8,16 @@ REST_ENERGY = constants.electron_mass * constants.speed_of_light**2 / constants.
 
 def ocelot_lattice_2_transfer_matrix(lattice):
     """Compute the transfer matrix of an Ocelot lattice."""
-    transfer_map = np.eye(6)
+    transfer_map = np.eye(7)
     for element in lattice:
         if element.__class__ is oc.Drift:
             transfer_map = np.matmul(drift(element.l), transfer_map)
         elif element.__class__ is oc.Quadrupole:
             transfer_map = np.matmul(quadrupole(element.l, element.k1), transfer_map)
+        elif element.__class__ is oc.Hcor:
+            transfer_map = np.matmul(horizontal_corrector(element.l, element.angle), transfer_map)
+        elif element.__class__ is oc.Vcor:
+            transfer_map = np.matmul(vertical_corrector(element.l, element.angle), transfer_map)
         else:
             transfer_map = np.matmul(drift(element.l), transfer_map)
         
@@ -25,12 +29,13 @@ def drift(l, energy=1e+8):
     gamma = energy / REST_ENERGY
     igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
-    transfer_map = np.array([[1, l, 0, 0, 0, 0],
-                             [0, 1, 0, 0, 0, 0],
-                             [0, 0, 1, l, 0, 0],
-                             [0, 0, 0, 1, 0, 0],
-                             [0, 0, 0, 0, 1, l*igamma2],
-                             [0, 0, 0, 0, 0, 1]])
+    transfer_map = np.array([[1, l, 0, 0, 0,         0, 0],
+                             [0, 1, 0, 0, 0,         0, 0],
+                             [0, 0, 1, l, 0,         0, 0],
+                             [0, 0, 0, 1, 0,         0, 0],
+                             [0, 0, 0, 0, 1, l*igamma2, 0],
+                             [0, 0, 0, 0, 0,         1, 0],
+                             [0, 0, 0, 0, 0,         0, 1]])
     return transfer_map
 
 
@@ -61,11 +66,36 @@ def quadrupole(l, k1, energy=1e+8):
     
     r56 -= l / beta**2 * igamma2
 
-    transfer_map = np.array([[            cx,        sx,        0., 0., 0.,      dx / beta],
-                             [     -kx2 * sx,        cx,        0., 0., 0., sx * hx / beta],
-                             [            0.,        0.,        cy, sy, 0.,             0.],
-                             [            0.,        0., -ky2 * sy, cy, 0.,             0.],
-                             [sx * hx / beta, dx / beta,        0., 0., 1.,            r56],
-                             [            0.,        0.,        0., 0., 0.,             1.]])
+    transfer_map = np.array([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
+                             [     -kx2 * sx,        cx,         0,  0, 0, sx * hx / beta, 0],
+                             [             0,         0,        cy, sy, 0,              0, 0],
+                             [             0,         0, -ky2 * sy, cy, 0,              0, 0],
+                             [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
+                             [             0,         0,         0,  0, 0,              1, 0],
+                             [             0,         0,         0,  0, 0,              0, 1]])
 
+    return transfer_map
+
+
+def horizontal_corrector(l, angle, energy=1e+8):
+    """Create the transfer matrix of a horizontal corrector magnet of the given parameters."""
+    transfer_map = np.array([[1, l, 0, 0, 0, 0,     0],
+                             [0, 1, 0, 0, 0, 0, angle],
+                             [0, 0, 1, l, 0, 0,     0],
+                             [0, 0, 0, 1, 0, 0,     0],
+                             [0, 0, 0, 0, 1, 0,     0],
+                             [0, 0, 0, 0, 0, 1,     0],
+                             [0, 0, 0, 0, 0, 0,     1]])
+    return transfer_map
+
+
+def vertical_corrector(l, angle, energy=1e+8):
+    """Create the transfer matrix of a quadrupole magnet of the given parameters."""
+    transfer_map = np.array([[1, l, 0, 0, 0, 0,     0],
+                             [0, 1, 0, 0, 0, 0,     0],
+                             [0, 0, 1, l, 0, 0,     0],
+                             [0, 0, 0, 1, 0, 0, angle],
+                             [0, 0, 0, 0, 1, 0,     0],
+                             [0, 0, 0, 0, 0, 1,     0],
+                             [0, 0, 0, 0, 0, 0,     1]])
     return transfer_map

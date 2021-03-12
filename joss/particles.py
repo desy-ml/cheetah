@@ -14,7 +14,9 @@ def generate_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=1
            [         0,           0,          0,           0, sigma_s**2,          0],
            [         0,           0,          0,           0,          0, sigma_p**2]]
 
-    particles = np.random.multivariate_normal(mean=mean, cov=cov, size=n)
+    particles = np.ones((n, 7))
+    particles[:,:6] = np.random.multivariate_normal(mean=mean, cov=cov, size=n)
+
     return particles
 
 
