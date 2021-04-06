@@ -16,8 +16,3 @@ def generate_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=1
                                          energy=0.1,
                                          sigma_tau=0.0).rparticles.transpose()
     return particles
-
-
-def track(particles, transfer_map):
-    """Track particles through a given transfer map."""
-    return np.matmul(particles, transfer_map.transpose())
