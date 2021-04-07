@@ -1,6 +1,7 @@
 from itertools import chain
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 from scipy import constants
 
@@ -9,6 +10,9 @@ from joss.utils import ocelot2joss
 
 ELEMENT_COUNT = 0
 REST_ENERGY = constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
+
+ELEMENT_ZORDER = 3
+DRIFT_ZORDER = 2
         
 
 class Element:
@@ -31,6 +35,9 @@ class Element:
         return np.matmul(particles, self.transfer_map.transpose())
     
     def split(self, resolution):
+        raise NotImplementedError
+    
+    def plot(self, ax, s):
         raise NotImplementedError
 
 
@@ -64,6 +71,9 @@ class Drift(Element):
             split_elements.append(element)
             remaining -= resolution
         return split_elements
+    
+    def plot(self, ax, s):
+        ax.plot([s, s+self.length], [0, 0], color="black", zorder=DRIFT_ZORDER)
 
 
 class Quadrupole(Element):
@@ -119,6 +129,10 @@ class Quadrupole(Element):
             split_elements.append(element)
             remaining -= resolution
         return split_elements
+    
+    def plot(self, ax, s):
+        patch = Rectangle((s, -0.4), self.length, 0.8, color="tab:red", zorder=ELEMENT_ZORDER)
+        ax.add_patch(patch)
 
 
 class HorizontalCorrector(Element):
@@ -150,6 +164,10 @@ class HorizontalCorrector(Element):
             split_elements.append(element)
             remaining -= resolution
         return split_elements
+    
+    def plot(self, ax, s):
+        patch = Rectangle((s, -0.4), self.length, 0.8, color="tab:blue", zorder=ELEMENT_ZORDER)
+        ax.add_patch(patch)
 
 
 class VerticalCorrector(Element):
@@ -181,6 +199,10 @@ class VerticalCorrector(Element):
             split_elements.append(element)
             remaining -= resolution
         return split_elements
+    
+    def plot(self, ax, s):
+        patch = Rectangle((s, -0.4), self.length, 0.8, color="tab:cyan", zorder=ELEMENT_ZORDER)
+        ax.add_patch(patch)
 
 
 class Segment(Element):
@@ -204,29 +226,36 @@ class Segment(Element):
                               for split_element in element.split(resolution)]
 
     def plot_reference_particles(self, particles, n=10, resolution=0.01):
-        split_elements = self.split(resolution)
+        splits = self.split(resolution)
 
-        lengths = [element.length for element in split_elements]
-        ss = [0] + [sum(lengths[:i+1]) for i, _ in enumerate(lengths)]
+        split_lengths = [split.length for split in splits]
+        ss = [0] + [sum(split_lengths[:i+1]) for i, _ in enumerate(split_lengths)]
 
         references = np.zeros((len(ss), n, particles.shape[1]))
         references[0] = particles[np.random.choice(len(particles), n, replace=False)]
-        for i, element in enumerate(split_elements):
-            references[i+1] = element(references[i])
+        for i, split in enumerate(splits):
+            references[i+1] = split(references[i])
 
-        plt.subplot(211)
+        fig, (ax0, ax1, ax2) = plt.subplots(3, sharex=True)
+        
         for particle in range(references.shape[1]):
-            plt.plot(ss, references[:,particle,0])
-        plt.xlabel("s [m]")
-        plt.ylabel("x [m]")
-        plt.grid()
+            ax0.plot(ss, references[:,particle,0])
+        ax0.set_xlabel("s [m]")
+        ax0.set_ylabel("x [m]")
+        ax0.grid()
 
-        plt.subplot(212)
         for particle in range(references.shape[1]):
-            plt.plot(ss, references[:,particle,2])
-        plt.xlabel("s [m]")
-        plt.ylabel("y [m]")
-        plt.grid()
+            ax1.plot(ss, references[:,particle,2])
+        ax1.set_xlabel("s [m]")
+        ax1.set_ylabel("y [m]")
+        ax1.grid()
+
+        element_lengths = [element.length for element in self.elements]
+        element_ss = [0] + [sum(element_lengths[:i+1]) for i, _ in enumerate(element_lengths[:-1])]
+        for element, s in zip(self.elements, element_ss):
+            element.plot(ax2, s)
+        ax2.set_ylim(-0.5, 0.5)
+        ax2.grid()
 
         plt.tight_layout()
         plt.show()
