@@ -38,6 +38,9 @@ class Element:
     
     def plot(self, ax, s):
         raise NotImplementedError
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name=\"{self.name}\")"
 
 
 class Drift(Element):
@@ -73,6 +76,9 @@ class Drift(Element):
     
     def plot(self, ax, s):
         pass
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self.length:.2f}, name=\"{self.name}\")"
 
 
 class Quadrupole(Element):
@@ -139,6 +145,11 @@ class Quadrupole(Element):
                            alpha=alpha,
                            zorder=2)
         ax.add_patch(patch)
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self.length:.2f}, " + \
+                                         f"k1={self.k1}, " + \
+                                         f"name=\"{self.name}\")"
 
 
 class HorizontalCorrector(Element):
@@ -181,6 +192,11 @@ class HorizontalCorrector(Element):
                            alpha=alpha,
                            zorder=2)
         ax.add_patch(patch)
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self.length:.2f}, " + \
+                                         f"angle={self.angle}, " + \
+                                         f"name=\"{self.name}\")"
 
 
 class VerticalCorrector(Element):
@@ -222,7 +238,31 @@ class VerticalCorrector(Element):
                            color="tab:cyan",
                            alpha=alpha,
                            zorder=2)
-        print(s, self.name, self.angle)
+        ax.add_patch(patch)
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self.length:.2f}, " + \
+                                         f"angle={self.angle}, " + \
+                                         f"name=\"{self.name}\")"
+
+
+class Screen(Element):
+
+    length = 0
+    transfer_map = np.eye(7)
+
+    def __call__(self, particles):
+        return particles
+    
+    def split(self, resolution):
+        return []
+    
+    def plot(self, ax, s):
+        patch = Rectangle((s, -0.6),
+                           0,
+                           0.6 * 2,
+                           color="gold",
+                           zorder=2)
         ax.add_patch(patch)
 
 
@@ -284,3 +324,13 @@ class Segment(Element):
 
         plt.tight_layout()
         plt.show()
+
+    def __repr__(self):
+        start = f"{self.__class__.__name__}(["
+
+        s = start + self.elements[0].__repr__()
+        x = ["\n" + (" " * len(start)) + element.__repr__() for element in self.elements[1:]]
+        s += "".join(x)
+        s += "])"
+
+        return s
