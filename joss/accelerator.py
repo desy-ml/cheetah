@@ -3,6 +3,7 @@ from itertools import chain
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
+from numpy.lib.shape_base import hsplit
 from scipy import constants
 
 from joss.utils import ocelot2joss
@@ -73,7 +74,7 @@ class Drift(Element):
         return split_elements
     
     def plot(self, ax, s):
-        ax.plot([s, s+self.length], [0, 0], color="black", zorder=DRIFT_ZORDER)
+        pass
 
 
 class Quadrupole(Element):
@@ -236,26 +237,30 @@ class Segment(Element):
         for i, split in enumerate(splits):
             references[i+1] = split(references[i])
 
-        fig, (ax0, ax1, ax2) = plt.subplots(3, sharex=True)
-        
+        fig = plt.figure()
+        gs = fig.add_gridspec(3, hspace=0, height_ratios=[2,2,1])
+        axs = gs.subplots(sharex=True)
+
+        axs[0].set_title("Reference Particle Traces")
         for particle in range(references.shape[1]):
-            ax0.plot(ss, references[:,particle,0])
-        ax0.set_xlabel("s [m]")
-        ax0.set_ylabel("x [m]")
-        ax0.grid()
+            axs[0].plot(ss, references[:,particle,0])
+        axs[0].set_ylabel("x (m)")
+        axs[0].grid()
 
         for particle in range(references.shape[1]):
-            ax1.plot(ss, references[:,particle,2])
-        ax1.set_xlabel("s [m]")
-        ax1.set_ylabel("y [m]")
-        ax1.grid()
+            axs[1].plot(ss, references[:,particle,2])
+        axs[1].set_ylabel("y (m)")
+        axs[1].grid()
 
         element_lengths = [element.length for element in self.elements]
         element_ss = [0] + [sum(element_lengths[:i+1]) for i, _ in enumerate(element_lengths[:-1])]
+        axs[2].plot([0, ss[-1]], [0, 0], "--", color="black", zorder=DRIFT_ZORDER)
         for element, s in zip(self.elements, element_ss):
-            element.plot(ax2, s)
-        ax2.set_ylim(-0.5, 0.5)
-        ax2.grid()
+            element.plot(axs[2], s)
+        axs[2].set_ylim(-0.5, 0.5)
+        axs[2].set_xlabel("s (m)")
+        axs[2].set_yticks([])
+        axs[2].grid()
 
         plt.tight_layout()
         plt.show()
