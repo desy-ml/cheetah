@@ -1,3 +1,5 @@
+from itertools import chain
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import constants
@@ -27,6 +29,9 @@ class Element:
 
     def __call__(self, particles):
         return np.matmul(particles, self.transfer_map.transpose())
+    
+    def split(self, resolution):
+        raise NotImplementedError
 
 
 class Drift(Element):
@@ -50,6 +55,15 @@ class Drift(Element):
                          [0,           0, 0,           0, 1, self.length * igamma2, 0],
                          [0,           0, 0,           0, 0,                     1, 0],
                          [0,           0, 0,           0, 0,                     0, 1]])
+    
+    def split(self, resolution):
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            element = Drift(min(resolution, remaining), energy=self.energy)
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
 
 
 class Quadrupole(Element):
@@ -96,6 +110,15 @@ class Quadrupole(Element):
                          [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
                          [             0,         0,         0,  0, 0,              1, 0],
                          [             0,         0,         0,  0, 0,              0, 1]])
+    
+    def split(self, resolution):
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            element = Quadrupole(min(resolution, remaining), self.k1, energy=self.energy)
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
 
 
 class HorizontalCorrector(Element):
@@ -116,6 +139,17 @@ class HorizontalCorrector(Element):
                          [0,           0, 0,           0, 1, 0,          0],
                          [0,           0, 0,           0, 0, 1,          0],
                          [0,           0, 0,           0, 0, 0,          1]])
+    
+    def split(self, resolution):
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            length = min(resolution, remaining)
+            element = HorizontalCorrector(length,
+                                          self.angle * length / self.length)
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
 
 
 class VerticalCorrector(Element):
@@ -136,6 +170,17 @@ class VerticalCorrector(Element):
                          [0,           0, 0,           0, 1, 0,          0],
                          [0,           0, 0,           0, 0, 1,          0],
                          [0,           0, 0,           0, 0, 0,          1]])
+    
+    def split(self, resolution):
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            length = min(resolution, remaining)
+            element = HorizontalCorrector(length,
+                                          self.angle * length / self.length)
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
 
 
 class Segment(Element):
@@ -154,13 +199,19 @@ class Segment(Element):
             transfer_map = np.matmul(element.transfer_map, transfer_map)
         return transfer_map
     
-    def plot_reference_particles(self, particles, n=10):
-        lengths = [element.length for element in self.elements]
+    def split(self, resolution):
+        return [split_element for element in self.elements
+                              for split_element in element.split(resolution)]
+
+    def plot_reference_particles(self, particles, n=10, resolution=0.01):
+        split_elements = self.split(resolution)
+
+        lengths = [element.length for element in split_elements]
         ss = [0] + [sum(lengths[:i+1]) for i, _ in enumerate(lengths)]
 
         references = np.zeros((len(ss), n, particles.shape[1]))
         references[0] = particles[np.random.choice(len(particles), n, replace=False)]
-        for i, element in enumerate(self.elements):
+        for i, element in enumerate(split_elements):
             references[i+1] = element(references[i])
 
         plt.subplot(211)
