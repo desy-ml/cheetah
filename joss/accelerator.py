@@ -1,4 +1,5 @@
 from itertools import chain
+from sys import path
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -11,9 +12,6 @@ from joss.utils import ocelot2joss
 
 ELEMENT_COUNT = 0
 REST_ENERGY = constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
-
-ELEMENT_ZORDER = 3
-DRIFT_ZORDER = 2
         
 
 class Element:
@@ -132,7 +130,14 @@ class Quadrupole(Element):
         return split_elements
     
     def plot(self, ax, s):
-        patch = Rectangle((s, -0.4), self.length, 0.8, color="tab:red", zorder=ELEMENT_ZORDER)
+        alpha = 1 if self.k1 != 0 else 0.2
+        height = np.sign(self.k1) if self.k1 != 0 else 1
+        patch = Rectangle((s, 0),
+                           self.length,
+                           height,
+                           color="tab:red",
+                           alpha=alpha,
+                           zorder=2)
         ax.add_patch(patch)
 
 
@@ -167,7 +172,14 @@ class HorizontalCorrector(Element):
         return split_elements
     
     def plot(self, ax, s):
-        patch = Rectangle((s, -0.4), self.length, 0.8, color="tab:blue", zorder=ELEMENT_ZORDER)
+        alpha = 1 if self.angle != 0 else 0.2
+        height = np.sign(self.angle) if self.angle != 0 else 1
+        patch = Rectangle((s, 0),
+                           self.length,
+                           height,
+                           color="tab:blue",
+                           alpha=alpha,
+                           zorder=2)
         ax.add_patch(patch)
 
 
@@ -202,7 +214,15 @@ class VerticalCorrector(Element):
         return split_elements
     
     def plot(self, ax, s):
-        patch = Rectangle((s, -0.4), self.length, 0.8, color="tab:cyan", zorder=ELEMENT_ZORDER)
+        alpha = 1 if self.angle != 0 else 0.2
+        height = np.sign(self.angle) if self.angle != 0 else 1
+        patch = Rectangle((s, 0),
+                           self.length,
+                           height,
+                           color="tab:cyan",
+                           alpha=alpha,
+                           zorder=2)
+        print(s, self.name, self.angle)
         ax.add_patch(patch)
 
 
@@ -254,10 +274,10 @@ class Segment(Element):
 
         element_lengths = [element.length for element in self.elements]
         element_ss = [0] + [sum(element_lengths[:i+1]) for i, _ in enumerate(element_lengths[:-1])]
-        axs[2].plot([0, ss[-1]], [0, 0], "--", color="black", zorder=DRIFT_ZORDER)
+        axs[2].plot([0, ss[-1]], [0, 0], "--", color="black")
         for element, s in zip(self.elements, element_ss):
             element.plot(axs[2], s)
-        axs[2].set_ylim(-0.5, 0.5)
+        axs[2].set_ylim(-1.2, 1.2)
         axs[2].set_xlabel("s (m)")
         axs[2].set_yticks([])
         axs[2].grid()
