@@ -443,18 +443,24 @@ class Segment(Element):
         axs[1].set_ylabel("y (m)")
         axs[1].grid()
 
-        element_lengths = [element.length for element in self.elements]
-        element_ss = [0] + [sum(element_lengths[:i+1]) for i, _ in enumerate(element_lengths[:-1])]
-        axs[2].plot([0, ss[-1]], [0, 0], "--", color="black")
-        for element, s in zip(self.elements, element_ss):
-            element.plot(axs[2], s)
-        axs[2].set_ylim(-1.2, 1.2)
-        axs[2].set_xlabel("s (m)")
-        axs[2].set_yticks([])
-        axs[2].grid()
+        self.plot(axs[2], 0)
 
         plt.tight_layout()
         plt.show()
+    
+    def plot(self, ax, s):
+        element_lengths = [element.length for element in self.elements]
+        element_ss = [0] + [sum(element_lengths[:i+1]) for i, _ in enumerate(element_lengths)]
+
+        ax.plot([0, element_ss[-1]], [0, 0], "--", color="black")
+
+        for element, s in zip(self.elements, element_ss[:-1]):
+            element.plot(ax, s)
+
+        ax.set_ylim(-1.2, 1.2)
+        ax.set_xlabel("s (m)")
+        ax.set_yticks([])
+        ax.grid()
 
     def __repr__(self):
         start = f"{self.__class__.__name__}(["
