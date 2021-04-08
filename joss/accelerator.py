@@ -15,6 +15,14 @@ REST_ENERGY = constants.electron_mass * constants.speed_of_light**2 / constants.
         
 
 class Element:
+    """
+    Base class for elements of particle accelerators.
+
+    Parameters
+    ----------
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     def __init__(self, name=None):
         global ELEMENT_COUNT
@@ -31,12 +39,58 @@ class Element:
         raise NotImplementedError
 
     def __call__(self, particles):
+        """
+        Track particles through the element.
+        
+        Pramameters
+        -----------
+        particles : numpy.ndarray
+            Array of particles entering the element.
+
+        Returns
+        -------
+        numpy.ndarray
+            Particles exiting the element.
+        """
         return np.matmul(particles, self.transfer_map.transpose())
     
     def split(self, resolution):
+        """
+        Split the element into slices no longer than `resolution`.
+
+        Parameters
+        ----------
+        resolution : float
+            Length of the longest allowed split in meters.
+
+        Returns
+        -------
+        list
+            Ordered sequence of sliced elements.
+        
+        Raises
+        ------
+        NotImplementedError
+            If not split function is implemented for the given `Element` subclass.
+        """
         raise NotImplementedError
     
     def plot(self, ax, s):
+        """
+        Plot a representation of this element into a `matplotlib` Axes at position `s`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes to plot the representation into.
+        s : float
+            Position of the object along s in meters.
+        
+        Raises
+        ------
+        NotImplementedError
+            If not split function is implemented for the given `Element` subclass.
+        """
         raise NotImplementedError
     
     def __repr__(self):
@@ -44,9 +98,19 @@ class Element:
 
 
 class Drift(Element):
+    """
+    Drift section in a particle accelerator.
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    energy : float, optional
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     def __init__(self, length, energy=1e+8, name=None):
-        """Create the transfer matrix of a drift section of given length."""
         self.length = length
         self.energy = energy
 
@@ -82,9 +146,21 @@ class Drift(Element):
 
 
 class Quadrupole(Element):
+    """
+    Quadrupole magnet in a particle accelerator.
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    k1 : float
+        Strength of the quadrupole in rad/m.
+    energy : float, optional
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     def __init__(self, length, k1, energy=1e+8, name=None):
-        """Create the transfer matrix of a quadrupole magnet of the given parameters."""
         self.length = length
         self.k1 = k1
         self.energy = energy
@@ -153,9 +229,21 @@ class Quadrupole(Element):
 
 
 class HorizontalCorrector(Element):
+    """
+    Horizontal corrector magnet in a particle accelerator.
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    angle : float
+        Particle deflection angle in the horizontal plane in rad.
+    energy : float, optional
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     def __init__(self, length, angle, energy=1e+8, name=None):
-        """Create the transfer matrix of a horizontal corrector magnet of the given parameters."""
         self.length = length
         self.angle = angle
 
@@ -200,9 +288,21 @@ class HorizontalCorrector(Element):
 
 
 class VerticalCorrector(Element):
+    """
+    Verticle corrector magnet in a particle accelerator.
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    angle : float
+        Particle deflection angle in the vertical plane in rad.
+    energy : float, optional
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     def __init__(self, length, angle, energy=1e+8, name=None):
-        """Create the transfer matrix of a vertical corrector magnet of the given parameters."""
         self.length = length
         self.angle = angle
 
@@ -247,6 +347,14 @@ class VerticalCorrector(Element):
 
 
 class Screen(Element):
+    """
+    Screen in a particle accelerator.
+
+    Parameters
+    ----------
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     length = 0
     transfer_map = np.eye(7)
@@ -267,6 +375,16 @@ class Screen(Element):
 
 
 class Segment(Element):
+    """
+    Segment of a particle accelerator consisting of several elements.
+
+    Parameters
+    ----------
+    ocelot_cell : list
+        List of ocelot elements that describe an accelerator (section).
+    name : string, optional
+        Unique identifier of the element.
+    """
 
     def __init__(self, ocelot_cell, name=None):
         self.elements = [ocelot2joss(element) for element in ocelot_cell]
@@ -287,6 +405,19 @@ class Segment(Element):
                               for split_element in element.split(resolution)]
 
     def plot_reference_particles(self, particles, n=10, resolution=0.01):
+        """
+        Plot `n` reference particles along the segment's lattice.
+
+        Parameters
+        ----------
+        particles : numpy.ndarray
+            Entering particles from which the reference particles are sampled.
+        n : int, optional
+            Number of reference particles to plot. Must not be larger than number of particles
+            passed in `particles`.
+        resolution : float, optional
+            Minimum resolution of the tracking of the reference particles in the plot.
+        """
         splits = self.split(resolution)
 
         split_lengths = [split.length for split in splits]
