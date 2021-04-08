@@ -7,6 +7,7 @@ import numpy as np
 from numpy.lib.shape_base import hsplit
 from scipy import constants
 
+from joss.particles import generate_particles
 from joss.utils import ocelot2joss
 
 
@@ -403,50 +404,6 @@ class Segment(Element):
     def split(self, resolution):
         return [split_element for element in self.elements
                               for split_element in element.split(resolution)]
-
-    def plot_reference_particles(self, particles, n=10, resolution=0.01):
-        """
-        Plot `n` reference particles along the segment's lattice.
-
-        Parameters
-        ----------
-        particles : numpy.ndarray
-            Entering particles from which the reference particles are sampled.
-        n : int, optional
-            Number of reference particles to plot. Must not be larger than number of particles
-            passed in `particles`.
-        resolution : float, optional
-            Minimum resolution of the tracking of the reference particles in the plot.
-        """
-        splits = self.split(resolution)
-
-        split_lengths = [split.length for split in splits]
-        ss = [0] + [sum(split_lengths[:i+1]) for i, _ in enumerate(split_lengths)]
-
-        references = np.zeros((len(ss), n, particles.shape[1]))
-        references[0] = particles[np.random.choice(len(particles), n, replace=False)]
-        for i, split in enumerate(splits):
-            references[i+1] = split(references[i])
-
-        fig = plt.figure()
-        gs = fig.add_gridspec(3, hspace=0, height_ratios=[2,2,1])
-        axs = gs.subplots(sharex=True)
-
-        axs[0].set_title("Reference Particle Traces")
-        for particle in range(references.shape[1]):
-            axs[0].plot(ss, references[:,particle,0])
-        axs[0].set_ylabel("x (m)")
-        axs[0].grid()
-
-        for particle in range(references.shape[1]):
-            axs[1].plot(ss, references[:,particle,2])
-        axs[1].set_ylabel("y (m)")
-        axs[1].grid()
-
-        self.plot(axs[2], 0)
-
-        plt.tight_layout()
-        plt.show()
     
     def plot(self, ax, s):
         element_lengths = [element.length for element in self.elements]
@@ -461,6 +418,74 @@ class Segment(Element):
         ax.set_xlabel("s (m)")
         ax.set_yticks([])
         ax.grid()
+    
+    def plot_reference_particle_traces(self, axx, axy, particles=None, n=10, resolution=0.01):
+        """
+        Plot `n` reference particles along the segment view in x- and y-direction.
+
+        Parameters
+        ----------
+        axx : matplotlib.axes.Axes
+            Axes to plot the particle traces into viewed in x-direction.
+        axy : matplotlib.axes.Axes
+            Axes to plot the particle traces into viewed in y-direction.
+        particles : numpy.ndarray, optional
+            Entering particles from which the reference particles are sampled.
+        n : int, optional
+            Number of reference particles to plot. Must not be larger than number of particles
+            passed in `particles`.
+        resolution : float, optional
+            Minimum resolution of the tracking of the reference particles in the plot.
+        """
+        splits = self.split(resolution)
+
+        split_lengths = [split.length for split in splits]
+        ss = [0] + [sum(split_lengths[:i+1]) for i, _ in enumerate(split_lengths)]
+
+        if particles is None:
+            particles = generate_particles(n=n)
+        references = np.zeros((len(ss), n, particles.shape[1]))
+        references[0] = particles[np.random.choice(len(particles), n, replace=False)]
+        for i, split in enumerate(splits):
+            references[i+1] = split(references[i])
+        
+        for particle in range(references.shape[1]):
+            axx.plot(ss, references[:,particle,0])
+        axx.set_xlabel("s (m)")
+        axx.set_ylabel("x (m)")
+        axx.grid()
+
+        for particle in range(references.shape[1]):
+            axy.plot(ss, references[:,particle,2])
+        axx.set_xlabel("s (m)")
+        axy.set_ylabel("y (m)")
+        axy.grid()
+    
+    def plot_overview(self, particles=None, n=10, resolution=0.01):
+        """
+        Plot an overview of the segment with the lattice and traced reference particles.
+
+        Parameters
+        ----------
+        particles : numpy.ndarray, optional
+            Entering particles from which the reference particles are sampled.
+        n : int, optional
+            Number of reference particles to plot. Must not be larger than number of particles
+            passed in `particles`.
+        resolution : float, optional
+            Minimum resolution of the tracking of the reference particles in the plot.
+        """
+        fig = plt.figure()
+        gs = fig.add_gridspec(3, hspace=0, height_ratios=[2,2,1])
+        axs = gs.subplots(sharex=True)
+
+        axs[0].set_title("Reference Particle Traces")
+        self.plot_reference_particle_traces(axs[0], axs[1], particles, n, resolution)
+
+        self.plot(axs[2], 0)
+
+        plt.tight_layout()
+        plt.show()
 
     def __repr__(self):
         start = f"{self.__class__.__name__}(["
