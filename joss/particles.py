@@ -37,7 +37,7 @@ def generate_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=1
     numpy.ndarray
         Randomly generated particles.
     """
-    particles = np.ones((int(1e+5), 7))
+    particles = np.ones((n, 7))
     particles[:,:6] = oc.generate_parray(nparticles=n,
                                          sigma_x=sigma_x,
                                          sigma_px=sigma_px,
