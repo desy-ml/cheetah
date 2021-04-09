@@ -3,7 +3,7 @@ from matplotlib.patches import Rectangle
 import numpy as np
 from scipy import constants
 
-from joss.particles import generate_particles
+from joss.particles import linspaced_particles
 from joss.utils import ocelot2joss
 
 
@@ -549,10 +549,19 @@ class Segment(Element):
         split_lengths = [split.length for split in splits]
         ss = [0] + [sum(split_lengths[:i+1]) for i, _ in enumerate(split_lengths)]
 
+        references = np.zeros((len(ss), n, 7))
         if particles is None:
-            particles = generate_particles(n=n)
-        references = np.zeros((len(ss), n, particles.shape[1]))
-        references[0] = particles[np.random.choice(len(particles), n, replace=False)]
+            references[0] = linspaced_particles(n=n)
+        else:
+            references[0] = linspaced_particles(n=n,
+                                             x=particles[:,0].mean(),
+                                             px=particles[:,1].mean(),
+                                             y=particles[:,2].mean(),
+                                             py=particles[:,3].mean(),
+                                             sigma_x=particles[:,0].std(),
+                                             sigma_px=particles[:,1].std(),
+                                             sigma_y=particles[:,2].std(),
+                                             sigma_py=particles[:,3].std())
         for i, split in enumerate(splits):
             references[i+1] = split(references[i])
         
