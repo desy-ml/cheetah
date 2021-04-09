@@ -28,7 +28,7 @@ def linspaced_particles(n=10, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175e
     sigma_py : float, optional
         Sgima of the particle distribution in py direction in meters.
     sigma_s : float, optional
-        CURRENTLY NOT IN USE! Sgima of the particle distribution in s direction in meters.
+        Sgima of the particle distribution in s direction in meters.
     sigma_p : float, optional
         Sgima of the particle distribution in p direction in meters.
     
