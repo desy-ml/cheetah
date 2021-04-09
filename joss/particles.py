@@ -43,8 +43,8 @@ def linspaced_particles(n=10, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175e
     particles[:,1] = np.linspace(px-sigma_px, px+sigma_px, n)
     particles[:,2] = np.linspace(y-sigma_y, y+sigma_y, n)
     particles[:,3] = np.linspace(py-sigma_py, py+sigma_py, n)
-    particles[:,4] = 0
-    particles[:,5] = 0
+    particles[:,4] = np.linspace(-sigma_s, sigma_s, n)
+    particles[:,5] = np.linspace(-sigma_p, sigma_p, n)
 
     return particles
 
