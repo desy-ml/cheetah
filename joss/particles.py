@@ -59,13 +59,13 @@ def random_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175
     n : int, optional
         Number of particles to generate.
     x : float, optional
-        CURRENTLY NOT IN USE! Center of the particle distribution on x in meters.
+        Center of the particle distribution on x in meters.
     y : float, optional
-        CURRENTLY NOT IN USE! Center of the particle distribution on y in meters.
+        Center of the particle distribution on y in meters.
     px : float, optional
-        CURRENTLY NOT IN USE! Center of the particle distribution on px in meters.
+        Center of the particle distribution on px in meters.
     py : float, optional
-        CURRENTLY NOT IN USE! Center of the particle distribution on py in meters.
+        Center of the particle distribution on py in meters.
     sigma_x : float, optional
         Sgima of the particle distribution in x direction in meters.
     sigma_y : float, optional
@@ -94,4 +94,10 @@ def random_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175
                                          chirp=0,
                                          energy=0.1,
                                          sigma_tau=0.0).rparticles.transpose()
+
+    particles[:,0] += x
+    particles[:,1] += px
+    particles[:,2] += y
+    particles[:,3] += py
+
     return particles
