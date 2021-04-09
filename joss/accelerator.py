@@ -1,10 +1,6 @@
-from itertools import chain
-from sys import path
-
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
-from numpy.lib.shape_base import hsplit
 from scipy import constants
 
 from joss.particles import generate_particles
@@ -213,8 +209,10 @@ class Quadrupole(Element):
         return split_elements
     
     def plot(self, ax, s):
-        alpha = 1 if self.k1 != 0 else 0.2
-        height = np.sign(self.k1) if self.k1 != 0 else 1
+        is_active = self.k1 != 0
+
+        alpha = 1 if is_active else 0.2
+        height = 0.8 * (np.sign(self.k1) if is_active else 1)
         patch = Rectangle((s, 0),
                            self.length,
                            height,
@@ -222,7 +220,7 @@ class Quadrupole(Element):
                            alpha=alpha,
                            zorder=2)
         ax.add_patch(patch)
-    
+
     def __repr__(self):
         return f"{self.__class__.__name__}(length={self.length:.2f}, " + \
                                          f"k1={self.k1}, " + \
@@ -272,8 +270,11 @@ class HorizontalCorrector(Element):
         return split_elements
     
     def plot(self, ax, s):
-        alpha = 1 if self.angle != 0 else 0.2
-        height = np.sign(self.angle) if self.angle != 0 else 1
+        is_active = self.angle != 0
+
+        alpha = 1 if is_active else 0.2
+        height = 0.8 * (np.sign(self.angle) if is_active else 1)
+
         patch = Rectangle((s, 0),
                            self.length,
                            height,
@@ -331,8 +332,11 @@ class VerticalCorrector(Element):
         return split_elements
     
     def plot(self, ax, s):
-        alpha = 1 if self.angle != 0 else 0.2
-        height = np.sign(self.angle) if self.angle != 0 else 1
+        is_active = self.angle != 0
+
+        alpha = 1 if is_active else 0.2
+        height = 0.8 * (np.sign(self.angle) if is_active else 1)
+
         patch = Rectangle((s, 0),
                            self.length,
                            height,
@@ -414,7 +418,7 @@ class Segment(Element):
         for element, s in zip(self.elements, element_ss[:-1]):
             element.plot(ax, s)
 
-        ax.set_ylim(-1.2, 1.2)
+        ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
         ax.set_yticks([])
         ax.grid()
