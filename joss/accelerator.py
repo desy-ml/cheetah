@@ -351,6 +351,68 @@ class VerticalCorrector(Element):
                                          f"name=\"{self.name}\")"
 
 
+class Cavity(Element):
+    """
+    Accelerating cavity in a particle accelerator.
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    name : string, optional
+        Unique identifier of the element.
+    
+    Notes
+    -----
+    Currently behaves like a drift section but is plotted distinctively.
+    """
+
+    def __init__(self, length, energy=1e+8, name=None):
+        self.length = length
+        self.energy = energy
+
+        super().__init__(name=name)
+    
+    @property
+    def transfer_map(self):
+        gamma = self.energy / REST_ENERGY
+        igamma2 = 1 / gamma**2 if gamma != 0 else 0
+
+        return np.array([[1, self.length, 0,           0, 0,                     0, 0],
+                         [0,           1, 0,           0, 0,                     0, 0],
+                         [0,           0, 1, self.length, 0,                     0, 0],
+                         [0,           0, 0,           1, 0,                     0, 0],
+                         [0,           0, 0,           0, 1, self.length * igamma2, 0],
+                         [0,           0, 0,           0, 0,                     1, 0],
+                         [0,           0, 0,           0, 0,                     0, 1]])
+    
+    def split(self, resolution):
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            element = Cavity(min(resolution, remaining), energy=self.energy)
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
+    
+    def plot(self, ax, s):
+        is_active = False
+
+        alpha = 1 if is_active else 0.2
+        height = 0.4 * (np.sign(self.angle) if is_active else 1)
+
+        patch = Rectangle((s, 0),
+                           self.length,
+                           height,
+                           color="gold",
+                           alpha=alpha,
+                           zorder=2)
+        ax.add_patch(patch)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self.length:.2f}, name=\"{self.name}\")"
+
+
 class Screen(Element):
     """
     Screen in a particle accelerator.
@@ -374,7 +436,7 @@ class Screen(Element):
         patch = Rectangle((s, -0.6),
                            0,
                            0.6 * 2,
-                           color="gold",
+                           color="tab:green",
                            zorder=2)
         ax.add_patch(patch)
 

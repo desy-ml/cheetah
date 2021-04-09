@@ -30,6 +30,8 @@ def ocelot2joss(element):
         return accelerator.HorizontalCorrector(element.l, element.angle, name=element.id)
     elif element.__class__ is oc.Vcor:
         return accelerator.VerticalCorrector(element.l, element.angle, name=element.id)
+    elif element.__class__ is oc.Cavity:
+        return accelerator.Cavity(element.l, name=element.id)
     elif element.__class__ is oc.Monitor and "SCR" in element.id:
         return accelerator.Screen(name=element.id)
     else:
