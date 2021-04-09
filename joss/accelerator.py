@@ -19,7 +19,15 @@ class Element:
     ----------
     name : string, optional
         Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Is set to `True` when the element is in operation. May be defined differently for each type
+        of element.
     """
+
+    is_active = False
 
     def __init__(self, name=None):
         global ELEMENT_COUNT
@@ -105,7 +113,14 @@ class Drift(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Drifts are always set as active.
     """
+
+    is_active = True
 
     def __init__(self, length, energy=1e+8, name=None):
         self.length = length
@@ -155,6 +170,11 @@ class Quadrupole(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `k1 != 0`.
     """
 
     def __init__(self, length, k1, energy=1e+8, name=None):
@@ -199,6 +219,10 @@ class Quadrupole(Element):
                          [             0,         0,         0,  0, 0,              1, 0],
                          [             0,         0,         0,  0, 0,              0, 1]])
     
+    @property
+    def is_active(self):
+        return self.k1 != 0
+    
     def split(self, resolution):
         split_elements = []
         remaining = self.length
@@ -209,10 +233,8 @@ class Quadrupole(Element):
         return split_elements
     
     def plot(self, ax, s):
-        is_active = self.k1 != 0
-
-        alpha = 1 if is_active else 0.2
-        height = 0.8 * (np.sign(self.k1) if is_active else 1)
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (np.sign(self.k1) if self.is_active else 1)
         patch = Rectangle((s, 0),
                            self.length,
                            height,
@@ -240,6 +262,11 @@ class HorizontalCorrector(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `angle != 0`.
     """
 
     def __init__(self, length, angle, energy=1e+8, name=None):
@@ -258,6 +285,10 @@ class HorizontalCorrector(Element):
                          [0,           0, 0,           0, 0, 1,          0],
                          [0,           0, 0,           0, 0, 0,          1]])
     
+    @property
+    def is_active(self):
+        return self.angle != 0
+    
     def split(self, resolution):
         split_elements = []
         remaining = self.length
@@ -270,10 +301,8 @@ class HorizontalCorrector(Element):
         return split_elements
     
     def plot(self, ax, s):
-        is_active = self.angle != 0
-
-        alpha = 1 if is_active else 0.2
-        height = 0.8 * (np.sign(self.angle) if is_active else 1)
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
 
         patch = Rectangle((s, 0),
                            self.length,
@@ -302,6 +331,11 @@ class VerticalCorrector(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `angle != 0`.
     """
 
     def __init__(self, length, angle, energy=1e+8, name=None):
@@ -320,6 +354,10 @@ class VerticalCorrector(Element):
                          [0,           0, 0,           0, 0, 1,          0],
                          [0,           0, 0,           0, 0, 0,          1]])
     
+    @property
+    def is_active(self):
+        return self.angle != 0
+    
     def split(self, resolution):
         split_elements = []
         remaining = self.length
@@ -332,10 +370,8 @@ class VerticalCorrector(Element):
         return split_elements
     
     def plot(self, ax, s):
-        is_active = self.angle != 0
-
-        alpha = 1 if is_active else 0.2
-        height = 0.8 * (np.sign(self.angle) if is_active else 1)
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
 
         patch = Rectangle((s, 0),
                            self.length,
@@ -396,10 +432,8 @@ class Cavity(Element):
         return split_elements
     
     def plot(self, ax, s):
-        is_active = False
-
-        alpha = 1 if is_active else 0.2
-        height = 0.4 * (np.sign(self.angle) if is_active else 1)
+        alpha = 1 if self.is_active else 0.2
+        height = 0.4 * (np.sign(self.angle) if self.is_active else 1)
 
         patch = Rectangle((s, 0),
                            self.length,
@@ -421,6 +455,11 @@ class Screen(Element):
     ----------
     name : string, optional
         Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Can be set by the user. Merely influences how the element is displayed in a lattice plot.
     """
 
     length = 0
@@ -430,13 +469,15 @@ class Screen(Element):
         return particles
     
     def split(self, resolution):
-        return []
+        return [self]
     
     def plot(self, ax, s):
+        alpha = 1 if self.is_active else 0.2
         patch = Rectangle((s, -0.6),
                            0,
                            0.6 * 2,
                            color="tab:green",
+                           alpha=alpha,
                            zorder=2)
         ax.add_patch(patch)
 
