@@ -363,8 +363,8 @@ class VerticalCorrector(Element):
         remaining = self.length
         while remaining > 0:
             length = min(resolution, remaining)
-            element = HorizontalCorrector(length,
-                                          self.angle * length / self.length)
+            element = VerticalCorrector(length,
+                                        self.angle * length / self.length)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
