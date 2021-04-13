@@ -554,14 +554,14 @@ class Segment(Element):
             references[0] = linspaced_particles(n=n)
         else:
             references[0] = linspaced_particles(n=n,
-                                             x=particles[:,0].mean(),
-                                             px=particles[:,1].mean(),
-                                             y=particles[:,2].mean(),
-                                             py=particles[:,3].mean(),
-                                             sigma_x=particles[:,0].std(),
-                                             sigma_px=particles[:,1].std(),
-                                             sigma_y=particles[:,2].std(),
-                                             sigma_py=particles[:,3].std())
+                                                x=particles[:,0].mean(),
+                                                px=particles[:,1].mean(),
+                                                y=particles[:,2].mean(),
+                                                py=particles[:,3].mean(),
+                                                sigma_x=particles[:,0].std(),
+                                                sigma_px=particles[:,1].std(),
+                                                sigma_y=particles[:,2].std(),
+                                                sigma_py=particles[:,3].std())
         for i, split in enumerate(splits):
             references[i+1] = split(references[i])
         

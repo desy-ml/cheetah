@@ -84,20 +84,28 @@ def random_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175
     numpy.ndarray
         Randomly generated particles.
     """
-    particles = np.ones((n, 7))
-    particles[:,:6] = oc.generate_parray(nparticles=n,
-                                         sigma_x=sigma_x,
-                                         sigma_px=sigma_px,
-                                         sigma_y=sigma_y,
-                                         sigma_py=sigma_py,
-                                         sigma_p=sigma_p,
-                                         chirp=0,
-                                         energy=0.1,
-                                         sigma_tau=0.0).rparticles.transpose()
-
+    parray = oc.generate_parray(nparticles=n,
+                                sigma_x=sigma_x,
+                                sigma_px=sigma_px,
+                                sigma_y=sigma_y,
+                                sigma_py=sigma_py,
+                                sigma_p=sigma_p,
+                                chirp=0,
+                                energy=0.1,
+                                sigma_tau=0.0).rparticles.transpose()
+    particles = ocelot_parray_to_joss_particles(parray)
+    
     particles[:,0] += x
     particles[:,1] += px
     particles[:,2] += y
     particles[:,3] += py
+
+    return particles
+
+
+def ocelot_parray_to_joss_particles(parray):
+    n = parray.rparticles.shape[1]
+    particles = np.ones((n, 7))
+    particles[:,:6] = parray.rparticles.transpose()
 
     return particles
