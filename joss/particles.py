@@ -92,9 +92,9 @@ def random_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175
                                 sigma_p=sigma_p,
                                 chirp=0,
                                 energy=0.1,
-                                sigma_tau=0.0).rparticles.transpose()
+                                sigma_tau=0.0)
     particles = ocelot_parray_to_joss_particles(parray)
-    
+
     particles[:,0] += x
     particles[:,1] += px
     particles[:,2] += y
@@ -104,6 +104,39 @@ def random_particles(n=100000, x=0, y=0, px=0, py=0, sigma_x=175e-9, sigma_y=175
 
 
 def ocelot_parray_to_joss_particles(parray):
+    """
+    Convert an Ocelot `ParticleArray` to a JOSS `numpy.ndarray` of particles.
+    
+    Parameters
+    ----------
+    n : int, optional
+        Number of particles to generate.
+    x : float, optional
+        Center of the particle distribution on x in meters.
+    y : float, optional
+        Center of the particle distribution on y in meters.
+    px : float, optional
+        Center of the particle distribution on px in meters.
+    py : float, optional
+        Center of the particle distribution on py in meters.
+    sigma_x : float, optional
+        Sgima of the particle distribution in x direction in meters.
+    sigma_y : float, optional
+        Sgima of the particle distribution in y direction in meters.
+    sigma_px : float, optional
+        Sgima of the particle distribution in px direction in meters.
+    sigma_py : float, optional
+        Sgima of the particle distribution in py direction in meters.
+    sigma_s : float, optional
+        CURRENTLY NOT IN USE! Sgima of the particle distribution in s direction in meters.
+    sigma_p : float, optional
+        Sgima of the particle distribution in p direction in meters.
+    
+    Returns
+    -------
+    numpy.ndarray
+        Randomly generated particles.
+    """
     n = parray.rparticles.shape[1]
     particles = np.ones((n, 7))
     particles[:,:6] = parray.rparticles.transpose()
