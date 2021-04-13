@@ -109,33 +109,13 @@ def ocelot_parray_to_joss_particles(parray):
     
     Parameters
     ----------
-    n : int, optional
-        Number of particles to generate.
-    x : float, optional
-        Center of the particle distribution on x in meters.
-    y : float, optional
-        Center of the particle distribution on y in meters.
-    px : float, optional
-        Center of the particle distribution on px in meters.
-    py : float, optional
-        Center of the particle distribution on py in meters.
-    sigma_x : float, optional
-        Sgima of the particle distribution in x direction in meters.
-    sigma_y : float, optional
-        Sgima of the particle distribution in y direction in meters.
-    sigma_px : float, optional
-        Sgima of the particle distribution in px direction in meters.
-    sigma_py : float, optional
-        Sgima of the particle distribution in py direction in meters.
-    sigma_s : float, optional
-        CURRENTLY NOT IN USE! Sgima of the particle distribution in s direction in meters.
-    sigma_p : float, optional
-        Sgima of the particle distribution in p direction in meters.
+    parray : ocelot.ParticleArray
+        Ocelot `ParticleArray` to convert.
     
     Returns
     -------
     numpy.ndarray
-        Randomly generated particles.
+        Converted particle array.
     """
     n = parray.rparticles.shape[1]
     particles = np.ones((n, 7))
