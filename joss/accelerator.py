@@ -577,12 +577,14 @@ class Segment(Element):
         axy.set_ylabel("y (m)")
         axy.grid()
     
-    def plot_overview(self, particles=None, n=10, resolution=0.01):
+    def plot_overview(self, fig=None, particles=None, n=10, resolution=0.01):
         """
         Plot an overview of the segment with the lattice and traced reference particles.
 
         Parameters
         ----------
+        fig: matplotlib.figure.Figure, optional
+            Figure to plot the overview into.
         particles : numpy.ndarray, optional
             Entering particles from which the reference particles are sampled.
         n : int, optional
@@ -591,7 +593,8 @@ class Segment(Element):
         resolution : float, optional
             Minimum resolution of the tracking of the reference particles in the plot.
         """
-        fig = plt.figure()
+        if fig is None:
+            fig = plt.figure()
         gs = fig.add_gridspec(3, hspace=0, height_ratios=[2,2,1])
         axs = gs.subplots(sharex=True)
 
@@ -601,7 +604,6 @@ class Segment(Element):
         self.plot(axs[2], 0)
 
         plt.tight_layout()
-        plt.show()
 
     def __repr__(self):
         start = f"{self.__class__.__name__}(["
