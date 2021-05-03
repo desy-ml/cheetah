@@ -167,6 +167,8 @@ class Quadrupole(Element):
         Length in meters.
     k1 : float
         Strength of the quadrupole in rad/m.
+    misalignment : (float, float), optional
+        Misalignment vector of the quadrupole in x- and y-directions.
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
@@ -177,9 +179,10 @@ class Quadrupole(Element):
         Is set `True` when `k1 != 0`.
     """
 
-    def __init__(self, length, k1, energy=1e+8, name=None):
+    def __init__(self, length, k1, misalignment=(0,0), energy=1e+8, name=None):
         self.length = length
         self.k1 = k1
+        self.misalignment = misalignment
         self.energy = energy
 
         super().__init__(name=name)
@@ -211,13 +214,34 @@ class Quadrupole(Element):
         
         r56 -= self.length / beta**2 * igamma2
 
-        return np.array([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
-                         [     -kx2 * sx,        cx,         0,  0, 0, sx * hx / beta, 0],
-                         [             0,         0,        cy, sy, 0,              0, 0],
-                         [             0,         0, -ky2 * sy, cy, 0,              0, 0],
-                         [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
-                         [             0,         0,         0,  0, 0,              1, 0],
-                         [             0,         0,         0,  0, 0,              0, 1]])
+        R = np.array([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
+                      [     -kx2 * sx,        cx,         0,  0, 0, sx * hx / beta, 0],
+                      [             0,         0,        cy, sy, 0,              0, 0],
+                      [             0,         0, -ky2 * sy, cy, 0,              0, 0],
+                      [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
+                      [             0,         0,         0,  0, 0,              1, 0],
+                      [             0,         0,         0,  0, 0,              0, 1]])
+        
+        if self.misalignment[0] == 0 and self.misalignment[1] == 0:
+            return R
+        else:
+            R_entry = np.array([[1, 0, 0, 0, 0, 0, self.misalignment[0]],
+                                [0, 1, 0, 0, 0, 0,                    0],
+                                [0, 0, 1, 0, 0, 0, self.misalignment[1]],
+                                [0, 0, 0, 1, 0, 0,                    0],
+                                [0, 0, 0, 0, 1, 0,                    0],
+                                [0, 0, 0, 0, 0, 1,                    0],
+                                [0, 0, 0, 0, 0, 0,                    1]])
+            R_exit = np.array([[1, 0, 0, 0, 0, 0, -self.misalignment[0]],
+                               [0, 1, 0, 0, 0, 0,                     0],
+                               [0, 0, 1, 0, 0, 0, -self.misalignment[1]],
+                               [0, 0, 0, 1, 0, 0,                     0],
+                               [0, 0, 0, 0, 1, 0,                     0],
+                               [0, 0, 0, 0, 0, 1,                     0],
+                               [0, 0, 0, 0, 0, 0,                     1]])
+            R = np.matmul(R_entry, R)
+            R = np.matmul(R, R_exit)
+            return R
     
     @property
     def is_active(self):
@@ -227,7 +251,10 @@ class Quadrupole(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Quadrupole(min(resolution, remaining), self.k1, energy=self.energy)
+            element = Quadrupole(min(resolution, remaining),
+                                 self.k1,
+                                 misalignment=self.misalignment,
+                                 energy=self.energy)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
