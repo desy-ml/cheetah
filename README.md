@@ -14,7 +14,7 @@ to install JOSS. Once the installation is finished, you will need to install the
 
 ## How To Use
 
-It is unlikely that you will need to you JOSS by itself, as its main purpose in life is being the default particle tracking backend for the [_Accelerator-Environments_](https://github.com/desy-ml/accelerator-environments) project. Nonetheless, here is a quick example of how JOSS is currently used in our RL environments.
+It is unlikely that you will need to use JOSS by itself, as its main purpose in life is being the default particle tracking backend for the [_Accelerator-Environments_](https://github.com/desy-ml/accelerator-environments) project. Nonetheless, here is a quick example of how JOSS is currently used in our RL environments.
 
 At this point in development, JOSS is rather integrated with Ocelot, because of the number of Ocelot-defined accelerator sections we use. You will therefore need an Ocelot cell defined as a list of Ocelot elements. We call this variable `cell`. You can create a JOSS `Segment` from this cell by running
 
