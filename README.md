@@ -53,8 +53,6 @@ You may plot a segment with reference particle traces bay calling
 segment.plot_overview(particles=particles)
 ```
 
-<p align="middle">
-    <img src="images/misalignment.png" width="400"/>
-</p>
+![Overview Plot](images/misalignment.png)
 
 where the optional keyword argument `particles` is the incoming particles from which the reference particles are created. JOSS will use its own incoming particles, if you do not pass any.
