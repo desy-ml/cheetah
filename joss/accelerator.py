@@ -588,7 +588,9 @@ class Segment(Element):
                                                 sigma_x=particles[:,0].std(),
                                                 sigma_px=particles[:,1].std(),
                                                 sigma_y=particles[:,2].std(),
-                                                sigma_py=particles[:,3].std())
+                                                sigma_py=particles[:,3].std(),
+                                                sigma_s=particles[:,4].std(),
+                                                sigma_p=particles[:,5].std())
         for i, split in enumerate(splits):
             references[i+1] = split(references[i])
         
