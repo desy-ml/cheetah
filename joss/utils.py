@@ -34,5 +34,7 @@ def ocelot2joss(element):
         return accelerator.Cavity(element.l, name=element.id)
     elif element.__class__ is oc.Monitor and "SCR" in element.id:
         return accelerator.Screen(name=element.id)
+    elif element.__class__ is oc.Undulator:
+        return accelerator.Undulator(element.l, name=element.id)
     else:
         return accelerator.Drift(element.l, name=element.id)

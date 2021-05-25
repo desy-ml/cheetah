@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
+import ocelot as oc
 from scipy import constants
 
 from joss.particles import linspaced_particles
@@ -460,7 +461,7 @@ class Cavity(Element):
     
     def plot(self, ax, s):
         alpha = 1 if self.is_active else 0.2
-        height = 0.4 * (np.sign(self.angle) if self.is_active else 1)
+        height = 0.4
 
         patch = Rectangle((s, 0),
                            self.length,
@@ -472,6 +473,41 @@ class Cavity(Element):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(length={self.length:.2f}, name=\"{self.name}\")"
+
+
+class BPM(Element):
+    """
+    Beam Position Monitor (BPM) in a particle accelerator.
+
+    Parameters
+    ----------
+    name : string, optional
+        Unique identifier of the element.
+    
+    Attributes
+    ---------
+    is_active : bool
+        Can be set by the user. Merely influences how the element is displayed in a lattice plot.
+    """
+
+    length = 0
+    transfer_map = np.eye(7)
+
+    def __call__(self, particles):
+        return particles
+    
+    def split(self, resolution):
+        return [self]
+    
+    def plot(self, ax, s):
+        alpha = 1 if self.is_active else 0.2
+        patch = Rectangle((s, -0.6),
+                           0,
+                           0.6,
+                           color="darkkhaki",
+                           alpha=alpha,
+                           zorder=2)
+        ax.add_patch(patch)
 
 
 class Screen(Element):
@@ -509,20 +545,86 @@ class Screen(Element):
         ax.add_patch(patch)
 
 
+class Undulator(Element):
+    """
+    Element representing an undulator in a particle accelerator.
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    name : string, optional
+        Unique identifier of the element.
+    
+    Notes
+    -----
+    Currently behaves like a drift section but is plotted distinctively.
+    """
+
+    def __init__(self, length, energy=1e+8, name=None):
+        self.length = length
+        self.energy = energy
+
+        super().__init__(name=name)
+    
+    @property
+    def transfer_map(self):
+        gamma = self.energy / REST_ENERGY
+        igamma2 = 1 / gamma**2 if gamma != 0 else 0
+
+        return np.array([[1, self.length, 0,           0, 0,                     0, 0],
+                         [0,           1, 0,           0, 0,                     0, 0],
+                         [0,           0, 1, self.length, 0,                     0, 0],
+                         [0,           0, 0,           1, 0,                     0, 0],
+                         [0,           0, 0,           0, 1, self.length * igamma2, 0],
+                         [0,           0, 0,           0, 0,                     1, 0],
+                         [0,           0, 0,           0, 0,                     0, 1]])
+    
+    def split(self, resolution):
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            element = Cavity(min(resolution, remaining), energy=self.energy)
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
+    
+    def plot(self, ax, s):
+        alpha = 1 if self.is_active else 0.2
+        height = 0.4
+
+        patch = Rectangle((s, 0),
+                           self.length,
+                           height,
+                           color="tab:purple",
+                           alpha=alpha,
+                           zorder=2)
+        ax.add_patch(patch)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(length={self.length:.2f}, name=\"{self.name}\")"
+
+
 class Segment(Element):
     """
     Segment of a particle accelerator consisting of several elements.
 
     Parameters
     ----------
-    ocelot_cell : list
-        List of ocelot elements that describe an accelerator (section).
+    cell : list
+        List of JOSS or Ocelot elements that describe an accelerator (section).
     name : string, optional
         Unique identifier of the element.
     """
 
-    def __init__(self, ocelot_cell, name=None):
-        self.elements = [ocelot2joss(element) for element in ocelot_cell]
+    def __init__(self, cell, name=None):
+        if isinstance(cell[0], Element):
+            self.elements = cell
+        elif isinstance(cell[0], oc.Element):
+            self.elements = [ocelot2joss(element) for element in cell]
+        else:
+            raise ValueError("Parameter cell must be either list of JOSS or Ocelot elements.")
+        
         for element in self.elements:
             self.__dict__[element.name] = element
         
