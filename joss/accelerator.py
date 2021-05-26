@@ -4,7 +4,7 @@ import numpy as np
 import ocelot as oc
 from scipy import constants
 
-from joss.particles import linspaced_particles
+from joss.particles import Beam
 from joss.utils import ocelot2joss
 
 
@@ -44,22 +44,23 @@ class Element:
     def transfer_map(self):
         raise NotImplementedError
 
-    def __call__(self, particles):
+    def __call__(self, incoming):
         """
         Track particles through the element.
         
         Pramameters
         -----------
-        particles : numpy.ndarray
-            Array of particles entering the element.
+        incoming : joss.Beam
+            Beam of particles entering the element.
 
         Returns
         -------
-        numpy.ndarray
-            Particles exiting the element.
+        joss.Beam
+            Beam of particles exiting the element.
         """
-        return np.matmul(particles, self.transfer_map.transpose())
-    
+        outgoing_particles = np.matmul(incoming.particles, self.transfer_map.transpose())
+        return Beam(outgoing_particles)
+
     def split(self, resolution):
         """
         Split the element into slices no longer than `resolution`.
@@ -528,8 +529,8 @@ class Screen(Element):
     length = 0
     transfer_map = np.eye(7)
 
-    def __call__(self, particles):
-        return particles
+    def __call__(self, beam):
+        return beam
     
     def split(self, resolution):
         return [self]
@@ -655,7 +656,7 @@ class Segment(Element):
         ax.set_yticks([])
         ax.grid()
     
-    def plot_reference_particle_traces(self, axx, axy, particles=None, n=10, resolution=0.01):
+    def plot_reference_particle_traces(self, axx, axy, beam=None, n=10, resolution=0.01):
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
 
@@ -665,8 +666,8 @@ class Segment(Element):
             Axes to plot the particle traces into viewed in x-direction.
         axy : matplotlib.axes.Axes
             Axes to plot the particle traces into viewed in y-direction.
-        particles : numpy.ndarray, optional
-            Entering particles from which the reference particles are sampled.
+        beam : joss.Beam, optional
+            Entering beam from which the reference particles are sampled.
         n : int, optional
             Number of reference particles to plot. Must not be larger than number of particles
             passed in `particles`.
@@ -678,37 +679,42 @@ class Segment(Element):
         split_lengths = [split.length for split in splits]
         ss = [0] + [sum(split_lengths[:i+1]) for i, _ in enumerate(split_lengths)]
 
-        references = np.zeros((len(ss), n, 7))
-        if particles is None:
-            references[0] = linspaced_particles(n=n)
+        references = []
+        if beam is None:
+            initial = Beam.make_linspaced(n=n)
+            references.append(initial)
         else:
-            references[0] = linspaced_particles(n=n,
-                                                x=particles[:,0].mean(),
-                                                px=particles[:,1].mean(),
-                                                y=particles[:,2].mean(),
-                                                py=particles[:,3].mean(),
-                                                sigma_x=particles[:,0].std(),
-                                                sigma_px=particles[:,1].std(),
-                                                sigma_y=particles[:,2].std(),
-                                                sigma_py=particles[:,3].std(),
-                                                sigma_s=particles[:,4].std(),
-                                                sigma_p=particles[:,5].std())
-        for i, split in enumerate(splits):
-            references[i+1] = split(references[i])
+            initial = Beam.make_linspaced(n=n,
+                                          x=beam.x.mean(),
+                                          px=beam.px.mean(),
+                                          y=beam.y.mean(),
+                                          py=beam.py.mean(),
+                                          sigma_x=beam.x.std(),
+                                          sigma_px=beam.px.std(),
+                                          sigma_y=beam.y.std(),
+                                          sigma_py=beam.py.std(),
+                                          sigma_s=beam.s.std(),
+                                          sigma_p=beam.p.std())
+            references.append(initial)
+        for split in splits:
+            sample = split(references[-1])
+            references.append(sample)
         
-        for particle in range(references.shape[1]):
-            axx.plot(ss, references[:,particle,0])
+        for particle_index in range(n):
+            x = [reference_beam.x[particle_index] for reference_beam in references]
+            axx.plot(ss, x)
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
         axx.grid()
 
-        for particle in range(references.shape[1]):
-            axy.plot(ss, references[:,particle,2])
+        for particle_index in range(n):
+            y = [reference_beam.y[particle_index] for reference_beam in references]
+            axy.plot(ss, y)
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
         axy.grid()
     
-    def plot_overview(self, fig=None, particles=None, n=10, resolution=0.01):
+    def plot_overview(self, fig=None, beam=None, n=10, resolution=0.01):
         """
         Plot an overview of the segment with the lattice and traced reference particles.
 
@@ -716,11 +722,11 @@ class Segment(Element):
         ----------
         fig: matplotlib.figure.Figure, optional
             Figure to plot the overview into.
-        particles : numpy.ndarray, optional
-            Entering particles from which the reference particles are sampled.
+        beam : joss.Beam, optional
+            Entering beam from which the reference particles are sampled.
         n : int, optional
             Number of reference particles to plot. Must not be larger than number of particles
-            passed in `particles`.
+            passed in `beam`.
         resolution : float, optional
             Minimum resolution of the tracking of the reference particles in the plot.
         """
@@ -730,7 +736,7 @@ class Segment(Element):
         axs = gs.subplots(sharex=True)
 
         axs[0].set_title("Reference Particle Traces")
-        self.plot_reference_particle_traces(axs[0], axs[1], particles, n, resolution)
+        self.plot_reference_particle_traces(axs[0], axs[1], beam, n, resolution)
 
         self.plot(axs[2], 0)
 
