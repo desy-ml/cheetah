@@ -110,12 +110,24 @@ class Beam:
         return cls(particles)
     
     @property
+    def n(self):
+        return self.particles.shape[0]
+    
+    @property
     def xs(self):
         return self.particles[:,0]
     
     @xs.setter
     def xs(self, value):
         self.particles[:,0] = value
+    
+    @property
+    def mu_x(self):
+        return self.xs.mean()
+    
+    @property
+    def sigma_x(self):
+        return self.xs.std()
     
     @property
     def xps(self):
@@ -126,12 +138,28 @@ class Beam:
         self.particles[:,1] = value
     
     @property
+    def mu_xp(self):
+        return self.xps.mean()
+    
+    @property
+    def sigma_xp(self):
+        return self.xps.std()
+    
+    @property
     def ys(self):
         return self.particles[:,2]
     
     @ys.setter
     def ys(self, value):
         self.particles[:,2] = value
+    
+    @property
+    def mu_y(self):
+        return self.ys.mean()
+    
+    @property
+    def sigma_y(self):
+        return self.ys.std()
     
     @property
     def yps(self):
@@ -142,6 +170,14 @@ class Beam:
         self.particles[:,3] = value
     
     @property
+    def mu_yp(self):
+        return self.yps.mean()
+    
+    @property
+    def sigma_yp(self):
+        return self.yps.std()
+    
+    @property
     def ss(self):
         return self.particles[:,4]
     
@@ -150,9 +186,25 @@ class Beam:
         self.particles[:,4] = value
     
     @property
+    def mu_s(self):
+        return self.ss.mean()
+    
+    @property
+    def sigma_s(self):
+        return self.ss.std()
+    
+    @property
     def ps(self):
         return self.particles[:,5]
     
     @ps.setter
     def ps(self, value):
         self.particles[:,5] = value
+    
+    @property
+    def mu_p(self):
+        return self.ps.mean()
+    
+    @property
+    def sigma_p(self):
+        return self.ps.std()

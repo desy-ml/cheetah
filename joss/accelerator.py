@@ -684,17 +684,11 @@ class Segment(Element):
             initial = Beam.make_linspaced(n=n)
             references.append(initial)
         else:
-            initial = Beam.make_linspaced(n=n,
-                                          mu_x=beam.xs.mean(),
-                                          mu_xp=beam.xps.mean(),
-                                          mu_y=beam.ys.mean(),
-                                          mu_yp=beam.yps.mean(),
-                                          sigma_x=beam.xs.std(),
-                                          sigma_xp=beam.xps.std(),
-                                          sigma_y=beam.ys.std(),
-                                          sigma_yp=beam.yps.std(),
-                                          sigma_s=beam.ss.std(),
-                                          sigma_p=beam.ps.std())
+            initial = Beam.make_linspaced(n=n, mu_x=beam.mu_x, mu_xp=beam.mu_xp, mu_y=beam.mu_y,
+                                          mu_yp=beam.mu_yp, sigma_x=beam.sigma_x,
+                                          sigma_xp=beam.sigma_xp, sigma_y=beam.sigma_y,
+                                          sigma_yp=beam.sigma_yp, sigma_s=beam.sigma_s,
+                                          sigma_p=beam.sigma_p)
             references.append(initial)
         for split in splits:
             sample = split(references[-1])
