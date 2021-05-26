@@ -167,7 +167,7 @@ class Quadrupole(Element):
     ----------
     length : float
         Length in meters.
-    k1 : float
+    k1 : float, optional
         Strength of the quadrupole in rad/m.
     misalignment : (float, float), optional
         Misalignment vector of the quadrupole in x- and y-directions.
@@ -181,7 +181,7 @@ class Quadrupole(Element):
         Is set `True` when `k1 != 0`.
     """
 
-    def __init__(self, length, k1, misalignment=(0,0), energy=1e+8, name=None):
+    def __init__(self, length, k1=0.0, misalignment=(0,0), energy=1e+8, name=None):
         self.length = length
         self.k1 = k1
         self.misalignment = misalignment
@@ -286,7 +286,7 @@ class HorizontalCorrector(Element):
     ----------
     length : float
         Length in meters.
-    angle : float
+    angle : float, optional
         Particle deflection angle in the horizontal plane in rad.
     energy : float, optional
     name : string, optional
@@ -298,7 +298,7 @@ class HorizontalCorrector(Element):
         Is set `True` when `angle != 0`.
     """
 
-    def __init__(self, length, angle, energy=1e+8, name=None):
+    def __init__(self, length, angle=0.0, energy=1e+8, name=None):
         self.length = length
         self.angle = angle
 
@@ -355,7 +355,7 @@ class VerticalCorrector(Element):
     ----------
     length : float
         Length in meters.
-    angle : float
+    angle : float, optional
         Particle deflection angle in the vertical plane in rad.
     energy : float, optional
     name : string, optional
@@ -367,7 +367,7 @@ class VerticalCorrector(Element):
         Is set `True` when `angle != 0`.
     """
 
-    def __init__(self, length, angle, energy=1e+8, name=None):
+    def __init__(self, length, angle=0.0, energy=1e+8, name=None):
         self.length = length
         self.angle = angle
 
