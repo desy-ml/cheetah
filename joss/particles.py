@@ -1,5 +1,4 @@
 import numpy as np
-import ocelot as oc
 
 
 class Beam:
@@ -8,8 +7,8 @@ class Beam:
         self.particles = particles
     
     @classmethod
-    def make_random(cls, n=100000, x=0, y=0, xp=0, yp=0, sigma_x=175e-9, sigma_y=175e-9,
-                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0):
+    def make_random(cls, n=100000, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
+                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, cor_x=0, cor_y=0, cor_s=0):
         """
         Generate JOSS Beam of random particles.
         
@@ -17,13 +16,13 @@ class Beam:
         ----------
         n : int, optional
             Number of particles to generate.
-        x : float, optional
+        mu_x : float, optional
             Center of the particle distribution on x in meters.
-        y : float, optional
+        mu_y : float, optional
             Center of the particle distribution on y in meters.
-        xp : float, optional
+        mu_xp : float, optional
             Center of the particle distribution on px in meters.
-        yp : float, optional
+        mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
             Sgima of the particle distribution in x direction in meters.
@@ -34,27 +33,28 @@ class Beam:
         sigma_yp : float, optional
             Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            CURRENTLY NOT IN USE! Sgima of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
             Sgima of the particle distribution in p direction in meters.
+        cor_x : float, optional
+            Correlation between x and xp.
+        cor_y : float, optional
+            Correlation between y and yp.
+        cor_s : float, optional
+            Correlation between s and p.
         """
-        parray = oc.generate_parray(nparticles=n,
-                                    sigma_x=sigma_x,
-                                    sigma_xp=sigma_xp,
-                                    sigma_y=sigma_y,
-                                    sigma_yp=sigma_yp,
-                                    sigma_p=sigma_p,
-                                    chirp=0.0,
-                                    energy=0.1,
-                                    sigma_tau=0.0)
-        beam = cls.from_ocelot(parray)
+        mean = [mu_x, mu_xp, mu_y, mu_yp, 0, 0]
+        cov = [[sigma_x**2,       cor_x,          0,           0,          0,          0],
+               [     cor_x, sigma_xp**2,          0,           0,          0,          0],
+               [         0,           0, sigma_y**2,       cor_y,          0,          0],
+               [         0,           0,      cor_y, sigma_yp**2,          0,          0],
+               [         0,           0,          0,           0, sigma_s**2,      cor_s],
+               [         0,           0,          0,           0,      cor_s, sigma_p**2]]
 
-        beam.particles[:,0] += x
-        beam.particles[:,1] += xp
-        beam.particles[:,2] += y
-        beam.particles[:,3] += yp
+        particles = np.random.multivariate_normal(mean, cov, size=n)
 
-        return beam
+        return cls(particles)
+    
     
     @classmethod
     def make_linspaced(cls, n=10, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
