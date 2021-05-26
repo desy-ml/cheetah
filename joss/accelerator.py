@@ -740,7 +740,7 @@ class Segment(Element):
         start = f"{self.__class__.__name__}(["
 
         s = start + self.elements[0].__repr__()
-        x = ["\n" + (" " * len(start)) + element.__repr__() for element in self.elements[1:]]
+        x = [",\n" + (" " * len(start)) + element.__repr__() for element in self.elements[1:]]
         s += "".join(x)
         s += "])"
 
