@@ -685,31 +685,31 @@ class Segment(Element):
             references.append(initial)
         else:
             initial = Beam.make_linspaced(n=n,
-                                          x=beam.x.mean(),
-                                          px=beam.px.mean(),
-                                          y=beam.y.mean(),
-                                          py=beam.py.mean(),
-                                          sigma_x=beam.x.std(),
-                                          sigma_px=beam.px.std(),
-                                          sigma_y=beam.y.std(),
-                                          sigma_py=beam.py.std(),
-                                          sigma_s=beam.s.std(),
-                                          sigma_p=beam.p.std())
+                                          mu_x=beam.xs.mean(),
+                                          mu_xp=beam.xps.mean(),
+                                          mu_y=beam.ys.mean(),
+                                          mu_yp=beam.yps.mean(),
+                                          sigma_x=beam.xs.std(),
+                                          sigma_xp=beam.xps.std(),
+                                          sigma_y=beam.ys.std(),
+                                          sigma_yp=beam.yps.std(),
+                                          sigma_s=beam.ss.std(),
+                                          sigma_p=beam.ps.std())
             references.append(initial)
         for split in splits:
             sample = split(references[-1])
             references.append(sample)
         
         for particle_index in range(n):
-            x = [reference_beam.x[particle_index] for reference_beam in references]
-            axx.plot(ss, x)
+            xs = [reference_beam.xs[particle_index] for reference_beam in references]
+            axx.plot(ss, xs)
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
         axx.grid()
 
         for particle_index in range(n):
-            y = [reference_beam.y[particle_index] for reference_beam in references]
-            axy.plot(ss, y)
+            ys = [reference_beam.ys[particle_index] for reference_beam in references]
+            axy.plot(ss, ys)
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
         axy.grid()
