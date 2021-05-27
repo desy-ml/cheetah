@@ -14,6 +14,7 @@ class Beam:
     """
 
     def __init__(self, particles, energy):
+        assert particles.shape[1] == 7, "Particle vectors must be 7-dimensional."
         self.particles = particles
         self.energy = energy
     

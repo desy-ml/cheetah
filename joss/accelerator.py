@@ -26,9 +26,15 @@ class Element:
     is_active : bool
         Is set to `True` when the element is in operation. May be defined differently for each type
         of element.
+    is_skippable : bool
+        Marking an element as skippable allows the transfer map to be combined with those of
+        preceeding and succeeding elements and results in faster particle tracking. This property
+        has to be defined by subclasses of `Element` and made be set dynamically depending on their
+        current mode of operation.
     """
 
     is_active = False
+    is_skippable = True
 
     def __init__(self, name=None):
         global ELEMENT_COUNT
@@ -123,6 +129,7 @@ class Drift(Element):
     """
 
     is_active = True
+    is_skippable = True
 
     def __init__(self, length, name=None):
         self.length = length
@@ -178,6 +185,8 @@ class Quadrupole(Element):
     is_active : bool
         Is set `True` when `k1 != 0`.
     """
+
+    is_skippable = True
 
     def __init__(self, length, k1=0.0, misalignment=(0,0), name=None):
         self.length = length
@@ -293,6 +302,8 @@ class HorizontalCorrector(Element):
         Is set `True` when `angle != 0`.
     """
 
+    is_skippable = True
+
     def __init__(self, length, angle=0.0, energy=1e+8, name=None):
         self.length = length
         self.angle = angle
@@ -361,6 +372,8 @@ class VerticalCorrector(Element):
         Is set `True` when `angle != 0`.
     """
 
+    is_skippable = True
+
     def __init__(self, length, angle=0.0, energy=1e+8, name=None):
         self.length = length
         self.angle = angle
@@ -425,6 +438,8 @@ class Cavity(Element):
     Currently behaves like a drift section but is plotted distinctively.
     """
 
+    is_skippable = True # TODO: Temporary
+
     def __init__(self, length, name=None):
         self.length = length
 
@@ -483,6 +498,7 @@ class BPM(Element):
     """
 
     length = 0
+    is_skippable = True # TODO: Temporary
 
     def transfer_map(self, energy):
         return np.eye(7)
@@ -520,6 +536,7 @@ class Screen(Element):
     """
 
     length = 0
+    is_skippable = True # TODO: Temporary
 
     def transfer_map(self, energy):
         return np.eye(7)
@@ -556,6 +573,8 @@ class Undulator(Element):
     -----
     Currently behaves like a drift section but is plotted distinctively.
     """
+
+    is_skippable = True # TODO: Temporary?
 
     def __init__(self, length, name=None):
         self.length = length
@@ -612,23 +631,57 @@ class Segment(Element):
     """
 
     def __init__(self, cell, name=None):
-        if isinstance(cell[0], Element):
-            self.elements = cell
-        elif isinstance(cell[0], oc.Element):
-            self.elements = [ocelot2joss(element) for element in cell]
-        else:
-            raise ValueError("Parameter cell must be either list of JOSS or Ocelot elements.")
+        self.elements = cell
         
         for element in self.elements:
             self.__dict__[element.name] = element
         
         super().__init__(name=name)
     
+    @classmethod
+    def from_ocelot(cls, cell, name=None):
+        converted = [ocelot2joss(element) for element in cell]
+        return cls(converted, name=name)
+    
+    @property
+    def is_skippable(self):
+        return all(element.is_skippable for element in self.elements)
+    
     def transfer_map(self, energy):
-        tm = np.eye(7)
-        for element in self.elements:
-            tm = np.matmul(element.transfer_map(energy), tm)
-        return tm
+        if self.is_skippable:
+            tm = np.eye(7)
+            for element in self.elements:
+                tm = np.matmul(element.transfer_map(energy), tm)
+            return tm
+        else:
+            return None
+    
+    def __call__(self, incoming):
+        if self.is_skippable:
+            print("Went with skippable")
+            return super().__call__(incoming)
+        else:
+            todos = []
+            for element in self.elements:
+                if todos == []:
+                    if element.is_skippable:
+                        todos.append(Segment([element]))
+                    else:
+                        todos.append(element)
+                else:
+                    if element.is_skippable:
+                        if todos[-1].is_skippable:
+                            todos[-1].elements.append(element)
+                        else:
+                            todos.append(Segment([element]))
+                    else:
+                        todos.append(element)
+            
+            print(todos)
+            for todo in todos:
+                incoming = todo(incoming)
+            
+            return incoming
     
     def split(self, resolution):
         return [split_element for element in self.elements
