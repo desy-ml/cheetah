@@ -63,7 +63,8 @@ class Beam:
                [         0,           0,          0,           0, sigma_s**2,      cor_s],
                [         0,           0,          0,           0,      cor_s, sigma_p**2]]
 
-        particles = np.random.multivariate_normal(mean, cov, size=n)
+        particles = np.ones((n, 7))
+        particles[:,:6] = np.random.multivariate_normal(mean, cov, size=n)
 
         return cls(particles, energy)
     
