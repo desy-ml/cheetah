@@ -2,13 +2,25 @@ import numpy as np
 
 
 class Beam:
+    """
+    Beam of charged particles.
 
-    def __init__(self, particles):
+    Parameters
+    ----------
+    particles : numpy.ndarray
+        List of 7-dimensional particle vectors.
+    energy : float
+        Energy of the beam in eV.
+    """
+
+    def __init__(self, particles, energy):
         self.particles = particles
+        self.energy = energy
     
     @classmethod
     def make_random(cls, n=100000, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
-                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, cor_x=0, cor_y=0, cor_s=0):
+                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, cor_x=0, cor_y=0, cor_s=0,
+                    energy=1e8):
         """
         Generate JOSS Beam of random particles.
         
@@ -53,12 +65,12 @@ class Beam:
 
         particles = np.random.multivariate_normal(mean, cov, size=n)
 
-        return cls(particles)
+        return cls(particles, energy)
     
     
     @classmethod
     def make_linspaced(cls, n=10, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
-                       sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0):
+                       sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, energy=1e8):
         """
         Generate JOSS Beam of *n* linspaced particles.
         
@@ -96,18 +108,19 @@ class Beam:
         particles[:,4] = np.linspace(-sigma_s, sigma_s, n)
         particles[:,5] = np.linspace(-sigma_p, sigma_p, n)
 
-        return cls(particles)
+        return cls(particles, energy)
 
     @classmethod
     def from_ocelot(cls, parray):
         """
         Convert an Ocelot ParticleArray `parray` to a JOSS Beam.
         """
+        print(f"parray = {parray}")
         n = parray.rparticles.shape[1]
         particles = np.ones((n, 7))
         particles[:,:6] = parray.rparticles.transpose()
 
-        return cls(particles)
+        return cls(particles, 1e9*parray.E)
     
     @property
     def n(self):
@@ -208,3 +221,6 @@ class Beam:
     @property
     def sigma_p(self):
         return self.ps.std()
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x}, mu_xp={self.mu_xp}, mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x}, sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y}, sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s}, sigma_p={self.sigma_p}, energy={self.energy})"

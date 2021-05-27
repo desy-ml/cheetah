@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name="joss",
-      version="0.3.3",
+      version="0.3.4",
       author="Jan Kaiser & Oliver Stein",
       author_email="jan.kaiser@desy.de | oliver.stein@desy.de",
       description="Fast particle accelerator optics simulation for reinforcement learning and optimisation applications.",

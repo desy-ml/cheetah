@@ -40,8 +40,7 @@ class Element:
         
         ELEMENT_COUNT += 1
     
-    @property
-    def transfer_map(self):
+    def transfer_map(self, energy):
         raise NotImplementedError
 
     def __call__(self, incoming):
@@ -58,8 +57,9 @@ class Element:
         joss.Beam
             Beam of particles exiting the element.
         """
-        outgoing_particles = np.matmul(incoming.particles, self.transfer_map.transpose())
-        return Beam(outgoing_particles)
+        tm = self.transfer_map(incoming.energy)
+        new_particles = np.matmul(incoming.particles, tm.transpose())
+        return Beam(new_particles, incoming.energy)
 
     def split(self, resolution):
         """
@@ -124,15 +124,13 @@ class Drift(Element):
 
     is_active = True
 
-    def __init__(self, length, energy=1e+8, name=None):
+    def __init__(self, length, name=None):
         self.length = length
-        self.energy = energy
 
         super().__init__(name=name)
     
-    @property
-    def transfer_map(self):
-        gamma = self.energy / REST_ENERGY
+    def transfer_map(self, energy):
+        gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
         return np.array([[1, self.length, 0,           0, 0,                     0, 0],
@@ -147,7 +145,7 @@ class Drift(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Drift(min(resolution, remaining), energy=self.energy)
+            element = Drift(min(resolution, remaining))
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -181,17 +179,15 @@ class Quadrupole(Element):
         Is set `True` when `k1 != 0`.
     """
 
-    def __init__(self, length, k1=0.0, misalignment=(0,0), energy=1e+8, name=None):
+    def __init__(self, length, k1=0.0, misalignment=(0,0), name=None):
         self.length = length
         self.k1 = k1
         self.misalignment = misalignment
-        self.energy = energy
 
         super().__init__(name=name)
     
-    @property
-    def transfer_map(self):
-        gamma = self.energy / REST_ENERGY
+    def transfer_map(self, energy):
+        gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
         beta = np.sqrt(1 - igamma2)
@@ -255,8 +251,7 @@ class Quadrupole(Element):
         while remaining > 0:
             element = Quadrupole(min(resolution, remaining),
                                  self.k1,
-                                 misalignment=self.misalignment,
-                                 energy=self.energy)
+                                 misalignment=self.misalignment)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -304,8 +299,7 @@ class HorizontalCorrector(Element):
 
         super().__init__(name=name)
 
-    @property
-    def transfer_map(self):
+    def transfer_map(self, energy):
         return np.array([[1, self.length, 0,           0, 0, 0,          0],
                          [0,           1, 0,           0, 0, 0, self.angle],
                          [0,           0, 1, self.length, 0, 0,          0],
@@ -373,8 +367,7 @@ class VerticalCorrector(Element):
 
         super().__init__(name=name)
 
-    @property
-    def transfer_map(self):
+    def transfer_map(self, energy):
         return np.array([[1, self.length, 0,           0, 0, 0,          0],
                          [0,           1, 0,           0, 0, 0,          0],
                          [0,           0, 1, self.length, 0, 0,          0],
@@ -432,15 +425,13 @@ class Cavity(Element):
     Currently behaves like a drift section but is plotted distinctively.
     """
 
-    def __init__(self, length, energy=1e+8, name=None):
+    def __init__(self, length, name=None):
         self.length = length
-        self.energy = energy
 
         super().__init__(name=name)
     
-    @property
-    def transfer_map(self):
-        gamma = self.energy / REST_ENERGY
+    def transfer_map(self, energy):
+        gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
         return np.array([[1, self.length, 0,           0, 0,                     0, 0],
@@ -455,7 +446,7 @@ class Cavity(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Cavity(min(resolution, remaining), energy=self.energy)
+            element = Cavity(min(resolution, remaining))
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -492,10 +483,12 @@ class BPM(Element):
     """
 
     length = 0
-    transfer_map = np.eye(7)
 
-    def __call__(self, particles):
-        return particles
+    def transfer_map(self, energy):
+        return np.eye(7)
+    
+    def __call__(self, incoming):
+        return Beam(incoming.particles, incoming.energy)
     
     def split(self, resolution):
         return [self]
@@ -527,10 +520,12 @@ class Screen(Element):
     """
 
     length = 0
-    transfer_map = np.eye(7)
 
-    def __call__(self, beam):
-        return beam
+    def transfer_map(self, energy):
+        return np.eye(7)
+
+    def __call__(self, incoming):
+        return Beam(incoming.particles, incoming.energy)
     
     def split(self, resolution):
         return [self]
@@ -562,15 +557,13 @@ class Undulator(Element):
     Currently behaves like a drift section but is plotted distinctively.
     """
 
-    def __init__(self, length, energy=1e+8, name=None):
+    def __init__(self, length, name=None):
         self.length = length
-        self.energy = energy
 
         super().__init__(name=name)
     
-    @property
-    def transfer_map(self):
-        gamma = self.energy / REST_ENERGY
+    def transfer_map(self, energy):
+        gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
         return np.array([[1, self.length, 0,           0, 0,                     0, 0],
@@ -585,7 +578,7 @@ class Undulator(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Cavity(min(resolution, remaining), energy=self.energy)
+            element = Cavity(min(resolution, remaining))
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -631,12 +624,11 @@ class Segment(Element):
         
         super().__init__(name=name)
     
-    @property
-    def transfer_map(self):
-        transfer_map = np.eye(7)
+    def transfer_map(self, energy):
+        tm = np.eye(7)
         for element in self.elements:
-            transfer_map = np.matmul(element.transfer_map, transfer_map)
-        return transfer_map
+            tm = np.matmul(element.transfer_map(energy), tm)
+        return tm
     
     def split(self, resolution):
         return [split_element for element in self.elements
@@ -688,7 +680,7 @@ class Segment(Element):
                                           mu_yp=beam.mu_yp, sigma_x=beam.sigma_x,
                                           sigma_xp=beam.sigma_xp, sigma_y=beam.sigma_y,
                                           sigma_yp=beam.sigma_yp, sigma_s=beam.sigma_s,
-                                          sigma_p=beam.sigma_p)
+                                          sigma_p=beam.sigma_p, energy=beam.energy)
             references.append(initial)
         for split in splits:
             sample = split(references[-1])
