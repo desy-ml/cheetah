@@ -430,20 +430,25 @@ class Cavity(Element):
     ----------
     length : float
         Length in meters.
+    delta_energy : float, optional
+        Energy added to the beam by the accelerating cavity.
     name : string, optional
         Unique identifier of the element.
-    
-    Notes
-    -----
-    Currently behaves like a drift section but is plotted distinctively.
     """
 
-    is_skippable = True # TODO: Temporary
-
-    def __init__(self, length, name=None):
+    def __init__(self, length, delta_energy=0, name=None):
         self.length = length
+        self.delta_energy = 0
 
         super().__init__(name=name)
+    
+    @property
+    def is_active(self):
+        return self.delta_energy != 0
+
+    @property
+    def is_skippable(self):
+        return not self.is_active
     
     def transfer_map(self, energy):
         gamma = energy / REST_ENERGY
@@ -457,11 +462,18 @@ class Cavity(Element):
                          [0,           0, 0,           0, 0,                     1, 0],
                          [0,           0, 0,           0, 0,                     0, 1]])
     
+    def __call__(self, incoming):
+        outgoing = super().__call__(incoming)
+        outgoing.energy += self.delta_energy
+        return outgoing
+    
     def split(self, resolution):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Cavity(min(resolution, remaining))
+            split_length = min(resolution, remaining)
+            split_delta_energy = self.delta_energy * split_length / self.length
+            element = Cavity(split_length, delta_energy=split_delta_energy)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -479,7 +491,7 @@ class Cavity(Element):
         ax.add_patch(patch)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(length={self.length:.2f}, name=\"{self.name}\")"
+        return f"{self.__class__.__name__}(length={self.length:.2f}, delta_energy={self.delta_energy}, name=\"{self.name}\")"
 
 
 class BPM(Element):
@@ -658,7 +670,6 @@ class Segment(Element):
     
     def __call__(self, incoming):
         if self.is_skippable:
-            print("Went with skippable")
             return super().__call__(incoming)
         else:
             todos = []
@@ -670,7 +681,6 @@ class Segment(Element):
                 else:
                     todos[-1].elements.append(element)
             
-            print(todos)
             for todo in todos:
                 incoming = todo(incoming)
             
@@ -778,7 +788,7 @@ class Segment(Element):
         start = f"{self.__class__.__name__}(["
 
         s = start + self.elements[0].__repr__()
-        x = [",\n" + (" " * len(start)) + element.__repr__() for element in self.elements[1:]]
+        x = [", " + element.__repr__() for element in self.elements[1:]]
         s += "".join(x)
         s += "])"
 
