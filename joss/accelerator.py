@@ -507,15 +507,25 @@ class BPM(Element):
     ---------
     is_active : bool
         Can be set by the user. Merely influences how the element is displayed in a lattice plot.
+    reading : (float, float)
+        Beam position read by the BPM. Is refreshed when the BPM is active and a beam is tracked
+        through it. Before tracking a beam through here, the reading is initialised as `(None, None)`.
     """
 
     length = 0
     is_skippable = True # TODO: Temporary
+    
+    reading = (None, None)
+
+    @property
+    def is_skippable(self):
+        return not self.is_active
 
     def transfer_map(self, energy):
         return np.eye(7)
     
     def __call__(self, incoming):
+        self.reading = (incoming.mu_x, incoming.mu_y)
         return Beam(incoming.particles, incoming.energy)
     
     def split(self, resolution):
