@@ -663,19 +663,12 @@ class Segment(Element):
         else:
             todos = []
             for element in self.elements:
-                if todos == []:
-                    if element.is_skippable:
-                        todos.append(Segment([element]))
-                    else:
-                        todos.append(element)
+                if not element.is_skippable:
+                    todos.append(element)
+                elif not todos or not todos[-1].is_skippable:
+                    todos.append(Segment([element]))
                 else:
-                    if element.is_skippable:
-                        if todos[-1].is_skippable:
-                            todos[-1].elements.append(element)
-                        else:
-                            todos.append(Segment([element]))
-                    else:
-                        todos.append(element)
+                    todos[-1].elements.append(element)
             
             print(todos)
             for todo in todos:
