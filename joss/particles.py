@@ -14,7 +14,7 @@ class Beam:
     """
 
     def __init__(self, particles, energy):
-        assert particles.shape[1] == 7, "Particle vectors must be 7-dimensional."
+        assert len(particles) == 0 or particles.shape[1] == 7, "Particle vectors must be 7-dimensional."
         self.particles = particles
         self.energy = energy
     
@@ -117,20 +117,26 @@ class Beam:
         """
         Convert an Ocelot ParticleArray `parray` to a JOSS Beam.
         """
-        print(f"parray = {parray}")
         n = parray.rparticles.shape[1]
         particles = np.ones((n, 7))
         particles[:,:6] = parray.rparticles.transpose()
 
         return cls(particles, 1e9*parray.E)
     
+    def __len__(self):
+        return self.n
+    
     @property
     def n(self):
-        return self.particles.shape[0]
+        return len(self.particles)
+    
+    @property
+    def is_empty(self):
+        return self.n == 0
     
     @property
     def xs(self):
-        return self.particles[:,0]
+        return self.particles[:,0] if not self.is_empty else None
     
     @xs.setter
     def xs(self, value):
@@ -138,15 +144,15 @@ class Beam:
     
     @property
     def mu_x(self):
-        return self.xs.mean()
+        return self.xs.mean() if not self.is_empty else None
     
     @property
     def sigma_x(self):
-        return self.xs.std()
+        return self.xs.std() if not self.is_empty else None
     
     @property
     def xps(self):
-        return self.particles[:,1]
+        return self.particles[:,1] if not self.is_empty else None
     
     @xps.setter
     def xps(self, value):
@@ -154,15 +160,15 @@ class Beam:
     
     @property
     def mu_xp(self):
-        return self.xps.mean()
+        return self.xps.mean() if not self.is_empty else None
     
     @property
     def sigma_xp(self):
-        return self.xps.std()
+        return self.xps.std() if not self.is_empty else None
     
     @property
     def ys(self):
-        return self.particles[:,2]
+        return self.particles[:,2] if not self.is_empty else None
     
     @ys.setter
     def ys(self, value):
@@ -170,15 +176,15 @@ class Beam:
     
     @property
     def mu_y(self):
-        return self.ys.mean()
+        return self.ys.mean() if not self.is_empty else None
     
     @property
     def sigma_y(self):
-        return self.ys.std()
+        return self.ys.std() if not self.is_empty else None
     
     @property
     def yps(self):
-        return self.particles[:,3]
+        return self.particles[:,3] if not self.is_empty else None
     
     @yps.setter
     def yps(self, value):
@@ -186,15 +192,15 @@ class Beam:
     
     @property
     def mu_yp(self):
-        return self.yps.mean()
+        return self.yps.mean() if not self.is_empty else None
     
     @property
     def sigma_yp(self):
-        return self.yps.std()
+        return self.yps.std() if not self.is_empty else None
     
     @property
     def ss(self):
-        return self.particles[:,4]
+        return self.particles[:,4] if not self.is_empty else None
     
     @ss.setter
     def ss(self, value):
@@ -202,15 +208,15 @@ class Beam:
     
     @property
     def mu_s(self):
-        return self.ss.mean()
+        return self.ss.mean() if not self.is_empty else None
     
     @property
     def sigma_s(self):
-        return self.ss.std()
+        return self.ss.std() if not self.is_empty else None
     
     @property
     def ps(self):
-        return self.particles[:,5]
+        return self.particles[:,5] if not self.is_empty else None
     
     @ps.setter
     def ps(self, value):
@@ -218,11 +224,11 @@ class Beam:
     
     @property
     def mu_p(self):
-        return self.ps.mean()
+        return self.ps.mean() if not self.is_empty else None
     
     @property
     def sigma_p(self):
-        return self.ps.std()
+        return self.ps.std() if not self.is_empty else None
     
     def __repr__(self):
         return f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x}, mu_xp={self.mu_xp}, mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x}, sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y}, sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s}, sigma_p={self.sigma_p}, energy={self.energy})"

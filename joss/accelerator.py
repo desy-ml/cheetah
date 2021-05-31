@@ -63,9 +63,12 @@ class Element:
         joss.Beam
             Beam of particles exiting the element.
         """
-        tm = self.transfer_map(incoming.energy)
-        new_particles = np.matmul(incoming.particles, tm.transpose())
-        return Beam(new_particles, incoming.energy)
+        if incoming.is_empty:
+            return incoming
+        else:
+            tm = self.transfer_map(incoming.energy)
+            new_particles = np.matmul(incoming.particles, tm.transpose())
+            return Beam(new_particles, incoming.energy)
 
     def split(self, resolution):
         """
@@ -464,7 +467,8 @@ class Cavity(Element):
     
     def __call__(self, incoming):
         outgoing = super().__call__(incoming)
-        outgoing.energy += self.delta_energy
+        if not outgoing.is_empty:
+            outgoing.energy += self.delta_energy
         return outgoing
     
     def split(self, resolution):
@@ -525,7 +529,10 @@ class BPM(Element):
         return np.eye(7)
     
     def __call__(self, incoming):
-        self.reading = (incoming.mu_x, incoming.mu_y)
+        if incoming.is_empty:
+            self.reading = (None, None)
+        else:
+            self.reading = (incoming.mu_x, incoming.mu_y)
         return Beam(incoming.particles, incoming.energy)
     
     def split(self, resolution):
@@ -544,27 +551,73 @@ class BPM(Element):
 
 class Screen(Element):
     """
-    Screen in a particle accelerator.
+    Diagnostic screen in a particle accelerator.
 
     Parameters
     ----------
     name : string, optional
         Unique identifier of the element.
+    resolution : (int, int)
+        Resolution of the camera sensor looking at the screen given as a tuple `(width, height)`.
+    binning : int, optional
+        Binning used by the camera.
     
     Attributes
     ---------
     is_active : bool
-        Can be set by the user. Merely influences how the element is displayed in a lattice plot.
+        Can be set by the user. An active screen records an image and blocks all particles when a
+        beam is tracked through it.
     """
 
     length = 0
-    is_skippable = True # TODO: Temporary
+
+    def __init__(self, resolution, pixel_size, binning=1, name=None):
+        super().__init__(name=name)
+
+        self.resolution = resolution
+        self.pixel_size = pixel_size
+        self.binning = binning
+
+        x, y = int(resolution[0] / binning), int(resolution[1] / binning)
+        self.reading = np.zeros((y,x))
+        
+    @property
+    def is_skippable(self):
+        return not self.is_active
+    
+    @property
+    def extent(self):
+        return (-self.resolution[0] * self.pixel_size[0] / 2,
+                self.resolution[0] * self.pixel_size[0] / 2,
+                -self.resolution[1] * self.pixel_size[1] / 2,
+                self.resolution[1] * self.pixel_size[1] / 2)
 
     def transfer_map(self, energy):
         return np.eye(7)
 
     def __call__(self, incoming):
-        return Beam(incoming.particles, incoming.energy)
+        if self.is_active:
+            if incoming.is_empty:
+                x = int(self.resolution[0] / self.binning)
+                y = int(self.resolution[1] / self.binning)
+                self.reading = np.zeros((y,x))
+            else:
+                screen_bin_edges = (np.linspace(-self.resolution[0] * self.pixel_size[0] / 2,
+                                                self.resolution[0] * self.pixel_size[0] / 2,
+                                                num=int(self.resolution[0] / self.binning) + 1),
+                                    np.linspace(-self.resolution[1] * self.pixel_size[1] / 2,
+                                                self.resolution[1] * self.pixel_size[1] / 2,
+                                                num=int(self.resolution[1] / self.binning) + 1))
+                
+                image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=screen_bin_edges)
+                image = np.flipud(image.T)
+
+                self.reading = image
+                self.read_beam = incoming
+
+            return Beam([], 0)
+        else:
+            return incoming
     
     def split(self, resolution):
         return [self]
@@ -578,6 +631,9 @@ class Screen(Element):
                            alpha=alpha,
                            zorder=2)
         ax.add_patch(patch)
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(resolution={self.resolution}, pixel_size={self.pixel_size}, binning={self.binning}, name=\"{self.name}\")"
 
 
 class Undulator(Element):
@@ -753,15 +809,17 @@ class Segment(Element):
             references.append(sample)
         
         for particle_index in range(n):
-            xs = [reference_beam.xs[particle_index] for reference_beam in references]
-            axx.plot(ss, xs)
+            xs = [reference_beam.xs[particle_index] for reference_beam in references
+                                                    if reference_beam.xs is not None]
+            axx.plot(ss[:len(xs)], xs)
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
         axx.grid()
 
         for particle_index in range(n):
-            ys = [reference_beam.ys[particle_index] for reference_beam in references]
-            axy.plot(ss, ys)
+            ys = [reference_beam.ys[particle_index] for reference_beam in references
+                                                    if reference_beam.ys is not None]
+            axy.plot(ss[:len(ys)], ys)
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
         axy.grid()
