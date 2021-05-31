@@ -16,7 +16,23 @@ to install JOSS. Once the installation is finished, you will need to install the
 
 It is unlikely that you will need to use JOSS by itself, as its main purpose in life is being the default particle tracking backend for the [_Accelerator-Environments_](https://github.com/desy-ml/accelerator-environments) project. Nonetheless, here is a quick example of how JOSS is currently used in our RL environments.
 
-At this point in development, JOSS is rather integrated with Ocelot, because of the number of Ocelot-defined accelerator sections we use. You will therefore need an Ocelot cell defined as a list of Ocelot elements. We call this variable `cell`. You can create a JOSS `Segment` from this cell by running
+To create a JOSS `Segment` by defining a cell and creating a segment from it as follows
+
+```python
+segment = Segment([[BPM(name="BPM1SMATCH"),
+                    Drift(length=1.0),
+                    BPM(name="BPM6SMATCH"),
+                    Drift(length=1.0),
+                    VerticalCorrector(length=0.3, name="V7SMATCH"),
+                    Drift(length=0.2),
+                    HorizontalCorrector(length=0.3, name="H10SMATCH"),
+                    Drift(length=7.0),
+                    HorizontalCorrector(length=0.3, name="H12SMATCH"),
+                    Drift(length=0.05),
+                    BPM(name="BPM13SMATCH")])
+```
+
+Alternatively you can create a segment from an Ocelot cell by running
 
 ```python
 segment = joss.Segment(cell)
@@ -28,29 +44,28 @@ Assuming in `cell` there exists a quadrupole that goes by the ID *AREAMQZM2*, th
 segment.AREAMQZM2.k1 = 4.2
 ```
 
-In order to track particles through the segment, simply call it like so
+In order to track a beam through the segment, simply call it like so
 
 ```python
-particles = segment(particles)
+outgoing_beam = segment(incoming_beam)
 ````
 
-You can create particles either by calling one of JOSS's particle creation functions
+You can create particles a random beam using JOSS' `Beam` class by running
 
 ```python
-particles1 = joss.random_particles()
-particles2 = joss.linspaced_particles()
+beam = Beam.make_random()
 ```
 
 or by converting an Ocelot `ParticleArray`
 
 ```python
-particles = joss.ocelot_parray_to_joss_particles(parray)
+beam = Beam.from_ocelot(parray)
 ```
 
 You may plot a segment with reference particle traces bay calling
 
 ```python
-segment.plot_overview(particles=particles)
+segment.plot_overview(beam=beam)
 ```
 
 ![Overview Plot](images/misalignment.png)
