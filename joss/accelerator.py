@@ -725,6 +725,10 @@ class Segment(Element):
     def is_skippable(self):
         return all(element.is_skippable for element in self.elements)
     
+    @property
+    def length(self):
+        return sum(element.length for element in self.elements)
+    
     def transfer_map(self, energy):
         if self.is_skippable:
             tm = np.eye(7)
@@ -759,6 +763,7 @@ class Segment(Element):
     def plot(self, ax, s):
         element_lengths = [element.length for element in self.elements]
         element_ss = [0] + [sum(element_lengths[:i+1]) for i, _ in enumerate(element_lengths)]
+        element_ss = [s + element_s for element_s in element_ss]
 
         ax.plot([0, element_ss[-1]], [0, 0], "--", color="black")
 
