@@ -591,6 +591,15 @@ class Screen(Element):
                 self.resolution[0] * self.pixel_size[0] / 2,
                 -self.resolution[1] * self.pixel_size[1] / 2,
                 self.resolution[1] * self.pixel_size[1] / 2)
+    
+    @property
+    def pixel_bin_edges(self):
+        return (np.linspace(-self.resolution[0] * self.pixel_size[0] / 2,
+                            self.resolution[0] * self.pixel_size[0] / 2,
+                            num=int(self.resolution[0] / self.binning) + 1),
+                np.linspace(-self.resolution[1] * self.pixel_size[1] / 2,
+                            self.resolution[1] * self.pixel_size[1] / 2,
+                            num=int(self.resolution[1] / self.binning) + 1))
 
     def transfer_map(self, energy):
         return np.eye(7)
@@ -602,14 +611,7 @@ class Screen(Element):
                 y = int(self.resolution[1] / self.binning)
                 self.reading = np.zeros((y,x))
             else:
-                screen_bin_edges = (np.linspace(-self.resolution[0] * self.pixel_size[0] / 2,
-                                                self.resolution[0] * self.pixel_size[0] / 2,
-                                                num=int(self.resolution[0] / self.binning) + 1),
-                                    np.linspace(-self.resolution[1] * self.pixel_size[1] / 2,
-                                                self.resolution[1] * self.pixel_size[1] / 2,
-                                                num=int(self.resolution[1] / self.binning) + 1))
-                
-                image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=screen_bin_edges)
+                image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=self.pixel_bin_edges)
                 image = np.flipud(image.T)
 
                 self.reading = image
