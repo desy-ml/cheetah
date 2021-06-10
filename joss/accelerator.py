@@ -540,9 +540,9 @@ class BPM(Element):
     
     def plot(self, ax, s):
         alpha = 1 if self.is_active else 0.2
-        patch = Rectangle((s, -0.6),
+        patch = Rectangle((s, -0.3),
                            0,
-                           0.6,
+                           0.3 * 2,
                            color="darkkhaki",
                            alpha=alpha,
                            zorder=2)
