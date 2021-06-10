@@ -34,7 +34,7 @@ def ocelot2joss(element):
     elif isinstance(element, oc.Cavity):
         return accelerator.Cavity(element.l, name=element.id)
     elif isinstance(element, oc.Monitor) and "SCR" in element.id:
-        print("WARNING: A diagnostic screen was converted from Ocelot and its resolution and pixel size were set to default values. You may need to adjust these!")
+        print("WARNING: Diagnostic screen was converted with default screen properties.")
         return accelerator.Screen((2448,2040), (3.5488e-6,2.5003e-6), name=element.id)
     elif isinstance(element, oc.Monitor) and "BPM" in element.id:
         return accelerator.BPM(name=element.id)
