@@ -21,7 +21,9 @@ def ocelot2joss(element):
     Notes
     -----
     Object not supported by JOSS are translated to drift sections. Screen objects are created only
-    from `ocelot.Monitor` objects when the string "SCR" in their `id` attribute.
+    from `ocelot.Monitor` objects when the string "SCR" in their `id` attribute. Their screen
+    properties are always set to default values and most likely need adjusting afterwards. BPM
+    objects are only created from `ocelot.Monitor` objects when their id has a substring "BPM".
     """
     if isinstance(element, oc.Drift):
         return accelerator.Drift(element.l, name=element.id)
