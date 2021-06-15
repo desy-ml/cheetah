@@ -4,13 +4,15 @@ JOSS (Jan and Oliver's Simulation Software) is a particle tracking accelerator w
 
 ## Installation
 
-Simply `git clone` this repository to your machine, change into the directory and run
+First, you need to install the [_Ocelot_](https://github.com/ocelot-collab/ocelot) package manually as it is not currently available on PyPI.
+
+Then, simply `git clone` this repository to your machine, change into the directory and run
 
 ```bash
 pip3 install .
 ```
 
-to install JOSS. Once the installation is finished, you will need to install the [_Ocelot_](https://github.com/ocelot-collab/ocelot) package manually as it is not currently available on PyPI.
+to install JOSS.
 
 ## How To Use
 
