@@ -3,7 +3,6 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
-import ocelot as oc
 from scipy import constants
 
 from joss.particles import Beam
