@@ -1,3 +1,5 @@
+__UNDER CONSTRUCTION:__ This project is currently undergoing a major refit. Formely known as _JOSS_, it will emerge as _Cheetah_. __Note__, that code breaking changes will occur in the meantime.
+
 # JOSS
 
 JOSS (Jan and Oliver's Simulation Software) is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
