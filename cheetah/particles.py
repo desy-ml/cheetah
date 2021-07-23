@@ -1,6 +1,5 @@
 import torch
 from torch.distributions import MultivariateNormal
-from torch.functional import Tensor
 
 
 class Beam:
@@ -70,17 +69,17 @@ class Beam:
             Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
             available. The CPU is used otherwise.
         """
-        mean = torch.Tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0])
-        cov = torch.Tensor([[sigma_x**2,       cor_x,          0,           0,          0,          0],
+        mean = torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32)
+        cov = torch.tensor([[sigma_x**2,       cor_x,          0,           0,          0,          0],
                             [     cor_x, sigma_xp**2,          0,           0,          0,          0],
                             [         0,           0, sigma_y**2,       cor_y,          0,          0],
                             [         0,           0,      cor_y, sigma_yp**2,          0,          0],
                             [         0,           0,          0,           0, sigma_s**2,      cor_s],
-                            [         0,           0,          0,           0,      cor_s, sigma_p**2]])
+                            [         0,           0,          0,           0,      cor_s, sigma_p**2]], dtype=torch.float32)
 
-        particles = torch.ones((n, 7))
+        particles = torch.ones((n, 7), dtype=torch.float32)
         distribution = MultivariateNormal(mean, covariance_matrix=cov)
-        particles[:,:6] = distribution.sample((n,))
+        particles[:,:6] = distribution.sample((n,), dtype=torch.float32)
 
         return cls(particles, energy, device=device)
     
@@ -119,14 +118,14 @@ class Beam:
             Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
             available. The CPU is used otherwise.
         """
-        particles = torch.ones((n, 7))
+        particles = torch.ones((n, 7), dtype=torch.float32)
         
-        particles[:,0] = torch.linspace(mu_x-sigma_x, mu_x+sigma_x, n)
-        particles[:,1] = torch.linspace(mu_xp-sigma_xp, mu_xp+sigma_xp, n)
-        particles[:,2] = torch.linspace(mu_y-sigma_y, mu_y+sigma_y, n)
-        particles[:,3] = torch.linspace(mu_yp-sigma_yp, mu_yp+sigma_yp, n)
-        particles[:,4] = torch.linspace(-sigma_s, sigma_s, n)
-        particles[:,5] = torch.linspace(-sigma_p, sigma_p, n)
+        particles[:,0] = torch.linspace(mu_x-sigma_x, mu_x+sigma_x, n, dtype=torch.float32)
+        particles[:,1] = torch.linspace(mu_xp-sigma_xp, mu_xp+sigma_xp, n, dtype=torch.float32)
+        particles[:,2] = torch.linspace(mu_y-sigma_y, mu_y+sigma_y, n, dtype=torch.float32)
+        particles[:,3] = torch.linspace(mu_yp-sigma_yp, mu_yp+sigma_yp, n, dtype=torch.float32)
+        particles[:,4] = torch.linspace(-sigma_s, sigma_s, n, dtype=torch.float32)
+        particles[:,5] = torch.linspace(-sigma_p, sigma_p, n, dtype=torch.float32)
 
         return cls(particles, energy, device=device)
 
@@ -137,7 +136,7 @@ class Beam:
         """
         n = parray.rparticles.shape[1]
         particles = torch.ones((n, 7))
-        particles[:,:6] = torch.Tensor(parray.rparticles.transpose())
+        particles[:,:6] = torch.tensor(parray.rparticles.transpose(), dtype=torch.float32)
 
         return cls(particles, 1e9*parray.E, device=device)
     

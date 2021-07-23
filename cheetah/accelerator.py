@@ -150,13 +150,14 @@ class Drift(Element):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
         
-        return torch.Tensor([[1, self.length, 0,           0, 0,                     0, 0],
+        return torch.tensor([[1, self.length, 0,           0, 0,                     0, 0],
                              [0,           1, 0,           0, 0,                     0, 0],
                              [0,           0, 1, self.length, 0,                     0, 0],
                              [0,           0, 0,           1, 0,                     0, 0],
                              [0,           0, 0,           0, 1, self.length * igamma2, 0],
                              [0,           0, 0,           0, 0,                     1, 0],
-                             [0,           0, 0,           0, 0,                     0, 1]], device=self.device)
+                             [0,           0, 0,           0, 0,                     0, 1]],
+                            dtype=torch.float32, device=self.device)
     
     def split(self, resolution):
         split_elements = []
@@ -231,31 +232,34 @@ class Quadrupole(Element):
         
         r56 -= self.length / beta**2 * igamma2
 
-        R = torch.Tensor([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
+        R = torch.tensor([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
                           [     -kx2 * sx,        cx,         0,  0, 0, sx * hx / beta, 0],
                           [             0,         0,        cy, sy, 0,              0, 0],
                           [             0,         0, -ky2 * sy, cy, 0,              0, 0],
                           [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
                           [             0,         0,         0,  0, 0,              1, 0],
-                          [             0,         0,         0,  0, 0,              0, 1]], device=self.device)
+                          [             0,         0,         0,  0, 0,              0, 1]],
+                         dtype=torch.float32, device=self.device)
         
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_entry = torch.Tensor([[1, 0, 0, 0, 0, 0, self.misalignment[0]],
+            R_entry = torch.tensor([[1, 0, 0, 0, 0, 0, self.misalignment[0]],
                                     [0, 1, 0, 0, 0, 0,                    0],
                                     [0, 0, 1, 0, 0, 0, self.misalignment[1]],
                                     [0, 0, 0, 1, 0, 0,                    0],
                                     [0, 0, 0, 0, 1, 0,                    0],
                                     [0, 0, 0, 0, 0, 1,                    0],
-                                    [0, 0, 0, 0, 0, 0,                    1]], device=self.device)
-            R_exit = torch.Tensor([[1, 0, 0, 0, 0, 0, -self.misalignment[0]],
+                                    [0, 0, 0, 0, 0, 0,                    1]],
+                                   dtype=torch.float32, device=self.device)
+            R_exit = torch.tensor([[1, 0, 0, 0, 0, 0, -self.misalignment[0]],
                                    [0, 1, 0, 0, 0, 0,                     0],
                                    [0, 0, 1, 0, 0, 0, -self.misalignment[1]],
                                    [0, 0, 0, 1, 0, 0,                     0],
                                    [0, 0, 0, 0, 1, 0,                     0],
                                    [0, 0, 0, 0, 0, 1,                     0],
-                                   [0, 0, 0, 0, 0, 0,                     1]], device=self.device)
+                                   [0, 0, 0, 0, 0, 0,                     1]],
+                                   dtype=torch.float32, device=self.device)
             R = torch.matmul(R_entry, R)
             R = torch.matmul(R, R_exit)
             return R
@@ -322,13 +326,14 @@ class HorizontalCorrector(Element):
         super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
-        return torch.Tensor([[1, self.length, 0,           0, 0, 0,          0],
+        return torch.tensor([[1, self.length, 0,           0, 0, 0,          0],
                              [0,           1, 0,           0, 0, 0, self.angle],
                              [0,           0, 1, self.length, 0, 0,          0],
                              [0,           0, 0,           1, 0, 0,          0],
                              [0,           0, 0,           0, 1, 0,          0],
                              [0,           0, 0,           0, 0, 1,          0],
-                             [0,           0, 0,           0, 0, 0,          1]], device=self.device)
+                             [0,           0, 0,           0, 0, 0,          1]],
+                            dtype=torch.float32, device=self.device)
     
     @property
     def is_active(self):
@@ -393,13 +398,14 @@ class VerticalCorrector(Element):
         super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
-        return torch.Tensor([[1, self.length, 0,           0, 0, 0,          0],
+        return torch.tensor([[1, self.length, 0,           0, 0, 0,          0],
                              [0,           1, 0,           0, 0, 0,          0],
                              [0,           0, 1, self.length, 0, 0,          0],
                              [0,           0, 0,           1, 0, 0, self.angle],
                              [0,           0, 0,           0, 1, 0,          0],
                              [0,           0, 0,           0, 0, 1,          0],
-                             [0,           0, 0,           0, 0, 0,          1]], device=self.device)
+                             [0,           0, 0,           0, 0, 0,          1]],
+                            dtype=torch.float32, device=self.device)
     
     @property
     def is_active(self):
@@ -467,13 +473,14 @@ class Cavity(Element):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
-        return torch.Tensor([[1, self.length, 0,           0, 0,                     0, 0],
+        return torch.tensor([[1, self.length, 0,           0, 0,                     0, 0],
                              [0,           1, 0,           0, 0,                     0, 0],
                              [0,           0, 1, self.length, 0,                     0, 0],
                              [0,           0, 0,           1, 0,                     0, 0],
                              [0,           0, 0,           0, 1, self.length * igamma2, 0],
                              [0,           0, 0,           0, 0,                     1, 0],
-                             [0,           0, 0,           0, 0,                     0, 1]], device=self.device)
+                             [0,           0, 0,           0, 0,                     0, 1]],
+                            dtype=torch.float32, device=self.device)
     
     def __call__(self, incoming):
         outgoing = super().__call__(incoming)
@@ -676,13 +683,14 @@ class Undulator(Element):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
-        return torch.Tensor([[1, self.length, 0,           0, 0,                     0, 0],
+        return torch.tensor([[1, self.length, 0,           0, 0,                     0, 0],
                              [0,           1, 0,           0, 0,                     0, 0],
                              [0,           0, 1, self.length, 0,                     0, 0],
                              [0,           0, 0,           1, 0,                     0, 0],
                              [0,           0, 0,           0, 1, self.length * igamma2, 0],
                              [0,           0, 0,           0, 0,                     1, 0],
-                             [0,           0, 0,           0, 0,                     0, 1]], device=self.device)
+                             [0,           0, 0,           0, 0,                     0, 1]],
+                            dtype=torch.float32, device=self.device)
     
     def split(self, resolution):
         split_elements = []
