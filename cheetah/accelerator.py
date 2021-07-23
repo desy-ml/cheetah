@@ -632,7 +632,7 @@ class Screen(Element):
                 image, _ = utils.histogramdd(torch.stack((incoming.xs,incoming.ys)), bins=self.pixel_bin_edges)
                 image = torch.flipud(image.T)
 
-                self.reading = image
+                self.reading = image.cpu.to_numpy()
                 self.read_beam = incoming
 
             return Beam([], 0, device=self.device)
