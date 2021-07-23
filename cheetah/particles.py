@@ -161,11 +161,11 @@ class Beam:
     
     @property
     def mu_x(self):
-        return self.xs.mean() if not self.is_empty else None
+        return float(self.xs.mean()) if not self.is_empty else None
     
     @property
     def sigma_x(self):
-        return self.xs.std() if not self.is_empty else None
+        return float(self.xs.std()) if not self.is_empty else None
     
     @property
     def xps(self):
@@ -177,11 +177,11 @@ class Beam:
     
     @property
     def mu_xp(self):
-        return self.xps.mean() if not self.is_empty else None
+        return float(self.xps.mean()) if not self.is_empty else None
     
     @property
     def sigma_xp(self):
-        return self.xps.std() if not self.is_empty else None
+        return float(self.xps.std()) if not self.is_empty else None
     
     @property
     def ys(self):
@@ -193,11 +193,11 @@ class Beam:
     
     @property
     def mu_y(self):
-        return self.ys.mean() if not self.is_empty else None
+        return float(self.ys.mean()) if not self.is_empty else None
     
     @property
     def sigma_y(self):
-        return self.ys.std() if not self.is_empty else None
+        return float(self.ys.std()) if not self.is_empty else None
     
     @property
     def yps(self):
@@ -209,11 +209,11 @@ class Beam:
     
     @property
     def mu_yp(self):
-        return self.yps.mean() if not self.is_empty else None
+        return float(self.yps.mean()) if not self.is_empty else None
     
     @property
     def sigma_yp(self):
-        return self.yps.std() if not self.is_empty else None
+        return float(self.yps.std()) if not self.is_empty else None
     
     @property
     def ss(self):
@@ -225,11 +225,11 @@ class Beam:
     
     @property
     def mu_s(self):
-        return self.ss.mean() if not self.is_empty else None
+        return float(self.ss.mean()) if not self.is_empty else None
     
     @property
     def sigma_s(self):
-        return self.ss.std() if not self.is_empty else None
+        return float(self.ss.std()) if not self.is_empty else None
     
     @property
     def ps(self):
@@ -241,11 +241,11 @@ class Beam:
     
     @property
     def mu_p(self):
-        return self.ps.mean() if not self.is_empty else None
+        return float(self.ps.mean()) if not self.is_empty else None
     
     @property
     def sigma_p(self):
-        return self.ps.std() if not self.is_empty else None
+        return float(self.ps.std()) if not self.is_empty else None
     
     def __repr__(self):
         return f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x}, mu_xp={self.mu_xp}, mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x}, sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y}, sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s}, sigma_p={self.sigma_p}, energy={self.energy})"
