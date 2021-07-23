@@ -1,4 +1,6 @@
-import numpy as np
+import torch
+from torch.distributions import MultivariateNormal
+from torch.functional import Tensor
 
 
 class Beam:
@@ -7,21 +9,30 @@ class Beam:
 
     Parameters
     ----------
-    particles : numpy.ndarray
+    particles : torch.Tensor
         List of 7-dimensional particle vectors.
     energy : float
         Energy of the beam in eV.
+    device : string
+        Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
+        available. The CPU is used otherwise.
     """
 
-    def __init__(self, particles, energy):
+    def __init__(self, particles, energy, device="auto"):
         assert len(particles) == 0 or particles.shape[1] == 7, "Particle vectors must be 7-dimensional."
-        self.particles = particles
+
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
+
+        self.particles = particles.to(device) if isinstance(particles, torch.Tensor) else particles
+        
         self.energy = energy
     
     @classmethod
     def make_random(cls, n=100000, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
-                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, cor_x=0, cor_y=0, cor_s=0,
-                    energy=1e8):
+                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=1e-6, sigma_p=1e-6, cor_x=0, cor_y=0,
+                    cor_s=0, energy=1e8, device="auto"):
         """
         Generate Cheetah Beam of random particles.
         
@@ -55,24 +66,28 @@ class Beam:
             Correlation between y and yp.
         cor_s : float, optional
             Correlation between s and p.
+        device : string
+            Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
+            available. The CPU is used otherwise.
         """
-        mean = [mu_x, mu_xp, mu_y, mu_yp, 0, 0]
-        cov = [[sigma_x**2,       cor_x,          0,           0,          0,          0],
-               [     cor_x, sigma_xp**2,          0,           0,          0,          0],
-               [         0,           0, sigma_y**2,       cor_y,          0,          0],
-               [         0,           0,      cor_y, sigma_yp**2,          0,          0],
-               [         0,           0,          0,           0, sigma_s**2,      cor_s],
-               [         0,           0,          0,           0,      cor_s, sigma_p**2]]
+        mean = torch.Tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0])
+        cov = torch.Tensor([[sigma_x**2,       cor_x,          0,           0,          0,          0],
+                            [     cor_x, sigma_xp**2,          0,           0,          0,          0],
+                            [         0,           0, sigma_y**2,       cor_y,          0,          0],
+                            [         0,           0,      cor_y, sigma_yp**2,          0,          0],
+                            [         0,           0,          0,           0, sigma_s**2,      cor_s],
+                            [         0,           0,          0,           0,      cor_s, sigma_p**2]])
 
-        particles = np.ones((n, 7))
-        particles[:,:6] = np.random.multivariate_normal(mean, cov, size=n)
+        particles = torch.ones((n, 7))
+        distribution = MultivariateNormal(mean, covariance_matrix=cov)
+        particles[:,:6] = distribution.sample((n,))
 
-        return cls(particles, energy)
+        return cls(particles, energy, device=device)
     
     
     @classmethod
     def make_linspaced(cls, n=10, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
-                       sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, energy=1e8):
+                       sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, energy=1e8, device="auto"):
         """
         Generate Cheetah Beam of *n* linspaced particles.
         
@@ -100,28 +115,31 @@ class Beam:
             Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
             Sgima of the particle distribution in p direction in meters.
+        device : string
+            Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
+            available. The CPU is used otherwise.
         """
-        particles = np.ones((n, 7))
+        particles = torch.ones((n, 7))
         
-        particles[:,0] = np.linspace(mu_x-sigma_x, mu_x+sigma_x, n)
-        particles[:,1] = np.linspace(mu_xp-sigma_xp, mu_xp+sigma_xp, n)
-        particles[:,2] = np.linspace(mu_y-sigma_y, mu_y+sigma_y, n)
-        particles[:,3] = np.linspace(mu_yp-sigma_yp, mu_yp+sigma_yp, n)
-        particles[:,4] = np.linspace(-sigma_s, sigma_s, n)
-        particles[:,5] = np.linspace(-sigma_p, sigma_p, n)
+        particles[:,0] = torch.linspace(mu_x-sigma_x, mu_x+sigma_x, n)
+        particles[:,1] = torch.linspace(mu_xp-sigma_xp, mu_xp+sigma_xp, n)
+        particles[:,2] = torch.linspace(mu_y-sigma_y, mu_y+sigma_y, n)
+        particles[:,3] = torch.linspace(mu_yp-sigma_yp, mu_yp+sigma_yp, n)
+        particles[:,4] = torch.linspace(-sigma_s, sigma_s, n)
+        particles[:,5] = torch.linspace(-sigma_p, sigma_p, n)
 
-        return cls(particles, energy)
+        return cls(particles, energy, device=device)
 
     @classmethod
-    def from_ocelot(cls, parray):
+    def from_ocelot(cls, parray, device="auto"):
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
         n = parray.rparticles.shape[1]
-        particles = np.ones((n, 7))
-        particles[:,:6] = parray.rparticles.transpose()
+        particles = torch.ones((n, 7))
+        particles[:,:6] = torch.Tensor(parray.rparticles.transpose())
 
-        return cls(particles, 1e9*parray.E)
+        return cls(particles, 1e9*parray.E, device=device)
     
     def __len__(self):
         return self.n

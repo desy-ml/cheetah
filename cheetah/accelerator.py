@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
-import ocelot as oc
 from scipy import constants
+import torch
 
+from cheetah import utils
 from cheetah.particles import Beam
-from cheetah.utils import ocelot2cheetah
 
 
 ELEMENT_COUNT = 0
@@ -31,20 +31,25 @@ class Element:
         preceeding and succeeding elements and results in faster particle tracking. This property
         has to be defined by subclasses of `Element` and made be set dynamically depending on their
         current mode of operation.
+    device : string
+        Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
+        available. The CPU is used otherwise.
     """
 
     is_active = False
     is_skippable = True
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, device="auto"):
         global ELEMENT_COUNT
-
         if name is not None:
             self.name = name
         else:
             self.name = f"{self.__class__.__name__}_{ELEMENT_COUNT:06d}"
-        
         ELEMENT_COUNT += 1
+
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
     
     def transfer_map(self, energy):
         raise NotImplementedError
@@ -67,7 +72,7 @@ class Element:
             return incoming
         else:
             tm = self.transfer_map(incoming.energy)
-            new_particles = np.matmul(incoming.particles, tm.transpose())
+            new_particles = torch.matmul(incoming.particles, tm.t())
             return Beam(new_particles, incoming.energy)
 
     def split(self, resolution):
@@ -134,28 +139,28 @@ class Drift(Element):
     is_active = True
     is_skippable = True
 
-    def __init__(self, length, name=None):
+    def __init__(self, length, name=None, **kwargs):
         self.length = length
 
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
     
     def transfer_map(self, energy):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
-
-        return np.array([[1, self.length, 0,           0, 0,                     0, 0],
-                         [0,           1, 0,           0, 0,                     0, 0],
-                         [0,           0, 1, self.length, 0,                     0, 0],
-                         [0,           0, 0,           1, 0,                     0, 0],
-                         [0,           0, 0,           0, 1, self.length * igamma2, 0],
-                         [0,           0, 0,           0, 0,                     1, 0],
-                         [0,           0, 0,           0, 0,                     0, 1]])
+        
+        return torch.Tensor([[1, self.length, 0,           0, 0,                     0, 0],
+                             [0,           1, 0,           0, 0,                     0, 0],
+                             [0,           0, 1, self.length, 0,                     0, 0],
+                             [0,           0, 0,           1, 0,                     0, 0],
+                             [0,           0, 0,           0, 1, self.length * igamma2, 0],
+                             [0,           0, 0,           0, 0,                     1, 0],
+                             [0,           0, 0,           0, 0,                     0, 1]], device=self.device)
     
     def split(self, resolution):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Drift(min(resolution, remaining))
+            element = Drift(min(resolution, remaining), device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -191,12 +196,12 @@ class Quadrupole(Element):
 
     is_skippable = True
 
-    def __init__(self, length, k1=0.0, misalignment=(0,0), name=None):
+    def __init__(self, length, k1=0.0, misalignment=(0,0), name=None, **kwargs):
         self.length = length
         self.k1 = k1
         self.misalignment = misalignment
 
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
     
     def transfer_map(self, energy):
         gamma = energy / REST_ENERGY
@@ -224,33 +229,33 @@ class Quadrupole(Element):
         
         r56 -= self.length / beta**2 * igamma2
 
-        R = np.array([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
-                      [     -kx2 * sx,        cx,         0,  0, 0, sx * hx / beta, 0],
-                      [             0,         0,        cy, sy, 0,              0, 0],
-                      [             0,         0, -ky2 * sy, cy, 0,              0, 0],
-                      [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
-                      [             0,         0,         0,  0, 0,              1, 0],
-                      [             0,         0,         0,  0, 0,              0, 1]])
+        R = torch.Tensor([[            cx,        sx,         0,  0, 0,      dx / beta, 0],
+                          [     -kx2 * sx,        cx,         0,  0, 0, sx * hx / beta, 0],
+                          [             0,         0,        cy, sy, 0,              0, 0],
+                          [             0,         0, -ky2 * sy, cy, 0,              0, 0],
+                          [sx * hx / beta, dx / beta,         0,  0, 1,            r56, 0],
+                          [             0,         0,         0,  0, 0,              1, 0],
+                          [             0,         0,         0,  0, 0,              0, 1]], device=self.device)
         
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_entry = np.array([[1, 0, 0, 0, 0, 0, self.misalignment[0]],
-                                [0, 1, 0, 0, 0, 0,                    0],
-                                [0, 0, 1, 0, 0, 0, self.misalignment[1]],
-                                [0, 0, 0, 1, 0, 0,                    0],
-                                [0, 0, 0, 0, 1, 0,                    0],
-                                [0, 0, 0, 0, 0, 1,                    0],
-                                [0, 0, 0, 0, 0, 0,                    1]])
-            R_exit = np.array([[1, 0, 0, 0, 0, 0, -self.misalignment[0]],
-                               [0, 1, 0, 0, 0, 0,                     0],
-                               [0, 0, 1, 0, 0, 0, -self.misalignment[1]],
-                               [0, 0, 0, 1, 0, 0,                     0],
-                               [0, 0, 0, 0, 1, 0,                     0],
-                               [0, 0, 0, 0, 0, 1,                     0],
-                               [0, 0, 0, 0, 0, 0,                     1]])
-            R = np.matmul(R_entry, R)
-            R = np.matmul(R, R_exit)
+            R_entry = torch.Tensor([[1, 0, 0, 0, 0, 0, self.misalignment[0]],
+                                    [0, 1, 0, 0, 0, 0,                    0],
+                                    [0, 0, 1, 0, 0, 0, self.misalignment[1]],
+                                    [0, 0, 0, 1, 0, 0,                    0],
+                                    [0, 0, 0, 0, 1, 0,                    0],
+                                    [0, 0, 0, 0, 0, 1,                    0],
+                                    [0, 0, 0, 0, 0, 0,                    1]], device=self.device)
+            R_exit = torch.Tensor([[1, 0, 0, 0, 0, 0, -self.misalignment[0]],
+                                   [0, 1, 0, 0, 0, 0,                     0],
+                                   [0, 0, 1, 0, 0, 0, -self.misalignment[1]],
+                                   [0, 0, 0, 1, 0, 0,                     0],
+                                   [0, 0, 0, 0, 1, 0,                     0],
+                                   [0, 0, 0, 0, 0, 1,                     0],
+                                   [0, 0, 0, 0, 0, 0,                     1]], device=self.device)
+            R = torch.matmul(R_entry, R)
+            R = torch.matmul(R, R_exit)
             return R
     
     @property
@@ -263,7 +268,8 @@ class Quadrupole(Element):
         while remaining > 0:
             element = Quadrupole(min(resolution, remaining),
                                  self.k1,
-                                 misalignment=self.misalignment)
+                                 misalignment=self.misalignment,
+                                 device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -307,20 +313,20 @@ class HorizontalCorrector(Element):
 
     is_skippable = True
 
-    def __init__(self, length, angle=0.0, energy=1e+8, name=None):
+    def __init__(self, length, angle=0.0, energy=1e+8, name=None, **kwargs):
         self.length = length
         self.angle = angle
 
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
-        return np.array([[1, self.length, 0,           0, 0, 0,          0],
-                         [0,           1, 0,           0, 0, 0, self.angle],
-                         [0,           0, 1, self.length, 0, 0,          0],
-                         [0,           0, 0,           1, 0, 0,          0],
-                         [0,           0, 0,           0, 1, 0,          0],
-                         [0,           0, 0,           0, 0, 1,          0],
-                         [0,           0, 0,           0, 0, 0,          1]])
+        return torch.Tensor([[1, self.length, 0,           0, 0, 0,          0],
+                             [0,           1, 0,           0, 0, 0, self.angle],
+                             [0,           0, 1, self.length, 0, 0,          0],
+                             [0,           0, 0,           1, 0, 0,          0],
+                             [0,           0, 0,           0, 1, 0,          0],
+                             [0,           0, 0,           0, 0, 1,          0],
+                             [0,           0, 0,           0, 0, 0,          1]], device=self.device)
     
     @property
     def is_active(self):
@@ -332,7 +338,8 @@ class HorizontalCorrector(Element):
         while remaining > 0:
             length = min(resolution, remaining)
             element = HorizontalCorrector(length,
-                                          self.angle * length / self.length)
+                                          self.angle * length / self.length,
+                                          device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -377,20 +384,20 @@ class VerticalCorrector(Element):
 
     is_skippable = True
 
-    def __init__(self, length, angle=0.0, energy=1e+8, name=None):
+    def __init__(self, length, angle=0.0, energy=1e+8, name=None, **kwargs):
         self.length = length
         self.angle = angle
 
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
-        return np.array([[1, self.length, 0,           0, 0, 0,          0],
-                         [0,           1, 0,           0, 0, 0,          0],
-                         [0,           0, 1, self.length, 0, 0,          0],
-                         [0,           0, 0,           1, 0, 0, self.angle],
-                         [0,           0, 0,           0, 1, 0,          0],
-                         [0,           0, 0,           0, 0, 1,          0],
-                         [0,           0, 0,           0, 0, 0,          1]])
+        return torch.Tensor([[1, self.length, 0,           0, 0, 0,          0],
+                             [0,           1, 0,           0, 0, 0,          0],
+                             [0,           0, 1, self.length, 0, 0,          0],
+                             [0,           0, 0,           1, 0, 0, self.angle],
+                             [0,           0, 0,           0, 1, 0,          0],
+                             [0,           0, 0,           0, 0, 1,          0],
+                             [0,           0, 0,           0, 0, 0,          1]], device=self.device)
     
     @property
     def is_active(self):
@@ -402,7 +409,8 @@ class VerticalCorrector(Element):
         while remaining > 0:
             length = min(resolution, remaining)
             element = VerticalCorrector(length,
-                                        self.angle * length / self.length)
+                                        self.angle * length / self.length,
+                                        device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -439,11 +447,11 @@ class Cavity(Element):
         Unique identifier of the element.
     """
 
-    def __init__(self, length, delta_energy=0, name=None):
+    def __init__(self, length, delta_energy=0, name=None, **kwargs):
         self.length = length
         self.delta_energy = 0
 
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
     
     @property
     def is_active(self):
@@ -457,13 +465,13 @@ class Cavity(Element):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
-        return np.array([[1, self.length, 0,           0, 0,                     0, 0],
-                         [0,           1, 0,           0, 0,                     0, 0],
-                         [0,           0, 1, self.length, 0,                     0, 0],
-                         [0,           0, 0,           1, 0,                     0, 0],
-                         [0,           0, 0,           0, 1, self.length * igamma2, 0],
-                         [0,           0, 0,           0, 0,                     1, 0],
-                         [0,           0, 0,           0, 0,                     0, 1]])
+        return torch.Tensor([[1, self.length, 0,           0, 0,                     0, 0],
+                             [0,           1, 0,           0, 0,                     0, 0],
+                             [0,           0, 1, self.length, 0,                     0, 0],
+                             [0,           0, 0,           1, 0,                     0, 0],
+                             [0,           0, 0,           0, 1, self.length * igamma2, 0],
+                             [0,           0, 0,           0, 0,                     1, 0],
+                             [0,           0, 0,           0, 0,                     0, 1]], device=self.device)
     
     def __call__(self, incoming):
         outgoing = super().__call__(incoming)
@@ -477,7 +485,7 @@ class Cavity(Element):
         while remaining > 0:
             split_length = min(resolution, remaining)
             split_delta_energy = self.delta_energy * split_length / self.length
-            element = Cavity(split_length, delta_energy=split_delta_energy)
+            element = Cavity(split_length, delta_energy=split_delta_energy, device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -526,14 +534,14 @@ class BPM(Element):
         return not self.is_active
 
     def transfer_map(self, energy):
-        return np.eye(7)
+        return torch.eye(7, device=self.device)
     
     def __call__(self, incoming):
         if incoming.is_empty:
             self.reading = (None, None)
         else:
             self.reading = (incoming.mu_x, incoming.mu_y)
-        return Beam(incoming.particles, incoming.energy)
+        return Beam(incoming.particles, incoming.energy, device=self.device)
     
     def split(self, resolution):
         return [self]
@@ -571,15 +579,15 @@ class Screen(Element):
 
     length = 0
 
-    def __init__(self, resolution, pixel_size, binning=1, name=None):
-        super().__init__(name=name)
+    def __init__(self, resolution, pixel_size, binning=1, name=None, **kwargs):
+        super().__init__(name=name, **kwargs)
 
         self.resolution = resolution
         self.pixel_size = pixel_size
         self.binning = binning
 
         x, y = int(resolution[0] / binning), int(resolution[1] / binning)
-        self.reading = np.zeros((y,x))
+        self.reading = torch.zeros((y,x), device=self.device)
         
     @property
     def is_skippable(self):
@@ -594,30 +602,31 @@ class Screen(Element):
     
     @property
     def pixel_bin_edges(self):
-        return (np.linspace(-self.resolution[0] * self.pixel_size[0] / 2,
-                            self.resolution[0] * self.pixel_size[0] / 2,
-                            num=int(self.resolution[0] / self.binning) + 1),
-                np.linspace(-self.resolution[1] * self.pixel_size[1] / 2,
-                            self.resolution[1] * self.pixel_size[1] / 2,
-                            num=int(self.resolution[1] / self.binning) + 1))
+        return (torch.linspace(-self.resolution[0] * self.pixel_size[0] / 2,
+                               self.resolution[0] * self.pixel_size[0] / 2,
+                               int(self.resolution[0] / self.binning) + 1),
+                torch.linspace(-self.resolution[1] * self.pixel_size[1] / 2,
+                               self.resolution[1] * self.pixel_size[1] / 2,
+                               int(self.resolution[1] / self.binning) + 1))
 
     def transfer_map(self, energy):
-        return np.eye(7)
+        return torch.eye(7, device=self.device)
 
     def __call__(self, incoming):
         if self.is_active:
             if incoming.is_empty:
                 x = int(self.resolution[0] / self.binning)
                 y = int(self.resolution[1] / self.binning)
-                self.reading = np.zeros((y,x))
+                self.reading = torch.zeros((y,x))
             else:
-                image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=self.pixel_bin_edges)
-                image = np.flipud(image.T)
+                # image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=self.pixel_bin_edges)
+                image, _ = utils.histogramdd(torch.stack((incoming.xs,incoming.ys)), bins=self.pixel_bin_edges)
+                image = torch.flipud(image.T)
 
                 self.reading = image
                 self.read_beam = incoming
 
-            return Beam([], 0)
+            return Beam([], 0, device=self.device)
         else:
             return incoming
     
@@ -656,28 +665,28 @@ class Undulator(Element):
 
     is_skippable = True # TODO: Temporary?
 
-    def __init__(self, length, name=None):
+    def __init__(self, length, name=None, **kwargs):
         self.length = length
 
-        super().__init__(name=name)
+        super().__init__(name=name, **kwargs)
     
     def transfer_map(self, energy):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
-        return np.array([[1, self.length, 0,           0, 0,                     0, 0],
-                         [0,           1, 0,           0, 0,                     0, 0],
-                         [0,           0, 1, self.length, 0,                     0, 0],
-                         [0,           0, 0,           1, 0,                     0, 0],
-                         [0,           0, 0,           0, 1, self.length * igamma2, 0],
-                         [0,           0, 0,           0, 0,                     1, 0],
-                         [0,           0, 0,           0, 0,                     0, 1]])
+        return torch.Tensor([[1, self.length, 0,           0, 0,                     0, 0],
+                             [0,           1, 0,           0, 0,                     0, 0],
+                             [0,           0, 1, self.length, 0,                     0, 0],
+                             [0,           0, 0,           1, 0,                     0, 0],
+                             [0,           0, 0,           0, 1, self.length * igamma2, 0],
+                             [0,           0, 0,           0, 0,                     1, 0],
+                             [0,           0, 0,           0, 0,                     0, 1]], device=self.device)
     
     def split(self, resolution):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Cavity(min(resolution, remaining))
+            element = Cavity(min(resolution, remaining), device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -710,18 +719,19 @@ class Segment(Element):
         Unique identifier of the element.
     """
 
-    def __init__(self, cell, name=None):
+    def __init__(self, cell, name=None, **kwargs):
+        super().__init__(name=name, **kwargs)
+
         self.elements = cell
         
         for element in self.elements:
+            element.device = self.device
             self.__dict__[element.name] = element
-        
-        super().__init__(name=name)
     
     @classmethod
-    def from_ocelot(cls, cell, name=None):
-        converted = [ocelot2cheetah(element) for element in cell]
-        return cls(converted, name=name)
+    def from_ocelot(cls, cell, name=None, **kwargs):
+        converted = [utils.ocelot2cheetah(element) for element in cell]
+        return cls(converted, name=name, **kwargs)
     
     @property
     def is_skippable(self):
@@ -733,9 +743,9 @@ class Segment(Element):
     
     def transfer_map(self, energy):
         if self.is_skippable:
-            tm = np.eye(7)
+            tm = torch.eye(7)
             for element in self.elements:
-                tm = np.matmul(element.transfer_map(energy), tm)
+                tm = torch.matmul(element.transfer_map(energy), tm)
             return tm
         else:
             return None
