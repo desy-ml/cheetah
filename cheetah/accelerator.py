@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
@@ -805,7 +807,8 @@ class Segment(Element):
         resolution : float, optional
             Minimum resolution of the tracking of the reference particles in the plot.
         """
-        splits = self.split(resolution)
+        reference_segment = deepcopy(self)
+        splits = reference_segment.split(resolution)
 
         split_lengths = [split.length for split in splits]
         ss = [0] + [sum(split_lengths[:i+1]) for i, _ in enumerate(split_lengths)]
