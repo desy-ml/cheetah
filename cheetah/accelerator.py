@@ -753,7 +753,7 @@ class Segment(Element):
     
     def transfer_map(self, energy):
         if self.is_skippable:
-            tm = torch.eye(7)
+            tm = torch.eye(7, dtype=torch.float32, device=self.device)
             for element in self.elements:
                 tm = torch.matmul(element.transfer_map(energy), tm)
             return tm

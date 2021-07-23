@@ -79,7 +79,7 @@ class Beam:
 
         particles = torch.ones((n, 7), dtype=torch.float32)
         distribution = MultivariateNormal(mean, covariance_matrix=cov)
-        particles[:,:6] = distribution.sample((n,), dtype=torch.float32)
+        particles[:,:6] = distribution.sample((n,))
 
         return cls(particles, energy, device=device)
     
