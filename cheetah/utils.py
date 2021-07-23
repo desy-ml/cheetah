@@ -1,11 +1,11 @@
 import ocelot as oc
 
-from joss import accelerator as acc
+from cheetah import accelerator as acc
 
 
-def ocelot2joss(element):
+def ocelot2cheetah(element):
     """
-    Translate an Ocelot element to a JOSS element.
+    Translate an Ocelot element to a Cheetah element.
 
     Parameters
     ----------
@@ -14,12 +14,12 @@ def ocelot2joss(element):
     
     Returns
     -------
-    joss.Element
-        JOSS element object representing an element of particle accelerator.
+    cheetah.Element
+        Cheetah element object representing an element of particle accelerator.
     
     Notes
     -----
-    Object not supported by JOSS are translated to drift sections. Screen objects are created only
+    Object not supported by Cheetah are translated to drift sections. Screen objects are created only
     from `ocelot.Monitor` objects when the string "SCR" in their `id` attribute. Their screen
     properties are always set to default values and most likely need adjusting afterwards. BPM
     objects are only created from `ocelot.Monitor` objects when their id has a substring "BPM".

@@ -1,8 +1,8 @@
-__UNDER CONSTRUCTION:__ This project is currently undergoing a major refit. Formely known as _JOSS_, it will emerge as _Cheetah_. __Note__, that code breaking changes will occur in the meantime.
+__UNDER CONSTRUCTION:__ This project is currently undergoing a major refit. Formerly known as _JOSS_, it will emerge as _Cheetah_. __Note__, that code breaking changes will occur in the meantime.
 
-# JOSS
+# Cheetah
 
-JOSS (Jan and Oliver's Simulation Software) is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
+Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
 ## Installation
 
@@ -14,13 +14,13 @@ Then, simply `git clone` this repository to your machine, change into the direct
 pip3 install .
 ```
 
-to install JOSS.
+to install Cheetah.
 
 ## How To Use
 
-It is unlikely that you will need to use JOSS by itself, as its main purpose in life is being the default particle tracking backend for the [_Accelerator-Environments_](https://github.com/desy-ml/accelerator-environments) project. Nonetheless, here is a quick example of how JOSS is currently used in our RL environments.
+It is unlikely that you will need to use Cheetah by itself, as its main purpose in life is being the default particle tracking backend for the [_Accelerator-Environments_](https://github.com/desy-ml/accelerator-environments) project. Nonetheless, here is a quick example of how Cheetah is currently used in our RL environments.
 
-To create a JOSS `Segment` by defining a cell and creating a segment from it as follows
+To create a Cheetah `Segment` by defining a cell and creating a segment from it as follows
 
 ```python
 segment = Segment([[BPM(name="BPM1SMATCH"),
@@ -39,7 +39,7 @@ segment = Segment([[BPM(name="BPM1SMATCH"),
 Alternatively you can create a segment from an Ocelot cell by running
 
 ```python
-segment = joss.Segment(cell)
+segment = Segment.from_ocelot(cell)
 ```
 
 Assuming in `cell` there exists a quadrupole that goes by the ID *AREAMQZM2*, the quadrupole's strength *k* can be changed by calling
@@ -54,7 +54,7 @@ In order to track a beam through the segment, simply call it like so
 outgoing_beam = segment(incoming_beam)
 ````
 
-You can create particles a random beam using JOSS' `Beam` class by running
+You can a random beam using Cheetah's `Beam` class by running
 
 ```python
 beam = Beam.make_random()
@@ -74,4 +74,4 @@ segment.plot_overview(beam=beam)
 
 ![Overview Plot](images/misalignment.png)
 
-where the optional keyword argument `particles` is the incoming particles from which the reference particles are created. JOSS will use its own incoming particles, if you do not pass any.
+where the optional keyword argument `particles` is the incoming particles from which the reference particles are created. Cheetah will use its own incoming particles, if you do not pass any.

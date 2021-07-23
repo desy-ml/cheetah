@@ -23,7 +23,7 @@ class Beam:
                     sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, cor_x=0, cor_y=0, cor_s=0,
                     energy=1e8):
         """
-        Generate JOSS Beam of random particles.
+        Generate Cheetah Beam of random particles.
         
         Parameters
         ----------
@@ -74,7 +74,7 @@ class Beam:
     def make_linspaced(cls, n=10, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
                        sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, energy=1e8):
         """
-        Generate JOSS Beam of *n* linspaced particles.
+        Generate Cheetah Beam of *n* linspaced particles.
         
         Parameters
         ----------
@@ -115,7 +115,7 @@ class Beam:
     @classmethod
     def from_ocelot(cls, parray):
         """
-        Convert an Ocelot ParticleArray `parray` to a JOSS Beam.
+        Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
         n = parray.rparticles.shape[1]
         particles = np.ones((n, 7))

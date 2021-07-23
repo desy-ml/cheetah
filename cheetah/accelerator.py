@@ -4,8 +4,8 @@ import numpy as np
 import ocelot as oc
 from scipy import constants
 
-from joss.particles import Beam
-from joss.utils import ocelot2joss
+from cheetah.particles import Beam
+from cheetah.utils import ocelot2cheetah
 
 
 ELEMENT_COUNT = 0
@@ -55,12 +55,12 @@ class Element:
         
         Pramameters
         -----------
-        incoming : joss.Beam
+        incoming : cheetah.Beam
             Beam of particles entering the element.
 
         Returns
         -------
-        joss.Beam
+        cheetah.Beam
             Beam of particles exiting the element.
         """
         if incoming.is_empty:
@@ -705,7 +705,7 @@ class Segment(Element):
     Parameters
     ----------
     cell : list
-        List of JOSS or Ocelot elements that describe an accelerator (section).
+        List of Cheetah elements that describe an accelerator (section).
     name : string, optional
         Unique identifier of the element.
     """
@@ -720,7 +720,7 @@ class Segment(Element):
     
     @classmethod
     def from_ocelot(cls, cell, name=None):
-        converted = [ocelot2joss(element) for element in cell]
+        converted = [ocelot2cheetah(element) for element in cell]
         return cls(converted, name=name)
     
     @property
@@ -787,7 +787,7 @@ class Segment(Element):
             Axes to plot the particle traces into viewed in x-direction.
         axy : matplotlib.axes.Axes
             Axes to plot the particle traces into viewed in y-direction.
-        beam : joss.Beam, optional
+        beam : cheetah.Beam, optional
             Entering beam from which the reference particles are sampled.
         n : int, optional
             Number of reference particles to plot. Must not be larger than number of particles
@@ -839,7 +839,7 @@ class Segment(Element):
         ----------
         fig: matplotlib.figure.Figure, optional
             Figure to plot the overview into.
-        beam : joss.Beam, optional
+        beam : cheetah.Beam, optional
             Entering beam from which the reference particles are sampled.
         n : int, optional
             Number of reference particles to plot. Must not be larger than number of particles
