@@ -1,0 +1,35 @@
+initializing ocelot...
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+WARNING: Diagnostic screen was converted with default screen properties.
+
+            SCREEN OFF             
+Simulation Code | Avrg. Time of 3
+----------------------------------
+Ocelot          |        0.2362 s
+JOSS            |        0.0023 s
+Cheetah (CPU)   |        0.0016 s
+Cheetah (GPU)   |        0.0019 s
+
+            SCREEN ON              
+Simulation Code | Avrg. Time of 3
+----------------------------------
+Ocelot          |        0.2278 s
+JOSS            |        0.0386 s
+Cheetah (CPU)   |        0.0199 s
+Cheetah (GPU)   |        0.0157 s

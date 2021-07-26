@@ -1,7 +1,6 @@
 import time
 
 from accelerator_environments import utils
-from torch._C import device
 import cheetah
 import joss
 import numpy as np
@@ -170,7 +169,7 @@ def time_cheetah_gpu():
     for _ in range(n):
         cell = utils.subcell_of(ares.cell, "AREASOLA1", "AREABSCR1")
 
-        segment = cheetah.Segment.from_ocelot(cell, device="cpu")
+        segment = cheetah.Segment.from_ocelot(cell, device="cuda")
         segment.AREABSCR1.is_active = False  # Turn screen on and off
 
         particles = cheetah.Beam.make_random(n=int(1e+5), sigma_x=175e-6, sigma_y=175e-6, device="cuda")
@@ -192,7 +191,7 @@ def time_cheetah_gpu_screen():
     for _ in range(n):
         cell = utils.subcell_of(ares.cell, "AREASOLA1", "AREABSCR1")
 
-        segment = cheetah.Segment.from_ocelot(cell, device="cpu")
+        segment = cheetah.Segment.from_ocelot(cell, device="cuda")
         segment.AREABSCR1.is_active = True  # Turn screen on and off
 
         particles = cheetah.Beam.make_random(n=int(1e+5), sigma_x=175e-6, sigma_y=175e-6, device="cuda")
