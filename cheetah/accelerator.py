@@ -839,7 +839,7 @@ class Segment(Element):
         for particle_index in range(n):
             xs = [reference_beam.xs[particle_index] for reference_beam in references
                                                     if reference_beam.xs is not None]
-            axx.plot(ss[:len(xs)], xs)
+            axx.plot(ss[:len(xs)], xs.cpu())
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
         axx.grid()
@@ -847,7 +847,7 @@ class Segment(Element):
         for particle_index in range(n):
             ys = [reference_beam.ys[particle_index] for reference_beam in references
                                                     if reference_beam.ys is not None]
-            axy.plot(ss[:len(ys)], ys)
+            axy.plot(ss[:len(ys)], ys.cpu())
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
         axy.grid()
