@@ -744,7 +744,7 @@ class Segment(Element):
         converted = [utils.ocelot2cheetah(element) for element in cell]
         return cls(converted, name=name, **kwargs)
     
-    def to_device(self, device):
+    def device(self, device):
         for element in self.elements:
             element.device = device
     
@@ -820,7 +820,7 @@ class Segment(Element):
         resolution : float, optional
             Minimum resolution of the tracking of the reference particles in the plot.
         """
-        reference_segment = deepcopy(self).to_device("cpu")
+        reference_segment = deepcopy(self).device("cpu")
         splits = reference_segment.split(resolution)
 
         split_lengths = [split.length for split in splits]
