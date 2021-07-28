@@ -5,7 +5,6 @@ from matplotlib.patches import Rectangle
 import numpy as np
 from scipy import constants
 import torch
-from torch._C import device
 
 from cheetah import utils
 from cheetah.particles import Beam
@@ -816,7 +815,7 @@ class Segment(Element):
         resolution : float, optional
             Minimum resolution of the tracking of the reference particles in the plot.
         """
-        reference_segment = deepcopy(self).cpu()
+        reference_segment = deepcopy(self)
         splits = reference_segment.split(resolution)
 
         split_lengths = [split.length for split in splits]
@@ -824,14 +823,14 @@ class Segment(Element):
 
         references = []
         if beam is None:
-            initial = Beam.make_linspaced(n=n, device="cpu")
+            initial = Beam.make_linspaced(n=n)
             references.append(initial)
         else:
             initial = Beam.make_linspaced(n=n, mu_x=beam.mu_x, mu_xp=beam.mu_xp, mu_y=beam.mu_y,
                                           mu_yp=beam.mu_yp, sigma_x=beam.sigma_x,
                                           sigma_xp=beam.sigma_xp, sigma_y=beam.sigma_y,
                                           sigma_yp=beam.sigma_yp, sigma_s=beam.sigma_s,
-                                          sigma_p=beam.sigma_p, energy=beam.energy, device="cpu")
+                                          sigma_p=beam.sigma_p, energy=beam.energy)
             references.append(initial)
         for split in splits:
             sample = split(references[-1])
@@ -840,7 +839,7 @@ class Segment(Element):
         for particle_index in range(n):
             xs = [reference_beam.xs[particle_index] for reference_beam in references
                                                     if reference_beam.xs is not None]
-            axx.plot(ss[:len(xs)], xs)
+            axx.plot(ss[:len(xs)], xs.cpu())
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
         axx.grid()
@@ -848,7 +847,7 @@ class Segment(Element):
         for particle_index in range(n):
             ys = [reference_beam.ys[particle_index] for reference_beam in references
                                                     if reference_beam.ys is not None]
-            axy.plot(ss[:len(ys)], ys)
+            axy.plot(ss[:len(ys)], ys.cpu())
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
         axy.grid()
