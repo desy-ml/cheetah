@@ -5,6 +5,7 @@ from matplotlib.patches import Rectangle
 import numpy as np
 from scipy import constants
 import torch
+from torch._C import device
 
 from cheetah import utils
 from cheetah.particles import Beam
@@ -747,7 +748,6 @@ class Segment(Element):
         return cls(converted, name=name, **kwargs)
     
     def to_device(self, device):
-        self.device = device
         for element in self.elements:
             element.to_device(device)
     
