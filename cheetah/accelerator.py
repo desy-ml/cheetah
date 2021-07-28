@@ -54,6 +54,9 @@ class Element:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
     
+    def to_device(self, device):
+        self.device = device
+    
     def transfer_map(self, energy):
         raise NotImplementedError
 
@@ -746,7 +749,7 @@ class Segment(Element):
     
     def to_device(self, device):
         for element in self.elements:
-            element.device = device
+            element.to_device(device)
     
     @property
     def is_skippable(self):
