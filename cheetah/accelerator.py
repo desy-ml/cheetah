@@ -816,7 +816,8 @@ class Segment(Element):
         resolution : float, optional
             Minimum resolution of the tracking of the reference particles in the plot.
         """
-        reference_segment = deepcopy(self).cpu()
+        reference_segment = deepcopy(self)
+        reference_segment.device = "cpu"
         splits = reference_segment.split(resolution)
 
         split_lengths = [split.length for split in splits]
