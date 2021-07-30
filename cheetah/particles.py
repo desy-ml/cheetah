@@ -1,3 +1,4 @@
+import ocelot.adaptors.astra2ocelot as oca
 import torch
 from torch.distributions import MultivariateNormal
 
@@ -142,6 +143,12 @@ class Beam:
     
     def __len__(self):
         return self.n
+    
+    @classmethod
+    def from_astra(cls, path, **kwargs):
+        """Load an Astra particle distribution as a Cheetah Beam."""
+        ocelot_parray = oca.astraBeam2particleArray(path, print_params=False)
+        return cls.from_ocelot(ocelot_parray, **kwargs)
     
     @property
     def n(self):
