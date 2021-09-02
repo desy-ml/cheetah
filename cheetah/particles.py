@@ -26,13 +26,6 @@ class Beam:
         available. The CPU is used otherwise.
     """
 
-    dist_name_list = ['ACHIP_EA1_2021.1351.001', 'ARES_Linac.1351.010']
-    dist_dict = {}
-    for dist_name in dist_name_list:
-        print(f'Loading ASTRA beam distribution: {dist_name}')
-        dist_dict[dist_name] = oca.astraBeam2particleArray(f'./distributions/{dist_name}')    
-    
-
     def __init__(self, particles, energy, device="auto"):
         assert len(particles) == 0 or particles.shape[1] == 7, "Particle vectors must be 7-dimensional."
 
@@ -43,6 +36,9 @@ class Beam:
         self.particles = particles.to(device) if isinstance(particles, torch.Tensor) else particles
         
         self.energy = energy
+
+        self.mus=torch.zeros(6,device=self.device) 
+        self.sigmas=torch.ones(6,device=self.device)*1e-6
 
         
     
@@ -161,58 +157,54 @@ class Beam:
         return cls(particles, 1e9*parray.E, device=device)
     
     @classmethod
-    def from_astra(cls, parray, randomizer=None ,device="auto"):
-        """
-        Convert and transform an Astra distribution to a Cheetah Beam.
-        """
-        if randomizer != None:
-            scaler = list(np.abs(np.random.uniform(1-i,1+i)) for i in randomizer['scaler'])
-            trans = list(np.random.uniform(-i,i) for i in randomizer['translator'])
-            parray.rparticles = np.transpose(parray.rparticles.transpose()*scaler+trans)
-        else:
-            pass
-        n = parray.rparticles.shape[1]
-        particles = torch.ones((n, 7))
-        p = parray.rparticles.transpose()
-         
-        particles[:,:6] = torch.tensor(p, dtype=torch.float32)
-
-        return cls(particles, 1e9*parray.E, device=device)
-
-
-    @classmethod
-    def from_astra_2(cls, randomizer=None ,device="auto"):
-        """
-        Convert and transform an Astra distribution to a Cheetah Beam.
-        """
-
-        dist_choosen = np.random.choice(cls.dist_name_list)
-        print(f'Selected List: {dist_choosen}')
-        part_dist = deepcopy(cls.dist_dict[dist_choosen])
-        
-        if randomizer != None:
-            scaler = list(np.abs(np.random.uniform(1-i,1+i)) for i in randomizer['scaler'])
-            trans = list(np.random.uniform(-i,i) for i in randomizer['translator'])
-            part_dist.rparticles = np.transpose(part_dist.rparticles.transpose()*scaler+trans)
-        else:
-            pass
-        n = part_dist.rparticles.shape[1]
-        particles = torch.ones((n, 7))
-        p = part_dist.rparticles.transpose()
-         
-        particles[:,:6] = torch.tensor(p, dtype=torch.float32)
-
-        return cls(particles, 1e9*part_dist.E, device=device)
-    
-    def __len__(self):
-        return self.n
-    
-    @classmethod
     def from_astra(cls, path, **kwargs):
         """Load an Astra particle distribution as a Cheetah Beam."""
         ocelot_parray = oca.astraBeam2particleArray(path, print_params=False)
         return cls.from_ocelot(ocelot_parray, **kwargs)
     
+    def __len__(self):
+        return self.n
+    
+    def randomizer(self, 
+                   sigma_range = [[1e-6,2e-6],
+                                  [1e-6,2e-6],
+                                  [1e-6,2e-6],
+                                  [1e-6,2e-6],
+                                  [1e-6,2e-6],
+                                  [1e-6,2e-6]],
+                   mu_range = [[-1e-6,1e-6],
+                               [-1e-6,1e-6],
+                               [-1e-6,1e-6],
+                               [-1e-6,1e-6],
+                               [-1e-6,1e-6],
+                               [-1e-6,1e-6]]):
+        
+        self.sigmas = torch.tensor(
+            list(np.random.uniform(low=sigma_r[0], high=sigma_r[1]) for sigma_r in sigma_range),
+            device = self.device)
+        self.mus = torch.tensor(list(np.random.uniform(low=mu_r[0], high=mu_r[1]) for mu_r in mu_range),
+            device = self.device)
+
+
+    def transformer(self):
+
+        phase_space = self.particles[:,:-1]
+        
+        means = torch.mean(phase_space,axis=0)
+        phase_space = torch.add(phase_space,-means)
+
+        stds = torch.std(phase_space, axis=0)
+        phase_space = torch.div(phase_space, stds)
+
+        phase_space = torch.mul(phase_space, self.sigmas)
+        phase_space = torch.add(phase_space, self.mus)
+        
+        self.particles = torch.cat(
+            (phase_space,torch.ones(phase_space.shape[0], 1, device='cuda')),1)
+
+         
+
+
     @property
     def n(self):
         return len(self.particles)
