@@ -1,7 +1,15 @@
 import ocelot.adaptors.astra2ocelot as oca
 import torch
 from torch.distributions import MultivariateNormal
+import ocelot.adaptors.astra2ocelot as oca
 
+import os
+import numpy as np
+
+from copy import deepcopy
+
+
+PATH = os.getcwd()
 
 class Beam:
     """
@@ -18,6 +26,13 @@ class Beam:
         available. The CPU is used otherwise.
     """
 
+    dist_name_list = ['ACHIP_EA1_2021.1351.001', 'ARES_Linac.1351.010']
+    dist_dict = {}
+    for dist_name in dist_name_list:
+        print(f'Loading ASTRA beam distribution: {dist_name}')
+        dist_dict[dist_name] = oca.astraBeam2particleArray(f'./distributions/{dist_name}')    
+    
+
     def __init__(self, particles, energy, device="auto"):
         assert len(particles) == 0 or particles.shape[1] == 7, "Particle vectors must be 7-dimensional."
 
@@ -28,6 +43,8 @@ class Beam:
         self.particles = particles.to(device) if isinstance(particles, torch.Tensor) else particles
         
         self.energy = energy
+
+        
     
     @classmethod
     def make_random(cls, n=100000, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
@@ -70,6 +87,8 @@ class Beam:
             Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
             available. The CPU is used otherwise.
         """
+
+
         mean = torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32)
         cov = torch.tensor([[sigma_x**2,       cor_x,          0,           0,          0,          0],
                             [     cor_x, sigma_xp**2,          0,           0,          0,          0],
@@ -140,6 +159,50 @@ class Beam:
         particles[:,:6] = torch.tensor(parray.rparticles.transpose(), dtype=torch.float32)
 
         return cls(particles, 1e9*parray.E, device=device)
+    
+    @classmethod
+    def from_astra(cls, parray, randomizer=None ,device="auto"):
+        """
+        Convert and transform an Astra distribution to a Cheetah Beam.
+        """
+        if randomizer != None:
+            scaler = list(np.abs(np.random.uniform(1-i,1+i)) for i in randomizer['scaler'])
+            trans = list(np.random.uniform(-i,i) for i in randomizer['translator'])
+            parray.rparticles = np.transpose(parray.rparticles.transpose()*scaler+trans)
+        else:
+            pass
+        n = parray.rparticles.shape[1]
+        particles = torch.ones((n, 7))
+        p = parray.rparticles.transpose()
+         
+        particles[:,:6] = torch.tensor(p, dtype=torch.float32)
+
+        return cls(particles, 1e9*parray.E, device=device)
+
+
+    @classmethod
+    def from_astra_2(cls, randomizer=None ,device="auto"):
+        """
+        Convert and transform an Astra distribution to a Cheetah Beam.
+        """
+
+        dist_choosen = np.random.choice(cls.dist_name_list)
+        print(f'Selected List: {dist_choosen}')
+        part_dist = deepcopy(cls.dist_dict[dist_choosen])
+        
+        if randomizer != None:
+            scaler = list(np.abs(np.random.uniform(1-i,1+i)) for i in randomizer['scaler'])
+            trans = list(np.random.uniform(-i,i) for i in randomizer['translator'])
+            part_dist.rparticles = np.transpose(part_dist.rparticles.transpose()*scaler+trans)
+        else:
+            pass
+        n = part_dist.rparticles.shape[1]
+        particles = torch.ones((n, 7))
+        p = part_dist.rparticles.transpose()
+         
+        particles[:,:6] = torch.tensor(p, dtype=torch.float32)
+
+        return cls(particles, 1e9*part_dist.E, device=device)
     
     def __len__(self):
         return self.n
