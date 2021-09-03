@@ -37,8 +37,7 @@ class Beam:
         
         self.energy = energy
 
-        self.mus=torch.zeros(6,device=self.device) 
-        self.sigmas=torch.ones(6,device=self.device)*1e-6
+
 
         
     
@@ -164,30 +163,17 @@ class Beam:
     
     def __len__(self):
         return self.n
-    
-    def randomizer(self, 
-                   sigma_range = [[1e-6,2e-6],
-                                  [1e-6,2e-6],
-                                  [1e-6,2e-6],
-                                  [1e-6,2e-6],
-                                  [1e-6,2e-6],
-                                  [1e-6,2e-6]],
-                   mu_range = [[-1e-6,1e-6],
-                               [-1e-6,1e-6],
-                               [-1e-6,1e-6],
-                               [-1e-6,1e-6],
-                               [-1e-6,1e-6],
-                               [-1e-6,1e-6]]):
+
+
+
+    def transformed_to(self, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
+                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=1e-6, sigma_p=1e-6):
+        """ Transforms the particles to new mus and sigmas. Returns a new beam."""
+        mus = torch.tensor([mu_x,mu_xp,mu_y,mu_yp,0,0],device=self.device)
+
+        sigmas = torch.tensor([sigma_x,sigma_xp,sigma_y,sigma_yp,sigma_s,sigma_p],device=self.device)
+
         
-        self.sigmas = torch.tensor(
-            list(np.random.uniform(low=sigma_r[0], high=sigma_r[1]) for sigma_r in sigma_range),
-            device = self.device)
-        self.mus = torch.tensor(list(np.random.uniform(low=mu_r[0], high=mu_r[1]) for mu_r in mu_range),
-            device = self.device)
-
-
-    def transformer(self):
-
         phase_space = self.particles[:,:-1]
         
         means = torch.mean(phase_space,axis=0)
@@ -196,13 +182,13 @@ class Beam:
         stds = torch.std(phase_space, axis=0)
         phase_space = torch.div(phase_space, stds)
 
-        phase_space = torch.mul(phase_space, self.sigmas)
-        phase_space = torch.add(phase_space, self.mus)
+        phase_space = torch.mul(phase_space, sigmas)
+        phase_space = torch.add(phase_space, mus)
         
-        self.particles = torch.cat(
-            (phase_space,torch.ones(phase_space.shape[0], 1, device='cuda')),1)
-
-         
+        particles = torch.cat(
+            (phase_space,torch.ones(phase_space.shape[0], 1, device=self.device)),1)
+        
+        return Beam(particles=particles, energy=self.energy)
 
 
     @property
