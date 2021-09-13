@@ -1,15 +1,7 @@
 import ocelot.adaptors.astra2ocelot as oca
 import torch
 from torch.distributions import MultivariateNormal
-import ocelot.adaptors.astra2ocelot as oca
 
-import os
-import numpy as np
-
-from copy import deepcopy
-
-
-PATH = os.getcwd()
 
 class Beam:
     """
@@ -37,10 +29,6 @@ class Beam:
         
         self.energy = energy
 
-
-
-        
-    
     @classmethod
     def make_random(cls, n=100000, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
                     sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=1e-6, sigma_p=1e-6, cor_x=0, cor_y=0,
@@ -78,12 +66,12 @@ class Beam:
             Correlation between y and yp.
         cor_s : float, optional
             Correlation between s and p.
+        energy : float, optional
+            Energy of the beam in eV.
         device : string
             Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
             available. The CPU is used otherwise.
         """
-
-
         mean = torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32)
         cov = torch.tensor([[sigma_x**2,       cor_x,          0,           0,          0,          0],
                             [     cor_x, sigma_xp**2,          0,           0,          0,          0],
@@ -97,8 +85,7 @@ class Beam:
         particles[:,:6] = distribution.sample((n,))
 
         return cls(particles, energy, device=device)
-    
-    
+     
     @classmethod
     def make_linspaced(cls, n=10, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
                        sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=0, sigma_p=0, energy=1e8, device="auto"):
@@ -129,6 +116,8 @@ class Beam:
             Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
             Sgima of the particle distribution in p direction in meters.
+        energy : float, optional
+            Energy of the beam in eV.
         device : string
             Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
             available. The CPU is used otherwise.
@@ -161,35 +150,86 @@ class Beam:
         ocelot_parray = oca.astraBeam2particleArray(path, print_params=False)
         return cls.from_ocelot(ocelot_parray, **kwargs)
     
+    def transformed_to(self, mu_x=None, mu_y=None, mu_xp=None, mu_yp=None, sigma_x=None,
+                       sigma_y=None, sigma_xp=None, sigma_yp=None, sigma_s=None, sigma_p=None,
+                       energy=None):
+        """
+        Create version of this beam that is transformed to new beam parameters.
+        
+        Parameters
+        ----------
+        n : int, optional
+            Number of particles to generate.
+        mu_x : float, optional
+            Center of the particle distribution on x in meters.
+        mu_y : float, optional
+            Center of the particle distribution on y in meters.
+        mu_xp : float, optional
+            Center of the particle distribution on px in meters.
+        mu_yp : float, optional
+            Center of the particle distribution on py in meters.
+        sigma_x : float, optional
+            Sgima of the particle distribution in x direction in meters.
+        sigma_y : float, optional
+            Sgima of the particle distribution in y direction in meters.
+        sigma_xp : float, optional
+            Sgima of the particle distribution in px direction in meters.
+        sigma_yp : float, optional
+            Sgima of the particle distribution in py direction in meters.
+        sigma_s : float, optional
+            Sgima of the particle distribution in s direction in meters.
+        sigma_p : float, optional
+            Sgima of the particle distribution in p direction in meters.
+        energy : float, optional
+            Energy of the beam in eV.
+        device : string
+            Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is selected if
+            available. The CPU is used otherwise.
+        """
+        mu_x = mu_x if mu_x != None else self.mu_x
+        mu_y = mu_y if mu_y != None else self.mu_y
+        mu_xp = mu_xp if mu_xp != None else self.mu_xp
+        mu_yp = mu_yp if mu_yp != None else self.mu_yp
+        sigma_x = sigma_x if sigma_x != None else self.sigma_x
+        sigma_y = sigma_y if sigma_y != None else self.sigma_y
+        sigma_xp = sigma_xp if sigma_xp != None else self.sigma_xp
+        sigma_yp = sigma_yp if sigma_yp != None else self.sigma_yp
+        sigma_s = sigma_s if sigma_s != None else self.sigma_s
+        sigma_p = sigma_p if sigma_p != None else self.sigma_p
+        energy = energy if energy != None else self.energy
+
+        new_mu = torch.tensor(
+            [mu_x, mu_xp, mu_y, mu_yp, 0, 0],
+            dtype=torch.float32,
+            device=self.device
+        )
+        new_sigma = torch.tensor(
+            [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p],
+            dtype=torch.float32,
+            device=self.device
+        )
+
+        old_mu = torch.tensor(
+            [self.mu_x, self.mu_xp, self.mu_y, self.mu_yp, 0, 0],
+            dtype=torch.float32,
+            device=self.device
+        )
+        old_sigma = torch.tensor(
+            [self.sigma_x, self.sigma_xp, self.sigma_y, self.sigma_yp, self.sigma_s, self.sigma_p],
+            dtype=torch.float32,
+            device=self.device
+        )
+
+        phase_space = self.particles[:,:6]
+        phase_space = (phase_space - old_mu) / old_sigma * new_sigma + new_mu
+
+        particles = torch.ones_like(self.particles, dtype=torch.float32, device=self.device)
+        particles[:,:6] = phase_space
+        
+        return Beam(particles=particles, energy=energy)
+    
     def __len__(self):
         return self.n
-
-
-
-    def transformed_to(self, mu_x=0, mu_y=0, mu_xp=0, mu_yp=0, sigma_x=175e-9, sigma_y=175e-9,
-                    sigma_xp=2e-7, sigma_yp=2e-7, sigma_s=1e-6, sigma_p=1e-6):
-        """ Transforms the particles to new mus and sigmas. Returns a new beam."""
-        mus = torch.tensor([mu_x,mu_xp,mu_y,mu_yp,0,0],device=self.device)
-
-        sigmas = torch.tensor([sigma_x,sigma_xp,sigma_y,sigma_yp,sigma_s,sigma_p],device=self.device)
-
-        
-        phase_space = self.particles[:,:-1]
-        
-        means = torch.mean(phase_space,axis=0)
-        phase_space = torch.add(phase_space,-means)
-
-        stds = torch.std(phase_space, axis=0)
-        phase_space = torch.div(phase_space, stds)
-
-        phase_space = torch.mul(phase_space, sigmas)
-        phase_space = torch.add(phase_space, mus)
-        
-        particles = torch.cat(
-            (phase_space,torch.ones(phase_space.shape[0], 1, device=self.device)),1)
-        
-        return Beam(particles=particles, energy=self.energy)
-
 
     @property
     def n(self):

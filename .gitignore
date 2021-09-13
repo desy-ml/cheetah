@@ -1,5 +1,6 @@
 .DS_Store
 __pycache__
 cheetah.egg-info
+.ipynb_checkpoints
 
 test/ACHIP_EA1_2021.1351.001
