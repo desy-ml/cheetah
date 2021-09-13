@@ -46,6 +46,18 @@ def ocelot2cheetah(element):
         return acc.Drift(element.l, name=element.id)
 
 
+def subcell_of(cell, start, end):
+    """Extract a subcell `[start, end]` from an Ocelot cell."""
+    subcell = []
+    is_in_subcell = False
+    for el in cell:
+        if el.id == start: is_in_subcell = True
+        if is_in_subcell: subcell.append(el)
+        if el.id == end: break
+    
+    return subcell
+
+
 _range = range
 
 def histogramdd(sample, bins=None, range=None, weights=None, remove_overflow=True):
