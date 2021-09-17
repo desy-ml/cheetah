@@ -1,5 +1,3 @@
-__UNDER CONSTRUCTION:__ This project is currently undergoing a major refit. Formerly known as _JOSS_, it will emerge as _Cheetah_. __Note__, that code breaking changes will occur in the meantime.
-
 # Cheetah
 
 Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
