@@ -47,7 +47,7 @@ def ocelot2cheetah(element, warnings=True):
         return acc.Drift(element.l, name=element.id)
 
 
-def subcell_of(cell, start, end):
+def subcell_of_ocelot(cell, start, end):
     """Extract a subcell `[start, end]` from an Ocelot cell."""
     subcell = []
     is_in_subcell = False

@@ -782,6 +782,17 @@ class Segment(Element):
             element.device = self.device
             self.__dict__[element.name] = element
     
+    def subcell(self, start, end, **kwargs):
+        """Extract a subcell `[start, end]` from an this segment."""
+        subcell = []
+        is_in_subcell = False
+        for element in self.elements:
+            if element.name == start: is_in_subcell = True
+            if is_in_subcell: subcell.append(element)
+            if element.name == end: break
+    
+        return self.__class__(subcell, **kwargs)
+    
     @classmethod
     def from_ocelot(cls, cell, name=None, warnings=True, **kwargs):
         converted = [utils.ocelot2cheetah(element, warnings=warnings) for element in cell]
