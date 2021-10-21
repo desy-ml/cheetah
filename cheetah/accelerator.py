@@ -597,14 +597,14 @@ class Screen(Element):
 
     length = 0
 
-    def __init__(self, resolution, pixel_size, binning=1, name=None, **kwargs):
+    def __init__(self, resolution, pixel_size, binning=1, misalignment=(0,0), name=None, **kwargs):
         super().__init__(name=name, **kwargs)
 
         self.resolution = resolution
         self.pixel_size = pixel_size
         self.binning = binning
+        self.misalignment = misalignment
 
-        x, y = int(resolution[0] / binning), int(resolution[1] / binning)
         self.read_beam = None
         
     @property
@@ -646,7 +646,19 @@ class Screen(Element):
 
     def __call__(self, incoming):
         if self.is_active:
-            self.read_beam = incoming
+            if isinstance(incoming, ParameterBeam):
+                self.read_beam = deepcopy(incoming)
+                self.read_beam._mu[0] -= self.misalignment[0]
+                self.read_beam._mu[2] -= self.misalignment[1]
+            elif isinstance(incoming, ParticleBeam):
+                self.read_beam = deepcopy(incoming)
+                x_offset = np.full(len(self.read_beam), self.misalignment[0])
+                y_offset = np.full(len(self.read_beam), self.misalignment[1])
+                self.read_beam.particles[:,0] -= x_offset
+                self.read_beam.particles[:,1] -= y_offset
+            else:
+                self.read_beam = incoming
+
             return Beam.empty
         else:
             return incoming
@@ -697,7 +709,7 @@ class Screen(Element):
         ax.add_patch(patch)
     
     def __repr__(self):
-        return f"{self.__class__.__name__}(resolution={self.resolution}, pixel_size={self.pixel_size}, binning={self.binning}, name=\"{self.name}\")"
+        return f"{self.__class__.__name__}(resolution={self.resolution}, pixel_size={self.pixel_size}, binning={self.binning}, misalignment={self.misalignment}, name=\"{self.name}\")"
 
 
 class Undulator(Element):
