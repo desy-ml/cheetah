@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="cheetah",
-    version="0.5.3",
+    version="0.5.4",
     author="Jan Kaiser & Oliver Stein",
     author_email="jan.kaiser@desy.de | oliver.stein@desy.de",
     description="Fast particle accelerator optics simulation for reinforcement learning and optimisation applications.",

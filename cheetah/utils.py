@@ -4,7 +4,7 @@ import torch
 from cheetah import accelerator as acc
 
 
-def ocelot2cheetah(element):
+def ocelot2cheetah(element, warnings=True):
     """
     Translate an Ocelot element to a Cheetah element.
 
@@ -36,7 +36,8 @@ def ocelot2cheetah(element):
     elif isinstance(element, oc.Cavity):
         return acc.Cavity(element.l, name=element.id)
     elif isinstance(element, oc.Monitor) and "SCR" in element.id:
-        print("WARNING: Diagnostic screen was converted with default screen properties.")
+        if warnings:
+            print("WARNING: Diagnostic screen was converted with default screen properties.")
         return acc.Screen((2448,2040), (3.5488e-6,2.5003e-6), name=element.id)
     elif isinstance(element, oc.Monitor) and "BPM" in element.id:
         return acc.BPM(name=element.id)

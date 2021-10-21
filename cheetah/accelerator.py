@@ -783,8 +783,8 @@ class Segment(Element):
             self.__dict__[element.name] = element
     
     @classmethod
-    def from_ocelot(cls, cell, name=None, **kwargs):
-        converted = [utils.ocelot2cheetah(element) for element in cell]
+    def from_ocelot(cls, cell, name=None, warnings=True, **kwargs):
+        converted = [utils.ocelot2cheetah(element, warnings=warnings) for element in cell]
         return cls(converted, name=name, **kwargs)
     
     @property
