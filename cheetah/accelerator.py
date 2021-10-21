@@ -327,7 +327,7 @@ class HorizontalCorrector(Element):
 
     is_skippable = True
 
-    def __init__(self, length, angle=0.0, energy=1e+8, name=None, **kwargs):
+    def __init__(self, length, angle=0.0, name=None, **kwargs):
         self.length = length
         self.angle = angle
 
@@ -399,7 +399,7 @@ class VerticalCorrector(Element):
 
     is_skippable = True
 
-    def __init__(self, length, angle=0.0, energy=1e+8, name=None, **kwargs):
+    def __init__(self, length, angle=0.0, name=None, **kwargs):
         self.length = length
         self.angle = angle
 
@@ -465,7 +465,7 @@ class Cavity(Element):
 
     def __init__(self, length, delta_energy=0, name=None, **kwargs):
         self.length = length
-        self.delta_energy = 0
+        self.delta_energy = delta_energy
 
         super().__init__(name=name, **kwargs)
     
