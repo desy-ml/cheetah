@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
 from scipy import constants
+from scipy.stats import multivariate_normal
 import torch
 
 from cheetah import utils
-from cheetah.particles import Beam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 
 
 ELEMENT_COUNT = 0
@@ -70,12 +71,19 @@ class Element:
         cheetah.Beam
             Beam of particles exiting the element.
         """
-        if incoming.is_empty:
+        if incoming is Beam.empty:
             return incoming
-        else:
+        elif isinstance(incoming, ParameterBeam):
+            tm = self.transfer_map(incoming.energy)
+            mu = torch.matmul(tm, incoming._mu)
+            cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
+            return ParameterBeam(mu, cov, incoming.energy)
+        elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
-            return Beam(new_particles, incoming.energy)
+            return ParticleBeam(new_particles, incoming.energy)
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def split(self, resolution):
         """
@@ -484,7 +492,7 @@ class Cavity(Element):
     
     def __call__(self, incoming):
         outgoing = super().__call__(incoming)
-        if not outgoing.is_empty:
+        if outgoing is not Beam.empty:
             outgoing.energy += self.delta_energy
         return outgoing
     
@@ -546,11 +554,12 @@ class BPM(Element):
         return torch.eye(7, device=self.device)
     
     def __call__(self, incoming):
-        if incoming.is_empty:
+        if incoming is Beam.empty:
             self.reading = (None, None)
+            return Beam.empty
         else:
             self.reading = (incoming.mu_x, incoming.mu_y)
-        return Beam(incoming.particles, incoming.energy, device=self.device)
+            return ParticleBeam(incoming.particles, incoming.energy, device=self.device)
     
     def split(self, resolution):
         return [self]
@@ -623,19 +632,42 @@ class Screen(Element):
 
     def __call__(self, incoming):
         if self.is_active:
-            if incoming.is_empty:
+            if incoming is Beam.empty:
                 x = int(self.resolution[0] / self.binning)
                 y = int(self.resolution[1] / self.binning)
                 self.reading = torch.zeros((y,x))
-            else:
+            elif isinstance(incoming, ParameterBeam):
+                transverse_mu = np.array([incoming._mu[0], incoming._mu[2]])
+                transverse_cov = np.array([
+                    [incoming._cov[0,0], incoming._cov[0,2]],
+                    [incoming._cov[2,0], incoming._cov[2,2]]
+                ])
+                dist = multivariate_normal(mean=transverse_mu, cov=transverse_cov)
+
+                left = self.extent[0]
+                right = self.extent[1]
+                hstep = self.pixel_size[0] * self.binning
+                bottom = self.extent[2]
+                top = self.extent[3]
+                vstep = self.pixel_size[1] * self.binning
+                x, y = np.mgrid[left:right:hstep,bottom:top:vstep]
+                pos = np.dstack((x, y))
+                image = dist.pdf(pos)
+                image = np.flipud(image.T)
+
+                self.reading = image
+                self.read_beam = incoming
+            elif isinstance(incoming, ParticleBeam):
                 # image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=self.pixel_bin_edges)
                 image, _ = utils.histogramdd(torch.stack((incoming.xs,incoming.ys)), bins=self.pixel_bin_edges)
                 image = torch.flipud(image.T)
 
                 self.reading = image.cpu()
                 self.read_beam = incoming
+            else:
+                raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-            return Beam([], 0, device=self.device)
+            return Beam.empty
         else:
             return incoming
     
@@ -823,14 +855,23 @@ class Segment(Element):
 
         references = []
         if beam is None:
-            initial = Beam.make_linspaced(n=n)
+            initial = ParticleBeam.make_linspaced(n=n)
             references.append(initial)
         else:
-            initial = Beam.make_linspaced(n=n, mu_x=beam.mu_x, mu_xp=beam.mu_xp, mu_y=beam.mu_y,
-                                          mu_yp=beam.mu_yp, sigma_x=beam.sigma_x,
-                                          sigma_xp=beam.sigma_xp, sigma_y=beam.sigma_y,
-                                          sigma_yp=beam.sigma_yp, sigma_s=beam.sigma_s,
-                                          sigma_p=beam.sigma_p, energy=beam.energy)
+            initial = ParticleBeam.make_linspaced(
+                n=n,
+                mu_x=beam.mu_x,
+                mu_xp=beam.mu_xp,
+                mu_y=beam.mu_y,
+                mu_yp=beam.mu_yp,
+                sigma_x=beam.sigma_x,
+                sigma_xp=beam.sigma_xp,
+                sigma_y=beam.sigma_y,
+                sigma_yp=beam.sigma_yp,
+                sigma_s=beam.sigma_s,
+                sigma_p=beam.sigma_p,
+                energy=beam.energy
+            )
             references.append(initial)
         for split in splits:
             sample = split(references[-1])
@@ -838,7 +879,7 @@ class Segment(Element):
         
         for particle_index in range(n):
             xs = [float(reference_beam.xs[particle_index].cpu()) for reference_beam in references
-                                                                 if reference_beam.xs is not None]
+                                                                 if reference_beam is not Beam.empty]
             axx.plot(ss[:len(xs)], xs)
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
@@ -846,7 +887,7 @@ class Segment(Element):
 
         for particle_index in range(n):
             ys = [float(reference_beam.ys[particle_index].cpu()) for reference_beam in references
-                                                                 if reference_beam.ys is not None]
+                                                                 if reference_beam is not Beam.empty]
             axy.plot(ss[:len(ys)], ys)
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")

@@ -1,2 +1,2 @@
 from cheetah.accelerator import *
-from cheetah.particles import Beam
+from cheetah.particles import *
