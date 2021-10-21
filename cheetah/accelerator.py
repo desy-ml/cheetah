@@ -605,7 +605,7 @@ class Screen(Element):
         self.binning = binning
 
         x, y = int(resolution[0] / binning), int(resolution[1] / binning)
-        self.reading = torch.zeros((y,x), device=self.device)
+        self.read_beam = None
         
     @property
     def is_skippable(self):
@@ -632,44 +632,44 @@ class Screen(Element):
 
     def __call__(self, incoming):
         if self.is_active:
-            if incoming is Beam.empty:
-                x = int(self.resolution[0] / self.binning)
-                y = int(self.resolution[1] / self.binning)
-                self.reading = torch.zeros((y,x))
-            elif isinstance(incoming, ParameterBeam):
-                transverse_mu = np.array([incoming._mu[0], incoming._mu[2]])
-                transverse_cov = np.array([
-                    [incoming._cov[0,0], incoming._cov[0,2]],
-                    [incoming._cov[2,0], incoming._cov[2,2]]
-                ])
-                dist = multivariate_normal(mean=transverse_mu, cov=transverse_cov)
-
-                left = self.extent[0]
-                right = self.extent[1]
-                hstep = self.pixel_size[0] * self.binning
-                bottom = self.extent[2]
-                top = self.extent[3]
-                vstep = self.pixel_size[1] * self.binning
-                x, y = np.mgrid[left:right:hstep,bottom:top:vstep]
-                pos = np.dstack((x, y))
-                image = dist.pdf(pos)
-                image = np.flipud(image.T)
-
-                self.reading = image
-                self.read_beam = incoming
-            elif isinstance(incoming, ParticleBeam):
-                # image, _, _ = np.histogram2d(incoming.xs, incoming.ys, bins=self.pixel_bin_edges)
-                image, _ = utils.histogramdd(torch.stack((incoming.xs,incoming.ys)), bins=self.pixel_bin_edges)
-                image = torch.flipud(image.T)
-
-                self.reading = image.cpu()
-                self.read_beam = incoming
-            else:
-                raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-
+            self.read_beam = incoming
             return Beam.empty
         else:
             return incoming
+    
+    @property
+    def reading(self):
+        if self.read_beam is Beam.empty or self.read_beam is None:
+            x = int(self.resolution[0] / self.binning)
+            y = int(self.resolution[1] / self.binning)
+            return torch.zeros((y,x))
+        elif isinstance(self.read_beam, ParameterBeam):
+            transverse_mu = np.array([self.read_beam._mu[0], self.read_beam._mu[2]])
+            transverse_cov = np.array([
+                [self.read_beam._cov[0,0], self.read_beam._cov[0,2]],
+                [self.read_beam._cov[2,0], self.read_beam._cov[2,2]]
+            ])
+            dist = multivariate_normal(mean=transverse_mu, cov=transverse_cov)
+
+            left = self.extent[0]
+            right = self.extent[1]
+            hstep = self.pixel_size[0] * self.binning
+            bottom = self.extent[2]
+            top = self.extent[3]
+            vstep = self.pixel_size[1] * self.binning
+            x, y = np.mgrid[left:right:hstep,bottom:top:vstep]
+            pos = np.dstack((x, y))
+            image = dist.pdf(pos)
+            image = np.flipud(image.T)
+
+            return image
+        elif isinstance(self.read_beam, ParticleBeam):
+            image, _ = utils.histogramdd(torch.stack((self.read_beam.xs,self.read_beam.ys)), bins=self.pixel_bin_edges)
+            image = torch.flipud(image.T)
+
+            return image.cpu()
+        else:
+            raise TypeError(f"Read beam is of invalid type {type(self.read_beam)}")
     
     def split(self, resolution):
         return [self]
