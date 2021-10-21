@@ -612,6 +612,20 @@ class Screen(Element):
         return not self.is_active
     
     @property
+    def effective_resolution(self):
+        return (
+            int(self.resolution[0] / self.binning),
+            int(self.resolution[1] / self.binning)
+        )
+    
+    @property
+    def effective_pixel_size(self):
+        return (
+            self.pixel_size[0] * self.binning,
+            self.pixel_size[0] * self.binning
+        )
+    
+    @property
     def extent(self):
         return (-self.resolution[0] * self.pixel_size[0] / 2,
                 self.resolution[0] * self.pixel_size[0] / 2,
@@ -622,10 +636,10 @@ class Screen(Element):
     def pixel_bin_edges(self):
         return (torch.linspace(-self.resolution[0] * self.pixel_size[0] / 2,
                                self.resolution[0] * self.pixel_size[0] / 2,
-                               int(self.resolution[0] / self.binning) + 1),
+                               self.effective_resolution[0] + 1),
                 torch.linspace(-self.resolution[1] * self.pixel_size[1] / 2,
                                self.resolution[1] * self.pixel_size[1] / 2,
-                               int(self.resolution[1] / self.binning) + 1))
+                               self.effective_resolution[1] + 1))
 
     def transfer_map(self, energy):
         return torch.eye(7, device=self.device)
@@ -640,9 +654,7 @@ class Screen(Element):
     @property
     def reading(self):
         if self.read_beam is Beam.empty or self.read_beam is None:
-            x = int(self.resolution[0] / self.binning)
-            y = int(self.resolution[1] / self.binning)
-            return torch.zeros((y,x))
+            return torch.zeros(self.effective_resolution)
         elif isinstance(self.read_beam, ParameterBeam):
             transverse_mu = np.array([self.read_beam._mu[0], self.read_beam._mu[2]])
             transverse_cov = np.array([
