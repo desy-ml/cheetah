@@ -803,7 +803,7 @@ class Segment(Element):
             if is_in_subcell: subcell.append(element)
             if element.name == end: break
     
-        return self.__class__(subcell, **kwargs)
+        return self.__class__(subcell, device=self.device, **kwargs)
     
     @classmethod
     def from_ocelot(cls, cell, name=None, warnings=True, **kwargs):
