@@ -9,29 +9,29 @@ First, you need to install the [_Ocelot_](https://github.com/ocelot-collab/ocelo
 Then, simply `git clone` this repository to your machine, change into the directory and run
 
 ```bash
-pip3 install .
+pip install -e .
 ```
 
 to install Cheetah.
 
 ## How To Use
 
-It is unlikely that you will need to use Cheetah by itself, as its main purpose in life is being the default particle tracking backend for the [_Accelerator-Environments_](https://github.com/desy-ml/accelerator-environments) project. Nonetheless, here is a quick example of how Cheetah is currently used in our RL environments.
-
-To create a Cheetah `Segment` by defining a cell and creating a segment from it as follows
+A sequence of accelerator elements (or a lattice) is called a `Segment` in *Cheetah*. You can create a `Segment` as follows
 
 ```python
-segment = Segment([[BPM(name="BPM1SMATCH"),
-                    Drift(length=1.0),
-                    BPM(name="BPM6SMATCH"),
-                    Drift(length=1.0),
-                    VerticalCorrector(length=0.3, name="V7SMATCH"),
-                    Drift(length=0.2),
-                    HorizontalCorrector(length=0.3, name="H10SMATCH"),
-                    Drift(length=7.0),
-                    HorizontalCorrector(length=0.3, name="H12SMATCH"),
-                    Drift(length=0.05),
-                    BPM(name="BPM13SMATCH")])
+segment = Segment([
+    BPM(name="BPM1SMATCH"),
+    Drift(length=1.0),
+    BPM(name="BPM6SMATCH"),
+    Drift(length=1.0),
+    VerticalCorrector(length=0.3, name="V7SMATCH"),
+    Drift(length=0.2),
+    HorizontalCorrector(length=0.3, name="H10SMATCH"),
+    Drift(length=7.0),
+    HorizontalCorrector(length=0.3, name="H12SMATCH"),
+    Drift(length=0.05),
+    BPM(name="BPM13SMATCH")
+])
 ```
 
 Alternatively you can create a segment from an Ocelot cell by running
@@ -40,28 +40,30 @@ Alternatively you can create a segment from an Ocelot cell by running
 segment = Segment.from_ocelot(cell)
 ```
 
-Assuming in `cell` there exists a quadrupole that goes by the ID *AREAMQZM2*, the quadrupole's strength *k* can be changed by calling
+All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named *AREAMQZM2* for example, may be set by running
 
 ```python
 segment.AREAMQZM2.k1 = 4.2
 ```
 
-In order to track a beam through the segment, simply call it like so
+In order to track a beam through the segment, simply call the segment like so
 
 ```python
 outgoing_beam = segment(incoming_beam)
 ````
 
-You can a random beam using Cheetah's `Beam` class by running
+You can choose to track either a beam defined by its parameters (fast) or by its particles (precise). *Cheetah* defines two different beam classes for this purpose and beams may be created by
 
 ```python
-beam = Beam.make_random()
+beam1 = ParameterBeam.from_parameters()
+beam2 = ParticleBeam.from_parameters()
 ```
 
-or by converting an Ocelot `ParticleArray`
+It is also possible to load beams from Ocelot `ParticleArray` or Astra particle distribution files for both types of beam
 
 ```python
-beam = Beam.from_ocelot(parray)
+ocelot_beam = ParticleBeam.from_ocelot(parray)
+astra_beam = ParticleBeam.from_astra(filepath)
 ```
 
 You may plot a segment with reference particle traces bay calling
@@ -72,4 +74,4 @@ segment.plot_overview(beam=beam)
 
 ![Overview Plot](images/misalignment.png)
 
-where the optional keyword argument `particles` is the incoming particles from which the reference particles are created. Cheetah will use its own incoming particles, if you do not pass any.
+where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
