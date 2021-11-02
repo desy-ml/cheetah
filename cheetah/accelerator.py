@@ -302,6 +302,7 @@ class Quadrupole(Element):
     def __repr__(self):
         return f"{self.__class__.__name__}(length={self.length:.2f}, " + \
                                          f"k1={self.k1}, " + \
+                                         f"misalignment={self.misalignment}, " + \
                                          f"name=\"{self.name}\")"
 
 
