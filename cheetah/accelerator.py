@@ -81,7 +81,7 @@ class Element:
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
-            return ParticleBeam(new_particles, incoming.energy)
+            return ParticleBeam(new_particles, incoming.energy, device=incoming.device)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
