@@ -890,7 +890,7 @@ class Segment(Element):
 
         references = []
         if beam is None:
-            initial = ParticleBeam.make_linspaced(n=n)
+            initial = ParticleBeam.make_linspaced(n=n, device="cpu")
             references.append(initial)
         else:
             initial = ParticleBeam.make_linspaced(
@@ -905,7 +905,8 @@ class Segment(Element):
                 sigma_yp=beam.sigma_yp,
                 sigma_s=beam.sigma_s,
                 sigma_p=beam.sigma_p,
-                energy=beam.energy
+                energy=beam.energy,
+                device="cpu"
             )
             references.append(initial)
         for split in splits:
