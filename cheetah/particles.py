@@ -117,6 +117,22 @@ class Beam:
         )
     
     @property
+    def parameters(self):
+        return {
+            "mu_x": self.mu_x,
+            "mu_xp": self.mu_xp,
+            "mu_y": self.mu_y,
+            "mu_yp": self.mu_yp,
+            "sigma_x": self.sigma_x,
+            "sigma_xp": self.sigma_xp,
+            "sigma_y": self.sigma_y,
+            "sigma_yp": self.sigma_yp,
+            "sigma_s": self.sigma_s,
+            "sigma_p": self.sigma_p,
+            "energy": self.energy
+        }
+    
+    @property
     def mu_x(self):
         raise NotImplementedError
     
