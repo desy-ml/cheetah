@@ -208,7 +208,7 @@ class ParameterBeam(Beam):
                         sigma_y=175e-9, sigma_yp=2e-7, sigma_s=1e-6, sigma_p=1e-6, cor_x=0, cor_y=0,
                         cor_s=0, energy=1e8):
         return cls(
-            mu=torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0, 1]),
+            mu=torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0, 1], dtype=torch.float32),
             cov=torch.tensor([
                 [sigma_x**2,       cor_x,          0,           0,          0,          0, 0],
                 [     cor_x, sigma_xp**2,          0,           0,          0,          0, 0],
@@ -217,7 +217,7 @@ class ParameterBeam(Beam):
                 [         0,           0,          0,           0, sigma_s**2,      cor_s, 0],
                 [         0,           0,          0,           0,      cor_s, sigma_p**2, 0],
                 [         0,           0,          0,           0,          0,          0, 0]
-            ]),
+            ], dtype=torch.float32),
             energy=energy
         )
 
