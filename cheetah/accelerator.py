@@ -667,7 +667,7 @@ class Screen(Element):
     @property
     def reading(self):
         if self.read_beam is Beam.empty or self.read_beam is None:
-            return torch.zeros(self.effective_resolution)
+            return torch.zeros((self.effective_resolution[1],self.effective_resolution[0]))
         elif isinstance(self.read_beam, ParameterBeam):
             transverse_mu = np.array([self.read_beam._mu[0], self.read_beam._mu[2]])
             transverse_cov = np.array([
