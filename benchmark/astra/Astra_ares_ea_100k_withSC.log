@@ -1,0 +1,135 @@
+ --------------------------------------------------------------------------
+
+               Astra- A space charge tracking algorithm 
+                 Version 3.2 - macOS 64bit - Intel   
+                        DESY,  Hamburg 2011          
+                        Tue May 17 17:41:17 
+
+     Parameter file is:  ares_ea_100k_withSC.in                            
+     ares_ea_100k_withSC                                                             
+
+ Initialize element settings:
+ --------------------------------------------------------------------------
+ Quadrupole:
+
+     quadrupole no.:        1         at =   0.1750     m
+     quadrupole no.:        2         at =   0.7250     m
+     quadrupole no.:        3         at =    1.275     m
+ --------------------------------------------------------------------------
+ Dipole:
+
+     vertical dipole no.:   1
+     horizontal dipole no.:   2
+ --------------------------------------------------------------------------
+  100000 particles from file ACHIP_EA1_2021.1351.001                           
+
+     Particles taken into account      N =     100000
+     total charge                      Q =    -5.0000E-04 nC
+     horizontal beam position          x =     8.2413E-04 mm
+     vertical beam position            y =    -1.7276E-03 mm
+     longitudinal beam position        z =    -5.7249E-06 m
+     horizontal beam size          sig x =     0.1749     mm
+     vertical beam size            sig y =     0.1752     mm
+     longitudinal beam size        sig z =     8.0114E-03 mm
+     average kinetic energy            E =      106.8     MeV
+     energy spread                    dE =      244.7     keV
+     average momentum                  P =      107.4     MeV/c
+     transverse beam emittance     eps x =     6.7758E-02 pi mrad mm
+     correlated divergence         cor x =     3.1823E-03 mrad 
+     transverse beam emittance     eps y =     6.7856E-02 pi mrad mm
+     correlated divergence         cor y =     3.1995E-03 mrad
+     longitudinal beam emittance   eps z =      1.934     pi keV mm
+     correlated energy spread      cor z =     -40.24     keV
+     emittance ratio eps y/eps x         =     0.9986    
+ --------------------------------------------------------------------------
+ on axis tracking of the reference particle:
+     initial position                  z =    0.000     m
+                                       x =   5.0896E-05 mm
+                                       y =  -5.4731E-04 mm
+     initial momentum                  p =    107.3     MeV/c
+     global phase shift              phi =    0.000     deg
+     time step for integration        dt =    1.000     ps
+ --------------------------------------------------------------------------
+ Online element settings:
+
+     gradient of quadrupole no.:   1     =    3.580     T/m
+     gradient of quadrupole no.:   2     =   -3.222     T/m
+     gradient of quadrupole no.:   3     =   -2.864     T/m
+     field strength of dipole no.:   1     =   1.7898E-02 T
+     field strength of dipole no.:   2     =  -3.5796E-02 T
+ --------------------------------------------------------------------------
+
+     particle reaches position         z =    2.046     m
+     time of flight is                 t =    6.825     ns
+     final momentum                    p =    107.3     MeV/c
+     final phase (cavity 1)      phi_end =    0.000     deg
+ --------------------------------------------------------------------------
+ off axis tracking of the reference particle: 
+     initial position                  z =    0.000     m
+                                       x =   0.1749     mm
+                                       y =   0.1746     mm
+
+     final position                    x =   -1.055     mm
+                                       y =   0.7411     mm
+     divergence                    px/pz =   -2.155     mrad
+                                   py/pz =   0.6607     mrad
+ --------------------------------------------------------------------------
+ tracking of   100000 particles :
+     tracking will stop at             z =    2.046     m
+
+     space charge forces are INCLUDED
+     cylindrical symmetric algorithm
+
+     final checkpoint at               z =    2.046     m
+     total number of iteration steps:          6826
+
+     **********************************************************************
+
+     Particles taken into account      N =     100000
+     total charge                      Q =    -5.0000E-04 nC
+     horizontal beam position          x =    -0.9201     mm
+     vertical beam position            y =     0.7524     mm
+     longitudinal beam position        z =      2.046     m
+     horizontal beam size          sig x =     0.1236     mm
+     vertical beam size            sig y =     9.9202E-03 mm
+     longitudinal beam size        sig z =     8.0005E-03 mm
+     average kinetic energy            E =      106.8     MeV
+     energy spread                    dE =      244.7     keV
+     average momentum                  P =      107.4     MeV/c
+     transverse beam emittance     eps x =     9.7108E-02 pi mrad mm
+     correlated divergence         cor x =     0.1459     mrad 
+     transverse beam emittance     eps y =     0.1478     pi mrad mm
+     correlated divergence         cor y =     0.3228     mrad
+     longitudinal beam emittance   eps z =      1.937     pi keV mm
+     correlated energy spread      cor z =     -35.55     keV
+     emittance ratio eps y/eps x         =     0.6570    
+
+     Particle Statistics: 
+
+
+     Total number of particles on stack     =     100000
+     Electrons (total)                      =     100000
+     particles at the cathode               =          0
+     active particles                       =     100000
+     passive particles (lost out of bunch)  =          0
+     probe particles                        =          6
+     backward traveling particles           =          0
+     particles lost with z<Zmin             =          0
+     particles lost due to cathode field    =          0
+     particles lost on aperture             =          0
+
+     **********************************************************************
+
+     Phase-space distributions logged in    : ares_ea_100k_withSC.Log.001   
+     No files saved 
+
+     **********************************************************************
+
+
+
+     finished simulation  Tue May 17 17:51:27 2022
+     elapsed time   :               603.7 seconds 
+     execution time :               599.5 seconds 
+     system time    :                 4.2 seconds
+     Goodbye.
+ --------------------------------------------------------------------------

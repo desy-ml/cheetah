@@ -1,0 +1,49 @@
+&NEWRUN
+    Head='ares_ea1'
+    Nloop=1
+    Distribution= 'distribution.ini'
+    AUTO_PHASE=F
+    check_ref_part=F
+    Lprompt=F
+/
+
+&OUTPUT
+    ZSTART=0.0
+    ZSTOP=2.046
+    Zphase=1
+    PhaseS=T
+/
+
+&CHARGE
+    LSPCH=T
+    Nlong_in=15
+    N_min = 100
+/
+
+&QUADRUPOLE
+    Lquad=T
+    Q_length(1)=0.122
+    Q_length(2)=0.122
+    Q_length(3)=0.122
+    Q_pos(1)=0.1750
+    Q_pos(2)=0.7250
+    Q_pos(3)=1.275
+    Q_K(1)=10.0
+    Q_K(2)=-9.0
+    Q_K(3)=-8.0
+/
+
+&DIPOLE
+    LDipole=T
+
+    D1(1)=(0.5,0.0), D2(1)=(-0.5,0.0), D3(1)=(0.5,0.02), D4(1)=(-0.5,0.02)
+    D1(2)=(0.5,0.0), D2(2)=(-0.5,0.0), D3(2)=(0.5,0.02), D4(2)=(-0.5,0.02)
+    D1(3)=(0.5,0.0), D2(3)=(-0.5,0.0), D3(3)=(0.5,0.02), D4(3)=(-0.5,0.02)
+    D1(4)=(0.5,0.0), D2(4)=(-0.5,0.0), D3(4)=(0.5,0.02), D4(4)=(-0.5,0.02)
+
+    D_zoff(1)=1.275, D_Type(1)=ver, D_Gap(1,1)=0.005, D_Gap(2,1)=0.005
+    D_zoff(2)=1.576, D_Type(2)=hor, D_Gap(1,2)=0.005, D_Gap(2,2)=0.005
+
+    D_radius(1)=100
+    D_radius(2)=100
+/
