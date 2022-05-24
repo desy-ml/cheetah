@@ -1,0 +1,39 @@
+! Markers
+! =======
+areasola1 : mark
+areabscr1 : mark
+
+! Drifts
+! ======
+drift_areasola1 : drif, l=0.175
+drift_areamqzm1 : drif, l=0.428
+drift_areamqzm2 : drif, l=0.204
+drift_areamcvm1 : drif, l=0.204
+drift_areamqzm3 : drif, l=0.179
+drift_areamchm1 : drif, l=0.450
+
+! Quadrupoles
+! ===========
+areamqzm1 : quad, l=0.122, k1=10.0
+areamqzm2 : quad, l=0.122, k1=-9.0
+areamqzm3 : quad, l=0.122, k1=8.0
+
+! Horizontal Steerers
+! ===================
+areamchm1 : hkick, l=0.02, kick=1.0E-03
+
+! Vertical Steerers
+! =================
+areamcvm1 : vkick, l=0.02, kick=-2.0E-03
+
+! Others
+! ======
+incharge : charge, total=5.0E-13
+
+!Beamline
+!========
+ea : line=(incharge, &
+    areasola1, drift_areasola1, areamqzm1, drift_areamqzm1, areamqzm2, &
+    areamqzm2, drift_areamqzm2, areamcvm1, drift_areamcvm1, areamqzm3, &
+    drift_areamqzm3, areamchm1, drift_areamchm1, areabscr1 &
+)

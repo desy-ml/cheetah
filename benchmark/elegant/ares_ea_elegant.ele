@@ -1,0 +1,23 @@
+&run_setup
+    lattice = ares_ea.lte,
+    use_beamline = ea,
+    output = %s.sdds,
+    p_central_mev = 150,
+    echo_lattice = 1
+&end
+
+&run_control
+&end
+
+&sdds_beam
+    input = ACHIP_EA1_2021.1351.001.sdds,
+    sample_fraction = 1
+&end
+
+! &bunches_beam_moments
+!     bunch = %s.bun,
+!     n_particles_per_bunch = 10000
+! &end
+
+&track
+&end
