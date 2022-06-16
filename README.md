@@ -2,6 +2,7 @@
 
 Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
+
 ## Installation
 
 First, you need to install the [_Ocelot_](https://github.com/ocelot-collab/ocelot) package manually as it is not currently available on PyPI.
@@ -13,6 +14,7 @@ pip install -e .
 ```
 
 to install Cheetah.
+
 
 ## How To Use
 
@@ -75,3 +77,19 @@ segment.plot_overview(beam=beam)
 ![Overview Plot](images/misalignment.png)
 
 where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
+
+
+## Cite Cheetah
+
+To cite Cheetah in publications:
+
+```bibtex
+@inproceedings{stein2022accelerating,
+    author = {Stein, Oliver and
+              Kaiser, Jan and
+              Eichler, Annika},
+    title = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+    booktitle = {Proceedings of the 13th International Particle Accelerator Conference},
+    year = {2022}
+}
+```
