@@ -666,8 +666,11 @@ class Screen(Element):
     
     @property
     def reading(self):
+        if self.cached_reading is not None:
+            return self.cached_reading
+
         if self.read_beam is Beam.empty or self.read_beam is None:
-            return torch.zeros((self.effective_resolution[1],self.effective_resolution[0]))
+            image = torch.zeros((self.effective_resolution[1],self.effective_resolution[0]))
         elif isinstance(self.read_beam, ParameterBeam):
             transverse_mu = np.array([self.read_beam._mu[0], self.read_beam._mu[2]])
             transverse_cov = np.array([
@@ -686,15 +689,25 @@ class Screen(Element):
             pos = np.dstack((x, y))
             image = dist.pdf(pos)
             image = np.flipud(image.T)
-
-            return image
         elif isinstance(self.read_beam, ParticleBeam):
             image, _ = utils.histogramdd(torch.stack((self.read_beam.xs,self.read_beam.ys)), bins=self.pixel_bin_edges)
             image = torch.flipud(image.T)
-
-            return image.cpu()
+            image = image.cpu()
         else:
             raise TypeError(f"Read beam is of invalid type {type(self.read_beam)}")
+        
+        self.cached_reading = image
+        return image
+    
+    @property
+    def read_beam(self):
+        return self._read_beam
+    
+    @read_beam.setter
+    def read_beam(self, value):
+        self._read_beam = value
+        if hasattr(self, "cached_reading"):
+            self.cached_reading = None
     
     def split(self, resolution):
         return [self]
