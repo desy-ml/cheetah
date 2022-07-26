@@ -5,7 +5,7 @@ setup(
     name="cheetah",
     version="0.5.13",
     author="Jan Kaiser & Oliver Stein",
-    author_email="jan.kaiser@desy.de | oliver.stein@desy.de",
+    author_email="jan.kaiser@desy.de",
     description="Fast particle accelerator optics simulation for reinforcement learning and optimisation applications.",
     url="https://github.com/desy-ml/cheetah",
     packages=["cheetah"],
