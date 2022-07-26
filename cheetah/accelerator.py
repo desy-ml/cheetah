@@ -607,6 +607,7 @@ class Screen(Element):
         self.misalignment = misalignment
 
         self.read_beam = None
+        self.cached_reading = None
         
     @property
     def is_skippable(self):
@@ -706,8 +707,7 @@ class Screen(Element):
     @read_beam.setter
     def read_beam(self, value):
         self._read_beam = value
-        if hasattr(self, "cached_reading"):
-            self.cached_reading = None
+        self.cached_reading = None
     
     def split(self, resolution):
         return [self]
