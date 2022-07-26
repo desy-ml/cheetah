@@ -8,6 +8,7 @@ setup(
     author_email="jan.kaiser@desy.de | oliver.stein@desy.de",
     description="Fast particle accelerator optics simulation for reinforcement learning and optimisation applications.",
     url="https://github.com/desy-ml/cheetah",
+    packages=["cheetah"],
     install_requires=[
         "torch>=1.9",
         "ocelot>=20.11.2",
