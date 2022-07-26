@@ -10,8 +10,10 @@ setup(
     url="https://github.com/desy-ml/cheetah",
     packages=["cheetah"],
     install_requires=[
-        "torch>=1.9",
-        "ocelot>=20.11.2",
-        "scipy>=1.6.0"
+        "torch",
+        "matplotlib",
+        "numpy",
+        "ocelot @ git+https://github.com/ocelot-collab/ocelot.git@21.12.1",
+        "scipy"
     ]
 )
