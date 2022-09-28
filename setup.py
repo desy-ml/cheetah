@@ -1,6 +1,5 @@
 from setuptools import setup
 
-
 setup(
     name="cheetah",
     version="0.5.13",
@@ -14,6 +13,6 @@ setup(
         "matplotlib",
         "numpy",
         "ocelot @ git+https://github.com/ocelot-collab/ocelot.git@21.12.1",
-        "scipy"
-    ]
+        "scipy",
+    ],
 )
