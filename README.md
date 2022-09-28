@@ -28,7 +28,7 @@ segment = Segment([
     Drift(length=7.0),
     HorizontalCorrector(length=0.3, name="H12SMATCH"),
     Drift(length=0.05),
-    BPM(name="BPM13SMATCH")
+    BPM(name="BPM13SMATCH"),
 ])
 ```
 
