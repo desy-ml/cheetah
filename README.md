@@ -5,15 +5,11 @@ Cheetah is a particle tracking accelerator we built specifically to speed up the
 
 ## Installation
 
-First, you need to install the [_Ocelot_](https://github.com/ocelot-collab/ocelot) package manually as it is not currently available on PyPI.
-
-Then, simply `git clone` this repository to your machine, change into the directory and run
+Simply install *Cheetah* from PyPI by running the following command.
 
 ```bash
-pip install -e .
+pip install cheetah-accelerator
 ```
-
-to install Cheetah.
 
 
 ## How To Use
