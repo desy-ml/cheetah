@@ -3,6 +3,9 @@ __pycache__
 cheetah.egg-info
 .ipynb_checkpoints
 .vscode
+dist
+
+*.egg-info
 
 test/ACHIP_EA1_2021.1351.001
 
