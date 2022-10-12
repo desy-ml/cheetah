@@ -1,7 +1,7 @@
 import numpy as np
-import ocelot.adaptors.astra2ocelot as oca
 import torch
 from torch.distributions import MultivariateNormal
+from utils import from_astrabeam
 
 
 class Beam:
@@ -68,8 +68,7 @@ class Beam:
     @classmethod
     def from_astra(cls, path, **kwargs):
         """Load an Astra particle distribution as a Cheetah Beam."""
-        ocelot_parray = oca.astraBeam2particleArray(path, print_params=False)
-        return cls.from_ocelot(ocelot_parray, **kwargs)
+        raise NotImplementedError
 
     def transformed_to(
         self,
@@ -278,8 +277,14 @@ class ParameterBeam(Beam):
     @classmethod
     def from_astra(cls, path, **kwargs):
         """Load an Astra particle distribution as a Cheetah Beam."""
-        ocelot_parray = oca.astraBeam2particleArray(path, print_params=False)
-        return cls.from_ocelot(ocelot_parray, **kwargs)
+        particles, energy = from_astrabeam(path)
+        mu = torch.ones(7)
+        mu[:6] = torch.tensor(particles.mean(axis=0), dtype=torch.float32)
+
+        cov = torch.zeros(7, 7)
+        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()), dtype=torch.float32)
+
+        return cls(mu=mu, cov=cov, energy=energy)
 
     def transformed_to(
         self,
@@ -596,8 +601,8 @@ class ParticleBeam:
     @classmethod
     def from_astra(cls, path, **kwargs):
         """Load an Astra particle distribution as a Cheetah Beam."""
-        ocelot_parray = oca.astraBeam2particleArray(path, print_params=False)
-        return cls.from_ocelot(ocelot_parray, **kwargs)
+        particles, energy = from_astrabeam(path)
+        return cls(particles, energy, **kwargs)
 
     def transformed_to(
         self,
