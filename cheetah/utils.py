@@ -1,5 +1,4 @@
 import numpy as np
-import ocelot as oc
 import torch
 
 from cheetah import accelerator as acc
@@ -93,6 +92,14 @@ def ocelot2cheetah(element, warnings=True):
     need adjusting afterwards. BPM objects are only created from `ocelot.Monitor`
     objects when their id has a substring "BPM".
     """
+    try:
+        import ocelot as oc
+    except ImportError:
+        raise ImportError(
+            """To use the ocelot2cheetah lattice converter, Ocelot must be first 
+        installed, see https://github.com/ocelot-collab/ocelot """
+        )
+
     if isinstance(element, oc.Drift):
         return acc.Drift(element.l, name=element.id)
     elif isinstance(element, oc.Quadrupole):
@@ -114,6 +121,10 @@ def ocelot2cheetah(element, warnings=True):
     elif isinstance(element, oc.Undulator):
         return acc.Undulator(element.l, name=element.id)
     else:
+        if warnings:
+            print(
+                f"WARNING: Unknown element {element.id}, replacing with drift section."
+            )
         return acc.Drift(element.l, name=element.id)
 
 

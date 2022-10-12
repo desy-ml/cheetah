@@ -19,7 +19,6 @@ setup(
         "torch",
         "matplotlib",
         "numpy",
-        "ocelot @ git+https://github.com/ocelot-collab/ocelot.git@21.12.1",
         "scipy",
     ],
 )
