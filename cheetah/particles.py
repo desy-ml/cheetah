@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch.distributions import MultivariateNormal
+
 from cheetah.utils import from_astrabeam
 
 
@@ -602,7 +603,9 @@ class ParticleBeam:
     def from_astra(cls, path, **kwargs):
         """Load an Astra particle distribution as a Cheetah Beam."""
         particles, energy = from_astrabeam(path)
-        return cls(particles, energy, **kwargs)
+        particles_7d = torch.ones((particles.shape[0], 7))
+        particles_7d[:, :6] = torch.from_numpy(particles)
+        return cls(particles_7d, energy, **kwargs)
 
     def transformed_to(
         self,
