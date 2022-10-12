@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="cheetah-accelerator",
-    version="0.5.14",
+    version="0.5.15",
     author="Jan Kaiser & Oliver Stein",
     author_email="jan.kaiser@desy.de",
     url="https://github.com/desy-ml/cheetah",
@@ -19,7 +19,6 @@ setup(
         "torch",
         "matplotlib",
         "numpy",
-        "ocelot @ git+https://github.com/ocelot-collab/ocelot.git@21.12.1",
         "scipy",
     ],
 )
