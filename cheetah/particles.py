@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.distributions import MultivariateNormal
-from utils import from_astrabeam
+from cheetah.utils import from_astrabeam
 
 
 class Beam:
