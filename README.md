@@ -86,6 +86,7 @@ To cite Cheetah in publications:
               Eichler, Annika},
     title = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
     booktitle = {Proceedings of the 13th International Particle Accelerator Conference},
-    year = {2022}
+    year = {2022},
+    url = {https://github.com/desy-ml/cheetah},
 }
 ```
