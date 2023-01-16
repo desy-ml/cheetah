@@ -267,7 +267,7 @@ class Quadrupole(Element):
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_entry = torch.tensor(
+            R_exit = torch.tensor(
                 [
                     [1, 0, 0, 0, 0, 0, self.misalignment[0]],
                     [0, 1, 0, 0, 0, 0, 0],
@@ -280,7 +280,7 @@ class Quadrupole(Element):
                 dtype=torch.float32,
                 device=self.device,
             )
-            R_exit = torch.tensor(
+            R_entry = torch.tensor(
                 [
                     [1, 0, 0, 0, 0, 0, -self.misalignment[0]],
                     [0, 1, 0, 0, 0, 0, 0],
@@ -293,8 +293,7 @@ class Quadrupole(Element):
                 dtype=torch.float32,
                 device=self.device,
             )
-            R = torch.matmul(R_entry, R)
-            R = torch.matmul(R, R_exit)
+            R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
 
     @property
