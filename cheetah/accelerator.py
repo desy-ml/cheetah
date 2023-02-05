@@ -745,7 +745,7 @@ class Screen(Element):
             image = dist.pdf(pos)
             image = np.flipud(image.T)
         elif isinstance(self.read_beam, ParticleBeam):
-            image, _ = utils.histogramdd(
+            image, _ = torch.histogramdd(
                 torch.stack((self.read_beam.xs, self.read_beam.ys)),
                 bins=self.pixel_bin_edges,
             )
