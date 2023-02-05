@@ -113,7 +113,8 @@ def ocelot2cheetah(element, warnings=True):
     elif isinstance(element, oc.Monitor) and "BSC" in element.id:
         if warnings:
             print(
-                "WARNING: Diagnostic screen was converted with default screen properties."
+                "WARNING: Diagnostic screen was converted with default screen"
+                " properties."
             )
         return acc.Screen((2448, 2040), (3.5488e-6, 2.5003e-6), name=element.id)
     elif isinstance(element, oc.Monitor) and "BPM" in element.id:
