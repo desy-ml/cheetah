@@ -732,7 +732,9 @@ class Screen(Element):
                     [self.read_beam._cov[2, 0], self.read_beam._cov[2, 2]],
                 ]
             )
-            dist = multivariate_normal(mean=transverse_mu, cov=transverse_cov)
+            dist = multivariate_normal(
+                mean=transverse_mu, cov=transverse_cov, allow_singular=True
+            )
 
             left = self.extent[0]
             right = self.extent[1]
