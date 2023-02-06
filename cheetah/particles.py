@@ -6,7 +6,6 @@ from cheetah.utils import from_astrabeam
 
 
 class Beam:
-
     empty = "I'm an empty beam!"
 
     @classmethod
@@ -115,17 +114,17 @@ class Beam:
         energy : float, optional
             Energy of the beam in eV.
         """
-        mu_x = mu_x if mu_x != None else self.mu_x
-        mu_xp = mu_xp if mu_xp != None else self.mu_xp
-        mu_y = mu_y if mu_y != None else self.mu_y
-        mu_yp = mu_yp if mu_yp != None else self.mu_yp
-        sigma_x = sigma_x if sigma_x != None else self.sigma_x
-        sigma_xp = sigma_xp if sigma_xp != None else self.sigma_xp
-        sigma_y = sigma_y if sigma_y != None else self.sigma_y
-        sigma_yp = sigma_yp if sigma_yp != None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s != None else self.sigma_s
-        sigma_p = sigma_p if sigma_p != None else self.sigma_p
-        energy = energy if energy != None else self.energy
+        mu_x = mu_x if mu_x is not None else self.mu_x
+        mu_xp = mu_xp if mu_xp is not None else self.mu_xp
+        mu_y = mu_y if mu_y is not None else self.mu_y
+        mu_yp = mu_yp if mu_yp is not None else self.mu_yp
+        sigma_x = sigma_x if sigma_x is not None else self.sigma_x
+        sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
+        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
+        sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
+        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
+        sigma_p = sigma_p if sigma_p is not None else self.sigma_p
+        energy = energy if energy is not None else self.energy
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -206,7 +205,13 @@ class Beam:
         raise NotImplementedError
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_xp={self.mu_xp}, mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x}, sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y}, sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s}, sigma_p={self.sigma_p}, energy={self.energy})"
+        return (
+            f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_xp={self.mu_xp},"
+            f" mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x},"
+            f" sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y},"
+            f" sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s},"
+            f" sigma_p={self.sigma_p}, energy={self.energy})"
+        )
 
 
 class ParameterBeam(Beam):
@@ -331,17 +336,17 @@ class ParameterBeam(Beam):
         energy : float, optional
             Energy of the beam in eV.
         """
-        mu_x = mu_x if mu_x != None else self.mu_x
-        mu_xp = mu_xp if mu_xp != None else self.mu_xp
-        mu_y = mu_y if mu_y != None else self.mu_y
-        mu_yp = mu_yp if mu_yp != None else self.mu_yp
-        sigma_x = sigma_x if sigma_x != None else self.sigma_x
-        sigma_xp = sigma_xp if sigma_xp != None else self.sigma_xp
-        sigma_y = sigma_y if sigma_y != None else self.sigma_y
-        sigma_yp = sigma_yp if sigma_yp != None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s != None else self.sigma_s
-        sigma_p = sigma_p if sigma_p != None else self.sigma_p
-        energy = energy if energy != None else self.energy
+        mu_x = mu_x if mu_x is not None else self.mu_x
+        mu_xp = mu_xp if mu_xp is not None else self.mu_xp
+        mu_y = mu_y if mu_y is not None else self.mu_y
+        mu_yp = mu_yp if mu_yp is not None else self.mu_yp
+        sigma_x = sigma_x if sigma_x is not None else self.sigma_x
+        sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
+        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
+        sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
+        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
+        sigma_p = sigma_p if sigma_p is not None else self.sigma_p
+        energy = energy if energy is not None else self.energy
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -406,7 +411,14 @@ class ParameterBeam(Beam):
         return torch.sqrt(self._cov[5, 5])
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(mu_x={self.mu_x:.6f}, mu_xp={self.mu_xp:.6f}, mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f}, sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f}, sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f}, sigma_s={self.sigma_s:.6f}, sigma_p={self.sigma_p:.6f}, energy={self.energy:.3f})"
+        return (
+            f"{self.__class__.__name__}(mu_x={self.mu_x:.6f}, mu_xp={self.mu_xp:.6f},"
+            f" mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
+            f" sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f},"
+            f" sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f},"
+            f" sigma_s={self.sigma_s:.6f}, sigma_p={self.sigma_p:.6f},"
+            f" energy={self.energy:.3f})"
+        )
 
 
 class ParticleBeam:
@@ -654,17 +666,17 @@ class ParticleBeam:
             Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU
             is selected if available. The CPU is used otherwise.
         """
-        mu_x = mu_x if mu_x != None else self.mu_x
-        mu_y = mu_y if mu_y != None else self.mu_y
-        mu_xp = mu_xp if mu_xp != None else self.mu_xp
-        mu_yp = mu_yp if mu_yp != None else self.mu_yp
-        sigma_x = sigma_x if sigma_x != None else self.sigma_x
-        sigma_y = sigma_y if sigma_y != None else self.sigma_y
-        sigma_xp = sigma_xp if sigma_xp != None else self.sigma_xp
-        sigma_yp = sigma_yp if sigma_yp != None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s != None else self.sigma_s
-        sigma_p = sigma_p if sigma_p != None else self.sigma_p
-        energy = energy if energy != None else self.energy
+        mu_x = mu_x if mu_x is not None else self.mu_x
+        mu_y = mu_y if mu_y is not None else self.mu_y
+        mu_xp = mu_xp if mu_xp is not None else self.mu_xp
+        mu_yp = mu_yp if mu_yp is not None else self.mu_yp
+        sigma_x = sigma_x if sigma_x is not None else self.sigma_x
+        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
+        sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
+        sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
+        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
+        sigma_p = sigma_p if sigma_p is not None else self.sigma_p
+        energy = energy if energy is not None else self.energy
 
         new_mu = torch.tensor(
             [mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32, device=self.device
@@ -807,4 +819,11 @@ class ParticleBeam:
         return float(self.ps.std()) if self is not Beam.empty else None
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x:.6f}, mu_xp={self.mu_xp:.6f}, mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f}, sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f}, sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f}, sigma_s={self.sigma_s:.6f}, sigma_p={self.sigma_p:.6f}, energy={self.energy:.3f})"
+        return (
+            f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x:.6f},"
+            f" mu_xp={self.mu_xp:.6f}, mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
+            f" sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f},"
+            f" sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f},"
+            f" sigma_s={self.sigma_s:.6f}, sigma_p={self.sigma_p:.6f},"
+            f" energy={self.energy:.3f})"
+        )
