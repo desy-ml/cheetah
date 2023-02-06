@@ -558,7 +558,10 @@ class Cavity(Element):
         ax.add_patch(patch)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(length={self.length:.2f}, delta_energy={self.delta_energy}, name="{self.name}")'
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f},"
+            f' delta_energy={self.delta_energy}, name="{self.name}")'
+        )
 
 
 class BPM(Element):
@@ -779,7 +782,11 @@ class Screen(Element):
         ax.add_patch(patch)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(resolution={self.resolution}, pixel_size={self.pixel_size}, binning={self.binning}, misalignment={self.misalignment}, name="{self.name}")'
+        return (
+            f"{self.__class__.__name__}(resolution={self.resolution},"
+            f" pixel_size={self.pixel_size}, binning={self.binning},"
+            f' misalignment={self.misalignment}, name="{self.name}")'
+        )
 
 
 class Undulator(Element):
