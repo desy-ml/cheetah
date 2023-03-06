@@ -21,6 +21,10 @@ REST_ENERGY = (
 class Element:
     """
     Base class for elements of particle accelerators.
+    Every subclass depending on this base class inherits the Parameters, Attributes and Functions from this base class.
+    New Parameters, Attributes and Functions can be added in the subclass and the Functions can be redefined. 
+    To sum up the base class is used to set the default settings for every subclass, as well as commenting on the behavior of 
+    various base functions, which are just slightly changed for each subclass.
 
     Parameters
     ----------
