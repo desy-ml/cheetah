@@ -64,7 +64,7 @@ class Element:
         """
         Track particles through the element.
 
-        Pramameters
+        Parameters
         -----------
         incoming : cheetah.Beam
             Beam of particles entering the element.
@@ -105,7 +105,7 @@ class Element:
         Raises
         ------
         NotImplementedError
-            If not split function is implemented for the given `Element` subclass.
+            If no split function is implemented for the given `Element` subclass.
         """
         raise NotImplementedError
 
@@ -123,7 +123,7 @@ class Element:
         Raises
         ------
         NotImplementedError
-            If not split function is implemented for the given `Element` subclass.
+            If no plot function is implemented for the given `Element` subclass.
         """
         raise NotImplementedError
 
