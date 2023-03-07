@@ -62,6 +62,24 @@ class Element:
         self.device = device
 
     def transfer_map(self, energy):
+        """
+        Necessary for the calculations in '__call__'.
+        
+        Parameters
+        ----------
+        energy: cheetah.Beam.energy
+            Energy of the Beam. Read from the fed in Cheetah Beam.
+           
+        Returns
+        --------
+        R  
+            A 7x7 Matrix for further calculations.
+            
+        Raises
+        -------
+        NotImplementedError
+            If no transfer_map function is implemented for the given `Element` subclass.
+        """
         raise NotImplementedError
 
     def __call__(self, incoming):
