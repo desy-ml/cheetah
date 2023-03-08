@@ -50,6 +50,11 @@ class Element:
     is_skippable = True
 
     def __init__(self, name=None, device="auto"):
+        """
+        Used to define parameters. When defined they can be accessed through self.parameter via other function.
+        The function parameters change for each class. Since the parameters of this funvtion are always equivalent to the ones of the class
+        there will be no further description of the parameters.
+        """
         global ELEMENT_COUNT
         if name is not None:
             self.name = name
@@ -63,7 +68,16 @@ class Element:
 
     def transfer_map(self, energy):
         """
-        Necessary for the calculations in '__call__'.
+        Necessary for the calculations in '__call__'. The Matrix R that is returned is then multiplied with the state vector.
+        The state vector is consisting of 6 values with a physical meaning:
+            x: Position in x direction
+            xp: Momentum in x direction
+            y: Position in y direction
+            yp: Momentum in y direction
+            s: Position in z direction, the zero value is set to the middle of the pulse
+            sp: Momentum in s direction
+        As well as a seventh value used to add constants to some of the prior values if necesassary. Through this
+        seventh state, the addition of constants can be represented using a matrix multiplication.
         
         Parameters
         ----------
@@ -84,8 +98,8 @@ class Element:
 
     def __call__(self, incoming):
         """
-        Track particles through the element.
-
+        Track particles through the element. Parameter and Particle Beams are treated differently, using an if statement. 
+        
         Parameters
         -----------
         incoming : cheetah.Beam
@@ -150,6 +164,9 @@ class Element:
         raise NotImplementedError
 
     def __repr__(self):
+        """
+        This method is used to represent a class's objects as a string.
+        """
         return f'{self.__class__.__name__}(name="{self.name}")'
 
 
@@ -161,7 +178,6 @@ class Drift(Element):
     ----------
     length : float
         Length in meters.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -227,7 +243,6 @@ class Quadrupole(Element):
         Strength of the quadrupole in rad/m.
     misalignment : (float, float), optional
         Misalignment vector of the quadrupole in x- and y-directions.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -363,7 +378,6 @@ class HorizontalCorrector(Element):
         Length in meters.
     angle : float, optional
         Particle deflection angle in the horizontal plane in rad.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -439,7 +453,6 @@ class VerticalCorrector(Element):
         Length in meters.
     angle : float, optional
         Particle deflection angle in the vertical plane in rad.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -622,15 +635,10 @@ class BPM(Element):
         if incoming is Beam.empty:
             self.reading = (None, None)
             return Beam.empty
-        elif isinstance(incoming, ParameterBeam):
-            self.reading = (incoming.mu_x, incoming.mu_y)
-            return ParameterBeam(incoming._mu, incoming._cov, incoming.energy)
-        elif isinstance(incoming, ParticleBeam):
+        else:
             self.reading = (incoming.mu_x, incoming.mu_y)
             return ParticleBeam(incoming.particles, incoming.energy, device=self.device)
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-        
+
     def split(self, resolution):
         return [self]
 
