@@ -238,7 +238,7 @@ class ParameterBeam(Beam):
         self._mu = mu
         self._cov = cov
         self.energy = energy
-        if device == "auto" and torch.cuda.is_available():
+        if element.device == "auto" and torch.cuda.is_available():
             raise DeviceError
 
     @classmethod
