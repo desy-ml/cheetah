@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 from cheetah import accelerator as acc
 
@@ -96,7 +95,7 @@ def ocelot2cheetah(element, warnings=True):
         import ocelot as oc
     except ImportError:
         raise ImportError(
-            """To use the ocelot2cheetah lattice converter, Ocelot must be first 
+            """To use the ocelot2cheetah lattice converter, Ocelot must be first
         installed, see https://github.com/ocelot-collab/ocelot """
         )
 
