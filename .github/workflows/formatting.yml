@@ -18,7 +18,7 @@ jobs:
         run: pip install isort black
 
       - name: Run black
-        run: black --check --verbose --diff --color *.py
+        run: black . --check --verbose --diff --color --exclude="/*.ipynb/"
       
       - name: Run isort
-        run: isort --df --check-only *.py
+        run: isort . --check --diff
