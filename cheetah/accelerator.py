@@ -21,10 +21,6 @@ REST_ENERGY = (
 class Element:
     """
     Base class for elements of particle accelerators.
-    Every subclass depending on this base class inherits the Parameters, Attributes and Functions from this base class.
-    New Parameters, Attributes and Functions can be added in the subclass and the Functions can be redefined. 
-    To sum up the base class is used to set the default settings for every subclass, as well as commenting on the behavior of 
-    various base functions, which are just slightly changed for each subclass.
 
     Parameters
     ----------
@@ -68,7 +64,8 @@ class Element:
 
     def transfer_map(self, energy):
         """
-        Necessary for the calculations in '__call__'. The Matrix R that is returned is then multiplied with the state vector.
+        Generates the element's transfer map that describes how the beam and its particles are transformed when travelling through the element.
+        The Matrix R that is returned is then multiplied with the state vector in the function '__call__'.
         The state vector is consisting of 6 values with a physical meaning:
             x: Position in x direction
             xp: Momentum in x direction
@@ -635,14 +632,9 @@ class BPM(Element):
         if incoming is Beam.empty:
             self.reading = (None, None)
             return Beam.empty
-        elif isinstance(incoming, ParameterBeam):
-            self.reading = (incoming.mu_x, incoming.mu_y)
-            return ParameterBeam(incoming._mu, incoming._cov, incoming.energy)
-        elif isinstance(incoming, ParticleBeam):
+        else:
             self.reading = (incoming.mu_x, incoming.mu_y)
             return ParticleBeam(incoming.particles, incoming.energy, device=self.device)
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
         
     def split(self, resolution):
         return [self]
