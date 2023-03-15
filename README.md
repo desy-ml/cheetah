@@ -2,7 +2,6 @@
 
 Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
-
 ## Installation
 
 Simply install *Cheetah* from PyPI by running the following command.
@@ -10,7 +9,6 @@ Simply install *Cheetah* from PyPI by running the following command.
 ```bash
 pip install cheetah-accelerator
 ```
-
 
 ## How To Use
 
@@ -74,7 +72,6 @@ segment.plot_overview(beam=beam)
 
 where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
 
-
 ## Cite Cheetah
 
 To cite Cheetah in publications:
@@ -89,4 +86,21 @@ To cite Cheetah in publications:
     year = {2022},
     url = {https://github.com/desy-ml/cheetah},
 }
+```
+
+## For Developers
+
+Activate your virtual envrionment. (Optional)
+
+Install the cheetah package as editable
+
+```sh
+pip install -e .
+```
+
+We suggest to install pre-commit hooks to automatically conform with the code formatting in commits:
+
+```sh
+pip install pre-commit
+pre-commit install
 ```
