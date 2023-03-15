@@ -74,7 +74,7 @@ def time_ocelot_screen():
         navigator = oc.Navigator(lattice)
         navigator.unit_step = lattice.totalLen
         _, particles = oc.track(lattice, particles, navigator, print_progress=False)
-        image = np.histogram2d(particles.x(), particles.y(), bins=screen_bin_edges)[
+        _ = np.histogram2d(particles.x(), particles.y(), bins=screen_bin_edges)[
             0
         ].transpose()
 
@@ -121,7 +121,7 @@ def time_joss_screen():
         t1 = time.time()
 
         _ = segment(particles)
-        image = segment.AREABSCR1.reading
+        _ = segment.AREABSCR1.reading
 
         t2 = time.time()
 
@@ -170,7 +170,7 @@ def time_cheetah_cpu_screen():
         t1 = time.time()
 
         _ = segment(particles)
-        image = segment.AREABSCR1.reading
+        _ = segment.AREABSCR1.reading
 
         t2 = time.time()
 
@@ -219,7 +219,7 @@ def time_cheetah_gpu_screen():
         t1 = time.time()
 
         _ = segment(particles)
-        image = segment.AREABSCR1.reading
+        _ = segment.AREABSCR1.reading
 
         t2 = time.time()
 
@@ -241,9 +241,9 @@ tcc_scr = time_cheetah_cpu_screen()
 tcg_scr = time_cheetah_gpu_screen() if torch.cuda.is_available() else None
 
 print("")
-print(f"            SCREEN OFF             ")
+print("            SCREEN OFF             ")
 print(f"Simulation Code | Avrg. Time of {n}")
-print(f"----------------------------------")
+print("----------------------------------")
 print(f"Ocelot          |   {toc:11.4f} s")
 print(f"JOSS            |   {tjo:11.4f} s")
 print(f"Cheetah (CPU)   |   {tcc:11.4f} s")
@@ -254,9 +254,9 @@ print(
 )
 
 print("")
-print(f"            SCREEN ON              ")
+print("            SCREEN ON              ")
 print(f"Simulation Code | Avrg. Time of {n}")
-print(f"----------------------------------")
+print("----------------------------------")
 print(f"Ocelot          |   {toc_scr:11.4f} s")
 print(f"JOSS            |   {tjo_scr:11.4f} s")
 print(f"Cheetah (CPU)   |   {tcc_scr:11.4f} s")
