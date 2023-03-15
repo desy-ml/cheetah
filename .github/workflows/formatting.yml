@@ -28,4 +28,4 @@ jobs:
         with:
           ignore: "F401"
           max-line-length: "88"
-          plugins: "flake8-bugbear==22.1.11 flake8-black"
+          plugins: "flake8-bugbear flake8-black"
