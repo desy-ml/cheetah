@@ -17,16 +17,21 @@ REST_ENERGY = (
     / constants.elementary_charge
 )
 
+class DeviceError(Exception):
+    """
+    Used to create an exception, in case the device used for the beam and the elements are different.
+    """
+    def __init__(self):
+        super().__init__("Warning! The device used for calculating the elements is not the same, as the device used to calculate the ParameterBeam.")
+
 
 class Element:
     """
     Base class for elements of particle accelerators.
-
     Parameters
     ----------
     name : string, optional
         Unique identifier of the element.
-
     Attributes
     ---------
     is_active : bool
@@ -46,11 +51,6 @@ class Element:
     is_skippable = True
 
     def __init__(self, name=None, device="auto"):
-        """
-        Used to define parameters. When defined they can be accessed through self.parameter via other function.
-        The function parameters change for each class. Since the parameters of this funvtion are always equivalent to the ones of the class
-        there will be no further description of the parameters.
-        """
         global ELEMENT_COUNT
         if name is not None:
             self.name = name
@@ -63,45 +63,15 @@ class Element:
         self.device = device
 
     def transfer_map(self, energy):
-        """
-        Generates the element's transfer map that describes how the beam and its particles are transformed when travelling through the element.
-        The Matrix R that is returned is then multiplied with the state vector in the function '__call__'.
-        The state vector is consisting of 6 values with a physical meaning:
-            x: Position in x direction
-            xp: Momentum in x direction
-            y: Position in y direction
-            yp: Momentum in y direction
-            s: Position in z direction, the zero value is set to the middle of the pulse
-            sp: Momentum in s direction
-        As well as a seventh value used to add constants to some of the prior values if necesassary. Through this
-        seventh state, the addition of constants can be represented using a matrix multiplication.
-        
-        Parameters
-        ----------
-        energy: cheetah.Beam.energy
-            Energy of the Beam. Read from the fed in Cheetah Beam.
-           
-        Returns
-        --------
-        R  
-            A 7x7 Matrix for further calculations.
-            
-        Raises
-        -------
-        NotImplementedError
-            If no transfer_map function is implemented for the given `Element` subclass.
-        """
         raise NotImplementedError
 
     def __call__(self, incoming):
         """
-        Track particles through the element. Parameter and Particle Beams are treated differently, using an if statement. 
-        
-        Parameters
+        Track particles through the element.
+        Pramameters
         -----------
         incoming : cheetah.Beam
             Beam of particles entering the element.
-
         Returns
         -------
         cheetah.Beam
@@ -113,6 +83,8 @@ class Element:
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
+            if self.device != "cpu":
+                raise DeviceError
             return ParameterBeam(mu, cov, incoming.energy)
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy)
@@ -124,60 +96,51 @@ class Element:
     def split(self, resolution):
         """
         Split the element into slices no longer than `resolution`.
-
         Parameters
         ----------
         resolution : float
             Length of the longest allowed split in meters.
-
         Returns
         -------
         list
             Ordered sequence of sliced elements.
-
         Raises
         ------
         NotImplementedError
-            If no split function is implemented for the given `Element` subclass.
+            If not split function is implemented for the given `Element` subclass.
         """
         raise NotImplementedError
 
     def plot(self, ax, s):
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
-
         Parameters
         ----------
         ax : matplotlib.axes.Axes
             Axes to plot the representation into.
         s : float
             Position of the object along s in meters.
-
         Raises
         ------
         NotImplementedError
-            If no plot function is implemented for the given `Element` subclass.
+            If not split function is implemented for the given `Element` subclass.
         """
         raise NotImplementedError
 
     def __repr__(self):
-        """
-        This method is used to represent a class's objects as a string.
-        """
         return f'{self.__class__.__name__}(name="{self.name}")'
 
 
 class Drift(Element):
     """
     Drift section in a particle accelerator.
-
     Parameters
     ----------
     length : float
         Length in meters.
+    energy : float, optional
     name : string, optional
         Unique identifier of the element.
-
     Attributes
     ---------
     is_active : bool
@@ -231,7 +194,6 @@ class Drift(Element):
 class Quadrupole(Element):
     """
     Quadrupole magnet in a particle accelerator.
-
     Parameters
     ----------
     length : float
@@ -240,9 +202,9 @@ class Quadrupole(Element):
         Strength of the quadrupole in rad/m.
     misalignment : (float, float), optional
         Misalignment vector of the quadrupole in x- and y-directions.
+    energy : float, optional
     name : string, optional
         Unique identifier of the element.
-
     Attributes
     ---------
     is_active : bool
@@ -368,16 +330,15 @@ class Quadrupole(Element):
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
-
     Parameters
     ----------
     length : float
         Length in meters.
     angle : float, optional
         Particle deflection angle in the horizontal plane in rad.
+    energy : float, optional
     name : string, optional
         Unique identifier of the element.
-
     Attributes
     ---------
     is_active : bool
@@ -443,16 +404,15 @@ class HorizontalCorrector(Element):
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
-
     Parameters
     ----------
     length : float
         Length in meters.
     angle : float, optional
         Particle deflection angle in the vertical plane in rad.
+    energy : float, optional
     name : string, optional
         Unique identifier of the element.
-
     Attributes
     ---------
     is_active : bool
@@ -518,7 +478,6 @@ class VerticalCorrector(Element):
 class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
-
     Parameters
     ----------
     length : float
@@ -599,12 +558,10 @@ class Cavity(Element):
 class BPM(Element):
     """
     Beam Position Monitor (BPM) in a particle accelerator.
-
     Parameters
     ----------
     name : string, optional
         Unique identifier of the element.
-
     Attributes
     ---------
     is_active : bool
@@ -635,7 +592,7 @@ class BPM(Element):
         else:
             self.reading = (incoming.mu_x, incoming.mu_y)
             return ParticleBeam(incoming.particles, incoming.energy, device=self.device)
-        
+
     def split(self, resolution):
         return [self]
 
@@ -650,7 +607,6 @@ class BPM(Element):
 class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
-
     Parameters
     ----------
     name : string, optional
@@ -660,7 +616,6 @@ class Screen(Element):
         `(width, height)`.
     binning : int, optional
         Binning used by the camera.
-
     Attributes
     ---------
     is_active : bool
@@ -824,14 +779,12 @@ class Screen(Element):
 class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
-
     Parameters
     ----------
     length : float
         Length in meters.
     name : string, optional
         Unique identifier of the element.
-
     Notes
     -----
     Currently behaves like a drift section but is plotted distinctively.
@@ -889,7 +842,6 @@ class Undulator(Element):
 class Segment(Element):
     """
     Segment of a particle accelerator consisting of several elements.
-
     Parameters
     ----------
     cell : list
@@ -992,7 +944,6 @@ class Segment(Element):
     ):
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
-
         Parameters
         ----------
         axx : matplotlib.axes.Axes
@@ -1063,7 +1014,6 @@ class Segment(Element):
     def plot_overview(self, fig=None, beam=None, n=10, resolution=0.01):
         """
         Plot an overview of the segment with the lattice and traced reference particles.
-
         Parameters
         ----------
         fig: matplotlib.figure.Figure, optional
