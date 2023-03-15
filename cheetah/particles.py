@@ -4,6 +4,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.utils import from_astrabeam
 
+
 class Beam:
     empty = "I'm an empty beam!"
 
@@ -27,7 +28,6 @@ class Beam:
     ):
         """
         Create beam that with given beam parameters.
-
         Parameters
         ----------
         n : int, optional
@@ -41,17 +41,17 @@ class Beam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
+            Sgima of the particle distribution in x direction in meters.
         sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
+            Sgima of the particle distribution in px direction in meters.
         sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
+            Sgima of the particle distribution in y direction in meters.
         sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
+            Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
+            Sgima of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         """
@@ -85,7 +85,6 @@ class Beam:
     ):
         """
         Create version of this beam that is transformed to new beam parameters.
-
         Parameters
         ----------
         n : int, optional
@@ -99,17 +98,17 @@ class Beam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
+            Sgima of the particle distribution in x direction in meters.
         sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
+            Sgima of the particle distribution in px direction in meters.
         sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
+            Sgima of the particle distribution in y direction in meters.
         sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
+            Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
+            Sgima of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         """
@@ -216,7 +215,6 @@ class Beam:
 class ParameterBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
-
     Parameters
     ----------
     mu : torch.Tensor
@@ -307,7 +305,6 @@ class ParameterBeam(Beam):
     ):
         """
         Create version of this beam that is transformed to new beam parameters.
-
         Parameters
         ----------
         n : int, optional
@@ -321,17 +318,17 @@ class ParameterBeam(Beam):
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
+            Sgima of the particle distribution in x direction in meters.
         sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
+            Sgima of the particle distribution in px direction in meters.
         sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
+            Sgima of the particle distribution in y direction in meters.
         sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
+            Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
+            Sgima of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         """
@@ -423,7 +420,6 @@ class ParameterBeam(Beam):
 class ParticleBeam:
     """
     Beam of charged particles, where each particle is simulated.
-
     Parameters
     ----------
     particles : torch.Tensor
@@ -472,7 +468,6 @@ class ParticleBeam:
     ):
         """
         Generate Cheetah Beam of random particles.
-
         Parameters
         ----------
         n : int, optional
@@ -486,17 +481,17 @@ class ParticleBeam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
+            Sgima of the particle distribution in x direction in meters.
         sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
+            Sgima of the particle distribution in y direction in meters.
         sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
+            Sgima of the particle distribution in px direction in meters.
         sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
+            Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
+            Sgima of the particle distribution in p direction in meters.
         cor_x : float, optional
             Correlation between x and xp.
         cor_y : float, optional
@@ -547,7 +542,6 @@ class ParticleBeam:
     ):
         """
         Generate Cheetah Beam of *n* linspaced particles.
-
         Parameters
         ----------
         n : int, optional
@@ -561,17 +555,17 @@ class ParticleBeam:
         mu_py : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
+            Sgima of the particle distribution in x direction in meters.
         sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
+            Sgima of the particle distribution in y direction in meters.
         sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
+            Sgima of the particle distribution in px direction in meters.
         sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
+            Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
+            Sgima of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         device : string
@@ -634,7 +628,6 @@ class ParticleBeam:
     ):
         """
         Create version of this beam that is transformed to new beam parameters.
-
         Parameters
         ----------
         n : int, optional
@@ -648,17 +641,17 @@ class ParticleBeam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
+            Sgima of the particle distribution in x direction in meters.
         sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
+            Sgima of the particle distribution in y direction in meters.
         sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
+            Sgima of the particle distribution in px direction in meters.
         sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
+            Sgima of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
+            Sgima of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
+            Sgima of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         device : string
