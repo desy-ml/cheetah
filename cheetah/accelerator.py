@@ -28,10 +28,12 @@ class DeviceError(Exception):
 class Element:
     """
     Base class for elements of particle accelerators.
+    
     Parameters
     ----------
     name : string, optional
         Unique identifier of the element.
+        
     Attributes
     ---------
     is_active : bool
@@ -68,6 +70,7 @@ class Element:
     def __call__(self, incoming):
         """
         Track particles through the element.
+        
         Pramameters
         -----------
         incoming : cheetah.Beam
@@ -96,6 +99,7 @@ class Element:
     def split(self, resolution):
         """
         Split the element into slices no longer than `resolution`.
+        
         Parameters
         ----------
         resolution : float
@@ -104,6 +108,7 @@ class Element:
         -------
         list
             Ordered sequence of sliced elements.
+            
         Raises
         ------
         NotImplementedError
@@ -114,12 +119,14 @@ class Element:
     def plot(self, ax, s):
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
+        
         Parameters
         ----------
         ax : matplotlib.axes.Axes
             Axes to plot the representation into.
         s : float
             Position of the object along s in meters.
+            
         Raises
         ------
         NotImplementedError
@@ -134,6 +141,7 @@ class Element:
 class Drift(Element):
     """
     Drift section in a particle accelerator.
+    
     Parameters
     ----------
     length : float
@@ -141,6 +149,7 @@ class Drift(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+        
     Attributes
     ---------
     is_active : bool
@@ -194,6 +203,7 @@ class Drift(Element):
 class Quadrupole(Element):
     """
     Quadrupole magnet in a particle accelerator.
+    
     Parameters
     ----------
     length : float
@@ -205,6 +215,7 @@ class Quadrupole(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+        
     Attributes
     ---------
     is_active : bool
@@ -330,6 +341,7 @@ class Quadrupole(Element):
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
+    
     Parameters
     ----------
     length : float
@@ -339,6 +351,7 @@ class HorizontalCorrector(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+        
     Attributes
     ---------
     is_active : bool
@@ -404,6 +417,7 @@ class HorizontalCorrector(Element):
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
+    
     Parameters
     ----------
     length : float
@@ -413,6 +427,7 @@ class VerticalCorrector(Element):
     energy : float, optional
     name : string, optional
         Unique identifier of the element.
+        
     Attributes
     ---------
     is_active : bool
@@ -478,6 +493,7 @@ class VerticalCorrector(Element):
 class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
+    
     Parameters
     ----------
     length : float
@@ -558,10 +574,12 @@ class Cavity(Element):
 class BPM(Element):
     """
     Beam Position Monitor (BPM) in a particle accelerator.
+    
     Parameters
     ----------
     name : string, optional
         Unique identifier of the element.
+        
     Attributes
     ---------
     is_active : bool
@@ -607,6 +625,7 @@ class BPM(Element):
 class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
+    
     Parameters
     ----------
     name : string, optional
@@ -616,6 +635,7 @@ class Screen(Element):
         `(width, height)`.
     binning : int, optional
         Binning used by the camera.
+        
     Attributes
     ---------
     is_active : bool
@@ -779,12 +799,14 @@ class Screen(Element):
 class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
+    
     Parameters
     ----------
     length : float
         Length in meters.
     name : string, optional
         Unique identifier of the element.
+        
     Notes
     -----
     Currently behaves like a drift section but is plotted distinctively.
@@ -842,6 +864,7 @@ class Undulator(Element):
 class Segment(Element):
     """
     Segment of a particle accelerator consisting of several elements.
+    
     Parameters
     ----------
     cell : list
@@ -944,6 +967,7 @@ class Segment(Element):
     ):
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
+        
         Parameters
         ----------
         axx : matplotlib.axes.Axes
@@ -1014,6 +1038,7 @@ class Segment(Element):
     def plot_overview(self, fig=None, beam=None, n=10, resolution=0.01):
         """
         Plot an overview of the segment with the lattice and traced reference particles.
+        
         Parameters
         ----------
         fig: matplotlib.figure.Figure, optional
