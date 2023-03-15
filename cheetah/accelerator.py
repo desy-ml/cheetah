@@ -597,7 +597,7 @@ class BPM(Element):
         return torch.eye(7, device=self.device)
 
     def __call__(self, incoming):
-         if incoming is Beam.empty:
+        if incoming is Beam.empty:
             self.reading = (None, None)
             return Beam.empty
         elif isinstance(incoming, ParameterBeam):
