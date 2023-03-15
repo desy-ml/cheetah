@@ -4,13 +4,6 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.utils import from_astrabeam
 
-class DeviceError(Exception):
-    """
-    Used to create an exception, in case the device used for the beam and the elements are different.
-    """
-    print("Warning! The device used for calculating the elements is not the same, as the device used to calculate the ParameterBeam.")
-
-
 class Beam:
     empty = "I'm an empty beam!"
 
@@ -238,8 +231,6 @@ class ParameterBeam(Beam):
         self._mu = mu
         self._cov = cov
         self.energy = energy
-        if element.device == "cuda":
-            raise DeviceError
 
     @classmethod
     def from_parameters(
