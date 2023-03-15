@@ -28,6 +28,7 @@ class Beam:
     ):
         """
         Create beam that with given beam parameters.
+
         Parameters
         ----------
         n : int, optional
@@ -85,6 +86,7 @@ class Beam:
     ):
         """
         Create version of this beam that is transformed to new beam parameters.
+
         Parameters
         ----------
         n : int, optional
@@ -215,6 +217,7 @@ class Beam:
 class ParameterBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
+
     Parameters
     ----------
     mu : torch.Tensor
@@ -305,6 +308,7 @@ class ParameterBeam(Beam):
     ):
         """
         Create version of this beam that is transformed to new beam parameters.
+
         Parameters
         ----------
         n : int, optional
@@ -420,6 +424,7 @@ class ParameterBeam(Beam):
 class ParticleBeam:
     """
     Beam of charged particles, where each particle is simulated.
+
     Parameters
     ----------
     particles : torch.Tensor
@@ -468,6 +473,7 @@ class ParticleBeam:
     ):
         """
         Generate Cheetah Beam of random particles.
+
         Parameters
         ----------
         n : int, optional
@@ -542,6 +548,7 @@ class ParticleBeam:
     ):
         """
         Generate Cheetah Beam of *n* linspaced particles.
+
         Parameters
         ----------
         n : int, optional
@@ -628,6 +635,7 @@ class ParticleBeam:
     ):
         """
         Create version of this beam that is transformed to new beam parameters.
+
         Parameters
         ----------
         n : int, optional
