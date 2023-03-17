@@ -96,7 +96,7 @@ class Element:
     def __call__(self, incoming):
         """
         Track particles through the element. Parameter and Particle Beams are treated differently, using an if statement. 
-        
+
         Parameters
         -----------
         incoming : cheetah.Beam
@@ -635,7 +635,7 @@ class BPM(Element):
         else:
             self.reading = (incoming.mu_x, incoming.mu_y)
             return ParticleBeam(incoming.particles, incoming.energy, device=self.device)
-        
+
     def split(self, resolution):
         return [self]
 
