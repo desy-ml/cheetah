@@ -46,11 +46,6 @@ class Element:
     is_skippable = True
 
     def __init__(self, name=None, device="auto"):
-        """
-        Used to define parameters. When defined they can be accessed through self.parameter via other function.
-        The function parameters change for each class. Since the parameters of this funvtion are always equivalent to the ones of the class
-        there will be no further description of the parameters.
-        """
         global ELEMENT_COUNT
         if name is not None:
             self.name = name
@@ -65,7 +60,6 @@ class Element:
     def transfer_map(self, energy):
         """
         Generates the element's transfer map that describes how the beam and its particles are transformed when travelling through the element.
-        The Matrix R that is returned is then multiplied with the state vector in the function '__call__'.
         The state vector is consisting of 6 values with a physical meaning:
             x: Position in x direction
             xp: Momentum in x direction
@@ -95,7 +89,7 @@ class Element:
 
     def __call__(self, incoming):
         """
-        Track particles through the element. Parameter and Particle Beams are treated differently, using an if statement. 
+        Track particles through the element. The input can be a 'ParameterBeam' or a 'ParticleBeam'.
 
         Parameters
         -----------
@@ -161,9 +155,6 @@ class Element:
         raise NotImplementedError
 
     def __repr__(self):
-        """
-        This method is used to represent a class's objects as a string.
-        """
         return f'{self.__class__.__name__}(name="{self.name}")'
 
 
