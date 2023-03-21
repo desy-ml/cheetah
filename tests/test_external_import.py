@@ -3,7 +3,6 @@ from cheetah import ParameterBeam, ParticleBeam, Segment
 
 
 def test_ares_ocelot_import():
-
     segment = Segment.from_ocelot(ares.cell)
     segment.plot_overview()
 
