@@ -4,6 +4,7 @@ cheetah.egg-info
 .ipynb_checkpoints
 .vscode
 dist
+.coverage
 
 *.egg-info
 
