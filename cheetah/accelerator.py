@@ -756,7 +756,7 @@ class Screen(Element):
             image = np.flipud(image.T)
         elif isinstance(self.read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
-                torch.stack((self.read_beam.xs, self.read_beam.ys)),
+                torch.stack((self.read_beam.xs, self.read_beam.ys)).T,
                 bins=self.pixel_bin_edges,
             )
             image = torch.flipud(image.T)
