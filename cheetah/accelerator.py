@@ -93,6 +93,8 @@ class Element:
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
+            if self.device != incoming.device:
+                raise DeviceError
             return ParticleBeam(new_particles, incoming.energy, device=incoming.device)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
