@@ -1,7 +1,8 @@
+import sys
+
 import cheetah
 import numpy as np
 import torch
-import sys
 
 sys.path.append(
     "c:/users/ftheilen/appdata/local/packages/pythonsoftwarefoundation.python.3.10_qbz5n2kfra8p0/localcache/local-packages/python310/site-packages"

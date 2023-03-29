@@ -3,12 +3,11 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from cheetah import utils
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.stats import multivariate_normal
-
-from cheetah import utils
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 
 ELEMENT_COUNT = 0
 REST_ENERGY = (

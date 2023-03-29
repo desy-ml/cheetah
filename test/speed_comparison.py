@@ -1,13 +1,12 @@
 import time
 
 import ARESlatticeStage3v1_9 as ares
+import cheetah
 import joss
 import numpy as np
 import ocelot as oc
 import torch
 from accelerator_environments import utils
-
-import cheetah
 
 
 def time_ocelot():

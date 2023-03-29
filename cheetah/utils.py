@@ -1,5 +1,4 @@
 import numpy as np
-
 from cheetah import accelerator as acc
 
 # electron mass in eV
