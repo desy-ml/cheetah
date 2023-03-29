@@ -1,5 +1,16 @@
-from ocelot import (Aperture, Cavity, Drift, Hcor, Marker, Monitor, Quadrupole,
-                    SBend, Solenoid, TDCavity, Vcor)
+from ocelot import (
+    Aperture,
+    Cavity,
+    Drift,
+    Hcor,
+    Marker,
+    Monitor,
+    Quadrupole,
+    SBend,
+    Solenoid,
+    TDCavity,
+    Vcor,
+)
 
 # Drifts
 drift_arlisolg1 = Drift(l=0.19600000000000006, eid="Drift_ARLISOLG1")
