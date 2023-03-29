@@ -18,6 +18,7 @@ beam2 = cheetah.ParticleBeam.from_astra(
     "H:/Source/cheetah/benchmark/cheetah/ACHIP_EA1_2021.1351.001"
 )
 
+
 def test_import_ParameterBeam():
     assert (
         str(beam1)
