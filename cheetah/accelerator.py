@@ -89,7 +89,7 @@ class Element:
 
     def __call__(self, incoming):
         """
-        Track particles through the element. The input can be a 'ParameterBeam' or a 'ParticleBeam'.
+        Track particles through the element. The input can be a `ParameterBeam` or a `ParticleBeam`.
 
         Parameters
         -----------
