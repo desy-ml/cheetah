@@ -3,12 +3,11 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from cheetah import utils
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.stats import multivariate_normal
-
-from cheetah import utils
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 
 ELEMENT_COUNT = 0
 REST_ENERGY = (
@@ -23,6 +22,17 @@ class DeviceError(Exception):
     """
     def __init__(self):
         super().__init__("Warning! The device used for calculating the elements is not the same, as the device used to calculate the Beam.")
+
+
+class DeviceError(Exception):
+    """
+    Used to create an exception, in case the device used for the beam and the elements are different.
+    """
+
+    def __init__(self):
+        super().__init__(
+            "Warning! The device used for calculating the elements is not the same, as the device used to calculate the Beam."
+        )
 
 
 class Element:
