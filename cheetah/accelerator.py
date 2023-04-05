@@ -600,9 +600,14 @@ class BPM(Element):
         if incoming is Beam.empty:
             self.reading = (None, None)
             return Beam.empty
-        else:
+        elif isinstance(incoming, ParameterBeam):
+            self.reading = (incoming.mu_x, incoming.mu_y)
+            return ParameterBeam(incoming._mu, incoming._cov, incoming.energy)
+        elif isinstance(incoming, ParticleBeam):
             self.reading = (incoming.mu_x, incoming.mu_y)
             return ParticleBeam(incoming.particles, incoming.energy, device=self.device)
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def split(self, resolution):
         return [self]
@@ -751,7 +756,7 @@ class Screen(Element):
             image = np.flipud(image.T)
         elif isinstance(self.read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
-                torch.stack((self.read_beam.xs, self.read_beam.ys)),
+                torch.stack((self.read_beam.xs, self.read_beam.ys)).T,
                 bins=self.pixel_bin_edges,
             )
             image = torch.flipud(image.T)
