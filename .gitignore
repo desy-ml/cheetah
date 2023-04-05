@@ -10,24 +10,3 @@ dist
 test/ACHIP_EA1_2021.1351.001
 
 distributions
-
-.idea
-
-ARESlatticeStage3v1_9.py
-
-ocelot-master.zip
-test/parse_help.py
-test/syspath.py
-.idea/cheetah.iml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-benchmark/ocelot/ARESlatticeStage3v1_9.py
-cheetah/config.py
-cheetah/probe.py
-ocelot-master.zip
-test/calculation_of_Testresults.py
-test/ARESlatticeStage3v1_9.py
-test/ARES.py
-test/test_Felix_Cheetah_1.py
