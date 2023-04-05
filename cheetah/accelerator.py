@@ -17,12 +17,17 @@ REST_ENERGY = (
     / constants.elementary_charge
 )
 
+
 class DeviceError(Exception):
     """
     Used to create an exception, in case the device used for the beam and the elements are different.
     """
+
     def __init__(self):
-        super().__init__("Warning! The device used for calculating the elements is not the same, as the device used to calculate the ParameterBeam.")
+        super().__init__(
+            "Warning! The device used for calculating the elements is not the same, as the device used to calculate the ParameterBeam."
+        )
+
 
 class Element:
     """
@@ -73,7 +78,7 @@ class Element:
         Pramameters
 
         Track particles through the element. The input can be a 'ParameterBeam' or a 'ParticleBeam'.
-        
+
         Parameters
         -----------
         incoming : cheetah.Beam
