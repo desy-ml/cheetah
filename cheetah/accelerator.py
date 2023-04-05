@@ -18,17 +18,6 @@ REST_ENERGY = (
 )
 
 
-class DeviceError(Exception):
-    """
-    Used to create an exception, in case the device used for the beam and the elements are different.
-    """
-
-    def __init__(self):
-        super().__init__(
-            "Warning! The device used for calculating the elements is not the same, as the device used to calculate the ParameterBeam."
-        )
-
-
 class Element:
     """
     Base class for elements of particle accelerators.
@@ -76,10 +65,6 @@ class Element:
         Track particles through the element.
 
         Pramameters
-
-        Track particles through the element. The input can be a 'ParameterBeam' or a 'ParticleBeam'.
-
-        Parameters
         -----------
         incoming : cheetah.Beam
             Beam of particles entering the element.
@@ -95,14 +80,10 @@ class Element:
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
-            if self.device != "cpu":
-                raise DeviceError
             return ParameterBeam(mu, cov, incoming.energy)
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
-            if self.device != incoming.device:
-                raise DeviceError
             return ParticleBeam(new_particles, incoming.energy, device=incoming.device)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
