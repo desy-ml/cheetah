@@ -7,3 +7,4 @@ exclude =
     .ipynb_checkpoints
 max-line-length = 88
 extend-ignore = E203, W503
+ignore = BLK100
