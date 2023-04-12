@@ -11,3 +11,5 @@ dist
 test/ACHIP_EA1_2021.1351.001
 
 distributions
+
+.idea*
