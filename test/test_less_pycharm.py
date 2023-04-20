@@ -4,7 +4,7 @@ import torch
 import cheetah
 
 """
-Test Beam, which can be found in GitHub in the 
+Test Beam, which can be found in GitHub in the
 folder benchmark/cheetah/ACHIP_EA1_2021.1351.001
 """
 
