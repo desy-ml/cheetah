@@ -12,21 +12,9 @@ sys.path.append(
 Test Beam, which can be found in GitHub in the folder benchmark/cheetah/ACHIP_EA1_2021.1351.001
 """
 
-"""
-beam1 = cheetah.ParameterBeam.from_astra(
-    "D:/Fachpraktikum_DESY/GitHub/cheetah/benchmark/cheetah/ACHIP_EA1_2021.1351.001"
-)
-beam2 = cheetah.ParticleBeam.from_astra(
-    "D:/Fachpraktikum_DESY/GitHub/cheetah/benchmark/cheetah/ACHIP_EA1_2021.1351.001"
-)
-"""
 
-beam1 = cheetah.ParameterBeam.from_astra(
-    "C:/Users/ftheilen/Source/cheetah/benchmark/cheetah/ACHIP_EA1_2021.1351.001"
-)
-beam2 = cheetah.ParticleBeam.from_astra(
-    "C:/Users/ftheilen/Source/cheetah/benchmark/cheetah/ACHIP_EA1_2021.1351.001"
-)
+beam1 = cheetah.ParameterBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+beam2 = cheetah.ParticleBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
 
 
 def test_ParticleBeam_n():
@@ -45,7 +33,7 @@ def test_ParticleBeam_energy():
     assert np.isclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_beam1_mu():
+def test_ParameterBeam_mu():
     actual = beam1._mu
     expected = torch.tensor(
         [
@@ -62,7 +50,7 @@ def test_beam1_mu():
     assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_beam2_particles_mean():
+def test_ParticleBeam_particles_mean():
     actual = beam2.particles.mean(axis=0)
     expected = torch.tensor(
         [
@@ -79,19 +67,13 @@ def test_beam2_particles_mean():
     assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_division_beam1_beam2():
-    actual = beam1._mu / beam2.particles.mean(axis=0)
-    expected = torch.tensor([1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000])
-    assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
+def test_ParameterBeam_ParticleBeam_mu_dif():
+    assert torch.allclose(
+        beam1._mu, beam2.particles.mean(axis=0), rtol=1e-5, atol=1e-8, equal_nan=False
+    )
 
 
-def test_division_beam2_beam1():
-    actual = beam2.particles.mean(axis=0) / beam1._mu
-    expected = torch.tensor([1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000])
-    assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
-
-
-def test_cov_beam1():
+def test_ParameterBeam_cov():
     actual = beam1._cov
     expected = torch.tensor(
         [
@@ -163,7 +145,7 @@ def test_cov_beam1():
     assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_cov_beam2():
+def test_ParticleBeam_cov():
     actual = np.cov(beam2.particles.t().numpy())
     expected = np.array(
         [
@@ -235,54 +217,14 @@ def test_cov_beam2():
     assert np.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_division_cov_beam1_beam2():
-    actual = beam1._cov / np.cov(beam2.particles.t().numpy())
-    expected = torch.tensor(
-        [
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-            ],
-        ],
-        dtype=torch.float64,
+def test_ParameterBeam_ParticleBeam_cov_dif():
+    assert np.allclose(
+        beam1._cov,
+        np.cov(beam2.particles.t().numpy()),
+        rtol=1e-5,
+        atol=1e-8,
+        equal_nan=False,
     )
-    assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=True)
-
-
-def test_division_cov_beam2_beam1():
-    actual = np.cov(beam2.particles.t().numpy()) / beam1._cov
-    expected = torch.tensor(
-        [
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-            ],
-        ],
-        dtype=torch.float64,
-    )
-    assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=True)
 
 
 segment = cheetah.Segment(
@@ -292,6 +234,7 @@ segment.quad.angle = 2e-3
 
 result1 = segment(beam1)
 result2 = segment(beam2)
+
 
 def test_ParticleBeam_result2_n():
     assert result2.n == 100000
@@ -309,7 +252,7 @@ def test_ParticleBeam_result2_energy():
     assert np.isclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_result1_mu():
+def test_ParameterBeam_result1_mu():
     actual = result1._mu
     expected = torch.tensor(
         [
@@ -325,7 +268,7 @@ def test_result1_mu():
     assert np.allclose(actual, expected, rtol=1e-3, atol=1e-8, equal_nan=False)
 
 
-def test_result2_particles_mean():
+def test_ParticleBeam_result2_particles_mean():
     actual = result2.particles.mean(axis=0)
     expected = torch.tensor(
         [
@@ -341,19 +284,17 @@ def test_result2_particles_mean():
     assert np.allclose(actual, expected, rtol=1e-3, atol=1e-8, equal_nan=False)
 
 
-def test_division_result1_result2():
-    actual = result1._mu / result2.particles.mean(axis=0)
-    expected = torch.tensor([1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000])
-    assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
+def test_ParameterBeam_result1_ParticleBeam_result2_mu_dif():
+    assert torch.allclose(
+        result1._mu,
+        result2.particles.mean(axis=0),
+        rtol=1e-5,
+        atol=1e-8,
+        equal_nan=False,
+    )
 
 
-def test_division_result2_result1():
-    actual = result2.particles.mean(axis=0) / result1._mu
-    expected = torch.tensor([1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000])
-    assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
-
-
-def test_result1_cov():
+def test_ParameterBeam_result1_cov():
     actual = result1._cov
     expected = torch.tensor(
         [
@@ -425,7 +366,7 @@ def test_result1_cov():
     assert torch.allclose(actual, expected, rtol=1e-5, atol=1e-8, equal_nan=False)
 
 
-def test_result2_cov():
+def test_ParticleBeam_result2_cov():
     actual = np.cov(result2.particles.t().numpy())
     expected = np.array(
         [
@@ -497,51 +438,11 @@ def test_result2_cov():
     assert np.allclose(actual, expected, rtol=1e-05, atol=1e-14, equal_nan=False)
 
 
-def test_division_cov_result1_result2():
-    actual = result1._cov / np.cov(result2.particles.t().numpy())
-    expected = torch.tensor(
-        [
-            [1.0000, 1.0000, 0.9999, 1.0000, 1.0000, 0.9998, float("nan")],
-            [1.0000, 1.0000, 1.0002, 1.0002, 1.0001, 0.9921, float("nan")],
-            [0.9999, 1.0002, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0002, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 1.0001, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [0.9998, 0.9921, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-            ],
-        ],
-        dtype=torch.float64,
+def test_ParameterBeam_result1_ParticleBeam_result2_cov_dif():
+    assert np.allclose(
+        result1._cov,
+        np.cov(result2.particles.t().numpy()),
+        rtol=1e-3,
+        atol=1e-8,
+        equal_nan=True,
     )
-    assert torch.allclose(actual, expected, rtol=1e-3, atol=1e-8, equal_nan=True)
-
-
-def test_division_cov_result2_result1():
-    actual = np.cov(result2.particles.t().numpy()) / result1._cov
-    expected = torch.tensor(
-        [
-            [1.0000, 1.0000, 1.0001, 1.0000, 1.0000, 1.0002, float("nan")],
-            [1.0000, 1.0000, 0.9998, 0.9998, 0.9999, 1.0080, float("nan")],
-            [1.0001, 0.9998, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 0.9998, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0000, 0.9999, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [1.0002, 1.0080, 1.0000, 1.0000, 1.0000, 1.0000, float("nan")],
-            [
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-                float("nan"),
-            ],
-        ],
-        dtype=torch.float64,
-    )
-    assert torch.allclose(actual, expected, rtol=1e-3, atol=1e-8, equal_nan=True)
