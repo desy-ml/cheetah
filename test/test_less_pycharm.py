@@ -5,12 +5,9 @@ import torch
 
 import cheetah
 
-sys.path.append(
-    "c:/users/ftheilen/appdata/local/packages/pythonsoftwarefoundation.python.3.10_qbz5n2kfra8p0/localcache/local-packages/python310/site-packages"
-)
-
 """
-Test Beam, which can be found in GitHub in the folder benchmark/cheetah/ACHIP_EA1_2021.1351.001
+Test Beam, which can be found in GitHub in the 
+folder benchmark/cheetah/ACHIP_EA1_2021.1351.001
 """
 
 
