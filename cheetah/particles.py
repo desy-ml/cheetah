@@ -4,7 +4,6 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.utils import from_astrabeam
 
-
 class Beam:
     empty = "I'm an empty beam!"
 
@@ -42,17 +41,17 @@ class Beam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sgima of the particle distribution in x direction in meters.
+            Sigma of the particle distribution in x direction in meters.
         sigma_xp : float, optional
-            Sgima of the particle distribution in px direction in meters.
+            Sigma of the particle distribution in px direction in meters.
         sigma_y : float, optional
-            Sgima of the particle distribution in y direction in meters.
+            Sigma of the particle distribution in y direction in meters.
         sigma_yp : float, optional
-            Sgima of the particle distribution in py direction in meters.
+            Sigma of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sgima of the particle distribution in s direction in meters.
+            Sigma of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sgima of the particle distribution in p direction in meters.
+            Sigma of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         """
@@ -100,17 +99,17 @@ class Beam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sgima of the particle distribution in x direction in meters.
+            Sigma of the particle distribution in x direction in meters.
         sigma_xp : float, optional
-            Sgima of the particle distribution in px direction in meters.
+            Sigma of the particle distribution in px direction in meters.
         sigma_y : float, optional
-            Sgima of the particle distribution in y direction in meters.
+            Sigma of the particle distribution in y direction in meters.
         sigma_yp : float, optional
-            Sgima of the particle distribution in py direction in meters.
+            Sigma of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sgima of the particle distribution in s direction in meters.
+            Sigma of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sgima of the particle distribution in p direction in meters.
+            Sigma of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         """
@@ -322,17 +321,17 @@ class ParameterBeam(Beam):
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sgima of the particle distribution in x direction in meters.
+            Sigma of the particle distribution in x direction in meters.
         sigma_xp : float, optional
-            Sgima of the particle distribution in px direction in meters.
+            Sigma of the particle distribution in px direction in meters.
         sigma_y : float, optional
-            Sgima of the particle distribution in y direction in meters.
+            Sigma of the particle distribution in y direction in meters.
         sigma_yp : float, optional
-            Sgima of the particle distribution in py direction in meters.
+            Sigma of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sgima of the particle distribution in s direction in meters.
+            Sigma of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sgima of the particle distribution in p direction in meters.
+            Sigma of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         """
@@ -487,17 +486,17 @@ class ParticleBeam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sgima of the particle distribution in x direction in meters.
+            Sigma of the particle distribution in x direction in meters.
         sigma_y : float, optional
-            Sgima of the particle distribution in y direction in meters.
+            Sigma of the particle distribution in y direction in meters.
         sigma_xp : float, optional
-            Sgima of the particle distribution in px direction in meters.
+            Sigma of the particle distribution in px direction in meters.
         sigma_yp : float, optional
-            Sgima of the particle distribution in py direction in meters.
+            Sigma of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sgima of the particle distribution in s direction in meters.
+            Sigma of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sgima of the particle distribution in p direction in meters.
+            Sigma of the particle distribution in p direction in meters.
         cor_x : float, optional
             Correlation between x and xp.
         cor_y : float, optional
@@ -562,17 +561,17 @@ class ParticleBeam:
         mu_py : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sgima of the particle distribution in x direction in meters.
+            Sigma of the particle distribution in x direction in meters.
         sigma_y : float, optional
-            Sgima of the particle distribution in y direction in meters.
+            Sigma of the particle distribution in y direction in meters.
         sigma_xp : float, optional
-            Sgima of the particle distribution in px direction in meters.
+            Sigma of the particle distribution in px direction in meters.
         sigma_yp : float, optional
-            Sgima of the particle distribution in py direction in meters.
+            Sigma of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sgima of the particle distribution in s direction in meters.
+            Sigma of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sgima of the particle distribution in p direction in meters.
+            Sigma of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         device : string
@@ -649,17 +648,17 @@ class ParticleBeam:
         mu_yp : float, optional
             Center of the particle distribution on py in meters.
         sigma_x : float, optional
-            Sgima of the particle distribution in x direction in meters.
+            Sigma of the particle distribution in x direction in meters.
         sigma_y : float, optional
-            Sgima of the particle distribution in y direction in meters.
+            Sigma of the particle distribution in y direction in meters.
         sigma_xp : float, optional
-            Sgima of the particle distribution in px direction in meters.
+            Sigma of the particle distribution in px direction in meters.
         sigma_yp : float, optional
-            Sgima of the particle distribution in py direction in meters.
+            Sigma of the particle distribution in py direction in meters.
         sigma_s : float, optional
-            Sgima of the particle distribution in s direction in meters.
+            Sigma of the particle distribution in s direction in meters.
         sigma_p : float, optional
-            Sgima of the particle distribution in p direction in meters.
+            Sigma of the particle distribution in p direction in meters.
         energy : float, optional
             Energy of the beam in eV.
         device : string
