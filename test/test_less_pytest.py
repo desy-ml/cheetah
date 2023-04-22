@@ -9,8 +9,8 @@ folder benchmark/cheetah/ACHIP_EA1_2021.1351.001
 """
 
 
-beam1 = cheetah.ParameterBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
-beam2 = cheetah.ParticleBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+beam1 = cheetah.ParameterBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+beam2 = cheetah.ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
 
 
 def test_ParticleBeam_n():
