@@ -69,17 +69,17 @@ class Element:
             sp: Momentum in s direction
         As well as a seventh value used to add constants to some of the prior values if necesassary. Through this
         seventh state, the addition of constants can be represented using a matrix multiplication.
-        
+
         Parameters
         ----------
         energy: cheetah.Beam.energy
             Energy of the Beam. Read from the fed in Cheetah Beam.
-           
+
         Returns
         --------
-        R  
+        R
             A 7x7 Matrix for further calculations.
-            
+
         Raises
         -------
         NotImplementedError
