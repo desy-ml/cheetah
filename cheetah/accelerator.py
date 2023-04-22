@@ -59,7 +59,8 @@ class Element:
 
     def transfer_map(self, energy):
         """
-        Generates the element's transfer map that describes how the beam and its particles are transformed when travelling through the element.
+        Generates the element's transfer map that describes how the beam and its
+        particles are transformed when travelling through the element.
         The state vector is consisting of 6 values with a physical meaning:
             x: Position in x direction
             xp: Momentum in x direction
@@ -67,8 +68,9 @@ class Element:
             yp: Momentum in y direction
             s: Position in z direction, the zero value is set to the middle of the pulse
             sp: Momentum in s direction
-        As well as a seventh value used to add constants to some of the prior values if necesassary. Through this
-        seventh state, the addition of constants can be represented using a matrix multiplication.
+        As well as a seventh value used to add constants to some of the prior values if
+        necesassary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication.
 
         Parameters
         ----------
@@ -89,7 +91,8 @@ class Element:
 
     def __call__(self, incoming):
         """
-        Track particles through the element. The input can be a `ParameterBeam` or a `ParticleBeam`.
+        Track particles through the element. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
 
         Parameters
         -----------
