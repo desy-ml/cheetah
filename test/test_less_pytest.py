@@ -1,6 +1,7 @@
-import cheetah
 import numpy as np
 import torch
+
+import cheetah
 
 """
 Test Beam, which can be found in GitHub in the
