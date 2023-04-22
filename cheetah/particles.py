@@ -4,6 +4,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.utils import from_astrabeam
 
+
 class Beam:
     empty = "I'm an empty beam!"
 
