@@ -21,8 +21,8 @@ benchmark/cheetah/ACHIP_EA1_2021.1351.001
 """
 
 
-ParameterBeam = ParameterBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
-ParticleBeam = ParticleBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+ParameterBeam = ParameterBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+ParticleBeam = ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
 
 
 segment = Segment.from_ocelot(ares.cell)
