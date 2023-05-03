@@ -1,6 +1,7 @@
 import ARESlatticeStage3v1_9 as ares
 import numpy as np
 import torch
+
 from cheetah import (
     BPM,
     Cavity,
@@ -20,8 +21,8 @@ benchmark/cheetah/ACHIP_EA1_2021.1351.001
 """
 
 
-ParameterBeam = ParameterBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
-ParticleBeam = ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+ParameterBeam = ParameterBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+ParticleBeam = ParticleBeam.from_astra("../benchmark/cheetah/ACHIP_EA1_2021.1351.001")
 
 
 segment = Segment.from_ocelot(ares.cell)
