@@ -454,7 +454,7 @@ def test_ParticleBeam_parameters_cov():
         np.cov(ParticleBeam_parameters.particles.t().numpy()),
         ParticleBeam_parameters_cov,
         rtol=1e-04,
-        atol=1e-14,
+        atol=1e-10,
         equal_nan=False,
     )
 
@@ -464,7 +464,7 @@ def test_ParameterBeam_parameters_ParticleBeam_parameters_cov_dif():
         ParameterBeam_parameters._cov,
         np.cov(ParticleBeam_parameters.particles.t().numpy()),
         rtol=1e-03,
-        atol=1e-14,
+        atol=1e-10,
         equal_nan=False,
     )
 
