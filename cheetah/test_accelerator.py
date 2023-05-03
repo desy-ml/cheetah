@@ -10,10 +10,10 @@ benchmark/cheetah/ACHIP_EA1_2021.1351.001
 
 
 ParameterBeam = cheetah.ParameterBeam.from_astra(
-    "../benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
 )
 ParticleBeam = cheetah.ParticleBeam.from_astra(
-    "../benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
 )
 
 # Segments
