@@ -88,8 +88,8 @@ def ocelot2cheetah(element, warnings=True):
     Object not supported by Cheetah are translated to drift sections. Screen objects are
     created only from `ocelot.Monitor` objects when the string "SCR" or the string "BSC"
     is contained in their `id` attribute. Their screen properties are always set to
-    default values and most likely need adjusting afterwards. BPM objects are only created
-    from `ocelot.Monitor` objects when their id has a substring "BPM".
+    default values and most likely need adjusting afterwards. BPM objects are only
+    created from `ocelot.Monitor` objects when their id has a substring "BPM".
     """
     try:
         import ocelot as oc
