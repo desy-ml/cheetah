@@ -58,13 +58,43 @@ class Element:
         self.device = device
 
     def transfer_map(self, energy):
+        """
+        Generates the element's transfer map that describes how the beam and its
+        particles are transformed when travelling through the element.
+        The state vector is consisting of 6 values with a physical meaning:
+            x: Position in x direction
+            xp: Momentum in x direction
+            y: Position in y direction
+            yp: Momentum in y direction
+            s: Position in z direction, the zero value is set to the middle of the pulse
+            sp: Momentum in s direction
+        As well as a seventh value used to add constants to some of the prior values if
+        necesassary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication.
+
+        Parameters
+        ----------
+        energy: cheetah.Beam.energy
+            Energy of the Beam. Read from the fed in Cheetah Beam.
+
+        Returns
+        --------
+        R
+            A 7x7 Matrix for further calculations.
+
+        Raises
+        -------
+        NotImplementedError
+            If no transfer_map function is implemented for the given `Element` subclass.
+        """
         raise NotImplementedError
 
     def __call__(self, incoming):
         """
-        Track particles through the element.
+        Track particles through the element. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
 
-        Pramameters
+        Parameters
         -----------
         incoming : cheetah.Beam
             Beam of particles entering the element.
@@ -105,7 +135,7 @@ class Element:
         Raises
         ------
         NotImplementedError
-            If not split function is implemented for the given `Element` subclass.
+            If no split function is implemented for the given `Element` subclass.
         """
         raise NotImplementedError
 
@@ -123,7 +153,7 @@ class Element:
         Raises
         ------
         NotImplementedError
-            If not split function is implemented for the given `Element` subclass.
+            If no plot function is implemented for the given `Element` subclass.
         """
         raise NotImplementedError
 
@@ -139,7 +169,6 @@ class Drift(Element):
     ----------
     length : float
         Length in meters.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -205,7 +234,6 @@ class Quadrupole(Element):
         Strength of the quadrupole in rad/m.
     misalignment : (float, float), optional
         Misalignment vector of the quadrupole in x- and y-directions.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -341,7 +369,6 @@ class HorizontalCorrector(Element):
         Length in meters.
     angle : float, optional
         Particle deflection angle in the horizontal plane in rad.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
@@ -417,7 +444,6 @@ class VerticalCorrector(Element):
         Length in meters.
     angle : float, optional
         Particle deflection angle in the vertical plane in rad.
-    energy : float, optional
     name : string, optional
         Unique identifier of the element.
 
