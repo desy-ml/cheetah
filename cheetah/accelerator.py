@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -644,6 +645,33 @@ class BPM(Element):
             (s, -0.3), 0, 0.3 * 2, color="darkkhaki", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
+
+
+class Monitor(Element):
+    """
+    General Marker / Monitor element
+
+    Parameters
+    ----------
+    name : string, optional
+        Unique identifier of the element.
+    """
+
+    length = 0
+
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        self.is_skippable = True
+        super().__init__(name=name, **kwargs)
+
+    def transfer_map(self, energy):
+        return torch.eye(7, device=self.device)
+
+    def __call__(self, incoming):
+        return incoming
 
 
 class Screen(Element):
