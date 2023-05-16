@@ -10,13 +10,14 @@ from scipy.stats import multivariate_normal
 
 from cheetah import utils
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.track_methods import base_rmatrix
 
 ELEMENT_COUNT = 0
 REST_ENERGY = (
     constants.electron_mass
     * constants.speed_of_light**2
     / constants.elementary_charge
-)
+)  # electron mass
 
 
 class Element:
@@ -254,42 +255,12 @@ class Quadrupole(Element):
         super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
-        gamma = energy / REST_ENERGY
-        igamma2 = 1 / gamma**2 if gamma != 0 else 0
-
-        beta = np.sqrt(1 - igamma2)
-
-        hx = 0
-        kx2 = self.k1 + hx**2
-        ky2 = -self.k1
-        kx = np.sqrt(kx2 + 0.0j)
-        ky = np.sqrt(ky2 + 0.0j)
-        cx = np.cos(kx * self.length).real
-        cy = np.cos(ky * self.length).real
-        sy = (np.sin(ky * self.length) / ky).real if ky != 0 else self.length
-
-        if kx != 0:
-            sx = (np.sin(kx * self.length) / kx).real
-            dx = hx / kx2 * (1.0 - cx)
-            r56 = hx**2 * (self.length - sx) / kx2 / beta**2
-        else:
-            sx = self.length
-            dx = self.length**2 * hx / 2
-            r56 = hx**2 * self.length**3 / 6 / beta**2
-
-        r56 -= self.length / beta**2 * igamma2
-
-        R = torch.tensor(
-            [
-                [cx, sx, 0, 0, 0, dx / beta, 0],
-                [-kx2 * sx, cx, 0, 0, 0, sx * hx / beta, 0],
-                [0, 0, cy, sy, 0, 0, 0],
-                [0, 0, -ky2 * sy, cy, 0, 0, 0],
-                [sx * hx / beta, dx / beta, 0, 0, 1, r56, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
+        R = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=0,
+            tilt=0,
+            energy=energy,
             device=self.device,
         )
 
