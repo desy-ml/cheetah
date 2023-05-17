@@ -86,10 +86,10 @@ def ocelot2cheetah(element, warnings=True):
     Notes
     -----
     Object not supported by Cheetah are translated to drift sections. Screen objects are
-    created only from `ocelot.Monitor` objects when the string "SCR" in their `id`
-    attribute. Their screen properties are always set to default values and most likely
-    need adjusting afterwards. BPM objects are only created from `ocelot.Monitor`
-    objects when their id has a substring "BPM".
+    created only from `ocelot.Monitor` objects when the string "SCR" or the string "BSC"
+    is contained in their `id` attribute. Their screen properties are always set to
+    default values and most likely need adjusting afterwards. BPM objects are only
+    created from `ocelot.Monitor` objects when their id has a substring "BPM".
     """
     try:
         import ocelot as oc
@@ -109,7 +109,9 @@ def ocelot2cheetah(element, warnings=True):
         return acc.VerticalCorrector(element.l, element.angle, name=element.id)
     elif isinstance(element, oc.Cavity):
         return acc.Cavity(element.l, name=element.id)
-    elif isinstance(element, oc.Monitor) and "BSC" in element.id:
+    elif isinstance(element, oc.Monitor) and (
+        "BSC" in element.id or "SCR" in element.id
+    ):
         if warnings:
             print(
                 "WARNING: Diagnostic screen was converted with default screen"
