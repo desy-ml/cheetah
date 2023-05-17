@@ -373,6 +373,11 @@ class Dipole(Element):
         the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     name : Optional[str], optional
         Unique identifier of the element, by default None
+
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `angle != 0`.
     """
 
     def __init__(
@@ -441,7 +446,7 @@ class Dipole(Element):
         R = torch.matmul(R_exit, torch.matmul(R, R_enter))
         # Apply rotation for tilted magnets
         R = torch.matmul(
-            rotation_matrix(-self.angle), torch.matmul(R, rotation_matrix(self.angle))
+            rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
         )
 
         return R
@@ -493,6 +498,9 @@ class Dipole(Element):
             + f"e1={self.e1:.2f},"
             + f"e2={self.e2:.2f},"
             + f"tilt={self.tilt:.2f},"
+            + f"fint={self.fint:.2f},"
+            + f"fintx={self.fintx:.2f},"
+            + f"gap={self.gap:.2f},"
             + f'name="{self.name}")'
         )
 
