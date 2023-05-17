@@ -31,8 +31,8 @@ def rotation_matrix(angle: float, device: Union[str, torch.device] = "auto"):
     """
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    cs = torch.cos(angle)
-    sn = torch.sin(angle)
+    cs = np.cos(angle)
+    sn = np.sin(angle)
     return torch.tensor(
         [
             [cs, 0, sn, 0, 0, 0, 0],
