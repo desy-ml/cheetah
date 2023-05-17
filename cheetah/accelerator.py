@@ -10,7 +10,7 @@ from scipy.stats import multivariate_normal
 
 from cheetah import utils
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.track_methods import base_rmatrix
+from cheetah.track_methods import base_rmatrix, rotation_matrix
 
 ELEMENT_COUNT = 0
 REST_ENERGY = (
@@ -344,6 +344,155 @@ class Quadrupole(Element):
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"k1={self.k1}, "
             + f"misalignment={self.misalignment}, "
+            + f'name="{self.name}")'
+        )
+
+
+class Dipole(Element):
+    """
+    Dipole magnet
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    angle : float, optional
+        Deflection angle, by default 0.0
+    e1 : float, optional
+        the angle of inclination of the entrance face [rad], by default 0.0
+    e2 : float, optional
+        the angle of inclination of the exit face [rad], by default 0.0
+    tilt: float, optional
+        tilt of the magnet in x-y plane [rad], by default 0.0
+    fint: float, optional
+        fringe field integral (of the enterance face), by default 0.0
+    fintx: float, optional
+        (only set if different from `fint`) fringe field integral
+        of the exit face, by default None
+    gap: float, optional
+        the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    name : Optional[str], optional
+        Unique identifier of the element, by default None
+    """
+
+    def __init__(
+        self,
+        length: float,
+        angle: float = 0.0,
+        e1: float = 0.0,
+        e2: float = 0.0,
+        tilt: float = 0.0,
+        fint: float = 0.0,
+        fintx: Optional[float] = None,
+        gap: float = 0.0,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        self.length = length
+        self.angle = angle
+        self.gap = gap
+        self.tilt = tilt
+        self.name = name
+        self.fint = fint
+        self.fintx = fint if fintx is None else fintx
+        # Rectangular bend
+        self.e1 = e1 + angle / 2
+        self.e2 = e2 + angle / 2
+
+        if self.length == 0.0:
+            self.hx = 0.0
+        else:
+            self.hx = self.angle / self.length
+
+        super().__init__(name=name, **kwargs)
+
+    @property
+    def is_active(self):
+        return self.angle != 0
+
+    def transfer_map(self, energy):
+        R_enter = self._transfer_map_enter(energy)
+        R_exit = self._transfer_map_exit(energy)
+
+        if self.length != 0.0:  # Bending magnet with finite length
+            R = base_rmatrix(
+                length=self.length,
+                k1=0,
+                hx=self.hx,
+                tilt=0.0,
+                energy=energy,
+                device=self.device,
+            )
+        else:  # Reduce to Thin-Corrector
+            R = torch.tensor(
+                [
+                    [1, self.length, 0, 0, 0, 0, 0],
+                    [0, 1, 0, 0, 0, 0, self.angle],
+                    [0, 0, 1, self.length, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                ],
+                dtype=torch.float32,
+                device=self.device,
+            )
+        # Apply fringe fields
+        R = torch.matmul(R_exit, torch.matmul(R, R_enter))
+        # Apply rotation for tilted magnets
+        R = torch.matmul(
+            rotation_matrix(-self.angle), torch.matmul(R, rotation_matrix(self.angle))
+        )
+
+        return R
+
+    def _transfer_map_enter(self, energy):
+        if self.fint == 0:
+            return torch.eye(7, device=self.device)
+        else:
+            sec_e = 1.0 / np.cos(self.e1)
+            phi = self.fint * self.hx * self.gap * sec_e * (1 + np.sin(self.e1) ** 2)
+            return torch.tensor(
+                [
+                    [1, 0, 0, 0, 0, 0, 0],
+                    [self.hx * np.tan(self.e1), 1, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 0, 0, 0, 0],
+                    [0, 0, -self.hx * np.tan(self.e1 - phi), 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                ],
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+    def _transfer_map_exit(self, energy):
+        if self.fintx == 0:
+            return torch.eye(7, device=self.device)
+        else:
+            sec_e = 1.0 / np.cos(self.e2)
+            phi = self.fint * self.hx * self.gap * sec_e * (1 + np.sin(self.e2) ** 2)
+            return torch.tensor(
+                [
+                    [1, 0, 0, 0, 0, 0, 0],
+                    [self.hx * np.tan(self.e2), 1, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 0, 0, 0, 0],
+                    [0, 0, -self.hx * np.tan(self.e2 - phi), 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                ],
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f}, "
+            + f"angle={self.angle}, "
+            + f"e1={self.e1:.2f},"
+            + f"e2={self.e2:.2f},"
+            + f"tilt={self.tilt:.2f},"
             + f'name="{self.name}")'
         )
 
