@@ -253,6 +253,8 @@ class Quadrupole(Element):
         Strength of the quadrupole in rad/m.
     misalignment : (float, float), optional
         Misalignment vector of the quadrupole in x- and y-directions.
+    tilt: float, optional
+        Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for skew-quadrupole.
     name : string, optional
         Unique identifier of the element.
 
@@ -264,10 +266,13 @@ class Quadrupole(Element):
 
     is_skippable = True
 
-    def __init__(self, length, k1=0.0, misalignment=(0, 0), name=None, **kwargs):
+    def __init__(
+        self, length, k1=0.0, misalignment=(0, 0), tilt=0.0, name=None, **kwargs
+    ):
         self.length = length
         self.k1 = k1
         self.misalignment = misalignment
+        self.tilt = tilt
 
         super().__init__(name=name, **kwargs)
 
@@ -276,7 +281,7 @@ class Quadrupole(Element):
             length=self.length,
             k1=self.k1,
             hx=0,
-            tilt=0,
+            tilt=self.tilt,
             energy=energy,
             device=self.device,
         )
@@ -350,7 +355,7 @@ class Quadrupole(Element):
 
 class Dipole(Element):
     """
-    Dipole magnet
+    Dipole magnet (by default a sector bending magnet)
 
     Parameters
     ----------
@@ -401,8 +406,8 @@ class Dipole(Element):
         self.fint = fint
         self.fintx = fint if fintx is None else fintx
         # Rectangular bend
-        self.e1 = e1 + angle / 2
-        self.e2 = e2 + angle / 2
+        self.e1 = e1
+        self.e2 = e2
 
         if self.length == 0.0:
             self.hx = 0.0
@@ -502,6 +507,67 @@ class Dipole(Element):
             + f"fintx={self.fintx:.2f},"
             + f"gap={self.gap:.2f},"
             + f'name="{self.name}")'
+        )
+
+
+class RBend(Dipole):
+    """
+    Rectangular bending magnet
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    angle : float, optional
+        Deflection angle, by default 0.0
+    e1 : float, optional
+        the angle of inclination of the entrance face [rad], by default 0.0
+    e2 : float, optional
+        the angle of inclination of the exit face [rad], by default 0.0
+    tilt: float, optional
+        tilt of the magnet in x-y plane [rad], by default 0.0
+    fint: float, optional
+        fringe field integral (of the enterance face), by default 0.0
+    fintx: float, optional
+        (only set if different from `fint`) fringe field integral
+        of the exit face, by default None
+    gap: float, optional
+        the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    name : Optional[str], optional
+        Unique identifier of the element, by default None
+
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `angle != 0`.
+    """
+
+    def __init__(
+        self,
+        length: float,
+        angle: float = 0.0,
+        e1: float = 0.0,
+        e2: float = 0.0,
+        tilt: float = 0.0,
+        fint: float = 0.0,
+        fintx: Optional[float] = None,
+        gap: float = 0.0,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        e1 = e1 + angle / 2
+        e2 = e2 + angle / 2
+        super().__init__(
+            length=length,
+            angle=angle,
+            e1=e1,
+            e2=e2,
+            tilt=tilt,
+            fint=fint,
+            fintx=fintx,
+            gap=gap,
+            name=name,
+            **kwargs,
         )
 
 
