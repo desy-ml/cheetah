@@ -19,8 +19,6 @@ Github repository: https://github.com/desy-ml/cheetah
 
 Paper: https://accelconf.web.cern.ch/ipac2022/papers/wepoms036.pdf
 
-<img src="images/logo.png" align="right" width="25%"/>
-
 
 Installation
 ------------
@@ -91,7 +89,7 @@ You may plot a segment with reference particle traces bay calling
 
     segment.plot_overview(beam=beam)
 
-![Overview Plot](images/misalignment.png)
+.. image:: ../_static/img/misalignment.png
 
 where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
 
