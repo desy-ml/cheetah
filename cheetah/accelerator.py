@@ -1,5 +1,7 @@
 from copy import deepcopy
+from typing import Optional
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -58,7 +60,7 @@ class Element:
     is_active = False
     is_skippable = True
 
-    def __init__(self, name=None, device="auto"):
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
         global ELEMENT_COUNT
         if name is not None:
             self.name = name
@@ -70,7 +72,7 @@ class Element:
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         """
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when travelling through the element.
@@ -102,7 +104,7 @@ class Element:
         """
         raise NotImplementedError
 
-    def __call__(self, incoming):
+    def __call__(self, incoming: Beam) -> Beam:
         """
         Track particles through the element. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
@@ -135,7 +137,7 @@ class Element:
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`.
 
@@ -156,7 +158,7 @@ class Element:
         """
         raise NotImplementedError
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 
@@ -174,7 +176,7 @@ class Element:
         """
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.__class__.__name__}(name="{self.name}")'
 
 
@@ -198,12 +200,12 @@ class Drift(Element):
     is_active = True
     is_skippable = True
 
-    def __init__(self, length, name=None, **kwargs):
+    def __init__(self, length: float, name: Optional[str] = None, **kwargs) -> None:
         self.length = length
 
         super().__init__(name=name, **kwargs)
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
@@ -221,7 +223,7 @@ class Drift(Element):
             device=self.device,
         )
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -230,10 +232,10 @@ class Drift(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}")'
         )
@@ -262,14 +264,21 @@ class Quadrupole(Element):
 
     is_skippable = True
 
-    def __init__(self, length, k1=0.0, misalignment=(0, 0), name=None, **kwargs):
+    def __init__(
+        self,
+        length: float,
+        k1: float = 0.0,
+        misalignment: tuple[float, float] = (0, 0),
+        name: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         self.length = length
         self.k1 = k1
         self.misalignment = misalignment
 
         super().__init__(name=name, **kwargs)
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
@@ -342,10 +351,10 @@ class Quadrupole(Element):
             return R
 
     @property
-    def is_active(self):
+    def is_active(self) -> bool:
         return self.k1 != 0
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -359,7 +368,7 @@ class Quadrupole(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (np.sign(self.k1) if self.is_active else 1)
         patch = Rectangle(
@@ -367,7 +376,7 @@ class Quadrupole(Element):
         )
         ax.add_patch(patch)
 
-    def __repr__(self):
+    def __repr__(self) -> None:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"k1={self.k1}, "
@@ -397,13 +406,15 @@ class HorizontalCorrector(Element):
 
     is_skippable = True
 
-    def __init__(self, length, angle=0.0, name=None, **kwargs):
+    def __init__(
+        self, length: float, angle: float = 0.0, name: Optional[str] = None, **kwargs
+    ) -> None:
         self.length = length
         self.angle = angle
 
         super().__init__(name=name, **kwargs)
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         return torch.tensor(
             [
                 [1, self.length, 0, 0, 0, 0, 0],
@@ -419,10 +430,10 @@ class HorizontalCorrector(Element):
         )
 
     @property
-    def is_active(self):
+    def is_active(self) -> bool:
         return self.angle != 0
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -434,7 +445,7 @@ class HorizontalCorrector(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
 
@@ -443,7 +454,7 @@ class HorizontalCorrector(Element):
         )
         ax.add_patch(patch)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"angle={self.angle}, "
@@ -472,13 +483,15 @@ class VerticalCorrector(Element):
 
     is_skippable = True
 
-    def __init__(self, length, angle=0.0, name=None, **kwargs):
+    def __init__(
+        self, length: float, angle: float = 0.0, name: Optional[str] = None, **kwargs
+    ) -> None:
         self.length = length
         self.angle = angle
 
         super().__init__(name=name, **kwargs)
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         return torch.tensor(
             [
                 [1, self.length, 0, 0, 0, 0, 0],
@@ -494,10 +507,10 @@ class VerticalCorrector(Element):
         )
 
     @property
-    def is_active(self):
+    def is_active(self) -> bool:
         return self.angle != 0
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -509,7 +522,7 @@ class VerticalCorrector(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
 
@@ -518,7 +531,7 @@ class VerticalCorrector(Element):
         )
         ax.add_patch(patch)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"angle={self.angle}, "
@@ -540,21 +553,27 @@ class Cavity(Element):
         Unique identifier of the element.
     """
 
-    def __init__(self, length, delta_energy=0, name=None, **kwargs):
+    def __init__(
+        self,
+        length: float,
+        delta_energy: float = 0,
+        name: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         self.length = length
         self.delta_energy = delta_energy
 
         super().__init__(name=name, **kwargs)
 
     @property
-    def is_active(self):
+    def is_active(self) -> bool:
         return self.delta_energy != 0
 
     @property
-    def is_skippable(self):
+    def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
@@ -572,13 +591,13 @@ class Cavity(Element):
             device=self.device,
         )
 
-    def __call__(self, incoming):
+    def __call__(self, incoming: Beam) -> Beam:
         outgoing = super().__call__(incoming)
         if outgoing is not Beam.empty:
             outgoing.energy += self.delta_energy
         return outgoing
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -591,7 +610,7 @@ class Cavity(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
@@ -600,7 +619,7 @@ class Cavity(Element):
         )
         ax.add_patch(patch)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f},"
             f' delta_energy={self.delta_energy}, name="{self.name}")'
@@ -633,13 +652,13 @@ class BPM(Element):
     reading = (None, None)
 
     @property
-    def is_skippable(self):
+    def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
-    def __call__(self, incoming):
+    def __call__(self, incoming: Beam) -> Beam:
         if incoming is Beam.empty:
             self.reading = (None, None)
             return Beam.empty
@@ -652,10 +671,10 @@ class BPM(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         return [self]
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         patch = Rectangle(
             (s, -0.3), 0, 0.3 * 2, color="darkkhaki", alpha=alpha, zorder=2
@@ -688,13 +707,13 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution,
-        pixel_size,
-        binning=1,
-        misalignment=(0, 0),
-        name=None,
+        resolution: tuple[int, int],
+        pixel_size: tuple[float, float],
+        binning: int = 1,
+        misalignment: tuple[float, float] = (0, 0),
+        name: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(name=name, **kwargs)
 
         self.resolution = resolution
@@ -706,22 +725,22 @@ class Screen(Element):
         self.cached_reading = None
 
     @property
-    def is_skippable(self):
+    def is_skippable(self) -> bool:
         return not self.is_active
 
     @property
-    def effective_resolution(self):
+    def effective_resolution(self) -> tuple[int, int]:
         return (
             int(self.resolution[0] / self.binning),
             int(self.resolution[1] / self.binning),
         )
 
     @property
-    def effective_pixel_size(self):
+    def effective_pixel_size(self) -> tuple[float, float]:
         return (self.pixel_size[0] * self.binning, self.pixel_size[0] * self.binning)
 
     @property
-    def extent(self):
+    def extent(self) -> tuple[float, float, float, float]:
         return (
             -self.resolution[0] * self.pixel_size[0] / 2,
             self.resolution[0] * self.pixel_size[0] / 2,
@@ -730,7 +749,7 @@ class Screen(Element):
         )
 
     @property
-    def pixel_bin_edges(self):
+    def pixel_bin_edges(self) -> tuple[torch.Tensor, torch.Tensor]:
         return (
             torch.linspace(
                 -self.resolution[0] * self.pixel_size[0] / 2,
@@ -744,10 +763,10 @@ class Screen(Element):
             ),
         )
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
-    def __call__(self, incoming):
+    def __call__(self, incoming: Beam) -> Beam:
         if self.is_active:
             if isinstance(incoming, ParameterBeam):
                 self.read_beam = deepcopy(incoming)
@@ -767,7 +786,7 @@ class Screen(Element):
             return incoming
 
     @property
-    def reading(self):
+    def reading(self) -> torch.Tensor:
         if self.cached_reading is not None:
             return self.cached_reading
 
@@ -811,25 +830,25 @@ class Screen(Element):
         return image
 
     @property
-    def read_beam(self):
+    def read_beam(self) -> Beam:
         return self._read_beam
 
     @read_beam.setter
-    def read_beam(self, value):
+    def read_beam(self, value: Beam) -> None:
         self._read_beam = value
         self.cached_reading = None
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         return [self]
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         patch = Rectangle(
             (s, -0.6), 0, 0.6 * 2, color="tab:green", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(resolution={self.resolution},"
             f" pixel_size={self.pixel_size}, binning={self.binning},"
@@ -855,12 +874,12 @@ class Undulator(Element):
 
     is_skippable = True  # TODO: Temporary?
 
-    def __init__(self, length, name=None, **kwargs):
+    def __init__(self, length: float, name: Optional[str] = None, **kwargs) -> None:
         self.length = length
 
         super().__init__(name=name, **kwargs)
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else 0
 
@@ -878,7 +897,7 @@ class Undulator(Element):
             device=self.device,
         )
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -887,7 +906,7 @@ class Undulator(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
@@ -896,7 +915,7 @@ class Undulator(Element):
         )
         ax.add_patch(patch)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}")'
         )
@@ -914,7 +933,9 @@ class Segment(Element):
         Unique identifier of the element.
     """
 
-    def __init__(self, cell, name=None, **kwargs):
+    def __init__(
+        self, cell: list[Element], name: Optional[str] = None, **kwargs
+    ) -> None:
         super().__init__(name=name, **kwargs)
 
         self.elements = cell
@@ -923,7 +944,7 @@ class Segment(Element):
             element.device = self.device
             self.__dict__[element.name] = element
 
-    def subcell(self, start, end, **kwargs):
+    def subcell(self, start: str, end: str, **kwargs) -> "Segment":
         """Extract a subcell `[start, end]` from an this segment."""
         subcell = []
         is_in_subcell = False
@@ -938,21 +959,23 @@ class Segment(Element):
         return self.__class__(subcell, device=self.device, **kwargs)
 
     @classmethod
-    def from_ocelot(cls, cell, name=None, warnings=True, **kwargs):
+    def from_ocelot(
+        cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
+    ) -> "Segment":
         converted = [
             utils.ocelot2cheetah(element, warnings=warnings) for element in cell
         ]
         return cls(converted, name=name, **kwargs)
 
     @property
-    def is_skippable(self):
+    def is_skippable(self) -> bool:
         return all(element.is_skippable for element in self.elements)
 
     @property
-    def length(self):
+    def length(self) -> float:
         return sum(element.length for element in self.elements)
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, dtype=torch.float32, device=self.device)
             for element in self.elements:
@@ -961,7 +984,7 @@ class Segment(Element):
         else:
             return None
 
-    def __call__(self, incoming):
+    def __call__(self, incoming: Beam) -> Beam:
         if self.is_skippable:
             return super().__call__(incoming)
         else:
@@ -979,14 +1002,14 @@ class Segment(Element):
 
             return incoming
 
-    def split(self, resolution):
+    def split(self, resolution: float) -> list[Element]:
         return [
             split_element
             for element in self.elements
             for split_element in element.split(resolution)
         ]
 
-    def plot(self, ax, s):
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         element_lengths = [element.length for element in self.elements]
         element_ss = [0] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
@@ -1004,8 +1027,13 @@ class Segment(Element):
         ax.grid()
 
     def plot_reference_particle_traces(
-        self, axx, axy, beam=None, n=10, resolution=0.01
-    ):
+        self,
+        axx: matplotlib.axes.Axes,
+        axy: matplotlib.axes.Axes,
+        beam: Optional[Beam] = None,
+        n: int = 10,
+        resolution: float = 0.01,
+    ) -> None:
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
 
@@ -1076,7 +1104,13 @@ class Segment(Element):
         axy.set_ylabel("y (m)")
         axy.grid()
 
-    def plot_overview(self, fig=None, beam=None, n=10, resolution=0.01):
+    def plot_overview(
+        self,
+        fig: Optional[matplotlib.figure.Figure] = None,
+        beam: Optional[Beam] = None,
+        n: int = 10,
+        resolution: float = 0.01,
+    ) -> None:
         """
         Plot an overview of the segment with the lattice and traced reference particles.
 
@@ -1104,7 +1138,7 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         start = f"{self.__class__.__name__}(["
 
         s = start + self.elements[0].__repr__()
