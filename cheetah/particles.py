@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 from torch.distributions import MultivariateNormal
@@ -11,21 +13,21 @@ class Beam:
     @classmethod
     def from_parameters(
         cls,
-        mu_x=0,
-        mu_xp=0,
-        mu_y=0,
-        mu_yp=0,
-        sigma_x=175e-9,
-        sigma_xp=2e-7,
-        sigma_y=175e-9,
-        sigma_yp=2e-7,
-        sigma_s=1e-6,
-        sigma_p=1e-6,
-        cor_x=0,
-        cor_y=0,
-        cor_s=0,
-        energy=1e8,
-    ):
+        mu_x: float = 0,
+        mu_xp: float = 0,
+        mu_y: float = 0,
+        mu_yp: float = 0,
+        sigma_x: float = 1,
+        sigma_xp: float = 0,
+        sigma_y: float = 1,
+        sigma_yp: float = 0,
+        sigma_s: float = 0,
+        sigma_p: float = 0,
+        cor_x: float = 0,
+        cor_y: float = 0,
+        cor_s: float = 0,
+        energy: float = 1e8,
+    ) -> "Beam":
         """
         Create beam that with given beam parameters.
 
@@ -59,31 +61,31 @@ class Beam:
         raise NotImplementedError
 
     @classmethod
-    def from_ocelot(cls, parray):
+    def from_ocelot(cls, parray) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
         raise NotImplementedError
 
     @classmethod
-    def from_astra(cls, path, **kwargs):
+    def from_astra(cls, path: str, **kwargs) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 
     def transformed_to(
         self,
-        mu_x=None,
-        mu_xp=None,
-        mu_y=None,
-        mu_yp=None,
-        sigma_x=None,
-        sigma_xp=None,
-        sigma_y=None,
-        sigma_yp=None,
-        sigma_s=None,
-        sigma_p=None,
-        energy=None,
-    ):
+        mu_x: Optional[float] = None,
+        mu_xp: Optional[float] = None,
+        mu_y: Optional[float] = None,
+        mu_yp: Optional[float] = None,
+        sigma_x: Optional[float] = None,
+        sigma_xp: Optional[float] = None,
+        sigma_y: Optional[float] = None,
+        sigma_yp: Optional[float] = None,
+        sigma_s: Optional[float] = None,
+        sigma_p: Optional[float] = None,
+        energy: Optional[float] = None,
+    ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
 
@@ -141,7 +143,7 @@ class Beam:
         )
 
     @property
-    def parameters(self):
+    def parameters(self) -> dict[str, float]:
         return {
             "mu_x": self.mu_x,
             "mu_xp": self.mu_xp,
@@ -157,54 +159,54 @@ class Beam:
         }
 
     @property
-    def mu_x(self):
+    def mu_x(self) -> float:
         raise NotImplementedError
 
     @property
-    def sigma_x(self):
+    def sigma_x(self) -> float:
         raise NotImplementedError
 
     @property
-    def mu_xp(self):
+    def mu_xp(self) -> float:
         raise NotImplementedError
 
     @property
-    def sigma_xp(self):
+    def sigma_xp(self) -> float:
         raise NotImplementedError
 
     @property
-    def mu_y(self):
+    def mu_y(self) -> float:
         raise NotImplementedError
 
     @property
-    def sigma_y(self):
+    def sigma_y(self) -> float:
         raise NotImplementedError
 
     @property
-    def mu_yp(self):
+    def mu_yp(self) -> float:
         raise NotImplementedError
 
     @property
-    def sigma_yp(self):
+    def sigma_yp(self) -> float:
         raise NotImplementedError
 
     @property
-    def mu_s(self):
+    def mu_s(self) -> float:
         raise NotImplementedError
 
     @property
-    def sigma_s(self):
+    def sigma_s(self) -> float:
         raise NotImplementedError
 
     @property
-    def mu_p(self):
+    def mu_p(self) -> float:
         raise NotImplementedError
 
     @property
-    def sigma_p(self):
+    def sigma_p(self) -> float:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_xp={self.mu_xp},"
             f" mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x},"
@@ -228,7 +230,7 @@ class ParameterBeam(Beam):
         Energy of the beam in eV.
     """
 
-    def __init__(self, mu, cov, energy):
+    def __init__(self, mu: torch.Tensor, cov: torch.Tensor, energy: float) -> None:
         self._mu = mu
         self._cov = cov
         self.energy = energy
@@ -236,21 +238,21 @@ class ParameterBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        mu_x=0,
-        mu_xp=0,
-        mu_y=0,
-        mu_yp=0,
-        sigma_x=175e-9,
-        sigma_xp=2e-7,
-        sigma_y=175e-9,
-        sigma_yp=2e-7,
-        sigma_s=1e-6,
-        sigma_p=1e-6,
-        cor_x=0,
-        cor_y=0,
-        cor_s=0,
-        energy=1e8,
-    ):
+        mu_x: float = 0,
+        mu_xp: float = 0,
+        mu_y: float = 0,
+        mu_yp: float = 0,
+        sigma_x: float = 175e-9,
+        sigma_xp: float = 2e-7,
+        sigma_y: float = 175e-9,
+        sigma_yp: float = 2e-7,
+        sigma_s: float = 1e-6,
+        sigma_p: float = 1e-6,
+        cor_x: float = 0,
+        cor_y: float = 0,
+        cor_s: float = 0,
+        energy: float = 1e8,
+    ) -> "ParameterBeam":
         return cls(
             mu=torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0, 1], dtype=torch.float32),
             cov=torch.tensor(
@@ -269,7 +271,7 @@ class ParameterBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray):
+    def from_ocelot(cls, parray) -> "ParameterBeam":
         mu = torch.ones(7)
         mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
 
@@ -281,7 +283,7 @@ class ParameterBeam(Beam):
         return cls(mu=mu, cov=cov, energy=energy)
 
     @classmethod
-    def from_astra(cls, path, **kwargs):
+    def from_astra(cls, path: str, **kwargs) -> "ParameterBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         particles, energy = from_astrabeam(path)
         mu = torch.ones(7)
@@ -294,18 +296,18 @@ class ParameterBeam(Beam):
 
     def transformed_to(
         self,
-        mu_x=None,
-        mu_xp=None,
-        mu_y=None,
-        mu_yp=None,
-        sigma_x=None,
-        sigma_xp=None,
-        sigma_y=None,
-        sigma_yp=None,
-        sigma_s=None,
-        sigma_p=None,
-        energy=None,
-    ):
+        mu_x: Optional[float] = None,
+        mu_xp: Optional[float] = None,
+        mu_y: Optional[float] = None,
+        mu_yp: Optional[float] = None,
+        sigma_x: Optional[float] = None,
+        sigma_xp: Optional[float] = None,
+        sigma_y: Optional[float] = None,
+        sigma_yp: Optional[float] = None,
+        sigma_s: Optional[float] = None,
+        sigma_p: Optional[float] = None,
+        energy: Optional[float] = None,
+    ) -> "ParameterBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
 
@@ -363,54 +365,54 @@ class ParameterBeam(Beam):
         )
 
     @property
-    def mu_x(self):
+    def mu_x(self) -> float:
         return self._mu[0]
 
     @property
-    def sigma_x(self):
+    def sigma_x(self) -> float:
         return torch.sqrt(self._cov[0, 0])
 
     @property
-    def mu_xp(self):
+    def mu_xp(self) -> float:
         return self._mu[1]
 
     @property
-    def sigma_xp(self):
+    def sigma_xp(self) -> float:
         return torch.sqrt(self._cov[1, 1])
 
     @property
-    def mu_y(self):
+    def mu_y(self) -> float:
         return self._mu[2]
 
     @property
-    def sigma_y(self):
+    def sigma_y(self) -> float:
         return torch.sqrt(self._cov[2, 2])
 
     @property
-    def mu_yp(self):
+    def mu_yp(self) -> float:
         return self._mu[3]
 
     @property
-    def sigma_yp(self):
+    def sigma_yp(self) -> float:
         return torch.sqrt(self._cov[3, 3])
 
     @property
-    def mu_s(self):
+    def mu_s(self) -> float:
         return self._mu[4]
 
     @property
-    def sigma_s(self):
+    def sigma_s(self) -> float:
         return torch.sqrt(self._cov[4, 4])
 
     @property
-    def mu_p(self):
+    def mu_p(self) -> float:
         return self._mu[5]
 
     @property
-    def sigma_p(self):
+    def sigma_p(self) -> float:
         return torch.sqrt(self._cov[5, 5])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={self.mu_x:.6f}, mu_xp={self.mu_xp:.6f},"
             f" mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
@@ -436,7 +438,9 @@ class ParticleBeam:
         selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, particles, energy, device="auto"):
+    def __init__(
+        self, particles: torch.Tensor, energy: float, device: str = "auto"
+    ) -> None:
         assert (
             len(particles) > 0 and particles.shape[1] == 7
         ), "Particle vectors must be 7-dimensional."
@@ -454,23 +458,23 @@ class ParticleBeam:
     @classmethod
     def from_parameters(
         cls,
-        n=100000,
-        mu_x=0,
-        mu_y=0,
-        mu_xp=0,
-        mu_yp=0,
-        sigma_x=175e-9,
-        sigma_y=175e-9,
-        sigma_xp=2e-7,
-        sigma_yp=2e-7,
-        sigma_s=1e-6,
-        sigma_p=1e-6,
-        cor_x=0,
-        cor_y=0,
-        cor_s=0,
-        energy=1e8,
-        device="auto",
-    ):
+        n: int = 100000,
+        mu_x: float = 0,
+        mu_y: float = 0,
+        mu_xp: float = 0,
+        mu_yp: float = 0,
+        sigma_x: float = 175e-9,
+        sigma_y: float = 175e-9,
+        sigma_xp: float = 2e-7,
+        sigma_yp: float = 2e-7,
+        sigma_s: float = 1e-6,
+        sigma_p: float = 1e-6,
+        cor_x: float = 0,
+        cor_y: float = 0,
+        cor_s: float = 0,
+        energy: float = 1e8,
+        device: str = "auto",
+    ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles.
 
@@ -532,20 +536,20 @@ class ParticleBeam:
     @classmethod
     def make_linspaced(
         cls,
-        n=10,
-        mu_x=0,
-        mu_y=0,
-        mu_xp=0,
-        mu_yp=0,
-        sigma_x=175e-9,
-        sigma_y=175e-9,
-        sigma_xp=2e-7,
-        sigma_yp=2e-7,
-        sigma_s=0,
-        sigma_p=0,
-        energy=1e8,
-        device="auto",
-    ):
+        n: int = 10,
+        mu_x: float = 0,
+        mu_y: float = 0,
+        mu_xp: float = 0,
+        mu_yp: float = 0,
+        sigma_x: float = 175e-9,
+        sigma_y: float = 175e-9,
+        sigma_xp: float = 2e-7,
+        sigma_yp: float = 2e-7,
+        sigma_s: float = 0,
+        sigma_p: float = 0,
+        energy: float = 1e8,
+        device: str = "auto",
+    ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of *n* linspaced particles.
 
@@ -599,7 +603,7 @@ class ParticleBeam:
         return cls(particles, energy, device=device)
 
     @classmethod
-    def from_ocelot(cls, parray, device="auto"):
+    def from_ocelot(cls, parray, device: str = "auto") -> "ParticleBeam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
@@ -612,7 +616,7 @@ class ParticleBeam:
         return cls(particles, 1e9 * parray.E, device=device)
 
     @classmethod
-    def from_astra(cls, path, **kwargs):
+    def from_astra(cls, path: str, **kwargs) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         particles, energy = from_astrabeam(path)
         particles_7d = torch.ones((particles.shape[0], 7))
@@ -621,18 +625,18 @@ class ParticleBeam:
 
     def transformed_to(
         self,
-        mu_x=None,
-        mu_y=None,
-        mu_xp=None,
-        mu_yp=None,
-        sigma_x=None,
-        sigma_y=None,
-        sigma_xp=None,
-        sigma_yp=None,
-        sigma_s=None,
-        sigma_p=None,
-        energy=None,
-    ):
+        mu_x: Optional[float] = None,
+        mu_y: Optional[float] = None,
+        mu_xp: Optional[float] = None,
+        mu_yp: Optional[float] = None,
+        sigma_x: Optional[float] = None,
+        sigma_y: Optional[float] = None,
+        sigma_xp: Optional[float] = None,
+        sigma_yp: Optional[float] = None,
+        sigma_s: Optional[float] = None,
+        sigma_p: Optional[float] = None,
+        energy: Optional[float] = None,
+    ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
 
@@ -715,110 +719,110 @@ class ParticleBeam:
 
         return self.__class__(particles=particles, energy=energy)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.n
 
     @property
-    def n(self):
+    def n(self) -> int:
         return len(self.particles)
 
     @property
-    def xs(self):
+    def xs(self) -> Optional[torch.Tensor]:
         return self.particles[:, 0] if self is not Beam.empty else None
 
     @xs.setter
-    def xs(self, value):
+    def xs(self, value: torch.Tensor) -> None:
         self.particles[:, 0] = value
 
     @property
-    def mu_x(self):
+    def mu_x(self) -> Optional[float]:
         return float(self.xs.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_x(self):
+    def sigma_x(self) -> Optional[float]:
         return float(self.xs.std()) if self is not Beam.empty else None
 
     @property
-    def xps(self):
+    def xps(self) -> Optional[torch.Tensor]:
         return self.particles[:, 1] if self is not Beam.empty else None
 
     @xps.setter
-    def xps(self, value):
+    def xps(self, value: torch.Tensor) -> None:
         self.particles[:, 1] = value
 
     @property
-    def mu_xp(self):
+    def mu_xp(self) -> Optional[float]:
         return float(self.xps.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_xp(self):
+    def sigma_xp(self) -> Optional[float]:
         return float(self.xps.std()) if self is not Beam.empty else None
 
     @property
-    def ys(self):
+    def ys(self) -> Optional[torch.Tensor]:
         return self.particles[:, 2] if self is not Beam.empty else None
 
     @ys.setter
-    def ys(self, value):
+    def ys(self, value: torch.Tensor) -> None:
         self.particles[:, 2] = value
 
     @property
-    def mu_y(self):
+    def mu_y(self) -> Optional[float]:
         return float(self.ys.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_y(self):
+    def sigma_y(self) -> Optional[float]:
         return float(self.ys.std()) if self is not Beam.empty else None
 
     @property
-    def yps(self):
+    def yps(self) -> Optional[torch.Tensor]:
         return self.particles[:, 3] if self is not Beam.empty else None
 
     @yps.setter
-    def yps(self, value):
+    def yps(self, value: torch.Tensor) -> None:
         self.particles[:, 3] = value
 
     @property
-    def mu_yp(self):
+    def mu_yp(self) -> Optional[float]:
         return float(self.yps.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_yp(self):
+    def sigma_yp(self) -> Optional[float]:
         return float(self.yps.std()) if self is not Beam.empty else None
 
     @property
-    def ss(self):
+    def ss(self) -> Optional[torch.Tensor]:
         return self.particles[:, 4] if self is not Beam.empty else None
 
     @ss.setter
-    def ss(self, value):
+    def ss(self, value: torch.Tensor) -> None:
         self.particles[:, 4] = value
 
     @property
-    def mu_s(self):
+    def mu_s(self) -> Optional[float]:
         return float(self.ss.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_s(self):
+    def sigma_s(self) -> Optional[float]:
         return float(self.ss.std()) if self is not Beam.empty else None
 
     @property
-    def ps(self):
+    def ps(self) -> Optional[torch.Tensor]:
         return self.particles[:, 5] if self is not Beam.empty else None
 
     @ps.setter
-    def ps(self, value):
+    def ps(self, value: torch.Tensor) -> None:
         self.particles[:, 5] = value
 
     @property
-    def mu_p(self):
+    def mu_p(self) -> Optional[float]:
         return float(self.ps.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_p(self):
+    def sigma_p(self) -> Optional[float]:
         return float(self.ps.std()) if self is not Beam.empty else None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x:.6f},"
             f" mu_xp={self.mu_xp:.6f}, mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
