@@ -25,6 +25,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "alabaster"
 
-html_logo = "_static/img/logo.png"
+html_logo = "_static/logo.png"
 
 html_static_path = ["_static"]
