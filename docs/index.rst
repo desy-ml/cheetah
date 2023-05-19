@@ -89,8 +89,7 @@ You may plot a segment with reference particle traces bay calling
 
     segment.plot_overview(beam=beam)
 
-..
-    .. image:: _static/img/misalignment.png
+.. image:: _static/img/misalignment.png
 
 where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
 
