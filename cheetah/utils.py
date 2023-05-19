@@ -69,7 +69,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     return particles, energy
 
 
-def ocelot2cheetah(element, warnings: bool = True) -> acc.Element:
+def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
