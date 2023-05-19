@@ -6,7 +6,7 @@ from cheetah import accelerator as acc
 m_e_eV = 510998.8671
 
 
-def from_astrabeam(path: str):
+def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     """
     Read from a ASTRA beam distribution, and prepare for conversion to a Cheetah
     ParticleBeam or ParameterBeam.
@@ -69,7 +69,7 @@ def from_astrabeam(path: str):
     return particles, energy
 
 
-def ocelot2cheetah(element, warnings=True):
+def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
@@ -128,7 +128,7 @@ def ocelot2cheetah(element, warnings=True):
         return acc.Drift(element.l, name=element.id)
 
 
-def subcell_of_ocelot(cell, start, end):
+def subcell_of_ocelot(cell: list, start: str, end: str) -> list:
     """Extract a subcell `[start, end]` from an Ocelot cell."""
     subcell = []
     is_in_subcell = False
