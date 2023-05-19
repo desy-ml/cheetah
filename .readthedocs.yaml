@@ -13,4 +13,4 @@ formats: all
 
 # Set requirements using conda env
 # conda:
-#   environment: docs/conda_env.yml
+#   environment: docs/conda_env.yaml
