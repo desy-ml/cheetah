@@ -272,7 +272,7 @@ class Quadrupole(Element):
         length: float,
         k1: float = 0.0,
         misalignment: tuple[float, float] = (0, 0),
-        tilt: float = 0.0
+        tilt: float = 0.0,
         name: Optional[str] = None,
         **kwargs,
     ) -> None:
