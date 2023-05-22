@@ -6,7 +6,7 @@ from cheetah import accelerator as acc
 m_e_eV = 510998.8671
 
 
-def from_astrabeam(path: str):
+def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     """
     Read from a ASTRA beam distribution, and prepare for conversion to a Cheetah
     ParticleBeam or ParameterBeam.
@@ -69,7 +69,7 @@ def from_astrabeam(path: str):
     return particles, energy
 
 
-def ocelot2cheetah(element, warnings=True):
+def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
@@ -86,10 +86,10 @@ def ocelot2cheetah(element, warnings=True):
     Notes
     -----
     Object not supported by Cheetah are translated to drift sections. Screen objects are
-    created only from `ocelot.Monitor` objects when the string "SCR" or the string "BSC"
-    is contained in their `id` attribute. Their screen properties are always set to
-    default values and most likely need adjusting afterwards. BPM objects are only
-    created from `ocelot.Monitor` objects when their id has a substring "BPM".
+    created only from `ocelot.Monitor` objects when the string "SCR" is contained
+    in their `id` attribute. Their screen properties are always set to default
+    values and most likely need adjusting afterwards. BPM objects are only created
+    from `ocelot.Monitor` objects when their id has a substring "BPM".
     """
     try:
         import ocelot as oc
@@ -109,9 +109,7 @@ def ocelot2cheetah(element, warnings=True):
         return acc.VerticalCorrector(element.l, element.angle, name=element.id)
     elif isinstance(element, oc.Cavity):
         return acc.Cavity(element.l, name=element.id)
-    elif isinstance(element, oc.Monitor) and (
-        "BSC" in element.id or "SCR" in element.id
-    ):
+    elif isinstance(element, oc.Monitor) and ("SCR" in element.id):
         if warnings:
             print(
                 "WARNING: Diagnostic screen was converted with default screen"
@@ -130,7 +128,7 @@ def ocelot2cheetah(element, warnings=True):
         return acc.Drift(element.l, name=element.id)
 
 
-def subcell_of_ocelot(cell, start, end):
+def subcell_of_ocelot(cell: list, start: str, end: str) -> list:
     """Extract a subcell `[start, end]` from an Ocelot cell."""
     subcell = []
     is_in_subcell = False

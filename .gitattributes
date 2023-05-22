@@ -1,4 +1,0 @@
-*.png filter=lfs diff=lfs merge=lfs -text
-distributions/ACHIP_EA1_2021.1351.001 filter=lfs diff=lfs merge=lfs -text
-distributions/ARES_AOcomp_run.1351.026 filter=lfs diff=lfs merge=lfs -text
-distributions/ARES_Linac.1351.010 filter=lfs diff=lfs merge=lfs -text

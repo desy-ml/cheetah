@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="cheetah-accelerator",
-    version="0.5.18",
+    version="0.5.19",
     author="Jan Kaiser & Oliver Stein",
     author_email="jan.kaiser@desy.de",
     url="https://github.com/desy-ml/cheetah",
@@ -18,6 +18,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["cheetah"],
+    python_requires=">=3.9",
     install_requires=[
         "torch",
         "matplotlib",

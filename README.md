@@ -1,3 +1,5 @@
+<img src="images/logo.png" align="right" width="25%"/>
+
 # Cheetah
 
 Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
