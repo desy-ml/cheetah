@@ -109,7 +109,9 @@ def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
         return acc.VerticalCorrector(element.l, element.angle, name=element.id)
     elif isinstance(element, oc.Cavity):
         return acc.Cavity(element.l, name=element.id)
-    elif isinstance(element, oc.Monitor) and ("SCR" in element.id):
+    elif isinstance(element, oc.Monitor) and ("BSC" in element.id):
+        # NOTE This pattern is very specific to ARES and will need a more complex
+        # solution for other accelerators
         if warnings:
             print(
                 "WARNING: Diagnostic screen was converted with default screen"
