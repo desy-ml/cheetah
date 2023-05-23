@@ -11,13 +11,14 @@ from scipy.stats import multivariate_normal
 
 from cheetah import utils
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
 ELEMENT_COUNT = 0
 REST_ENERGY = (
     constants.electron_mass
     * constants.speed_of_light**2
     / constants.elementary_charge
-)
+)  # electron mass
 
 
 class DeviceError(Exception):
@@ -253,6 +254,8 @@ class Quadrupole(Element):
         Strength of the quadrupole in rad/m.
     misalignment : (float, float), optional
         Misalignment vector of the quadrupole in x- and y-directions.
+    tilt: float, optional
+        Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for skew-quadrupole.
     name : string, optional
         Unique identifier of the element.
 
@@ -269,84 +272,31 @@ class Quadrupole(Element):
         length: float,
         k1: float = 0.0,
         misalignment: tuple[float, float] = (0, 0),
+        tilt: float = 0.0,
         name: Optional[str] = None,
         **kwargs,
     ) -> None:
         self.length = length
         self.k1 = k1
         self.misalignment = misalignment
+        self.tilt = tilt
 
         super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
-        gamma = energy / REST_ENERGY
-        igamma2 = 1 / gamma**2 if gamma != 0 else 0
-
-        beta = np.sqrt(1 - igamma2)
-
-        hx = 0
-        kx2 = self.k1 + hx**2
-        ky2 = -self.k1
-        kx = np.sqrt(kx2 + 0.0j)
-        ky = np.sqrt(ky2 + 0.0j)
-        cx = np.cos(kx * self.length).real
-        cy = np.cos(ky * self.length).real
-        sy = (np.sin(ky * self.length) / ky).real if ky != 0 else self.length
-
-        if kx != 0:
-            sx = (np.sin(kx * self.length) / kx).real
-            dx = hx / kx2 * (1.0 - cx)
-            r56 = hx**2 * (self.length - sx) / kx2 / beta**2
-        else:
-            sx = self.length
-            dx = self.length**2 * hx / 2
-            r56 = hx**2 * self.length**3 / 6 / beta**2
-
-        r56 -= self.length / beta**2 * igamma2
-
-        R = torch.tensor(
-            [
-                [cx, sx, 0, 0, 0, dx / beta, 0],
-                [-kx2 * sx, cx, 0, 0, 0, sx * hx / beta, 0],
-                [0, 0, cy, sy, 0, 0, 0],
-                [0, 0, -ky2 * sy, cy, 0, 0, 0],
-                [sx * hx / beta, dx / beta, 0, 0, 1, r56, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
+        R = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=0,
+            tilt=self.tilt,
+            energy=energy,
             device=self.device,
         )
 
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_exit = torch.tensor(
-                [
-                    [1, 0, 0, 0, 0, 0, self.misalignment[0]],
-                    [0, 1, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, self.misalignment[1]],
-                    [0, 0, 0, 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
-            R_entry = torch.tensor(
-                [
-                    [1, 0, 0, 0, 0, 0, -self.misalignment[0]],
-                    [0, 1, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, -self.misalignment[1]],
-                    [0, 0, 0, 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
+            R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
 
@@ -382,6 +332,224 @@ class Quadrupole(Element):
             + f"k1={self.k1}, "
             + f"misalignment={self.misalignment}, "
             + f'name="{self.name}")'
+        )
+
+
+class Dipole(Element):
+    """
+    Dipole magnet (by default a sector bending magnet)
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    angle : float, optional
+        Deflection angle, by default 0.0
+    e1 : float, optional
+        the angle of inclination of the entrance face [rad], by default 0.0
+    e2 : float, optional
+        the angle of inclination of the exit face [rad], by default 0.0
+    tilt: float, optional
+        tilt of the magnet in x-y plane [rad], by default 0.0
+    fint: float, optional
+        fringe field integral (of the enterance face), by default 0.0
+    fintx: float, optional
+        (only set if different from `fint`) fringe field integral
+        of the exit face, by default None
+    gap: float, optional
+        the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    name : Optional[str], optional
+        Unique identifier of the element, by default None
+
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `angle != 0`.
+    """
+
+    def __init__(
+        self,
+        length: float,
+        angle: float = 0.0,
+        e1: float = 0.0,
+        e2: float = 0.0,
+        tilt: float = 0.0,
+        fint: float = 0.0,
+        fintx: Optional[float] = None,
+        gap: float = 0.0,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        self.length = length
+        self.angle = angle
+        self.gap = gap
+        self.tilt = tilt
+        self.name = name
+        self.fint = fint
+        self.fintx = fint if fintx is None else fintx
+        # Rectangular bend
+        self.e1 = e1
+        self.e2 = e2
+
+        if self.length == 0.0:
+            self.hx = 0.0
+        else:
+            self.hx = self.angle / self.length
+
+        super().__init__(name=name, **kwargs)
+
+    @property
+    def is_active(self):
+        return self.angle != 0
+
+    def transfer_map(self, energy: float) -> torch.Tensor:
+        R_enter = self._transfer_map_enter(energy)
+        R_exit = self._transfer_map_exit(energy)
+
+        if self.length != 0.0:  # Bending magnet with finite length
+            R = base_rmatrix(
+                length=self.length,
+                k1=0,
+                hx=self.hx,
+                tilt=0.0,
+                energy=energy,
+                device=self.device,
+            )
+        else:  # Reduce to Thin-Corrector
+            R = torch.tensor(
+                [
+                    [1, self.length, 0, 0, 0, 0, 0],
+                    [0, 1, 0, 0, 0, 0, self.angle],
+                    [0, 0, 1, self.length, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                ],
+                dtype=torch.float32,
+                device=self.device,
+            )
+        # Apply fringe fields
+        R = torch.matmul(R_exit, torch.matmul(R, R_enter))
+        # Apply rotation for tilted magnets
+        R = torch.matmul(
+            rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
+        )
+
+        return R
+
+    def _transfer_map_enter(self, energy: float) -> torch.Tensor:
+        if self.fint == 0:
+            return torch.eye(7, device=self.device)
+        else:
+            sec_e = 1.0 / np.cos(self.e1)
+            phi = self.fint * self.hx * self.gap * sec_e * (1 + np.sin(self.e1) ** 2)
+            return torch.tensor(
+                [
+                    [1, 0, 0, 0, 0, 0, 0],
+                    [self.hx * np.tan(self.e1), 1, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 0, 0, 0, 0],
+                    [0, 0, -self.hx * np.tan(self.e1 - phi), 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                ],
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+    def _transfer_map_exit(self, energy: float) -> torch.Tensor:
+        if self.fintx == 0:
+            return torch.eye(7, device=self.device)
+        else:
+            sec_e = 1.0 / np.cos(self.e2)
+            phi = self.fint * self.hx * self.gap * sec_e * (1 + np.sin(self.e2) ** 2)
+            return torch.tensor(
+                [
+                    [1, 0, 0, 0, 0, 0, 0],
+                    [self.hx * np.tan(self.e2), 1, 0, 0, 0, 0, 0],
+                    [0, 0, 1, 0, 0, 0, 0],
+                    [0, 0, -self.hx * np.tan(self.e2 - phi), 1, 0, 0, 0],
+                    [0, 0, 0, 0, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                ],
+                dtype=torch.float32,
+                device=self.device,
+            )
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f}, "
+            + f"angle={self.angle}, "
+            + f"e1={self.e1:.2f},"
+            + f"e2={self.e2:.2f},"
+            + f"tilt={self.tilt:.2f},"
+            + f"fint={self.fint:.2f},"
+            + f"fintx={self.fintx:.2f},"
+            + f"gap={self.gap:.2f},"
+            + f'name="{self.name}")'
+        )
+
+
+class RBend(Dipole):
+    """
+    Rectangular bending magnet
+
+    Parameters
+    ----------
+    length : float
+        Length in meters.
+    angle : float, optional
+        Deflection angle, by default 0.0
+    e1 : float, optional
+        the angle of inclination of the entrance face [rad], by default 0.0
+    e2 : float, optional
+        the angle of inclination of the exit face [rad], by default 0.0
+    tilt: float, optional
+        tilt of the magnet in x-y plane [rad], by default 0.0
+    fint: float, optional
+        fringe field integral (of the enterance face), by default 0.0
+    fintx: float, optional
+        (only set if different from `fint`) fringe field integral
+        of the exit face, by default None
+    gap: float, optional
+        the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    name : Optional[str], optional
+        Unique identifier of the element, by default None
+
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `angle != 0`.
+    """
+
+    def __init__(
+        self,
+        length: float,
+        angle: float = 0.0,
+        e1: float = 0.0,
+        e2: float = 0.0,
+        tilt: float = 0.0,
+        fint: float = 0.0,
+        fintx: Optional[float] = None,
+        gap: float = 0.0,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        e1 = e1 + angle / 2
+        e2 = e2 + angle / 2
+        super().__init__(
+            length=length,
+            angle=angle,
+            e1=e1,
+            e2=e2,
+            tilt=tilt,
+            fint=fint,
+            fintx=fintx,
+            gap=gap,
+            name=name,
+            **kwargs,
         )
 
 
@@ -682,6 +850,33 @@ class BPM(Element):
         ax.add_patch(patch)
 
 
+class Monitor(Element):
+    """
+    General Marker / Monitor element
+
+    Parameters
+    ----------
+    name : string, optional
+        Unique identifier of the element.
+    """
+
+    length = 0
+
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        self.is_skippable = True
+        super().__init__(name=name, **kwargs)
+
+    def transfer_map(self, energy):
+        return torch.eye(7, device=self.device)
+
+    def __call__(self, incoming):
+        return incoming
+
+
 class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
@@ -856,6 +1051,85 @@ class Screen(Element):
         )
 
 
+class Aperture(Element):
+    """
+    Physical aperture,
+
+    Parameters
+    ----------
+    xmax : float, default np.inf
+        half size horizontal offset in [m]
+    ymax : float, default np.inf
+        half size vertical offset in [m]
+    type : str, default "rect"
+        Aperture shape, "rect" for rectangular and "ellip" for elliptical.
+    name : string, optional
+        Unique identifier of the element.
+    resolution : (int, int)
+        Resolution of the camera sensor looking at the screen given as a tuple
+        `(width, height)`.
+    binning : int, optional
+        Binning used by the camera.
+
+    Attributes
+    ---------
+    is_active : bool
+        Can be set by the user. An active aperture blocks the particles
+        in a Particlebeam with large transverse offset.
+    lost_particle: torch.Tensor
+        List of stopped particles at the aperture. Initialised to None
+    """
+
+    length = 0
+    lost_particle = None
+
+    def __init__(
+        self,
+        xmax: float = np.inf,
+        ymax: float = np.inf,
+        type: str = "rect",
+        name: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        assert xmax >= 0 and ymax >= 0
+        self.xmax = xmax
+        self.ymax = ymax
+        if type != "rect" and type != "ellipt":
+            raise ValueError('Unknown aperture type, use "rect" or "ellipt"')
+        self.type = type
+        super().__init__(name, **kwargs)
+
+    @property
+    def is_skippable(self) -> bool:
+        return not self.is_active
+
+    def transfer_map(self, energy: float) -> torch.Tensor:
+        return torch.eye(7, device=self.device)
+
+    def __call__(self, incoming: Beam) -> Beam:
+        if self.is_active and isinstance(incoming, ParticleBeam):
+            x = incoming.particles[:, 0]
+            y = incoming.particles[:, 2]
+            if self.type == "rect":
+                survived_mask = torch.logical_and(
+                    torch.logical_and(x > -self.xmax, x < self.xmax),
+                    torch.logical_and(y > -self.ymax, y < self.ymax),
+                )
+            elif self.type == "ellipt":
+                survived_mask = (
+                    x**2 / self.xmax**2 + y**2 / self.ymax**2
+                ) <= 1.0
+            outgoing_particles = incoming.particles[survived_mask]
+
+            self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
+
+            return ParticleBeam(
+                outgoing_particles, incoming.energy, device=incoming.device
+            )
+        else:
+            return incoming
+
+
 class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
@@ -918,6 +1192,88 @@ class Undulator(Element):
     def __repr__(self) -> str:
         return (
             f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}")'
+        )
+
+
+class Solenoid(Element):
+    """
+    Solenoid magnet.
+
+    Implemented according to A.W.Chao P74
+
+    Parameters
+    ----------
+    length : float
+        Length in m
+    k : float, optional
+        Noramlized strength of the solenoid magnet B0/(2*Brho)
+        B0 is the field inside the solenoid
+        Brho is the momentum of central trajectory
+    misalignment : (float, float), optional
+        Misalignment vector of the solenoid magnet in x- and y-directions.
+    name : string, optional
+        Unique identifier of the element.
+
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `k != 0`.
+    """
+
+    def __init__(
+        self,
+        length: float = 0,
+        k: float = 0,
+        misalignment: tuple[float, float] = (0, 0),
+        name: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        self.length = length
+        self.k = k
+        self.misalignment = misalignment
+        super().__init__(name, **kwargs)
+
+    def transfer_map(self, energy: float) -> torch.Tensor:
+        gamma = energy / REST_ENERGY
+        c = np.cos(self.length * self.k)
+        s = np.sin(self.length * self.k)
+        if self.k == 0:
+            s_k = self.length
+        else:
+            s_k = s / self.k
+        r56 = 0.0
+        if gamma != 0:
+            gamma2 = gamma * gamma
+            beta = np.sqrt(1.0 - 1.0 / gamma2)
+            r56 -= self.length / (beta * beta * gamma2)
+        R = torch.tensor(
+            [
+                [c * c, c * s_k, s * c, s * s_k, 0, 0, 0],
+                [-self.k * s * c, c * c, -self.k * s * s, s * c, 0, 0, 0],
+                [-s * c, -s * s_k, c * c, c * s_k, 0, 0, 0],
+                [self.k * s * s, -s * c, -self.k * s * c, c * c, 0, 0, 0],
+                [0, 0, 0, 0, 1, r56, 0],
+                [0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 1],
+            ],
+            dtype=torch.float32,
+            device=self.device,
+        ).real
+        if self.misalignment[0] == 0 and self.misalignment[1] == 0:
+            return R
+        else:
+            R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
+            R = torch.matmul(R_exit, torch.matmul(R, R_entry))
+            return R
+
+    @property
+    def is_active(self) -> bool:
+        return self.k != 0
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f}"
+            + 'k1={self.k1:.2f}, name="{self.name}")'
         )
 
 
