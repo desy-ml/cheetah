@@ -1246,7 +1246,7 @@ class Solenoid(Element):
             gamma2 = gamma * gamma
             beta = np.sqrt(1.0 - 1.0 / gamma2)
             r56 -= self.length / (beta * beta * gamma2)
-        R = torch.Tensor(
+        R = torch.tensor(
             [
                 [c * c, c * s_k, s * c, s * s_k, 0, 0, 0],
                 [-self.k * s * c, c * c, -self.k * s * s, s * c, 0, 0, 0],
@@ -1257,7 +1257,7 @@ class Solenoid(Element):
                 [0, 0, 0, 0, 0, 0, 1],
             ],
             dtype=torch.float32,
-            evice=self.device,
+            device=self.device,
         ).real
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R

@@ -109,3 +109,25 @@ def test_benchmark_ocelot_aperture_elliptical():
     _, p_array = ocelot.track(lat, p_array, navi)
 
     assert p_out_cheetah.n == p_array.rparticles.shape[1]
+
+
+def test_benchmark_ocelot_solenoid():
+    length = 0.5
+    k = 5
+    cheetah_bend = cheetah.Solenoid(length=length, k=k)
+    ocelot_bend = ocelot.Solenoid(l=length, k=k)
+    p_array = deepcopy(PARRAY_OCELOT)
+    p_in_cheetah = deepcopy(PARTICLEBEAM_CHEETAH)
+    pb_out_cheetah = cheetah_bend(p_in_cheetah)
+
+    lat = ocelot.MagneticLattice([ocelot_bend], stop=None)
+    navi = ocelot.Navigator(lat)
+    _, p_array = ocelot.track(lat, p_array, navi)
+
+    assert np.allclose(
+        p_array.rparticles,
+        pb_out_cheetah.particles[:, :6].t().numpy(),
+        rtol=1e-4,
+        atol=1e-10,
+        equal_nan=False,
+    )
