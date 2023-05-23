@@ -1118,7 +1118,7 @@ class Aperture(Element):
             elif self.type == "ellipt":
                 survived_mask = (
                     x**2 / self.xmax**2 + y**2 / self.ymax**2
-                ) > 1.0
+                ) <= 1.0
             outgoing_particles = incoming.particles[survived_mask]
 
             self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
