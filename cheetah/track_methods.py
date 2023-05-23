@@ -48,7 +48,14 @@ def rotation_matrix(angle: float, device: Union[str, torch.device] = "auto"):
     )
 
 
-def base_rmatrix(length, k1, hx, tilt: float = 0.0, energy: float = 0.0, device="auto"):
+def base_rmatrix(
+    length: float,
+    k1: float,
+    hx: float,
+    tilt: float = 0.0,
+    energy: float = 0.0,
+    device: Union[str, torch.device] = "auto",
+):
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     gamma = energy / REST_ENERGY
@@ -93,3 +100,36 @@ def base_rmatrix(length, k1, hx, tilt: float = 0.0, energy: float = 0.0, device=
     if tilt != 0:
         R = torch.dot(torch.dot(rotation_matrix(-tilt), R), rotation_matrix(tilt))
     return R
+
+
+def misalignment_matrix(
+    misalignment: tuple[float, float], device: torch.device
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Shift the beam for tracking beam through misaligned elements"""
+    R_exit = torch.tensor(
+        [
+            [1, 0, 0, 0, 0, 0, misalignment[0]],
+            [0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, misalignment[1]],
+            [0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+        ],
+        dtype=torch.float32,
+        device=device,
+    )
+    R_entry = torch.tensor(
+        [
+            [1, 0, 0, 0, 0, 0, -misalignment[0]],
+            [0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, -misalignment[1]],
+            [0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+        ],
+        dtype=torch.float32,
+        device=device,
+    )
+    return R_exit, R_entry

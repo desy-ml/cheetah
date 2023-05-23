@@ -11,7 +11,7 @@ from scipy.stats import multivariate_normal
 
 from cheetah import utils
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.track_methods import base_rmatrix, rotation_matrix
+from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
 ELEMENT_COUNT = 0
 REST_ENERGY = (
@@ -296,32 +296,7 @@ class Quadrupole(Element):
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_exit = torch.tensor(
-                [
-                    [1, 0, 0, 0, 0, 0, self.misalignment[0]],
-                    [0, 1, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, self.misalignment[1]],
-                    [0, 0, 0, 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
-            R_entry = torch.tensor(
-                [
-                    [1, 0, 0, 0, 0, 0, -self.misalignment[0]],
-                    [0, 1, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, -self.misalignment[1]],
-                    [0, 0, 0, 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
+            R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
 
@@ -427,7 +402,7 @@ class Dipole(Element):
     def is_active(self):
         return self.angle != 0
 
-    def transfer_map(self, energy):
+    def transfer_map(self, energy: float) -> torch.Tensor:
         R_enter = self._transfer_map_enter(energy)
         R_exit = self._transfer_map_exit(energy)
 
@@ -463,7 +438,7 @@ class Dipole(Element):
 
         return R
 
-    def _transfer_map_enter(self, energy):
+    def _transfer_map_enter(self, energy: float) -> torch.Tensor:
         if self.fint == 0:
             return torch.eye(7, device=self.device)
         else:
@@ -483,7 +458,7 @@ class Dipole(Element):
                 device=self.device,
             )
 
-    def _transfer_map_exit(self, energy):
+    def _transfer_map_exit(self, energy: float) -> torch.Tensor:
         if self.fintx == 0:
             return torch.eye(7, device=self.device)
         else:
@@ -1218,6 +1193,88 @@ class Undulator(Element):
     def __repr__(self) -> str:
         return (
             f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}")'
+        )
+
+
+class Solenoid(Element):
+    """
+    Solenoid magnet.
+
+    Implemented according to A.W.Chao P74
+
+    Parameters
+    ----------
+    length : float
+        Length in m
+    k : float, optional
+        Noramlized strength of the solenoid magnet B0/(2*Brho)
+        B0 is the field inside the solenoid
+        Brho is the momentum of central trajectory
+    misalignment : (float, float), optional
+        Misalignment vector of the solenoid magnet in x- and y-directions.
+    name : string, optional
+        Unique identifier of the element.
+
+    Attributes
+    ---------
+    is_active : bool
+        Is set `True` when `k != 0`.
+    """
+
+    def __init__(
+        self,
+        length: float = 0,
+        k: float = 0,
+        misalignment: tuple[float, float] = (0, 0),
+        name: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        self.length = length
+        self.k = k
+        self.misalignment = misalignment
+        super().__init__(name, **kwargs)
+
+    def transfer_map(self, energy: float) -> torch.Tensor:
+        gamma = energy / REST_ENERGY
+        c = np.cos(self.length * self.k)
+        s = np.sin(self.length * self.k)
+        if self.k == 0:
+            s_k = self.length
+        else:
+            s_k = s / self.k
+        r56 = 0.0
+        if gamma != 0:
+            gamma2 = gamma * gamma
+            beta = np.sqrt(1.0 - 1.0 / gamma2)
+            r56 -= self.length / (beta * beta * gamma2)
+        R = torch.Tensor(
+            [
+                [c * c, c * s_k, s * c, s * s_k, 0, 0, 0],
+                [-self.k * s * c, c * c, -self.k * s * s, s * c, 0, 0, 0],
+                [-s * c, -s * s_k, c * c, c * s_k, 0, 0, 0],
+                [self.k * s * s, -s * c, -self.k * s * c, c * c, 0, 0, 0],
+                [0, 0, 0, 0, 1, r56, 0],
+                [0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 1],
+            ],
+            dtype=torch.float32,
+            evice=self.device,
+        ).real
+        if self.misalignment[0] == 0 and self.misalignment[1] == 0:
+            return R
+        else:
+            R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
+            R = torch.matmul(R_exit, torch.matmul(R, R_entry))
+            return R
+
+    @property
+    def is_active(self) -> bool:
+        return self.k != 0
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f}"
+            + 'k1={self.k1:.2f}, name="{self.name}")'
         )
 
 
