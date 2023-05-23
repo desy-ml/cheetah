@@ -1076,6 +1076,86 @@ class Screen(Element):
         )
 
 
+class Aperture(Element):
+    """
+    Physical aperture,
+
+    Parameters
+    ----------
+    xmax : float, default np.inf
+        half size horizontal offset in [m]
+    ymax : float, default np.inf
+        half size vertical offset in [m]
+    type : str, default "rect"
+        Aperture shape, "rect" for rectangular and "ellip" for elliptical.
+    name : string, optional
+        Unique identifier of the element.
+    resolution : (int, int)
+        Resolution of the camera sensor looking at the screen given as a tuple
+        `(width, height)`.
+    binning : int, optional
+        Binning used by the camera.
+
+    Attributes
+    ---------
+    is_active : bool
+        Can be set by the user. An active aperture blocks the particles
+        in a Particlebeam with large transverse offset.
+    lost_particle: torch.Tensor
+        List of stopped particles at the aperture. Initialised to None
+    """
+
+    length = 0
+    lost_particle = None
+
+    def __init__(
+        self,
+        xmax: float = np.inf,
+        ymax: float = np.inf,
+        type: str = "rect",
+        name: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        assert xmax >= 0 and ymax >= 0
+        self.xmax = xmax
+        self.ymax = ymax
+        if type != "rect" and type != "ellipt":
+            raise ValueError('Unknown aperture type, use "rect" or "ellipt"')
+        self.type = type
+        super().__init__(name, **kwargs)
+
+    @property
+    def is_skippable(self) -> bool:
+        return not self.is_active
+
+    def transfer_map(self, energy: float) -> torch.Tensor:
+        return torch.eye(7, device=self.device)
+
+    def __call__(self, incoming: Beam) -> Beam:
+        if self.is_active and isinstance(incoming, ParticleBeam):
+            print("Applying aperture")
+            x = incoming.particles[:, 0]
+            y = incoming.particles[:, 2]
+            if self.type == "rect":
+                survived_mask = torch.logical_and(
+                    torch.logical_and(x > -self.xmax, x < self.xmax),
+                    torch.logical_and(y > -self.ymax, y < self.ymax),
+                )
+            elif self.type == "ellipt":
+                survived_mask = (
+                    x**2 / self.xmax**2 + y**2 / self.ymax**2
+                ) > 1.0
+            outgoing_particles = incoming.particles[survived_mask]
+
+            self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
+
+            return ParticleBeam(
+                outgoing_particles, incoming.energy, device=incoming.device
+            )
+        else:
+            return incoming
+
+
 class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
