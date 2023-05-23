@@ -1,20 +1,33 @@
 import test.ARESlatticeStage3v1_9 as ares
 
+import pytest
+
 from cheetah import Screen, Segment
 
 
-def test_screen_conversion():
+@pytest.mark.parametrize(
+    "name",
+    [
+        "ARLIBSCX1",
+        "ARLIBSCR1",
+        "ARLIBSCR2",
+        "ARLIBSCR3",
+        "AREABSCR1",
+        "ARMRBSCR1",
+        "ARMRBSCR2",
+        "ARMRBSCR3",
+        "ARBCBSCE1",
+        "ARDLBSCR1",
+        "ARDLBSCE1",
+        "ARSHBSCE2",
+        "ARSHBSCE1",
+    ],
+)
+def test_screen_conversion(name: str):
     """
     Test on the example of the ARES lattice that all screens are correctly converted to
     `cheetah.Screen`.
     ˚"""
     segment = Segment.from_ocelot(ares.cell)
-
-    assert isinstance(segment.ARLIBSCR1, Screen)
-    assert isinstance(segment.ARLIBSCR2, Screen)
-    assert isinstance(segment.ARLIBSCR3, Screen)
-    assert isinstance(segment.AREABSCR1, Screen)
-    assert isinstance(segment.ARMRBSCR1, Screen)
-    assert isinstance(segment.ARMRBSCR2, Screen)
-    assert isinstance(segment.ARMRBSCR3, Screen)
-    assert isinstance(segment.ARDLBSCR1, Screen)
+    screen = getattr(segment, name)
+    assert isinstance(screen, Screen)
