@@ -1108,7 +1108,6 @@ class Aperture(Element):
 
     def __call__(self, incoming: Beam) -> Beam:
         if self.is_active and isinstance(incoming, ParticleBeam):
-            print("Applying aperture")
             x = incoming.particles[:, 0]
             y = incoming.particles[:, 2]
             if self.type == "rect":
