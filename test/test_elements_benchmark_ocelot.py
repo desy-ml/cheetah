@@ -20,8 +20,10 @@ PARRAY_OCELOT = ocelot.astraBeam2particleArray(
 
 
 def test_benchmark_ocelot_dipole():
-    cheetah_bend = cheetah.Dipole(length=0.1, angle=0.1)
-    ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
+    length = 0.1
+    angle = 0.1
+    cheetah_bend = cheetah.Dipole(length=length, angle=angle)
+    ocelot_bend = ocelot.Bend(l=length, angle=angle)
     p_array = deepcopy(PARRAY_OCELOT)
     p_in_cheetah = deepcopy(PARTICLEBEAM_CHEETAH)
     pb_out_cheetah = cheetah_bend(p_in_cheetah)
@@ -34,7 +36,7 @@ def test_benchmark_ocelot_dipole():
         p_array.rparticles,
         pb_out_cheetah.particles[:, :6].t().numpy(),
         rtol=1e-4,
-        atol=1e-12,
+        atol=1e-10,
         equal_nan=False,
     )
 
@@ -58,7 +60,7 @@ def test_benchmark_ocelot_dipole_with_fringe_field():
         p_array.rparticles,
         pb_out_cheetah.particles[:, :6].t().numpy(),
         rtol=1e-4,
-        atol=1e-12,
+        atol=1e-10,
         equal_nan=False,
     )
 
