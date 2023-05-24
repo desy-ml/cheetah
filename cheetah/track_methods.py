@@ -16,18 +16,9 @@ REST_ENERGY = (
 def rotation_matrix(angle: float, device: Union[str, torch.device] = "auto"):
     """Rotate the transfer map in x-y plane
 
-    Parameters
-    ----------
-    angle : float [rad]
-        rotation angle of the element, for example
-        `angle = torch.pi/2` for vertical dipole
-    device : [str, torch.device], optional
-        device used for tracking, by default "auto"
-
-    Returns
-    -------
-    torch.tensor
-       rotation matrix to be multiplied to the element's transfer matrix
+    :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
+        dipole.
+    :param device: Device used for tracking, by default "auto".
     """
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
