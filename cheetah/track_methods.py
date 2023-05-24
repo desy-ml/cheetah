@@ -19,6 +19,7 @@ def rotation_matrix(angle: float, device: Union[str, torch.device] = "auto"):
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
         dipole.
     :param device: Device used for tracking, by default "auto".
+    :return: Rotation matrix to be multiplied to the element's transfer matrix.
     """
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
