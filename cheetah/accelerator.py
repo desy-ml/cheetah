@@ -61,19 +61,19 @@ class Element:
     def transfer_map(self, energy: float) -> torch.Tensor:
         """
         Generates the element's transfer map that describes how the beam and its
-        particles are transformed when travelling through the element.
-        The state vector is consisting of 6 values with a physical meaning:
-            x: Position in x direction
-            xp: Momentum in x direction
-            y: Position in y direction
-            yp: Momentum in y direction
-            s: Position in z direction, the zero value is set to the middle of the pulse
-            sp: Momentum in s direction
+        particles are transformed when traveling through the element. The state vector
+        consists of 6 values with a physical meaning:
+        - x: Position in x direction
+        - xp: Momentum in x direction
+        - y: Position in y direction
+        - yp: Momentum in y direction
+        - s: Position in z direction, the zero value is set to the middle of the pulse
+        - sp: Momentum in s direction
         As well as a seventh value used to add constants to some of the prior values if
-        necesassary. Through this seventh state, the addition of constants can be
+        necessary. Through this seventh state, the addition of constants can be
         represented using a matrix multiplication.
 
-        :param energy: Energy of the Beam. Read from the fed in Cheetah Beam.
+        :param energy: Energy of the Beam. Read from the fed-in Cheetah Beam.
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
