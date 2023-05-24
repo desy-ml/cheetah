@@ -14,18 +14,8 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     Adapted from the implementation in ocelot:
     https://github.com/ocelot-collab/ocelot/blob/master/ocelot/adaptors/astra2ocelot.py
 
-    Parameters
-    ----------
-    path : str
-        Path to the ASTRA beam distribution file.
-
-    Returns
-    -------
-    particles : np.ndarray
-        Particle 6D phase space information
-    energy : float
-        Mean energy of the particle beam
-
+    :param path: Path to the ASTRA beam distribution file.
+    :return: Particle 6D phase space information and mean energy of the particle beam.
     """
     P0 = np.loadtxt(path)
 
@@ -73,23 +63,17 @@ def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
-    Parameters
-    ----------
-    element : ocelot.Element
-        Ocelot element object representing an element of particle accelerator.
+    NOTE Object not supported by Cheetah are translated to drift sections. Screen
+    objects are created only from `ocelot.Monitor` objects when the string "BSC" is
+    contained in their `id` attribute. Their screen properties are always set to default
+    values and most likely need adjusting afterwards. BPM objects are only created from
+    `ocelot.Monitor` objects when their id has a substring "BPM".
 
-    Returns
-    -------
-    cheetah.Element
-        Cheetah element object representing an element of particle accelerator.
-
-    Notes
-    -----
-    Object not supported by Cheetah are translated to drift sections. Screen objects are
-    created only from `ocelot.Monitor` objects when the string "SCR" is contained
-    in their `id` attribute. Their screen properties are always set to default
-    values and most likely need adjusting afterwards. BPM objects are only created
-    from `ocelot.Monitor` objects when their id has a substring "BPM".
+    :param element: Ocelot element object representing an element of particle
+        accelerator.
+    :param warnings: Whether to print warnings when elements might not be converted as
+        expected.
+    :return: Cheetah element object representing an element of particle accelerator.
     """
     try:
         import ocelot as oc
