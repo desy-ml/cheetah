@@ -38,24 +38,9 @@ class Element:
     """
     Base class for elements of particle accelerators.
 
-    Parameters
-    ----------
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set to `True` when the element is in operation. May be defined differently
-        for each type of element.
-    is_skippable : bool
-        Marking an element as skippable allows the transfer map to be combined with
-        those of preceeding and succeeding elements and results in faster particle
-        tracking. This property has to be defined by subclasses of `Element` and made be
-        set dynamically depending on their current mode of operation.
-    device : string
-        Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is
-        selected if available. The CPU is used otherwise.
+    :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     is_active = False
@@ -88,20 +73,8 @@ class Element:
         necesassary. Through this seventh state, the addition of constants can be
         represented using a matrix multiplication.
 
-        Parameters
-        ----------
-        energy: cheetah.Beam.energy
-            Energy of the Beam. Read from the fed in Cheetah Beam.
-
-        Returns
-        --------
-        R
-            A 7x7 Matrix for further calculations.
-
-        Raises
-        -------
-        NotImplementedError
-            If no transfer_map function is implemented for the given `Element` subclass.
+        :param energy: Energy of the Beam. Read from the fed in Cheetah Beam.
+        :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
 
@@ -110,15 +83,8 @@ class Element:
         Track particles through the element. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
 
-        Parameters
-        -----------
-        incoming : cheetah.Beam
-            Beam of particles entering the element.
-
-        Returns
-        -------
-        cheetah.Beam
-            Beam of particles exiting the element.
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
         """
         if incoming is Beam.empty:
             return incoming
@@ -142,20 +108,8 @@ class Element:
         """
         Split the element into slices no longer than `resolution`.
 
-        Parameters
-        ----------
-        resolution : float
-            Length of the longest allowed split in meters.
-
-        Returns
-        -------
-        list
-            Ordered sequence of sliced elements.
-
-        Raises
-        ------
-        NotImplementedError
-            If no split function is implemented for the given `Element` subclass.
+        :param resolution: Length of the longest allowed split in meters.
+        :return: Ordered sequence of sliced elements.
         """
         raise NotImplementedError
 
@@ -163,17 +117,8 @@ class Element:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 
-        Parameters
-        ----------
-        ax : matplotlib.axes.Axes
-            Axes to plot the representation into.
-        s : float
-            Position of the object along s in meters.
-
-        Raises
-        ------
-        NotImplementedError
-            If no plot function is implemented for the given `Element` subclass.
+        :param ax: Axes to plot the representation into.
+        :param s: Position of the object along s in meters.
         """
         raise NotImplementedError
 
@@ -185,17 +130,8 @@ class Drift(Element):
     """
     Drift section in a particle accelerator.
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Drifts are always set as active.
+    :param length: Length in meters.
+    :param name: Unique identifier of the element.
     """
 
     is_active = True
@@ -246,23 +182,12 @@ class Quadrupole(Element):
     """
     Quadrupole magnet in a particle accelerator.
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    k1 : float, optional
-        Strength of the quadrupole in rad/m.
-    misalignment : (float, float), optional
-        Misalignment vector of the quadrupole in x- and y-directions.
-    tilt: float, optional
-        Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for skew-quadrupole.
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set `True` when `k1 != 0`.
+    :param length: Length in meters.
+    :param k1: Strength of the quadrupole in rad/m.
+    :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
+    :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
+        skew-quadrupole.
+    :param name: Unique identifier of the element.
     """
 
     is_skippable = True
@@ -339,32 +264,16 @@ class Dipole(Element):
     """
     Dipole magnet (by default a sector bending magnet)
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    angle : float, optional
-        Deflection angle, by default 0.0
-    e1 : float, optional
-        the angle of inclination of the entrance face [rad], by default 0.0
-    e2 : float, optional
-        the angle of inclination of the exit face [rad], by default 0.0
-    tilt: float, optional
-        tilt of the magnet in x-y plane [rad], by default 0.0
-    fint: float, optional
-        fringe field integral (of the enterance face), by default 0.0
-    fintx: float, optional
-        (only set if different from `fint`) fringe field integral
-        of the exit face, by default None
-    gap: float, optional
-        the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
-    name : Optional[str], optional
-        Unique identifier of the element, by default None
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set `True` when `angle != 0`.
+    :param length: Length in meters.
+    :param angle: Deflection angle in rad.
+    :param e1: The angle of inclination of the entrance face [rad].
+    :param e2: The angle of inclination of the exit face [rad].
+    :param tilt: Tilt of the magnet in x-y plane [rad].
+    :param fint: Fringe field integral (of the enterance face).
+    :param fintx: (only set if different from `fint`) Fringe field integral of the exit
+        face.
+    :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    :param name: Unique identifier of the element.
     """
 
     def __init__(
@@ -496,32 +405,16 @@ class RBend(Dipole):
     """
     Rectangular bending magnet
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    angle : float, optional
-        Deflection angle, by default 0.0
-    e1 : float, optional
-        the angle of inclination of the entrance face [rad], by default 0.0
-    e2 : float, optional
-        the angle of inclination of the exit face [rad], by default 0.0
-    tilt: float, optional
-        tilt of the magnet in x-y plane [rad], by default 0.0
-    fint: float, optional
-        fringe field integral (of the enterance face), by default 0.0
-    fintx: float, optional
-        (only set if different from `fint`) fringe field integral
-        of the exit face, by default None
-    gap: float, optional
-        the magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
-    name : Optional[str], optional
-        Unique identifier of the element, by default None
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set `True` when `angle != 0`.
+    :param length: Length in meters.
+    :param angle: Deflection angle in rad.
+    :param e1: The angle of inclination of the entrance face [rad].
+    :param e2: The angle of inclination of the exit face [rad].
+    :param tilt: Tilt of the magnet in x-y plane [rad].
+    :param fint: Fringe field integral (of the enterance face).
+    :param fintx: (only set if different from `fint`) Fringe field integral of the exit
+        face.
+    :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    :param name: Unique identifier of the element.
     """
 
     def __init__(
@@ -557,19 +450,9 @@ class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    angle : float, optional
-        Particle deflection angle in the horizontal plane in rad.
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set `True` when `angle != 0`.
+    :param length: Length in meters.
+    :param angle: Particle deflection angle in the horizontal plane in rad.
+    :param name: Unique identifier of the element.
     """
 
     is_skippable = True
@@ -634,19 +517,9 @@ class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    angle : float, optional
-        Particle deflection angle in the vertical plane in rad.
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set `True` when `angle != 0`.
+    :param length: Length in meters.
+    :param angle: Particle deflection angle in the vertical plane in rad.
+    :param name: Unique identifier of the element.
     """
 
     is_skippable = True
@@ -711,14 +584,9 @@ class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
 
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    delta_energy : float, optional
-        Energy added to the beam by the accelerating cavity.
-    name : string, optional
-        Unique identifier of the element.
+    :param length: Length in meters.
+    :param delta_energy: Energy added to the beam by the accelerating cavity.
+    :param name: Unique identifier of the element.
     """
 
     def __init__(
@@ -798,20 +666,7 @@ class BPM(Element):
     """
     Beam Position Monitor (BPM) in a particle accelerator.
 
-    Parameters
-    ----------
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Can be set by the user. Merely influences how the element is displayed in a
-        lattice plot.
-    reading : (float, float)
-        Beam position read by the BPM. Is refreshed when the BPM is active and a beam is
-        tracked through it. Before tracking a beam through here, the reading is
-        initialised as `(None, None)`.
+    :param name: Unique identifier of the element.
     """
 
     length = 0
@@ -854,10 +709,7 @@ class Monitor(Element):
     """
     General Marker / Monitor element
 
-    Parameters
-    ----------
-    name : string, optional
-        Unique identifier of the element.
+    :param name: Unique identifier of the element.
     """
 
     length = 0
@@ -881,21 +733,10 @@ class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
 
-    Parameters
-    ----------
-    name : string, optional
-        Unique identifier of the element.
-    resolution : (int, int)
-        Resolution of the camera sensor looking at the screen given as a tuple
-        `(width, height)`.
-    binning : int, optional
-        Binning used by the camera.
-
-    Attributes
-    ---------
-    is_active : bool
-        Can be set by the user. An active screen records an image and blocks all
-        particles when a beam is tracked through it.
+    :param name: Unique identifier of the element.
+    :param resolution: Resolution of the camera sensor looking at the screen given as a
+        tuple `(width, height)`.
+    :param binning: Binning used by the camera.
     """
 
     length = 0
@@ -1053,31 +894,12 @@ class Screen(Element):
 
 class Aperture(Element):
     """
-    Physical aperture,
+    Physical aperture.
 
-    Parameters
-    ----------
-    xmax : float, default np.inf
-        half size horizontal offset in [m]
-    ymax : float, default np.inf
-        half size vertical offset in [m]
-    type : str, default "rect"
-        Aperture shape, "rect" for rectangular and "ellip" for elliptical.
-    name : string, optional
-        Unique identifier of the element.
-    resolution : (int, int)
-        Resolution of the camera sensor looking at the screen given as a tuple
-        `(width, height)`.
-    binning : int, optional
-        Binning used by the camera.
-
-    Attributes
-    ---------
-    is_active : bool
-        Can be set by the user. An active aperture blocks the particles
-        in a Particlebeam with large transverse offset.
-    lost_particle: torch.Tensor
-        List of stopped particles at the aperture. Initialised to None
+    :param xmax: half size horizontal offset in [m]
+    :param ymax: half size vertical offset in [m]
+    :param type: Aperture shape, "rect" for rectangular and "ellip" for elliptical.
+    :param name: Unique identifier of the element.
     """
 
     length = 0
@@ -1134,16 +956,17 @@ class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
 
+    NOTE Currently behaves like a drift section but is plotted distinctively.
+
+    :param length: Length in meters.
+    :param name: Unique identifier of the element.
+
     Parameters
     ----------
     length : float
         Length in meters.
     name : string, optional
         Unique identifier of the element.
-
-    Notes
-    -----
-    Currently behaves like a drift section but is plotted distinctively.
     """
 
     is_skippable = True  # TODO: Temporary?
@@ -1201,23 +1024,12 @@ class Solenoid(Element):
 
     Implemented according to A.W.Chao P74
 
-    Parameters
-    ----------
-    length : float
-        Length in m
-    k : float, optional
-        Noramlized strength of the solenoid magnet B0/(2*Brho)
-        B0 is the field inside the solenoid
-        Brho is the momentum of central trajectory
-    misalignment : (float, float), optional
-        Misalignment vector of the solenoid magnet in x- and y-directions.
-    name : string, optional
-        Unique identifier of the element.
-
-    Attributes
-    ---------
-    is_active : bool
-        Is set `True` when `k != 0`.
+    :param length: Length in meters.
+    :param k: Noramlized strength of the solenoid magnet B0/(2*Brho). B0 is the field
+        inside the solenoid, Brho is the momentum of central trajectory.
+    :param misalignment: Misalignment vector of the solenoid magnet in x- and
+        y-directions.
+    :param name: Unique identifier of the element.
     """
 
     def __init__(
@@ -1281,12 +1093,8 @@ class Segment(Element):
     """
     Segment of a particle accelerator consisting of several elements.
 
-    Parameters
-    ----------
-    cell : list
-        List of Cheetah elements that describe an accelerator (section).
-    name : string, optional
-        Unique identifier of the element.
+    :param cell: List of Cheetah elements that describe an accelerator (section).
+    :param name: Unique identifier of the element.
     """
 
     def __init__(
@@ -1393,19 +1201,13 @@ class Segment(Element):
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
 
-        Parameters
-        ----------
-        axx : matplotlib.axes.Axes
-            Axes to plot the particle traces into viewed in x-direction.
-        axy : matplotlib.axes.Axes
-            Axes to plot the particle traces into viewed in y-direction.
-        beam : cheetah.Beam, optional
-            Entering beam from which the reference particles are sampled.
-        n : int, optional
-            Number of reference particles to plot. Must not be larger than number of
-            particles passed in `particles`.
-        resolution : float, optional
-            Minimum resolution of the tracking of the reference particles in the plot.
+        :param axx: Axes to plot the particle traces into viewed in x-direction.
+        :param axy: Axes to plot the particle traces into viewed in y-direction.
+        :param beam: Entering beam from which the reference particles are sampled.
+        :param n: Number of reference particles to plot. Must not be larger than number
+            of particles passed in `beam`.
+        :param resolution: Minimum resolution of the tracking of the reference particles
+            in the plot.
         """
         reference_segment = deepcopy(self)
         splits = reference_segment.split(resolution)
@@ -1470,17 +1272,12 @@ class Segment(Element):
         """
         Plot an overview of the segment with the lattice and traced reference particles.
 
-        Parameters
-        ----------
-        fig: matplotlib.figure.Figure, optional
-            Figure to plot the overview into.
-        beam : cheetah.Beam, optional
-            Entering beam from which the reference particles are sampled.
-        n : int, optional
-            Number of reference particles to plot. Must not be larger than number of
-            particles passed in `beam`.
-        resolution : float, optional
-            Minimum resolution of the tracking of the reference particles in the plot.
+        :param fig: Figure to plot the overview into.
+        :param beam: Entering beam from which the reference particles are sampled.
+        :param n: Number of reference particles to plot. Must not be larger than number
+            of particles passed in `beam`.
+        :param resolution: Minimum resolution of the tracking of the reference particles
+            in the plot.
         """
         if fig is None:
             fig = plt.figure()
