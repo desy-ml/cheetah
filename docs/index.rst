@@ -7,11 +7,13 @@ Welcome to Cheetah's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :caption: Contents:
 
-
-:.
+    accelerator
+    particles
+    track_methods
+    utils
 
 `Cheetah <https://github.com/desy-ml/cheetah>`_ is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
