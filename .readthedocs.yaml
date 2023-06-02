@@ -20,3 +20,7 @@ python:
   install:
     - method: pip
       path: .
+
+build:
+  tools:
+    python: 3.9
