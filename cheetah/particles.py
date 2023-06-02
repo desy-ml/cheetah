@@ -31,32 +31,18 @@ class Beam:
         """
         Create beam that with given beam parameters.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of particles to generate.
-        mu_x : float, optional
-            Center of the particle distribution on x in meters.
-        mu_xp : float, optional
-            Center of the particle distribution on px in meters.
-        mu_y : float, optional
-            Center of the particle distribution on y in meters.
-        mu_yp : float, optional
-            Center of the particle distribution on py in meters.
-        sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
-        sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
-        sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
-        sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
-        sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
-        sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
-        energy : float, optional
-            Energy of the beam in eV.
+        :param n: Number of particles to generate.
+        :param mu_x: Center of the particle distribution on x in meters.
+        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_y: Center of the particle distribution on y in meters.
+        :param mu_yp: Center of the particle distribution on py in meters.
+        :param sigma_x: Sigma of the particle distribution in x direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param energy: Energy of the beam in eV.
         """
         raise NotImplementedError
 
@@ -89,32 +75,17 @@ class Beam:
         """
         Create version of this beam that is transformed to new beam parameters.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of particles to generate.
-        mu_x : float, optional
-            Center of the particle distribution on x in meters.
-        mu_xp : float, optional
-            Center of the particle distribution on px in meters.
-        mu_y : float, optional
-            Center of the particle distribution on y in meters.
-        mu_yp : float, optional
-            Center of the particle distribution on py in meters.
-        sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
-        sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
-        sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
-        sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
-        sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
-        sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
-        energy : float, optional
-            Energy of the beam in eV.
+        :param mu_x: Center of the particle distribution on x in meters.
+        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_y: Center of the particle distribution on y in meters.
+        :param mu_yp: Center of the particle distribution on py in meters.
+        :param sigma_x: Sigma of the particle distribution in x direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param energy: Energy of the beam in eV.
         """
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
@@ -220,14 +191,9 @@ class ParameterBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
 
-    Parameters
-    ----------
-    mu : torch.Tensor
-        Mu vector of the beam.
-    cov : torch.Tensor
-        Covariance matrix of the beam.
-    energy : float
-        Energy of the beam in eV.
+    :param mu: Mu vector of the beam.
+    :param cov: Covariance matrix of the beam.
+    :param energy: Energy of the beam in eV.
     """
 
     def __init__(self, mu: torch.Tensor, cov: torch.Tensor, energy: float) -> None:
@@ -311,32 +277,18 @@ class ParameterBeam(Beam):
         """
         Create version of this beam that is transformed to new beam parameters.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of particles to generate.
-        mu_x : float, optional
-            Center of the particle distribution on x in meters.
-        mu_xp : float, optional
-            Center of the particle distribution on px in meters.
-        mu_y : float, optional
-            Center of the particle distribution on y in meters.
-        mu_yp : float, optional
-            Center of the particle distribution on py in meters.
-        sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
-        sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
-        sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
-        sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
-        sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
-        sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
-        energy : float, optional
-            Energy of the beam in eV.
+        :param n: Number of particles to generate.
+        :param mu_x: Center of the particle distribution on x in meters.
+        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_y: Center of the particle distribution on y in meters.
+        :param mu_yp: Center of the particle distribution on py in meters.
+        :param sigma_x: Sigma of the particle distribution in x direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param energy: Energy of the beam in eV.
         """
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
@@ -427,15 +379,10 @@ class ParticleBeam:
     """
     Beam of charged particles, where each particle is simulated.
 
-    Parameters
-    ----------
-    particles : torch.Tensor
-        List of 7-dimensional particle vectors.
-    energy : float
-        Energy of the beam in eV.
-    device : string
-        Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU is
-        selected if available. The CPU is used otherwise.
+    :param particles: List of 7-dimensional particle vectors.
+    :param energy: Energy of the beam in eV.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -478,41 +425,23 @@ class ParticleBeam:
         """
         Generate Cheetah Beam of random particles.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of particles to generate.
-        mu_x : float, optional
-            Center of the particle distribution on x in meters.
-        mu_y : float, optional
-            Center of the particle distribution on y in meters.
-        mu_xp : float, optional
-            Center of the particle distribution on px in meters.
-        mu_yp : float, optional
-            Center of the particle distribution on py in meters.
-        sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
-        sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
-        sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
-        sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
-        sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
-        sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
-        cor_x : float, optional
-            Correlation between x and xp.
-        cor_y : float, optional
-            Correlation between y and yp.
-        cor_s : float, optional
-            Correlation between s and p.
-        energy : float, optional
-            Energy of the beam in eV.
-        device : string
-            Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU
-            is selected if available. The CPU is used otherwise.
+        :param n: Number of particles to generate.
+        :param mu_x: Center of the particle distribution on x in meters.
+        :param mu_y: Center of the particle distribution on y in meters.
+        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_yp: Center of the particle distribution on py in meters.
+        :param sigma_x: Sigma of the particle distribution in x direction in meters.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param cor_x: Correlation between x and xp.
+        :param cor_y: Correlation between y and yp.
+        :param cor_s: Correlation between s and p.
+        :param energy: Energy of the beam in eV.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
         """
         mean = torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32)
         cov = torch.tensor(
@@ -553,35 +482,20 @@ class ParticleBeam:
         """
         Generate Cheetah Beam of *n* linspaced particles.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of particles to generate.
-        mu_x : float, optional
-            Center of the particle distribution on x in meters.
-        mu_y : float, optional
-            Center of the particle distribution on y in meters.
-        mu_px : float, optional
-            Center of the particle distribution on px in meters.
-        mu_py : float, optional
-            Center of the particle distribution on py in meters.
-        sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
-        sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
-        sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
-        sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
-        sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
-        sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
-        energy : float, optional
-            Energy of the beam in eV.
-        device : string
-            Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU
-            is selected if available. The CPU is used otherwise.
+        :param n: Number of particles to generate.
+        :param mu_x: Center of the particle distribution on x in meters.
+        :param mu_y: Center of the particle distribution on y in meters.
+        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_yp: Center of the particle distribution on py in meters.
+        :param sigma_x: Sigma of the particle distribution in x direction in meters.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param energy: Energy of the beam in eV.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
         """
         particles = torch.ones((n, 7), dtype=torch.float32)
 
@@ -640,35 +554,20 @@ class ParticleBeam:
         """
         Create version of this beam that is transformed to new beam parameters.
 
-        Parameters
-        ----------
-        n : int, optional
-            Number of particles to generate.
-        mu_x : float, optional
-            Center of the particle distribution on x in meters.
-        mu_y : float, optional
-            Center of the particle distribution on y in meters.
-        mu_xp : float, optional
-            Center of the particle distribution on px in meters.
-        mu_yp : float, optional
-            Center of the particle distribution on py in meters.
-        sigma_x : float, optional
-            Sigma of the particle distribution in x direction in meters.
-        sigma_y : float, optional
-            Sigma of the particle distribution in y direction in meters.
-        sigma_xp : float, optional
-            Sigma of the particle distribution in px direction in meters.
-        sigma_yp : float, optional
-            Sigma of the particle distribution in py direction in meters.
-        sigma_s : float, optional
-            Sigma of the particle distribution in s direction in meters.
-        sigma_p : float, optional
-            Sigma of the particle distribution in p direction in meters.
-        energy : float, optional
-            Energy of the beam in eV.
-        device : string
-            Device to move the beam's particle array to. If set to `"auto"` a CUDA GPU
-            is selected if available. The CPU is used otherwise.
+        :param n: Number of particles to generate.
+        :param mu_x: Center of the particle distribution on x in meters.
+        :param mu_y: Center of the particle distribution on y in meters.
+        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_yp: Center of the particle distribution on py in meters.
+        :param sigma_x: Sigma of the particle distribution in x direction in meters.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param energy: Energy of the beam in eV.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
         """
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_y = mu_y if mu_y is not None else self.mu_y
