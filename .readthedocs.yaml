@@ -14,3 +14,9 @@ formats: all
 # Set requirements using conda env
 # conda:
 #   environment: docs/conda_env.yaml
+
+# Optionally declare the Python requirements required to build your docs
+python:
+  install:
+    - method: pip
+      path: .
