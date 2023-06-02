@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 setup(
     name="cheetah-accelerator",
     version="0.5.19",
-    author="Jan Kaiser & Oliver Stein",
+    author="Jan Kaiser, Chenran Xu & Oliver Stein",
     author_email="jan.kaiser@desy.de",
     url="https://github.com/desy-ml/cheetah",
     description=(
