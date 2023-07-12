@@ -1,5 +1,10 @@
+import json
+import sys
+from typing import Optional
+
 import numpy as np
 
+import cheetah
 from cheetah import accelerator as acc
 
 # electron mass in eV
@@ -127,3 +132,169 @@ def subcell_of_ocelot(cell: list, start: str, end: str) -> list:
             break
 
     return subcell
+
+
+# Saving Cheetah to JSON
+def parse_cheetah_element(element: acc.Element):
+    """Get information from cheetah element for saving
+
+    Parameters
+    ----------
+    element : acc.Element
+
+    Returns
+    -------
+    element_name : str
+        Name of the element
+    element_class : str
+        Type of the element
+    params : dict
+        Parameters of the element
+    """
+    element_name = element.name
+    if isinstance(element, acc.Drift):
+        element_class = "Drift"
+        params = {"length": element.length}
+    elif isinstance(element, acc.Dipole):
+        element_class = "Dipole"
+        params = {
+            "length": element.length,
+            "angle": element.angle,
+            "e1": element.e1,
+            "e2": element.e2,
+            "gap": element.gap,
+            "tilt": element.tilt,
+            "fint": element.fint,
+            "fintx": element.fintx,
+        }
+    elif isinstance(element, acc.Quadrupole):
+        element_class = "Quadrupole"
+        params = {
+            "length": element.length,
+            "k1": element.k1,
+            "misalignment": element.misalignment,
+            "tilt": element.tilt,
+        }
+    elif isinstance(element, acc.HorizontalCorrector):
+        element_class = "HorizontalCorrector"
+        params = {"length": element.length, "angle": element.angle}
+    elif isinstance(element, acc.VerticalCorrector):
+        element_class = "VerticalCorrector"
+        params = {"length": element.length, "angle": element.angle}
+    elif isinstance(element, acc.Cavity):
+        element_class = "Cavity"
+        params = {"length": element.length, "delta_energy": element.delta_energy}
+    elif isinstance(element, acc.BPM):
+        element_class = "BPM"
+        params = {}
+    elif isinstance(element, acc.Monitor):
+        element_class = "Monitor"
+        params = {}
+    elif isinstance(element, acc.Screen):
+        element_class = "Screen"
+        params = {
+            "resolution": element.resolution,
+            "pixel_size": element.pixel_size,
+            "binning": element.binning,
+            "misalignment": element.misalignment,
+        }
+    elif isinstance(element, acc.Aperture):
+        element_class = "Aperture"
+        params = {"xmax": element.xmax, "ymax": element.ymax, "type": element.type}
+    elif isinstance(element, acc.Solenoid):
+        element_class = "Solenoid"
+        params = {
+            "length": element.length,
+            "k": element.k,
+            "misalignment": element.misalignment,
+        }
+    elif isinstance(element, acc.Undulator):
+        element_class = "Undulator"
+        params = {"length": element.length}
+    else:
+        print(element)
+        raise ValueError("Element type not supported")
+
+    return element_name, element_class, params
+
+
+def save_cheetah_model(
+    segment: acc.Segment,
+    fname: str,
+    metadata: Optional[dict] = None,
+):
+    """Save a cheetah model to json file accoding to the lattice-json convention
+    c.f. https://github.com/nobeam/latticejson
+
+    Parameters
+    ----------
+    segment : acc.Segment
+        Cheetah segment to save
+    fname : str
+        Filename to save to
+    metadata : Optional[dict], optional
+        Metadata for the saved lattice, by default {}
+    """
+    if metadata is None:
+        metadata = {
+            "version": "1.0",
+            "title": "Test Lattice",
+            "info": "This is a placeholder lattice description",
+            "root": "cell",
+        }
+    lattice_dict = metadata.copy()
+
+    # Get elements
+    cell = []
+    elements = {}
+    for element in segment.elements:
+        element_name, element_class, params = parse_cheetah_element(element)
+        elements[element_name] = [element_class, params]
+        cell.append(element_name)
+    lattice_dict["elements"] = elements
+    lattice_dict["lattices"] = {
+        "cell": cell,
+    }
+    with open(fname, "w") as f:
+        s = json.dumps(lattice_dict, cls=CompactJSONEncoder, indent=4)
+        f.write(s)
+        # json.dump(lattice_dict, f, indent=4, separators=(",", ': '))
+
+
+# taken from https://github.com/nobeam/latticejson/blob/main/latticejson/format.py
+class CompactJSONEncoder(json.JSONEncoder):
+    """A JSON Encoder which only indents the first two levels."""
+
+    def encode(self, obj, level=0):
+        if isinstance(obj, dict) and level < 2:
+            items_indent = (level + 1) * self.indent * " "
+            items_string = ",\n".join(
+                f"{items_indent}{json.dumps(key)}: {self.encode(value, level=level+1)}"
+                for key, value in obj.items()
+            )
+            dict_indent = level * self.indent * " "
+            newline = "\n" if level == 0 else ""
+            return f"{{\n{items_string}\n{dict_indent}}}{newline}"
+        else:
+            return json.dumps(obj)
+
+
+# Loading Cheetah from JSON
+def load_cheetah_model(fname: str) -> acc.Segment:
+    """Load a cheetah model from json file"""
+    with open(fname, "r") as f:
+        lattice_dict = json.load(f)
+    cell = []
+    for element_name in lattice_dict["lattices"]["cell"]:
+        # Construct new element
+        cell.append(
+            str_to_class(lattice_dict["elements"][element_name][0])(
+                name=element_name, **lattice_dict["elements"][element_name][1]
+            )
+        )
+
+    return acc.Segment(cell=cell)
+
+
+def str_to_class(classname: str):
+    return getattr(sys.modules[cheetah], classname)
