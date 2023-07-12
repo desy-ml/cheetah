@@ -9,7 +9,6 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.stats import multivariate_normal
 
-from cheetah import utils
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
@@ -1126,9 +1125,9 @@ class Segment(Element):
     def from_ocelot(
         cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
     ) -> "Segment":
-        converted = [
-            utils.ocelot2cheetah(element, warnings=warnings) for element in cell
-        ]
+        from cheetah.utils import ocelot2cheetah
+
+        converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
         return cls(converted, name=name, **kwargs)
 
     @property
