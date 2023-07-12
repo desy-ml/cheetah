@@ -1,10 +1,8 @@
 import json
-import sys
 from typing import Optional
 
 import numpy as np
 
-import cheetah
 from cheetah import accelerator as acc
 
 # electron mass in eV
@@ -297,4 +295,5 @@ def load_cheetah_model(fname: str) -> acc.Segment:
 
 
 def str_to_class(classname: str):
-    return getattr(sys.modules[cheetah], classname)
+    # get class from string
+    return getattr(acc, classname)
