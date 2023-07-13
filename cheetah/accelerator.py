@@ -210,7 +210,7 @@ class Quadrupole(Element):
     ) -> None:
         self.length = length
         self.k1 = k1
-        self.misalignment = misalignment
+        self.misalignment = tuple(misalignment)
         self.tilt = tilt
 
         super().__init__(name=name, **kwargs)
@@ -769,10 +769,10 @@ class Screen(Element):
     ) -> None:
         super().__init__(name=name, **kwargs)
 
-        self.resolution = resolution
-        self.pixel_size = pixel_size
+        self.resolution = tuple(resolution)
+        self.pixel_size = tuple(pixel_size)
         self.binning = binning
-        self.misalignment = misalignment
+        self.misalignment = tuple(misalignment)
 
         self.read_beam = None
         self.cached_reading = None
@@ -1065,7 +1065,7 @@ class Solenoid(Element):
     ) -> None:
         self.length = length
         self.k = k
-        self.misalignment = misalignment
+        self.misalignment = tuple(misalignment)
         super().__init__(name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
@@ -1158,6 +1158,13 @@ class Segment(Element):
                 break
 
         return self.__class__(subcell, device=self.device, **kwargs)
+
+    def __eq__(self, another_segment: Element) -> bool:
+        equal = True
+        for i, element in enumerate(self.elements):
+            if element != another_segment.elements[i]:
+                return False
+        return equal
 
     @classmethod
     def from_ocelot(
