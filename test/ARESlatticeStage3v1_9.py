@@ -120,9 +120,9 @@ arshmbho1 = SBend(
 )
 
 # Hcors
-arlimcxg1a = Hcor(l=5e-05, eid="ARLIMCXG1")
-arlimcxg2a = Hcor(l=5e-05, eid="ARLIMCXG2")
-arlimcxg3a = Hcor(l=5e-05, eid="ARLIMCXG3")
+arlimcxg1a = Hcor(l=5e-05, eid="ARLIMCXG1A")
+arlimcxg2a = Hcor(l=5e-05, eid="ARLIMCXG2A")
+arlimcxg3a = Hcor(l=5e-05, eid="ARLIMCXG3A")
 arlimchm1 = Hcor(l=0.02, eid="ARLIMCHM1")
 arlimcxg4a = Hcor(
     l=5e-05, eid="ARLIMCXG4A"
@@ -139,9 +139,9 @@ ardlmchm1 = Hcor(l=0.02, eid="ARDLMCHM1")
 ardlmchm2 = Hcor(l=0.02, eid="ARDLMCHM2")
 
 # Vcors
-arlimcxg1b = Vcor(l=5e-05, eid="ARLIMCXG1")
-arlimcxg2b = Vcor(l=5e-05, eid="ARLIMCXG2")
-arlimcxg3b = Vcor(l=5e-05, eid="ARLIMCXG3")
+arlimcxg1b = Vcor(l=5e-05, eid="ARLIMCXG1B")
+arlimcxg2b = Vcor(l=5e-05, eid="ARLIMCXG2B")
+arlimcxg3b = Vcor(l=5e-05, eid="ARLIMCXG3B")
 arlimcvm1 = Vcor(l=0.02, eid="ARLIMCVM1")
 arlimcxg4b = Vcor(
     l=5e-05, eid="ARLIMCXG4B"
@@ -170,8 +170,8 @@ ardlrxbd2 = TDCavity(
 )
 
 # Solenoids
-arlimsog1a = Solenoid(l=0.09, eid="ARLIMSOG1")
-arlimsog1b = Solenoid(l=0.09, eid="ARLIMSOG1")
+arlimsog1a = Solenoid(l=0.09, eid="ARLIMSOG1A")
+arlimsog1b = Solenoid(l=0.09, eid="ARLIMSOG1B")
 
 # Monitors
 arlibscl1 = Monitor(eid="ARLIBSCL1")
