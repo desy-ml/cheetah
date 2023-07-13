@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Optional
 
 import matplotlib
@@ -9,7 +10,6 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.stats import multivariate_normal
 
-from cheetah import utils
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
@@ -34,6 +34,7 @@ class DeviceError(Exception):
         )
 
 
+@dataclass()
 class Element:
     """
     Base class for elements of particle accelerators.
@@ -43,8 +44,11 @@ class Element:
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    is_active = False
-    is_skippable = True
+    is_active: bool = False
+    is_skippable: bool = True
+    name: str = None
+    device: str = "auto"
+    length: float = 0
 
     def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
         global ELEMENT_COUNT
@@ -126,6 +130,7 @@ class Element:
         return f'{self.__class__.__name__}(name="{self.name}")'
 
 
+@dataclass
 class Drift(Element):
     """
     Drift section in a particle accelerator.
@@ -134,8 +139,7 @@ class Drift(Element):
     :param name: Unique identifier of the element.
     """
 
-    is_active = True
-    is_skippable = True
+    is_active: bool = True
 
     def __init__(self, length: float, name: Optional[str] = None, **kwargs) -> None:
         self.length = length
@@ -178,6 +182,7 @@ class Drift(Element):
         )
 
 
+@dataclass
 class Quadrupole(Element):
     """
     Quadrupole magnet in a particle accelerator.
@@ -190,7 +195,9 @@ class Quadrupole(Element):
     :param name: Unique identifier of the element.
     """
 
-    is_skippable = True
+    k1: float = 0
+    misalignment: tuple[float, float] = (0, 0)
+    tilt: float = 0
 
     def __init__(
         self,
@@ -260,6 +267,7 @@ class Quadrupole(Element):
         )
 
 
+@dataclass
 class Dipole(Element):
     """
     Dipole magnet (by default a sector bending magnet)
@@ -275,6 +283,14 @@ class Dipole(Element):
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
     """
+
+    angle: float = 0
+    e1: float = 0
+    e2: float = 0
+    tilt: float = 0
+    fint: float = 0
+    fintx: float = 0
+    gap: float = 0
 
     def __init__(
         self,
@@ -401,6 +417,7 @@ class Dipole(Element):
         )
 
 
+@dataclass
 class RBend(Dipole):
     """
     Rectangular bending magnet
@@ -446,6 +463,7 @@ class RBend(Dipole):
         )
 
 
+@dataclass
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
@@ -455,7 +473,7 @@ class HorizontalCorrector(Element):
     :param name: Unique identifier of the element.
     """
 
-    is_skippable = True
+    angle: float = 0
 
     def __init__(
         self, length: float, angle: float = 0.0, name: Optional[str] = None, **kwargs
@@ -513,6 +531,7 @@ class HorizontalCorrector(Element):
         )
 
 
+@dataclass
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
@@ -522,7 +541,7 @@ class VerticalCorrector(Element):
     :param name: Unique identifier of the element.
     """
 
-    is_skippable = True
+    angle: float = 0
 
     def __init__(
         self, length: float, angle: float = 0.0, name: Optional[str] = None, **kwargs
@@ -580,6 +599,7 @@ class VerticalCorrector(Element):
         )
 
 
+@dataclass
 class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
@@ -588,6 +608,8 @@ class Cavity(Element):
     :param delta_energy: Energy added to the beam by the accelerating cavity.
     :param name: Unique identifier of the element.
     """
+
+    delta_energy: float = 0
 
     def __init__(
         self,
@@ -662,6 +684,7 @@ class Cavity(Element):
         )
 
 
+@dataclass
 class BPM(Element):
     """
     Beam Position Monitor (BPM) in a particle accelerator.
@@ -669,10 +692,9 @@ class BPM(Element):
     :param name: Unique identifier of the element.
     """
 
-    length = 0
-    is_skippable = True  # TODO: Temporary
-
-    reading = (None, None)
+    def __init__(self, name: Optional[str] = None, **kwargs) -> None:
+        super().__init__(name=name, **kwargs)
+        self.reading = (None, None)
 
     @property
     def is_skippable(self) -> bool:
@@ -705,22 +727,13 @@ class BPM(Element):
         ax.add_patch(patch)
 
 
+@dataclass
 class Monitor(Element):
     """
     General Marker / Monitor element
 
     :param name: Unique identifier of the element.
     """
-
-    length = 0
-
-    def __init__(
-        self,
-        name: Optional[str] = None,
-        **kwargs,
-    ):
-        self.is_skippable = True
-        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
         return torch.eye(7, device=self.device)
@@ -729,6 +742,7 @@ class Monitor(Element):
         return incoming
 
 
+@dataclass
 class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
@@ -739,7 +753,10 @@ class Screen(Element):
     :param binning: Binning used by the camera.
     """
 
-    length = 0
+    resolution: tuple[int, int] = (1024, 1024)
+    pixel_size: tuple[float, float] = (1e-3, 1e-3)
+    binning: int = 1
+    misalignment: tuple[float, float] = (0, 0)
 
     def __init__(
         self,
@@ -892,6 +909,7 @@ class Screen(Element):
         )
 
 
+@dataclass
 class Aperture(Element):
     """
     Physical aperture.
@@ -902,8 +920,9 @@ class Aperture(Element):
     :param name: Unique identifier of the element.
     """
 
-    length = 0
-    lost_particle = None
+    xmax: float = np.inf
+    ymax: float = np.inf
+    type: str = "rect"
 
     def __init__(
         self,
@@ -919,6 +938,7 @@ class Aperture(Element):
         if type != "rect" and type != "ellipt":
             raise ValueError('Unknown aperture type, use "rect" or "ellipt"')
         self.type = type
+        self.lost_particle = None
         super().__init__(name, **kwargs)
 
     @property
@@ -952,6 +972,7 @@ class Aperture(Element):
             return incoming
 
 
+@dataclass
 class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
@@ -968,8 +989,6 @@ class Undulator(Element):
     name : string, optional
         Unique identifier of the element.
     """
-
-    is_skippable = True  # TODO: Temporary?
 
     def __init__(self, length: float, name: Optional[str] = None, **kwargs) -> None:
         self.length = length
@@ -1018,6 +1037,7 @@ class Undulator(Element):
         )
 
 
+@dataclass
 class Solenoid(Element):
     """
     Solenoid magnet.
@@ -1031,6 +1051,9 @@ class Solenoid(Element):
         y-directions.
     :param name: Unique identifier of the element.
     """
+
+    k: float = 0
+    misalignment: tuple[float, float] = (0, 0)
 
     def __init__(
         self,
@@ -1089,6 +1112,7 @@ class Solenoid(Element):
         )
 
 
+@dataclass
 class Segment(Element):
     """
     Segment of a particle accelerator consisting of several elements.
@@ -1098,9 +1122,22 @@ class Segment(Element):
     """
 
     def __init__(
-        self, cell: list[Element], name: Optional[str] = None, **kwargs
+        self,
+        cell: list[Element],
+        name: Optional[str] = None,
+        device: str = "auto",
+        **kwargs,
     ) -> None:
-        super().__init__(name=name, **kwargs)
+        global ELEMENT_COUNT
+        if name is not None:
+            self.name = name
+        else:
+            self.name = f"{self.__class__.__name__}_{ELEMENT_COUNT:06d}"
+        ELEMENT_COUNT += 1
+
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
 
         self.elements = cell
 
@@ -1126,9 +1163,9 @@ class Segment(Element):
     def from_ocelot(
         cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
     ) -> "Segment":
-        converted = [
-            utils.ocelot2cheetah(element, warnings=warnings) for element in cell
-        ]
+        from cheetah.utils import ocelot2cheetah
+
+        converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
         return cls(converted, name=name, **kwargs)
 
     @property

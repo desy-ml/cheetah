@@ -4,8 +4,6 @@ import numpy as np
 import torch
 from torch.distributions import MultivariateNormal
 
-from cheetah.utils import from_astrabeam
-
 
 class Beam:
     empty = "I'm an empty beam!"
@@ -251,6 +249,8 @@ class ParameterBeam(Beam):
     @classmethod
     def from_astra(cls, path: str, **kwargs) -> "ParameterBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
+        from cheetah.utils import from_astrabeam
+
         particles, energy = from_astrabeam(path)
         mu = torch.ones(7)
         mu[:6] = torch.tensor(particles.mean(axis=0), dtype=torch.float32)
@@ -532,6 +532,8 @@ class ParticleBeam:
     @classmethod
     def from_astra(cls, path: str, **kwargs) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
+        from cheetah.utils import from_astrabeam
+
         particles, energy = from_astrabeam(path)
         particles_7d = torch.ones((particles.shape[0], 7))
         particles_7d[:, :6] = torch.from_numpy(particles)
