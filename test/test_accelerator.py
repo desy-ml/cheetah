@@ -40,7 +40,7 @@ Cavity.element.delta_energy = 1000
 BPM = cheetah.Segment([cheetah.BPM(name="element")])
 
 Screen = cheetah.Segment(
-    [cheetah.Screen(resolution=(1000, 1000), pixel_size=1, name="element")]
+    [cheetah.Screen(resolution=(1000, 1000), pixel_size=(1, 1), name="element")]
 )
 
 Undulator = cheetah.Segment([cheetah.Undulator(length=0.02, name="element")])

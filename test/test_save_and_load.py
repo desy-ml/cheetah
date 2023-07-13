@@ -8,7 +8,16 @@ cheetah_segment = Segment.from_ocelot(ares.cell, name="ARES_Segment")
 
 
 def test_save_cheetah():
-    save_cheetah_model(cheetah_segment, "test/test_save_cheetah.json")
+    save_cheetah_model(
+        cheetah_segment,
+        "test/test_save_cheetah.json",
+        metadata={
+            "version": "1.0",
+            "title": "ARES Lattice",
+            "info": "JSON file for ARESlatticeStage3v1_9",
+            "root": "cell",
+        },
+    )
 
 
 def test_load_cheetah():
