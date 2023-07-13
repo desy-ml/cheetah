@@ -278,7 +278,7 @@ class CompactJSONEncoder(json.JSONEncoder):
 
 
 # Loading Cheetah from JSON
-def load_cheetah_model(fname: str) -> acc.Segment:
+def load_cheetah_model(fname: str, name: Optional[str] = None) -> acc.Segment:
     """Load a cheetah model from json file"""
     with open(fname, "r") as f:
         lattice_dict = json.load(f)
@@ -291,7 +291,7 @@ def load_cheetah_model(fname: str) -> acc.Segment:
             )
         )
 
-    return acc.Segment(cell=cell)
+    return acc.Segment(cell=cell, name=name)
 
 
 def str_to_class(classname: str):
