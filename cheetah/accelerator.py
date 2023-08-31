@@ -1170,6 +1170,21 @@ class Segment(Element):
     def from_ocelot(
         cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
     ) -> "Segment":
+        """
+        Translate an Ocelot cell to a Cheetah `Segment`.
+
+        NOTE Objects not supported by Cheetah are translated to drift sections. Screen
+        objects are created only from `ocelot.Monitor` objects when the string "BSC" is
+        contained in their `id` attribute. Their screen properties are always set to
+        default values and most likely need adjusting afterwards. BPM objects are only
+        created from `ocelot.Monitor` objects when their id has a substring "BPM".
+
+        :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
+        :param name: Unique identifier for the entire segment.
+        :param warnings: Whether to print warnings when objects are not supported by
+            Cheetah or converted with potentially unexpected behavior.
+        :return: Cheetah segment closely resembling the Ocelot cell.
+        """
         from cheetah.utils import ocelot2cheetah
 
         converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
