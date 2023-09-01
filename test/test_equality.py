@@ -1,47 +1,55 @@
-from cheetah.accelerator import Dipole, Drift, Quadrupole, Segment
-
-Dipole1 = Dipole(
-    name="dipole1",
-    length=1.0,
-    angle=0.1,
-    e1=0.2,
-    e2=0.3,
-    gap=0.4,
-    tilt=0.5,
-    fint=0.6,
-    fintx=0.7,
-)
-
-Dipole2 = Dipole(
-    name="dipole2",
-    length=2.0,
-    angle=0.1,
-    e1=0.2,
-    e2=0.3,
-    gap=0.4,
-    tilt=0.5,
-    fint=0.6,
-    fintx=0.7,
-)
-
-Drift1 = Drift(name="Drift1", length=0.1)
-Drift2 = Drift(name="Drift1", length=0.1)
+from cheetah.accelerator import Drift, Quadrupole, Segment
 
 
-Quadrupole1 = Quadrupole(name="Q1", length=0.1, k1=0.2)
-Quadrupole2 = Quadrupole(name="Q1", length=0.1, k1=0.2)
+def test_drift_equal():
+    """Test that equal drift sections are recognised as such."""
+    drift_1 = Drift(name="drift_eq", length=0.1)
+    drift_2 = Drift(name="drift_eq", length=0.1)
+    assert drift_1 == drift_2
 
-segment1 = Segment(cell=[Dipole1, Drift1, Quadrupole1], name="TestSegment")
-segment2 = Segment(cell=[Dipole2, Drift1, Quadrupole1], name="TestSegment")
-segment3 = Segment(cell=[Dipole1, Drift2, Quadrupole2], name="TestSegment")
+
+def test_drift_not_equal():
+    """Test that unequal drift sections are recognised as such."""
+    drift_1 = Drift(name="drift_1", length=0.1)
+    drift_2 = Drift(name="drift_2", length=0.2)
+    assert drift_1 != drift_2
 
 
-def test_elements_equal():
-    assert Dipole1 != Dipole2
-    assert Drift1 == Drift2
-    assert Quadrupole1 == Quadrupole2
+def test_quadrupole_equal():
+    """Test that equal quadrupoles are recognised as such."""
+    quadrupole_1 = Quadrupole(name="quadrupole_eq", length=0.1, k1=0.2)
+    quadrupole_2 = Quadrupole(name="quadrupole_eq", length=0.1, k1=0.2)
+    assert quadrupole_1 == quadrupole_2
+
+
+def test_quadrupole_not_equal():
+    """Test that unequal quadrupoles are recognised as such."""
+    quadrupole_1 = Quadrupole(name="quadrupole_1", length=0.1, k1=0.2)
+    quadrupole_2 = Quadrupole(name="quadrupole_2", length=0.2, k1=0.2)
+    assert quadrupole_1 != quadrupole_2
 
 
 def test_segment_equal():
-    assert segment1 != segment2
-    assert segment1 == segment3
+    """Test that equal segments are recognised as such."""
+    segment_1 = Segment(
+        cell=[Drift(name="d", length=0.1), Quadrupole(name="q", length=0.1, k1=0.2)],
+        name="test_segment",
+    )
+    segment_2 = Segment(
+        cell=[Drift(name="d", length=0.1), Quadrupole(name="q", length=0.1, k1=0.2)],
+        name="test_segment",
+    )
+    assert segment_1 == segment_2
+
+
+def test_segment_not_equal():
+    """Test that unequal segments are recognised as such."""
+    segment_1 = Segment(
+        cell=[Drift(name="d", length=0.1), Quadrupole(name="q", length=0.1, k1=0.2)],
+        name="test_segment",
+    )
+    segment_2 = Segment(
+        cell=[Quadrupole(name="q", length=0.2, k1=0.2), Drift(name="d", length=0.1)],
+        name="test_segment",
+    )
+    assert segment_1 != segment_2
