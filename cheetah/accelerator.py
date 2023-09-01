@@ -1159,12 +1159,11 @@ class Segment(Element):
 
         return self.__class__(subcell, device=self.device, **kwargs)
 
-    def __eq__(self, another_segment: Element) -> bool:
-        equal = True
-        for i, element in enumerate(self.elements):
-            if element != another_segment.elements[i]:
+    def __eq__(self, other: "Segment") -> bool:
+        for my_element, other_element in zip(self.elements, other.elements):
+            if my_element != other_element:
                 return False
-        return equal
+        return True
 
     @classmethod
     def from_ocelot(
