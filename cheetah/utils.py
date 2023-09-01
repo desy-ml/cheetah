@@ -2,11 +2,12 @@ import json
 from typing import Optional
 
 import numpy as np
+from scipy.constants import physical_constants
 
 from cheetah import accelerator as acc
 
-# electron mass in eV
-m_e_eV = 510998.8671
+# Electron mass in eV
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
@@ -36,15 +37,15 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     xp[0, 2] = 0.0
     xp[0, 5] = 0.0
 
-    gamref = np.sqrt((Pref / m_e_eV) ** 2 + 1)
+    gamref = np.sqrt((Pref / electron_mass_eV) ** 2 + 1)
     # energy in eV: E = gamma * m_e
-    energy = gamref * m_e_eV
+    energy = gamref * electron_mass_eV
 
     n_particles = xp.shape[0]
     particles = np.zeros((n_particles, 6))
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
-    gamma = np.sqrt(1 + np.sum(u * u, 1) / m_e_eV**2)
+    gamma = np.sqrt(1 + np.sum(u * u, 1) / electron_mass_eV**2)
     beta = np.sqrt(1 - gamma**-2)
     betaref = np.sqrt(1 - gamref**-2)
 
