@@ -199,7 +199,7 @@ def parse_cheetah_element(element: acc.Element):
         }
     elif isinstance(element, acc.Aperture):
         element_class = "Aperture"
-        params = {"xmax": element.xmax, "ymax": element.ymax, "type": element.type}
+        params = {"x_max": element.x_max, "y_max": element.y_max, "type": element.shape}
     elif isinstance(element, acc.Solenoid):
         element_class = "Solenoid"
         params = {

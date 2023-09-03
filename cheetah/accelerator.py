@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -914,32 +914,31 @@ class Aperture(Element):
     """
     Physical aperture.
 
-    :param xmax: half size horizontal offset in [m]
-    :param ymax: half size vertical offset in [m]
-    :param type: Aperture shape, "rect" for rectangular and "ellip" for elliptical.
+    :param x_max: half size horizontal offset in [m]
+    :param y_max: half size vertical offset in [m]
+    :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param name: Unique identifier of the element.
     """
 
-    xmax: float = np.inf
-    ymax: float = np.inf
-    type: str = "rect"
+    x_max: float = np.inf
+    y_max: float = np.inf
+    shape: str = "rect"
 
     def __init__(
         self,
-        xmax: float = np.inf,
-        ymax: float = np.inf,
-        type: str = "rect",  # TODO: Better strings ellipciatl and rectangular
+        x_max: float = np.inf,
+        y_max: float = np.inf,
+        shape: Literal["rectangular", "elliptical"] = "rectangular",
         name: Optional[str] = None,
         **kwargs,
     ) -> None:
-        assert xmax >= 0 and ymax >= 0
-        self.xmax = xmax
-        self.ymax = ymax
-        if type != "rect" and type != "ellipt":
-            raise ValueError('Unknown aperture type, use "rect" or "ellipt"')
-        self.type = type
-        self.lost_particle = None
         super().__init__(name, **kwargs)
+
+        self.x_max = x_max
+        self.y_max = y_max
+        self.shape = shape
+
+        self.lost_particles = None
 
     @property
     def is_skippable(self) -> bool:  # TODO: Aperatures should always be active
@@ -949,27 +948,30 @@ class Aperture(Element):
         return torch.eye(7, device=self.device)
 
     def __call__(self, incoming: Beam) -> Beam:
-        if self.is_active and isinstance(incoming, ParticleBeam):
-            x = incoming.particles[:, 0]
-            y = incoming.particles[:, 2]
-            if self.type == "rect":
-                survived_mask = torch.logical_and(
-                    torch.logical_and(x > -self.xmax, x < self.xmax),
-                    torch.logical_and(y > -self.ymax, y < self.ymax),
-                )
-            elif self.type == "ellipt":
-                survived_mask = (
-                    x**2 / self.xmax**2 + y**2 / self.ymax**2
-                ) <= 1.0
-            outgoing_particles = incoming.particles[survived_mask]
-
-            self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
-
-            return ParticleBeam(
-                outgoing_particles, incoming.energy, device=incoming.device
-            )
-        else:
+        # Only apply aperture to particle beams and if the element is active
+        if not (isinstance(incoming, ParticleBeam) and self.is_active):
             return incoming
+
+        assert self.x_max >= 0 and self.y_max >= 0
+        assert self.shape in [
+            "rectangular",
+            "elliptical",
+        ], f"Unknown aperture shape {self.shape}"
+
+        if self.shape == "rectangular":
+            survived_mask = torch.logical_and(
+                torch.logical_and(incoming.xs > -self.x_max, incoming.xs < self.x_max),
+                torch.logical_and(incoming.ys > -self.y_max, incoming.ys < self.y_max),
+            )
+        elif self.shape == "elliptical":
+            survived_mask = (
+                incoming.xs**2 / self.x_max**2 + incoming.ys**2 / self.y_max**2
+            ) <= 1.0
+        outgoing_particles = incoming.particles[survived_mask]
+
+        self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
+
+        return ParticleBeam(outgoing_particles, incoming.energy, device=incoming.device)
 
 
 @dataclass

@@ -83,10 +83,7 @@ def test_aperture():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                xmax=2e-4,
-                ymax=2e-4,
-                type="rect",
-                name="aperture",  # TODO: Don't use type keyword
+                x_max=2e-4, y_max=2e-4, shape="rectangular", name="aperture"
             ),  # TODO: is_active on init
             cheetah.Drift(length=0.1),
         ]
@@ -119,10 +116,7 @@ def test_aperture_elliptical():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                xmax=2e-4,
-                ymax=2e-4,
-                type="ellipt",
-                name="aperture",  # TODO: Don't use type keyword
+                x_max=2e-4, y_max=2e-4, shape="elliptical", name="aperture"
             ),  # TODO: is_active on init
             cheetah.Drift(length=0.1),
         ]
