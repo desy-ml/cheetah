@@ -8,7 +8,7 @@ def test_create_from_parameters():
     Test that a `ParticleBeam` created from parameters actually has those parameters.
     """
     beam = ParticleBeam.from_parameters(
-        n=1_000_000,
+        num_particles=1_000_000,
         mu_x=1e-5,
         mu_xp=1e-7,
         mu_y=2e-5,
@@ -25,7 +25,7 @@ def test_create_from_parameters():
         energy=1e7,
     )
 
-    assert beam.n == 1_000_000
+    assert beam.num_particles == 1_000_000
     assert np.isclose(beam.mu_x, 1e-5)
     assert np.isclose(beam.mu_xp, 1e-7)
     assert np.isclose(beam.mu_y, 2e-5)
@@ -60,7 +60,7 @@ def test_transform_to():
     )
 
     assert isinstance(transformed_beam, ParticleBeam)
-    assert original_beam.n == transformed_beam.n
+    assert original_beam.num_particles == transformed_beam.num_particles
 
     assert np.isclose(transformed_beam.mu_x, 1e-5)
     assert np.isclose(transformed_beam.mu_xp, 1e-7)

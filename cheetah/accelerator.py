@@ -1255,7 +1255,7 @@ class Segment(Element):
         axx: matplotlib.axes.Axes,
         axy: matplotlib.axes.Axes,
         beam: Optional[Beam] = None,
-        n: int = 10,
+        num_particles: int = 10,
         resolution: float = 0.01,
     ) -> None:
         """
@@ -1264,7 +1264,7 @@ class Segment(Element):
         :param axx: Axes to plot the particle traces into viewed in x-direction.
         :param axy: Axes to plot the particle traces into viewed in y-direction.
         :param beam: Entering beam from which the reference particles are sampled.
-        :param n: Number of reference particles to plot. Must not be larger than number
+        :param num_particles: Number of reference particles to plot. Must not be larger than number
             of particles passed in `beam`.
         :param resolution: Minimum resolution of the tracking of the reference particles
             in the plot.
@@ -1277,11 +1277,13 @@ class Segment(Element):
 
         references = []
         if beam is None:
-            initial = ParticleBeam.make_linspaced(n=n, device="cpu")
+            initial = ParticleBeam.make_linspaced(
+                num_particles=num_particles, device="cpu"
+            )
             references.append(initial)
         else:
             initial = ParticleBeam.make_linspaced(
-                n=n,
+                num_particles=num_particles,
                 mu_x=beam.mu_x,
                 mu_xp=beam.mu_xp,
                 mu_y=beam.mu_y,
@@ -1300,7 +1302,7 @@ class Segment(Element):
             sample = split(references[-1])
             references.append(sample)
 
-        for particle_index in range(n):
+        for particle_index in range(num_particles):
             xs = [
                 float(reference_beam.xs[particle_index].cpu())
                 for reference_beam in references
@@ -1311,7 +1313,7 @@ class Segment(Element):
         axx.set_ylabel("x (m)")
         axx.grid()
 
-        for particle_index in range(n):
+        for particle_index in range(num_particles):
             ys = [
                 float(reference_beam.ys[particle_index].cpu())
                 for reference_beam in references
