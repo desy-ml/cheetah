@@ -163,8 +163,8 @@ def parse_cheetah_element(element: acc.Element):
             "e2": element.e2,
             "gap": element.gap,
             "tilt": element.tilt,
-            "fint": element.fint,
-            "fintx": element.fintx,
+            "fint": element.fringe_integral,
+            "fintx": element.fringe_integral,
         }
     elif isinstance(element, acc.Quadrupole):
         element_class = "Quadrupole"

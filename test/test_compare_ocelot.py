@@ -41,7 +41,7 @@ def test_dipole_with_fringe_field():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(length=0.1, angle=0.1, fint=0.1, gap=0.2)
+    cheetah_dipole = cheetah.Dipole(length=0.1, angle=0.1, fringe_integral=0.1, gap=0.2)
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot

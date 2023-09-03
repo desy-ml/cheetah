@@ -287,16 +287,16 @@ class Quadrupole(Element):
 @dataclass
 class Dipole(Element):
     """
-    Dipole magnet (by default a sector bending magnet)
+    Dipole magnet (by default a sector bending magnet).
 
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
     :param e1: The angle of inclination of the entrance face [rad].
     :param e2: The angle of inclination of the exit face [rad].
     :param tilt: Tilt of the magnet in x-y plane [rad].
-    :param fint: Fringe field integral (of the enterance face).
-    :param fintx: (only set if different from `fint`) Fringe field integral of the exit
-        face.
+    :param fringe_integral: Fringe field integral (of the enterance face).
+    :param fringe_integral_exit: (only set if different from `fint`) Fringe field
+        integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
     """
@@ -305,8 +305,8 @@ class Dipole(Element):
     e1: float = 0
     e2: float = 0
     tilt: float = 0
-    fint: float = 0
-    fintx: float = 0
+    fringe_integral: float = 0
+    fringe_integral_exit: float = 0
     gap: float = 0
 
     def __init__(
@@ -316,8 +316,8 @@ class Dipole(Element):
         e1: float = 0.0,
         e2: float = 0.0,
         tilt: float = 0.0,
-        fint: float = 0.0,
-        fintx: Optional[float] = None,
+        fringe_integral: float = 0.0,
+        fringe_integral_exit: Optional[float] = None,
         gap: float = 0.0,
         name: Optional[str] = None,
         **kwargs,
@@ -327,8 +327,10 @@ class Dipole(Element):
         self.gap = gap
         self.tilt = tilt
         self.name = name
-        self.fint = fint
-        self.fintx = fint if fintx is None else fintx
+        self.fringe_integral = fringe_integral
+        self.fringe_integral_exit = (
+            fringe_integral if fringe_integral_exit is None else fringe_integral_exit
+        )
         # Rectangular bend
         self.e1 = e1
         self.e2 = e2
@@ -381,11 +383,17 @@ class Dipole(Element):
         return R
 
     def _transfer_map_enter(self, energy: float) -> torch.Tensor:
-        if self.fint == 0:
+        if self.fringe_integral == 0:
             return torch.eye(7, device=self.device)
         else:
             sec_e = 1.0 / np.cos(self.e1)
-            phi = self.fint * self.hx * self.gap * sec_e * (1 + np.sin(self.e1) ** 2)
+            phi = (
+                self.fringe_integral
+                * self.hx
+                * self.gap
+                * sec_e
+                * (1 + np.sin(self.e1) ** 2)
+            )
             return torch.tensor(
                 [
                     [1, 0, 0, 0, 0, 0, 0],
@@ -401,11 +409,17 @@ class Dipole(Element):
             )
 
     def _transfer_map_exit(self, energy: float) -> torch.Tensor:
-        if self.fintx == 0:
+        if self.fringe_integral_exit == 0:
             return torch.eye(7, device=self.device)
         else:
             sec_e = 1.0 / np.cos(self.e2)
-            phi = self.fint * self.hx * self.gap * sec_e * (1 + np.sin(self.e2) ** 2)
+            phi = (
+                self.fringe_integral
+                * self.hx
+                * self.gap
+                * sec_e
+                * (1 + np.sin(self.e2) ** 2)
+            )
             return torch.tensor(
                 [
                     [1, 0, 0, 0, 0, 0, 0],
@@ -427,8 +441,8 @@ class Dipole(Element):
             + f"e1={self.e1:.2f},"
             + f"e2={self.e2:.2f},"
             + f"tilt={self.tilt:.2f},"
-            + f"fint={self.fint:.2f},"
-            + f"fintx={self.fintx:.2f},"
+            + f"fint={self.fringe_integral:.2f},"
+            + f"fintx={self.fringe_integral_exit:.2f},"
             + f"gap={self.gap:.2f},"
             + f'name="{self.name}")'
         )
@@ -437,16 +451,16 @@ class Dipole(Element):
 @dataclass
 class RBend(Dipole):
     """
-    Rectangular bending magnet
+    Rectangular bending magnet.
 
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
     :param e1: The angle of inclination of the entrance face [rad].
     :param e2: The angle of inclination of the exit face [rad].
     :param tilt: Tilt of the magnet in x-y plane [rad].
-    :param fint: Fringe field integral (of the enterance face).
-    :param fintx: (only set if different from `fint`) Fringe field integral of the exit
-        face.
+    :param fringe_integral: Fringe field integral (of the enterance face).
+    :param fringe_integral_exit: (only set if different from `fint`) Fringe field
+        integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
     """
@@ -458,8 +472,8 @@ class RBend(Dipole):
         e1: float = 0.0,
         e2: float = 0.0,
         tilt: float = 0.0,
-        fint: float = 0.0,
-        fintx: Optional[float] = None,
+        fringe_integral: float = 0.0,
+        fringe_integral_exit: Optional[float] = None,
         gap: float = 0.0,
         name: Optional[str] = None,
         **kwargs,
@@ -472,8 +486,8 @@ class RBend(Dipole):
             e1=e1,
             e2=e2,
             tilt=tilt,
-            fint=fint,
-            fintx=fintx,
+            fringe_integral=fringe_integral,
+            fringe_integral_exit=fringe_integral_exit,
             gap=gap,
             name=name,
             **kwargs,
