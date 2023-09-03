@@ -928,7 +928,7 @@ class Aperture(Element):
         self,
         xmax: float = np.inf,
         ymax: float = np.inf,
-        type: str = "rect",
+        type: str = "rect",  # TODO: Better strings ellipciatl and rectangular
         name: Optional[str] = None,
         **kwargs,
     ) -> None:
@@ -942,7 +942,7 @@ class Aperture(Element):
         super().__init__(name, **kwargs)
 
     @property
-    def is_skippable(self) -> bool:
+    def is_skippable(self) -> bool:  # TODO: Aperatures should always be active
         return not self.is_active
 
     def transfer_map(self, energy: float) -> torch.Tensor:
