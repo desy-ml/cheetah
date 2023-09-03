@@ -70,12 +70,15 @@ def test_aperture():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                x_max=2e-4, y_max=2e-4, shape="rectangular", name="aperture"
-            ),  # TODO: is_active on init
+                x_max=2e-4,
+                y_max=2e-4,
+                shape="rectangular",
+                name="aperture",
+                is_active=True,
+            ),
             cheetah.Drift(length=0.1),
         ]
     )
-    cheetah_segment.aperture.is_active = True
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
@@ -103,12 +106,15 @@ def test_aperture_elliptical():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                x_max=2e-4, y_max=2e-4, shape="elliptical", name="aperture"
-            ),  # TODO: is_active on init
+                x_max=2e-4,
+                y_max=2e-4,
+                shape="elliptical",
+                name="aperture",
+                is_active=True,
+            ),
             cheetah.Drift(length=0.1),
         ]
     )
-    cheetah_segment.aperture.is_active = True
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
