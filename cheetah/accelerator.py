@@ -108,6 +108,19 @@ class Element:
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
+    def track(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the element. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
+
+        NOTE: The purpose of this method is to provide a nicer more readable interface
+        to `__call__`. The latter coninues to work, but we encourage the use of `track`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        return self(incoming)
+
     def split(self, resolution: float) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`.

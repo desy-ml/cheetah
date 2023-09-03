@@ -16,7 +16,7 @@ def test_dipole():
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(length=0.1, angle=0.1)
-    outgoing_beam = cheetah_dipole(incoming_beam)
+    outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
@@ -42,7 +42,7 @@ def test_dipole_with_fringe_field():
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(length=0.1, angle=0.1, fint=0.1, gap=0.2)
-    outgoing_beam = cheetah_dipole(incoming_beam)
+    outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
@@ -76,7 +76,7 @@ def test_aperture():
         ]
     )
     cheetah_segment.aperture.is_active = True
-    outgoing_beam = cheetah_segment(incoming_beam)
+    outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
@@ -109,7 +109,7 @@ def test_aperture_elliptical():
         ]
     )
     cheetah_segment.aperture.is_active = True
-    outgoing_beam = cheetah_segment(incoming_beam)
+    outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
@@ -137,7 +137,7 @@ def test_solenoid():
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
     cheetah_solenoid = cheetah.Solenoid(length=0.5, k=5)
-    outgoing_beam = cheetah_solenoid(incoming_beam)
+    outgoing_beam = cheetah_solenoid.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(

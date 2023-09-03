@@ -6,7 +6,7 @@ Cheetah is a particle tracking accelerator we built specifically to speed up the
 
 ## Installation
 
-Simply install *Cheetah* from PyPI by running the following command.
+Simply install _Cheetah_ from PyPI by running the following command.
 
 ```bash
 pip install cheetah-accelerator
@@ -14,7 +14,7 @@ pip install cheetah-accelerator
 
 ## How To Use
 
-A sequence of accelerator elements (or a lattice) is called a `Segment` in *Cheetah*. You can create a `Segment` as follows
+A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
 ```python
 segment = Segment([
@@ -38,7 +38,7 @@ Alternatively you can create a segment from an Ocelot cell by running
 segment = Segment.from_ocelot(cell)
 ```
 
-All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named *AREAMQZM2* for example, may be set by running
+All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
 
 ```python
 segment.AREAMQZM2.k1 = 4.2
@@ -47,10 +47,10 @@ segment.AREAMQZM2.k1 = 4.2
 In order to track a beam through the segment, simply call the segment like so
 
 ```python
-outgoing_beam = segment(incoming_beam)
-````
+outgoing_beam = segment.track(incoming_beam)
+```
 
-You can choose to track either a beam defined by its parameters (fast) or by its particles (precise). *Cheetah* defines two different beam classes for this purpose and beams may be created by
+You can choose to track either a beam defined by its parameters (fast) or by its particles (precise). _Cheetah_ defines two different beam classes for this purpose and beams may be created by
 
 ```python
 beam1 = ParameterBeam.from_parameters()
