@@ -961,7 +961,7 @@ class Aperture(Element):
         self.lost_particles = None
 
     @property
-    def is_skippable(self) -> bool:  # TODO: Aperatures should always be active
+    def is_skippable(self) -> bool:
         return not self.is_active
 
     def transfer_map(self, energy: float) -> torch.Tensor:
