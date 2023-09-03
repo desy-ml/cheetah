@@ -132,7 +132,7 @@ class Beam:
         raise NotImplementedError
 
     @property
-    def sigma_x(self) -> float:
+    def sigma_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -148,7 +148,7 @@ class Beam:
         raise NotImplementedError
 
     @property
-    def sigma_y(self) -> float:
+    def sigma_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -174,6 +174,38 @@ class Beam:
     @property
     def sigma_p(self) -> float:
         raise NotImplementedError
+
+    @property
+    def emittance_x(self) -> torch.Tensor:
+        return torch.sqrt(
+            self.sigma_x**2 * self.sigma_xp**2 - (self.sigma_x * self.sigma_xp) ** 2
+        )
+
+    @property
+    def beta_x(self) -> float:
+        return float(self.sigma_x**2 / self.emittance_x)
+
+    @property
+    def alpha_x(self) -> float:
+        return float(
+            self.sigma_xp**2 / self.emittance_x
+        )  # TODO: Does this make sense?
+
+    @property
+    def emittance_y(self) -> torch.Tensor:
+        return torch.sqrt(
+            self.sigma_y**2 * self.sigma_yp**2 - (self.sigma_y * self.sigma_yp) ** 2
+        )
+
+    @property
+    def beta_y(self) -> float:
+        return float(self.sigma_y**2 / self.emittance_y)
+
+    @property
+    def alpha_y(self) -> float:
+        return float(
+            self.sigma_yp**2 / self.emittance_y
+        )  # TODO: Does this make sense?
 
     def __repr__(self) -> str:
         return (
@@ -375,7 +407,7 @@ class ParameterBeam(Beam):
         )
 
 
-class ParticleBeam:
+class ParticleBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
 
@@ -644,8 +676,8 @@ class ParticleBeam:
         return float(self.xs.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_x(self) -> Optional[float]:
-        return float(self.xs.std()) if self is not Beam.empty else None
+    def sigma_x(self) -> Optional[torch.Tensor]:
+        return self.xs.std() if self is not Beam.empty else None
 
     @property
     def xps(self) -> Optional[torch.Tensor]:
@@ -676,8 +708,8 @@ class ParticleBeam:
         return float(self.ys.mean()) if self is not Beam.empty else None
 
     @property
-    def sigma_y(self) -> Optional[float]:
-        return float(self.ys.std()) if self is not Beam.empty else None
+    def sigma_y(self) -> Optional[torch.Tensor]:
+        return self.ys.std() if self is not Beam.empty else None
 
     @property
     def yps(self) -> Optional[torch.Tensor]:
