@@ -1264,8 +1264,8 @@ class Segment(Element):
         :param axx: Axes to plot the particle traces into viewed in x-direction.
         :param axy: Axes to plot the particle traces into viewed in y-direction.
         :param beam: Entering beam from which the reference particles are sampled.
-        :param num_particles: Number of reference particles to plot. Must not be larger than number
-            of particles passed in `beam`.
+        :param num_particles: Number of reference particles to plot. Must not be larger
+            than number of particles passed in `beam`.
         :param resolution: Minimum resolution of the tracking of the reference particles
             in the plot.
         """
