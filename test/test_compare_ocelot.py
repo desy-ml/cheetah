@@ -5,19 +5,6 @@ import ocelot
 
 import cheetah
 
-"""
-Test implementation of transfer maps of the cheetah elements,
-compare tracking results with OCELOT: https://github.com/ocelot-collab/ocelot
-"""
-
-PARTICLEBEAM_CHEETAH = cheetah.ParticleBeam.from_astra(
-    "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
-)
-
-PARRAY_OCELOT = ocelot.astraBeam2particleArray(
-    "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
-)
-
 
 def test_dipole():
     """
