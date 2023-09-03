@@ -230,3 +230,15 @@ def test_twiss():
     assert np.isclose(particle_beam.normalized_emittance_y, ocelot_twiss.emit_yn)
     assert np.isclose(particle_beam.beta_y, ocelot_twiss.beta_y)
     assert np.isclose(particle_beam.alpha_y, ocelot_twiss.alpha_y)
+
+
+def test_astra_import():
+    """
+    Test if the beam imported from Astra in Cheetah matches the beam imported from Astra
+    in Ocelot.
+    """
+    beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    p_array = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
+
+    assert np.allclose(beam.particles[:, :6], p_array.rparticles.transpose())
+    assert np.isclose(beam.energy, (p_array.E * 1e9))
