@@ -26,7 +26,7 @@ def test_astra_to_particle_beam():
     beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
 
     # True values taken from version of Cheetah that is belived to be correct (v0.5.19)
-    assert beam.num_particles == 100000
+    assert beam.num_particles == 100_000
     assert np.allclose(beam.mu_x, 8.24126345833065e-07)
     assert np.allclose(beam.mu_xp, 5.988477624896404e-08)
     assert np.allclose(beam.mu_y, -1.7276204289373709e-06)

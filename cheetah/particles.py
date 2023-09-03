@@ -5,8 +5,8 @@ import torch
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
-electron_mass_GeV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e-3
+electron_mass_eV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
 
 
@@ -183,12 +183,13 @@ class Beam:
     @property
     def emittance_x(self) -> torch.Tensor:
         return torch.sqrt(
-            self.sigma_x**2 * self.sigma_xp**2 - (self.sigma_x * self.sigma_xp) ** 2
+            self.sigma_x**2 * self.sigma_xp**2
+            - torch.mean((self.xs - self.mu_x) * (self.xps - self.mu_xp)) ** 2
         )
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
-        relativistic_gamma = self.energy / electron_mass_GeV
+        relativistic_gamma = self.energy / electron_mass_eV
         relativistic_beta = (
             torch.sqrt(1 - 1 / (relativistic_gamma**2))
             if torch.abs(relativistic_gamma) > 0
@@ -207,12 +208,13 @@ class Beam:
     @property
     def emittance_y(self) -> torch.Tensor:
         return torch.sqrt(
-            self.sigma_y**2 * self.sigma_yp**2 - (self.sigma_y * self.sigma_yp) ** 2
+            self.sigma_y**2 * self.sigma_yp**2
+            - torch.mean((self.ys - self.mu_y) * (self.yps - self.mu_yp)) ** 2
         )
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
-        relativistic_gamma = self.energy / electron_mass_GeV
+        relativistic_gamma = self.energy / electron_mass_eV
         relativistic_beta = (
             torch.sqrt(1 - 1 / (relativistic_gamma**2))
             if torch.abs(relativistic_gamma) > 0
