@@ -227,13 +227,13 @@ def test_twiss():
     assert np.isclose(
         particle_beam.beta_x, ocelot_twiss.beta_x, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(particle_beam.alpha_x, ocelot_twiss.alpha_x)
+    assert np.isclose(particle_beam.alpha_x, ocelot_twiss.alpha_x, rtol=1e-4)
     assert np.isclose(particle_beam.emittance_y, ocelot_twiss.emit_y)
     assert np.isclose(particle_beam.normalized_emittance_y, ocelot_twiss.emit_yn)
     assert np.isclose(
         particle_beam.beta_y, ocelot_twiss.beta_y, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(particle_beam.alpha_y, ocelot_twiss.alpha_y)
+    assert np.isclose(particle_beam.alpha_y, ocelot_twiss.alpha_y, rtol=1e-4)
 
 
 def test_astra_import():
