@@ -113,7 +113,8 @@ def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
     else:
         if warnings:
             print(
-                f"WARNING: Unknown element {element.id}, replacing with drift section."
+                f"WARNING: Unknown element {element.id} of type {type(element)},"
+                " replacing with drift section."
             )
         return acc.Drift(element.l, name=element.id)
 
