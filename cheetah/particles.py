@@ -183,13 +183,11 @@ class Beam:
 
     @property
     def beta_x(self) -> torch.Tensor:
-        return float(self.sigma_x**2 / self.emittance_x)
+        return self.sigma_x**2 / self.emittance_x
 
     @property
     def alpha_x(self) -> torch.Tensor:
-        return float(
-            self.sigma_xp**2 / self.emittance_x
-        )  # TODO: Does this make sense?
+        return self.sigma_xp**2 / self.emittance_x  # TODO: Does this make sense?
 
     @property
     def emittance_y(self) -> torch.Tensor:
@@ -199,13 +197,11 @@ class Beam:
 
     @property
     def beta_y(self) -> torch.Tensor:
-        return float(self.sigma_y**2 / self.emittance_y)
+        return self.sigma_y**2 / self.emittance_y
 
     @property
     def alpha_y(self) -> torch.Tensor:
-        return float(
-            self.sigma_yp**2 / self.emittance_y
-        )  # TODO: Does this make sense?
+        return self.sigma_yp**2 / self.emittance_y  # TODO: Does this make sense?
 
     def __repr__(self) -> str:
         return (
