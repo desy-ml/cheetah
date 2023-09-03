@@ -204,35 +204,27 @@ def test_ares_ea():
     assert np.allclose(outgoing_beam.ps, outgoing_p_array.p())
 
 
-def test_ares_ea_twiss():
+def test_twiss():
     """
-    Test that the twiss parameters through a Experimental Area (EA) lattice of the ARES
-    accelerator at DESY match those computed by Ocelot.
+    Test that the twiss parameters computed by Cheetah for a `ParticleBeam` loaded from
+    an Astra beam are the same as those computed by Ocelot for the `ParticleArray`
+    loaded from that same Astra beam.
     """
-    cell = cheetah.utils.subcell_of_ocelot(ares.cell, "AREASOLA1", "AREABSCR1")
-    ares.areamqzm1.k1 = 5.0
-    ares.areamqzm2.k1 = -5.0
-    ares.areamcvm1.k1 = 1e-3
-    ares.areamqzm3.k1 = 5.0
-    ares.areamchm1.k1 = -2e-3
-
     # Cheetah
-    incoming_beam = cheetah.ParticleBeam.from_astra(
+    particle_beam = cheetah.ParticleBeam.from_astra(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_segment = cheetah.Segment.from_ocelot(cell)
-    outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
-    incoming_p_array = ocelot.astraBeam2particleArray(
+    p_array = ocelot.astraBeam2particleArray(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    lattice = ocelot.MagneticLattice(cell)
-    navigator = ocelot.Navigator(lattice)
-    twiss_list, _ = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
-    ocelot_twiss = twiss_list[-1]
+    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
-    assert np.isclose(outgoing_beam.beta_x, ocelot_twiss.beta_x)
-    assert np.isclose(outgoing_beam.alpha_x, ocelot_twiss.alpha_x)
-    assert np.isclose(outgoing_beam.beta_y, ocelot_twiss.beta_y)
-    assert np.isclose(outgoing_beam.alpha_y, ocelot_twiss.alpha_y)
+    # Compare
+    assert np.isclose(particle_beam.emittance_x, ocelot_twiss.emit_x)
+    assert np.isclose(particle_beam.beta_x, ocelot_twiss.beta_x)
+    assert np.isclose(particle_beam.alpha_x, ocelot_twiss.alpha_x)
+    assert np.isclose(particle_beam.emittance_y, ocelot_twiss.emit_y)
+    assert np.isclose(particle_beam.beta_y, ocelot_twiss.beta_y)
+    assert np.isclose(particle_beam.alpha_y, ocelot_twiss.alpha_y)
