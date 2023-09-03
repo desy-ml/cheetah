@@ -5,6 +5,10 @@ import torch
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
+electron_mass_GeV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e-3
+)
+
 
 class Beam:
     empty = "I'm an empty beam!"
@@ -184,10 +188,7 @@ class Beam:
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
-        relativistic_gamma = (
-            self.energy
-            / physical_constants["electron mass energy equivalent in MeV"][0]
-        )
+        relativistic_gamma = self.energy / electron_mass_GeV
         relativistic_beta = (
             torch.sqrt(1 - 1 / (relativistic_gamma**2))
             if torch.abs(relativistic_gamma) > 0
@@ -211,10 +212,7 @@ class Beam:
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
-        relativistic_gamma = (
-            self.energy
-            / physical_constants["electron mass energy equivalent in MeV"][0]
-        )
+        relativistic_gamma = self.energy / electron_mass_GeV
         relativistic_beta = (
             torch.sqrt(1 - 1 / (relativistic_gamma**2))
             if torch.abs(relativistic_gamma) > 0
