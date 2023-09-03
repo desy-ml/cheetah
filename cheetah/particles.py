@@ -2,6 +2,7 @@ from typing import Optional
 
 import numpy as np
 import torch
+from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
 
@@ -183,7 +184,16 @@ class Beam:
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
-        return self.emittance_x / self.energy  # TODO: Is this correct?
+        relativistic_gamma = (
+            self.energy
+            / physical_constants["electron mass energy equivalent in MeV"][0]
+        )
+        relativistic_beta = (
+            torch.sqrt(1 - 1 / (relativistic_gamma**2))
+            if torch.abs(relativistic_gamma) > 0
+            else 1.0
+        )
+        return self.emittance_x * relativistic_beta * relativistic_gamma
 
     @property
     def beta_x(self) -> torch.Tensor:
@@ -201,7 +211,16 @@ class Beam:
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
-        return self.emittance_y / self.energy  # TODO: Is this correct?
+        relativistic_gamma = (
+            self.energy
+            / physical_constants["electron mass energy equivalent in MeV"][0]
+        )
+        relativistic_beta = (
+            torch.sqrt(1 - 1 / (relativistic_gamma**2))
+            if torch.abs(relativistic_gamma) > 0
+            else 1.0
+        )
+        return self.emittance_y * relativistic_beta * relativistic_gamma
 
     @property
     def beta_y(self) -> torch.Tensor:
