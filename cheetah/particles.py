@@ -405,7 +405,7 @@ class ParticleBeam:
     @classmethod
     def from_parameters(
         cls,
-        n: int = 100000,
+        num_particles: int = 100000,
         mu_x: float = 0,
         mu_y: float = 0,
         mu_xp: float = 0,
@@ -425,7 +425,7 @@ class ParticleBeam:
         """
         Generate Cheetah Beam of random particles.
 
-        :param n: Number of particles to generate.
+        :param num_particles: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_xp: Center of the particle distribution on px in meters.
@@ -456,16 +456,16 @@ class ParticleBeam:
             dtype=torch.float32,
         )
 
-        particles = torch.ones((n, 7), dtype=torch.float32)
+        particles = torch.ones((num_particles, 7), dtype=torch.float32)
         distribution = MultivariateNormal(mean, covariance_matrix=cov)
-        particles[:, :6] = distribution.sample((n,))
+        particles[:, :6] = distribution.sample((num_particles,))
 
         return cls(particles, energy, device=device)
 
     @classmethod
     def make_linspaced(
         cls,
-        n: int = 10,
+        num_particles: int = 10,
         mu_x: float = 0,
         mu_y: float = 0,
         mu_xp: float = 0,
@@ -497,22 +497,26 @@ class ParticleBeam:
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
-        particles = torch.ones((n, 7), dtype=torch.float32)
+        particles = torch.ones((num_particles, 7), dtype=torch.float32)
 
         particles[:, 0] = torch.linspace(
-            mu_x - sigma_x, mu_x + sigma_x, n, dtype=torch.float32
+            mu_x - sigma_x, mu_x + sigma_x, num_particles, dtype=torch.float32
         )
         particles[:, 1] = torch.linspace(
-            mu_xp - sigma_xp, mu_xp + sigma_xp, n, dtype=torch.float32
+            mu_xp - sigma_xp, mu_xp + sigma_xp, num_particles, dtype=torch.float32
         )
         particles[:, 2] = torch.linspace(
-            mu_y - sigma_y, mu_y + sigma_y, n, dtype=torch.float32
+            mu_y - sigma_y, mu_y + sigma_y, num_particles, dtype=torch.float32
         )
         particles[:, 3] = torch.linspace(
-            mu_yp - sigma_yp, mu_yp + sigma_yp, n, dtype=torch.float32
+            mu_yp - sigma_yp, mu_yp + sigma_yp, num_particles, dtype=torch.float32
         )
-        particles[:, 4] = torch.linspace(-sigma_s, sigma_s, n, dtype=torch.float32)
-        particles[:, 5] = torch.linspace(-sigma_p, sigma_p, n, dtype=torch.float32)
+        particles[:, 4] = torch.linspace(
+            -sigma_s, sigma_s, num_particles, dtype=torch.float32
+        )
+        particles[:, 5] = torch.linspace(
+            -sigma_p, sigma_p, num_particles, dtype=torch.float32
+        )
 
         return cls(particles, energy, device=device)
 
@@ -521,8 +525,8 @@ class ParticleBeam:
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
-        n = parray.rparticles.shape[1]
-        particles = torch.ones((n, 7))
+        num_particles = parray.rparticles.shape[1]
+        particles = torch.ones((num_particles, 7))
         particles[:, :6] = torch.tensor(
             parray.rparticles.transpose(), dtype=torch.float32
         )
@@ -621,10 +625,10 @@ class ParticleBeam:
         return self.__class__(particles=particles, energy=energy)
 
     def __len__(self) -> int:
-        return self.n
+        return self.num_particles
 
     @property
-    def n(self) -> int:
+    def num_particles(self) -> int:
         return len(self.particles)
 
     @property
@@ -725,7 +729,7 @@ class ParticleBeam:
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(n={self.n}, mu_x={self.mu_x:.6f},"
+            f"{self.__class__.__name__}(n={self.num_particles}, mu_x={self.mu_x:.6f},"
             f" mu_xp={self.mu_xp:.6f}, mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
             f" sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f},"
             f" sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f},"

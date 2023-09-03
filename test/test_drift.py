@@ -20,7 +20,9 @@ def test_diverging_particle_beam():
     size in both dimensions when travelling through a drift section.
     """
     drift = Drift(length=1.0)
-    incoming_beam = ParticleBeam.from_parameters(n=1000, sigma_xp=2e-7, sigma_yp=2e-7)
+    incoming_beam = ParticleBeam.from_parameters(
+        num_particles=1000, sigma_xp=2e-7, sigma_yp=2e-7
+    )
     outgoing_beam = drift(incoming_beam)
 
     assert outgoing_beam.sigma_x > incoming_beam.sigma_x

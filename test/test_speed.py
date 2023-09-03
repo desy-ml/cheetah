@@ -12,7 +12,7 @@ def test_tracking_speed():
     segment.AREABSCR1.is_active = True  # Turn screen on and off
 
     particles = cheetah.ParticleBeam.from_parameters(
-        n=int(1e5), sigma_x=175e-6, sigma_y=175e-6
+        num_particles=int(1e5), sigma_x=175e-6, sigma_y=175e-6
     )
 
     t1 = time.time()
