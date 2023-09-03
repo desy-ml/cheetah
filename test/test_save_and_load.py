@@ -8,6 +8,8 @@ cheetah_segment = Segment.from_ocelot(ares.cell, name="ARES_Segment")
 
 
 def test_save_cheetah():
+    """Test that saving Cheetah segment to lattice JSON doesn't throw an error."""
+    # TODO: Use temporary directory
     save_cheetah_model(
         cheetah_segment,
         "test/test_save_cheetah.json",
@@ -21,6 +23,11 @@ def test_save_cheetah():
 
 
 def test_load_cheetah():
+    """
+    Test that loading Cheetah segment reproduces the segment that was originally saved
+    in the save test.
+    """
+    # TODO: Use pytest feature more properly
     cheetah_segment2 = load_cheetah_model(
         "test/test_save_cheetah.json", name="ARES_Segment"
     )
