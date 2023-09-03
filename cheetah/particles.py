@@ -182,6 +182,10 @@ class Beam:
         )
 
     @property
+    def normalized_emittance_x(self) -> torch.Tensor:
+        return self.emittance_x / self.energy  # TODO: Is this correct?
+
+    @property
     def beta_x(self) -> torch.Tensor:
         return self.sigma_x**2 / self.emittance_x
 
@@ -194,6 +198,10 @@ class Beam:
         return torch.sqrt(
             self.sigma_y**2 * self.sigma_yp**2 - (self.sigma_y * self.sigma_yp) ** 2
         )
+
+    @property
+    def normalized_emittance_y(self) -> torch.Tensor:
+        return self.emittance_y / self.energy  # TODO: Is this correct?
 
     @property
     def beta_y(self) -> torch.Tensor:
