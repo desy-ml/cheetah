@@ -203,7 +203,10 @@ class Beam:
 
     @property
     def alpha_x(self) -> torch.Tensor:
-        return self.sigma_xp**2 / self.emittance_x  # TODO: Does this make sense?
+        return (
+            -torch.mean((self.xs - self.mu_x) * (self.xps - self.mu_xp))
+            / self.emittance_x
+        )
 
     @property
     def emittance_y(self) -> torch.Tensor:
@@ -228,7 +231,10 @@ class Beam:
 
     @property
     def alpha_y(self) -> torch.Tensor:
-        return self.sigma_yp**2 / self.emittance_y  # TODO: Does this make sense?
+        return (
+            -torch.mean((self.ys - self.mu_y) * (self.yps - self.mu_yp))
+            / self.emittance_y
+        )
 
     def __repr__(self) -> str:
         return (
