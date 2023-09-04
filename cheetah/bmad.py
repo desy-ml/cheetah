@@ -1,8 +1,12 @@
+import math
 import os
 import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+import scipy
+from scipy.constants import physical_constants
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -348,5 +352,53 @@ def parse_use_line(line: str, context: dict) -> dict:
 
     use_line_name = match.group(1).strip()
     context["__use__"] = use_line_name
+
+    return context
+
+
+def parse_lines(lines: str) -> dict:
+    """
+    Parse a list of lines from a Bmad lattice file. They should be cleaned and merged
+    before being passed to this function.
+
+    :param lines: List of lines to parse.
+    :return: Dictionary of variables defined in the lattice file.
+    """
+    property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
+    variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
+    element_definition_pattern = r"[a-z0-9_]+\s*\:\s*[a-z0-9_]+.*"
+    line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
+    overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
+    use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
+
+    context = {
+        "pi": scipy.constants.pi,
+        "twopi": 2 * scipy.constants.pi,
+        "c_light": scipy.constants.c,
+        "emass": physical_constants["electron mass energy equivalent in MeV"][0] * 1e-3,
+        "m_electron": (
+            physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+        ),
+        "sqrt": math.sqrt,
+        "asin": math.asin,
+        "sin": math.sin,
+        "cos": math.cos,
+        "abs_func": abs,
+        "raddeg": scipy.constants.degree,
+    }
+
+    for line in lines:
+        if re.fullmatch(property_assignment_pattern, line):
+            context = assign_property(line, context)
+        elif re.fullmatch(variable_assignment_pattern, line):
+            context = assign_variable(line, context)
+        elif re.fullmatch(line_definition_pattern, line):
+            context = define_line(line, context)
+        elif re.fullmatch(overlay_definition_pattern, line):
+            context = define_overlay(line, context)
+        elif re.fullmatch(element_definition_pattern, line):
+            context = define_element(line, context)
+        elif re.fullmatch(use_line_pattern, line):
+            context = parse_use_line(line, context)
 
     return context
