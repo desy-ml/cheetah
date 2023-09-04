@@ -1,5 +1,6 @@
 import os
 import re
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -49,3 +50,27 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
     replaced_lines = [line.strip() for line in replaced_lines]
 
     return replaced_lines
+
+
+def merge_ampersand_continued_lines(lines: list[str]) -> list[str]:
+    """
+    Merge lines ending with an ampersand with the following line.
+
+    :param lines: List of lines to merge.
+    :return: List of lines with ampersand-continued lines merged.
+    """
+    merged_lines = deepcopy(lines)
+    for i in range(len(merged_lines) - 1):
+        if merged_lines[i] is not None and merged_lines[i].endswith("&"):
+            num_added_lines = 1
+            while merged_lines[i].endswith("&"):
+                merged_lines[i] = (
+                    merged_lines[i][:-1] + merged_lines[i + num_added_lines]
+                )
+                merged_lines[i + num_added_lines] = None
+                num_added_lines += 1
+
+    # Prune None lines
+    merged_lines = [line for line in merged_lines if line is not None]
+
+    return merged_lines
