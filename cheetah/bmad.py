@@ -45,4 +45,7 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
     # sensitive)
     replaced_lines = [line.lower() for line in replaced_lines]
 
+    # Finally remove spaces again, because some may now have appeared
+    replaced_lines = [line.strip() for line in replaced_lines]
+
     return replaced_lines
