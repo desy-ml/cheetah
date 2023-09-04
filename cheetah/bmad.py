@@ -2,6 +2,7 @@ import os
 import re
 from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -86,3 +87,266 @@ def merge_delimiter_continued_lines(
     merged_lines = [line.strip() for line in merged_lines]
 
     return merged_lines
+
+
+def evaluate_expression(expression: str, context: dict) -> Any:
+    """
+    Evaluate an expression in the context of a dictionary of variables.
+
+    :param expression: Expression to evaluate.
+    :param context: Dictionary of variables to evaluate the expression in the context
+        of.
+    :return: Result of evaluating the expression.
+    """
+
+    # Try reading the expression as an integer
+    try:
+        return int(expression)
+    except ValueError:
+        pass
+
+    # Try reading the expression as a float
+    try:
+        return float(expression)
+    except ValueError:
+        pass
+
+    # Check against allowed keywords
+    if expression in ["open", "electron", "t", "f", "traveling_wave", "full"]:
+        return expression
+
+    # Check against previously defined variables
+    if expression in context:
+        return context[expression]
+
+    # Evaluate as a mathematical expression
+    try:
+        # Surround expressions in bracks with quotes
+        expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
+        # Replace power operator with python equivalent
+        expression = re.sub(r"\^", r"**", expression)
+        # Replace abs with abs_func when it is followed by a (
+        # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
+        # lattice file. I'm not sure this replacement will lead to the intended
+        # behaviour.
+        expression = re.sub(r"abs\(", r"abs_func(", expression)
+
+        return eval(expression, context)
+    except SyntaxError:
+        if not (
+            len(expression.split(":")) == 3 or len(expression.split(":")) == 4
+        ):  # It's probably an alias
+            print(
+                f"DEBUG: Evaluating expression {expression}. Assuming it is a string."
+            )
+        return expression
+    except Exception as e:
+        print(expression)
+        raise e
+
+
+def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
+    """
+    Return a list of object names that match the given wildcard pattern.
+
+    :param wildcard_pattern: Wildcard pattern to match.
+    :param context: Dictionary of variables among which to search for matching object.
+    :return: List of object names that match the given wildcard pattern, both in terms
+        of name and element type.
+    """
+    object_type, object_name = wildcard_pattern.split("::")
+
+    pattern = object_name.replace("*", ".*").replace("%", ".")
+    name_matching_keys = [key for key in context.keys() if re.fullmatch(pattern, key)]
+    type_matching_keys = [
+        key
+        for key in name_matching_keys
+        if isinstance(context[key], dict)
+        and "element_type" in context[key]
+        and context[key]["element_type"] == object_type
+    ]
+
+    return type_matching_keys
+
+
+def assign_property(line: str, context: dict) -> dict:
+    """
+    Assign a property of an element to the context.
+
+    :param line: Line of a property assignment to be parsed.
+    :param context: Dictionary of variables to assign the property to and from which to
+        read variables.
+    :return: Updated context.
+    """
+    pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
+    match = re.fullmatch(pattern, line)
+
+    object_name = match.group(1).strip()
+    property_name = match.group(2).strip()
+    property_expression = match.group(3).strip()  # TODO: Evaluate expression first
+
+    if "*" in object_name or "%" in object_name:
+        object_names = resolve_object_name_wildcard(object_name, context)
+    else:
+        object_names = [object_name]
+
+    expression_result = evaluate_expression(property_expression, context)
+
+    for name in object_names:
+        if name not in context:
+            context[name] = {}
+        context[name][property_name] = expression_result
+
+    return context
+
+
+def assign_variable(line: str, context: dict) -> dict:
+    """
+    Assign a variable to the context.
+
+    :param line: Line of a variable assignment to be parsed.
+    :param context: Dictionary of variables to assign the variable to and from which to
+        read variables.
+    :return: Updated context.
+    """
+    pattern = r"([a-z0-9_]+)\s*=(.*)"
+    match = re.fullmatch(pattern, line)
+
+    variable_name = match.group(1).strip()
+    variable_expression = match.group(2).strip()
+
+    context[variable_name] = evaluate_expression(variable_expression, context)
+
+    return context
+
+
+def define_element(line: str, context: dict) -> dict:
+    """
+    Define an element in the context.
+
+    :param line: Line of an element definition to be parsed.
+    :param context: Dictionary of variables to define the element in and from which to
+        read variables.
+    :return: Updated context.
+    """
+    pattern = r"([a-z0-9_]+)\s*\:\s*([a-z0-9_]+)(\,(.*))?"
+    match = re.fullmatch(pattern, line)
+
+    element_name = match.group(1).strip()
+    element_type = match.group(2).strip()
+
+    if element_type in context:
+        element_properties = deepcopy(context[element_type])
+    else:
+        element_properties = {"element_type": element_type}
+
+    if match.group(3) is not None:
+        element_properties_string = match.group(4).strip()
+
+        property_pattern = r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9]+\s*\=\s*[^\=\,\"]+)"
+        property_matches = re.findall(property_pattern, element_properties_string)
+
+        for property_string in property_matches:
+            property_string = property_string.strip()
+
+            property_name, property_expression = property_string.split("=")
+            property_name = property_name.strip()
+            property_expression = property_expression.strip()
+
+            element_properties[property_name] = evaluate_expression(
+                property_expression, context
+            )
+
+    context[element_name] = element_properties
+
+    return context
+
+
+def define_line(line: str, context: dict) -> dict:
+    """
+    Define a beam line in the context.
+
+    :param line: Line of a beam line definition to be parsed.
+    :param context: Dictionary of variables to define the beam line in and from which
+        to read variables.
+    :return: Updated context.
+    """
+    pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
+    match = re.fullmatch(pattern, line)
+
+    line_name = match.group(1).strip()
+    line_elements_string = match.group(2).strip()
+
+    line_elements = []
+    for element_name in line_elements_string.split(","):
+        element_name = element_name.strip()
+
+        line_elements.append(element_name)
+
+    context[line_name] = line_elements
+
+    return context
+
+
+def define_overlay(line: str, context: dict) -> dict:
+    """
+    Define an overlay in the context.
+
+    :param line: Line of an overlay definition to be parsed.
+    :param context: Dictionary of variables to define the overlay in and from which to
+        read variables.
+    :return: Updated context.
+    """
+    knot_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"
+    expression_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}\s*(\,.*)*"
+
+    expression_match = re.fullmatch(expression_based_pattern, line)
+    knot_match = re.fullmatch(knot_based_pattern, line)
+
+    if knot_match:
+        overlay_name = knot_match.group(1).strip()
+        overlay_definition = knot_match.group(2).strip()
+        overlay_variable = knot_match.group(3).strip()
+        overlay_x_knot = knot_match.group(4).strip()
+
+        context[overlay_name] = {
+            "overlay_definition": overlay_definition,
+            "overlay_variable": overlay_variable,
+            "overlay_x_knot": overlay_x_knot,
+        }
+    elif expression_match:
+        overlay_name = expression_match.group(1).strip()
+        overlay_definition = expression_match.group(2).strip()
+        overlay_variables = expression_match.group(3).strip()
+        if expression_match.group(4) is not None:
+            overlay_parameters = expression_match.group(4).strip()[1:].strip()
+        else:
+            overlay_parameters = None
+
+        context[overlay_name] = {
+            "overlay_definition": overlay_definition,
+            "overlay_variables": overlay_variables,
+            "overlay_parameters": overlay_parameters,
+        }
+    else:
+        raise ValueError(f"Overlay definition {line} not understood.")
+
+    return context
+
+
+def parse_use_line(line: str, context: dict) -> dict:
+    """
+    Parse a use line.
+
+    :param line: Line of a use statement to be parsed.
+    :param context: Dictionary of variables to define the overlay in and from which to
+        read variables.
+    :return: Updated context.
+    """
+    pattern = r"use\s*\,\s*([a-z0-9_]+)"
+    match = re.fullmatch(pattern, line)
+
+    use_line_name = match.group(1).strip()
+    context["__use__"] = use_line_name
+
+    return context
