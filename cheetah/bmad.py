@@ -52,8 +52,8 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
     return replaced_lines
 
 
-def merge_delimitter_continued_lines(
-    lines: list[str], delimitter: str, remove_delimitter: bool = False
+def merge_delimiter_continued_lines(
+    lines: list[str], delimiter: str, remove_delimiter: bool = False
 ) -> list[str]:
     """
     Merge lines ending with some character as a delimitter with the following line.
@@ -65,10 +65,10 @@ def merge_delimitter_continued_lines(
     """
     merged_lines = deepcopy(lines)
     for i in range(len(merged_lines) - 1):
-        if merged_lines[i] is not None and merged_lines[i].endswith(delimitter):
+        if merged_lines[i] is not None and merged_lines[i].endswith(delimiter):
             num_added_lines = 1
-            while merged_lines[i].endswith(delimitter):
-                if remove_delimitter:
+            while merged_lines[i].endswith(delimiter):
+                if remove_delimiter:
                     merged_lines[i] = (
                         merged_lines[i][:-1] + merged_lines[i + num_added_lines]
                     )
