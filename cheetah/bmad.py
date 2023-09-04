@@ -52,12 +52,15 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
     return replaced_lines
 
 
-def merge_delimitter_continued_lines(lines: list[str], delimitter: str) -> list[str]:
+def merge_delimitter_continued_lines(
+    lines: list[str], delimitter: str, remove_delimitter: bool = False
+) -> list[str]:
     """
     Merge lines ending with some character as a delimitter with the following line.
 
     :param lines: List of lines to merge.
     :param delimitter: Character to use as a delimitter.
+    :param remove_delimitter: Whether to remove the delimitter from the merged line.
     :return: List of lines with ampersand-continued lines merged.
     """
     merged_lines = deepcopy(lines)
@@ -65,9 +68,14 @@ def merge_delimitter_continued_lines(lines: list[str], delimitter: str) -> list[
         if merged_lines[i] is not None and merged_lines[i].endswith(delimitter):
             num_added_lines = 1
             while merged_lines[i].endswith(delimitter):
-                merged_lines[i] = (
-                    merged_lines[i][:-1] + merged_lines[i + num_added_lines]
-                )
+                if remove_delimitter:
+                    merged_lines[i] = (
+                        merged_lines[i][:-1] + merged_lines[i + num_added_lines]
+                    )
+                else:
+                    merged_lines[i] = (
+                        merged_lines[i] + merged_lines[i + num_added_lines]
+                    )
                 merged_lines[i + num_added_lines] = None
                 num_added_lines += 1
 
