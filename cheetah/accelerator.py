@@ -759,7 +759,7 @@ class BPM(Element):
 
 
 @dataclass
-class Monitor(Element):
+class Marker(Element):
     """
     General Marker / Monitor element
 
