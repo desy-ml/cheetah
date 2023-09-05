@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -1457,7 +1457,7 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def plot_twiss(self, beam: Beam) -> None:
+    def plot_twiss(self, beam: Beam, ax: Optional[Any] = None) -> None:
         """Plot twiss parameters along the segment."""
         longitudinal_beams = [beam]
         s_positions = [0.0]
@@ -1470,8 +1470,9 @@ class Segment(Element):
         beta_x = [beam.beta_x for beam in longitudinal_beams]
         beta_y = [beam.beta_y for beam in longitudinal_beams]
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
 
         ax.set_title("Twiss Parameters")
         ax.set_xlabel("s (m)")
@@ -1481,6 +1482,17 @@ class Segment(Element):
         ax.plot(s_positions, beta_y, label=r"$\beta_y$", c="tab:green")
 
         ax.legend()
+        plt.tight_layout()
+
+    def plot_twiss_over_lattice(self, beam: Beam, figsize=(8, 4)) -> None:
+        """Plot twiss parameters in a plot over a plot of the lattice."""
+        fig = plt.figure(figsize=figsize)
+        gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
+        axs = gs.subplots(sharex=True)
+
+        self.plot_twiss(beam, ax=axs[0])
+        self.plot(axs[1], 0)
+
         plt.tight_layout()
 
     def __repr__(self) -> str:
