@@ -5,8 +5,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import scipy
 from scipy.constants import physical_constants
+
+import cheetah
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -404,3 +407,186 @@ def parse_lines(lines: str) -> dict:
             context = parse_use_line(line, context)
 
     return context
+
+
+def validate_understood_properties(understood: list[str], properties: dict) -> None:
+    """
+    Validate that all properties are understood. This function primarily ensures that
+    properties not understood by Cheetah are not ignored silently.
+
+    Raises an `AssertionError` if a property is found that is not understood.
+
+    :param understood: List of properties understood (or purpusefully ignored) by
+        Cheetah.
+    :param properties: Dictionary of properties to validate.
+    :return: None
+    """
+    for property in properties:
+        assert property in understood, (
+            f"Property {property} with value {properties[property]} for element type"
+            f" {properties['element_type']} is currently not understood. Other values"
+            f" in properties are {properties.keys()}."
+        )
+
+
+def convert_element(name: str, context: dict) -> "cheetah.Element":
+    """Convert a parsed Bmad element dict to a cheetah Element.
+
+    :param name: Name of the (top-level) element to convert.
+    :param context: Context dictionary parsed from Bmad lattice file(s).
+    :return: Converted cheetah Element. If you are calling this function yourself
+        as a user of Cheetah, this is most likely a `Segment`.
+    """
+    bmad_parsed = context[name]
+
+    if isinstance(bmad_parsed, list):
+        return cheetah.Segment(
+            cell=[
+                convert_element(element_name, context) for element_name in bmad_parsed
+            ],
+            name=name,
+        )
+    elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
+        if bmad_parsed["element_type"] == "marker":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "alias",
+                    "type",
+                    "sr_wake",
+                    r"sr_wake%scale_with_length",
+                    r"sr_wake%amp_scale",
+                ],
+                bmad_parsed,
+            )
+            return cheetah.Marker(name=name)
+        elif bmad_parsed["element_type"] == "monitor":
+            validate_understood_properties(
+                ["element_type", "alias", "type", "l"], bmad_parsed
+            )
+            if "l" in bmad_parsed:
+                return cheetah.Drift(length=bmad_parsed["l"], name=name)
+            else:
+                return cheetah.Marker(name=name)
+        elif bmad_parsed["element_type"] == "instrument":
+            validate_understood_properties(
+                ["element_type", "alias", "type", "l"], bmad_parsed
+            )
+            if "l" in bmad_parsed:
+                return cheetah.Drift(length=bmad_parsed["l"], name=name)
+            else:
+                return cheetah.Marker(name=name)
+        elif bmad_parsed["element_type"] == "pipe":
+            validate_understood_properties(
+                ["element_type", "alias", "type", "l", "descrip"], bmad_parsed
+            )
+            return cheetah.Drift(length=bmad_parsed["l"], name=name)
+        elif bmad_parsed["element_type"] == "drift":
+            validate_understood_properties(
+                ["element_type", "l", "type", "descrip"], bmad_parsed
+            )
+            return cheetah.Drift(length=bmad_parsed["l"], name=name)
+        elif bmad_parsed["element_type"] == "hkicker":
+            validate_understood_properties(
+                ["element_type", "type", "alias"], bmad_parsed
+            )
+            return cheetah.HorizontalCorrector(
+                length=bmad_parsed.get("l", 0.0),
+                angle=bmad_parsed.get("kick", 0.0),
+                name=name,
+            )
+        elif bmad_parsed["element_type"] == "vkicker":
+            validate_understood_properties(
+                ["element_type", "type", "alias"], bmad_parsed
+            )
+            return cheetah.VerticalCorrector(
+                length=bmad_parsed.get("l", 0.0),
+                angle=bmad_parsed.get("kick", 0.0),
+                name=name,
+            )
+        elif bmad_parsed["element_type"] == "quadrupole":
+            # TODO: Aperture for quadrupoles?
+            validate_understood_properties(
+                ["element_type", "l", "k1", "type", "aperture", "alias", "tilt"],
+                bmad_parsed,
+            )
+            return cheetah.Quadrupole(
+                length=bmad_parsed["l"],
+                k1=bmad_parsed["k1"],
+                tilt=bmad_parsed.get("tilt", 0.0),
+                name=name,
+            )
+        elif bmad_parsed["element_type"] == "solenoid":
+            validate_understood_properties(
+                ["element_type", "l", "ks", "alias"], bmad_parsed
+            )
+            return cheetah.Solenoid(
+                length=bmad_parsed["l"], k=bmad_parsed["ks"], name=name
+            )
+        elif bmad_parsed["element_type"] == "lcavity":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "l",
+                    "type",
+                    "rf_frequency",
+                    "voltage",
+                    "phi0",
+                    "sr_wake",
+                    "cavity_type",
+                    "alias",
+                ],
+                bmad_parsed,
+            )
+            return cheetah.Cavity(length=bmad_parsed["l"], name=name)
+        elif bmad_parsed["element_type"] == "rcollimator":
+            validate_understood_properties(
+                ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
+                bmad_parsed,
+            )
+            return cheetah.Aperture(
+                x_max=bmad_parsed.get("x_limit", np.inf),
+                y_max=bmad_parsed.get("y_limit", np.inf),
+                shape="rectangular",
+                name=name,
+            )
+        elif bmad_parsed["element_type"] == "ecollimator":
+            validate_understood_properties(
+                ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
+                bmad_parsed,
+            )
+            return cheetah.Aperture(
+                x_max=bmad_parsed.get("x_limit", np.inf),
+                y_max=bmad_parsed.get("y_limit", np.inf),
+                shape="elliptical",
+                name=name,
+            )
+        elif bmad_parsed["element_type"] == "wiggler":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "type",
+                    "l_period",
+                    "n_period",
+                    "b_max",
+                    "l",
+                    "alias",
+                    "tilt",
+                    "ds_step",
+                ],
+                bmad_parsed,
+            )
+            return cheetah.Undulator(length=bmad_parsed["l"], name=name)
+        elif bmad_parsed["element_type"] == "patch":
+            # TODO: Does this need to be implemented in Cheetah in a more proper way?
+            validate_understood_properties(["element_type", "tilt"], bmad_parsed)
+            return cheetah.Drift(length=bmad_parsed.get("l", 0.0), name=name)
+        else:
+            print(
+                f"WARNING: Element {name} of type {bmad_parsed['element_type']} cannot"
+                " be converted correctly. Using drift section instead."
+            )
+            # TODO: Remove the length if by adding markers to Cheeath
+            return cheetah.Drift(name=name, length=bmad_parsed.get("l", 0.0))
+    else:
+        raise ValueError(f"Unknown Bmad element type for {name = }")
