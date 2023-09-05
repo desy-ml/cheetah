@@ -11,6 +11,7 @@ Welcome to Cheetah's documentation!
     :caption: Contents:
 
     accelerator
+    dontbemad
     particles
     track_methods
     utils
