@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,7 +38,7 @@ class DeviceError(Exception):
 
 
 @dataclass()
-class Element:
+class Element(ABC):
     """
     Base class for elements of particle accelerators.
 
@@ -136,6 +137,7 @@ class Element:
         """
         raise NotImplementedError
 
+    @abstractmethod
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
@@ -448,6 +450,15 @@ class Dipole(Element):
             + f"gap={self.gap:.2f},"
             + f'name="{self.name}")'
         )
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
+
+        patch = Rectangle(
+            (s, 0), self.length, height, color="tab:green", alpha=alpha, zorder=2
+        )
+        ax.add_patch(patch)
 
 
 @dataclass
@@ -774,6 +785,11 @@ class Marker(Element):
     def __call__(self, incoming):
         return incoming
 
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        # Do nothing on purpose. Maybe later we decide markers should be shown, but for
+        # now they are invisible.
+        pass
+
 
 @dataclass
 class Screen(Element):
@@ -1009,6 +1025,15 @@ class Aperture(Element):
 
         return ParticleBeam(outgoing_particles, incoming.energy, device=incoming.device)
 
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        alpha = 1 if self.is_active else 0.2
+        height = 0.4
+
+        patch = Rectangle(
+            (s, 0), self.length, height, color="tab:pink", alpha=alpha, zorder=2
+        )
+        ax.add_patch(patch)
+
 
 @dataclass
 class Undulator(Element):
@@ -1148,6 +1173,15 @@ class Solenoid(Element):
             f"{self.__class__.__name__}(length={self.length:.2f}, k={self.k:.2f},"
             f' name="{self.name}")'
         )
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8
+
+        patch = Rectangle(
+            (s, 0), self.length, height, color="tab:orange", alpha=alpha, zorder=2
+        )
+        ax.add_patch(patch)
 
 
 @dataclass
