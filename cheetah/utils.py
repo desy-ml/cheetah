@@ -187,8 +187,8 @@ def parse_cheetah_element(element: acc.Element):
     elif isinstance(element, acc.BPM):
         element_class = "BPM"
         params = {}
-    elif isinstance(element, acc.Monitor):
-        element_class = "Monitor"
+    elif isinstance(element, acc.Marker):
+        element_class = "Marker"
         params = {}
     elif isinstance(element, acc.Screen):
         element_class = "Screen"
