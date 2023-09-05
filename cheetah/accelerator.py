@@ -1352,7 +1352,6 @@ class Segment(Element):
         ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
         ax.set_yticks([])
-        ax.grid()
 
     def plot_reference_particle_traces(
         self,
