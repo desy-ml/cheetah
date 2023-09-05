@@ -2,7 +2,12 @@ from typing import Optional
 
 import numpy as np
 import torch
+from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
+
+electron_mass_eV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+)
 
 
 class Beam:
@@ -31,15 +36,40 @@ class Beam:
 
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_xp: Center of the particle distribution on x'=px/px'
+            (trace space) in rad.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_yp: Center of the particle distribution on y' in rad.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param energy: Energy of the beam in eV.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def from_twiss(
+        cls,
+        beta_x: float = 0.0,
+        alpha_x: float = 0.0,
+        emittance_x: float = 0.0,
+        beta_y: float = 0.0,
+        alpha_y: float = 0.0,
+        emittance_y: float = 0.0,
+        energy: float = 1e8,
+    ) -> "Beam":
+        """
+        Create a beam from twiss parameters.
+
+        :param beta_x: Beta function in x direction in meters.
+        :param alpha_x: Alpha function in x direction in meters.
+        :param emittance_x: Emittance in x direction.
+        :param beta_y: Beta function in y direction in meters.
+        :param alpha_y: Alpha function in y direction in meters.
+        :param emittance_y: Emittance in y direction.
         :param energy: Energy of the beam in eV.
         """
         raise NotImplementedError
@@ -112,7 +142,7 @@ class Beam:
         )
 
     @property
-    def parameters(self) -> dict[str, float]:
+    def parameters(self) -> dict:
         return {
             "mu_x": self.mu_x,
             "mu_xp": self.mu_xp,
@@ -128,52 +158,112 @@ class Beam:
         }
 
     @property
-    def mu_x(self) -> float:
+    def mu_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_x(self) -> float:
+    def sigma_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_xp(self) -> float:
+    def mu_xp(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_xp(self) -> float:
+    def sigma_xp(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_y(self) -> float:
+    def mu_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_y(self) -> float:
+    def sigma_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_yp(self) -> float:
+    def mu_yp(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_yp(self) -> float:
+    def sigma_yp(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_s(self) -> float:
+    def mu_s(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_s(self) -> float:
+    def sigma_s(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_p(self) -> float:
+    def mu_p(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_p(self) -> float:
+    def sigma_p(self) -> torch.Tensor:
         raise NotImplementedError
+
+    @property
+    def relativistic_gamma(self) -> float:
+        return self.energy / electron_mass_eV
+
+    @property
+    def relativistic_beta(self) -> torch.Tensor:
+        relativistic_beta = (
+            torch.sqrt(1 - 1 / (self.relativistic_gamma**2))
+            if torch.abs(self.relativistic_gamma) > 0
+            else 1.0
+        )
+        return relativistic_beta
+
+    @property
+    def sigma_xxp(self) -> torch.Tensor:
+        # the covariance of (x,x') ~ $\sigma_{xx'}$
+        raise NotImplementedError
+
+    @property
+    def sigma_yyp(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    def emittance_x(self) -> torch.Tensor:
+        """Emittance of the beam in x direction in m*rad."""
+        return torch.sqrt(self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2)
+
+    @property
+    def normalized_emittance_x(self) -> torch.Tensor:
+        """Normalized emittance of the beam in x direction in m*rad."""
+        return self.emittance_x * self.relativistic_beta * self.relativistic_gamma
+
+    @property
+    def beta_x(self) -> torch.Tensor:
+        """Beta function in x direction in meters."""
+        return self.sigma_x**2 / self.emittance_x
+
+    @property
+    def alpha_x(self) -> torch.Tensor:
+        return -self.sigma_xxp / self.emittance_x
+
+    @property
+    def emittance_y(self) -> torch.Tensor:
+        """Emittance of the beam in y direction in m*rad."""
+        return torch.sqrt(self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2)
+
+    @property
+    def normalized_emittance_y(self) -> torch.Tensor:
+        """Normalized emittance of the beam in y direction in m*rad."""
+        return self.emittance_y * self.relativistic_beta * self.relativistic_gamma
+
+    @property
+    def beta_y(self) -> torch.Tensor:
+        """Beta function in y direction in meters."""
+        return self.sigma_y**2 / self.emittance_y
+
+    @property
+    def alpha_y(self) -> torch.Tensor:
+        return -self.sigma_yyp / self.emittance_y
 
     def __repr__(self) -> str:
         return (
@@ -232,6 +322,39 @@ class ParameterBeam(Beam):
                 dtype=torch.float32,
             ),
             energy=energy,
+        )
+
+    @classmethod
+    def from_twiss(
+        cls,
+        beta_x: float = 0.0,
+        alpha_x: float = 0.0,
+        emittance_x: float = 0.0,
+        beta_y: float = 0.0,
+        alpha_y: float = 0.0,
+        emittance_y: float = 0.0,
+        sigma_s: float = 1e-6,
+        sigma_p: float = 1e-6,
+        cor_s: float = 0,
+        energy: float = 1e8,
+    ) -> "ParameterBeam":
+        sigma_x = np.sqrt(emittance_x * beta_x)
+        sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
+        sigma_y = np.sqrt(emittance_y * beta_y)
+        sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
+        cor_x = -emittance_x * alpha_x
+        cor_y = -emittance_y * alpha_y
+        return cls.from_parameters(
+            sigma_x=sigma_x,
+            sigma_xp=sigma_xp,
+            sigma_y=sigma_y,
+            sigma_yp=sigma_yp,
+            sigma_s=sigma_s,
+            sigma_p=sigma_p,
+            energy=energy,
+            cor_s=cor_s,
+            cor_x=cor_x,
+            cor_y=cor_y,
         )
 
     @classmethod
@@ -317,52 +440,60 @@ class ParameterBeam(Beam):
         )
 
     @property
-    def mu_x(self) -> float:
+    def mu_x(self) -> torch.Tensor:
         return self._mu[0]
 
     @property
-    def sigma_x(self) -> float:
+    def sigma_x(self) -> torch.Tensor:
         return torch.sqrt(self._cov[0, 0])
 
     @property
-    def mu_xp(self) -> float:
+    def mu_xp(self) -> torch.Tensor:
         return self._mu[1]
 
     @property
-    def sigma_xp(self) -> float:
+    def sigma_xp(self) -> torch.Tensor:
         return torch.sqrt(self._cov[1, 1])
 
     @property
-    def mu_y(self) -> float:
+    def mu_y(self) -> torch.Tensor:
         return self._mu[2]
 
     @property
-    def sigma_y(self) -> float:
+    def sigma_y(self) -> torch.Tensor:
         return torch.sqrt(self._cov[2, 2])
 
     @property
-    def mu_yp(self) -> float:
+    def mu_yp(self) -> torch.Tensor:
         return self._mu[3]
 
     @property
-    def sigma_yp(self) -> float:
+    def sigma_yp(self) -> torch.Tensor:
         return torch.sqrt(self._cov[3, 3])
 
     @property
-    def mu_s(self) -> float:
+    def mu_s(self) -> torch.Tensor:
         return self._mu[4]
 
     @property
-    def sigma_s(self) -> float:
+    def sigma_s(self) -> torch.Tensor:
         return torch.sqrt(self._cov[4, 4])
 
     @property
-    def mu_p(self) -> float:
+    def mu_p(self) -> torch.Tensor:
         return self._mu[5]
 
     @property
-    def sigma_p(self) -> float:
+    def sigma_p(self) -> torch.Tensor:
         return torch.sqrt(self._cov[5, 5])
+
+    @property
+    def sigma_xxp(self) -> torch.Tensor:
+        return self._cov[0, 1]
+
+    @property
+    def sigma_yyp(self) -> torch.Tensor:
+        return self._cov[2, 3]
 
     def __repr__(self) -> str:
         return (
@@ -375,7 +506,7 @@ class ParameterBeam(Beam):
         )
 
 
-class ParticleBeam:
+class ParticleBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
 
@@ -461,6 +592,47 @@ class ParticleBeam:
         particles[:, :6] = distribution.sample((num_particles,))
 
         return cls(particles, energy, device=device)
+
+    @classmethod
+    def from_twiss(
+        cls,
+        num_particles: int = 1_000_000,
+        beta_x: float = 0.0,
+        alpha_x: float = 0.0,
+        emittance_x: float = 0.0,
+        beta_y: float = 0.0,
+        alpha_y: float = 0.0,
+        emittance_y: float = 0.0,
+        energy: float = 1e8,
+        sigma_s: float = 1e-6,
+        sigma_p: float = 1e-6,
+        cor_s: float = 0,
+        device: str = "auto",
+    ) -> "ParticleBeam":
+        sigma_x = np.sqrt(beta_x * emittance_x)
+        sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
+        sigma_y = np.sqrt(beta_y * emittance_y)
+        sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
+        cor_x = -emittance_x * alpha_x
+        cor_y = -emittance_y * alpha_y
+        return cls.from_parameters(
+            num_particles=num_particles,
+            mu_x=0,
+            mu_xp=0,
+            mu_y=0,
+            mu_yp=0,
+            sigma_x=sigma_x,
+            sigma_xp=sigma_xp,
+            sigma_y=sigma_y,
+            sigma_yp=sigma_yp,
+            sigma_s=sigma_s,
+            sigma_p=sigma_p,
+            energy=energy,
+            cor_s=cor_s,
+            cor_x=cor_x,
+            cor_y=cor_y,
+            device=device,
+        )
 
     @classmethod
     def make_linspaced(
@@ -640,12 +812,12 @@ class ParticleBeam:
         self.particles[:, 0] = value
 
     @property
-    def mu_x(self) -> Optional[float]:
-        return float(self.xs.mean()) if self is not Beam.empty else None
+    def mu_x(self) -> Optional[torch.Tensor]:
+        return self.xs.mean() if self is not Beam.empty else None
 
     @property
-    def sigma_x(self) -> Optional[float]:
-        return float(self.xs.std()) if self is not Beam.empty else None
+    def sigma_x(self) -> Optional[torch.Tensor]:
+        return self.xs.std() if self is not Beam.empty else None
 
     @property
     def xps(self) -> Optional[torch.Tensor]:
@@ -656,12 +828,12 @@ class ParticleBeam:
         self.particles[:, 1] = value
 
     @property
-    def mu_xp(self) -> Optional[float]:
-        return float(self.xps.mean()) if self is not Beam.empty else None
+    def mu_xp(self) -> Optional[torch.Tensor]:
+        return self.xps.mean() if self is not Beam.empty else None
 
     @property
-    def sigma_xp(self) -> Optional[float]:
-        return float(self.xps.std()) if self is not Beam.empty else None
+    def sigma_xp(self) -> Optional[torch.Tensor]:
+        return self.xps.std() if self is not Beam.empty else None
 
     @property
     def ys(self) -> Optional[torch.Tensor]:
@@ -673,11 +845,11 @@ class ParticleBeam:
 
     @property
     def mu_y(self) -> Optional[float]:
-        return float(self.ys.mean()) if self is not Beam.empty else None
+        return self.ys.mean() if self is not Beam.empty else None
 
     @property
-    def sigma_y(self) -> Optional[float]:
-        return float(self.ys.std()) if self is not Beam.empty else None
+    def sigma_y(self) -> Optional[torch.Tensor]:
+        return self.ys.std() if self is not Beam.empty else None
 
     @property
     def yps(self) -> Optional[torch.Tensor]:
@@ -688,12 +860,12 @@ class ParticleBeam:
         self.particles[:, 3] = value
 
     @property
-    def mu_yp(self) -> Optional[float]:
-        return float(self.yps.mean()) if self is not Beam.empty else None
+    def mu_yp(self) -> Optional[torch.Tensor]:
+        return self.yps.mean() if self is not Beam.empty else None
 
     @property
-    def sigma_yp(self) -> Optional[float]:
-        return float(self.yps.std()) if self is not Beam.empty else None
+    def sigma_yp(self) -> Optional[torch.Tensor]:
+        return self.yps.std() if self is not Beam.empty else None
 
     @property
     def ss(self) -> Optional[torch.Tensor]:
@@ -704,12 +876,12 @@ class ParticleBeam:
         self.particles[:, 4] = value
 
     @property
-    def mu_s(self) -> Optional[float]:
-        return float(self.ss.mean()) if self is not Beam.empty else None
+    def mu_s(self) -> Optional[torch.Tensor]:
+        return self.ss.mean() if self is not Beam.empty else None
 
     @property
-    def sigma_s(self) -> Optional[float]:
-        return float(self.ss.std()) if self is not Beam.empty else None
+    def sigma_s(self) -> Optional[torch.Tensor]:
+        return self.ss.std() if self is not Beam.empty else None
 
     @property
     def ps(self) -> Optional[torch.Tensor]:
@@ -720,12 +892,20 @@ class ParticleBeam:
         self.particles[:, 5] = value
 
     @property
-    def mu_p(self) -> Optional[float]:
-        return float(self.ps.mean()) if self is not Beam.empty else None
+    def mu_p(self) -> Optional[torch.Tensor]:
+        return self.ps.mean() if self is not Beam.empty else None
 
     @property
-    def sigma_p(self) -> Optional[float]:
-        return float(self.ps.std()) if self is not Beam.empty else None
+    def sigma_p(self) -> Optional[torch.Tensor]:
+        return self.ps.std() if self is not Beam.empty else None
+
+    @property
+    def sigma_xxp(self) -> torch.Tensor:
+        return torch.mean((self.xs - self.mu_x) * (self.xps - self.mu_xp))
+
+    @property
+    def sigma_yyp(self) -> torch.Tensor:
+        return torch.mean((self.ys - self.mu_y) * (self.yps - self.mu_yp))
 
     def __repr__(self) -> str:
         return (
