@@ -247,7 +247,9 @@ def define_element(line: str, context: dict) -> dict:
     if match.group(3) is not None:
         element_properties_string = match.group(4).strip()
 
-        property_pattern = r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9]+\s*\=\s*[^\=\,\"]+)"
+        property_pattern = (
+            r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9_]+\s*\=\s*[^\=\,\"]+)"
+        )
         property_matches = re.findall(property_pattern, element_properties_string)
 
         for property_string in property_matches:
