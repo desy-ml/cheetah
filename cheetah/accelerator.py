@@ -1,5 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal, Optional
 
 import matplotlib
@@ -10,6 +11,7 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.stats import multivariate_normal
 
+from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
@@ -1238,6 +1240,26 @@ class Segment(Element):
 
         converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
         return cls(converted, name=name, **kwargs)
+
+    @classmethod
+    def from_bmad(
+        cls, bmad_lattice_file_path: str, environment_variables: Optional[dict] = None
+    ) -> "Segment":
+        """
+        Read a Cheetah segment from a Bmad lattice file.
+
+        NOTE: This function was designed at the example of the LCLS lattice. While this
+        lattice is extensive, this function might not properly convert all features of
+        a Bmad lattice. If you find that this function does not work for your lattice,
+        please open an issue on GitHub.
+
+        :param bmad_lattice_file_path: Path to the Bmad lattice file.
+        :param environment_variables: Dictionary of environment variables to use when
+            parsing the lattice file.
+        :return: Cheetah `Segment` representing the Bmad lattice.
+        """
+        bmad_lattice_file_path = Path(bmad_lattice_file_path)
+        return convert_bmad_lattice(bmad_lattice_file_path, environment_variables)
 
     @property
     def is_skippable(self) -> bool:
