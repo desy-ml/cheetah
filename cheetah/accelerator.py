@@ -284,6 +284,7 @@ class Quadrupole(Element):
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"k1={self.k1}, "
             + f"misalignment={self.misalignment}, "
+            + f"tilt={self.tilt:.2f}, "
             + f'name="{self.name}")'
         )
 
@@ -1461,6 +1462,7 @@ class Segment(Element):
         longitudinal_beams = [beam]
         s_positions = [0.0]
         for element in self.elements:
+            print(element)
             outgoing = element.track(longitudinal_beams[-1])
 
             longitudinal_beams.append(outgoing)
