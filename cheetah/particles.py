@@ -50,6 +50,30 @@ class Beam:
         raise NotImplementedError
 
     @classmethod
+    def from_twiss(
+        cls,
+        beta_x: float = 0.0,
+        alpha_x: float = 0.0,
+        emittance_x: float = 0.0,
+        beta_y: float = 0.0,
+        alpha_y: float = 0.0,
+        emittance_y: float = 0.0,
+        energy: float = 1e8,
+    ) -> "Beam":
+        """
+        Create a beam from twiss parameters.
+
+        :param beta_x: Beta function in x direction in meters.
+        :param alpha_x: Alpha function in x direction in meters.
+        :param emittance_x: Emittance in x direction.
+        :param beta_y: Beta function in y direction in meters.
+        :param alpha_y: Alpha function in y direction in meters.
+        :param emittance_y: Emittance in y direction.
+        :param energy: Energy of the beam in eV.
+        """
+        raise NotImplementedError
+
+    @classmethod
     def from_ocelot(cls, parray) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
