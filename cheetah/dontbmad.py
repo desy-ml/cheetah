@@ -504,6 +504,35 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 angle=bmad_parsed.get("kick", 0.0),
                 name=name,
             )
+        elif bmad_parsed["element_type"] == "sbend":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "alias",
+                    "type",
+                    "hgap",
+                    "l",
+                    "angle",
+                    "e1",
+                    "e2",
+                    "fint",
+                    "fintx",
+                    "fringe_type",
+                    "ref_tilt",
+                ],
+                bmad_parsed,
+            )
+            return cheetah.Dipole(
+                length=bmad_parsed["l"],
+                gap=bmad_parsed["hgap"],
+                angle=bmad_parsed["angle"],
+                e1=bmad_parsed["e1"],
+                e2=bmad_parsed["e2"],
+                tilt=bmad_parsed.get("ref_tilt", 0.0),
+                fringe_integral=bmad_parsed["fint"],
+                fringe_integral_exit=bmad_parsed["fintx"],
+                name=name,
+            )
         elif bmad_parsed["element_type"] == "quadrupole":
             # TODO: Aperture for quadrupoles?
             validate_understood_properties(
