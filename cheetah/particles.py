@@ -179,7 +179,18 @@ class Beam:
     @property
     def sigma_p(self) -> torch.Tensor:
         raise NotImplementedError
+@property
+def relativistic_gamma(self) -> float
+    return self.energy / electron_mass_eV
 
+@property
+def relativistic_beta(self) -> torch.Tensor
+    relativistic_beta = (
+            torch.sqrt(1 - 1 / (relativistic_gamma**2))
+            if torch.abs(relativistic_gamma) > 0
+            else 1.0
+        )
+        return relativistic_beta
     @property
     def emittance_x(self) -> torch.Tensor:
         return torch.sqrt(
@@ -189,13 +200,7 @@ class Beam:
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
-        relativistic_gamma = self.energy / electron_mass_eV
-        relativistic_beta = (
-            torch.sqrt(1 - 1 / (relativistic_gamma**2))
-            if torch.abs(relativistic_gamma) > 0
-            else 1.0
-        )
-        return self.emittance_x * relativistic_beta * relativistic_gamma
+        return self.emittance_x * self.relativistic_beta * self.relativistic_gamma
 
     @property
     def beta_x(self) -> torch.Tensor:
@@ -217,13 +222,7 @@ class Beam:
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
-        relativistic_gamma = self.energy / electron_mass_eV
-        relativistic_beta = (
-            torch.sqrt(1 - 1 / (relativistic_gamma**2))
-            if torch.abs(relativistic_gamma) > 0
-            else 1.0
-        )
-        return self.emittance_y * relativistic_beta * relativistic_gamma
+        return self.emittance_y * self.relativistic_beta * self.relativistic_gamma
 
     @property
     def beta_y(self) -> torch.Tensor:
