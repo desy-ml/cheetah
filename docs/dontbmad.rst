@@ -1,8 +1,8 @@
 .. Documents dontbemad.py
 
-Track Methods
-=============
+DontBmad
+========
 
-.. automodule:: dontbemad
+.. automodule:: dontbmad
     :members:
     :undoc-members:
