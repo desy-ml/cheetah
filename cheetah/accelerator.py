@@ -1201,6 +1201,20 @@ class Segment(Element):
                 return False
         return True
 
+    def flattened(self) -> "Segment":
+        """
+        Return a flattened version of the segment, i.e. one where all subsegments are
+        resolved and their elements entered into a top-level segment.
+        """
+        flattened_elements = []
+        for element in self.elements:
+            if isinstance(element, Segment):
+                flattened_elements += element.flattened().elements
+            else:
+                flattened_elements.append(element)
+
+        return Segment(cell=flattened_elements, name=self.name, device=self.device)
+
     @classmethod
     def from_ocelot(
         cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
