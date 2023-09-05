@@ -1456,6 +1456,32 @@ class Segment(Element):
 
         plt.tight_layout()
 
+    def plot_twiss(self, beam: Beam) -> None:
+        """Plot twiss parameters along the segment."""
+        longitudinal_beams = [beam]
+        s_positions = [0.0]
+        for element in self.elements:
+            outgoing = element.track(longitudinal_beams[-1])
+
+            longitudinal_beams.append(outgoing)
+            s_positions.append(s_positions[-1] + element.length)
+
+        beta_x = [beam.beta_x for beam in longitudinal_beams]
+        beta_y = [beam.beta_y for beam in longitudinal_beams]
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        ax.set_title("Twiss Parameters")
+        ax.set_xlabel("s (m)")
+        ax.set_ylabel(r"$\beta$ (m)")
+
+        ax.plot(s_positions, beta_x, label=r"$\beta_x$", c="tab:red")
+        ax.plot(s_positions, beta_y, label=r"$\beta_y$", c="tab:green")
+
+        ax.legend()
+        plt.tight_layout()
+
     def __repr__(self) -> str:
         start = f"{self.__class__.__name__}(["
 
