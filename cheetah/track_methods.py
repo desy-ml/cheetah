@@ -13,7 +13,9 @@ REST_ENERGY = (
 )  # electron mass
 
 
-def rotation_matrix(angle: float, device: Union[str, torch.device] = "auto"):
+def rotation_matrix(
+    angle: float, device: Union[str, torch.device] = "auto"
+) -> torch.Tensor:
     """Rotate the transfer map in x-y plane
 
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
@@ -47,7 +49,7 @@ def base_rmatrix(
     tilt: float = 0.0,
     energy: float = 0.0,
     device: Union[str, torch.device] = "auto",
-):
+) -> torch.Tensor:
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     gamma = energy / REST_ENERGY
