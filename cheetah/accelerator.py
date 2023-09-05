@@ -1462,7 +1462,6 @@ class Segment(Element):
         longitudinal_beams = [beam]
         s_positions = [0.0]
         for element in self.elements:
-            print(element)
             outgoing = element.track(longitudinal_beams[-1])
 
             longitudinal_beams.append(outgoing)

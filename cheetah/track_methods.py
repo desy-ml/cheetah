@@ -92,7 +92,7 @@ def base_rmatrix(
 
     # Rotate the R matrix for skew / vertical magnets
     if tilt != 0:
-        R = torch.dot(torch.dot(rotation_matrix(-tilt), R), rotation_matrix(tilt))
+        R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
     return R
 
 
