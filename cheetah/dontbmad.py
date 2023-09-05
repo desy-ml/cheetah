@@ -519,18 +519,20 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                     "fintx",
                     "fringe_type",
                     "ref_tilt",
+                    "g",
+                    "dg",
                 ],
                 bmad_parsed,
             )
             return cheetah.Dipole(
                 length=bmad_parsed["l"],
-                gap=bmad_parsed["hgap"],
-                angle=bmad_parsed["angle"],
+                gap=bmad_parsed.get("hgap", 0.0),
+                angle=bmad_parsed.get("angle", 0.0),
                 e1=bmad_parsed["e1"],
-                e2=bmad_parsed["e2"],
+                e2=bmad_parsed.get("e2", 0.0),
                 tilt=bmad_parsed.get("ref_tilt", 0.0),
-                fringe_integral=bmad_parsed["fint"],
-                fringe_integral_exit=bmad_parsed["fintx"],
+                fringe_integral=bmad_parsed.get("fint", 0.0),
+                fringe_integral_exit=bmad_parsed.get("fintx", None),
                 name=name,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
