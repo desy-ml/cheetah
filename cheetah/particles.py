@@ -194,11 +194,17 @@ class Beam:
         return relativistic_beta
 
     @property
+    def sigma_xxp(self) -> torch.Tensor:
+        # the covariance of (x,x') ~ $\sigma_{xx'}$
+        raise NotImplementedError
+
+    @property
+    def sigma_yyp(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
     def emittance_x(self) -> torch.Tensor:
-        return torch.sqrt(
-            self.sigma_x**2 * self.sigma_xp**2
-            - torch.mean((self.xs - self.mu_x) * (self.xps - self.mu_xp)) ** 2
-        )
+        return torch.sqrt(self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2)
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
@@ -210,17 +216,11 @@ class Beam:
 
     @property
     def alpha_x(self) -> torch.Tensor:
-        return (
-            -torch.mean((self.xs - self.mu_x) * (self.xps - self.mu_xp))
-            / self.emittance_x
-        )
+        return -self.sigma_xxp / self.emittance_x
 
     @property
     def emittance_y(self) -> torch.Tensor:
-        return torch.sqrt(
-            self.sigma_y**2 * self.sigma_yp**2
-            - torch.mean((self.ys - self.mu_y) * (self.yps - self.mu_yp)) ** 2
-        )
+        return torch.sqrt(self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2)
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
@@ -232,10 +232,7 @@ class Beam:
 
     @property
     def alpha_y(self) -> torch.Tensor:
-        return (
-            -torch.mean((self.ys - self.mu_y) * (self.yps - self.mu_yp))
-            / self.emittance_y
-        )
+        return -self.sigma_yyp / self.emittance_y
 
     def __repr__(self) -> str:
         return (
@@ -425,6 +422,14 @@ class ParameterBeam(Beam):
     @property
     def sigma_p(self) -> torch.Tensor:
         return torch.sqrt(self._cov[5, 5])
+
+    @property
+    def sigma_xxp(self) -> torch.Tensor:
+        return self._cov[0, 1]
+
+    @property
+    def sigma_yyp(self) -> torch.Tensor:
+        return self._cov[2, 3]
 
     def __repr__(self) -> str:
         return (
@@ -788,6 +793,14 @@ class ParticleBeam(Beam):
     @property
     def sigma_p(self) -> Optional[torch.Tensor]:
         return self.ps.std() if self is not Beam.empty else None
+
+    @property
+    def sigma_xxp(self) -> torch.Tensor:
+        return torch.mean((self.xs - self.mu_x) * (self.xps - self.mu_xp))
+
+    @property
+    def sigma_yyp(self) -> torch.Tensor:
+        return torch.mean((self.ys - self.mu_y) * (self.yps - self.mu_yp))
 
     def __repr__(self) -> str:
         return (
