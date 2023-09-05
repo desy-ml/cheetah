@@ -328,27 +328,16 @@ class ParameterBeam(Beam):
         emittance_y: float = 0.0,
         energy: float = 1e8,
     ) -> "ParameterBeam":
-        sigma_x_squared = beta_x * emittance_x
-        cov_x_xp = -alpha_x * emittance_x
-        sigma_xp_squared = (emittance_x**2 + cov_x_xp) / sigma_x_squared
-        sigma_y_squared = beta_y * emittance_y
-        cov_y_yp = -alpha_y * emittance_y
-        sigma_yp_squared = (emittance_y**2 + cov_y_yp) / sigma_y_squared
+        sigma_x = np.sqrt(emittance_x * beta_x)
+        sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
+        sigma_y = np.sqrt(emittance_y * beta_y)
+        sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
 
-        return cls(
-            mu=torch.tensor([0, 0, 0, 0, 0, 0, 1], dtype=torch.float32),
-            cov=torch.tensor(
-                [
-                    [sigma_x_squared, cov_x_xp, 0, 0, 0, 0, 0],
-                    [cov_x_xp, sigma_xp_squared, 0, 0, 0, 0, 0],
-                    [0, 0, sigma_y_squared, cov_y_yp, 0, 0, 0],
-                    [0, 0, cov_y_yp, sigma_yp_squared, 0, 0, 0],
-                    [0, 0, 0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0, emittance_x * emittance_y, 0],
-                    [0, 0, 0, 0, 0, 0, 0],
-                ],
-                dtype=torch.float32,
-            ),
+        return cls.from_parameters(
+            sigma_x=sigma_x,
+            sigma_xp=sigma_xp,
+            sigma_y=sigma_y,
+            sigma_yp=sigma_yp,
             energy=energy,
         )
 
@@ -601,31 +590,26 @@ class ParticleBeam(Beam):
         energy: float = 1e8,
         device: str = "auto",
     ) -> "ParticleBeam":
-        sigma_x_squared = beta_x * emittance_x
-        cov_x_xp = -alpha_x * emittance_x
-        sigma_xp_squared = (emittance_x**2 + cov_x_xp) / sigma_x_squared
-        sigma_y_squared = beta_y * emittance_y
-        cov_y_yp = -alpha_y * emittance_y
-        sigma_yp_squared = (emittance_y**2 + cov_y_yp) / sigma_y_squared
+        sigma_x = np.sqrt(beta_x * emittance_x)
+        sigma_xp = np.sqrt((emittance_x**2 - alpha_x**2) / sigma_x)
+        sigma_y = np.sqrt(beta_y * emittance_y)
+        sigma_yp = np.sqrt((emittance_y**2 - alpha_y**2) / sigma_y)
 
-        mean = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.float32)
-        cov = torch.tensor(
-            [
-                [sigma_x_squared, cov_x_xp, 0, 0, 0, 0],
-                [cov_x_xp, sigma_xp_squared, 0, 0, 0, 0],
-                [0, 0, sigma_y_squared, cov_y_yp, 0, 0],
-                [0, 0, cov_y_yp, sigma_yp_squared, 0, 0],
-                [0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, emittance_x * emittance_y],
-            ],
-            dtype=torch.float32,
+        return cls.from_parameters(
+            num_particles=num_particles,
+            mu_x=0,
+            mu_xp=0,
+            mu_y=0,
+            mu_yp=0,
+            sigma_x=sigma_x,
+            sigma_xp=sigma_xp,
+            sigma_y=sigma_y,
+            sigma_yp=sigma_yp,
+            sigma_s=0,
+            sigma_p=0,
+            energy=energy,
+            device=device,
         )
-
-        particles = torch.ones((num_particles, 7), dtype=torch.float32)
-        distribution = MultivariateNormal(mean, covariance_matrix=cov)
-        particles[:, :6] = distribution.sample((num_particles,))
-
-        return cls(particles, energy, device=device)
 
     @classmethod
     def make_linspaced(
