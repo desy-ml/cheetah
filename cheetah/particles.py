@@ -328,14 +328,21 @@ class ParameterBeam(Beam):
         emittance_y: float = 0.0,
         energy: float = 1e8,
     ) -> "ParameterBeam":
+        sigma_x_squared = beta_x * emittance_x
+        cov_x_xp = -alpha_x * emittance_x
+        sigma_xp_squared = (emittance_x**2 + cov_x_xp) / sigma_x_squared
+        sigma_y_squared = beta_y * emittance_y
+        cov_y_yp = -alpha_y * emittance_y
+        sigma_yp_squared = (emittance_y**2 + cov_y_yp) / sigma_y_squared
+
         return cls(
             mu=torch.tensor([0, 0, 0, 0, 0, 0, 1], dtype=torch.float32),
             cov=torch.tensor(
                 [
-                    [beta_x * emittance_x, -alpha_x * emittance_x, 0, 0, 0, 0, 0],
-                    [-alpha_x * emittance_x, emittance_x / beta_x, 0, 0, 0, 0, 0],
-                    [0, 0, beta_y * emittance_y, -alpha_y * emittance_y, 0, 0, 0],
-                    [0, 0, -alpha_y * emittance_y, emittance_y / beta_y, 0, 0, 0],
+                    [sigma_x_squared, cov_x_xp, 0, 0, 0, 0, 0],
+                    [cov_x_xp, sigma_xp_squared, 0, 0, 0, 0, 0],
+                    [0, 0, sigma_y_squared, cov_y_yp, 0, 0, 0],
+                    [0, 0, cov_y_yp, sigma_yp_squared, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, emittance_x * emittance_y, 0],
                     [0, 0, 0, 0, 0, 0, 0],
@@ -594,13 +601,20 @@ class ParticleBeam(Beam):
         energy: float = 1e8,
         device: str = "auto",
     ) -> "ParticleBeam":
+        sigma_x_squared = beta_x * emittance_x
+        cov_x_xp = -alpha_x * emittance_x
+        sigma_xp_squared = (emittance_x**2 + cov_x_xp) / sigma_x_squared
+        sigma_y_squared = beta_y * emittance_y
+        cov_y_yp = -alpha_y * emittance_y
+        sigma_yp_squared = (emittance_y**2 + cov_y_yp) / sigma_y_squared
+
         mean = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.float32)
         cov = torch.tensor(
             [
-                [beta_x * emittance_x, -alpha_x * emittance_x, 0, 0, 0, 0],
-                [-alpha_x * emittance_x, emittance_x / beta_x, 0, 0, 0, 0],
-                [0, 0, beta_y * emittance_y, -alpha_y * emittance_y, 0, 0],
-                [0, 0, -alpha_y * emittance_y, emittance_y / beta_y, 0, 0],
+                [sigma_x_squared, cov_x_xp, 0, 0, 0, 0],
+                [cov_x_xp, sigma_xp_squared, 0, 0, 0, 0],
+                [0, 0, sigma_y_squared, cov_y_yp, 0, 0],
+                [0, 0, cov_y_yp, sigma_yp_squared, 0, 0],
                 [0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, emittance_x * emittance_y],
             ],
