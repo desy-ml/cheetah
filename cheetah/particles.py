@@ -36,13 +36,14 @@ class Beam:
 
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_xp: Center of the particle distribution on x'=px/px'
+            (trace space) in rad.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_yp: Center of the particle distribution on y' in rad.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction in meters.
         :param energy: Energy of the beam in eV.
@@ -228,14 +229,17 @@ class Beam:
 
     @property
     def emittance_x(self) -> torch.Tensor:
+        """Emittance of the beam in x direction in m*rad."""
         return torch.sqrt(self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2)
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
+        """Normalized emittance of the beam in x direction in m*rad."""
         return self.emittance_x * self.relativistic_beta * self.relativistic_gamma
 
     @property
     def beta_x(self) -> torch.Tensor:
+        """Beta function in x direction in meters."""
         return self.sigma_x**2 / self.emittance_x
 
     @property
@@ -244,14 +248,17 @@ class Beam:
 
     @property
     def emittance_y(self) -> torch.Tensor:
+        """Emittance of the beam in y direction in m*rad."""
         return torch.sqrt(self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2)
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
+        """Normalized emittance of the beam in y direction in m*rad."""
         return self.emittance_y * self.relativistic_beta * self.relativistic_gamma
 
     @property
     def beta_y(self) -> torch.Tensor:
+        """Beta function in y direction in meters."""
         return self.sigma_y**2 / self.emittance_y
 
     @property
@@ -326,19 +333,28 @@ class ParameterBeam(Beam):
         beta_y: float = 0.0,
         alpha_y: float = 0.0,
         emittance_y: float = 0.0,
+        sigma_s: float = 1e-6,
+        sigma_p: float = 1e-6,
+        cor_s: float = 0,
         energy: float = 1e8,
     ) -> "ParameterBeam":
         sigma_x = np.sqrt(emittance_x * beta_x)
         sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = np.sqrt(emittance_y * beta_y)
         sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
-
+        cor_x = -emittance_x * alpha_x
+        cor_y = -emittance_y * alpha_y
         return cls.from_parameters(
             sigma_x=sigma_x,
             sigma_xp=sigma_xp,
             sigma_y=sigma_y,
             sigma_yp=sigma_yp,
+            sigma_s=sigma_s,
+            sigma_p=sigma_p,
             energy=energy,
+            cor_s=cor_s,
+            cor_x=cor_x,
+            cor_y=cor_y,
         )
 
     @classmethod
@@ -588,13 +604,17 @@ class ParticleBeam(Beam):
         alpha_y: float = 0.0,
         emittance_y: float = 0.0,
         energy: float = 1e8,
+        sigma_s: float = 1e-6,
+        sigma_p: float = 1e-6,
+        cor_s: float = 0,
         device: str = "auto",
     ) -> "ParticleBeam":
         sigma_x = np.sqrt(beta_x * emittance_x)
-        sigma_xp = np.sqrt((emittance_x**2 - alpha_x**2) / sigma_x)
+        sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = np.sqrt(beta_y * emittance_y)
-        sigma_yp = np.sqrt((emittance_y**2 - alpha_y**2) / sigma_y)
-
+        sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
+        cor_x = -emittance_x * alpha_x
+        cor_y = -emittance_y * alpha_y
         return cls.from_parameters(
             num_particles=num_particles,
             mu_x=0,
@@ -605,9 +625,12 @@ class ParticleBeam(Beam):
             sigma_xp=sigma_xp,
             sigma_y=sigma_y,
             sigma_yp=sigma_yp,
-            sigma_s=0,
-            sigma_p=0,
+            sigma_s=sigma_s,
+            sigma_p=sigma_p,
             energy=energy,
+            cor_s=cor_s,
+            cor_x=cor_x,
+            cor_y=cor_y,
             device=device,
         )
 
