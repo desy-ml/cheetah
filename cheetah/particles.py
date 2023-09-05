@@ -582,6 +582,38 @@ class ParticleBeam(Beam):
         return cls(particles, energy, device=device)
 
     @classmethod
+    def from_twiss(
+        cls,
+        num_particles: int = 1_000_000,
+        beta_x: float = 0.0,
+        alpha_x: float = 0.0,
+        emittance_x: float = 0.0,
+        beta_y: float = 0.0,
+        alpha_y: float = 0.0,
+        emittance_y: float = 0.0,
+        energy: float = 1e8,
+        device: str = "auto",
+    ) -> "ParticleBeam":
+        mean = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.float32)
+        cov = torch.tensor(
+            [
+                [beta_x * emittance_x, -alpha_x * emittance_x, 0, 0, 0, 0],
+                [-alpha_x * emittance_x, emittance_x / beta_x, 0, 0, 0, 0],
+                [0, 0, beta_y * emittance_y, -alpha_y * emittance_y, 0, 0],
+                [0, 0, -alpha_y * emittance_y, emittance_y / beta_y, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, emittance_x * emittance_y],
+            ],
+            dtype=torch.float32,
+        )
+
+        particles = torch.ones((num_particles, 7), dtype=torch.float32)
+        distribution = MultivariateNormal(mean, covariance_matrix=cov)
+        particles[:, :6] = distribution.sample((num_particles,))
+
+        return cls(particles, energy, device=device)
+
+    @classmethod
     def make_linspaced(
         cls,
         num_particles: int = 10,
