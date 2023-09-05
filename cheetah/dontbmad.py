@@ -32,7 +32,7 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
 
     # Replace lines calling external files with the lines of the external file
     replaced_lines = []
-    for i, line in enumerate(lines):
+    for line in lines:
         if line.startswith("call, file ="):
             external_file_path = Path(line.split("=")[1].strip())
             resolved_external_file_path = Path(
