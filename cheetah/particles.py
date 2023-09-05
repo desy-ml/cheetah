@@ -318,6 +318,34 @@ class ParameterBeam(Beam):
         )
 
     @classmethod
+    def from_twiss(
+        cls,
+        beta_x: float = 0.0,
+        alpha_x: float = 0.0,
+        emittance_x: float = 0.0,
+        beta_y: float = 0.0,
+        alpha_y: float = 0.0,
+        emittance_y: float = 0.0,
+        energy: float = 1e8,
+    ) -> "ParameterBeam":
+        return cls(
+            mu=torch.tensor([0, 0, 0, 0, 0, 0, 1], dtype=torch.float32),
+            cov=torch.tensor(
+                [
+                    [beta_x * emittance_x, -alpha_x * emittance_x, 0, 0, 0, 0, 0],
+                    [-alpha_x * emittance_x, emittance_x / beta_x, 0, 0, 0, 0, 0],
+                    [0, 0, beta_y * emittance_y, -alpha_y * emittance_y, 0, 0, 0],
+                    [0, 0, -alpha_y * emittance_y, emittance_y / beta_y, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, emittance_x * emittance_y, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=torch.float32,
+            ),
+            energy=energy,
+        )
+
+    @classmethod
     def from_ocelot(cls, parray) -> "ParameterBeam":
         mu = torch.ones(7)
         mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
