@@ -84,17 +84,17 @@ def test_from_twiss_to_twiss():
         num_particles=1_000_000,
         beta_x=5.91253676811640894,
         alpha_x=3.55631307633660354,
-        emittance_x=1e-5,  # TODO: Choose more realistic value
+        emittance_x=3.494768647122823e-09,  # TODO: Choose more realistic value
         beta_y=5.91253676811640982,
         alpha_y=2e-7,
-        emittance_y=2e-5,  # TODO: Choose more realistic value
+        emittance_y=3.497810737006068e-09,  # TODO: Choose more realistic value
         energy=6e6,
     )
 
     assert np.isclose(beam.beta_x, 5.91253676811640894)
     assert np.isclose(beam.alpha_x, 3.55631307633660354)
-    assert np.isclose(beam.emittance_x, 1e-5)
+    assert np.isclose(beam.emittance_x, 3.494768647122823e-09)
     assert np.isclose(beam.beta_y, 5.91253676811640982)
     assert np.isclose(beam.alpha_y, 3.55631307633660398)
-    assert np.isclose(beam.emittance_y, 2e-5)
+    assert np.isclose(beam.emittance_y, 3.497810737006068e-09)
     assert np.isclose(beam.energy, 6e6)
