@@ -1143,8 +1143,8 @@ class Solenoid(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}"
-            + 'k1={self.k1:.2f}, name="{self.name}")'
+            f"{self.__class__.__name__}(length={self.length:.2f}, k={self.k:.2f},"
+            f' name="{self.name}")'
         )
 
 
