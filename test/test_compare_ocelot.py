@@ -478,3 +478,54 @@ def test_rbend():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+
+
+def test_cavity():
+    """
+    Test if the tracking results through a Cheeath `Cavity` element match those through
+    an Ocelot `Cavity` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_cavity = cheetah.Cavity(length=3.14159, delta_energy=1e2)
+    cheetah_segment = cheetah.Segment(
+        [cheetah.Drift(length=0.1), cheetah_cavity, cheetah.Drift(length=0.1)]
+    )
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_cavity = ocelot.Cavity(l=3.14159, v=240.0)
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Drift(l=0.1), ocelot_cavity, ocelot.Drift(l=0.1)]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
