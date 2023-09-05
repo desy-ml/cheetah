@@ -3,7 +3,7 @@ import os
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import scipy
@@ -590,3 +590,57 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
             return cheetah.Drift(name=name, length=bmad_parsed.get("l", 0.0))
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")
+
+
+def convert_bmad_lattice(
+    bmad_lattice_file_path: Path, environment_variables: Optional[dict] = None
+) -> "cheetah.Element":
+    """
+    Convert a Bmad lattice file to a Cheetah `Segment`.
+
+    NOTE: This function was designed at the example of the LCLS lattice. While this
+        lattice is extensive, this function might not properly convert all features of
+        a Bmad lattice. If you find that this function does not work for your lattice,
+        please open an issue on GitHub.
+
+    :param bmad_lattice_file_path: Path to the Bmad lattice file.
+    :param environment_variables: Dictionary of environment variables to use when
+        parsing the lattice file.
+    :return: Cheetah `Segment` representing the Bmad lattice.
+    """
+
+    # If provided, set environment variables
+    if environment_variables is not None:
+        for key, value in environment_variables.items():
+            os.environ[key] = value
+
+    # Replace environment variables in the lattice file path
+    resolved_lattice_file_path = Path(
+        *[
+            os.environ[part[1:]] if part.startswith("$") else part
+            for part in bmad_lattice_file_path.parts
+        ]
+    )
+
+    # Read and clean the lattice file(s)
+    lines = read_clean_lines(resolved_lattice_file_path)
+
+    # Merge multi-line statements
+    merged_lines = merge_delimiter_continued_lines(
+        lines, delimiter="&", remove_delimiter=True
+    )
+    merged_lines = merge_delimiter_continued_lines(
+        merged_lines, delimiter=",", remove_delimiter=False
+    )
+    merged_lines = merge_delimiter_continued_lines(
+        merged_lines, delimiter="{", remove_delimiter=False
+    )
+    assert len(merged_lines) <= len(
+        lines
+    ), "Merging lines should never produce more lines than there were before."
+
+    # Parse the lattice file(s), i.e. basically execute them
+    context = parse_lines(merged_lines)
+
+    # Convert the parsed lattice info to Cheetah elements
+    return convert_element(context["__use__"], context)
