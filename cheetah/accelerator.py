@@ -446,8 +446,8 @@ class Dipole(Element):
             + f"e1={self.e1:.2f},"
             + f"e2={self.e2:.2f},"
             + f"tilt={self.tilt:.2f},"
-            + f"fint={self.fringe_integral:.2f},"
-            + f"fintx={self.fringe_integral_exit:.2f},"
+            + f"fringe_integral={self.fringe_integral:.2f},"
+            + f"fringe_integral_exit={self.fringe_integral_exit:.2f},"
             + f"gap={self.gap:.2f},"
             + f'name="{self.name}")'
         )
