@@ -202,3 +202,79 @@ def test_ares_ea():
         outgoing_beam.ss, outgoing_p_array.tau(), atol=1e-7, rtol=1e-1
     )  # TODO: Why do we need such large tolerances?
     assert np.allclose(outgoing_beam.ps, outgoing_p_array.p())
+
+
+def test_twiss_particle_beam():
+    """
+    Test that the twiss parameters computed by Cheetah for a `ParticleBeam` loaded from
+    an Astra beam are the same as those computed by Ocelot for the `ParticleArray`
+    loaded from that same Astra beam.
+    """
+    # Cheetah
+    particle_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Ocelot
+    p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
+
+    # Compare
+    assert np.isclose(particle_beam.emittance_x, ocelot_twiss.emit_x)
+    assert np.isclose(particle_beam.normalized_emittance_x, ocelot_twiss.emit_xn)
+    assert np.isclose(
+        particle_beam.beta_x, ocelot_twiss.beta_x, rtol=1e-4
+    )  # TODO: Is tolerance okay?
+    assert np.isclose(particle_beam.alpha_x, ocelot_twiss.alpha_x, rtol=1e-4)
+    assert np.isclose(particle_beam.emittance_y, ocelot_twiss.emit_y)
+    assert np.isclose(particle_beam.normalized_emittance_y, ocelot_twiss.emit_yn)
+    assert np.isclose(
+        particle_beam.beta_y, ocelot_twiss.beta_y, rtol=1e-4
+    )  # TODO: Is tolerance okay?
+    assert np.isclose(particle_beam.alpha_y, ocelot_twiss.alpha_y, rtol=1e-4)
+
+
+def test_twiss_parameter_beam():
+    """
+    Test that the twiss parameters computed by Cheetah for a `ParameterBeam` loaded from
+    an Astra beam are the same as those computed by Ocelot for the `ParticleArray`
+    loaded from that same Astra beam.
+    """
+    # Cheetah
+    parameter_beam = cheetah.ParameterBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Ocelot
+    p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
+
+    # Compare
+    assert np.isclose(parameter_beam.emittance_x, ocelot_twiss.emit_x)
+    assert np.isclose(parameter_beam.normalized_emittance_x, ocelot_twiss.emit_xn)
+    assert np.isclose(
+        parameter_beam.beta_x, ocelot_twiss.beta_x, rtol=1e-4
+    )  # TODO: Is tolerance okay?
+    assert np.isclose(parameter_beam.alpha_x, ocelot_twiss.alpha_x, rtol=1e-4)
+    assert np.isclose(parameter_beam.emittance_y, ocelot_twiss.emit_y)
+    assert np.isclose(parameter_beam.normalized_emittance_y, ocelot_twiss.emit_yn)
+    assert np.isclose(
+        parameter_beam.beta_y, ocelot_twiss.beta_y, rtol=1e-4
+    )  # TODO: Is tolerance okay?
+    assert np.isclose(parameter_beam.alpha_y, ocelot_twiss.alpha_y, rtol=1e-4)
+
+
+def test_astra_import():
+    """
+    Test if the beam imported from Astra in Cheetah matches the beam imported from Astra
+    in Ocelot.
+    """
+    beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    p_array = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
+
+    assert np.allclose(beam.particles[:, :6], p_array.rparticles.transpose())
+    assert np.isclose(beam.energy, (p_array.E * 1e9))
