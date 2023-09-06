@@ -50,6 +50,19 @@ def base_rmatrix(
     energy: float = 0.0,
     device: Union[str, torch.device] = "auto",
 ) -> torch.Tensor:
+    """
+    Create a universal transfer matrix for a beamline element.
+
+    :param length: Length of the element in m.
+    :param k1: Quadrupole strength in 1/m**2.
+    :param hx: Curvature (1/radius) of the element in 1/m**2.
+    :param tilt: Roation of the element relative to the longitudinal axis in rad.
+    :param energy: Beam energy in eV.
+    :param device: Device where the transfer matrix is created. If "auto", the device
+        is selected automatically.
+    :return: Transfer matrix for the element.
+    """
+
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     gamma = energy / REST_ENERGY
