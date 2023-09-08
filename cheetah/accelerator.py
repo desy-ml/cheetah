@@ -1206,7 +1206,11 @@ class Aperture(Element):
 
         self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
 
-        return ParticleBeam(outgoing_particles, incoming.energy, device=incoming.device)
+        return (
+            ParticleBeam(outgoing_particles, incoming.energy, device=incoming.device)
+            if outgoing_particles.shape[0] > 0
+            else ParticleBeam.empty
+        )
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
