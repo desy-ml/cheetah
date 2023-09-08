@@ -23,8 +23,8 @@ REST_ENERGY = (
     * constants.speed_of_light**2
     / constants.elementary_charge
 )  # electron mass
-electron_mass_GeV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e-3
+electron_mass_eV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
 
 
@@ -724,10 +724,10 @@ class Cavity(Element):
 
     def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
         beta0 = 1
-        igamma2 = 1
+        igamma2 = 0
         g0 = 1e10
         if incoming.energy != 0:
-            g0 = incoming.energy / electron_mass_GeV
+            g0 = incoming.energy / electron_mass_eV
             igamma2 = 1 / g0**2
             beta0 = torch.sqrt(1 - igamma2)
 
@@ -742,23 +742,23 @@ class Cavity(Element):
         T555 = 0
         if incoming.energy + delta_energy > 0:
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
-            E1 = incoming.energy + delta_energy
-            g1 = E1 / electron_mass_GeV
+            outgoing_energy = incoming.energy + delta_energy
+            g1 = outgoing_energy / electron_mass_eV
             beta1 = torch.sqrt(1 - 1 / g1**2)
 
             outgoing_particles[:, 5] = (
                 incoming.particles[:, 5]
-                + incoming.energy * beta0 / (E1 * beta1)
+                + incoming.energy * beta0 / (outgoing_energy * beta1)
                 + self.voltage
                 * beta0
-                / (E1 * beta1)
+                / (outgoing_energy * beta1)
                 * (
                     torch.cos(incoming.particles[:, 4] * beta0 * k + phi)
                     - torch.cos(phi)
                 )
             )
 
-            dgamma = self.voltage / electron_mass_GeV
+            dgamma = self.voltage / electron_mass_eV
             if delta_energy > 0:
                 T566 = (
                     self.length
@@ -803,7 +803,9 @@ class Cavity(Element):
                 + T555 * incoming.particles[:, 4] ** 2
             )
 
-            return ParticleBeam(outgoing_particles, E1, device=incoming.device)
+            return ParticleBeam(
+                outgoing_particles, outgoing_energy, device=incoming.device
+            )
 
     def _cavity_rmatrix(self, energy: float) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
@@ -811,16 +813,16 @@ class Cavity(Element):
         delta_energy = torch.tensor(self.voltage) * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1)
-        Ei = energy / electron_mass_GeV
-        Ef = (energy + delta_energy) / electron_mass_GeV
-        Ep = (Ei + Ef) / torch.tensor(self.length)  # Derivative of the energy
+        Ei = energy / electron_mass_eV
+        Ef = (energy + delta_energy) / electron_mass_eV
+        Ep = (Ef - Ei) / torch.tensor(self.length)  # Derivative of the energy
         assert Ei > 0, "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
         r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
 
-        if torch.abs(Ep) > 1e-10:
+        if torch.abs(Ep) > 10:
             r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
         else:
             r12 = self.length
@@ -861,14 +863,14 @@ class Cavity(Element):
                 * self.length
                 * beta0
                 * self.voltage
-                / electron_mass_GeV
+                / electron_mass_eV
                 * torch.sin(phi)
                 * (g0 * g1 * (beta0 * beta1 - 1) + 1)
                 / (beta1 * g1 * (g0 - g1) ** 2)
             )
 
         r66 = Ei / Ef * beta0 / beta1
-        r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_GeV)
+        r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
         R = torch.tensor(
             [

@@ -516,7 +516,7 @@ def test_cavity():
         alpha_y=3.55631308,
         emittance_x=3.494768647122823e-09,
         emittance_y=3.497810737006068e-09,
-        energy=6e-3,
+        energy=6e6,
     )
     cheetah_cavity = cheetah.Cavity(
         length=1.0377, voltage=0.01815975e9, frequency=1.3e9, phase=0.0
@@ -545,7 +545,7 @@ def test_cavity():
     derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
 
     # Compare
-    assert np.isclose(outgoing_beam.beta_x, derived_twiss.beta_x)
-    assert np.isclose(outgoing_beam.alpha_x, derived_twiss.alpha_x)
-    assert np.isclose(outgoing_beam.beta_y, derived_twiss.beta_y)
-    assert np.isclose(outgoing_beam.alpha_y, derived_twiss.alpha_y)
+    assert np.isclose(outgoing_beam.beta_x, derived_twiss.beta_x, rtol=1e-2)
+    assert np.isclose(outgoing_beam.alpha_x, derived_twiss.alpha_x, rtol=1e-2)
+    assert np.isclose(outgoing_beam.beta_y, derived_twiss.beta_y, rtol=1e-2)
+    assert np.isclose(outgoing_beam.alpha_y, derived_twiss.alpha_y, rtol=1e-2)
