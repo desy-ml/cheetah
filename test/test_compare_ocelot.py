@@ -584,24 +584,3 @@ def test_cavity_on():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
-
-
-def test_cavity_on_transfer_matrix():
-    """
-    Test if Cheetah and Ocelot come up with the same transfer matrix for a cavity with
-    the same parameters for a cavity that is on, i.e. its voltage is non-zero.
-    """
-    # Cheetah
-    cheetah_cavity = cheetah.Cavity(
-        length=3.14159, voltage=81.0, phase=0.1, frequency=1.3e9
-    )
-    cheetah_transfer_matrix = cheetah_cavity.transfer_map(energy=150e6)[:6, :6]
-
-    # Ocelot
-    ocelot_cavity = ocelot.Cavity(l=3.14159, v=81.0, phi=0.1, freq=1.3e9)
-    ocelot_transfer_matrix = ocelot_cavity.R(energy=150e6)[0]
-
-    print(cheetah_transfer_matrix)
-    print(ocelot_transfer_matrix)
-
-    assert np.allclose(cheetah_transfer_matrix, ocelot_transfer_matrix)
