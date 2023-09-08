@@ -480,16 +480,18 @@ def test_rbend():
     )
 
 
-def test_cavity():
+def test_cavity_off():
     """
     Test if the tracking results through a Cheeath `Cavity` element match those through
-    an Ocelot `Cavity` element.
+    an Ocelot `Cavity` element when the cavity is off, i.e. its voltage is zero.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_cavity = cheetah.Cavity(length=3.14159, delta_energy=1e2)
+    cheetah_cavity = cheetah.Cavity(
+        length=3.14159, voltage=0.0, phase=0.1, frequency=1.3e9
+    )
     cheetah_segment = cheetah.Segment(
         [cheetah.Drift(length=0.1), cheetah_cavity, cheetah.Drift(length=0.1)]
     )
@@ -499,7 +501,7 @@ def test_cavity():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_cavity = ocelot.Cavity(l=3.14159, v=240.0)
+    ocelot_cavity = ocelot.Cavity(l=3.14159, v=0.0, phi=0.1, freq=1.3e9)
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_cavity, ocelot.Drift(l=0.1)]
     )
@@ -529,3 +531,77 @@ def test_cavity():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+
+
+def test_cavity_on():
+    """
+    Test if the tracking results through a Cheeath `Cavity` element match those through
+    an Ocelot `Cavity` element when the cavity is on, i.e. its voltage is non-zero.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_cavity = cheetah.Cavity(
+        length=3.14159, voltage=81.0, phase=0.1, frequency=1.3e9
+    )
+    cheetah_segment = cheetah.Segment(
+        [cheetah.Drift(length=0.1), cheetah_cavity, cheetah.Drift(length=0.1)]
+    )
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_cavity = ocelot.Cavity(l=3.14159, v=81.0, phi=0.1, freq=1.3e9)
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Drift(l=0.1), ocelot_cavity, ocelot.Drift(l=0.1)]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
+
+
+def test_cavity_on_transfer_matrix():
+    """
+    Test if Cheetah and Ocelot come up with the same transfer matrix for a cavity with
+    the same parameters for a cavity that is on, i.e. its voltage is non-zero.
+    """
+    # Cheetah
+    cheetah_cavity = cheetah.Cavity(
+        length=3.14159, voltage=81.0, phase=0.1, frequency=1.3e9
+    )
+    cheetah_transfer_matrix = cheetah_cavity.transfer_map(energy=150e6)[:6, :6]
+
+    # Ocelot
+    ocelot_cavity = ocelot.Cavity(l=3.14159, v=81.0, phi=0.1, freq=1.3e9)
+    ocelot_transfer_matrix = ocelot_cavity.R(energy=150e6)[0]
+
+    print(cheetah_transfer_matrix)
+    print(ocelot_transfer_matrix)
+
+    assert np.allclose(cheetah_transfer_matrix, ocelot_transfer_matrix)
