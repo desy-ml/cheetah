@@ -97,17 +97,17 @@ class Element:
         if incoming is Beam.empty:
             return incoming
         elif isinstance(incoming, ParameterBeam):
+            if self.device != incoming.device:
+                raise DeviceError
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
-            if self.device != "cpu":
-                raise DeviceError
-            return ParameterBeam(mu, cov, incoming.energy)
+            return ParameterBeam(mu, cov, incoming.energy, device=incoming.device)
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy)
-            new_particles = torch.matmul(incoming.particles, tm.t())
             if self.device != incoming.device:
                 raise DeviceError
+            tm = self.transfer_map(incoming.energy)
+            new_particles = torch.matmul(incoming.particles, tm.t())
             return ParticleBeam(new_particles, incoming.energy, device=incoming.device)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
