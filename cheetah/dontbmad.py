@@ -569,7 +569,13 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 ],
                 bmad_parsed,
             )
-            return cheetah.Cavity(length=bmad_parsed["l"], name=name)
+            return cheetah.Cavity(
+                length=bmad_parsed["l"],
+                voltage=bmad_parsed["voltage"] if "voltage" in bmad_parsed else 0.0,
+                phase=bmad_parsed["phi0"] if "phi0" in bmad_parsed else 0.0,
+                frequency=bmad_parsed["rf_frequency"],
+                name=name,
+            )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
                 ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
