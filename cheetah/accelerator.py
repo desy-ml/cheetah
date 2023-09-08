@@ -742,13 +742,13 @@ class Cavity(Element):
         T555 = 0
         if incoming.energy + delta_energy > 0:
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
-            E1 = self.energy + delta_energy
+            E1 = incoming.energy + delta_energy
             g1 = E1 / electron_mass_GeV
             beta1 = torch.sqrt(1 - 1 / g1**2)
 
             outgoing_particles[:, 5] = (
                 incoming.particles[:, 5]
-                + self.energy * beta0 / (E1 * beta1)
+                + incoming.energy * beta0 / (E1 * beta1)
                 + self.voltage
                 * beta0
                 / (E1 * beta1)
@@ -907,12 +907,6 @@ class Cavity(Element):
             (s, 0), self.length, height, color="gold", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={self.length:.2f},"
-            f' delta_energy={self.delta_energy}, name="{self.name}")'
-        )
 
 
 @dataclass
