@@ -7,6 +7,98 @@ import numpy as np
 import cheetah
 
 
+def test_drift():
+    """Test that the drift output for both beam types is roughly the same."""
+
+    # Set up lattice
+    cheetah_drift = cheetah.Drift(length=1.0)
+
+    # Parameter beam
+    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
+        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+    )
+    outgoing_parameter_beam = cheetah_drift.track(incoming_parameter_beam)
+
+    # Particle beam
+    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+    )
+    outgoing_particle_beam = cheetah_drift.track(incoming_particle_beam)
+
+    # Compare
+    assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert np.isclose(
+        outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+    )
+
+
+def test_quadrupole():
+    """Test that the quadrupole output for both beam types is roughly the same."""
+
+    # Set up lattice
+    cheetah_quadrupole = cheetah.Quadrupole(length=0.15, k1=4.2)
+
+    # Parameter beam
+    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
+        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+    )
+    outgoing_parameter_beam = cheetah_quadrupole.track(incoming_parameter_beam)
+
+    # Particle beam
+    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+    )
+    outgoing_particle_beam = cheetah_quadrupole.track(incoming_particle_beam)
+
+    # Compare
+    assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert np.isclose(
+        outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+    )
+
+
 def test_cavity():
     """Test that the cavity output for both beam types is roughly the same."""
 
