@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
+from scipy.constants import physical_constants
 from scipy.stats import multivariate_normal
 
 from cheetah.dontbmad import convert_bmad_lattice
@@ -22,6 +23,9 @@ REST_ENERGY = (
     * constants.speed_of_light**2
     / constants.elementary_charge
 )  # electron mass
+electron_mass_GeV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e-3
+)
 
 
 class DeviceError(Exception):
@@ -650,54 +654,246 @@ class Cavity(Element):
     Accelerating cavity in a particle accelerator.
 
     :param length: Length in meters.
-    :param delta_energy: Energy added to the beam by the accelerating cavity.
+    :param voltage: Voltage of the cavity in volts.
+    :param phase: Phase of the cavity in degrees.
+    :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
     """
 
-    delta_energy: float = 0
+    voltage: float = 0
+    phase: float = 0
+    frequency: float = 0
 
     def __init__(
         self,
         length: float,
-        delta_energy: float = 0,
+        voltage: float = 0.0,
+        phase: float = 0.0,
+        frequency: float = 0.0,
         name: Optional[str] = None,
         **kwargs,
     ) -> None:
         self.length = length
-        self.delta_energy = delta_energy
+        self.voltage = voltage
+        self.phase = phase
+        self.frequency = frequency
 
         super().__init__(name=name, **kwargs)
 
     @property
     def is_active(self) -> bool:
-        return self.delta_energy != 0
+        return self.voltage != 0
 
     @property
     def is_skippable(self) -> bool:
         return not self.is_active
 
     def transfer_map(self, energy: float) -> torch.Tensor:
-        gamma = energy / REST_ENERGY
-        igamma2 = 1 / gamma**2 if gamma != 0 else 0
+        if self.voltage > 0:
+            return self._cavity_rmatrix(energy)
+        else:
+            return base_rmatrix(
+                length=self.length,
+                k1=0.0,
+                hx=0.0,
+                tilt=0.0,
+                energy=energy,
+                device=self.device,
+            )
 
-        return torch.tensor(
+    def __call__(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the cavity. The input can be a `ParameterBeam` or a
+        `ParticleBeam`. For a cavity, this does a little more than just the transfer map
+        multiplication done by most elements.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        if incoming is Beam.empty:
+            return incoming
+        elif isinstance(incoming, ParameterBeam):
+            return self._track_parameter_beam(incoming)
+        elif isinstance(incoming, ParticleBeam):
+            return self._track_particle_beam(incoming)
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def _track_parameter_beam(self, incoming: ParameterBeam) -> ParameterBeam:
+        raise NotImplementedError
+
+    def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
+        beta0 = 1
+        igamma2 = 1
+        g0 = 1e10
+        if incoming.energy != 0:
+            g0 = incoming.energy / electron_mass_GeV
+            igamma2 = 1 / g0**2
+            beta0 = torch.sqrt(1 - igamma2)
+
+        phi = torch.tensor(self.phase) * torch.pi / 180
+
+        tm = self.transfer_map(incoming.energy)
+        outgoing_particles = torch.matmul(incoming.particles, tm.t())
+        delta_energy = self.voltage * torch.cos(phi)
+
+        T566 = 1.5 * self.length * igamma2 / beta0**3
+        T556 = 0
+        T555 = 0
+        if incoming.energy + delta_energy > 0:
+            k = 2 * torch.pi * self.frequency / constants.speed_of_light
+            E1 = self.energy + delta_energy
+            g1 = E1 / electron_mass_GeV
+            beta1 = torch.sqrt(1 - 1 / g1**2)
+
+            outgoing_particles[:, 5] = (
+                incoming.particles[:, 5]
+                + self.energy * beta0 / (E1 * beta1)
+                + self.voltage
+                * beta0
+                / (E1 * beta1)
+                * (
+                    torch.cos(incoming.particles[:, 4] * beta0 * k + phi)
+                    - torch.cos(phi)
+                )
+            )
+
+            dgamma = self.voltage / electron_mass_GeV
+            if delta_energy > 0:
+                T566 = (
+                    self.length
+                    * (beta0**3 * g0**3 - beta1**3 * g1**3)
+                    / (2 * beta0 * beta1**3 * g0 * (g0 - g1) * g1**3)
+                )
+                T556 = (
+                    beta0
+                    * k
+                    * self.length
+                    * dgamma
+                    * g0
+                    * (beta1**3 * g1**3 + beta0 * (g0 - g1**3))
+                    * torch.sin(phi)
+                    / (beta1**3 * g1**3 * (g0 - g1) ** 2)
+                )
+                T555 = (
+                    beta0**2
+                    * k**2
+                    * self.length
+                    * dgamma
+                    / 2.0
+                    * (
+                        dgamma
+                        * (
+                            2 * g0 * g1**3 * (beta0 * beta1**3 - 1)
+                            + g0**2
+                            + 3 * g1**2
+                            - 2
+                        )
+                        / (beta1**3 * g1**3 * (g0 - g1) ** 3)
+                        * torch.sin(phi) ** 2
+                        - (g1 * g0 * (beta1 * beta0 - 1) + 1)
+                        / (beta1 * g1 * (g0 - g1) ** 2)
+                        * torch.cos(phi)
+                    )
+                )
+
+            outgoing_particles[:, 4] = (
+                T566 * incoming.particles[:, 5] ** 2
+                + T556 * incoming.particles[:, 4] * incoming.particles[:, 5]
+                + T555 * incoming.particles[:, 4] ** 2
+            )
+
+            return ParticleBeam(outgoing_particles, E1, device=incoming.device)
+
+    def _cavity_rmatrix(self, energy: float) -> torch.Tensor:
+        """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
+        phi = torch.tensor(self.phase) * torch.pi / 180
+        delta_energy = torch.tensor(self.voltage) * torch.cos(phi)
+        # Comment from Ocelot: Pure pi-standing-wave case
+        eta = torch.tensor(1)
+        Ei = energy / electron_mass_GeV
+        Ef = (energy + delta_energy) / electron_mass_GeV
+        Ep = (Ei + Ef) / torch.tensor(self.length)  # Derivative of the energy
+        assert Ei > 0, "Initial energy must be larger than 0"
+
+        alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
+
+        r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+
+        if torch.abs(Ep) > 1e-10:
+            r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
+        else:
+            r12 = self.length
+        r21 = (
+            -Ep
+            / Ef
+            * (
+                torch.cos(phi) / torch.sqrt(2 * eta)
+                + torch.sqrt(eta / 8) / torch.cos(phi)
+            )
+            * torch.sin(alpha)
+        )
+
+        r22 = (
+            Ei
+            / Ef
+            * (
+                torch.cos(alpha)
+                + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+            )
+        )
+
+        r56 = 0
+        beta0 = 1
+        beta1 = 1
+
+        k = 2 * torch.pi * self.frequency / constants.speed_of_light
+        r55_cor = 0
+        if self.voltage != 0 and energy != 0:  # TODO: Do we need this if?
+            beta0 = torch.sqrt(1 - 1 / Ei**2)
+            beta1 = torch.sqrt(1 - 1 / Ef**2)
+
+            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            g0 = Ei
+            g1 = Ef
+            r55_cor = (
+                k
+                * self.length
+                * beta0
+                * self.voltage
+                / electron_mass_GeV
+                * torch.sin(phi)
+                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
+                / (beta1 * g1 * (g0 - g1) ** 2)
+            )
+
+        r66 = Ei / Ef * beta0 / beta1
+        r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_GeV)
+
+        R = torch.tensor(
             [
-                [1, self.length, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 1, self.length, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, self.length * igamma2, 0],
-                [0, 0, 0, 0, 0, 1, 0],
+                [r11, r12, 0, 0, 0, 0, 0],
+                [r21, r22, 0, 0, 0, 0, 0],
+                [0, 0, r11, r12, 0, 0, 0],
+                [0, 0, r21, r22, 0, 0, 0],
+                [0, 0, 0, 0, 1 + r55_cor, r56, 0],
+                [0, 0, 0, 0, r65, r66, 0],
                 [0, 0, 0, 0, 0, 0, 1],
             ],
             dtype=torch.float32,
             device=self.device,
         )
 
+        return R
+
     def __call__(self, incoming: Beam) -> Beam:
         outgoing = super().__call__(incoming)
         if outgoing is not Beam.empty:
-            outgoing.energy += self.delta_energy
+            delta_energy = self.voltage * torch.cos(
+                torch.tensor(self.phase) * torch.pi / 180
+            )
+            outgoing.energy += delta_energy
+
         return outgoing
 
     def split(self, resolution: float) -> list[Element]:
