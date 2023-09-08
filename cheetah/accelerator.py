@@ -886,16 +886,6 @@ class Cavity(Element):
 
         return R
 
-    def __call__(self, incoming: Beam) -> Beam:
-        outgoing = super().__call__(incoming)
-        if outgoing is not Beam.empty:
-            delta_energy = self.voltage * torch.cos(
-                torch.tensor(self.phase) * torch.pi / 180
-            )
-            outgoing.energy += delta_energy
-
-        return outgoing
-
     def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
