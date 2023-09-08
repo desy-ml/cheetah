@@ -59,3 +59,27 @@ def test_cavity():
         outgoing_parameter_beam.emittance_y, outgoing_particle_beam.emittance_y
     )
     assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert np.isclose(
+        outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+    )
