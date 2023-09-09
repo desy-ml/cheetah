@@ -572,7 +572,11 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
             return cheetah.Cavity(
                 length=bmad_parsed["l"],
                 voltage=bmad_parsed["voltage"] if "voltage" in bmad_parsed else 0.0,
-                phase=bmad_parsed["phi0"] if "phi0" in bmad_parsed else 0.0,
+                phase=(
+                    np.degrees(bmad_parsed["phi0"] * 2 * np.pi)
+                    if "phi0" in bmad_parsed
+                    else 0.0
+                ),
                 frequency=bmad_parsed["rf_frequency"],
                 name=name,
             )
