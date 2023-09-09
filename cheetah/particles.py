@@ -376,10 +376,10 @@ class ParameterBeam(Beam):
 
         particles, energy = from_astrabeam(path)
         mu = torch.ones(7)
-        mu[:6] = torch.tensor(particles.mean(axis=0), dtype=torch.float32)
+        mu[:6] = torch.tensor(particles.mean(axis=0))
 
         cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()), dtype=torch.float32)
+        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()))
 
         return cls(mu=mu, cov=cov, energy=energy)
 
