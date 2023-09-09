@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -41,27 +40,16 @@ class DeviceError(Exception):
         )
 
 
-@dataclass()
 class Element(ABC):
     """
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
-    :param is_active: Whether the element is active or not. This can have different
-        meanings depending on the element type.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    is_active: bool = False
-    is_skippable: bool = True
-    name: str = None
-    device: str = "auto"
-    length: float = 0
-
-    def __init__(
-        self, name: Optional[str] = None, is_active: bool = False, device: str = "auto"
-    ) -> None:
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
         global ELEMENT_COUNT
         if name is not None:
             self.name = name
@@ -132,6 +120,28 @@ class Element(ABC):
         """
         return self(incoming)
 
+    @property
+    @abstractmethod
+    def is_skippable(self) -> bool:
+        """
+        Whether the element can be skipped during tracking. If `True`, the element's
+        transfer map is combined with the transfer maps of surrounding skipable
+        elements.
+        """
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def defining_features(self) -> list[str]:
+        """
+        List of features that define the element. Used to compare elements for equality
+        and to save them.
+
+        NOTE: When overriding this property, make sure to call the super method and
+        extend the list it returns.
+        """
+        return ["name", "device"]
+
     @abstractmethod
     def split(self, resolution: float) -> list["Element"]:
         """
@@ -155,24 +165,33 @@ class Element(ABC):
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(name="{self.name}")'
+        return f'{self.__class__.__name__}(name="{self.name}", device="{self.device}")'
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Element):
+            return False
+        return all(
+            getattr(self, feature) == getattr(other, feature)
+            for feature in self.defining_features
+        )
 
 
-@dataclass
 class Drift(Element):
     """
     Drift section in a particle accelerator.
 
     :param length: Length in meters.
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    is_active: bool = True
+    def __init__(
+        self, length: float, name: Optional[str] = None, device: str = "auto"
+    ) -> None:
+        super().__init__(name=name, device=device)
 
-    def __init__(self, length: float, name: Optional[str] = None, **kwargs) -> None:
         self.length = length
-
-        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
@@ -192,6 +211,10 @@ class Drift(Element):
             device=self.device,
         )
 
+    @property
+    def is_skippable(self) -> bool:
+        return True
+
     def split(self, resolution: float) -> list[Element]:
         split_elements = []
         remaining = self.length
@@ -204,13 +227,17 @@ class Drift(Element):
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         pass
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length"]
+
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}")'
+            f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}",'
+            f' device="{self.device}")'
         )
 
 
-@dataclass
 class Quadrupole(Element):
     """
     Quadrupole magnet in a particle accelerator.
@@ -221,11 +248,9 @@ class Quadrupole(Element):
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    k1: float = 0
-    misalignment: tuple[float, float] = (0, 0)
-    tilt: float = 0
 
     def __init__(
         self,
@@ -234,14 +259,14 @@ class Quadrupole(Element):
         misalignment: tuple[float, float] = (0, 0),
         tilt: float = 0.0,
         name: Optional[str] = None,
-        **kwargs,
+        device: str = "auto",
     ) -> None:
+        super().__init__(name=name, device=device)
+
         self.length = length
         self.k1 = k1
         self.misalignment = tuple(misalignment)
         self.tilt = tilt
-
-        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         R = base_rmatrix(
@@ -259,6 +284,10 @@ class Quadrupole(Element):
             R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
 
     @property
     def is_active(self) -> bool:
@@ -286,17 +315,21 @@ class Quadrupole(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length", "k1", "misalignment", "tilt"]
+
     def __repr__(self) -> None:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"k1={self.k1}, "
             + f"misalignment={self.misalignment}, "
             + f"tilt={self.tilt:.2f}, "
-            + f'name="{self.name}")'
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
         )
 
 
-@dataclass
 class Dipole(Element):
     """
     Dipole magnet (by default a sector bending magnet).
@@ -311,15 +344,9 @@ class Dipole(Element):
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    angle: float = 0
-    e1: float = 0
-    e2: float = 0
-    tilt: float = 0
-    fringe_integral: float = 0
-    fringe_integral_exit: float = 0
-    gap: float = 0
 
     def __init__(
         self,
@@ -332,8 +359,10 @@ class Dipole(Element):
         fringe_integral_exit: Optional[float] = None,
         gap: float = 0.0,
         name: Optional[str] = None,
-        **kwargs,
+        device: str = "auto",
     ):
+        super().__init__(name=name, device=device)
+
         self.length = length
         self.angle = angle
         self.gap = gap
@@ -352,7 +381,9 @@ class Dipole(Element):
         else:
             self.hx = self.angle / self.length
 
-        super().__init__(name=name, **kwargs)
+    @property
+    def is_skippable(self) -> bool:
+        return True
 
     @property
     def is_active(self):
@@ -461,8 +492,22 @@ class Dipole(Element):
             + f"fringe_integral={self.fringe_integral:.2f},"
             + f"fringe_integral_exit={self.fringe_integral_exit:.2f},"
             + f"gap={self.gap:.2f},"
-            + f'name="{self.name}")'
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
         )
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "length",
+            "angle",
+            "e1",
+            "e2",
+            "tilt",
+            "fringe_integral",
+            "fringe_integral_exit",
+            "gap",
+        ]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
@@ -474,7 +519,6 @@ class Dipole(Element):
         ax.add_patch(patch)
 
 
-@dataclass
 class RBend(Dipole):
     """
     Rectangular bending magnet.
@@ -489,6 +533,8 @@ class RBend(Dipole):
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -502,10 +548,11 @@ class RBend(Dipole):
         fringe_integral_exit: Optional[float] = None,
         gap: float = 0.0,
         name: Optional[str] = None,
-        **kwargs,
+        device: str = "auto",
     ):
         e1 = e1 + angle / 2
         e2 = e2 + angle / 2
+
         super().__init__(
             length=length,
             angle=angle,
@@ -516,11 +563,10 @@ class RBend(Dipole):
             fringe_integral_exit=fringe_integral_exit,
             gap=gap,
             name=name,
-            **kwargs,
+            device=device,
         )
 
 
-@dataclass
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
@@ -528,17 +574,21 @@ class HorizontalCorrector(Element):
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    angle: float = 0
-
     def __init__(
-        self, length: float, angle: float = 0.0, name: Optional[str] = None, **kwargs
+        self,
+        length: float,
+        angle: float = 0.0,
+        name: Optional[str] = None,
+        device: str = "auto",
     ) -> None:
+        super().__init__(name=name, device=device)
+
         self.length = length
         self.angle = angle
-
-        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         return torch.tensor(
@@ -554,6 +604,10 @@ class HorizontalCorrector(Element):
             dtype=torch.float32,
             device=self.device,
         )
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
 
     @property
     def is_active(self) -> bool:
@@ -580,15 +634,19 @@ class HorizontalCorrector(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length", "angle"]
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"angle={self.angle}, "
-            + f'name="{self.name}")'
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
         )
 
 
-@dataclass
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
@@ -596,17 +654,21 @@ class VerticalCorrector(Element):
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    angle: float = 0
-
     def __init__(
-        self, length: float, angle: float = 0.0, name: Optional[str] = None, **kwargs
+        self,
+        length: float,
+        angle: float = 0.0,
+        name: Optional[str] = None,
+        device: str = "auto",
     ) -> None:
+        super().__init__(name=name, device=device)
+
         self.length = length
         self.angle = angle
-
-        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         return torch.tensor(
@@ -622,6 +684,10 @@ class VerticalCorrector(Element):
             dtype=torch.float32,
             device=self.device,
         )
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
 
     @property
     def is_active(self) -> bool:
@@ -648,15 +714,19 @@ class VerticalCorrector(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length", "angle"]
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={self.length:.2f}, "
             + f"angle={self.angle}, "
-            + f'name="{self.name}")'
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
         )
 
 
-@dataclass
 class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
@@ -666,11 +736,9 @@ class Cavity(Element):
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    voltage: float = 0
-    phase: float = 0
-    frequency: float = 0
 
     def __init__(
         self,
@@ -679,14 +747,14 @@ class Cavity(Element):
         phase: float = 0.0,
         frequency: float = 0.0,
         name: Optional[str] = None,
-        **kwargs,
+        device: str = "auto",
     ) -> None:
+        super().__init__(name=name, device=device)
+
         self.length = length
         self.voltage = voltage
         self.phase = phase
         self.frequency = frequency
-
-        super().__init__(name=name, **kwargs)
 
     @property
     def is_active(self) -> bool:
@@ -951,17 +1019,33 @@ class Cavity(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length", "voltage", "phase", "frequency"]
 
-@dataclass
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f}, "
+            + f"voltage={self.voltage:.2f}, "
+            + f"phase={self.phase:.2f}, "
+            + f"frequency={self.frequency:.2f}, "
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
+        )
+
+
 class BPM(Element):
     """
     Beam Position Monitor (BPM) in a particle accelerator.
 
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, name: Optional[str] = None, **kwargs) -> None:
-        super().__init__(name=name, **kwargs)
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
+        super().__init__(name=name, device=device)
+
         self.reading = (None, None)
 
     @property
@@ -994,20 +1078,35 @@ class BPM(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features
 
-@dataclass
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}(name={self.name}, device="{self.device}")'
+
+
 class Marker(Element):
     """
     General Marker / Monitor element
 
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
+
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
+        super().__init__(name=name, device=device)
 
     def transfer_map(self, energy):
         return torch.eye(7, device=self.device)
 
     def __call__(self, incoming):
         return incoming
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
 
     def split(self, resolution: float) -> list[Element]:
         return [self]
@@ -1017,38 +1116,49 @@ class Marker(Element):
         # now they are invisible.
         pass
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features
 
-@dataclass
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}(name={self.name}, device="{self.device}")'
+
+
 class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
 
-    :param name: Unique identifier of the element.
     :param resolution: Resolution of the camera sensor looking at the screen given as a
         tuple `(width, height)`.
+    :param pixel_size: Size of a pixel on the screen in meters given as a tuple
+        `(width, height)`.
     :param binning: Binning used by the camera.
+    :param misalignment: Misalignment of the screen in meters given as a tuple `(x, y)`.
+    :param is_active: If `True` the screen is active and will record the beam's
+        distribution. If `False` the screen is inactive and will not record the beam's
+        distribution.
+    :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    resolution: tuple[int, int] = (1024, 1024)
-    pixel_size: tuple[float, float] = (1e-3, 1e-3)
-    binning: int = 1
-    misalignment: tuple[float, float] = (0, 0)
 
     def __init__(
         self,
-        resolution: tuple[int, int],
-        pixel_size: tuple[float, float],
+        resolution: tuple[int, int] = (1024, 1024),
+        pixel_size: tuple[float, float] = (1e-3, 1e-3),
         binning: int = 1,
         misalignment: tuple[float, float] = (0, 0),
+        is_active: bool = False,
         name: Optional[str] = None,
-        **kwargs,
+        device: str = "auto",
     ) -> None:
-        super().__init__(name=name, **kwargs)
+        super().__init__(name=name, device=device)
 
         self.resolution = tuple(resolution)
         self.pixel_size = tuple(pixel_size)
         self.binning = binning
         self.misalignment = tuple(misalignment)
+        self.is_active = is_active
 
         self.read_beam = None
         self.cached_reading = None
@@ -1177,15 +1287,28 @@ class Screen(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "resolution",
+            "pixel_size",
+            "binning",
+            "misalignment",
+            "is_active",
+        ]
+
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(resolution={self.resolution},"
-            f" pixel_size={self.pixel_size}, binning={self.binning},"
-            f' misalignment={self.misalignment}, name="{self.name}")'
+            f"{self.__class__.__name__}(resolution={self.resolution}, "
+            + f"pixel_size={self.pixel_size}, "
+            + f"binning={self.binning}, "
+            + f"misalignment={self.misalignment}, "
+            + f"is_active={self.is_active}, "
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
         )
 
 
-@dataclass
 class Aperture(Element):
     """
     Physical aperture.
@@ -1193,24 +1316,22 @@ class Aperture(Element):
     :param x_max: half size horizontal offset in [m]
     :param y_max: half size vertical offset in [m]
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
-    :param name: Unique identifier of the element.
     :param is_active: If the aperture actually blocks particles.
+    :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    x_max: float = np.inf
-    y_max: float = np.inf
-    shape: str = "rect"
 
     def __init__(
         self,
         x_max: float = np.inf,
         y_max: float = np.inf,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
-        name: Optional[str] = None,
         is_active: bool = True,
-        **kwargs,
+        name: Optional[str] = None,
+        device: str = "auto",
     ) -> None:
-        super().__init__(name, **kwargs)
+        super().__init__(name=name, device=device)
 
         self.x_max = x_max
         self.y_max = y_max
@@ -1264,13 +1385,33 @@ class Aperture(Element):
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
+        dummy_length = 0.0
+
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:pink", alpha=alpha, zorder=2
+            (s, 0), dummy_length, height, color="tab:pink", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "x_max",
+            "y_max",
+            "shape",
+            "is_active",
+        ]
 
-@dataclass
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(x_max={self.x_max:.2f}, "
+            + f"y_max={self.y_max:.2f}, "
+            + f'shape="{self.shape}", '
+            + f"is_active={self.is_active}, "
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
+        )
+
+
 class Undulator(Element):
     """
     Element representing an undulator in a particle accelerator.
@@ -1278,20 +1419,24 @@ class Undulator(Element):
     NOTE Currently behaves like a drift section but is plotted distinctively.
 
     :param length: Length in meters.
+    :param is_active: Indicates if the undulator is active or not. Currently has no
+        effect.
     :param name: Unique identifier of the element.
-
-    Parameters
-    ----------
-    length : float
-        Length in meters.
-    name : string, optional
-        Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, length: float, name: Optional[str] = None, **kwargs) -> None:
-        self.length = length
+    def __init__(
+        self,
+        length: float,
+        is_active: bool = False,
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
 
-        super().__init__(name=name, **kwargs)
+        self.length = length
+        self.is_active = is_active
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
@@ -1311,6 +1456,10 @@ class Undulator(Element):
             device=self.device,
         )
 
+    @property
+    def is_skippable(self) -> bool:
+        return True
+
     def split(self, resolution: float) -> list[Element]:
         # TODO: Implement splitting for undulator properly, for now just return self
         return [self]
@@ -1324,13 +1473,19 @@ class Undulator(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length"]
+
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}")'
+            f"{self.__class__.__name__}(length={self.length:.2f}, "
+            + f"is_active={self.is_active}, "
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
         )
 
 
-@dataclass
 class Solenoid(Element):
     """
     Solenoid magnet.
@@ -1338,15 +1493,14 @@ class Solenoid(Element):
     Implemented according to A.W.Chao P74
 
     :param length: Length in meters.
-    :param k: Noramlized strength of the solenoid magnet B0/(2*Brho). B0 is the field
+    :param k: Normalised strength of the solenoid magnet B0/(2*Brho). B0 is the field
         inside the solenoid, Brho is the momentum of central trajectory.
     :param misalignment: Misalignment vector of the solenoid magnet in x- and
         y-directions.
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    k: float = 0
-    misalignment: tuple[float, float] = (0, 0)
 
     def __init__(
         self,
@@ -1354,13 +1508,13 @@ class Solenoid(Element):
         k: float = 0,
         misalignment: tuple[float, float] = (0, 0),
         name: Optional[str] = None,
-        **kwargs,
+        device: str = "auto",
     ) -> None:
+        super().__init__(name=name, device=device)
+
         self.length = length
         self.k = k
         self.misalignment = tuple(misalignment)
-
-        super().__init__(name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         gamma = energy / REST_ENERGY
@@ -1399,15 +1553,12 @@ class Solenoid(Element):
     def is_active(self) -> bool:
         return self.k != 0
 
+    def is_skippable(self) -> bool:
+        return True
+
     def split(self, resolution: float) -> list[Element]:
         # TODO: Implement splitting for solenoid properly, for now just return self
         return [self]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, k={self.k:.2f},"
-            f' name="{self.name}")'
-        )
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
@@ -1418,22 +1569,32 @@ class Solenoid(Element):
         )
         ax.add_patch(patch)
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length", "k", "misalignment"]
 
-@dataclass
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(length={self.length:.2f}, "
+            + f"k={self.k:.2f}, "
+            + f"misalignment={self.misalignment}, "
+            + f'name="{self.name}", '
+            + f'device="{self.device}")'
+        )
+
+
 class Segment(Element):
     """
     Segment of a particle accelerator consisting of several elements.
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
+    :param device: Device to move the beam's particle array to. If set to `"auto"` a
+        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
-        self,
-        cell: list[Element],
-        name: Optional[str] = None,
-        device: str = "auto",
-        **kwargs,
+        self, cell: list[Element], name: Optional[str] = None, device: str = "auto"
     ) -> None:
         global ELEMENT_COUNT
         if name is not None:
@@ -1545,7 +1706,9 @@ class Segment(Element):
 
     @property
     def length(self) -> float:
-        return sum(element.length for element in self.elements)
+        return sum(
+            element.length for element in self.elements if hasattr(element, "length")
+        )
 
     def transfer_map(self, energy: float) -> torch.Tensor:
         if self.is_skippable:
@@ -1582,7 +1745,10 @@ class Segment(Element):
         ]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
-        element_lengths = [element.length for element in self.elements]
+        element_lengths = [
+            element.length if hasattr(element, "length") else 0.0
+            for element in self.elements
+        ]
         element_ss = [0] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
         ]
@@ -1705,7 +1871,7 @@ class Segment(Element):
         longitudinal_beams = [beam]
         s_positions = [0.0]
         for element in self.elements:
-            if element.length == 0:
+            if not hasattr(element, "length") or element.length == 0:
                 continue
 
             outgoing = element.track(longitudinal_beams[-1])
@@ -1729,6 +1895,10 @@ class Segment(Element):
 
         ax.legend()
         plt.tight_layout()
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["elements"]
 
     def plot_twiss_over_lattice(self, beam: Beam, figsize=(8, 4)) -> None:
         """Plot twiss parameters in a plot over a plot of the lattice."""
