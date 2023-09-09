@@ -938,21 +938,9 @@ class Cavity(Element):
         return R
 
     def split(self, resolution: float) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            split_length = min(resolution, remaining)
-            split_voltage = self.voltage * split_length / self.length
-            element = Cavity(
-                length=split_length,
-                voltage=split_voltage,
-                phase=self.phase,
-                frequency=self.frequency,
-                device=self.device,
-            )
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
+        # TODO: Implement splitting for cavity properly, for now just returns the
+        # element itself
+        return [self]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
@@ -1324,13 +1312,8 @@ class Undulator(Element):
         )
 
     def split(self, resolution: float) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            element = Cavity(min(resolution, remaining), device=self.device)
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
+        # TODO: Implement splitting for undulator properly, for now just return self
+        return [self]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
