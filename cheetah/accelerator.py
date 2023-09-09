@@ -754,11 +754,15 @@ class Cavity(Element):
                     / (outgoing_energy * beta1)
                     * (torch.cos(incoming._mu[4] * beta0 * k + phi) - torch.cos(phi))
                 )
-                outgoing_cov[5, :] = (
-                    T566 * incoming._mu[5] ** 2
-                    + T556 * incoming._mu[4] * incoming._mu[5]
-                    + T555 * incoming._mu[4] ** 2
-                )
+                outgoing_cov[5, 5] = incoming._cov[5, 5]
+                # outgoing_cov[5, 5] = (
+                #     incoming._cov[5, 5]
+                #     + incoming.energy * beta0 / (outgoing_energy * beta1)
+                #     + self.voltage
+                #     * beta0
+                #     / (outgoing_energy * beta1)
+                #     * (torch.cos(incoming._mu[4] * beta0 * k + phi) - torch.cos(phi))
+                # )
             else:  # ParticleBeam
                 outgoing_particles[:, 5] = (
                     incoming.particles[:, 5]
@@ -817,11 +821,17 @@ class Cavity(Element):
                     + T556 * incoming._mu[4] * incoming._mu[5]
                     + T555 * incoming._mu[4] ** 2
                 )
-                outgoing_cov[4, :] = (
-                    T566 * incoming._mu[5] ** 2
-                    + T556 * incoming._mu[4] * incoming._mu[5]
-                    + T555 * incoming._mu[4] ** 2
+                outgoing_cov[4, 4] = (
+                    T566 * incoming._cov[5, 5] ** 2
+                    + T556 * incoming._cov[4, 5] * incoming._cov[5, 5]
+                    + T555 * incoming._cov[4, 4] ** 2
                 )
+                outgoing_cov[4, 5] = (
+                    T566 * incoming._cov[5, 5] ** 2
+                    + T556 * incoming._cov[4, 5] * incoming._cov[5, 5]
+                    + T555 * incoming._cov[4, 4] ** 2
+                )
+                outgoing_cov[5, 4] = outgoing_cov[4, 5]
             else:  # ParticleBeam
                 outgoing_particles[:, 4] = (
                     T566 * incoming.particles[:, 5] ** 2
@@ -830,11 +840,13 @@ class Cavity(Element):
                 )
 
             if isinstance(incoming, ParameterBeam):
-                return ParameterBeam(outgoing_mu, outgoing_cov, outgoing_energy)
+                outgoing = ParameterBeam(outgoing_mu, outgoing_cov, outgoing_energy)
+                return outgoing
             else:  # ParticleBeam
-                return ParticleBeam(
+                outgoing = ParticleBeam(
                     outgoing_particles, outgoing_energy, device=incoming.device
                 )
+                return outgoing
 
     def _cavity_rmatrix(self, energy: float) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
@@ -1345,6 +1357,7 @@ class Solenoid(Element):
         self.length = length
         self.k = k
         self.misalignment = tuple(misalignment)
+
         super().__init__(name, **kwargs)
 
     def transfer_map(self, energy: float) -> torch.Tensor:
@@ -1677,6 +1690,9 @@ class Segment(Element):
         longitudinal_beams = [beam]
         s_positions = [0.0]
         for element in self.elements:
+            if element.length == 0:
+                continue
+
             outgoing = element.track(longitudinal_beams[-1])
 
             longitudinal_beams.append(outgoing)
