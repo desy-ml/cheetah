@@ -132,9 +132,12 @@ class Element(ABC):
         """
         return self(incoming)
 
+    @abstractmethod
     def split(self, resolution: float) -> list["Element"]:
         """
-        Split the element into slices no longer than `resolution`.
+        Split the element into slices no longer than `resolution`. Some elements may not
+        be splittable, in which case a list containing only the element itself is
+        returned.
 
         :param resolution: Length of the longest allowed split in meters.
         :return: Ordered sequence of sliced elements.
@@ -442,6 +445,11 @@ class Dipole(Element):
                 dtype=torch.float32,
                 device=self.device,
             )
+
+    def split(self, resolution: float) -> list[Element]:
+        # TODO: Implement splitting for dipole properly, for now just returns the
+        # element itself
+        return [self]
 
     def __repr__(self):
         return (
@@ -934,9 +942,13 @@ class Cavity(Element):
         remaining = self.length
         while remaining > 0:
             split_length = min(resolution, remaining)
-            split_delta_energy = self.delta_energy * split_length / self.length
+            split_voltage = self.voltage * split_length / self.length
             element = Cavity(
-                split_length, delta_energy=split_delta_energy, device=self.device
+                length=split_length,
+                voltage=split_voltage,
+                phase=self.phase,
+                frequency=self.frequency,
+                device=self.device,
             )
             split_elements.append(element)
             remaining -= resolution
@@ -1008,6 +1020,9 @@ class Marker(Element):
 
     def __call__(self, incoming):
         return incoming
+
+    def split(self, resolution: float) -> list[Element]:
+        return [self]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         # Do nothing on purpose. Maybe later we decide markers should be shown, but for
@@ -1253,6 +1268,10 @@ class Aperture(Element):
             else ParticleBeam.empty
         )
 
+    def split(self, resolution: float) -> list[Element]:
+        # TODO: Implement splitting for aperture properly, for now just return self
+        return [self]
+
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.4
@@ -1396,6 +1415,10 @@ class Solenoid(Element):
     @property
     def is_active(self) -> bool:
         return self.k != 0
+
+    def split(self, resolution: float) -> list[Element]:
+        # TODO: Implement splitting for solenoid properly, for now just return self
+        return [self]
 
     def __repr__(self) -> str:
         return (
