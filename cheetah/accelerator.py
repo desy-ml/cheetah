@@ -1450,7 +1450,16 @@ class Segment(Element):
 
         for element in self.elements:
             element.device = self.device
-            self.__dict__[element.name] = element
+
+            # Make elements accessible via .name attribute. If multiple elements have
+            # the same name, they are accessible via a list.
+            if element.name in self.__dict__:
+                if isinstance(self.__dict__[element.name], list):
+                    self.__dict__[element.name].append(element)
+                else:  # Is instance of cheetah.Element
+                    self.__dict__[element.name] = [self.__dict__[element.name], element]
+            else:
+                self.__dict__[element.name] = element
 
     def subcell(self, start: str, end: str, **kwargs) -> "Segment":
         """Extract a subcell `[start, end]` from an this segment."""
