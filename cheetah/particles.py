@@ -282,11 +282,19 @@ class ParameterBeam(Beam):
     :param mu: Mu vector of the beam.
     :param cov: Covariance matrix of the beam.
     :param energy: Energy of the beam in eV.
+    :param device: Device to use for the beam. If "auto", use CUDA if available.
+        Note: Compuationally it would be faster to use CPU for ParameterBeam.
     """
 
-    def __init__(self, mu: torch.Tensor, cov: torch.Tensor, energy: float) -> None:
-        self._mu = mu
-        self._cov = cov
+    def __init__(
+        self, mu: torch.Tensor, cov: torch.Tensor, energy: float, device: str = "auto"
+    ) -> None:
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
+
+        self._mu = mu.to(device)
+        self._cov = cov.to(device)
         self.energy = energy
 
     @classmethod
@@ -306,6 +314,7 @@ class ParameterBeam(Beam):
         cor_y: float = 0,
         cor_s: float = 0,
         energy: float = 1e8,
+        device: str = "auto",
     ) -> "ParameterBeam":
         return cls(
             mu=torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0, 1], dtype=torch.float32),
@@ -322,6 +331,7 @@ class ParameterBeam(Beam):
                 dtype=torch.float32,
             ),
             energy=energy,
+            device=device,
         )
 
     @classmethod
@@ -337,6 +347,7 @@ class ParameterBeam(Beam):
         sigma_p: float = 1e-6,
         cor_s: float = 0,
         energy: float = 1e8,
+        device: str = "auto",
     ) -> "ParameterBeam":
         sigma_x = np.sqrt(emittance_x * beta_x)
         sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
@@ -355,10 +366,11 @@ class ParameterBeam(Beam):
             cor_s=cor_s,
             cor_x=cor_x,
             cor_y=cor_y,
+            device=device,
         )
 
     @classmethod
-    def from_ocelot(cls, parray) -> "ParameterBeam":
+    def from_ocelot(cls, parray, device: str = "auto") -> "ParameterBeam":
         mu = torch.ones(7)
         mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
 
@@ -367,7 +379,7 @@ class ParameterBeam(Beam):
 
         energy = 1e9 * parray.E
 
-        return cls(mu=mu, cov=cov, energy=energy)
+        return cls(mu=mu, cov=cov, energy=energy, device=device)
 
     @classmethod
     def from_astra(cls, path: str, **kwargs) -> "ParameterBeam":
@@ -381,7 +393,7 @@ class ParameterBeam(Beam):
         cov = torch.zeros(7, 7)
         cov[:6, :6] = torch.tensor(np.cov(particles.transpose()))
 
-        return cls(mu=mu, cov=cov, energy=energy)
+        return cls(mu=mu, cov=cov, energy=energy, **kwargs)
 
     def transformed_to(
         self,
@@ -437,6 +449,7 @@ class ParameterBeam(Beam):
             sigma_s=sigma_s,
             sigma_p=sigma_p,
             energy=energy,
+            device=self.device,
         )
 
     @property
