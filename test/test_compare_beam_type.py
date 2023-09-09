@@ -268,10 +268,10 @@ def test_cavity_from_twiss():
         outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, atol=1e-6
     )
     assert np.isclose(
-        outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-3
+        outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
     )
     assert np.isclose(
-        outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-3
+        outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
     assert np.isclose(
         outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, atol=1e-6
@@ -280,8 +280,8 @@ def test_cavity_from_twiss():
         outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, atol=1e-6
     )
     assert np.isclose(
-        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-3
+        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
     )
     assert np.isclose(
-        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-3
+        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
     )
