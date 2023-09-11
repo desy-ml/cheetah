@@ -802,7 +802,7 @@ class Cavity(Element):
             igamma2 = 1 / g0**2
             beta0 = torch.sqrt(1 - igamma2)
 
-        phi = torch.tensor(self.phase) * torch.pi / 180
+        phi = torch.deg2rad(torch.tensor(self.phase))
 
         tm = self.transfer_map(incoming.energy)
         if isinstance(incoming, ParameterBeam):
