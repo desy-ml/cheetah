@@ -915,14 +915,14 @@ class Cavity(Element):
                     + T555 * incoming.particles[:, 4] ** 2
                 )
 
-            if isinstance(incoming, ParameterBeam):
-                outgoing = ParameterBeam(outgoing_mu, outgoing_cov, outgoing_energy)
-                return outgoing
-            else:  # ParticleBeam
-                outgoing = ParticleBeam(
-                    outgoing_particles, outgoing_energy, device=incoming.device
-                )
-                return outgoing
+        if isinstance(incoming, ParameterBeam):
+            outgoing = ParameterBeam(outgoing_mu, outgoing_cov, outgoing_energy)
+            return outgoing
+        else:  # ParticleBeam
+            outgoing = ParticleBeam(
+                outgoing_particles, outgoing_energy, device=incoming.device
+            )
+            return outgoing
 
     def _cavity_rmatrix(self, energy: float) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
