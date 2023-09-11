@@ -573,7 +573,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 length=bmad_parsed["l"],
                 voltage=bmad_parsed["voltage"] if "voltage" in bmad_parsed else 0.0,
                 phase=(
-                    np.degrees(bmad_parsed["phi0"] * 2 * np.pi)
+                    -np.degrees(bmad_parsed["phi0"] * 2 * np.pi)
                     if "phi0" in bmad_parsed
                     else 0.0
                 ),
