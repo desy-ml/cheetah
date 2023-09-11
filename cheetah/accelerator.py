@@ -939,10 +939,11 @@ class Cavity(Element):
 
         r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
 
-        if torch.abs(Ep) > 10:
-            r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
-        else:
-            r12 = self.length
+        # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
+        # otherwise. This is implemented differently here in order to achieve results
+        # closer to Bmad.
+        r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
+
         r21 = (
             -Ep
             / Ef
@@ -988,6 +989,8 @@ class Cavity(Element):
 
         r66 = Ei / Ef * beta0 / beta1
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
+
+        print(f"{r12 = }")
 
         R = torch.tensor(
             [
