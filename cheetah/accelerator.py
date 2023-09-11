@@ -926,8 +926,8 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: float) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
-        phi = torch.tensor(self.phase) * torch.pi / 180
-        delta_energy = torch.tensor(self.voltage) * torch.cos(phi)
+        phi = torch.deg2rad(torch.tensor(self.phase))
+        delta_energy = torch.tensor(self.voltage) * phi
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1)
         Ei = energy / electron_mass_eV
