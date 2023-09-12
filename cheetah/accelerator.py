@@ -11,6 +11,7 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
 from scipy.stats import multivariate_normal
+from utils import DeviceError
 
 from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
@@ -25,19 +26,6 @@ REST_ENERGY = torch.tensor(
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
-
-
-class DeviceError(Exception):
-    """
-    Used to create an exception, in case the device used for the beam
-    and the elements are different.
-    """
-
-    def __init__(self):
-        super().__init__(
-            "Warning! The device used for calculating the elements is not the same, "
-            "as the device used to calculate the Beam."
-        )
 
 
 class Element(ABC):
