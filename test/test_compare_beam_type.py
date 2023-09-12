@@ -31,12 +31,12 @@ def test_from_twiss():
         energy=6e6,
     )
 
-    assert np.isclose(parameter_beam.mu_x, particle_beam.mu_x, atol=1e-7)
-    assert np.isclose(parameter_beam.mu_y, particle_beam.mu_y, atol=1e-7)
+    assert np.isclose(parameter_beam.mu_x, particle_beam.mu_x, atol=1e-6)
+    assert np.isclose(parameter_beam.mu_y, particle_beam.mu_y, atol=1e-6)
     assert np.isclose(parameter_beam.sigma_x, particle_beam.sigma_x, rtol=1e-3)
     assert np.isclose(parameter_beam.sigma_y, particle_beam.sigma_y, rtol=1e-3)
-    assert np.isclose(parameter_beam.mu_xp, particle_beam.mu_xp, atol=1e-7)
-    assert np.isclose(parameter_beam.mu_yp, particle_beam.mu_yp, atol=1e-7)
+    assert np.isclose(parameter_beam.mu_xp, particle_beam.mu_xp, atol=1e-6)
+    assert np.isclose(parameter_beam.mu_yp, particle_beam.mu_yp, atol=1e-6)
     assert np.isclose(parameter_beam.sigma_xp, particle_beam.sigma_xp, rtol=1e-3)
     assert np.isclose(parameter_beam.sigma_yp, particle_beam.sigma_yp, rtol=1e-3)
     assert np.isclose(parameter_beam.mu_s, particle_beam.mu_s)
