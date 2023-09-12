@@ -12,11 +12,11 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
 from scipy.stats import multivariate_normal
-from utils import DeviceError
 
 from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
+from cheetah.utils import DeviceError
 
 REST_ENERGY = torch.tensor(
     constants.electron_mass
