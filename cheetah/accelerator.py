@@ -6,7 +6,6 @@ from typing import Any, Literal, Optional
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pydantic
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
@@ -28,7 +27,7 @@ electron_mass_eV = torch.tensor(
 )
 
 
-class Element(ABC, pydantic.BaseModel):
+class Element(ABC):
     """
     Base class for elements of particle accelerators.
 
@@ -37,10 +36,7 @@ class Element(ABC, pydantic.BaseModel):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    name: str = "unnamed"
-    device: torch.device
-
-    def __init__(self, name: str = "unnamed", device: str = "auto") -> None:
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
         self.name = name
 
         if device == "auto":
@@ -172,8 +168,6 @@ class Drift(Element):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    length: torch.Tensor
-
     def __init__(
         self, length: torch.Tensor, name: Optional[str] = None, device: str = "auto"
     ) -> None:
@@ -239,11 +233,6 @@ class Quadrupole(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    length: torch.Tensor
-    k1: torch.Tensor = torch.tensor(0.0)
-    misalignment: torch.Tensor = torch.tensor([0.0, 0.0])
-    tilt: torch.Tensor = torch.tensor(0.0)
 
     def __init__(
         self,
@@ -340,15 +329,6 @@ class Dipole(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    length: torch.Tensor
-    angle: torch.Tensor = torch.tensor(0.0)
-    e1: torch.Tensor = torch.tensor(0.0)
-    e2: torch.Tensor = torch.tensor(0.0)
-    tilt: torch.Tensor = torch.tensor(0.0)
-    fringe_integral: torch.Tensor = torch.tensor(0.0)
-    fringe_integral_exit: Optional[torch.Tensor] = None
-    gap: torch.Tensor = torch.tensor(0.0)
 
     def __init__(
         self,
@@ -580,9 +560,6 @@ class HorizontalCorrector(Element):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    length: torch.Tensor
-    angle: torch.Tensor = torch.tensor(0.0)
-
     def __init__(
         self,
         length: torch.Tensor,
@@ -662,9 +639,6 @@ class VerticalCorrector(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    length: torch.Tensor
-    angle: torch.Tensor = torch.tensor(0.0)
 
     def __init__(
         self,
@@ -747,11 +721,6 @@ class Cavity(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    length: torch.Tensor
-    voltage: torch.Tensor = torch.tensor(0.0)
-    phase: torch.Tensor = torch.tensor(0.0)
-    frequency: torch.Tensor = torch.tensor(0.0)
 
     def __init__(
         self,
@@ -1156,12 +1125,6 @@ class Screen(Element):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    resolution: torch.Tensor = torch.tensor((1024, 1024))
-    pixel_size: torch.Tensor = torch.tensor((1e-3, 1e-3))
-    binning: torch.Tensor = torch.tensor(1)
-    misalignment: torch.Tensor = torch.tensor((0.0, 0.0))
-    is_active: bool = False
-
     def __init__(
         self,
         resolution: torch.Tensor = torch.tensor((1024, 1024)),
@@ -1342,11 +1305,6 @@ class Aperture(Element):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    x_max: torch.Tensor = torch.inf
-    y_max: torch.Tensor = torch.inf
-    shape: Literal["rectangular", "elliptical"] = "rectangular"
-    is_active: bool = True
-
     def __init__(
         self,
         x_max: torch.Tensor = torch.inf,
@@ -1451,9 +1409,6 @@ class Undulator(Element):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    length: torch.Tensor
-    is_active: bool = False
-
     def __init__(
         self,
         length: torch.Tensor,
@@ -1529,10 +1484,6 @@ class Solenoid(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    length: torch.Tensor
-    k: torch.Tensor = torch.tensor(0.0)
-    misalignment: torch.Tensor = torch.tensor((0.0, 0.0))
 
     def __init__(
         self,
@@ -1624,8 +1575,6 @@ class Segment(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
-
-    elements: list[Element]
 
     def __init__(
         self, cell: list[Element], name: str = "unnamed", device: str = "auto"
