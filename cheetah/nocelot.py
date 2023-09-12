@@ -28,18 +28,22 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
         )
 
     if isinstance(element, ocelot.Drift):
-        return cheetah.Drift(torch.tensor(element.l), name=element.id)
+        return cheetah.Drift(length=torch.tensor(element.l), name=element.id)
     elif isinstance(element, ocelot.Quadrupole):
         return cheetah.Quadrupole(
-            torch.tensor(element.l), torch.tensor(element.k1), name=element.id
+            length=torch.tensor(element.l), k1=torch.tensor(element.k1), name=element.id
         )
     elif isinstance(element, ocelot.Hcor):
         return cheetah.HorizontalCorrector(
-            torch.tensor(element.l), torch.tensor(element.angle), name=element.id
+            length=torch.tensor(element.l),
+            angle=torch.tensor(element.angle),
+            name=element.id,
         )
     elif isinstance(element, ocelot.Vcor):
         return cheetah.VerticalCorrector(
-            torch.tensor(element.l), torch.tensor(element.angle), name=element.id
+            length=torch.tensor(element.l),
+            angle=torch.tensor(element.angle),
+            name=element.id,
         )
     elif isinstance(element, ocelot.Cavity):
         return cheetah.Cavity(torch.tensor(element.l), name=element.id)
@@ -52,8 +56,8 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
                 " properties."
             )
         return cheetah.Screen(
-            torch.tensor([2448, 2040]),
-            torch.tensor([3.5488e-6, 2.5003e-6]),
+            resolution=torch.tensor([2448, 2040]),
+            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             name=element.id,
         )
     elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
@@ -66,7 +70,7 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
                 f"WARNING: Unknown element {element.id} of type {type(element)},"
                 " replacing with drift section."
             )
-        return cheetah.Drift(torch.tensor(element.l), name=element.id)
+        return cheetah.Drift(length=torch.tensor(element.l), name=element.id)
 
 
 def subcell_of_ocelot(cell: list, start: str, end: str) -> list:
