@@ -40,14 +40,12 @@ class Element(ABC, pydantic.BaseModel):
     name: str = "unnamed"
     device: torch.device
 
-    class Config:
-        arbitrary_types_allowed = True
+    def __init__(self, name: str = "unnamed", device: str = "auto") -> None:
+        self.name = name
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        if self.device == "auto":
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         """
@@ -176,6 +174,13 @@ class Drift(Element):
 
     length: torch.Tensor
 
+    def __init__(
+        self, length: torch.Tensor, name: Optional[str] = None, device: str = "auto"
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
@@ -239,6 +244,22 @@ class Quadrupole(Element):
     k1: torch.Tensor = torch.tensor(0.0)
     misalignment: torch.Tensor = torch.tensor([0.0, 0.0])
     tilt: torch.Tensor = torch.tensor(0.0)
+
+    def __init__(
+        self,
+        length: torch.Tensor,
+        k1: torch.Tensor = torch.tensor(0.0),
+        misalignment: torch.Tensor = torch.tensor([0.0, 0.0]),
+        tilt: torch.Tensor = torch.tensor(0.0),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+        self.k1 = k1
+        self.misalignment = misalignment
+        self.tilt = tilt
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         R = base_rmatrix(
@@ -329,13 +350,38 @@ class Dipole(Element):
     fringe_integral_exit: Optional[torch.Tensor] = None
     gap: torch.Tensor = torch.tensor(0.0)
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
+        e1: torch.Tensor = torch.tensor(0.0),
+        e2: torch.Tensor = torch.tensor(0.0),
+        tilt: torch.Tensor = torch.tensor(0.0),
+        fringe_integral: torch.Tensor = torch.tensor(0.0),
+        fringe_integral_exit: Optional[torch.Tensor] = None,
+        gap: torch.Tensor = torch.tensor(0.0),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ):
+        super().__init__(name=name, device=device)
 
-        if self.fringe_integral_exit is None:
-            self.fringe_integral_exit = self.fringe_integral
+        self.length = length
+        self.angle = angle
+        self.gap = gap
+        self.tilt = tilt
+        self.name = name
+        self.fringe_integral = fringe_integral
+        self.fringe_integral_exit = (
+            fringe_integral if fringe_integral_exit is None else fringe_integral_exit
+        )
+        # Rectangular bend
+        self.e1 = e1
+        self.e2 = e2
 
-        self.hx = self.angle / self.length if self.length != 0 else torch.tensor(0.0)
+        if self.length == 0.0:
+            self.hx = torch.tensor(0.0)
+        else:
+            self.hx = self.angle / self.length
 
     @property
     def is_skippable(self) -> bool:
@@ -494,16 +540,33 @@ class RBend(Dipole):
     """
 
     def __init__(
-        *args,
+        self,
+        length: torch.Tensor,
         angle: torch.Tensor = torch.tensor(0.0),
         e1: torch.Tensor = torch.tensor(0.0),
         e2: torch.Tensor = torch.tensor(0.0),
-        **kwargs,
-    ) -> None:
+        tilt: torch.Tensor = torch.tensor(0.0),
+        fringe_integral: torch.Tensor = torch.tensor(0.0),
+        fringe_integral_exit: Optional[torch.Tensor] = None,
+        gap: torch.Tensor = torch.tensor(0.0),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ):
         e1 = e1 + angle / 2
         e2 = e2 + angle / 2
 
-        super().__init__(*args, angle=angle, e1=e1, e2=e2, **kwargs)
+        super().__init__(
+            length=length,
+            angle=angle,
+            e1=e1,
+            e2=e2,
+            tilt=tilt,
+            fringe_integral=fringe_integral,
+            fringe_integral_exit=fringe_integral_exit,
+            gap=gap,
+            name=name,
+            device=device,
+        )
 
 
 class HorizontalCorrector(Element):
@@ -519,6 +582,18 @@ class HorizontalCorrector(Element):
 
     length: torch.Tensor
     angle: torch.Tensor = torch.tensor(0.0)
+
+    def __init__(
+        self,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+        self.angle = angle
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.tensor(
@@ -590,6 +665,18 @@ class VerticalCorrector(Element):
 
     length: torch.Tensor
     angle: torch.Tensor = torch.tensor(0.0)
+
+    def __init__(
+        self,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+        self.angle = angle
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.tensor(
@@ -665,6 +752,22 @@ class Cavity(Element):
     voltage: torch.Tensor = torch.tensor(0.0)
     phase: torch.Tensor = torch.tensor(0.0)
     frequency: torch.Tensor = torch.tensor(0.0)
+
+    def __init__(
+        self,
+        length: torch.Tensor,
+        voltage: torch.Tensor = torch.tensor(0.0),
+        phase: torch.Tensor = torch.tensor(0.0),
+        frequency: torch.Tensor = torch.tensor(0.0),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+        self.voltage = voltage
+        self.phase = phase
+        self.frequency = frequency
 
     @property
     def is_active(self) -> bool:
@@ -954,8 +1057,8 @@ class BPM(Element):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
+        super().__init__(name=name, device=device)
 
         self.reading = (None, None)
 
@@ -1005,6 +1108,9 @@ class Marker(Element):
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
+
+    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
+        super().__init__(name=name, device=device)
 
     def transfer_map(self, energy):
         return torch.eye(7, device=self.device)
@@ -1056,8 +1162,23 @@ class Screen(Element):
     misalignment: torch.Tensor = torch.tensor((0.0, 0.0))
     is_active: bool = False
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        resolution: torch.Tensor = torch.tensor((1024, 1024)),
+        pixel_size: torch.Tensor = torch.tensor((1e-3, 1e-3)),
+        binning: torch.Tensor = torch.tensor(1),
+        misalignment: torch.Tensor = torch.tensor((0.0, 0.0)),
+        is_active: bool = False,
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.resolution = tuple(resolution)
+        self.pixel_size = tuple(pixel_size)
+        self.binning = binning
+        self.misalignment = tuple(misalignment)
+        self.is_active = is_active
 
         self.read_beam = None
         self.cached_reading = None
@@ -1226,8 +1347,21 @@ class Aperture(Element):
     shape: Literal["rectangular", "elliptical"] = "rectangular"
     is_active: bool = True
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        x_max: torch.Tensor = torch.inf,
+        y_max: torch.Tensor = torch.inf,
+        shape: Literal["rectangular", "elliptical"] = "rectangular",
+        is_active: bool = True,
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.x_max = x_max
+        self.y_max = y_max
+        self.shape = shape
+        self.is_active = is_active
 
         self.lost_particles = None
 
@@ -1320,6 +1454,18 @@ class Undulator(Element):
     length: torch.Tensor
     is_active: bool = False
 
+    def __init__(
+        self,
+        length: torch.Tensor,
+        is_active: bool = False,
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+        self.is_active = is_active
+
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
@@ -1387,6 +1533,20 @@ class Solenoid(Element):
     length: torch.Tensor
     k: torch.Tensor = torch.tensor(0.0)
     misalignment: torch.Tensor = torch.tensor((0.0, 0.0))
+
+    def __init__(
+        self,
+        length: torch.Tensor = torch.tensor(0.0),
+        k: torch.Tensor = torch.tensor(0.0),
+        misalignment: torch.Tensor = torch.tensor((0.0, 0.0)),
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        self.length = length
+        self.k = k
+        self.misalignment = tuple(misalignment)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY
@@ -1467,8 +1627,16 @@ class Segment(Element):
 
     elements: list[Element]
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, cell: list[Element], name: str = "unnamed", device: str = "auto"
+    ) -> None:
+        self.name = name
+
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
+
+        self.elements = cell
 
         for element in self.elements:
             element.device = self.device
