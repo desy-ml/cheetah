@@ -14,9 +14,9 @@ from scipy.constants import physical_constants
 from scipy.stats import multivariate_normal
 
 from cheetah.dontbmad import convert_bmad_lattice
+from cheetah.error import DeviceError
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
-from cheetah.utils import DeviceError
 
 REST_ENERGY = torch.tensor(
     constants.electron_mass
@@ -39,6 +39,9 @@ class Element(ABC, pydantic.BaseModel):
 
     name: str = "unnamed"
     device: torch.device
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -1533,7 +1536,7 @@ class Segment(Element):
             Cheetah or converted with potentially unexpected behavior.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
-        from cheetah.utils import ocelot2cheetah
+        from cheetah.nocelot import ocelot2cheetah
 
         converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
         return cls(converted, name=name, **kwargs)

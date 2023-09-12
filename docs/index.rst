@@ -11,10 +11,13 @@ Welcome to Cheetah's documentation!
     :caption: Contents:
 
     accelerator
+    astralavista
     dontbmad
+    error
+    latticejson
+    nocelot
     particles
     track_methods
-    utils
 
 `Cheetah <https://github.com/desy-ml/cheetah>`_ is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
