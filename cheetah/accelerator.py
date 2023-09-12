@@ -990,8 +990,6 @@ class Cavity(Element):
         r66 = Ei / Ef * beta0 / beta1
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
-        print(f"{r12 = }")
-
         R = torch.tensor(
             [
                 [r11, r12, 0, 0, 0, 0, 0],
