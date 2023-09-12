@@ -18,7 +18,6 @@ from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
-ELEMENT_COUNT = 0
 REST_ENERGY = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
@@ -38,16 +37,11 @@ class Element(ABC, pydantic.BaseModel):
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    name: str
+    name: str = "unnamed"
     device: torch.device
 
-    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
-        global ELEMENT_COUNT
-        if name is not None:
-            self.name = name
-        else:
-            self.name = f"{self.__class__.__name__}_{ELEMENT_COUNT:06d}"
-        ELEMENT_COUNT += 1
+    def __init__(self, name: str = "unnamed", device: str = "auto") -> None:
+        self.name = name
 
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -1634,14 +1628,9 @@ class Segment(Element):
     elements: list[Element]
 
     def __init__(
-        self, cell: list[Element], name: Optional[str] = None, device: str = "auto"
+        self, cell: list[Element], name: str = "unnamed", device: str = "auto"
     ) -> None:
-        global ELEMENT_COUNT
-        if name is not None:
-            self.name = name
-        else:
-            self.name = f"{self.__class__.__name__}_{ELEMENT_COUNT:06d}"
-        ELEMENT_COUNT += 1
+        self.name = name
 
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
