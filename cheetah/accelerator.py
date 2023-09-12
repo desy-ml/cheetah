@@ -17,7 +17,7 @@ from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
 ELEMENT_COUNT = 0
-REST_ENERGY = (
+REST_ENERGY = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
     / constants.elementary_charge
@@ -61,7 +61,7 @@ class Element(ABC):
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         """
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element. The state vector
@@ -143,7 +143,7 @@ class Element(ABC):
         return ["name", "device"]
 
     @abstractmethod
-    def split(self, resolution: float) -> list["Element"]:
+    def split(self, resolution: torch.Tensor) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`. Some elements may not
         be splittable, in which case a list containing only the element itself is
@@ -187,15 +187,15 @@ class Drift(Element):
     """
 
     def __init__(
-        self, length: float, name: Optional[str] = None, device: str = "auto"
+        self, length: torch.Tensor, name: Optional[str] = None, device: str = "auto"
     ) -> None:
         super().__init__(name=name, device=device)
 
         self.length = length
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY
-        igamma2 = 1 / gamma**2 if gamma != 0 else 0
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
         return torch.tensor(
             [
@@ -215,7 +215,7 @@ class Drift(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -254,10 +254,10 @@ class Quadrupole(Element):
 
     def __init__(
         self,
-        length: float,
-        k1: float = 0.0,
-        misalignment: tuple[float, float] = (0, 0),
-        tilt: float = 0.0,
+        length: torch.Tensor,
+        k1: torch.Tensor = torch.tensor(0.0),
+        misalignment: torch.Tensor = torch.tensor([0.0, 0.0]),
+        tilt: torch.Tensor = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -265,10 +265,10 @@ class Quadrupole(Element):
 
         self.length = length
         self.k1 = k1
-        self.misalignment = tuple(misalignment)
+        self.misalignment = misalignment
         self.tilt = tilt
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
@@ -293,7 +293,7 @@ class Quadrupole(Element):
     def is_active(self) -> bool:
         return self.k1 != 0
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -350,14 +350,14 @@ class Dipole(Element):
 
     def __init__(
         self,
-        length: float,
-        angle: float = 0.0,
-        e1: float = 0.0,
-        e2: float = 0.0,
-        tilt: float = 0.0,
-        fringe_integral: float = 0.0,
-        fringe_integral_exit: Optional[float] = None,
-        gap: float = 0.0,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
+        e1: torch.Tensor = torch.tensor(0.0),
+        e2: torch.Tensor = torch.tensor(0.0),
+        tilt: torch.Tensor = torch.tensor(0.0),
+        fringe_integral: torch.Tensor = torch.tensor(0.0),
+        fringe_integral_exit: Optional[torch.Tensor] = None,
+        gap: torch.Tensor = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ):
@@ -377,7 +377,7 @@ class Dipole(Element):
         self.e2 = e2
 
         if self.length == 0.0:
-            self.hx = 0.0
+            self.hx = torch.tensor(0.0)
         else:
             self.hx = self.angle / self.length
 
@@ -389,7 +389,7 @@ class Dipole(Element):
     def is_active(self):
         return self.angle != 0
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         R_enter = self._transfer_map_enter(energy)
         R_exit = self._transfer_map_exit(energy)
 
@@ -425,24 +425,24 @@ class Dipole(Element):
 
         return R
 
-    def _transfer_map_enter(self, energy: float) -> torch.Tensor:
+    def _transfer_map_enter(self, energy: torch.Tensor) -> torch.Tensor:
         if self.fringe_integral == 0:
             return torch.eye(7, device=self.device)
         else:
-            sec_e = 1.0 / np.cos(self.e1)
+            sec_e = torch.tensor(1.0) / torch.cos(self.e1)
             phi = (
                 self.fringe_integral
                 * self.hx
                 * self.gap
                 * sec_e
-                * (1 + np.sin(self.e1) ** 2)
+                * (1 + torch.sin(self.e1) ** 2)
             )
             return torch.tensor(
                 [
                     [1, 0, 0, 0, 0, 0, 0],
-                    [self.hx * np.tan(self.e1), 1, 0, 0, 0, 0, 0],
+                    [self.hx * torch.tan(self.e1), 1, 0, 0, 0, 0, 0],
                     [0, 0, 1, 0, 0, 0, 0],
-                    [0, 0, -self.hx * np.tan(self.e1 - phi), 1, 0, 0, 0],
+                    [0, 0, -self.hx * torch.tan(self.e1 - phi), 1, 0, 0, 0],
                     [0, 0, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 1, 0],
                     [0, 0, 0, 0, 0, 0, 1],
@@ -451,24 +451,24 @@ class Dipole(Element):
                 device=self.device,
             )
 
-    def _transfer_map_exit(self, energy: float) -> torch.Tensor:
+    def _transfer_map_exit(self, energy: torch.Tensor) -> torch.Tensor:
         if self.fringe_integral_exit == 0:
             return torch.eye(7, device=self.device)
         else:
-            sec_e = 1.0 / np.cos(self.e2)
+            sec_e = 1.0 / torch.cos(self.e2)
             phi = (
                 self.fringe_integral
                 * self.hx
                 * self.gap
                 * sec_e
-                * (1 + np.sin(self.e2) ** 2)
+                * (1 + torch.sin(self.e2) ** 2)
             )
             return torch.tensor(
                 [
                     [1, 0, 0, 0, 0, 0, 0],
-                    [self.hx * np.tan(self.e2), 1, 0, 0, 0, 0, 0],
+                    [self.hx * torch.tan(self.e2), 1, 0, 0, 0, 0, 0],
                     [0, 0, 1, 0, 0, 0, 0],
-                    [0, 0, -self.hx * np.tan(self.e2 - phi), 1, 0, 0, 0],
+                    [0, 0, -self.hx * torch.tan(self.e2 - phi), 1, 0, 0, 0],
                     [0, 0, 0, 0, 1, 0, 0],
                     [0, 0, 0, 0, 0, 1, 0],
                     [0, 0, 0, 0, 0, 0, 1],
@@ -477,7 +477,7 @@ class Dipole(Element):
                 device=self.device,
             )
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
         # element itself
         return [self]
@@ -539,14 +539,14 @@ class RBend(Dipole):
 
     def __init__(
         self,
-        length: float,
-        angle: float = 0.0,
-        e1: float = 0.0,
-        e2: float = 0.0,
-        tilt: float = 0.0,
-        fringe_integral: float = 0.0,
-        fringe_integral_exit: Optional[float] = None,
-        gap: float = 0.0,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
+        e1: torch.Tensor = torch.tensor(0.0),
+        e2: torch.Tensor = torch.tensor(0.0),
+        tilt: torch.Tensor = torch.tensor(0.0),
+        fringe_integral: torch.Tensor = torch.tensor(0.0),
+        fringe_integral_exit: Optional[torch.Tensor] = None,
+        gap: torch.Tensor = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ):
@@ -580,8 +580,8 @@ class HorizontalCorrector(Element):
 
     def __init__(
         self,
-        length: float,
-        angle: float = 0.0,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -590,7 +590,7 @@ class HorizontalCorrector(Element):
         self.length = length
         self.angle = angle
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.tensor(
             [
                 [1, self.length, 0, 0, 0, 0, 0],
@@ -613,7 +613,7 @@ class HorizontalCorrector(Element):
     def is_active(self) -> bool:
         return self.angle != 0
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -660,8 +660,8 @@ class VerticalCorrector(Element):
 
     def __init__(
         self,
-        length: float,
-        angle: float = 0.0,
+        length: torch.Tensor,
+        angle: torch.Tensor = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -670,7 +670,7 @@ class VerticalCorrector(Element):
         self.length = length
         self.angle = angle
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.tensor(
             [
                 [1, self.length, 0, 0, 0, 0, 0],
@@ -693,7 +693,7 @@ class VerticalCorrector(Element):
     def is_active(self) -> bool:
         return self.angle != 0
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
@@ -742,10 +742,10 @@ class Cavity(Element):
 
     def __init__(
         self,
-        length: float,
-        voltage: float = 0.0,
-        phase: float = 0.0,
-        frequency: float = 0.0,
+        length: torch.Tensor,
+        voltage: torch.Tensor = torch.tensor(0.0),
+        phase: torch.Tensor = torch.tensor(0.0),
+        frequency: torch.Tensor = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -764,7 +764,7 @@ class Cavity(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.voltage > 0:
             return self._cavity_rmatrix(energy)
         else:
@@ -794,15 +794,15 @@ class Cavity(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_beam(self, incoming: ParticleBeam) -> ParticleBeam:
-        beta0 = 1
-        igamma2 = 0
-        g0 = 1e10
+        beta0 = torch.tensor(1.0)
+        igamma2 = torch.tensor(0.0)
+        g0 = torch.tensor(1e10)
         if incoming.energy != 0:
             g0 = incoming.energy / electron_mass_eV
             igamma2 = 1 / g0**2
             beta0 = torch.sqrt(1 - igamma2)
 
-        phi = torch.deg2rad(torch.tensor(self.phase))
+        phi = torch.deg2rad(self.phase)
 
         tm = self.transfer_map(incoming.energy)
         if isinstance(incoming, ParameterBeam):
@@ -924,15 +924,15 @@ class Cavity(Element):
             )
             return outgoing
 
-    def _cavity_rmatrix(self, energy: float) -> torch.Tensor:
+    def _cavity_rmatrix(self, energy: torch.Tensor) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
-        phi = torch.deg2rad(torch.tensor(self.phase))
-        delta_energy = torch.tensor(self.voltage) * torch.cos(phi)
+        phi = torch.deg2rad(self.phase)
+        delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1)
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
-        Ep = (Ef - Ei) / torch.tensor(self.length)  # Derivative of the energy
+        Ep = (Ef - Ei) / self.length  # Derivative of the energy
         assert Ei > 0, "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
@@ -963,11 +963,11 @@ class Cavity(Element):
             )
         )
 
-        r56 = 0
-        beta0 = 1
-        beta1 = 1
+        r56 = torch.tensor(0.0)
+        beta0 = torch.tensor(1.0)
+        beta1 = torch.tensor(1.0)
 
-        k = 2 * torch.pi * self.frequency / constants.speed_of_light
+        k = 2 * torch.pi * self.frequency / torch.tensor(constants.speed_of_light)
         r55_cor = 0
         if self.voltage != 0 and energy != 0:  # TODO: Do we need this if?
             beta0 = torch.sqrt(1 - 1 / Ei**2)
@@ -1006,7 +1006,7 @@ class Cavity(Element):
 
         return R
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the
         # element itself
         return [self]
@@ -1053,7 +1053,7 @@ class BPM(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
     def __call__(self, incoming: Beam) -> Beam:
@@ -1069,7 +1069,7 @@ class BPM(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
@@ -1109,7 +1109,7 @@ class Marker(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
@@ -1145,10 +1145,10 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: tuple[int, int] = (1024, 1024),
-        pixel_size: tuple[float, float] = (1e-3, 1e-3),
-        binning: int = 1,
-        misalignment: tuple[float, float] = (0, 0),
+        resolution: torch.Tensor = torch.tensor((1024, 1024)),
+        pixel_size: torch.Tensor = torch.tensor((1e-3, 1e-3)),
+        binning: torch.Tensor = torch.tensor(1),
+        misalignment: torch.Tensor = torch.tensor((0.0, 0.0)),
         is_active: bool = False,
         name: Optional[str] = None,
         device: str = "auto",
@@ -1203,7 +1203,7 @@ class Screen(Element):
             ),
         )
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
     def __call__(self, incoming: Beam) -> Beam:
@@ -1214,8 +1214,8 @@ class Screen(Element):
                 self.read_beam._mu[2] -= self.misalignment[1]
             elif isinstance(incoming, ParticleBeam):
                 self.read_beam = deepcopy(incoming)
-                x_offset = np.full(len(self.read_beam), self.misalignment[0])
-                y_offset = np.full(len(self.read_beam), self.misalignment[1])
+                x_offset = torch.full(len(self.read_beam), self.misalignment[0])
+                y_offset = torch.full(len(self.read_beam), self.misalignment[1])
                 self.read_beam.particles[:, 0] -= x_offset
                 self.read_beam.particles[:, 1] -= y_offset
             else:
@@ -1235,8 +1235,8 @@ class Screen(Element):
                 (self.effective_resolution[1], self.effective_resolution[0])
             )
         elif isinstance(self.read_beam, ParameterBeam):
-            transverse_mu = np.array([self.read_beam._mu[0], self.read_beam._mu[2]])
-            transverse_cov = np.array(
+            transverse_mu = torch.tensor([self.read_beam._mu[0], self.read_beam._mu[2]])
+            transverse_cov = torch.tensor(
                 [
                     [self.read_beam._cov[0, 0], self.read_beam._cov[0, 2]],
                     [self.read_beam._cov[2, 0], self.read_beam._cov[2, 2]],
@@ -1252,10 +1252,10 @@ class Screen(Element):
             bottom = self.extent[2]
             top = self.extent[3]
             vstep = self.pixel_size[1] * self.binning
-            x, y = np.mgrid[left:right:hstep, bottom:top:vstep]
-            pos = np.dstack((x, y))
+            x, y = torch.mgrid[left:right:hstep, bottom:top:vstep]
+            pos = torch.dstack((x, y))
             image = dist.pdf(pos)
-            image = np.flipud(image.T)
+            image = torch.flipud(image.T)
         elif isinstance(self.read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
                 torch.stack((self.read_beam.xs, self.read_beam.ys)).T,
@@ -1278,7 +1278,7 @@ class Screen(Element):
         self._read_beam = value
         self.cached_reading = None
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
@@ -1325,8 +1325,8 @@ class Aperture(Element):
 
     def __init__(
         self,
-        x_max: float = np.inf,
-        y_max: float = np.inf,
+        x_max: torch.Tensor = torch.inf,
+        y_max: torch.Tensor = torch.inf,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: Optional[str] = None,
@@ -1345,7 +1345,7 @@ class Aperture(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
     def __call__(self, incoming: Beam) -> Beam:
@@ -1378,7 +1378,7 @@ class Aperture(Element):
             else ParticleBeam.empty
         )
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self
         return [self]
 
@@ -1429,7 +1429,7 @@ class Undulator(Element):
 
     def __init__(
         self,
-        length: float,
+        length: torch.Tensor,
         is_active: bool = False,
         name: Optional[str] = None,
         device: str = "auto",
@@ -1439,9 +1439,9 @@ class Undulator(Element):
         self.length = length
         self.is_active = is_active
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY
-        igamma2 = 1 / gamma**2 if gamma != 0 else 0
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
         return torch.tensor(
             [
@@ -1461,7 +1461,7 @@ class Undulator(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for undulator properly, for now just return self
         return [self]
 
@@ -1505,9 +1505,9 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: float = 0,
-        k: float = 0,
-        misalignment: tuple[float, float] = (0, 0),
+        length: torch.Tensor = torch.tensor(0.0),
+        k: torch.Tensor = torch.tensor(0.0),
+        misalignment: torch.Tensor = torch.tensor((0.0, 0.0)),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -1517,18 +1517,18 @@ class Solenoid(Element):
         self.k = k
         self.misalignment = tuple(misalignment)
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY
-        c = np.cos(self.length * self.k)
-        s = np.sin(self.length * self.k)
+        c = torch.cos(self.length * self.k)
+        s = torch.sin(self.length * self.k)
         if self.k == 0:
             s_k = self.length
         else:
             s_k = s / self.k
-        r56 = 0.0
+        r56 = torch.tensor(0.0)
         if gamma != 0:
             gamma2 = gamma * gamma
-            beta = np.sqrt(1.0 - 1.0 / gamma2)
+            beta = torch.sqrt(1.0 - 1.0 / gamma2)
             r56 -= self.length / (beta * beta * gamma2)
         R = torch.tensor(
             [
@@ -1557,7 +1557,7 @@ class Solenoid(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for solenoid properly, for now just return self
         return [self]
 
@@ -1707,11 +1707,11 @@ class Segment(Element):
 
     @property
     def length(self) -> float:
-        return sum(
+        return torch.sum(
             element.length for element in self.elements if hasattr(element, "length")
         )
 
-    def transfer_map(self, energy: float) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, dtype=torch.float32, device=self.device)
             for element in self.elements:
@@ -1738,7 +1738,7 @@ class Segment(Element):
 
             return incoming
 
-    def split(self, resolution: float) -> list[Element]:
+    def split(self, resolution: torch.Tensor) -> list[Element]:
         return [
             split_element
             for element in self.elements

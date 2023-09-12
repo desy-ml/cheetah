@@ -2,9 +2,10 @@ import json
 from typing import Optional
 
 import numpy as np
+import torch
 from scipy.constants import physical_constants
 
-from cheetah import accelerator as acc
+import cheetah
 
 # Electron mass in eV
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
@@ -63,7 +64,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     return particles, energy
 
 
-def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
+def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
@@ -80,24 +81,30 @@ def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
     :return: Cheetah element object representing an element of particle accelerator.
     """
     try:
-        import ocelot as oc
+        import ocelot
     except ImportError:
         raise ImportError(
             """To use the ocelot2cheetah lattice converter, Ocelot must be first
         installed, see https://github.com/ocelot-collab/ocelot """
         )
 
-    if isinstance(element, oc.Drift):
-        return acc.Drift(element.l, name=element.id)
-    elif isinstance(element, oc.Quadrupole):
-        return acc.Quadrupole(element.l, element.k1, name=element.id)
-    elif isinstance(element, oc.Hcor):
-        return acc.HorizontalCorrector(element.l, element.angle, name=element.id)
-    elif isinstance(element, oc.Vcor):
-        return acc.VerticalCorrector(element.l, element.angle, name=element.id)
-    elif isinstance(element, oc.Cavity):
-        return acc.Cavity(element.l, name=element.id)
-    elif isinstance(element, oc.Monitor) and ("BSC" in element.id):
+    if isinstance(element, ocelot.Drift):
+        return cheetah.Drift(torch.tensor(element.l), name=element.id)
+    elif isinstance(element, ocelot.Quadrupole):
+        return cheetah.Quadrupole(
+            torch.tensor(element.l), torch.tensor(element.k1), name=element.id
+        )
+    elif isinstance(element, ocelot.Hcor):
+        return cheetah.HorizontalCorrector(
+            torch.tensor(element.l), torch.tensor(element.angle), name=element.id
+        )
+    elif isinstance(element, ocelot.Vcor):
+        return cheetah.VerticalCorrector(
+            torch.tensor(element.l), torch.tensor(element.angle), name=element.id
+        )
+    elif isinstance(element, ocelot.Cavity):
+        return cheetah.Cavity(torch.tensor(element.l), name=element.id)
+    elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
         # NOTE This pattern is very specific to ARES and will need a more complex
         # solution for other accelerators
         if warnings:
@@ -105,18 +112,22 @@ def ocelot2cheetah(element, warnings: bool = True) -> "acc.Element":
                 "WARNING: Diagnostic screen was converted with default screen"
                 " properties."
             )
-        return acc.Screen((2448, 2040), (3.5488e-6, 2.5003e-6), name=element.id)
-    elif isinstance(element, oc.Monitor) and "BPM" in element.id:
-        return acc.BPM(name=element.id)
-    elif isinstance(element, oc.Undulator):
-        return acc.Undulator(element.l, name=element.id)
+        return cheetah.Screen(
+            torch.tensor([2448, 2040]),
+            torch.tensor([3.5488e-6, 2.5003e-6]),
+            name=element.id,
+        )
+    elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
+        return cheetah.BPM(name=element.id)
+    elif isinstance(element, ocelot.Undulator):
+        return cheetah.Undulator(torch.tensor(element.l), name=element.id)
     else:
         if warnings:
             print(
                 f"WARNING: Unknown element {element.id} of type {type(element)},"
                 " replacing with drift section."
             )
-        return acc.Drift(element.l, name=element.id)
+        return cheetah.Drift(torch.tensor(element.l), name=element.id)
 
 
 def subcell_of_ocelot(cell: list, start: str, end: str) -> list:
@@ -135,27 +146,17 @@ def subcell_of_ocelot(cell: list, start: str, end: str) -> list:
 
 
 # Saving Cheetah to JSON
-def parse_cheetah_element(element: acc.Element):
+def parse_cheetah_element(element: cheetah.Element):
     """Get information from cheetah element for saving
 
-    Parameters
-    ----------
-    element : acc.Element
-
-    Returns
-    -------
-    element_name : str
-        Name of the element
-    element_class : str
-        Type of the element
-    params : dict
-        Parameters of the element
+    :param element: Cheetah element
+    :return: Tuple of element name, element class, and element parameters
     """
     element_name = element.name
-    if isinstance(element, acc.Drift):
+    if isinstance(element, cheetah.Drift):
         element_class = "Drift"
         params = {"length": element.length}
-    elif isinstance(element, acc.Dipole):
+    elif isinstance(element, cheetah.Dipole):
         element_class = "Dipole"
         params = {
             "length": element.length,
@@ -167,7 +168,7 @@ def parse_cheetah_element(element: acc.Element):
             "fint": element.fringe_integral,
             "fintx": element.fringe_integral,
         }
-    elif isinstance(element, acc.Quadrupole):
+    elif isinstance(element, cheetah.Quadrupole):
         element_class = "Quadrupole"
         params = {
             "length": element.length,
@@ -175,26 +176,26 @@ def parse_cheetah_element(element: acc.Element):
             "misalignment": element.misalignment,
             "tilt": element.tilt,
         }
-    elif isinstance(element, acc.HorizontalCorrector):
+    elif isinstance(element, cheetah.HorizontalCorrector):
         element_class = "HorizontalCorrector"
         params = {"length": element.length, "angle": element.angle}
-    elif isinstance(element, acc.VerticalCorrector):
+    elif isinstance(element, cheetah.VerticalCorrector):
         element_class = "VerticalCorrector"
         params = {"length": element.length, "angle": element.angle}
-    elif isinstance(element, acc.Cavity):
+    elif isinstance(element, cheetah.Cavity):
         element_class = "Cavity"
         params = {
             "length": element.length,
             "voltage": element.voltage,
             "phase": element.phase,
         }
-    elif isinstance(element, acc.BPM):
+    elif isinstance(element, cheetah.BPM):
         element_class = "BPM"
         params = {}
-    elif isinstance(element, acc.Marker):
+    elif isinstance(element, cheetah.Marker):
         element_class = "Marker"
         params = {}
-    elif isinstance(element, acc.Screen):
+    elif isinstance(element, cheetah.Screen):
         element_class = "Screen"
         params = {
             "resolution": element.resolution,
@@ -202,17 +203,17 @@ def parse_cheetah_element(element: acc.Element):
             "binning": element.binning,
             "misalignment": element.misalignment,
         }
-    elif isinstance(element, acc.Aperture):
+    elif isinstance(element, cheetah.Aperture):
         element_class = "Aperture"
         params = {"x_max": element.x_max, "y_max": element.y_max, "type": element.shape}
-    elif isinstance(element, acc.Solenoid):
+    elif isinstance(element, cheetah.Solenoid):
         element_class = "Solenoid"
         params = {
             "length": element.length,
             "k": element.k,
             "misalignment": element.misalignment,
         }
-    elif isinstance(element, acc.Undulator):
+    elif isinstance(element, cheetah.Undulator):
         element_class = "Undulator"
         params = {"length": element.length}
     else:
@@ -223,21 +224,14 @@ def parse_cheetah_element(element: acc.Element):
 
 
 def save_cheetah_model(
-    segment: acc.Segment,
-    fname: str,
-    metadata: Optional[dict] = None,
+    segment: cheetah.Segment, fname: str, metadata: Optional[dict] = None
 ):
     """Save a cheetah model to json file accoding to the lattice-json convention
     c.f. https://github.com/nobeam/latticejson
 
-    Parameters
-    ----------
-    segment : acc.Segment
-        Cheetah segment to save
-    fname : str
-        Filename to save to
-    metadata : Optional[dict], optional
-        Metadata for the saved lattice, by default {}
+    :param segment: Cheetah segment to save
+    :param fname: Filename to save to
+    :param metadata: Metadata for the saved lattice, by default {}
     """
     if metadata is None:
         metadata = {
@@ -284,7 +278,7 @@ class CompactJSONEncoder(json.JSONEncoder):
 
 
 # Loading Cheetah from JSON
-def load_cheetah_model(fname: str, name: Optional[str] = None) -> acc.Segment:
+def load_cheetah_model(fname: str, name: Optional[str] = None) -> cheetah.Segment:
     """Load a cheetah model from json file"""
     with open(fname, "r") as f:
         lattice_dict = json.load(f)
@@ -297,9 +291,9 @@ def load_cheetah_model(fname: str, name: Optional[str] = None) -> acc.Segment:
             )
         )
 
-    return acc.Segment(cell=cell, name=name)
+    return cheetah.Segment(cell=cell, name=name)
 
 
 def str_to_class(classname: str):
     # get class from string
-    return getattr(acc, classname)
+    return getattr(cheetah, classname)

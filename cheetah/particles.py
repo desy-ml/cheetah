@@ -16,20 +16,20 @@ class Beam:
     @classmethod
     def from_parameters(
         cls,
-        mu_x: float = 0,
-        mu_xp: float = 0,
-        mu_y: float = 0,
-        mu_yp: float = 0,
-        sigma_x: float = 1,
-        sigma_xp: float = 0,
-        sigma_y: float = 1,
-        sigma_yp: float = 0,
-        sigma_s: float = 0,
-        sigma_p: float = 0,
-        cor_x: float = 0,
-        cor_y: float = 0,
-        cor_s: float = 0,
-        energy: float = 1e8,
+        mu_x: torch.Tensor = torch.tensor(0.0),
+        mu_xp: torch.Tensor = torch.tensor(0.0),
+        mu_y: torch.Tensor = torch.tensor(0.0),
+        mu_yp: torch.Tensor = torch.tensor(0.0),
+        sigma_x: torch.Tensor = torch.tensor(1.0),
+        sigma_xp: torch.Tensor = torch.tensor(0.0),
+        sigma_y: torch.Tensor = torch.tensor(1.0),
+        sigma_yp: torch.Tensor = torch.tensor(0.0),
+        sigma_s: torch.Tensor = torch.tensor(0.0),
+        sigma_p: torch.Tensor = torch.tensor(0.0),
+        cor_x: torch.Tensor = torch.tensor(0.0),
+        cor_y: torch.Tensor = torch.tensor(0.0),
+        cor_s: torch.Tensor = torch.tensor(0.0),
+        energy: torch.Tensor = torch.tensor(1e8),
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -53,13 +53,13 @@ class Beam:
     @classmethod
     def from_twiss(
         cls,
-        beta_x: float = 0.0,
-        alpha_x: float = 0.0,
-        emittance_x: float = 0.0,
-        beta_y: float = 0.0,
-        alpha_y: float = 0.0,
-        emittance_y: float = 0.0,
-        energy: float = 1e8,
+        beta_x: torch.Tensor = torch.tensor(0.0),
+        alpha_x: torch.Tensor = torch.tensor(0.0),
+        emittance_x: torch.Tensor = torch.tensor(0.0),
+        beta_y: torch.Tensor = torch.tensor(0.0),
+        alpha_y: torch.Tensor = torch.tensor(0.0),
+        emittance_y: torch.Tensor = torch.tensor(0.0),
+        energy: torch.Tensor = torch.tensor(1e8),
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -88,17 +88,17 @@ class Beam:
 
     def transformed_to(
         self,
-        mu_x: Optional[float] = None,
-        mu_xp: Optional[float] = None,
-        mu_y: Optional[float] = None,
-        mu_yp: Optional[float] = None,
-        sigma_x: Optional[float] = None,
-        sigma_xp: Optional[float] = None,
-        sigma_y: Optional[float] = None,
-        sigma_yp: Optional[float] = None,
-        sigma_s: Optional[float] = None,
-        sigma_p: Optional[float] = None,
-        energy: Optional[float] = None,
+        mu_x: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -206,7 +206,7 @@ class Beam:
         raise NotImplementedError
 
     @property
-    def relativistic_gamma(self) -> float:
+    def relativistic_gamma(self) -> torch.Tensor:
         return self.energy / electron_mass_eV
 
     @property
@@ -214,7 +214,7 @@ class Beam:
         relativistic_beta = (
             torch.sqrt(1 - 1 / (self.relativistic_gamma**2))
             if torch.abs(self.relativistic_gamma) > 0
-            else 1.0
+            else torch.tensor(1.0)
         )
         return relativistic_beta
 
@@ -287,7 +287,11 @@ class ParameterBeam(Beam):
     """
 
     def __init__(
-        self, mu: torch.Tensor, cov: torch.Tensor, energy: float, device: str = "auto"
+        self,
+        mu: torch.Tensor,
+        cov: torch.Tensor,
+        energy: torch.Tensor,
+        device: str = "auto",
     ) -> None:
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -300,20 +304,20 @@ class ParameterBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        mu_x: float = 0,
-        mu_xp: float = 0,
-        mu_y: float = 0,
-        mu_yp: float = 0,
-        sigma_x: float = 175e-9,
-        sigma_xp: float = 2e-7,
-        sigma_y: float = 175e-9,
-        sigma_yp: float = 2e-7,
-        sigma_s: float = 1e-6,
-        sigma_p: float = 1e-6,
-        cor_x: float = 0,
-        cor_y: float = 0,
-        cor_s: float = 0,
-        energy: float = 1e8,
+        mu_x: torch.Tensor = torch.tensor(0),
+        mu_xp: torch.Tensor = torch.tensor(0),
+        mu_y: torch.Tensor = torch.tensor(0),
+        mu_yp: torch.Tensor = torch.tensor(0),
+        sigma_x: torch.Tensor = torch.tensor(175e-9),
+        sigma_xp: torch.Tensor = torch.tensor(2e-7),
+        sigma_y: torch.Tensor = torch.tensor(175e-9),
+        sigma_yp: torch.Tensor = torch.tensor(2e-7),
+        sigma_s: torch.Tensor = torch.tensor(1e-6),
+        sigma_p: torch.Tensor = torch.tensor(1e-6),
+        cor_x: torch.Tensor = torch.tensor(0),
+        cor_y: torch.Tensor = torch.tensor(0),
+        cor_s: torch.Tensor = torch.tensor(0),
+        energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParameterBeam":
         return cls(
@@ -337,22 +341,22 @@ class ParameterBeam(Beam):
     @classmethod
     def from_twiss(
         cls,
-        beta_x: float = 0.0,
-        alpha_x: float = 0.0,
-        emittance_x: float = 0.0,
-        beta_y: float = 0.0,
-        alpha_y: float = 0.0,
-        emittance_y: float = 0.0,
-        sigma_s: float = 1e-6,
-        sigma_p: float = 1e-6,
-        cor_s: float = 0,
-        energy: float = 1e8,
+        beta_x: torch.Tensor = torch.tensor(0.0),
+        alpha_x: torch.Tensor = torch.tensor(0.0),
+        emittance_x: torch.Tensor = torch.tensor(0.0),
+        beta_y: torch.Tensor = torch.tensor(0.0),
+        alpha_y: torch.Tensor = torch.tensor(0.0),
+        emittance_y: torch.Tensor = torch.tensor(0.0),
+        sigma_s: torch.Tensor = torch.tensor(1e-6),
+        sigma_p: torch.Tensor = torch.tensor(1e-6),
+        cor_s: torch.Tensor = torch.tensor(0),
+        energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParameterBeam":
-        sigma_x = np.sqrt(emittance_x * beta_x)
-        sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
-        sigma_y = np.sqrt(emittance_y * beta_y)
-        sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
+        sigma_x = torch.sqrt(emittance_x * beta_x)
+        sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
+        sigma_y = torch.sqrt(emittance_y * beta_y)
+        sigma_yp = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
         cor_x = -emittance_x * alpha_x
         cor_y = -emittance_y * alpha_y
         return cls.from_parameters(
@@ -377,7 +381,7 @@ class ParameterBeam(Beam):
         cov = torch.zeros(7, 7)
         cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
 
-        energy = 1e9 * parray.E
+        energy = torch.tensor(1e9 * parray.E)
 
         return cls(mu=mu, cov=cov, energy=energy, device=device)
 
@@ -393,21 +397,21 @@ class ParameterBeam(Beam):
         cov = torch.zeros(7, 7)
         cov[:6, :6] = torch.tensor(np.cov(particles.transpose()))
 
-        return cls(mu=mu, cov=cov, energy=energy, **kwargs)
+        return cls(mu=mu, cov=cov, energy=torch.tensor(energy), **kwargs)
 
     def transformed_to(
         self,
-        mu_x: Optional[float] = None,
-        mu_xp: Optional[float] = None,
-        mu_y: Optional[float] = None,
-        mu_yp: Optional[float] = None,
-        sigma_x: Optional[float] = None,
-        sigma_xp: Optional[float] = None,
-        sigma_y: Optional[float] = None,
-        sigma_yp: Optional[float] = None,
-        sigma_s: Optional[float] = None,
-        sigma_p: Optional[float] = None,
-        energy: Optional[float] = None,
+        mu_x: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
     ) -> "ParameterBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -530,7 +534,7 @@ class ParticleBeam(Beam):
     """
 
     def __init__(
-        self, particles: torch.Tensor, energy: float, device: str = "auto"
+        self, particles: torch.Tensor, energy: torch.Tensor, device: str = "auto"
     ) -> None:
         assert (
             len(particles) > 0 and particles.shape[1] == 7
@@ -549,21 +553,21 @@ class ParticleBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        num_particles: int = 100000,
-        mu_x: float = 0,
-        mu_y: float = 0,
-        mu_xp: float = 0,
-        mu_yp: float = 0,
-        sigma_x: float = 175e-9,
-        sigma_y: float = 175e-9,
-        sigma_xp: float = 2e-7,
-        sigma_yp: float = 2e-7,
-        sigma_s: float = 1e-6,
-        sigma_p: float = 1e-6,
-        cor_x: float = 0,
-        cor_y: float = 0,
-        cor_s: float = 0,
-        energy: float = 1e8,
+        num_particles: torch.Tensor = torch.tensor(100_000),
+        mu_x: torch.Tensor = torch.tensor(0),
+        mu_y: torch.Tensor = torch.tensor(0),
+        mu_xp: torch.Tensor = torch.tensor(0),
+        mu_yp: torch.Tensor = torch.tensor(0),
+        sigma_x: torch.Tensor = torch.tensor(175e-9),
+        sigma_y: torch.Tensor = torch.tensor(175e-9),
+        sigma_xp: torch.Tensor = torch.tensor(2e-7),
+        sigma_yp: torch.Tensor = torch.tensor(2e-7),
+        sigma_s: torch.Tensor = torch.tensor(1e-6),
+        sigma_p: torch.Tensor = torch.tensor(1e-6),
+        cor_x: torch.Tensor = torch.tensor(0),
+        cor_y: torch.Tensor = torch.tensor(0),
+        cor_s: torch.Tensor = torch.tensor(0),
+        energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParticleBeam":
         """
@@ -609,23 +613,23 @@ class ParticleBeam(Beam):
     @classmethod
     def from_twiss(
         cls,
-        num_particles: int = 1_000_000,
-        beta_x: float = 0.0,
-        alpha_x: float = 0.0,
-        emittance_x: float = 0.0,
-        beta_y: float = 0.0,
-        alpha_y: float = 0.0,
-        emittance_y: float = 0.0,
-        energy: float = 1e8,
-        sigma_s: float = 1e-6,
-        sigma_p: float = 1e-6,
-        cor_s: float = 0,
+        num_particles: torch.Tensor = torch.tensor(1_000_000),
+        beta_x: torch.Tensor = torch.tensor(0.0),
+        alpha_x: torch.Tensor = torch.tensor(0.0),
+        emittance_x: torch.Tensor = torch.tensor(0.0),
+        beta_y: torch.Tensor = torch.tensor(0.0),
+        alpha_y: torch.Tensor = torch.tensor(0.0),
+        emittance_y: torch.Tensor = torch.tensor(0.0),
+        energy: torch.Tensor = torch.tensor(1e8),
+        sigma_s: torch.Tensor = torch.tensor(1e-6),
+        sigma_p: torch.Tensor = torch.tensor(1e-6),
+        cor_s: torch.Tensor = torch.tensor(0),
         device: str = "auto",
     ) -> "ParticleBeam":
-        sigma_x = np.sqrt(beta_x * emittance_x)
-        sigma_xp = np.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
-        sigma_y = np.sqrt(beta_y * emittance_y)
-        sigma_yp = np.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
+        sigma_x = torch.sqrt(beta_x * emittance_x)
+        sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
+        sigma_y = torch.sqrt(beta_y * emittance_y)
+        sigma_yp = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
         cor_x = -emittance_x * alpha_x
         cor_y = -emittance_y * alpha_y
         return cls.from_parameters(
@@ -650,18 +654,18 @@ class ParticleBeam(Beam):
     @classmethod
     def make_linspaced(
         cls,
-        num_particles: int = 10,
-        mu_x: float = 0,
-        mu_y: float = 0,
-        mu_xp: float = 0,
-        mu_yp: float = 0,
-        sigma_x: float = 175e-9,
-        sigma_y: float = 175e-9,
-        sigma_xp: float = 2e-7,
-        sigma_yp: float = 2e-7,
-        sigma_s: float = 0,
-        sigma_p: float = 0,
-        energy: float = 1e8,
+        num_particles: torch.Tensor = torch.tensor(10),
+        mu_x: torch.Tensor = torch.tensor(0),
+        mu_y: torch.Tensor = torch.tensor(0),
+        mu_xp: torch.Tensor = torch.tensor(0),
+        mu_yp: torch.Tensor = torch.tensor(0),
+        sigma_x: torch.Tensor = torch.tensor(175e-9),
+        sigma_y: torch.Tensor = torch.tensor(175e-9),
+        sigma_xp: torch.Tensor = torch.tensor(2e-7),
+        sigma_yp: torch.Tensor = torch.tensor(2e-7),
+        sigma_s: torch.Tensor = torch.tensor(0),
+        sigma_p: torch.Tensor = torch.tensor(0),
+        energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParticleBeam":
         """
@@ -716,7 +720,9 @@ class ParticleBeam(Beam):
             parray.rparticles.transpose(), dtype=torch.float32
         )
 
-        return cls(particles, 1e9 * parray.E, device=device)
+        return cls(
+            particles=particles, energy=torch.tensor(1e9 * parray.E), device=device
+        )
 
     @classmethod
     def from_astra(cls, path: str, **kwargs) -> "ParticleBeam":
@@ -726,21 +732,21 @@ class ParticleBeam(Beam):
         particles, energy = from_astrabeam(path)
         particles_7d = torch.ones((particles.shape[0], 7))
         particles_7d[:, :6] = torch.from_numpy(particles)
-        return cls(particles_7d, energy, **kwargs)
+        return cls(particles=particles_7d, energy=torch.tensor(energy), **kwargs)
 
     def transformed_to(
         self,
-        mu_x: Optional[float] = None,
-        mu_y: Optional[float] = None,
-        mu_xp: Optional[float] = None,
-        mu_yp: Optional[float] = None,
-        sigma_x: Optional[float] = None,
-        sigma_y: Optional[float] = None,
-        sigma_xp: Optional[float] = None,
-        sigma_yp: Optional[float] = None,
-        sigma_s: Optional[float] = None,
-        sigma_p: Optional[float] = None,
-        energy: Optional[float] = None,
+        mu_x: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
     ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -809,11 +815,11 @@ class ParticleBeam(Beam):
 
         return self.__class__(particles=particles, energy=energy)
 
-    def __len__(self) -> int:
+    def __len__(self) -> torch.Tensor:
         return self.num_particles
 
     @property
-    def num_particles(self) -> int:
+    def num_particles(self) -> torch.Tensor:
         return len(self.particles)
 
     @property

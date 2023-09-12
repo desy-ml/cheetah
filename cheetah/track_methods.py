@@ -2,11 +2,10 @@
 
 from typing import Union
 
-import numpy as np
 import torch
 from scipy import constants
 
-REST_ENERGY = (
+REST_ENERGY = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
     / constants.elementary_charge
@@ -14,7 +13,7 @@ REST_ENERGY = (
 
 
 def rotation_matrix(
-    angle: float, device: Union[str, torch.device] = "auto"
+    angle: torch.Tensor, device: Union[str, torch.device] = "auto"
 ) -> torch.Tensor:
     """Rotate the transfer map in x-y plane
 
@@ -25,8 +24,8 @@ def rotation_matrix(
     """
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    cs = np.cos(angle)
-    sn = np.sin(angle)
+    cs = torch.cos(angle)
+    sn = torch.sin(angle)
     return torch.tensor(
         [
             [cs, 0, sn, 0, 0, 0, 0],
@@ -43,11 +42,11 @@ def rotation_matrix(
 
 
 def base_rmatrix(
-    length: float,
-    k1: float,
-    hx: float,
-    tilt: float = 0.0,
-    energy: float = 0.0,
+    length: torch.Tensor,
+    k1: torch.Tensor,
+    hx: torch.Tensor,
+    tilt: torch.Tensor = torch.tensor(0.0),
+    energy: torch.Tensor = torch.tensor(0.0),
     device: Union[str, torch.device] = "auto",
 ) -> torch.Tensor:
     """
@@ -66,20 +65,20 @@ def base_rmatrix(
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     gamma = energy / REST_ENERGY
-    igamma2 = 1 / gamma**2 if gamma != 0 else 0
+    igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
-    beta = np.sqrt(1 - igamma2)
+    beta = torch.sqrt(1 - igamma2)
 
     kx2 = k1 + hx**2
     ky2 = -k1
-    kx = np.sqrt(kx2 + 0.0j)
-    ky = np.sqrt(ky2 + 0.0j)
-    cx = np.cos(kx * length).real
-    cy = np.cos(ky * length).real
-    sy = (np.sin(ky * length) / ky).real if ky != 0 else length
+    kx = torch.sqrt(kx2 + 0.0j)
+    ky = torch.sqrt(ky2 + 0.0j)
+    cx = torch.cos(kx * length).real
+    cy = torch.cos(ky * length).real
+    sy = (torch.sin(ky * length) / ky).real if ky != 0 else length
 
     if kx != 0:
-        sx = (np.sin(kx * length) / kx).real
+        sx = (torch.sin(kx * length) / kx).real
         dx = hx / kx2 * (1.0 - cx)
         r56 = hx**2 * (length - sx) / kx2 / beta**2
     else:
@@ -110,7 +109,7 @@ def base_rmatrix(
 
 
 def misalignment_matrix(
-    misalignment: tuple[float, float], device: torch.device
+    misalignment: torch.Tensor, device: torch.device
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Shift the beam for tracking beam through misaligned elements"""
     R_exit = torch.tensor(
