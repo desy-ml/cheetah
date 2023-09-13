@@ -18,7 +18,7 @@ from cheetah.error import DeviceError
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
-REST_ENERGY = torch.tensor(  # TODO: Make lower case
+rest_energy = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
     / constants.elementary_charge
@@ -168,7 +168,7 @@ class Drift(Element):
         self.length = length
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / REST_ENERGY
+        gamma = energy / rest_energy
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
         tm = torch.eye(7, device=self.device)
@@ -1399,7 +1399,7 @@ class Undulator(Element):
         self.is_active = is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / REST_ENERGY
+        gamma = energy / rest_energy
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
         tm = torch.eye(7, device=self.device)
@@ -1472,7 +1472,7 @@ class Solenoid(Element):
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / REST_ENERGY
+        gamma = energy / rest_energy
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
         if self.k == 0:
