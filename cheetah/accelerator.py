@@ -1132,12 +1132,13 @@ class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
 
-    :param resolution: Resolution of the camera sensor looking at the screen given as a
-        tuple `(width, height)`.
-    :param pixel_size: Size of a pixel on the screen in meters given as a tuple
+    :param resolution: Resolution of the camera sensor looking at the screen given as
+        Tensor `(width, height)`.
+    :param pixel_size: Size of a pixel on the screen in meters given as a Tensor
         `(width, height)`.
     :param binning: Binning used by the camera.
-    :param misalignment: Misalignment of the screen in meters given as a tuple `(x, y)`.
+    :param misalignment: Misalignment of the screen in meters given as a Tensor
+        `(x, y)`.
     :param is_active: If `True` the screen is active and will record the beam's
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
@@ -1178,15 +1179,12 @@ class Screen(Element):
         return not self.is_active
 
     @property
-    def effective_resolution(self) -> tuple[int, int]:
-        return (
-            int(self.resolution[0] / self.binning),
-            int(self.resolution[1] / self.binning),
-        )
+    def effective_resolution(self) -> torch.Tensor:
+        return self.resolution / self.binning
 
     @property
-    def effective_pixel_size(self) -> tuple[float, float]:
-        return (self.pixel_size[0] * self.binning, self.pixel_size[0] * self.binning)
+    def effective_pixel_size(self) -> torch.Tensor:
+        return self.pixel_size * self.binning
 
     @property
     def extent(self) -> tuple[float, float, float, float]:
@@ -1203,12 +1201,12 @@ class Screen(Element):
             torch.linspace(
                 -self.resolution[0] * self.pixel_size[0] / 2,
                 self.resolution[0] * self.pixel_size[0] / 2,
-                self.effective_resolution[0] + 1,
+                int(self.effective_resolution[0]) + 1,
             ),
             torch.linspace(
                 -self.resolution[1] * self.pixel_size[1] / 2,
                 self.resolution[1] * self.pixel_size[1] / 2,
-                self.effective_resolution[1] + 1,
+                int(self.effective_resolution[1]) + 1,
             ),
         )
 
