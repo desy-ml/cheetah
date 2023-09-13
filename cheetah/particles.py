@@ -3,6 +3,7 @@ from typing import Optional
 import numpy as np
 import torch
 from scipy.constants import physical_constants
+from torch import nn
 from torch.distributions import MultivariateNormal
 
 electron_mass_eV = torch.tensor(
@@ -10,7 +11,7 @@ electron_mass_eV = torch.tensor(
 )
 
 
-class Beam:
+class Beam(nn.Module):
     empty = "I'm an empty beam!"
 
     @classmethod
@@ -293,6 +294,8 @@ class ParameterBeam(Beam):
         energy: torch.Tensor,
         device: str = "auto",
     ) -> None:
+        super().__init__()
+
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
@@ -574,6 +577,8 @@ class ParticleBeam(Beam):
     def __init__(
         self, particles: torch.Tensor, energy: torch.Tensor, device: str = "auto"
     ) -> None:
+        super().__init__()
+
         assert (
             len(particles) > 0 and particles.shape[1] == 7
         ), "Particle vectors must be 7-dimensional."
