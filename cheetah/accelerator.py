@@ -202,7 +202,7 @@ class Drift(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Drift(min(resolution, remaining), device=self.device)
+            element = Drift(torch.min(resolution, remaining), device=self.device)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -255,7 +255,7 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=0,
+            hx=torch.tensor(0.0),
             tilt=self.tilt,
             energy=energy,
             device=self.device,
@@ -281,7 +281,7 @@ class Quadrupole(Element):
         remaining = self.length
         while remaining > 0:
             element = Quadrupole(
-                min(resolution, remaining),
+                torch.min(resolution, remaining),
                 self.k1,
                 misalignment=self.misalignment,
                 device=self.device,
@@ -379,9 +379,9 @@ class Dipole(Element):
         if self.length != 0.0:  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
-                k1=0,
+                k1=torch.tensor(0.0),
                 hx=self.hx,
-                tilt=0.0,
+                tilt=torch.tensor(0.0),
                 energy=energy,
                 device=self.device,
             )
@@ -600,7 +600,7 @@ class HorizontalCorrector(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            length = min(resolution, remaining)
+            length = torch.min(resolution, remaining)
             element = HorizontalCorrector(
                 length, self.angle * length / self.length, device=self.device
             )
@@ -680,7 +680,7 @@ class VerticalCorrector(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            length = min(resolution, remaining)
+            length = torch.min(resolution, remaining)
             element = VerticalCorrector(
                 length, self.angle * length / self.length, device=self.device
             )
@@ -753,9 +753,9 @@ class Cavity(Element):
         else:
             return base_rmatrix(
                 length=self.length,
-                k1=0.0,
-                hx=0.0,
-                tilt=0.0,
+                k1=torch.tensor(0.0),
+                hx=torch.tensor(0.0),
+                tilt=torch.tensor(0.0),
                 energy=energy,
                 device=self.device,
             )
@@ -912,7 +912,7 @@ class Cavity(Element):
         phi = torch.deg2rad(self.phase)
         delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1)
+        eta = torch.tensor(1.0)
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
@@ -1136,7 +1136,7 @@ class Screen(Element):
         self,
         resolution: Union[torch.Tensor, nn.Parameter] = torch.tensor((1024, 1024)),
         pixel_size: Union[torch.Tensor, nn.Parameter] = torch.tensor((1e-3, 1e-3)),
-        binning: Union[torch.Tensor, nn.Parameter] = torch.tensor(1),
+        binning: Union[torch.Tensor, nn.Parameter] = torch.tensor(1.0),
         misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor((0.0, 0.0)),
         is_active: bool = False,
         name: Optional[str] = None,
@@ -1203,8 +1203,12 @@ class Screen(Element):
                 self.read_beam._mu[2] -= self.misalignment[1]
             elif isinstance(incoming, ParticleBeam):
                 self.read_beam = deepcopy(incoming)
-                x_offset = torch.full(len(self.read_beam), self.misalignment[0])
-                y_offset = torch.full(len(self.read_beam), self.misalignment[1])
+                x_offset = torch.full(
+                    (self.read_beam.num_particles,), self.misalignment[0]
+                )
+                y_offset = torch.full(
+                    (self.read_beam.num_particles,), self.misalignment[1]
+                )
                 self.read_beam.particles[:, 0] -= x_offset
                 self.read_beam.particles[:, 1] -= y_offset
             else:

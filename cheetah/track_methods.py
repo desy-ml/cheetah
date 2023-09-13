@@ -71,8 +71,8 @@ def base_rmatrix(
 
     kx2 = k1 + hx**2
     ky2 = -k1
-    kx = torch.sqrt(kx2 + 0.0j)
-    ky = torch.sqrt(ky2 + 0.0j)
+    kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0)))
+    ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
     sy = (torch.sin(ky * length) / ky).real if ky != 0 else length

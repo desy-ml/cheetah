@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from cheetah import ParameterBeam
 
@@ -8,20 +9,20 @@ def test_create_from_parameters():
     Test that a `ParameterBeam` created from parameters actually has those parameters.
     """
     beam = ParameterBeam.from_parameters(
-        mu_x=1e-5,
-        mu_xp=1e-7,
-        mu_y=2e-5,
-        mu_yp=2e-7,
-        sigma_x=1.75e-7,
-        sigma_xp=2e-7,
-        sigma_y=1.75e-7,
-        sigma_yp=2e-7,
-        sigma_s=0.000001,
-        sigma_p=0.000001,
-        cor_x=0,
-        cor_y=0,
-        cor_s=0,
-        energy=1e7,
+        mu_x=torch.tensor(1e-5),
+        mu_xp=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_yp=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_xp=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_yp=torch.tensor(2e-7),
+        sigma_s=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        cor_x=torch.tensor(0.0),
+        cor_y=torch.tensor(0.0),
+        cor_s=torch.tensor(0.0),
+        energy=torch.tensor(1e7),
     )
 
     assert np.isclose(beam.mu_x, 1e-5)
@@ -44,17 +45,17 @@ def test_transform_to():
     """
     original_beam = ParameterBeam.from_parameters()
     transformed_beam = original_beam.transformed_to(
-        mu_x=1e-5,
-        mu_xp=1e-7,
-        mu_y=2e-5,
-        mu_yp=2e-7,
-        sigma_x=1.75e-7,
-        sigma_xp=2e-7,
-        sigma_y=1.75e-7,
-        sigma_yp=2e-7,
-        sigma_s=0.000001,
-        sigma_p=0.000001,
-        energy=1e7,
+        mu_x=torch.tensor(1e-5),
+        mu_xp=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_yp=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_xp=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_yp=torch.tensor(2e-7),
+        sigma_s=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        energy=torch.tensor(1e7),
     )
 
     assert isinstance(transformed_beam, ParameterBeam)
@@ -77,13 +78,13 @@ def test_from_twiss_to_twiss():
     parameters.
     """
     beam = ParameterBeam.from_twiss(
-        beta_x=5.91253676811640894,
-        alpha_x=3.55631307633660354,
-        emittance_x=3.494768647122823e-09,
-        beta_y=5.91253676811640982,
-        alpha_y=2e-7,
-        emittance_y=3.497810737006068e-09,
-        energy=6e6,
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(2e-7),
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        energy=torch.tensor(6e6),
     )
 
     assert np.isclose(beam.beta_x, 5.91253676811640894)

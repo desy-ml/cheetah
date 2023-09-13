@@ -304,19 +304,19 @@ class ParameterBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        mu_x: torch.Tensor = torch.tensor(0),
-        mu_xp: torch.Tensor = torch.tensor(0),
-        mu_y: torch.Tensor = torch.tensor(0),
-        mu_yp: torch.Tensor = torch.tensor(0),
+        mu_x: torch.Tensor = torch.tensor(0.0),
+        mu_xp: torch.Tensor = torch.tensor(0.0),
+        mu_y: torch.Tensor = torch.tensor(0.0),
+        mu_yp: torch.Tensor = torch.tensor(0.0),
         sigma_x: torch.Tensor = torch.tensor(175e-9),
         sigma_xp: torch.Tensor = torch.tensor(2e-7),
         sigma_y: torch.Tensor = torch.tensor(175e-9),
         sigma_yp: torch.Tensor = torch.tensor(2e-7),
         sigma_s: torch.Tensor = torch.tensor(1e-6),
         sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_x: torch.Tensor = torch.tensor(0),
-        cor_y: torch.Tensor = torch.tensor(0),
-        cor_s: torch.Tensor = torch.tensor(0),
+        cor_x: torch.Tensor = torch.tensor(0.0),
+        cor_y: torch.Tensor = torch.tensor(0.0),
+        cor_s: torch.Tensor = torch.tensor(0.0),
         energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParameterBeam":
@@ -349,7 +349,7 @@ class ParameterBeam(Beam):
         emittance_y: torch.Tensor = torch.tensor(0.0),
         sigma_s: torch.Tensor = torch.tensor(1e-6),
         sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_s: torch.Tensor = torch.tensor(0),
+        cor_s: torch.Tensor = torch.tensor(0.0),
         energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParameterBeam":
@@ -514,12 +514,12 @@ class ParameterBeam(Beam):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(mu_x={self.mu_x:.6f}, mu_xp={self.mu_xp:.6f},"
-            f" mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
-            f" sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f},"
-            f" sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f},"
-            f" sigma_s={self.sigma_s:.6f}, sigma_p={self.sigma_p:.6f},"
-            f" energy={self.energy:.3f})"
+            f"{self.__class__.__name__}(mu_x={repr(self.mu_x)},"
+            f" mu_xp={repr(self.mu_xp)}, mu_y={repr(self.mu_y)},"
+            f" mu_yp={repr(self.mu_yp)}, sigma_x={repr(self.sigma_x)},"
+            f" sigma_xp={repr(self.sigma_xp)}, sigma_y={repr(self.sigma_y)},"
+            f" sigma_yp={repr(self.sigma_yp)}, sigma_s={repr(self.sigma_s)},"
+            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)})"
         )
 
 
@@ -554,19 +554,19 @@ class ParticleBeam(Beam):
     def from_parameters(
         cls,
         num_particles: torch.Tensor = torch.tensor(100_000),
-        mu_x: torch.Tensor = torch.tensor(0),
-        mu_y: torch.Tensor = torch.tensor(0),
-        mu_xp: torch.Tensor = torch.tensor(0),
-        mu_yp: torch.Tensor = torch.tensor(0),
+        mu_x: torch.Tensor = torch.tensor(0.0),
+        mu_y: torch.Tensor = torch.tensor(0.0),
+        mu_xp: torch.Tensor = torch.tensor(0.0),
+        mu_yp: torch.Tensor = torch.tensor(0.0),
         sigma_x: torch.Tensor = torch.tensor(175e-9),
         sigma_y: torch.Tensor = torch.tensor(175e-9),
         sigma_xp: torch.Tensor = torch.tensor(2e-7),
         sigma_yp: torch.Tensor = torch.tensor(2e-7),
         sigma_s: torch.Tensor = torch.tensor(1e-6),
         sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_x: torch.Tensor = torch.tensor(0),
-        cor_y: torch.Tensor = torch.tensor(0),
-        cor_s: torch.Tensor = torch.tensor(0),
+        cor_x: torch.Tensor = torch.tensor(0.0),
+        cor_y: torch.Tensor = torch.tensor(0.0),
+        cor_s: torch.Tensor = torch.tensor(0.0),
         energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParticleBeam":
@@ -623,7 +623,7 @@ class ParticleBeam(Beam):
         energy: torch.Tensor = torch.tensor(1e8),
         sigma_s: torch.Tensor = torch.tensor(1e-6),
         sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_s: torch.Tensor = torch.tensor(0),
+        cor_s: torch.Tensor = torch.tensor(0.0),
         device: str = "auto",
     ) -> "ParticleBeam":
         sigma_x = torch.sqrt(beta_x * emittance_x)
@@ -655,16 +655,16 @@ class ParticleBeam(Beam):
     def make_linspaced(
         cls,
         num_particles: torch.Tensor = torch.tensor(10),
-        mu_x: torch.Tensor = torch.tensor(0),
-        mu_y: torch.Tensor = torch.tensor(0),
-        mu_xp: torch.Tensor = torch.tensor(0),
-        mu_yp: torch.Tensor = torch.tensor(0),
+        mu_x: torch.Tensor = torch.tensor(0.0),
+        mu_y: torch.Tensor = torch.tensor(0.0),
+        mu_xp: torch.Tensor = torch.tensor(0.0),
+        mu_yp: torch.Tensor = torch.tensor(0.0),
         sigma_x: torch.Tensor = torch.tensor(175e-9),
         sigma_y: torch.Tensor = torch.tensor(175e-9),
         sigma_xp: torch.Tensor = torch.tensor(2e-7),
         sigma_yp: torch.Tensor = torch.tensor(2e-7),
-        sigma_s: torch.Tensor = torch.tensor(0),
-        sigma_p: torch.Tensor = torch.tensor(0),
+        sigma_s: torch.Tensor = torch.tensor(0.0),
+        sigma_p: torch.Tensor = torch.tensor(0.0),
         energy: torch.Tensor = torch.tensor(1e8),
         device: str = "auto",
     ) -> "ParticleBeam":
@@ -815,8 +815,8 @@ class ParticleBeam(Beam):
 
         return self.__class__(particles=particles, energy=energy)
 
-    def __len__(self) -> torch.Tensor:
-        return self.num_particles
+    def __len__(self) -> int:
+        return int(self.num_particles)
 
     @property
     def num_particles(self) -> torch.Tensor:
@@ -928,10 +928,11 @@ class ParticleBeam(Beam):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(n={self.num_particles}, mu_x={self.mu_x:.6f},"
-            f" mu_xp={self.mu_xp:.6f}, mu_y={self.mu_y:.6f}, mu_yp={self.mu_yp:.6f},"
-            f" sigma_x={self.sigma_x:.6f}, sigma_xp={self.sigma_xp:.6f},"
-            f" sigma_y={self.sigma_y:.6f}, sigma_yp={self.sigma_yp:.6f},"
-            f" sigma_s={self.sigma_s:.6f}, sigma_p={self.sigma_p:.6f},"
-            f" energy={self.energy:.3f})"
+            f"{self.__class__.__name__}(n={repr(self.num_particles)},"
+            f" mu_x={repr(self.mu_x)}, mu_xp={repr(self.mu_xp)},"
+            f" mu_y={repr(self.mu_y)}, mu_yp={repr(self.mu_yp)},"
+            f" sigma_x={repr(self.sigma_x)}, sigma_xp={repr(self.sigma_xp)},"
+            f" sigma_y={repr(self.sigma_y)}, sigma_yp={repr(self.sigma_yp)},"
+            f" sigma_s={repr(self.sigma_s)}, sigma_p={repr(self.sigma_p)},"
+            f" energy={repr(self.energy)})"
         )

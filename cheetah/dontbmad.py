@@ -533,7 +533,11 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 e2=torch.tensor(bmad_parsed.get("e2", 0.0)),
                 tilt=torch.tensor(bmad_parsed.get("ref_tilt", 0.0)),
                 fringe_integral=torch.tensor(bmad_parsed.get("fint", 0.0)),
-                fringe_integral_exit=torch.tensor(bmad_parsed.get("fintx", None)),
+                fringe_integral_exit=(
+                    torch.tensor(bmad_parsed["fintx"])
+                    if "fintx" in bmad_parsed
+                    else None
+                ),
                 name=name,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
