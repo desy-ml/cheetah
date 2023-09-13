@@ -150,7 +150,7 @@ def load_cheetah_model(fname: str, name: Optional[str] = None) -> cheetah.Segmen
             )
         )
 
-    return cheetah.Segment(cell=cell, name=name)
+    return cheetah.Segment(elements=cell, name=name)
 
 
 def str_to_class(classname: str):

@@ -11,6 +11,7 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
 from scipy.stats import multivariate_normal
+from torch import nn
 
 from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.error import DeviceError
@@ -27,7 +28,7 @@ electron_mass_eV = torch.tensor(
 )
 
 
-class Element(ABC):
+class Element(ABC, nn.Module):
     """
     Base class for elements of particle accelerators.
 
@@ -37,6 +38,8 @@ class Element(ABC):
     """
 
     def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
+        super().__init__()
+
         self.name = name
 
         if device == "auto":
@@ -147,14 +150,9 @@ class Element(ABC):
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(name="{self.name}", device="{self.device}")'
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Element):
-            return False
-        return all(
-            getattr(self, feature) == getattr(other, feature)
-            for feature in self.defining_features
+        return (
+            f"{self.__class__.__name__}(name={repr(self.name)},"
+            f" device={repr(self.device)})"
         )
 
 
@@ -215,8 +213,8 @@ class Drift(Element):
 
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}(length={self.length:.2f}, name="{self.name}",'
-            f' device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)},"
+            f" name={repr(self.name)}, device={repr(self.device)})"
         )
 
 
@@ -303,12 +301,12 @@ class Quadrupole(Element):
 
     def __repr__(self) -> None:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"k1={self.k1}, "
-            + f"misalignment={self.misalignment}, "
-            + f"tilt={self.tilt:.2f}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"k1={repr(self.k1)}, "
+            + f"misalignment={repr(self.misalignment)}, "
+            + f"tilt={repr(self.tilt)}, "
+            + f"name={repr(self.name)}, "
+            + f'device="{repr(self.device)}")'
         )
 
 
@@ -466,16 +464,16 @@ class Dipole(Element):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"angle={self.angle}, "
-            + f"e1={self.e1:.2f},"
-            + f"e2={self.e2:.2f},"
-            + f"tilt={self.tilt:.2f},"
-            + f"fringe_integral={self.fringe_integral:.2f},"
-            + f"fringe_integral_exit={self.fringe_integral_exit:.2f},"
-            + f"gap={self.gap:.2f},"
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"angle={repr(self.angle)}, "
+            + f"e1={repr(self.e1)},"
+            + f"e2={repr(self.e2)},"
+            + f"tilt={repr(self.tilt)},"
+            + f"fringe_integral={repr(self.fringe_integral)},"
+            + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
+            + f"gap={repr(self.gap)},"
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
     @property
@@ -622,10 +620,10 @@ class HorizontalCorrector(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"angle={self.angle}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"angle={repr(self.angle)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -702,10 +700,10 @@ class VerticalCorrector(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"angle={self.angle}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"angle={repr(self.angle)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -1008,12 +1006,12 @@ class Cavity(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"voltage={self.voltage:.2f}, "
-            + f"phase={self.phase:.2f}, "
-            + f"frequency={self.frequency:.2f}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"voltage={repr(self.voltage)}, "
+            + f"phase={repr(self.voltage)}, "
+            + f"frequency={repr(self.frequency)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -1066,7 +1064,10 @@ class BPM(Element):
         return super().defining_features
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(name={self.name}, device="{self.device}")'
+        return (
+            f"{self.__class__.__name__}(name={repr(self.name)},"
+            f" device={repr(self.device)})"
+        )
 
 
 class Marker(Element):
@@ -1104,7 +1105,10 @@ class Marker(Element):
         return super().defining_features
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(name={self.name}, device="{self.device}")'
+        return (
+            f"{self.__class__.__name__}(name={repr(self.name)},"
+            f" device={repr(self.device)})"
+        )
 
 
 class Screen(Element):
@@ -1282,13 +1286,13 @@ class Screen(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(resolution={self.resolution}, "
-            + f"pixel_size={self.pixel_size}, "
-            + f"binning={self.binning}, "
-            + f"misalignment={self.misalignment}, "
-            + f"is_active={self.is_active}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(resolution={repr(self.resolution)}, "
+            + f"pixel_size={repr(self.pixel_size)}, "
+            + f"binning={repr(self.binning)}, "
+            + f"misalignment={repr(self.misalignment)}, "
+            + f"is_active={repr(self.is_active)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -1386,12 +1390,12 @@ class Aperture(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(x_max={self.x_max:.2f}, "
-            + f"y_max={self.y_max:.2f}, "
-            + f'shape="{self.shape}", '
-            + f"is_active={self.is_active}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(x_max={repr(self.x_max)}, "
+            + f"y_max={repr(self.y_max)}, "
+            + f"shape={repr(self.shape)}, "
+            + f"is_active={repr(self.is_active)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -1462,10 +1466,10 @@ class Undulator(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"is_active={self.is_active}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"is_active={repr(self.is_active)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -1558,11 +1562,11 @@ class Solenoid(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(length={self.length:.2f}, "
-            + f"k={self.k:.2f}, "
-            + f"misalignment={self.misalignment}, "
-            + f'name="{self.name}", '
-            + f'device="{self.device}")'
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"k={repr(self.k)}, "
+            + f"misalignment={repr(self.misalignment)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
         )
 
 
@@ -1577,15 +1581,11 @@ class Segment(Element):
     """
 
     def __init__(
-        self, cell: list[Element], name: str = "unnamed", device: str = "auto"
+        self, elements: list[Element], name: str = "unnamed", device: str = "auto"
     ) -> None:
-        self.name = name
+        super().__init__(name=name, device=device)
 
-        if device == "auto":
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.device = device
-
-        self.elements = cell
+        self.elements = nn.ModuleList(elements)
 
         for element in self.elements:
             element.device = self.device
@@ -1614,12 +1614,6 @@ class Segment(Element):
 
         return self.__class__(subcell, device=self.device, **kwargs)
 
-    def __eq__(self, other: "Segment") -> bool:
-        for my_element, other_element in zip(self.elements, other.elements):
-            if my_element != other_element:
-                return False
-        return True
-
     def flattened(self) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
@@ -1632,7 +1626,7 @@ class Segment(Element):
             else:
                 flattened_elements.append(element)
 
-        return Segment(cell=flattened_elements, name=self.name, device=self.device)
+        return Segment(elements=flattened_elements, name=self.name, device=self.device)
 
     @classmethod
     def from_ocelot(
@@ -1890,11 +1884,8 @@ class Segment(Element):
         plt.tight_layout()
 
     def __repr__(self) -> str:
-        start = f"{self.__class__.__name__}(["
-
-        s = start + self.elements[0].__repr__()
-        x = [", " + element.__repr__() for element in self.elements[1:]]
-        s += "".join(x)
-        s += "])"
-
-        return s
+        return (
+            f"{self.__class__.__name__}(elements={repr(self.elements)}, "
+            + f"name={repr(self.name)}, "
+            + f"device={repr(self.device)})"
+        )

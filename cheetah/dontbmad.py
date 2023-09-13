@@ -442,7 +442,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
 
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
-            cell=[
+            elements=[
                 convert_element(element_name, context) for element_name in bmad_parsed
             ],
             name=name,

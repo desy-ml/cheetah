@@ -32,11 +32,17 @@ def test_quadrupole_not_equal():
 def test_segment_equal():
     """Test that equal segments are recognised as such."""
     segment_1 = Segment(
-        cell=[Drift(name="d", length=0.1), Quadrupole(name="q", length=0.1, k1=0.2)],
+        elements=[
+            Drift(name="d", length=0.1),
+            Quadrupole(name="q", length=0.1, k1=0.2),
+        ],
         name="test_segment",
     )
     segment_2 = Segment(
-        cell=[Drift(name="d", length=0.1), Quadrupole(name="q", length=0.1, k1=0.2)],
+        elements=[
+            Drift(name="d", length=0.1),
+            Quadrupole(name="q", length=0.1, k1=0.2),
+        ],
         name="test_segment",
     )
     assert segment_1 == segment_2
@@ -45,11 +51,17 @@ def test_segment_equal():
 def test_segment_not_equal():
     """Test that unequal segments are recognised as such."""
     segment_1 = Segment(
-        cell=[Drift(name="d", length=0.1), Quadrupole(name="q", length=0.1, k1=0.2)],
+        elements=[
+            Drift(name="d", length=0.1),
+            Quadrupole(name="q", length=0.1, k1=0.2),
+        ],
         name="test_segment",
     )
     segment_2 = Segment(
-        cell=[Quadrupole(name="q", length=0.2, k1=0.2), Drift(name="d", length=0.1)],
+        elements=[
+            Quadrupole(name="q", length=0.2, k1=0.2),
+            Drift(name="d", length=0.1),
+        ],
         name="test_segment",
     )
     assert segment_1 != segment_2
