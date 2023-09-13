@@ -18,7 +18,7 @@ from cheetah.error import DeviceError
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 
-REST_ENERGY = torch.tensor(
+REST_ENERGY = torch.tensor(  # TODO: Make lower case
     constants.electron_mass
     * constants.speed_of_light**2
     / constants.elementary_charge
@@ -66,7 +66,7 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def __call__(self, incoming: Beam) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the element. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
@@ -92,18 +92,9 @@ class Element(ABC, nn.Module):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def track(self, incoming: Beam) -> Beam:
-        """
-        Track particles through the element. The input can be a `ParameterBeam` or a
-        `ParticleBeam`.
-
-        NOTE: The purpose of this method is to provide a nicer more readable interface
-        to `__call__`. The latter coninues to work, but we encourage the use of `track`.
-
-        :param incoming: Beam of particles entering the element.
-        :return: Beam of particles exiting the element.
-        """
-        return self(incoming)
+    def forward(self, incoming: Beam) -> Beam:
+        """Forward function required by `torch.nn.Module`. Simply calls `track`."""
+        return self.track(incoming)
 
     @property
     @abstractmethod
@@ -731,7 +722,7 @@ class Cavity(Element):
                 device=self.device,
             )
 
-    def __call__(self, incoming: Beam) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the cavity. The input can be a `ParameterBeam` or a
         `ParticleBeam`. For a cavity, this does a little more than just the transfer map
@@ -1010,7 +1001,7 @@ class BPM(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
-    def __call__(self, incoming: Beam) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         if incoming is Beam.empty:
             self.reading = (None, None)
             return Beam.empty
@@ -1059,7 +1050,7 @@ class Marker(Element):
     def transfer_map(self, energy):
         return torch.eye(7, device=self.device)
 
-    def __call__(self, incoming):
+    def track(self, incoming):
         return incoming
 
     @property
@@ -1170,7 +1161,7 @@ class Screen(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
-    def __call__(self, incoming: Beam) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         if self.is_active:
             if isinstance(incoming, ParameterBeam):
                 self.read_beam = deepcopy(incoming)
@@ -1316,7 +1307,7 @@ class Aperture(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.eye(7, device=self.device)
 
-    def __call__(self, incoming: Beam) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
         if not (isinstance(incoming, ParticleBeam) and self.is_active):
             return incoming
@@ -1677,9 +1668,9 @@ class Segment(Element):
         else:
             return None
 
-    def __call__(self, incoming: Beam) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
-            return super().__call__(incoming)
+            return super().track(incoming)
         else:
             todos = []
             for element in self.elements:
