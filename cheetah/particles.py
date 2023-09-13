@@ -336,23 +336,33 @@ class ParameterBeam(Beam):
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
 
-        return cls(
-            mu=torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0, 1], dtype=torch.float32),
-            cov=torch.tensor(
-                [
-                    [sigma_x**2, cor_x, 0, 0, 0, 0, 0],
-                    [cor_x, sigma_xp**2, 0, 0, 0, 0, 0],
-                    [0, 0, sigma_y**2, cor_y, 0, 0, 0],
-                    [0, 0, cor_y, sigma_yp**2, 0, 0, 0],
-                    [0, 0, 0, 0, sigma_s**2, cor_s, 0],
-                    [0, 0, 0, 0, cor_s, sigma_p**2, 0],
-                    [0, 0, 0, 0, 0, 0, 0],
-                ],
-                dtype=torch.float32,
-            ),
-            energy=energy,
-            device=device,
+        mu = torch.stack(
+            [
+                mu_x,
+                mu_xp,
+                mu_y,
+                mu_yp,
+                torch.tensor(0.0),
+                torch.tensor(0.0),
+                torch.tensor(1.0),
+            ]
         )
+
+        cov = torch.zeros(7, 7)
+        cov[0, 0] = sigma_x**2
+        cov[0, 1] = cor_x
+        cov[1, 0] = cor_x
+        cov[1, 1] = sigma_xp**2
+        cov[2, 2] = sigma_y**2
+        cov[2, 3] = cor_y
+        cov[3, 2] = cor_y
+        cov[3, 3] = sigma_yp**2
+        cov[4, 4] = sigma_s**2
+        cov[4, 5] = cor_s
+        cov[5, 4] = cor_s
+        cov[5, 5] = sigma_p**2
+
+        return cls(mu=mu, cov=cov, energy=energy, device=device)
 
     @classmethod
     def from_twiss(
@@ -638,18 +648,23 @@ class ParticleBeam(Beam):
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
 
-        mean = torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32)
-        cov = torch.tensor(
-            [
-                [sigma_x**2, cor_x, 0, 0, 0, 0],
-                [cor_x, sigma_xp**2, 0, 0, 0, 0],
-                [0, 0, sigma_y**2, cor_y, 0, 0],
-                [0, 0, cor_y, sigma_yp**2, 0, 0],
-                [0, 0, 0, 0, sigma_s**2, cor_s],
-                [0, 0, 0, 0, cor_s, sigma_p**2],
-            ],
-            dtype=torch.float32,
+        mean = torch.stack(
+            [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
         )
+
+        cov = torch.zeros(6, 6)
+        cov[0, 0] = sigma_x**2
+        cov[0, 1] = cor_x
+        cov[1, 0] = cor_x
+        cov[1, 1] = sigma_xp**2
+        cov[2, 2] = sigma_y**2
+        cov[2, 3] = cor_y
+        cov[3, 2] = cor_y
+        cov[3, 3] = sigma_yp**2
+        cov[4, 4] = sigma_s**2
+        cov[4, 5] = cor_s
+        cov[5, 4] = cor_s
+        cov[5, 5] = sigma_p**2
 
         particles = torch.ones((num_particles, 7), dtype=torch.float32)
         distribution = MultivariateNormal(mean, covariance_matrix=cov)
@@ -697,10 +712,10 @@ class ParticleBeam(Beam):
 
         return cls.from_parameters(
             num_particles=num_particles,
-            mu_x=0,
-            mu_xp=0,
-            mu_y=0,
-            mu_yp=0,
+            mu_x=torch.tensor(0.0),
+            mu_xp=torch.tensor(0.0),
+            mu_y=torch.tensor(0.0),
+            mu_yp=torch.tensor(0.0),
             sigma_x=sigma_x,
             sigma_xp=sigma_xp,
             sigma_y=sigma_y,
@@ -856,21 +871,24 @@ class ParticleBeam(Beam):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
 
-        new_mu = torch.tensor(
-            [mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32, device=self.device
+        new_mu = torch.stack(
+            [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
         )
-        new_sigma = torch.tensor(
-            [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p],
-            dtype=torch.float32,
-            device=self.device,
+        new_sigma = torch.stack(
+            [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p]
         )
 
-        old_mu = torch.tensor(
-            [self.mu_x, self.mu_xp, self.mu_y, self.mu_yp, 0, 0],
-            dtype=torch.float32,
-            device=self.device,
+        old_mu = torch.stack(
+            [
+                self.mu_x,
+                self.mu_xp,
+                self.mu_y,
+                self.mu_yp,
+                torch.tensor(0.0),
+                torch.tensor(0.0),
+            ]
         )
-        old_sigma = torch.tensor(
+        old_sigma = torch.stack(
             [
                 self.sigma_x,
                 self.sigma_xp,
@@ -878,9 +896,7 @@ class ParticleBeam(Beam):
                 self.sigma_yp,
                 self.sigma_s,
                 self.sigma_p,
-            ],
-            dtype=torch.float32,
-            device=self.device,
+            ]
         )
 
         phase_space = self.particles[:, :6]

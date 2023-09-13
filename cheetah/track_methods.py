@@ -26,19 +26,18 @@ def rotation_matrix(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     cs = torch.cos(angle)
     sn = torch.sin(angle)
-    return torch.tensor(
-        [
-            [cs, 0, sn, 0, 0, 0, 0],
-            [0, cs, 0, sn, 0, 0, 0],
-            [-sn, 0, cs, 0, 0, 0, 0],
-            [0, -sn, 0, cs, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 1],
-        ],
-        dtype=torch.float32,
-        device=device,
-    )
+
+    tm = torch.eye(7, dtype=torch.float32, device=device)
+    tm[0, 0] = cs
+    tm[0, 2] = sn
+    tm[1, 1] = cs
+    tm[1, 3] = sn
+    tm[2, 0] = -sn
+    tm[2, 2] = cs
+    tm[3, 1] = -sn
+    tm[3, 3] = cs
+
+    return tm
 
 
 def base_rmatrix(
@@ -91,19 +90,20 @@ def base_rmatrix(
 
     r56 -= length / beta**2 * igamma2
 
-    R = torch.tensor(
-        [
-            [cx, sx, 0, 0, 0, dx / beta, 0],
-            [-kx2 * sx, cx, 0, 0, 0, sx * hx / beta, 0],
-            [0, 0, cy, sy, 0, 0, 0],
-            [0, 0, -ky2 * sy, cy, 0, 0, 0],
-            [sx * hx / beta, dx / beta, 0, 0, 1, r56, 0],
-            [0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 1],
-        ],
-        dtype=torch.float32,
-        device=device,
-    )
+    R = torch.eye(7, dtype=torch.float32, device=device)
+    R[0, 0] = cx
+    R[0, 1] = sx
+    R[0, 5] = dx / beta
+    R[1, 0] = -kx2 * sx
+    R[1, 1] = cx
+    R[1, 5] = sx * hx / beta
+    R[2, 2] = cy
+    R[2, 3] = sy
+    R[3, 2] = -ky2 * sy
+    R[3, 3] = cy
+    R[4, 0] = sx * hx / beta
+    R[4, 1] = dx / beta
+    R[4, 5] = r56
 
     # Rotate the R matrix for skew / vertical magnets
     if tilt != 0:
@@ -115,30 +115,12 @@ def misalignment_matrix(
     misalignment: torch.Tensor, device: torch.device
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Shift the beam for tracking beam through misaligned elements"""
-    R_exit = torch.tensor(
-        [
-            [1, 0, 0, 0, 0, 0, misalignment[0]],
-            [0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, misalignment[1]],
-            [0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 1],
-        ],
-        dtype=torch.float32,
-        device=device,
-    )
-    R_entry = torch.tensor(
-        [
-            [1, 0, 0, 0, 0, 0, -misalignment[0]],
-            [0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, -misalignment[1]],
-            [0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 1],
-        ],
-        dtype=torch.float32,
-        device=device,
-    )
-    return R_exit, R_entry
+    R_exit = torch.eye(7, dtype=torch.float32, device=device)
+    R_exit[0, 6] = misalignment[0]
+    R_exit[2, 6] = misalignment[1]
+
+    R_entry = torch.eye(7, dtype=torch.float32, device=device)
+    R_entry[0, 6] = -misalignment[0]
+    R_entry[2, 6] = -misalignment[1]
+
+    return R_exit, R_entry  # TODO: This order is confusing, should be entry, exit

@@ -180,19 +180,12 @@ class Drift(Element):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
-        return torch.tensor(
-            [
-                [1, self.length, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 1, self.length, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, self.length * igamma2, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
-            device=self.device,
-        )
+        tm = torch.eye(7, device=self.device)
+        tm[0, 1] = self.length
+        tm[2, 3] = self.length
+        tm[4, 5] = self.length * igamma2
+
+        return tm
 
     @property
     def is_skippable(self) -> bool:
@@ -390,19 +383,11 @@ class Dipole(Element):
                 device=self.device,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.tensor(
-                [
-                    [1, self.length, 0, 0, 0, 0, 0],
-                    [0, 1, 0, 0, 0, 0, self.angle],
-                    [0, 0, 1, self.length, 0, 0, 0],
-                    [0, 0, 0, 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
+            R = torch.eye(7, device=self.device)
+            R[0, 1] = self.length
+            R[2, 6] = self.angle
+            R[2, 3] = self.length
+
         # Apply fringe fields
         R = torch.matmul(R_exit, torch.matmul(R, R_enter))
         # Apply rotation for tilted magnets
@@ -424,19 +409,12 @@ class Dipole(Element):
                 * sec_e
                 * (1 + torch.sin(self.e1) ** 2)
             )
-            return torch.tensor(
-                [
-                    [1, 0, 0, 0, 0, 0, 0],
-                    [self.hx * torch.tan(self.e1), 1, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, 0],
-                    [0, 0, -self.hx * torch.tan(self.e1 - phi), 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
+
+            tm = torch.eye(7, device=self.device)
+            tm[1, 0] = self.hx * torch.tan(self.e1)
+            tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
+
+            return tm
 
     def _transfer_map_exit(self, energy: torch.Tensor) -> torch.Tensor:
         if self.fringe_integral_exit == 0:
@@ -450,19 +428,12 @@ class Dipole(Element):
                 * sec_e
                 * (1 + torch.sin(self.e2) ** 2)
             )
-            return torch.tensor(
-                [
-                    [1, 0, 0, 0, 0, 0, 0],
-                    [self.hx * torch.tan(self.e2), 1, 0, 0, 0, 0, 0],
-                    [0, 0, 1, 0, 0, 0, 0],
-                    [0, 0, -self.hx * torch.tan(self.e2 - phi), 1, 0, 0, 0],
-                    [0, 0, 0, 0, 1, 0, 0],
-                    [0, 0, 0, 0, 0, 1, 0],
-                    [0, 0, 0, 0, 0, 0, 1],
-                ],
-                dtype=torch.float32,
-                device=self.device,
-            )
+
+            tm = torch.eye(7, device=self.device)
+            tm[1, 0] = self.hx * torch.tan(self.e2)
+            tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
+
+            return tm
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
@@ -588,19 +559,12 @@ class HorizontalCorrector(Element):
         self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return torch.tensor(
-            [
-                [1, self.length, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, self.angle],
-                [0, 0, 1, self.length, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
-            device=self.device,
-        )
+        tm = torch.eye(7, device=self.device)
+        tm[0, 1] = self.length
+        tm[1, 6] = self.angle
+        tm[2, 3] = self.length
+
+        return tm
 
     @property
     def is_skippable(self) -> bool:
@@ -668,19 +632,12 @@ class VerticalCorrector(Element):
         self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return torch.tensor(
-            [
-                [1, self.length, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 1, self.length, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, self.angle],
-                [0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
-            device=self.device,
-        )
+        tm = torch.eye(7, device=self.device)
+        tm[0, 1] = self.length
+        tm[2, 3] = self.length
+        tm[3, 6] = self.angle
+
+        return tm
 
     @property
     def is_skippable(self) -> bool:
@@ -987,19 +944,19 @@ class Cavity(Element):
         r66 = Ei / Ef * beta0 / beta1
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
-        R = torch.tensor(
-            [
-                [r11, r12, 0, 0, 0, 0, 0],
-                [r21, r22, 0, 0, 0, 0, 0],
-                [0, 0, r11, r12, 0, 0, 0],
-                [0, 0, r21, r22, 0, 0, 0],
-                [0, 0, 0, 0, 1 + r55_cor, r56, 0],
-                [0, 0, 0, 0, r65, r66, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
-            device=self.device,
-        )
+        R = torch.eye(7, device=self.device)
+        R[0, 0] = r11
+        R[0, 1] = r12
+        R[1, 0] = r21
+        R[1, 1] = r22
+        R[2, 2] = r11
+        R[2, 3] = r12
+        R[3, 2] = r21
+        R[3, 3] = r22
+        R[4, 4] = 1 + r55_cor
+        R[4, 5] = r56
+        R[5, 4] = r65
+        R[5, 5] = r66
 
         return R
 
@@ -1246,11 +1203,11 @@ class Screen(Element):
                 (self.effective_resolution[1], self.effective_resolution[0])
             )
         elif isinstance(self.read_beam, ParameterBeam):
-            transverse_mu = torch.tensor([self.read_beam._mu[0], self.read_beam._mu[2]])
-            transverse_cov = torch.tensor(
+            transverse_mu = torch.stack([self.read_beam._mu[0], self.read_beam._mu[2]])
+            transverse_cov = torch.stack(
                 [
-                    [self.read_beam._cov[0, 0], self.read_beam._cov[0, 2]],
-                    [self.read_beam._cov[2, 0], self.read_beam._cov[2, 2]],
+                    torch.stack([self.read_beam._cov[0, 0], self.read_beam._cov[0, 2]]),
+                    torch.stack([self.read_beam._cov[2, 0], self.read_beam._cov[2, 2]]),
                 ]
             )
             dist = multivariate_normal(
@@ -1454,19 +1411,12 @@ class Undulator(Element):
         gamma = energy / REST_ENERGY
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
-        return torch.tensor(
-            [
-                [1, self.length, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 1, self.length, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, self.length * igamma2, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
-            device=self.device,
-        )
+        tm = torch.eye(7, device=self.device)
+        tm[0, 1] = self.length
+        tm[2, 3] = self.length
+        tm[4, 5] = self.length * igamma2
+
+        return tm
 
     @property
     def is_skippable(self) -> bool:
@@ -1543,19 +1493,28 @@ class Solenoid(Element):
             gamma2 = gamma * gamma
             beta = torch.sqrt(1.0 - 1.0 / gamma2)
             r56 -= self.length / (beta * beta * gamma2)
-        R = torch.tensor(
-            [
-                [c * c, c * s_k, s * c, s * s_k, 0, 0, 0],
-                [-self.k * s * c, c * c, -self.k * s * s, s * c, 0, 0, 0],
-                [-s * c, -s * s_k, c * c, c * s_k, 0, 0, 0],
-                [self.k * s * s, -s * c, -self.k * s * c, c * c, 0, 0, 0],
-                [0, 0, 0, 0, 1, r56, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ],
-            dtype=torch.float32,
-            device=self.device,
-        ).real
+
+        R = torch.eye(7, device=self.device)
+        R[0, 0] = c**2
+        R[0, 1] = c * s_k
+        R[0, 2] = s * c
+        R[0, 3] = s * s_k
+        R[1, 0] = -self.k * s * c
+        R[1, 1] = c**2
+        R[1, 2] = -self.k * s**2
+        R[1, 3] = s * c
+        R[2, 0] = -s * c
+        R[2, 1] = -s * s_k
+        R[2, 2] = c**2
+        R[2, 3] = c * s_k
+        R[3, 0] = self.k * s**2
+        R[3, 1] = -s * c
+        R[3, 2] = -self.k * s * c
+        R[3, 3] = c**2
+        R[4, 5] = r56
+
+        R = R.real
+
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
