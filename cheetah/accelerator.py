@@ -238,18 +238,20 @@ class Quadrupole(Element):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        k1: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor([0.0, 0.0]),
-        tilt: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
         self.length = length
-        self.k1 = k1
-        self.misalignment = misalignment
-        self.tilt = tilt
+        self.k1 = k1 if k1 is not None else torch.tensor(0.0)
+        self.misalignment = (
+            misalignment if misalignment is not None else torch.tensor([0.0, 0.0])
+        )
+        self.tilt = tilt if tilt is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         R = base_rmatrix(
@@ -334,30 +336,32 @@ class Dipole(Element):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        e1: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        e2: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        tilt: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        fringe_integral: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        fringe_integral_exit: Optional[torch.Tensor] = None,
-        gap: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ):
         super().__init__(name=name, device=device)
 
         self.length = length
-        self.angle = angle
-        self.gap = gap
-        self.tilt = tilt
+        self.angle = angle if angle is not None else torch.tensor(0.0)
+        self.gap = gap if gap is not None else torch.tensor(0.0)
+        self.tilt = tilt if tilt is not None else torch.tensor(0.0)
         self.name = name
-        self.fringe_integral = fringe_integral
+        self.fringe_integral = (
+            fringe_integral if fringe_integral is not None else torch.tensor(0.0)
+        )
         self.fringe_integral_exit = (
             fringe_integral if fringe_integral_exit is None else fringe_integral_exit
         )
         # Rectangular bend
-        self.e1 = e1
-        self.e2 = e2
+        self.e1 = e1 if e1 is not None else torch.tensor(0.0)
+        self.e2 = e2 if e2 is not None else torch.tensor(0.0)
 
         if self.length == 0.0:
             self.hx = torch.tensor(0.0)
@@ -522,17 +526,27 @@ class RBend(Dipole):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        e1: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        e2: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        tilt: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        fringe_integral: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        fringe_integral_exit: Optional[torch.Tensor] = None,
-        gap: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        length: Optional[Union[torch.Tensor, nn.Parameter]],
+        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ):
+        angle = angle if angle is not None else torch.tensor(0.0)
+        e1 = e1 if e1 is not None else torch.tensor(0.0)
+        e2 = e2 if e2 is not None else torch.tensor(0.0)
+        tilt = tilt if tilt is not None else torch.tensor(0.0)
+        fringe_integral = (
+            fringe_integral if fringe_integral is not None else torch.tensor(0.0)
+        )
+        # fringe_integral_exit is left out on purpose
+        gap = gap if gap is not None else torch.tensor(0.0)
+
         e1 = e1 + angle / 2
         e2 = e2 + angle / 2
 
@@ -564,14 +578,14 @@ class HorizontalCorrector(Element):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
         self.length = length
-        self.angle = angle
+        self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.tensor(
@@ -644,14 +658,14 @@ class VerticalCorrector(Element):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
         self.length = length
-        self.angle = angle
+        self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return torch.tensor(
@@ -726,18 +740,18 @@ class Cavity(Element):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        voltage: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        phase: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        frequency: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
         self.length = length
-        self.voltage = voltage
-        self.phase = phase
-        self.frequency = frequency
+        self.voltage = voltage if voltage is not None else torch.tensor(0.0)
+        self.phase = phase if phase is not None else torch.tensor(0.0)
+        self.frequency = frequency if frequency is not None else torch.tensor(0.0)
 
     @property
     def is_active(self) -> bool:
@@ -1134,20 +1148,26 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: Union[torch.Tensor, nn.Parameter] = torch.tensor((1024, 1024)),
-        pixel_size: Union[torch.Tensor, nn.Parameter] = torch.tensor((1e-3, 1e-3)),
-        binning: Union[torch.Tensor, nn.Parameter] = torch.tensor(1.0),
-        misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor((0.0, 0.0)),
+        resolution: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.resolution = tuple(resolution)
-        self.pixel_size = tuple(pixel_size)
-        self.binning = binning
-        self.misalignment = tuple(misalignment)
+        self.resolution = (
+            resolution if resolution is not None else torch.tensor((1024, 1024))
+        )
+        self.pixel_size = (
+            pixel_size if pixel_size is not None else torch.tensor((1e-3, 1e-3))
+        )
+        self.binning = binning if binning is not None else torch.tensor(1)
+        self.misalignment = (
+            misalignment if misalignment is not None else torch.tensor((0.0, 0.0))
+        )
         self.is_active = is_active
 
         self.read_beam = None
@@ -1498,17 +1518,19 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        k: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
-        misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor((0.0, 0.0)),
+        length: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length
-        self.k = k
-        self.misalignment = tuple(misalignment)
+        self.length = length if length is not None else torch.tensor(0.0)
+        self.k = k if k is not None else torch.tensor(0.0)
+        self.misalignment = (
+            misalignment if misalignment is not None else torch.tensor((0.0, 0.0))
+        )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / REST_ENERGY

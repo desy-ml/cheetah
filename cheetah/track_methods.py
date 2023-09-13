@@ -1,6 +1,6 @@
 """Utility functions for creating transfer maps for the elements."""
 
-from typing import Union
+from typing import Optional, Union
 
 import torch
 from scipy import constants
@@ -45,8 +45,8 @@ def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
     hx: torch.Tensor,
-    tilt: torch.Tensor = torch.tensor(0.0),
-    energy: torch.Tensor = torch.tensor(0.0),
+    tilt: Optional[torch.Tensor] = None,
+    energy: Optional[torch.Tensor] = None,
     device: Union[str, torch.device] = "auto",
 ) -> torch.Tensor:
     """
@@ -61,6 +61,9 @@ def base_rmatrix(
         is selected automatically.
     :return: Transfer matrix for the element.
     """
+
+    tilt = tilt if tilt is not None else torch.tensor(0.0)
+    energy = energy if energy is not None else torch.tensor(0.0)
 
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"

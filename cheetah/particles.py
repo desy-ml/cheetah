@@ -16,20 +16,20 @@ class Beam:
     @classmethod
     def from_parameters(
         cls,
-        mu_x: torch.Tensor = torch.tensor(0.0),
-        mu_xp: torch.Tensor = torch.tensor(0.0),
-        mu_y: torch.Tensor = torch.tensor(0.0),
-        mu_yp: torch.Tensor = torch.tensor(0.0),
-        sigma_x: torch.Tensor = torch.tensor(1.0),
-        sigma_xp: torch.Tensor = torch.tensor(0.0),
-        sigma_y: torch.Tensor = torch.tensor(1.0),
-        sigma_yp: torch.Tensor = torch.tensor(0.0),
-        sigma_s: torch.Tensor = torch.tensor(0.0),
-        sigma_p: torch.Tensor = torch.tensor(0.0),
-        cor_x: torch.Tensor = torch.tensor(0.0),
-        cor_y: torch.Tensor = torch.tensor(0.0),
-        cor_s: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
+        mu_x: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        cor_x: Optional[torch.Tensor] = None,
+        cor_y: Optional[torch.Tensor] = None,
+        cor_s: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -53,13 +53,13 @@ class Beam:
     @classmethod
     def from_twiss(
         cls,
-        beta_x: torch.Tensor = torch.tensor(0.0),
-        alpha_x: torch.Tensor = torch.tensor(0.0),
-        emittance_x: torch.Tensor = torch.tensor(0.0),
-        beta_y: torch.Tensor = torch.tensor(0.0),
-        alpha_y: torch.Tensor = torch.tensor(0.0),
-        emittance_y: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
+        beta_x: Optional[torch.Tensor] = None,
+        alpha_x: Optional[torch.Tensor] = None,
+        emittance_x: Optional[torch.Tensor] = None,
+        beta_y: Optional[torch.Tensor] = None,
+        alpha_y: Optional[torch.Tensor] = None,
+        emittance_y: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -304,22 +304,38 @@ class ParameterBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        mu_x: torch.Tensor = torch.tensor(0.0),
-        mu_xp: torch.Tensor = torch.tensor(0.0),
-        mu_y: torch.Tensor = torch.tensor(0.0),
-        mu_yp: torch.Tensor = torch.tensor(0.0),
-        sigma_x: torch.Tensor = torch.tensor(175e-9),
-        sigma_xp: torch.Tensor = torch.tensor(2e-7),
-        sigma_y: torch.Tensor = torch.tensor(175e-9),
-        sigma_yp: torch.Tensor = torch.tensor(2e-7),
-        sigma_s: torch.Tensor = torch.tensor(1e-6),
-        sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_x: torch.Tensor = torch.tensor(0.0),
-        cor_y: torch.Tensor = torch.tensor(0.0),
-        cor_s: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
+        mu_x: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        cor_x: Optional[torch.Tensor] = None,
+        cor_y: Optional[torch.Tensor] = None,
+        cor_s: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParameterBeam":
+        # Set default values without function call in function signature
+        mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
+        mu_xp = mu_xp if mu_xp is not None else torch.tensor(0.0)
+        mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
+        mu_yp = mu_yp if mu_yp is not None else torch.tensor(0.0)
+        sigma_x = sigma_x if sigma_x is not None else torch.tensor(175e-9)
+        sigma_xp = sigma_xp if sigma_xp is not None else torch.tensor(2e-7)
+        sigma_y = sigma_y if sigma_y is not None else torch.tensor(175e-9)
+        sigma_yp = sigma_yp if sigma_yp is not None else torch.tensor(2e-7)
+        sigma_s = sigma_s if sigma_s is not None else torch.tensor(1e-6)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
+        cor_x = cor_x if cor_x is not None else torch.tensor(0.0)
+        cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
+        cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+
         return cls(
             mu=torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0, 1], dtype=torch.float32),
             cov=torch.tensor(
@@ -341,18 +357,30 @@ class ParameterBeam(Beam):
     @classmethod
     def from_twiss(
         cls,
-        beta_x: torch.Tensor = torch.tensor(0.0),
-        alpha_x: torch.Tensor = torch.tensor(0.0),
-        emittance_x: torch.Tensor = torch.tensor(0.0),
-        beta_y: torch.Tensor = torch.tensor(0.0),
-        alpha_y: torch.Tensor = torch.tensor(0.0),
-        emittance_y: torch.Tensor = torch.tensor(0.0),
-        sigma_s: torch.Tensor = torch.tensor(1e-6),
-        sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_s: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
+        beta_x: Optional[torch.Tensor] = None,
+        alpha_x: Optional[torch.Tensor] = None,
+        emittance_x: Optional[torch.Tensor] = None,
+        beta_y: Optional[torch.Tensor] = None,
+        alpha_y: Optional[torch.Tensor] = None,
+        emittance_y: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        cor_s: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParameterBeam":
+        # Set default values without function call in function signature
+        beta_x = beta_x if beta_x is not None else torch.tensor(0.0)
+        alpha_x = alpha_x if alpha_x is not None else torch.tensor(0.0)
+        emittance_x = emittance_x if emittance_x is not None else torch.tensor(0.0)
+        beta_y = beta_y if beta_y is not None else torch.tensor(0.0)
+        alpha_y = alpha_y if alpha_y is not None else torch.tensor(0.0)
+        emittance_y = emittance_y if emittance_y is not None else torch.tensor(0.0)
+        sigma_s = sigma_s if sigma_s is not None else torch.tensor(1e-6)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
+        cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+
         sigma_x = torch.sqrt(emittance_x * beta_x)
         sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = torch.sqrt(emittance_y * beta_y)
@@ -553,21 +581,21 @@ class ParticleBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        num_particles: torch.Tensor = torch.tensor(100_000),
-        mu_x: torch.Tensor = torch.tensor(0.0),
-        mu_y: torch.Tensor = torch.tensor(0.0),
-        mu_xp: torch.Tensor = torch.tensor(0.0),
-        mu_yp: torch.Tensor = torch.tensor(0.0),
-        sigma_x: torch.Tensor = torch.tensor(175e-9),
-        sigma_y: torch.Tensor = torch.tensor(175e-9),
-        sigma_xp: torch.Tensor = torch.tensor(2e-7),
-        sigma_yp: torch.Tensor = torch.tensor(2e-7),
-        sigma_s: torch.Tensor = torch.tensor(1e-6),
-        sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_x: torch.Tensor = torch.tensor(0.0),
-        cor_y: torch.Tensor = torch.tensor(0.0),
-        cor_s: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
+        num_particles: Optional[torch.Tensor] = None,
+        mu_x: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        cor_x: Optional[torch.Tensor] = None,
+        cor_y: Optional[torch.Tensor] = None,
+        cor_s: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParticleBeam":
         """
@@ -591,6 +619,25 @@ class ParticleBeam(Beam):
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
+        # Set default values without function call in function signature
+        num_particles = (
+            num_particles if num_particles is not None else torch.tensor(100_000)
+        )
+        mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
+        mu_xp = mu_xp if mu_xp is not None else torch.tensor(0.0)
+        mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
+        mu_yp = mu_yp if mu_yp is not None else torch.tensor(0.0)
+        sigma_x = sigma_x if sigma_x is not None else torch.tensor(175e-9)
+        sigma_xp = sigma_xp if sigma_xp is not None else torch.tensor(2e-7)
+        sigma_y = sigma_y if sigma_y is not None else torch.tensor(175e-9)
+        sigma_yp = sigma_yp if sigma_yp is not None else torch.tensor(2e-7)
+        sigma_s = sigma_s if sigma_s is not None else torch.tensor(1e-6)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
+        cor_x = cor_x if cor_x is not None else torch.tensor(0.0)
+        cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
+        cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+
         mean = torch.tensor([mu_x, mu_xp, mu_y, mu_yp, 0, 0], dtype=torch.float32)
         cov = torch.tensor(
             [
@@ -613,25 +660,41 @@ class ParticleBeam(Beam):
     @classmethod
     def from_twiss(
         cls,
-        num_particles: torch.Tensor = torch.tensor(1_000_000),
-        beta_x: torch.Tensor = torch.tensor(0.0),
-        alpha_x: torch.Tensor = torch.tensor(0.0),
-        emittance_x: torch.Tensor = torch.tensor(0.0),
-        beta_y: torch.Tensor = torch.tensor(0.0),
-        alpha_y: torch.Tensor = torch.tensor(0.0),
-        emittance_y: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
-        sigma_s: torch.Tensor = torch.tensor(1e-6),
-        sigma_p: torch.Tensor = torch.tensor(1e-6),
-        cor_s: torch.Tensor = torch.tensor(0.0),
+        num_particles: Optional[torch.Tensor] = None,
+        beta_x: Optional[torch.Tensor] = None,
+        alpha_x: Optional[torch.Tensor] = None,
+        emittance_x: Optional[torch.Tensor] = None,
+        beta_y: Optional[torch.Tensor] = None,
+        alpha_y: Optional[torch.Tensor] = None,
+        emittance_y: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        cor_s: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParticleBeam":
+        # Set default values without function call in function signature
+        num_particles = (
+            num_particles if num_particles is not None else torch.tensor(1_000_000)
+        )
+        beta_x = beta_x if beta_x is not None else torch.tensor(0.0)
+        alpha_x = alpha_x if alpha_x is not None else torch.tensor(0.0)
+        emittance_x = emittance_x if emittance_x is not None else torch.tensor(0.0)
+        beta_y = beta_y if beta_y is not None else torch.tensor(0.0)
+        alpha_y = alpha_y if alpha_y is not None else torch.tensor(0.0)
+        emittance_y = emittance_y if emittance_y is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+        sigma_s = sigma_s if sigma_s is not None else torch.tensor(1e-6)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
+        cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
+
         sigma_x = torch.sqrt(beta_x * emittance_x)
         sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = torch.sqrt(beta_y * emittance_y)
         sigma_yp = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
         cor_x = -emittance_x * alpha_x
         cor_y = -emittance_y * alpha_y
+
         return cls.from_parameters(
             num_particles=num_particles,
             mu_x=0,
@@ -654,18 +717,18 @@ class ParticleBeam(Beam):
     @classmethod
     def make_linspaced(
         cls,
-        num_particles: torch.Tensor = torch.tensor(10),
-        mu_x: torch.Tensor = torch.tensor(0.0),
-        mu_y: torch.Tensor = torch.tensor(0.0),
-        mu_xp: torch.Tensor = torch.tensor(0.0),
-        mu_yp: torch.Tensor = torch.tensor(0.0),
-        sigma_x: torch.Tensor = torch.tensor(175e-9),
-        sigma_y: torch.Tensor = torch.tensor(175e-9),
-        sigma_xp: torch.Tensor = torch.tensor(2e-7),
-        sigma_yp: torch.Tensor = torch.tensor(2e-7),
-        sigma_s: torch.Tensor = torch.tensor(0.0),
-        sigma_p: torch.Tensor = torch.tensor(0.0),
-        energy: torch.Tensor = torch.tensor(1e8),
+        num_particles: Optional[torch.Tensor] = None,
+        mu_x: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
+        mu_xp: Optional[torch.Tensor] = None,
+        mu_yp: Optional[torch.Tensor] = None,
+        sigma_x: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParticleBeam":
         """
@@ -686,6 +749,21 @@ class ParticleBeam(Beam):
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
+
+        # Set default values without function call in function signature
+        num_particles = num_particles if num_particles is not None else torch.tensor(10)
+        mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
+        mu_xp = mu_xp if mu_xp is not None else torch.tensor(0.0)
+        mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
+        mu_yp = mu_yp if mu_yp is not None else torch.tensor(0.0)
+        sigma_x = sigma_x if sigma_x is not None else torch.tensor(175e-9)
+        sigma_xp = sigma_xp if sigma_xp is not None else torch.tensor(2e-7)
+        sigma_y = sigma_y if sigma_y is not None else torch.tensor(175e-9)
+        sigma_yp = sigma_yp if sigma_yp is not None else torch.tensor(2e-7)
+        sigma_s = sigma_s if sigma_s is not None else torch.tensor(0.0)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+
         particles = torch.ones((num_particles, 7), dtype=torch.float32)
 
         particles[:, 0] = torch.linspace(
