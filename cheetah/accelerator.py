@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -167,7 +167,10 @@ class Drift(Element):
     """
 
     def __init__(
-        self, length: torch.Tensor, name: Optional[str] = None, device: str = "auto"
+        self,
+        length: Union[torch.Tensor, nn.Parameter],
+        name: Optional[str] = None,
+        device: str = "auto",
     ) -> None:
         super().__init__(name=name, device=device)
 
@@ -234,10 +237,10 @@ class Quadrupole(Element):
 
     def __init__(
         self,
-        length: torch.Tensor,
-        k1: torch.Tensor = torch.tensor(0.0),
-        misalignment: torch.Tensor = torch.tensor([0.0, 0.0]),
-        tilt: torch.Tensor = torch.tensor(0.0),
+        length: Union[torch.Tensor, nn.Parameter],
+        k1: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor([0.0, 0.0]),
+        tilt: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -330,14 +333,14 @@ class Dipole(Element):
 
     def __init__(
         self,
-        length: torch.Tensor,
-        angle: torch.Tensor = torch.tensor(0.0),
-        e1: torch.Tensor = torch.tensor(0.0),
-        e2: torch.Tensor = torch.tensor(0.0),
-        tilt: torch.Tensor = torch.tensor(0.0),
-        fringe_integral: torch.Tensor = torch.tensor(0.0),
+        length: Union[torch.Tensor, nn.Parameter],
+        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        e1: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        e2: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        tilt: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        fringe_integral: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         fringe_integral_exit: Optional[torch.Tensor] = None,
-        gap: torch.Tensor = torch.tensor(0.0),
+        gap: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ):
@@ -519,14 +522,14 @@ class RBend(Dipole):
 
     def __init__(
         self,
-        length: torch.Tensor,
-        angle: torch.Tensor = torch.tensor(0.0),
-        e1: torch.Tensor = torch.tensor(0.0),
-        e2: torch.Tensor = torch.tensor(0.0),
-        tilt: torch.Tensor = torch.tensor(0.0),
-        fringe_integral: torch.Tensor = torch.tensor(0.0),
+        length: Union[torch.Tensor, nn.Parameter],
+        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        e1: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        e2: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        tilt: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        fringe_integral: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         fringe_integral_exit: Optional[torch.Tensor] = None,
-        gap: torch.Tensor = torch.tensor(0.0),
+        gap: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ):
@@ -560,8 +563,8 @@ class HorizontalCorrector(Element):
 
     def __init__(
         self,
-        length: torch.Tensor,
-        angle: torch.Tensor = torch.tensor(0.0),
+        length: Union[torch.Tensor, nn.Parameter],
+        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -640,8 +643,8 @@ class VerticalCorrector(Element):
 
     def __init__(
         self,
-        length: torch.Tensor,
-        angle: torch.Tensor = torch.tensor(0.0),
+        length: Union[torch.Tensor, nn.Parameter],
+        angle: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -722,10 +725,10 @@ class Cavity(Element):
 
     def __init__(
         self,
-        length: torch.Tensor,
-        voltage: torch.Tensor = torch.tensor(0.0),
-        phase: torch.Tensor = torch.tensor(0.0),
-        frequency: torch.Tensor = torch.tensor(0.0),
+        length: Union[torch.Tensor, nn.Parameter],
+        voltage: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        phase: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        frequency: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
@@ -1131,10 +1134,10 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: torch.Tensor = torch.tensor((1024, 1024)),
-        pixel_size: torch.Tensor = torch.tensor((1e-3, 1e-3)),
-        binning: torch.Tensor = torch.tensor(1),
-        misalignment: torch.Tensor = torch.tensor((0.0, 0.0)),
+        resolution: Union[torch.Tensor, nn.Parameter] = torch.tensor((1024, 1024)),
+        pixel_size: Union[torch.Tensor, nn.Parameter] = torch.tensor((1e-3, 1e-3)),
+        binning: Union[torch.Tensor, nn.Parameter] = torch.tensor(1),
+        misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor((0.0, 0.0)),
         is_active: bool = False,
         name: Optional[str] = None,
         device: str = "auto",
@@ -1311,8 +1314,8 @@ class Aperture(Element):
 
     def __init__(
         self,
-        x_max: torch.Tensor = torch.inf,
-        y_max: torch.Tensor = torch.inf,
+        x_max: Union[torch.Tensor, nn.Parameter] = torch.inf,
+        y_max: Union[torch.Tensor, nn.Parameter] = torch.inf,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: Optional[str] = None,
@@ -1415,7 +1418,7 @@ class Undulator(Element):
 
     def __init__(
         self,
-        length: torch.Tensor,
+        length: Union[torch.Tensor, nn.Parameter],
         is_active: bool = False,
         name: Optional[str] = None,
         device: str = "auto",
@@ -1491,9 +1494,9 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: torch.Tensor = torch.tensor(0.0),
-        k: torch.Tensor = torch.tensor(0.0),
-        misalignment: torch.Tensor = torch.tensor((0.0, 0.0)),
+        length: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        k: Union[torch.Tensor, nn.Parameter] = torch.tensor(0.0),
+        misalignment: Union[torch.Tensor, nn.Parameter] = torch.tensor((0.0, 0.0)),
         name: Optional[str] = None,
         device: str = "auto",
     ) -> None:
