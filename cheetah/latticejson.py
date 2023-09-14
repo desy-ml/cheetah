@@ -23,7 +23,7 @@ def feature2nontorch(value: Any) -> Any:
     )
 
 
-def convert_element(element: cheetah.Element):
+def convert_element(element: "cheetah.Element"):
     """
     Deconstruct an element into its name, class and parameters for saving to JSON.
 
@@ -38,7 +38,7 @@ def convert_element(element: cheetah.Element):
     return element.name, element.__class__.__name__, params
 
 
-def convert_segment(segment: cheetah.Segment) -> Tuple[dict, dict]:
+def convert_segment(segment: "cheetah.Segment") -> Tuple[dict, dict]:
     """
     Deconstruct a segment into its name, a list of its elements and a dictionary of
     its element parameters for saving to JSON.
@@ -71,7 +71,7 @@ def convert_segment(segment: cheetah.Segment) -> Tuple[dict, dict]:
 
 
 def save_cheetah_model(
-    segment: cheetah.Segment,
+    segment: "cheetah.Segment",
     filename: str,
     title: Optional[str] = None,
     info: str = "This is a placeholder lattice description",
@@ -143,7 +143,7 @@ def nontorch2feature(value: Any) -> Any:
     return value if isinstance(value, (str, bool)) else torch.tensor(value)
 
 
-def parse_element(name: str, lattice_dict: dict) -> cheetah.Element:
+def parse_element(name: str, lattice_dict: dict) -> "cheetah.Element":
     """
     Parse an `Element` named `name` from a `lattice_dict`.
 
@@ -158,7 +158,7 @@ def parse_element(name: str, lattice_dict: dict) -> cheetah.Element:
     return element_class(name=name, **converted_params)
 
 
-def parse_segment(name: str, lattice_dict: dict) -> cheetah.Segment:
+def parse_segment(name: str, lattice_dict: dict) -> "cheetah.Segment":
     """
     Parse a `Segment` named `name` from a `lattice_dict`.
 
@@ -179,7 +179,7 @@ def parse_segment(name: str, lattice_dict: dict) -> cheetah.Segment:
     return cheetah.Segment(elements=elements, name=name)
 
 
-def load_cheetah_model(filename: str) -> cheetah.Segment:
+def load_cheetah_model(filename: str) -> "cheetah.Segment":
     """
     Load a Cheetah model from a JSON file.
 

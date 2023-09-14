@@ -1,5 +1,4 @@
 from cheetah.accelerator import Segment
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -11,14 +10,13 @@ def test_save_and_reload(tmp_path):
     """
     original_segment = Segment.from_ocelot(ares.cell, name="ARES_Segment")
 
-    save_cheetah_model(
-        original_segment,
+    original_segment.to_lattice_json(
         str(tmp_path / "ares_lattice.json"),
         title="ARES LatticeJSON",
         info="Save and reload test for Cheetah using the ARES lattice",
     )
 
-    reloaded_segment = load_cheetah_model(str(tmp_path / "ares_lattice.json"))
+    reloaded_segment = Segment.from_lattice_json(str(tmp_path / "ares_lattice.json"))
 
     assert original_segment.name == reloaded_segment.name
     assert len(original_segment.elements) == len(reloaded_segment.elements)

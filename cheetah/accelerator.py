@@ -15,6 +15,7 @@ from torch import nn
 
 from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.error import DeviceError
+from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator
@@ -1610,6 +1611,34 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name, device=self.device)
+
+    @classmethod
+    def from_lattice_json(cls, filepath: str) -> "Segment":
+        """
+        Load a Cheetah model from a JSON file.
+
+        :param filename: Name/path of the file to load the lattice from.
+        :return: Loaded Cheetah `Segment`.
+        """
+        return load_cheetah_model(filepath)
+
+    def to_lattice_json(
+        self,
+        filepath: str,
+        title: Optional[str] = None,
+        info: str = "This is a placeholder lattice description",
+    ) -> None:
+        """
+        Save a Cheetah model to a JSON file.
+
+        :param filename: Name/path of the file to save the lattice to.
+        :param title: Title of the lattice. If not provided, defaults to the name of the
+        `Segment` object. If that also does not have a name, defaults to "Unnamed
+            Lattice".
+        :param info: Information about the lattice. Defaults to "This is a placeholder
+            lattice description".
+        """
+        save_cheetah_model(self, filepath, title, info)
 
     @classmethod
     def from_ocelot(
