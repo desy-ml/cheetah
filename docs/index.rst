@@ -6,12 +6,6 @@
 Welcome to Cheetah's documentation!
 ===================================
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Contents:
-
-    examples
-
 `Cheetah <https://github.com/desy-ml/cheetah>`_ is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
 GitHub repository: https://github.com/desy-ml/cheetah
@@ -27,6 +21,19 @@ Simply install *Cheetah* from PyPI by running the following command.
 .. code-block:: bash
 
     pip install cheetah-accelerator
+
+
+Examples
+--------
+
+We provide some examples to demonstrate some features of *Cheetah* and show how to use them. They provide a good entry point to using *Cheetah*, but they do not represent its full functionality. To move beyond the examples, please refer to the in-depth documentation. If you feel like other examples should be added, feel free to open an issue on GitHub.
+
+.. toctree::
+    :maxdepth: 2
+
+    examples/simple
+    examples/convert
+    examples/gradientbased
 
 
 Cite Cheetah
