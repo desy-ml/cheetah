@@ -30,10 +30,30 @@ We provide some examples to demonstrate some features of *Cheetah* and show how 
 
 .. toctree::
     :maxdepth: 2
+    :caption: Examples
 
     examples/simple
     examples/convert
     examples/gradientbased
+
+
+Documentation
+-------------
+
+For more advanced usage, please refer to the in-depth documentation.
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Documentation
+
+    accelerator
+    astralavista
+    dontbmad
+    error
+    latticejson
+    nocelot
+    particles
+    track_methods
 
 
 Cite Cheetah
