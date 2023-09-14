@@ -278,3 +278,274 @@ def test_astra_import():
 
     assert np.allclose(beam.particles[:, :6], p_array.rparticles.transpose())
     assert np.isclose(beam.energy, (p_array.E * 1e9))
+
+
+def test_quadrupole():
+    """
+    Test if the tracking results through a Cheeath `Quadrupole` element match those
+    through an Ocelot `Quadrupole` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_quadrupole = cheetah.Quadrupole(length=0.23, k1=5)
+    cheetah_segment = cheetah.Segment(
+        [cheetah.Drift(length=0.1), cheetah_quadrupole, cheetah.Drift(length=0.1)]
+    )
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5)
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Drift(l=0.1), ocelot_quadrupole, ocelot.Drift(l=0.1)]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
+
+
+def test_tilted_quadrupole():
+    """
+    Test if the tracking results through a tilted Cheeath `Quadrupole` element match
+    those through a tilted Ocelot `Quadrupole` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_quadrupole = cheetah.Quadrupole(length=0.23, k1=5, tilt=0.79)
+    cheetah_segment = cheetah.Segment(
+        [cheetah.Drift(length=0.1), cheetah_quadrupole, cheetah.Drift(length=0.1)]
+    )
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5, tilt=0.79)
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Drift(l=0.1), ocelot_quadrupole, ocelot.Drift(l=0.1)]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
+
+
+def test_sbend():
+    """
+    Test if the tracking results through a Cheeath `Dipole` element match those through
+    an Ocelot `SBend` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_dipole = cheetah.Dipole(length=0.1, angle=2e-5)
+    cheetah_segment = cheetah.Segment(
+        [cheetah.Drift(length=0.1), cheetah_dipole, cheetah.Drift(length=0.1)]
+    )
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_sbend = ocelot.SBend(l=0.1, angle=2e-5)
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Drift(l=0.1), ocelot_sbend, ocelot.Drift(l=0.1)]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
+
+
+def test_rbend():
+    """
+    Test if the tracking results through a Cheeath `RBend` element match those through
+    an Ocelot `RBend` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_dipole = cheetah.RBend(length=0.1, angle=2e-5)
+    cheetah_segment = cheetah.Segment(
+        [cheetah.Drift(length=0.1), cheetah_dipole, cheetah.Drift(length=0.1)]
+    )
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_sbend = ocelot.RBend(l=0.1, angle=2e-5)
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Drift(l=0.1), ocelot_sbend, ocelot.Drift(l=0.1)]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
+
+
+def test_cavity():
+    """
+    Compare tracking through a cavity that is on.
+
+    The particular settings tested here also get to the same result in Bmad/Tao. The
+    below lattice was used for the Bmad test:
+    ```
+    ! Lattice file: simple.bmad
+    beginning[beta_a] = 5.91253677 ! m a-mode beta function
+    beginning[beta_b] = 5.91253677 ! m b-mode beta function
+    beginning[alpha_a] = 3.55631308 ! a-mode alpha function
+    beginning[alpha_b] = 3.55631308 ! b-mode alpha function
+    beginning[e_tot] = 6e6 ! eV    Or can set beginning[p0c]
+
+    parameter[geometry] = open  ! Or closed
+    parameter[particle] = electron  ! Reference particle.
+
+    c: lcavity, rf_frequency = 1.3e9, l = 1.0377, voltage = 0.01815975e9, phi0 = 0.0
+
+    lat: line = (c) ! List of lattice elements
+    use, lat ! Line used to construct the lattice
+    ```
+    The twiss parameters at the end of the lattice according to Bmad should be:
+     - beta_x  = 0.23847352510683092
+     - beta_y  = 0.23847352512430994
+     - alpha_x = -1.0160687592932345
+     - alpha_y = -1.0160687593664295
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_twiss(
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emittance_x=3.494768647122823e-09,
+        emittance_y=3.497810737006068e-09,
+        energy=6e6,
+    )
+    cheetah_cavity = cheetah.Cavity(
+        length=1.0377, voltage=0.01815975e9, frequency=1.3e9, phase=0.0
+    )
+    outgoing_beam = cheetah_cavity.track(incoming_beam)
+
+    # Ocelot
+    tws = ocelot.Twiss()
+    tws.beta_x = 5.91253677
+    tws.alpha_x = 3.55631308
+    tws.beta_y = 5.91253677
+    tws.alpha_y = 3.55631308
+    tws.emit_x = 3.494768647122823e-09
+    tws.emit_y = 3.497810737006068e-09
+    tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
+    tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
+    tws.E = 6e-3
+
+    p_array = ocelot.generate_parray(tws=tws)
+
+    cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
+    lattice = ocelot.MagneticLattice(cell)
+    navigator = ocelot.Navigator(lattice=lattice)
+
+    _, outgoing_parray = ocelot.track(lattice, deepcopy(p_array), navigator)
+    derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
+
+    # Compare
+    assert np.isclose(outgoing_beam.beta_x, derived_twiss.beta_x, rtol=1e-2)
+    assert np.isclose(outgoing_beam.alpha_x, derived_twiss.alpha_x, rtol=1e-2)
+    assert np.isclose(outgoing_beam.beta_y, derived_twiss.beta_y, rtol=1e-2)
+    assert np.isclose(outgoing_beam.alpha_y, derived_twiss.alpha_y, rtol=1e-2)

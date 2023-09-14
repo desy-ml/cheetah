@@ -13,7 +13,9 @@ REST_ENERGY = (
 )  # electron mass
 
 
-def rotation_matrix(angle: float, device: Union[str, torch.device] = "auto"):
+def rotation_matrix(
+    angle: float, device: Union[str, torch.device] = "auto"
+) -> torch.Tensor:
     """Rotate the transfer map in x-y plane
 
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
@@ -47,7 +49,20 @@ def base_rmatrix(
     tilt: float = 0.0,
     energy: float = 0.0,
     device: Union[str, torch.device] = "auto",
-):
+) -> torch.Tensor:
+    """
+    Create a universal transfer matrix for a beamline element.
+
+    :param length: Length of the element in m.
+    :param k1: Quadrupole strength in 1/m**2.
+    :param hx: Curvature (1/radius) of the element in 1/m**2.
+    :param tilt: Roation of the element relative to the longitudinal axis in rad.
+    :param energy: Beam energy in eV.
+    :param device: Device where the transfer matrix is created. If "auto", the device
+        is selected automatically.
+    :return: Transfer matrix for the element.
+    """
+
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     gamma = energy / REST_ENERGY
@@ -90,7 +105,7 @@ def base_rmatrix(
 
     # Rotate the R matrix for skew / vertical magnets
     if tilt != 0:
-        R = torch.dot(torch.dot(rotation_matrix(-tilt), R), rotation_matrix(tilt))
+        R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
     return R
 
 
