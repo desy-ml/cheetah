@@ -17,19 +17,21 @@ pip install cheetah-accelerator
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
 ```python
-segment = Segment([
-    BPM(name="BPM1SMATCH"),
-    Drift(length=torch.tensor(1.0)),
-    BPM(name="BPM6SMATCH"),
-    Drift(length=torch.tensor(1.0)),
-    VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
-    Drift(length=torch.tensor(0.2)),
-    HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
-    Drift(length=torch.tensor(7.0)),
-    HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
-    Drift(length=torch.tensor(0.05)),
-    BPM(name="BPM13SMATCH"),
-])
+segment = Segment(
+    elements=[
+        BPM(name="BPM1SMATCH"),
+        Drift(length=torch.tensor(1.0)),
+        BPM(name="BPM6SMATCH"),
+        Drift(length=torch.tensor(1.0)),
+        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
+        Drift(length=torch.tensor(0.2)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
+        Drift(length=torch.tensor(7.0)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
+        Drift(length=torch.tensor(0.05)),
+        BPM(name="BPM13SMATCH"),
+    ]
+)
 ```
 
 Alternatively you can create a segment from an Ocelot cell by running
@@ -80,13 +82,11 @@ To cite Cheetah in publications:
 
 ```bibtex
 @inproceedings{stein2022accelerating,
-    author = {Stein, Oliver and
-              Kaiser, Jan and
-              Eichler, Annika},
-    title = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
-    booktitle = {Proceedings of the 13th International Particle Accelerator Conference},
-    year = {2022},
-    url = {https://github.com/desy-ml/cheetah},
+    title        = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+    author       = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
+    year         = 2022,
+    booktitle    = {Proceedings of the 13th International Particle Accelerator Conference},
+    url          = {https://github.com/desy-ml/cheetah}
 }
 ```
 
