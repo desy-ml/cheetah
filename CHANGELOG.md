@@ -4,14 +4,14 @@
 
 ### 🚨 Breaking Changes
 
-Cheetah elements are now subclasses of `torch.nn.Module`, where the parameters should always be `torch.Tensor`.
-This makes cheetah a _fully differentiable simulation code_.
-(see #11)
+- Cheetah elements are now subclasses of `torch.nn.Module`, where the parameters should always be `torch.Tensor`. This makes cheetah a _fully differentiable simulation code_. (see #11)
+- The `cell` keyword argument of `cheetah.Segment` has been renamed to `elements`.
+- Element and beam parameters must now always be passed to the constructor or set afterwards as a `torch.Tensor`. It is no longer possible to use `float`, `int` or `np.ndarray`. (see #11)
 
 ### 🚀 Features
 
-- Convert from Bmad lattice
-- Add proper transfer map for cavity
+- Convert from Bmad lattices files (see #65) (@jank324)
+- Add proper transfer map for cavity (see #65) (@jank324, @cr-xu)
 - Twiss parameter calculation and generate new beam from twiss parameter (see #62) (@jank324, @cr-xu)
 - Saving and loading lattices from JSON (see #9) (@cr-xu)
 
