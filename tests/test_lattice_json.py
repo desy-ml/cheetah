@@ -1,10 +1,11 @@
 import os
-import test.ARESlatticeStage3v1_9 as ares
 
 import pytest
 
 from cheetah.accelerator import Segment
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
+
+from .resources import ARESlatticeStage3v1_9 as ares
 
 cheetah_segment = Segment.from_ocelot(ares.cell, name="ARES_Segment")
 

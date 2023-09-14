@@ -1,9 +1,10 @@
-import test.ARESlatticeStage3v1_9 as ares
 import time
 
 import torch
 
 import cheetah
+
+from .resources import ARESlatticeStage3v1_9 as ares
 
 
 # TODO: Test that Cheeath tracks faster than Ocelot
@@ -21,7 +22,7 @@ def test_tracking_speed():
 
     t1 = time.time()
 
-    _ = segment(particles)
+    _ = segment.track(particles)
     _ = segment.AREABSCR1.reading
 
     t2 = time.time()

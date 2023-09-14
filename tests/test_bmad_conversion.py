@@ -5,7 +5,7 @@ import cheetah
 
 def test_bmad_tutorial():
     """Test importing the lattice example file from the Bmad and Tao tutorial."""
-    file_path = "test/bmad/bmad_tutorial_lattice.bmad"
+    file_path = "tests/resources/bmad_tutorial_lattice.bmad"
     converted = cheetah.Segment.from_bmad(file_path)
     converted.name = "bmad_tutorial"
 

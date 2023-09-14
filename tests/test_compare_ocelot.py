@@ -1,4 +1,3 @@
-import test.ARESlatticeStage3v1_9 as ares
 from copy import deepcopy
 
 import numpy as np
@@ -6,6 +5,8 @@ import ocelot
 import torch
 
 import cheetah
+
+from .resources import ARESlatticeStage3v1_9 as ares
 
 
 def test_dipole():

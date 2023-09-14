@@ -1,8 +1,8 @@
-import test.ARESlatticeStage3v1_9 as ares
-
 import pytest
 
 from cheetah import Screen, Segment
+
+from .resources import ARESlatticeStage3v1_9 as ares
 
 
 @pytest.mark.parametrize(
