@@ -183,12 +183,16 @@ def parse_cheetah_element(element: acc.Element):
         params = {"length": element.length, "angle": element.angle}
     elif isinstance(element, acc.Cavity):
         element_class = "Cavity"
-        params = {"length": element.length, "delta_energy": element.delta_energy}
+        params = {
+            "length": element.length,
+            "voltage": element.voltage,
+            "phase": element.phase,
+        }
     elif isinstance(element, acc.BPM):
         element_class = "BPM"
         params = {}
-    elif isinstance(element, acc.Monitor):
-        element_class = "Monitor"
+    elif isinstance(element, acc.Marker):
+        element_class = "Marker"
         params = {}
     elif isinstance(element, acc.Screen):
         element_class = "Screen"
