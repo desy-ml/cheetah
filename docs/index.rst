@@ -45,15 +45,15 @@ A sequence of accelerator elements (or a lattice) is called a `Segment` in *Chee
 
     segment = Segment([
         BPM(name="BPM1SMATCH"),
-        Drift(length=1.0),
+        Drift(length=torch.tensor(1.0)),
         BPM(name="BPM6SMATCH"),
-        Drift(length=1.0),
-        VerticalCorrector(length=0.3, name="V7SMATCH"),
-        Drift(length=0.2),
-        HorizontalCorrector(length=0.3, name="H10SMATCH"),
-        Drift(length=7.0),
-        HorizontalCorrector(length=0.3, name="H12SMATCH"),
-        Drift(length=0.05),
+        Drift(length=torch.tensor(1.0)),
+        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
+        Drift(length=torch.tensor(0.2)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
+        Drift(length=torch.tensor(7.0)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
+        Drift(length=torch.tensor(0.05)),
         BPM(name="BPM13SMATCH"),
     ])
 
@@ -67,7 +67,7 @@ All elements can be accesses as a property of the segment via their name. The st
 
 .. code-block:: python
 
-    segment.AREAMQZM2.k1 = 4.2
+    segment.AREAMQZM2.k1 = torch.tensor(4.2)
 
 In order to track a beam through the segment, simply call the segment like so
 
