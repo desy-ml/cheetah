@@ -13,7 +13,7 @@
 - Convert from Bmad lattices files (see #65) (@jank324)
 - Add proper transfer map for cavity (see #65) (@jank324, @cr-xu)
 - Twiss parameter calculation and generate new beam from twiss parameter (see #62) (@jank324, @cr-xu)
-- Saving and loading lattices from JSON (see #9) (@cr-xu)
+- Saving and loading lattices from LatticeJSON (see #9) (@cr-xu)
 
 ### 🐛 Bug fixes
 
