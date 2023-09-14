@@ -88,13 +88,12 @@ def save_cheetah_model(
     :param info: Information about the lattice. Defaults to "This is a placeholder
         lattice description".
     """
+    if title is None:
+        title = segment.name if segment.name is not None else "Unnamed Lattice"
+
     metadata = {
         "version": "cheetah-0.6",
-        "title": (
-            title
-            if title is not None
-            else segment.name if segment.name is not None else "Unnamed Lattice"
-        ),
+        "title": title,
         "info": info,
         "root": segment.name if segment.name is not None else "cell",
     }
