@@ -1119,7 +1119,7 @@ class Screen(Element):
         )
         self.is_active = is_active
 
-        self.read_beam = None
+        self.set_read_beam(None)
         self.cached_reading = None
 
     @property
@@ -1163,22 +1163,16 @@ class Screen(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:
+            copy_of_incoming = deepcopy(incoming)
+
             if isinstance(incoming, ParameterBeam):
-                self.read_beam = deepcopy(incoming)
-                self.read_beam._mu[0] -= self.misalignment[0]
-                self.read_beam._mu[2] -= self.misalignment[1]
+                copy_of_incoming._mu[0] -= self.misalignment[0]
+                copy_of_incoming._mu[2] -= self.misalignment[1]
             elif isinstance(incoming, ParticleBeam):
-                self.read_beam = deepcopy(incoming)
-                x_offset = torch.full(
-                    (self.read_beam.num_particles,), self.misalignment[0]
-                )
-                y_offset = torch.full(
-                    (self.read_beam.num_particles,), self.misalignment[1]
-                )
-                self.read_beam.particles[:, 0] -= x_offset
-                self.read_beam.particles[:, 1] -= y_offset
-            else:
-                self.read_beam = incoming
+                copy_of_incoming.particles[:, 0] -= self.misalignment[0]
+                copy_of_incoming.particles[:, 1] -= self.misalignment[1]
+
+            self.set_read_beam(copy_of_incoming)
 
             return Beam.empty
         else:
@@ -1189,16 +1183,17 @@ class Screen(Element):
         if self.cached_reading is not None:
             return self.cached_reading
 
-        if self.read_beam is Beam.empty or self.read_beam is None:
+        read_beam = self.get_read_beam()
+        if read_beam is Beam.empty or read_beam is None:
             image = torch.zeros(
                 (self.effective_resolution[1], self.effective_resolution[0])
             )
-        elif isinstance(self.read_beam, ParameterBeam):
-            transverse_mu = torch.stack([self.read_beam._mu[0], self.read_beam._mu[2]])
+        elif isinstance(read_beam, ParameterBeam):
+            transverse_mu = torch.stack([read_beam._mu[0], read_beam._mu[2]])
             transverse_cov = torch.stack(
                 [
-                    torch.stack([self.read_beam._cov[0, 0], self.read_beam._cov[0, 2]]),
-                    torch.stack([self.read_beam._cov[2, 0], self.read_beam._cov[2, 2]]),
+                    torch.stack([read_beam._cov[0, 0], read_beam._cov[0, 2]]),
+                    torch.stack([read_beam._cov[2, 0], read_beam._cov[2, 2]]),
                 ]
             )
             dist = multivariate_normal(
@@ -1215,26 +1210,30 @@ class Screen(Element):
             pos = torch.dstack((x, y))
             image = dist.pdf(pos)
             image = torch.flipud(image.T)
-        elif isinstance(self.read_beam, ParticleBeam):
+        elif isinstance(read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
-                torch.stack((self.read_beam.xs, self.read_beam.ys)).T,
+                torch.stack((read_beam.xs, read_beam.ys)).T,
                 bins=self.pixel_bin_edges,
             )
             image = torch.flipud(image.T)
             image = image.cpu()
         else:
-            raise TypeError(f"Read beam is of invalid type {type(self.read_beam)}")
+            raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
         self.cached_reading = image
         return image
 
-    @property
-    def read_beam(self) -> Beam:
-        return self._read_beam
+    def get_read_beam(self) -> Beam:
+        # Using these get and set methods instead of Python's property decorator to
+        # prevent `nn.Module` from intercepting the read beam, which is itself an
+        # `nn.Module`, and registering it as a submodule of the screen.
+        return self._read_beam[0] if self._read_beam is not None else None
 
-    @read_beam.setter
-    def read_beam(self, value: Beam) -> None:
-        self._read_beam = value
+    def set_read_beam(self, value: Beam) -> None:
+        # Using these get and set methods instead of Python's property decorator to
+        # prevent `nn.Module` from intercepting the read beam, which is itself an
+        # `nn.Module`, and registering it as a submodule of the screen.
+        self._read_beam = [value]
         self.cached_reading = None
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
