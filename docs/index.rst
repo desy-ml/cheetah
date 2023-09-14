@@ -10,18 +10,11 @@ Welcome to Cheetah's documentation!
     :maxdepth: 2
     :caption: Contents:
 
-    accelerator
-    astralavista
-    dontbmad
-    error
-    latticejson
-    nocelot
-    particles
-    track_methods
+    examples
 
 `Cheetah <https://github.com/desy-ml/cheetah>`_ is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
 
-Github repository: https://github.com/desy-ml/cheetah
+GitHub repository: https://github.com/desy-ml/cheetah
 
 Paper: https://accelconf.web.cern.ch/ipac2022/papers/wepoms036.pdf
 
@@ -35,69 +28,6 @@ Simply install *Cheetah* from PyPI by running the following command.
 
     pip install cheetah-accelerator
 
-
-How To Use
-----------
-
-A sequence of accelerator elements (or a lattice) is called a `Segment` in *Cheetah*. You can create a `Segment` as follows
-
-.. code-block:: python
-
-    segment = Segment([
-        BPM(name="BPM1SMATCH"),
-        Drift(length=torch.tensor(1.0)),
-        BPM(name="BPM6SMATCH"),
-        Drift(length=torch.tensor(1.0)),
-        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
-        Drift(length=torch.tensor(0.2)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
-        Drift(length=torch.tensor(7.0)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
-        Drift(length=torch.tensor(0.05)),
-        BPM(name="BPM13SMATCH"),
-    ])
-
-Alternatively you can create a segment from an Ocelot cell by running
-
-.. code-block:: python
-
-    segment = Segment.from_ocelot(cell)
-
-All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named *AREAMQZM2* for example, may be set by running
-
-.. code-block:: python
-
-    segment.AREAMQZM2.k1 = torch.tensor(4.2)
-
-In order to track a beam through the segment, simply call the segment like so
-
-.. code-block:: python
-
-    outgoing_beam = segment(incoming_beam)
-
-You can choose to track either a beam defined by its parameters (fast) or by its particles (precise). *Cheetah* defines two different beam classes for this purpose and beams may be created by
-
-.. code-block:: python
-
-    beam1 = ParameterBeam.from_parameters()
-    beam2 = ParticleBeam.from_parameters()
-
-It is also possible to load beams from Ocelot `ParticleArray` or Astra particle distribution files for both types of beam
-
-.. code-block:: python
-
-    ocelot_beam = ParticleBeam.from_ocelot(parray)
-    astra_beam = ParticleBeam.from_astra(filepath)
-
-You may plot a segment with reference particle traces bay calling
-
-.. code-block:: python
-
-    segment.plot_overview(beam=beam)
-
-.. image:: _static/misalignment.png
-
-where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
 
 Cite Cheetah
 ------------
