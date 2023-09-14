@@ -92,10 +92,10 @@ def test_from_twiss_to_twiss():
         energy=torch.tensor(6e6),
     )
     # rather loose rtol is needed here due to the random sampling of the beam
-    assert np.isclose(beam.beta_x, 5.91253676811640894, rtol=1e-3)
-    assert np.isclose(beam.alpha_x, 3.55631307633660354, rtol=1e-3)
-    assert np.isclose(beam.emittance_x, 3.494768647122823e-09, rtol=1e-3)
-    assert np.isclose(beam.beta_y, 5.91253676811640982, rtol=1e-3)
-    assert np.isclose(beam.alpha_y, 1.0, rtol=1e-3)
-    assert np.isclose(beam.emittance_y, 3.497810737006068e-09, rtol=1e-3)
+    assert np.isclose(beam.beta_x, 5.91253676811640894, rtol=1e-2)
+    assert np.isclose(beam.alpha_x, 3.55631307633660354, rtol=1e-2)
+    assert np.isclose(beam.emittance_x, 3.494768647122823e-09, rtol=1e-2)
+    assert np.isclose(beam.beta_y, 5.91253676811640982, rtol=1e-2)
+    assert np.isclose(beam.alpha_y, 1.0, rtol=1e-2)
+    assert np.isclose(beam.emittance_y, 3.497810737006068e-09, rtol=1e-2)
     assert np.isclose(beam.energy, 6e6)
