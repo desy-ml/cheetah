@@ -17,6 +17,9 @@ from cheetah.dontbmad import convert_bmad_lattice
 from cheetah.error import DeviceError
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
+from cheetah.utils import UniqueNameGenerator
+
+generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 rest_energy = torch.tensor(
     constants.electron_mass
@@ -40,7 +43,7 @@ class Element(ABC, nn.Module):
     def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
         super().__init__()
 
-        self.name = name
+        self.name = name if name is not None else generate_unique_name()
 
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -116,7 +119,7 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return ["name", "device"]
+        return []
 
     @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
@@ -1658,9 +1661,10 @@ class Segment(Element):
 
     @property
     def length(self) -> float:
-        return torch.sum(
-            element.length for element in self.elements if hasattr(element, "length")
+        lengths = torch.stack(
+            [element.length for element in self.elements if hasattr(element, "length")]
         )
+        return torch.sum(lengths)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:

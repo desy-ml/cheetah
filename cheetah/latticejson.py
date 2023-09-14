@@ -1,126 +1,121 @@
 import json
-from typing import Optional
+from typing import Any, Optional, Tuple
+
+import torch
 
 import cheetah
 
 
-# Saving Cheetah to JSON
-def parse_cheetah_element(element: cheetah.Element):
-    """Get information from cheetah element for saving
+def feature2nontorch(value: Any) -> Any:
+    """
+    if necesary, convert an the value of a feature of a `cheetah.Element` to a non-torch
+    type that can be saved to LatticeJSON.
+
+    :param value: Value of the feature that might be in some kind of PyTorch format,
+        such as `torch.Tensor` or `torch.nn.Parameter`.
+    :return: Value of the feature if it is not in a PyTorch format, otherwise the
+        value converted to a non-PyTorch format.
+    """
+    return (
+        value.tolist()
+        if isinstance(value, (torch.Tensor, torch.nn.Parameter))
+        else value
+    )
+
+
+def convert_element(element: cheetah.Element):
+    """
+    Deconstruct an element into its name, class and parameters for saving to JSON.
 
     :param element: Cheetah element
     :return: Tuple of element name, element class, and element parameters
     """
-    element_name = element.name
-    if isinstance(element, cheetah.Drift):
-        element_class = "Drift"
-        params = {"length": element.length}
-    elif isinstance(element, cheetah.Dipole):
-        element_class = "Dipole"
-        params = {
-            "length": element.length,
-            "angle": element.angle,
-            "e1": element.e1,
-            "e2": element.e2,
-            "gap": element.gap,
-            "tilt": element.tilt,
-            "fint": element.fringe_integral,
-            "fintx": element.fringe_integral,
-        }
-    elif isinstance(element, cheetah.Quadrupole):
-        element_class = "Quadrupole"
-        params = {
-            "length": element.length,
-            "k1": element.k1,
-            "misalignment": element.misalignment,
-            "tilt": element.tilt,
-        }
-    elif isinstance(element, cheetah.HorizontalCorrector):
-        element_class = "HorizontalCorrector"
-        params = {"length": element.length, "angle": element.angle}
-    elif isinstance(element, cheetah.VerticalCorrector):
-        element_class = "VerticalCorrector"
-        params = {"length": element.length, "angle": element.angle}
-    elif isinstance(element, cheetah.Cavity):
-        element_class = "Cavity"
-        params = {
-            "length": element.length,
-            "voltage": element.voltage,
-            "phase": element.phase,
-        }
-    elif isinstance(element, cheetah.BPM):
-        element_class = "BPM"
-        params = {}
-    elif isinstance(element, cheetah.Marker):
-        element_class = "Marker"
-        params = {}
-    elif isinstance(element, cheetah.Screen):
-        element_class = "Screen"
-        params = {
-            "resolution": element.resolution,
-            "pixel_size": element.pixel_size,
-            "binning": element.binning,
-            "misalignment": element.misalignment,
-        }
-    elif isinstance(element, cheetah.Aperture):
-        element_class = "Aperture"
-        params = {"x_max": element.x_max, "y_max": element.y_max, "type": element.shape}
-    elif isinstance(element, cheetah.Solenoid):
-        element_class = "Solenoid"
-        params = {
-            "length": element.length,
-            "k": element.k,
-            "misalignment": element.misalignment,
-        }
-    elif isinstance(element, cheetah.Undulator):
-        element_class = "Undulator"
-        params = {"length": element.length}
-    else:
-        print(element)
-        raise ValueError("Element type not supported")
+    params = {
+        feauture: feature2nontorch(getattr(element, feauture))
+        for feauture in element.defining_features
+    }
 
-    return element_name, element_class, params
+    return element.name, element.__class__.__name__, params
+
+
+def convert_segment(segment: cheetah.Segment) -> Tuple[dict, dict]:
+    """
+    Deconstruct a segment into its name, a list of its elements and a dictionary of
+    its element parameters for saving to JSON.
+
+    :param segment: Cheetah segment.
+    :return: Tuple of elments and lattices dictionaries found in segment, including
+        the segment itself.
+    """
+    elements = {}
+    lattices = {}
+
+    cell = []
+
+    for element in segment.elements:
+        if isinstance(element, cheetah.Segment):
+            segment_elements, segment_lattices = convert_segment(element)
+
+            elements.update(segment_elements)
+            lattices.update(segment_lattices)
+        else:
+            element_name, element_class, element_params = convert_element(element)
+
+            elements[element_name] = [element_class, element_params]
+
+        cell.append(element_name)
+
+    lattices[segment.name] = cell
+
+    return elements, lattices
 
 
 def save_cheetah_model(
-    segment: cheetah.Segment, fname: str, metadata: Optional[dict] = None
-):
-    """Save a cheetah model to json file accoding to the lattice-json convention
+    segment: cheetah.Segment,
+    filename: str,
+    title: Optional[str] = None,
+    info: str = "This is a placeholder lattice description",
+) -> None:
+    """
+    Save a cheetah model to json file accoding to the lattice-json convention
     c.f. https://github.com/nobeam/latticejson
 
-    :param segment: Cheetah segment to save
-    :param fname: Filename to save to
-    :param metadata: Metadata for the saved lattice, by default {}
+    :param segment: Cheetah `Segment` to save.
+    :param filename: Name/path of the file to save the lattice to.
+    :param title: Title of the lattice. If not provided, defaults to the name of the
+        `Segment` object. If that also does not have a name, defaults to "Unnamed
+        Lattice".
+    :param info: Information about the lattice. Defaults to "This is a placeholder
+        lattice description".
     """
-    if metadata is None:
-        metadata = {
-            "version": "1.0",
-            "title": "Test Lattice",
-            "info": "This is a placeholder lattice description",
-            "root": "cell",
-        }
+    metadata = {
+        "version": "cheetah-0.6",
+        "title": (
+            title
+            if title is not None
+            else segment.name if segment.name is not None else "Unnamed Lattice"
+        ),
+        "info": info,
+        "root": segment.name if segment.name is not None else "cell",
+    }
+
     lattice_dict = metadata.copy()
 
-    # Get elements
-    cell = []
-    elements = {}
-    for element in segment.elements:
-        element_name, element_class, params = parse_cheetah_element(element)
-        elements[element_name] = [element_class, params]
-        cell.append(element_name)
+    elements, lattices = convert_segment(segment)
     lattice_dict["elements"] = elements
-    lattice_dict["lattices"] = {
-        "cell": cell,
-    }
-    with open(fname, "w") as f:
+    lattice_dict["lattices"] = lattices
+
+    with open(filename, "w") as f:
         s = json.dumps(lattice_dict, cls=CompactJSONEncoder, indent=4)
         f.write(s)
-        # json.dump(lattice_dict, f, indent=4, separators=(",", ': '))
 
 
-# taken from https://github.com/nobeam/latticejson/blob/main/latticejson/format.py
 class CompactJSONEncoder(json.JSONEncoder):
-    """A JSON Encoder which only indents the first two levels."""
+    """
+    A JSON Encoder which only indents the first two levels.
+
+    Taken from https://github.com/nobeam/latticejson/blob/main/latticejson/format.py
+    """
 
     def encode(self, obj, level=0):
         if isinstance(obj, dict) and level < 2:
@@ -136,23 +131,64 @@ class CompactJSONEncoder(json.JSONEncoder):
             return json.dumps(obj)
 
 
-# Loading Cheetah from JSON
-def load_cheetah_model(fname: str, name: Optional[str] = None) -> cheetah.Segment:
-    """Load a cheetah model from json file"""
-    with open(fname, "r") as f:
-        lattice_dict = json.load(f)
-    cell = []
-    for element_name in lattice_dict["lattices"]["cell"]:
+def nontorch2feature(value: Any) -> Any:
+    """
+    Convert a value like a float, int, etc. to a torch tensor if necessary. Values of
+    type `str` and `bool` are not converted, because the all currently existing
+    `cheetah.Element` subclasses expect these values to not be `torch.Tensor`s.
+
+    :param value: Value to convert to a `torch.Tensor` if necessary.
+    :return: Value converted to a `torch.Tensor` if necessary.
+    """
+    return value if isinstance(value, (str, bool)) else torch.tensor(value)
+
+
+def parse_element(name: str, lattice_dict: dict) -> cheetah.Element:
+    """
+    Parse an `Element` named `name` from a `lattice_dict`.
+
+    :param name: Name of the `Element` to parse.
+    :param lattice_dict: Dictionary containing the lattice information.
+    """
+    element_class = getattr(cheetah, lattice_dict["elements"][name][0])
+    params = lattice_dict["elements"][name][1]
+
+    converted_params = {key: nontorch2feature(value) for key, value in params.items()}
+
+    return element_class(name=name, **converted_params)
+
+
+def parse_segment(name: str, lattice_dict: dict) -> cheetah.Segment:
+    """
+    Parse a `Segment` named `name` from a `lattice_dict`.
+
+    :param name: Name of the `Segment` to parse.
+    :param lattice_dict: Dictionary containing the lattice information.
+    """
+    elements = []
+    for element_name in lattice_dict["lattices"][name]:
         # Construct new element
-        cell.append(
-            str_to_class(lattice_dict["elements"][element_name][0])(
-                name=element_name, **lattice_dict["elements"][element_name][1]
-            )
-        )
+        if element_name in lattice_dict["lattices"]:
+            new_element = parse_segment(element_name, lattice_dict)
+        else:
+            new_element = parse_element(element_name, lattice_dict)
 
-    return cheetah.Segment(elements=cell, name=name)
+        # Append the element to the list of elements
+        elements.append(new_element)
+
+    return cheetah.Segment(elements=elements, name=name)
 
 
-def str_to_class(classname: str):
-    # get class from string
-    return getattr(cheetah, classname)
+def load_cheetah_model(filename: str) -> cheetah.Segment:
+    """
+    Load a Cheetah model from a JSON file.
+
+    :param filename: Name/path of the file to load the lattice from.
+    :return: Loaded Cheetah `Segment`.
+    """
+    with open(filename, "r") as f:
+        lattice_dict = json.load(f)
+
+    root_name = lattice_dict["root"]
+
+    return parse_segment(root_name, lattice_dict)
