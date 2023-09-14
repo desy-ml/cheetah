@@ -1,5 +1,12 @@
 <img src="images/logo.png" align="right" width="25%"/>
 
+![format](https://github.com/desy-ml/cheetah/actions/workflows/format.yml/badge.svg)
+![pytest](https://github.com/desy-ml/cheetah/actions/workflows/pytest.yml/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/cheetah-accelerator/badge/?version=latest)](https://cheetah-accelerator.readthedocs.io/en/latest/?badge=latest)
+[![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+<!-- [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
+
 # Cheetah
 
 Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
