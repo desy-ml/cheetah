@@ -1,5 +1,12 @@
 <img src="images/logo.png" align="right" width="25%"/>
 
+![format](https://github.com/desy-ml/cheetah/actions/workflows/format.yml/badge.svg)
+![pytest](https://github.com/desy-ml/cheetah/actions/workflows/pytest.yml/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/cheetah-accelerator/badge/?version=latest)](https://cheetah-accelerator.readthedocs.io/en/latest/?badge=latest)
+[![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+<!-- [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
+
 # Cheetah
 
 Cheetah is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
@@ -17,19 +24,21 @@ pip install cheetah-accelerator
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
 ```python
-segment = Segment([
-    BPM(name="BPM1SMATCH"),
-    Drift(length=1.0),
-    BPM(name="BPM6SMATCH"),
-    Drift(length=1.0),
-    VerticalCorrector(length=0.3, name="V7SMATCH"),
-    Drift(length=0.2),
-    HorizontalCorrector(length=0.3, name="H10SMATCH"),
-    Drift(length=7.0),
-    HorizontalCorrector(length=0.3, name="H12SMATCH"),
-    Drift(length=0.05),
-    BPM(name="BPM13SMATCH"),
-])
+segment = Segment(
+    elements=[
+        BPM(name="BPM1SMATCH"),
+        Drift(length=torch.tensor(1.0)),
+        BPM(name="BPM6SMATCH"),
+        Drift(length=torch.tensor(1.0)),
+        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
+        Drift(length=torch.tensor(0.2)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
+        Drift(length=torch.tensor(7.0)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
+        Drift(length=torch.tensor(0.05)),
+        BPM(name="BPM13SMATCH"),
+    ]
+)
 ```
 
 Alternatively you can create a segment from an Ocelot cell by running
@@ -41,7 +50,7 @@ segment = Segment.from_ocelot(cell)
 All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
 
 ```python
-segment.AREAMQZM2.k1 = 4.2
+segment.AREAMQZM2.k1 = torch.tensor(4.2)
 ```
 
 In order to track a beam through the segment, simply call the segment like so
@@ -80,13 +89,11 @@ To cite Cheetah in publications:
 
 ```bibtex
 @inproceedings{stein2022accelerating,
-    author = {Stein, Oliver and
-              Kaiser, Jan and
-              Eichler, Annika},
-    title = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
-    booktitle = {Proceedings of the 13th International Particle Accelerator Conference},
-    year = {2022},
-    url = {https://github.com/desy-ml/cheetah},
+    title        = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+    author       = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
+    year         = 2022,
+    booktitle    = {Proceedings of the 13th International Particle Accelerator Conference},
+    url          = {https://github.com/desy-ml/cheetah}
 }
 ```
 

@@ -1,11 +1,9 @@
-name: Python testing
+name: pytest
 
-on:
-  [push, pull_request]
+on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
