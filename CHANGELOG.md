@@ -14,6 +14,7 @@
 - Add proper transfer map for cavity (see #65) (@jank324, @cr-xu)
 - Twiss parameter calculation and generate new beam from twiss parameter (see #62) (@jank324, @cr-xu)
 - Saving and loading lattices from LatticeJSON (see #9) (@cr-xu)
+- Nested `Segment`s can now be flattened (@jank324)
 
 ### 🐛 Bug fixes
 
