@@ -15,6 +15,7 @@
 - Twiss parameter calculation and generate new beam from twiss parameter (see #62) (@jank324, @cr-xu)
 - Saving and loading lattices from LatticeJSON (see #9) (@cr-xu)
 - Nested `Segment`s can now be flattened (@jank324)
+- Ocelot converter adds support for `Cavity`, `TDCavity`, `Marker`, `Monitor`, `RBend`, `SBend`, `Aperture` and `Solenoid` (see #78) (@jank324)
 
 ### 🐛 Bug fixes
 
