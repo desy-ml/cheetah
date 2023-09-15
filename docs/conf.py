@@ -15,9 +15,9 @@ sys.path.insert(0, os.path.abspath("../cheetah"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Cheetah"
-copyright = "2023, Jan Kaiser, Chenran Xu, Oliver Stein"
-author = "Jan Kaiser, Chenran Xu, Oliver Stein"
-release = "0.5.19"
+copyright = "2023, Jan Kaiser, Chenran Xu"
+author = "Jan Kaiser, Chenran Xu"
+release = "0.6.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
