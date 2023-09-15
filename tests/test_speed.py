@@ -10,7 +10,9 @@ from .resources import ARESlatticeStage3v1_9 as ares
 # TODO: Test that Cheeath tracks faster than Ocelot
 def test_tracking_speed():
     """Really only tests that Cheetah isn't super slow."""
-    cell = cheetah.nocelot.subcell_of_ocelot(ares.cell, "AREASOLA1", "AREABSCR1")
+    cell = cheetah.converters.nocelot.subcell_of_ocelot(
+        ares.cell, "AREASOLA1", "AREABSCR1"
+    )
     segment = cheetah.Segment.from_ocelot(cell)
     segment.AREABSCR1.is_active = True  # Turn screen on and off
 
