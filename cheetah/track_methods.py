@@ -71,6 +71,8 @@ def base_rmatrix(
 
     beta = torch.sqrt(1 - igamma2)
 
+    if k1 == 0:
+        k1 = k1 + torch.tensor(1e-10, device=device)  # Avoid division by zero
     kx2 = k1 + hx**2
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0)))
@@ -79,14 +81,9 @@ def base_rmatrix(
     cy = torch.cos(ky * length).real
     sy = (torch.sin(ky * length) / ky).real if ky != 0 else length
 
-    if kx != 0:
-        sx = (torch.sin(kx * length) / kx).real
-        dx = hx / kx2 * (1.0 - cx)
-        r56 = hx**2 * (length - sx) / kx2 / beta**2
-    else:
-        sx = length
-        dx = length**2 * hx / 2
-        r56 = hx**2 * length**3 / 6 / beta**2
+    sx = (torch.sin(kx * length) / kx).real
+    dx = hx / kx2 * (1.0 - cx)
+    r56 = hx**2 * (length - sx) / kx2 / beta**2
 
     r56 -= length / beta**2 * igamma2
 
