@@ -1,7 +1,6 @@
-name: python formatting
+name: format
 
-on:
-  [push, pull_request]
+on: [push, pull_request]
 
 jobs:
   format:
@@ -22,7 +21,7 @@ jobs:
 
       - name: Run isort
         run: isort . --check --diff --profile black
-      
+
       - name: flake8 Lint
         uses: py-actions/flake8@v2
         with:
