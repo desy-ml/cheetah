@@ -13,12 +13,12 @@ from scipy.constants import physical_constants
 from scipy.stats import multivariate_normal
 from torch import nn
 
-from .converters.dontbmad import convert_bmad_lattice
-from .error import DeviceError
-from .latticejson import load_cheetah_model, save_cheetah_model
-from .particles import Beam, ParameterBeam, ParticleBeam
-from .track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
-from .utils import UniqueNameGenerator
+from cheetah.converters.dontbmad import convert_bmad_lattice
+from cheetah.error import DeviceError
+from cheetah.latticejson import load_cheetah_model, save_cheetah_model
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
