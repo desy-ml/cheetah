@@ -1,2 +1,3 @@
+cheetah-accelerator
 ipykernel
 nbsphinx
