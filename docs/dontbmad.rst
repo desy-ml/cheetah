@@ -3,6 +3,6 @@
 DontBmad
 ========
 
-.. automodule:: converters/dontbmad
+.. automodule:: converters.dontbmad
     :members:
     :undoc-members:
