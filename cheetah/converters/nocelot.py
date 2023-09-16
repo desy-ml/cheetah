@@ -37,6 +37,12 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             k1=torch.tensor(element.k1, dtype=torch.float32),
             name=element.id,
         )
+    elif isinstance(element, ocelot.Solenoid):
+        return cheetah.Solenoid(
+            length=torch.tensor(element.l, dtype=torch.float32),
+            k=torch.tensor(element.k, dtype=torch.float32),
+            name=element.id,
+        )
     elif isinstance(element, ocelot.Hcor):
         return cheetah.HorizontalCorrector(
             length=torch.tensor(element.l, dtype=torch.float32),
@@ -49,9 +55,44 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             angle=torch.tensor(element.angle, dtype=torch.float32),
             name=element.id,
         )
+    elif isinstance(element, ocelot.SBend):
+        return cheetah.Dipole(
+            length=torch.tensor(element.l, dtype=torch.float32),
+            angle=torch.tensor(element.angle, dtype=torch.float32),
+            e1=torch.tensor(element.e1, dtype=torch.float32),
+            e2=torch.tensor(element.e2, dtype=torch.float32),
+            tilt=torch.tensor(element.tilt, dtype=torch.float32),
+            fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
+            fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
+            gap=torch.tensor(element.gap, dtype=torch.float32),
+            name=element.id,
+        )
+    elif isinstance(element, ocelot.RBend):
+        return cheetah.RBend(
+            length=torch.tensor(element.l, dtype=torch.float32),
+            angle=torch.tensor(element.angle, dtype=torch.float32),
+            e1=torch.tensor(element.e1, dtype=torch.float32) - element.angle / 2,
+            e2=torch.tensor(element.e2, dtype=torch.float32) - element.angle / 2,
+            tilt=torch.tensor(element.tilt, dtype=torch.float32),
+            fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
+            fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
+            gap=torch.tensor(element.gap, dtype=torch.float32),
+            name=element.id,
+        )
     elif isinstance(element, ocelot.Cavity):
         return cheetah.Cavity(
-            torch.tensor(element.l, dtype=torch.float32), name=element.id
+            length=torch.tensor(element.l, dtype=torch.float32),
+            voltage=torch.tensor(element.v, dtype=torch.float32) * 1e9,
+            frequency=torch.tensor(element.freq, dtype=torch.float32),
+            phase=torch.tensor(element.phi, dtype=torch.float32),
+        )
+    elif isinstance(element, ocelot.TDCavity):
+        # TODO: Better replacement at some point?
+        return cheetah.Cavity(
+            length=torch.tensor(element.l, dtype=torch.float32),
+            voltage=torch.tensor(element.v, dtype=torch.float32) * 1e9,
+            frequency=torch.tensor(element.freq, dtype=torch.float32),
+            phase=torch.tensor(element.phi, dtype=torch.float32),
         )
     elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
         # NOTE This pattern is very specific to ARES and will need a more complex
@@ -68,9 +109,22 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
         )
     elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
         return cheetah.BPM(name=element.id)
+    elif isinstance(element, ocelot.Marker):
+        return cheetah.Marker(name=element.id)
+    elif isinstance(element, ocelot.Monitor):
+        return cheetah.Marker(name=element.id)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
             torch.tensor(element.l, dtype=torch.float32), name=element.id
+        )
+    elif isinstance(element, ocelot.Aperture):
+        shape_translation = {"rect": "rectangular", "elip": "elliptical"}
+        return cheetah.Aperture(
+            x_max=torch.tensor(element.xmax, dtype=torch.float32),
+            y_max=torch.tensor(element.ymax, dtype=torch.float32),
+            shape=shape_translation[element.type],
+            is_active=True,
+            name=element.id,
         )
     else:
         if warnings:
