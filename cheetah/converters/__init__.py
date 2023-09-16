@@ -1,4 +1,2 @@
 # flake8: noqa
-import astralavista
-import dontbmad
-import nocelot
+from . import astralavista, dontbmad, nocelot
