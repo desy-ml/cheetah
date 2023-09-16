@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -17,7 +17,7 @@ setup(
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=["cheetah"],
+    packages=[package for package in find_packages() if package.startswith("cheetah")],
     python_requires=">=3.9",
     install_requires=["matplotlib", "numpy", "scipy", "torch"],
 )

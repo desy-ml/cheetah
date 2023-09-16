@@ -54,6 +54,7 @@ For more advanced usage, please refer to the in-depth documentation.
     nocelot
     particles
     track_methods
+    utils
 
 
 Cite Cheetah
@@ -76,7 +77,7 @@ To cite Cheetah in publications:
 For Developers
 --------------
 
-Activate your virtual envrionment. (Optional)
+Activate your virtual environment. (Optional)
 
 Install the cheetah package as editable
 
@@ -84,7 +85,7 @@ Install the cheetah package as editable
 
     pip install -e .
 
-We suggest to install pre-commit hooks to automatically conform with the code formatting in commits:
+We suggest installing pre-commit hooks to automatically conform with the code formatting in commits:
 
 .. code-block:: sh
 

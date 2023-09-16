@@ -1,8 +1,8 @@
-.. Documents astralavista.py
+.. Documents converters/astralavista.py
 
 Astralavista
 ============
 
-.. automodule:: astralavista
+.. automodule:: converters.astralavista
     :members:
     :undoc-members:
