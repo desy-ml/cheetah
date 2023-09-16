@@ -3,6 +3,6 @@
 NOcelot
 =======
 
-.. automodule:: converters/nocelot
+.. automodule:: converters.nocelot
     :members:
     :undoc-members:
