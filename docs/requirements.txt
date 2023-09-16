@@ -1,3 +1,2 @@
 ipykernel
 nbsphinx
-git+https://github.com/ocelot-collab/ocelot@v22.12.0 # Ocelot
