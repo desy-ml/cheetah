@@ -1633,7 +1633,7 @@ class Segment(Element):
 
         :param filename: Name/path of the file to save the lattice to.
         :param title: Title of the lattice. If not provided, defaults to the name of the
-        `Segment` object. If that also does not have a name, defaults to "Unnamed
+            `Segment` object. If that also does not have a name, defaults to "Unnamed
             Lattice".
         :param info: Information about the lattice. Defaults to "This is a placeholder
             lattice description".

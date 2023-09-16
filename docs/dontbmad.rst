@@ -1,8 +1,8 @@
-.. Documents dontbemad.py
+.. Documents converters/dontbemad.py
 
 DontBmad
 ========
 
-.. automodule:: dontbmad
+.. automodule:: converters.dontbmad
     :members:
     :undoc-members:
