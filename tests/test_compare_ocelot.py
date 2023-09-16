@@ -172,7 +172,9 @@ def test_ares_ea():
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES
     accelerator at DESY match those using Ocelot.
     """
-    cell = cheetah.nocelot.subcell_of_ocelot(ares.cell, "AREASOLA1", "AREABSCR1")
+    cell = cheetah.converters.nocelot.subcell_of_ocelot(
+        ares.cell, "AREASOLA1", "AREABSCR1"
+    )
     ares.areamqzm1.k1 = 5.0
     ares.areamqzm2.k1 = -5.0
     ares.areamcvm1.k1 = 1e-3
@@ -477,14 +479,68 @@ def test_rbend():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_sbend = ocelot.RBend(l=0.1, angle=2e-5)
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=2e-5)
     lattice = ocelot.MagneticLattice(
-        [ocelot.Drift(l=0.1), ocelot_sbend, ocelot.Drift(l=0.1)]
+        [ocelot.Drift(l=0.1), ocelot_rbend, ocelot.Drift(l=0.1)]
     )
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(
         lattice, deepcopy(incoming_p_array), navigator, print_progress=False
     )
+
+    # Split in order to allow for different tolerances for each particle dimension
+    assert np.allclose(
+        outgoing_beam.particles[:, 0],
+        outgoing_p_array.rparticles.transpose()[:, 0],
+        rtol=1e-3,
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4],
+        outgoing_p_array.rparticles.transpose()[:, 4],
+        atol=1e-6,  # TODO: Is this tolerance already too large?
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+    )
+
+
+def test_convert_rbend():
+    """
+    Test if the tracking results through a ocelot-converted Cheetah segment match
+    those through an Ocelot section with an `RBend` element.
+    """
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=2e-5, gap=0.05, fint=0.1, eid="rbend")
+    lattice = ocelot.MagneticLattice(
+        [
+            ocelot.Drift(l=0.1, eid="drfit_1"),
+            ocelot_rbend,
+            ocelot.Drift(l=0.1, eid="drift_2"),
+        ]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
+    outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
