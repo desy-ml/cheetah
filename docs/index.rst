@@ -43,7 +43,7 @@ Documentation
 For more advanced usage, please refer to the in-depth documentation.
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     :caption: Documentation
 
     accelerator

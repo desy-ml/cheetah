@@ -10,7 +10,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     Read from a ASTRA beam distribution, and prepare for conversion to a Cheetah
     ParticleBeam or ParameterBeam.
 
-    Adapted from the implementation in ocelot:
+    Adapted from the implementation in Ocelot:
     https://github.com/ocelot-collab/ocelot/blob/master/ocelot/adaptors/astra2ocelot.py
 
     :param path: Path to the ASTRA beam distribution file.
