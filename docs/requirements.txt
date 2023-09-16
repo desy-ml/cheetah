@@ -1,2 +1,6 @@
 ipykernel
+matplotlib
 nbsphinx
+numpy
+scipy
+torch
