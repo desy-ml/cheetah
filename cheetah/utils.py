@@ -1,7 +1,7 @@
 class UniqueNameGenerator:
     """Generates a unique name given a prefix."""
 
-    def __init__(self, prefix):
+    def __init__(self, prefix: str):
         self._prefix = prefix
         self._counter = 0
 
