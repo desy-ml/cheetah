@@ -1,4 +1,4 @@
-.. Documents astralavista.py
+.. Documents converters/astralavista.py
 
 Astralavista
 ============

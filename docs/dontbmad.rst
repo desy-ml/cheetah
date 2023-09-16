@@ -1,4 +1,4 @@
-.. Documents dontbemad.py
+.. Documents converters/dontbemad.py
 
 DontBmad
 ========
