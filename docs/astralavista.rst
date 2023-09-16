@@ -3,6 +3,6 @@
 Astralavista
 ============
 
-.. automodule:: astralavista
+.. automodule:: converters/astralavista
     :members:
     :undoc-members:
