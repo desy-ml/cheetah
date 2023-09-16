@@ -132,9 +132,9 @@ class CompactJSONEncoder(json.JSONEncoder):
 
 def nontorch2feature(value: Any) -> Any:
     """
-    Convert a value like a float, int, etc. to a torch tensor if necessary. Values of
-    type `str` and `bool` are not converted, because the all currently existing
-    `cheetah.Element` subclasses expect these values to not be `torch.Tensor`s.
+    Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary.
+    Values of type `str` and `bool` are not converted, because all currently existing
+    `cheetah.Element` subclasses expect these values to not be of type `torch.Tensor`.
 
     :param value: Value to convert to a `torch.Tensor` if necessary.
     :return: Value converted to a `torch.Tensor` if necessary.
