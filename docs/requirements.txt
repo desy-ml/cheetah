@@ -1,3 +1,2 @@
 ipykernel
 nbsphinx
-sphinxawesome-theme
