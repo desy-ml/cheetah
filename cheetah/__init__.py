@@ -1,4 +1,4 @@
 # flake8: noqa
-from cheetah import converters
+import cheetah.converters
 from cheetah.accelerator import *
 from cheetah.particles import *
