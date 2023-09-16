@@ -54,6 +54,7 @@ For more advanced usage, please refer to the in-depth documentation.
     nocelot
     particles
     track_methods
+    utils
 
 
 Cite Cheetah
