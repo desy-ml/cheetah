@@ -1,2 +1,2 @@
 # flake8: noqa
-from . import astralavista, dontbmad, nocelot
+from cheetah.converters import astralavista, dontbmad, nocelot
