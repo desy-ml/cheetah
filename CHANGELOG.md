@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.6.1 [🚧 Work in Progress]
+## v0.6.2 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
@@ -17,6 +17,12 @@ None
 ### 🐆 Other
 
 None
+
+## [v0.6.1](https://github.com/desy-ml/cheetah/releases/tag/v0.6.1) (2023-09-17)
+
+### 🐛 Bug fixes
+
+- Fix issue where `converters` submodule was not installed properly (see 1562496) (@jank324)
 
 ## [v0.6.0](https://github.com/desy-ml/cheetah/releases/tag/v0.6.0) (2023-09-15)
 
