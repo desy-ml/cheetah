@@ -12,7 +12,7 @@ None
 
 ### 🐛 Bug fixes
 
-None
+- Prevent `NaN` and `Inf` that could be produced by Twiss parameter calculations as a result of numerical errors and zero divisions
 
 ### 🐆 Other
 
