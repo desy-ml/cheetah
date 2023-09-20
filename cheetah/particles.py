@@ -231,7 +231,9 @@ class Beam(nn.Module):
     @property
     def emittance_x(self) -> torch.Tensor:
         """Emittance of the beam in x direction in m*rad."""
-        return torch.sqrt(self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2)
+        a = self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2
+        a.clamp_(min=0)  # Prevents NaNs from sqrt
+        return torch.sqrt(a)
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
@@ -241,16 +243,18 @@ class Beam(nn.Module):
     @property
     def beta_x(self) -> torch.Tensor:
         """Beta function in x direction in meters."""
-        return self.sigma_x**2 / self.emittance_x
+        return self.sigma_x**2 / (self.emittance_x + 1e-20 * self.sigma_x**2)
 
     @property
     def alpha_x(self) -> torch.Tensor:
-        return -self.sigma_xxp / self.emittance_x
+        return -self.sigma_xxp / (self.emittance_x + 1e-20 * self.sigma_xxp)
 
     @property
     def emittance_y(self) -> torch.Tensor:
         """Emittance of the beam in y direction in m*rad."""
-        return torch.sqrt(self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2)
+        a = self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2
+        a.clamp_(min=0)  # Prevents NaNs from sqrt
+        return torch.sqrt(a)
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
@@ -260,11 +264,11 @@ class Beam(nn.Module):
     @property
     def beta_y(self) -> torch.Tensor:
         """Beta function in y direction in meters."""
-        return self.sigma_y**2 / self.emittance_y
+        return self.sigma_y**2 / (self.emittance_y + 1e-20 * self.sigma_y**2)
 
     @property
     def alpha_y(self) -> torch.Tensor:
-        return -self.sigma_yyp / self.emittance_y
+        return -self.sigma_yyp / (self.emittance_y + 1e-20 * self.sigma_yyp)
 
     def __repr__(self) -> str:
         return (
