@@ -31,6 +31,7 @@ class Beam(nn.Module):
         cor_y: Optional[torch.Tensor] = None,
         cor_s: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -48,6 +49,7 @@ class Beam(nn.Module):
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction in meters.
         :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
         """
         raise NotImplementedError
 
@@ -61,6 +63,7 @@ class Beam(nn.Module):
         alpha_y: Optional[torch.Tensor] = None,
         emittance_y: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -72,6 +75,7 @@ class Beam(nn.Module):
         :param alpha_y: Alpha function in y direction in meters.
         :param emittance_y: Emittance in y direction.
         :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
         """
         raise NotImplementedError
 
@@ -100,6 +104,7 @@ class Beam(nn.Module):
         sigma_s: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -115,6 +120,7 @@ class Beam(nn.Module):
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction in meters.
         :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
         """
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
@@ -127,6 +133,7 @@ class Beam(nn.Module):
         sigma_s = sigma_s if sigma_s is not None else self.sigma_s
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
+        total_charge = total_charge if total_charge is not None else self.total_charge
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -140,6 +147,7 @@ class Beam(nn.Module):
             sigma_s=sigma_s,
             sigma_p=sigma_p,
             energy=energy,
+            total_charge=total_charge,
         )
 
     @property
@@ -272,7 +280,8 @@ class Beam(nn.Module):
             f" mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x},"
             f" sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y},"
             f" sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s},"
-            f" sigma_p={self.sigma_p}, energy={self.energy})"
+            f" sigma_p={self.sigma_p}, energy={self.energy}),"
+            f" total_charge={self.total_charge})"
         )
 
 
@@ -283,6 +292,7 @@ class ParameterBeam(Beam):
     :param mu: Mu vector of the beam.
     :param cov: Covariance matrix of the beam.
     :param energy: Energy of the beam in eV.
+    :param total_charge: Total charge of the beam in C.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
     """
@@ -292,6 +302,7 @@ class ParameterBeam(Beam):
         mu: torch.Tensor,
         cov: torch.Tensor,
         energy: torch.Tensor,
+        total_charge: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> None:
         super().__init__()
@@ -302,6 +313,8 @@ class ParameterBeam(Beam):
 
         self._mu = mu.to(device)
         self._cov = cov.to(device)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
+        self.total_charge = total_charge.to(device)
         self.energy = energy
 
     @classmethod
@@ -321,6 +334,7 @@ class ParameterBeam(Beam):
         cor_y: Optional[torch.Tensor] = None,
         cor_s: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParameterBeam":
         # Set default values without function call in function signature
@@ -338,6 +352,7 @@ class ParameterBeam(Beam):
         cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
 
         mu = torch.stack(
             [
@@ -365,7 +380,9 @@ class ParameterBeam(Beam):
         cov[5, 4] = cor_s
         cov[5, 5] = sigma_p**2
 
-        return cls(mu=mu, cov=cov, energy=energy, device=device)
+        return cls(
+            mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
+        )
 
     @classmethod
     def from_twiss(
@@ -380,6 +397,7 @@ class ParameterBeam(Beam):
         sigma_p: Optional[torch.Tensor] = None,
         cor_s: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParameterBeam":
         # Set default values without function call in function signature
@@ -393,6 +411,7 @@ class ParameterBeam(Beam):
         sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
 
         sigma_x = torch.sqrt(emittance_x * beta_x)
         sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
@@ -411,34 +430,47 @@ class ParameterBeam(Beam):
             cor_s=cor_s,
             cor_x=cor_x,
             cor_y=cor_y,
+            total_charge=total_charge,
             device=device,
         )
 
     @classmethod
     def from_ocelot(cls, parray, device: str = "auto") -> "ParameterBeam":
+        """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
         mu = torch.ones(7)
         mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
 
         cov = torch.zeros(7, 7)
         cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
 
-        energy = torch.tensor(1e9 * parray.E)
+        energy = torch.tensor(1e9 * parray.E, dtype=torch.float32)
+        total_charge = torch.tensor(torch.sum(parray.q_array), dtype=torch.float32)
 
-        return cls(mu=mu, cov=cov, energy=energy, device=device)
+        return cls(
+            mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
+        )
 
     @classmethod
     def from_astra(cls, path: str, **kwargs) -> "ParameterBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astralavista import from_astrabeam
 
-        particles, energy = from_astrabeam(path)
+        particles, energy, q_array = from_astrabeam(path)
         mu = torch.ones(7)
         mu[:6] = torch.tensor(particles.mean(axis=0))
 
         cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()))
+        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()), dtype=torch.float32)
 
-        return cls(mu=mu, cov=cov, energy=torch.tensor(energy), **kwargs)
+        total_charge = torch.tensor(np.sum(q_array), dtype=torch.float32)
+
+        return cls(
+            mu=mu,
+            cov=cov,
+            energy=torch.tensor(energy),
+            total_charge=total_charge,
+            **kwargs,
+        )
 
     def transformed_to(
         self,
@@ -453,6 +485,7 @@ class ParameterBeam(Beam):
         sigma_s: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
     ) -> "ParameterBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -469,6 +502,7 @@ class ParameterBeam(Beam):
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction in meters.
         :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
         """
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
@@ -481,6 +515,7 @@ class ParameterBeam(Beam):
         sigma_s = sigma_s if sigma_s is not None else self.sigma_s
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
+        total_charge = total_charge if total_charge is not None else self.total_charge
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -560,7 +595,8 @@ class ParameterBeam(Beam):
             f" mu_yp={repr(self.mu_yp)}, sigma_x={repr(self.sigma_x)},"
             f" sigma_xp={repr(self.sigma_xp)}, sigma_y={repr(self.sigma_y)},"
             f" sigma_yp={repr(self.sigma_yp)}, sigma_s={repr(self.sigma_s)},"
-            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)})"
+            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
+            f" total_charge={repr(self.total_charge)})"
         )
 
 
@@ -570,12 +606,17 @@ class ParticleBeam(Beam):
 
     :param particles: List of 7-dimensional particle vectors.
     :param energy: Energy of the beam in eV.
+    :param total_charge: Total charge of the beam in C.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
-        self, particles: torch.Tensor, energy: torch.Tensor, device: str = "auto"
+        self,
+        particles: torch.Tensor,
+        energy: torch.Tensor,
+        q_array: Optional[torch.Tensor] = None,
+        device: str = "auto",
     ) -> None:
         super().__init__()
 
@@ -590,7 +631,13 @@ class ParticleBeam(Beam):
         self.particles = (
             particles.to(device) if isinstance(particles, torch.Tensor) else particles
         )
-
+        n_particles = len(self.particles)
+        self.q_array = (
+            q_array
+            if q_array is not None
+            else torch.zeros(n_particles, dtype=torch.float32)
+        )
+        self.q_array = self.q_array.to(self.device)
         self.energy = energy
 
     @classmethod
@@ -611,6 +658,7 @@ class ParticleBeam(Beam):
         cor_y: Optional[torch.Tensor] = None,
         cor_s: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParticleBeam":
         """
@@ -631,6 +679,7 @@ class ParticleBeam(Beam):
         :param cor_y: Correlation between y and yp.
         :param cor_s: Correlation between s and p.
         :param energy: Energy of the beam in eV.
+        :total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
@@ -652,6 +701,12 @@ class ParticleBeam(Beam):
         cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
+        q_array = (
+            torch.ones(num_particles, dtype=torch.float32)
+            * total_charge
+            / num_particles
+        )
 
         mean = torch.stack(
             [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
@@ -675,7 +730,7 @@ class ParticleBeam(Beam):
         distribution = MultivariateNormal(mean, covariance_matrix=cov)
         particles[:, :6] = distribution.sample((num_particles,))
 
-        return cls(particles, energy, device=device)
+        return cls(particles, energy, q_array=q_array, device=device)
 
     @classmethod
     def from_twiss(
@@ -691,6 +746,7 @@ class ParticleBeam(Beam):
         sigma_s: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         cor_s: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParticleBeam":
         # Set default values without function call in function signature
@@ -707,6 +763,7 @@ class ParticleBeam(Beam):
         sigma_s = sigma_s if sigma_s is not None else torch.tensor(1e-6)
         sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
 
         sigma_x = torch.sqrt(beta_x * emittance_x)
         sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
@@ -731,6 +788,7 @@ class ParticleBeam(Beam):
             cor_s=cor_s,
             cor_x=cor_x,
             cor_y=cor_y,
+            total_charge=total_charge,
             device=device,
         )
 
@@ -749,6 +807,7 @@ class ParticleBeam(Beam):
         sigma_s: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> "ParticleBeam":
         """
@@ -783,6 +842,13 @@ class ParticleBeam(Beam):
         sigma_s = sigma_s if sigma_s is not None else torch.tensor(0.0)
         sigma_p = sigma_p if sigma_p is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
+
+        q_array = (
+            torch.ones(num_particles, dtype=torch.float32)
+            * total_charge
+            / num_particles
+        )
 
         particles = torch.ones((num_particles, 7), dtype=torch.float32)
 
@@ -805,7 +871,7 @@ class ParticleBeam(Beam):
             -sigma_p, sigma_p, num_particles, dtype=torch.float32
         )
 
-        return cls(particles, energy, device=device)
+        return cls(particles=particles, energy=energy, q_array=q_array, device=device)
 
     @classmethod
     def from_ocelot(cls, parray, device: str = "auto") -> "ParticleBeam":
@@ -817,9 +883,13 @@ class ParticleBeam(Beam):
         particles[:, :6] = torch.tensor(
             parray.rparticles.transpose(), dtype=torch.float32
         )
+        q_array = torch.tensor(parray.q_array, dtype=torch.float32)
 
         return cls(
-            particles=particles, energy=torch.tensor(1e9 * parray.E), device=device
+            particles=particles,
+            energy=torch.tensor(1e9 * parray.E),
+            q_array=q_array,
+            device=device,
         )
 
     @classmethod
@@ -827,10 +897,16 @@ class ParticleBeam(Beam):
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astralavista import from_astrabeam
 
-        particles, energy = from_astrabeam(path)
+        particles, energy, q_array = from_astrabeam(path)
         particles_7d = torch.ones((particles.shape[0], 7))
         particles_7d[:, :6] = torch.from_numpy(particles)
-        return cls(particles=particles_7d, energy=torch.tensor(energy), **kwargs)
+        q_array = torch.from_numpy(q_array)
+        return cls(
+            particles=particles_7d,
+            energy=torch.tensor(energy),
+            q_array=q_array,
+            **kwargs,
+        )
 
     def transformed_to(
         self,
@@ -845,6 +921,7 @@ class ParticleBeam(Beam):
         sigma_s: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
     ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -861,6 +938,7 @@ class ParticleBeam(Beam):
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction in meters.
         :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
@@ -875,6 +953,10 @@ class ParticleBeam(Beam):
         sigma_s = sigma_s if sigma_s is not None else self.sigma_s
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
+        if total_charge is None:
+            q_array = self.q_array
+        else:  # scale to the new charge
+            q_array = self.q_array * total_charge / self.total_charge
 
         new_mu = torch.stack(
             [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
@@ -912,10 +994,14 @@ class ParticleBeam(Beam):
         )
         particles[:, :6] = phase_space
 
-        return self.__class__(particles=particles, energy=energy)
+        return self.__class__(particles=particles, energy=energy, q_array=q_array)
 
     def __len__(self) -> int:
         return int(self.num_particles)
+
+    @property
+    def total_charge(self) -> torch.Tensor:
+        return torch.sum(self.q_array)
 
     @property
     def num_particles(self) -> torch.Tensor:
@@ -1034,4 +1120,5 @@ class ParticleBeam(Beam):
             f" sigma_y={repr(self.sigma_y)}, sigma_yp={repr(self.sigma_yp)},"
             f" sigma_s={repr(self.sigma_s)}, sigma_p={repr(self.sigma_p)},"
             f" energy={repr(self.energy)})"
+            f" total_charge={repr(self.total_charge)})"
         )
