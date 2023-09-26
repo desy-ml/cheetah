@@ -5,7 +5,7 @@ from scipy.constants import physical_constants
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
+def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     """
     Read from a ASTRA beam distribution, and prepare for conversion to a Cheetah
     ParticleBeam or ParameterBeam.
@@ -14,7 +14,9 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     https://github.com/ocelot-collab/ocelot/blob/master/ocelot/adaptors/astra2ocelot.py
 
     :param path: Path to the ASTRA beam distribution file.
-    :return: Particle 6D phase space information and mean energy of the particle beam.
+    :return: (particles, energy, q_array)
+        Particle 6D phase space information, mean energy,
+        and the charge array of the particle beam.
     """
     P0 = np.loadtxt(path)
 
@@ -55,4 +57,6 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float]:
     particles[:, 3] = xp[:, 4] / Pref
     particles[:, 5] = (gamma / gamref - 1) / betaref
 
-    return particles, energy
+    q_array = abs(P0[:, 7]) * 1e-9  # convert charge array from nC to C
+
+    return particles, energy, q_array
