@@ -151,6 +151,74 @@ class Element(ABC, nn.Module):
         )
 
 
+class CustomTransferMap(Element):
+    """
+    This element can represent any custom transfer map.
+    """
+
+    def __init__(
+        self,
+        transfer_map: Union[torch.Tensor, nn.Parameter],
+        length: Optional[torch.Tensor] = None,
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        assert isinstance(transfer_map, torch.Tensor)
+        assert transfer_map.shape == (7, 7)
+
+        self._transfer_map = transfer_map
+        self.length = length if length is not None else torch.tensor(0.0)
+
+    @classmethod
+    def from_merging_elements(
+        cls, elements: list[Element], incoming_beam: Beam
+    ) -> "CustomTransferMap":
+        """
+        Combine the transfer maps of multiple successive elements into a single transfer
+        map. This can be used to speed up tracking through a segment, if no changes
+        are made to the elements in the segment or the energy of the beam being tracked
+        through them.
+
+        :param elements: List of consecutive elements to combine.
+        :param incoming_beam: Beam entering the first element in the segment. NOTE: That
+            this is required because the separate original transfer maps have to be
+            computed before being combined and some of them may depend on the energy of
+            the beam.
+        """
+        assert all(element.is_skippable for element in elements), (
+            "Combining the elements in a Segment that is not skippable will result in"
+            " incorrect tracking results."
+        )
+
+        tm = torch.eye(7, device=incoming_beam.device)
+        for element in elements:
+            tm = torch.matmul(tm, element.transfer_map(incoming_beam.energy))
+            incoming_beam = element.track(incoming_beam)
+
+        combined_length = sum(element.length for element in elements)
+
+        return cls(tm, length=combined_length, device=elements[0].device)
+
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        return self._transfer_map
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
+
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["transfer_map"]
+
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+        return [self]
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        # TODO: At some point think of a nice way to indicate this in a lattice plot
+        pass
+
+
 class Drift(Element):
     """
     Drift section in a particle accelerator.
@@ -1611,6 +1679,53 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name, device=self.device)
+
+    def transfer_maps_merged(
+        self, incoming_beam: Beam, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where the transfer maps of skipable elements are merged into
+        elements of type `CustomTransferMap`. This can be used to speed up tracking
+        through the segment.
+
+        :param incoming_beam: Beam that is incoming to the segment. NOTE: This beam is
+            needed to determine the energy of the beam when entering each element, as
+            the transfer maps of merged elements might depend on the beam energy.
+        :param except_for: List of names of elements that should not be merged despite
+            being skippable. Usually these are the elements that are changed from one
+            tracking to another.
+        :return: Segment with merged transfer maps.
+        """
+        if except_for is None:
+            except_for = []
+
+        merged_elements = []  # Elements for new merged segment
+        skippable_elements = []  # Keep track of elements that are not yet merged
+        tracked_beam = incoming_beam
+        for element in self.elements:
+            if element.is_skippable and element.name not in except_for:
+                skippable_elements.append(element)
+            else:
+                if len(skippable_elements) > 0:  # i.e. we need to merge some elements
+                    merged_elements.append(
+                        CustomTransferMap.from_merging_elements(
+                            skippable_elements, incoming_beam=tracked_beam
+                        )
+                    )
+                    skippable_elements = []
+                    tracked_beam = merged_elements[-1].track(tracked_beam)
+
+                merged_elements.append(element)
+                tracked_beam = element.track(tracked_beam)
+
+        if len(skippable_elements) > 0:
+            merged_elements.append(
+                CustomTransferMap.from_merging_elements(
+                    skippable_elements, incoming_beam=tracked_beam
+                )
+            )
+
+        return Segment(elements=merged_elements, name=self.name, device=self.device)
 
     @classmethod
     def from_lattice_json(cls, filepath: str) -> "Segment":
