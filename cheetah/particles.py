@@ -444,7 +444,9 @@ class ParameterBeam(Beam):
         cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
 
         energy = torch.tensor(1e9 * parray.E, dtype=torch.float32)
-        total_charge = torch.tensor(torch.sum(parray.q_array), dtype=torch.float32)
+        total_charge = torch.tensor(
+            torch.sum(parray.particle_charges), dtype=torch.float32
+        )
 
         return cls(
             mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
@@ -455,14 +457,14 @@ class ParameterBeam(Beam):
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astralavista import from_astrabeam
 
-        particles, energy, q_array = from_astrabeam(path)
+        particles, energy, particle_charges = from_astrabeam(path)
         mu = torch.ones(7)
         mu[:6] = torch.tensor(particles.mean(axis=0))
 
         cov = torch.zeros(7, 7)
         cov[:6, :6] = torch.tensor(np.cov(particles.transpose()), dtype=torch.float32)
 
-        total_charge = torch.tensor(np.sum(q_array), dtype=torch.float32)
+        total_charge = torch.tensor(np.sum(particle_charges), dtype=torch.float32)
 
         return cls(
             mu=mu,
@@ -615,7 +617,7 @@ class ParticleBeam(Beam):
         self,
         particles: torch.Tensor,
         energy: torch.Tensor,
-        q_array: Optional[torch.Tensor] = None,
+        particle_charges: Optional[torch.Tensor] = None,
         device: str = "auto",
     ) -> None:
         super().__init__()
@@ -632,12 +634,12 @@ class ParticleBeam(Beam):
             particles.to(device) if isinstance(particles, torch.Tensor) else particles
         )
         n_particles = len(self.particles)
-        self.q_array = (
-            q_array
-            if q_array is not None
+        self.particle_charges = (
+            particle_charges
+            if particle_charges is not None
             else torch.zeros(n_particles, dtype=torch.float32)
         )
-        self.q_array = self.q_array.to(self.device)
+        self.particle_charges = self.particle_charges.to(self.device)
         self.energy = energy
 
     @classmethod
@@ -702,7 +704,7 @@ class ParticleBeam(Beam):
         cor_s = cor_s if cor_s is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
         total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
-        q_array = (
+        particle_charges = (
             torch.ones(num_particles, dtype=torch.float32)
             * total_charge
             / num_particles
@@ -730,7 +732,7 @@ class ParticleBeam(Beam):
         distribution = MultivariateNormal(mean, covariance_matrix=cov)
         particles[:, :6] = distribution.sample((num_particles,))
 
-        return cls(particles, energy, q_array=q_array, device=device)
+        return cls(particles, energy, particle_charges=particle_charges, device=device)
 
     @classmethod
     def from_twiss(
@@ -844,7 +846,7 @@ class ParticleBeam(Beam):
         energy = energy if energy is not None else torch.tensor(1e8)
         total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
 
-        q_array = (
+        particle_charges = (
             torch.ones(num_particles, dtype=torch.float32)
             * total_charge
             / num_particles
@@ -871,7 +873,12 @@ class ParticleBeam(Beam):
             -sigma_p, sigma_p, num_particles, dtype=torch.float32
         )
 
-        return cls(particles=particles, energy=energy, q_array=q_array, device=device)
+        return cls(
+            particles=particles,
+            energy=energy,
+            particle_charges=particle_charges,
+            device=device,
+        )
 
     @classmethod
     def from_ocelot(cls, parray, device: str = "auto") -> "ParticleBeam":
@@ -883,12 +890,12 @@ class ParticleBeam(Beam):
         particles[:, :6] = torch.tensor(
             parray.rparticles.transpose(), dtype=torch.float32
         )
-        q_array = torch.tensor(parray.q_array, dtype=torch.float32)
+        particle_charges = torch.tensor(parray.particle_charges, dtype=torch.float32)
 
         return cls(
             particles=particles,
             energy=torch.tensor(1e9 * parray.E),
-            q_array=q_array,
+            particle_charges=particle_charges,
             device=device,
         )
 
@@ -897,14 +904,14 @@ class ParticleBeam(Beam):
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astralavista import from_astrabeam
 
-        particles, energy, q_array = from_astrabeam(path)
+        particles, energy, particle_charges = from_astrabeam(path)
         particles_7d = torch.ones((particles.shape[0], 7))
         particles_7d[:, :6] = torch.from_numpy(particles)
-        q_array = torch.from_numpy(q_array)
+        particle_charges = torch.from_numpy(particle_charges)
         return cls(
             particles=particles_7d,
             energy=torch.tensor(energy),
-            q_array=q_array,
+            particle_charges=particle_charges,
             **kwargs,
         )
 
@@ -954,9 +961,9 @@ class ParticleBeam(Beam):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         if total_charge is None:
-            q_array = self.q_array
+            particle_charges = self.particle_charges
         else:  # scale to the new charge
-            q_array = self.q_array * total_charge / self.total_charge
+            particle_charges = self.particle_charges * total_charge / self.total_charge
 
         new_mu = torch.stack(
             [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
@@ -994,14 +1001,16 @@ class ParticleBeam(Beam):
         )
         particles[:, :6] = phase_space
 
-        return self.__class__(particles=particles, energy=energy, q_array=q_array)
+        return self.__class__(
+            particles=particles, energy=energy, particle_charges=particle_charges
+        )
 
     def __len__(self) -> int:
         return int(self.num_particles)
 
     @property
     def total_charge(self) -> torch.Tensor:
-        return torch.sum(self.q_array)
+        return torch.sum(self.particle_charges)
 
     @property
     def num_particles(self) -> torch.Tensor:
