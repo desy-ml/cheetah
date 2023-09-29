@@ -60,6 +60,7 @@ def test_transform_to():
         sigma_s=torch.tensor(0.000001),
         sigma_p=torch.tensor(0.000001),
         energy=torch.tensor(1e7),
+        total_charge=torch.tensor(1e-9),
     )
 
     assert isinstance(transformed_beam, ParticleBeam)
@@ -76,6 +77,7 @@ def test_transform_to():
     assert np.isclose(transformed_beam.sigma_s, 0.000001)
     assert np.isclose(transformed_beam.sigma_p, 0.000001)
     assert np.isclose(transformed_beam.energy, 1e7)
+    assert np.isclose(transformed_beam.total_charge, 1e-9)
 
 
 def test_from_twiss_to_twiss():
