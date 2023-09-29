@@ -962,8 +962,12 @@ class ParticleBeam(Beam):
         energy = energy if energy is not None else self.energy
         if total_charge is None:
             particle_charges = self.particle_charges
-        else:  # scale to the new charge
+        elif self.total_charge is None:  # scale to the new charge
             particle_charges = self.particle_charges * total_charge / self.total_charge
+        else:
+            particle_charges = (
+                torch.ones(len(self.particles)) * total_charge / len(self.particles)
+            )
 
         new_mu = torch.stack(
             [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
