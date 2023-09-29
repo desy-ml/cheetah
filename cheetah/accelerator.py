@@ -208,7 +208,9 @@ class CustomTransferMap(Element):
             tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
             incoming_beam = element.track(incoming_beam)
 
-        combined_length = sum(element.length for element in elements)
+        combined_length = sum(
+            element.length for element in elements if hasattr(element, "length")
+        )
 
         return cls(tm, length=combined_length, device=elements[0].device)
 
@@ -1739,7 +1741,10 @@ class Segment(Element):
             if element.is_skippable and element.name not in except_for:
                 skippable_elements.append(element)
             else:
-                if len(skippable_elements) > 0:  # i.e. we need to merge some elements
+                if len(skippable_elements) == 1:
+                    merged_elements.append(skippable_elements[0])
+                    tracked_beam = skippable_elements[0].track(tracked_beam)
+                elif len(skippable_elements) > 1:  # i.e. we need to merge some elements
                     merged_elements.append(
                         CustomTransferMap.from_merging_elements(
                             skippable_elements, incoming_beam=tracked_beam
