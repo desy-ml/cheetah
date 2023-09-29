@@ -1748,6 +1748,27 @@ class Segment(Element):
             device=self.device,
         )
 
+    def without_inactive_zero_length_elements(self) -> "Segment":
+        """
+        Return a segment where all inactive zero length elements are removed. This can
+        be used to speed up tracking through the segment.
+
+        NOTE: If `is_active` is not implemented for an element, it is assumed to be
+        inactive and will be removed.
+
+        :return: Segment without inactive zero length elements.
+        """
+        return Segment(
+            elements=[
+                element
+                for element in self.elements
+                if (hasattr(element, "length") and element.length > 0.0)
+                or (hasattr(element, "is_active") and element.is_active)
+            ],
+            name=self.name,
+            device=self.device,
+        )
+
     @classmethod
     def from_lattice_json(cls, filepath: str) -> "Segment":
         """
