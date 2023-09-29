@@ -1729,7 +1729,9 @@ class Segment(Element):
 
         return Segment(elements=merged_elements, name=self.name, device=self.device)
 
-    def without_inactive_markers(self) -> "Segment":
+    def without_inactive_markers(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
         """
         Return a segment where all inactive markers are removed. This can be used to
         speed up tracking through the segment.
@@ -1737,18 +1739,27 @@ class Segment(Element):
         NOTE: `is_active` has not yet been implemented for Markers. Therefore, this
         function currently removes all markers.
 
+        :param except_for: List of names of elements that should not be removed despite
+            being inactive.
         :return: Segment without inactive markers.
         """
         # TODO: Add check for is_active once that has been implemented for Markers
+        if except_for is None:
+            except_for = []
+
         return Segment(
             elements=[
-                element for element in self.elements if not isinstance(element, Marker)
+                element
+                for element in self.elements
+                if not isinstance(element, Marker) or element.name in except_for
             ],
             name=self.name,
             device=self.device,
         )
 
-    def without_inactive_zero_length_elements(self) -> "Segment":
+    def without_inactive_zero_length_elements(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
         """
         Return a segment where all inactive zero length elements are removed. This can
         be used to speed up tracking through the segment.
@@ -1756,34 +1767,49 @@ class Segment(Element):
         NOTE: If `is_active` is not implemented for an element, it is assumed to be
         inactive and will be removed.
 
+        :param except_for: List of names of elements that should not be removed despite
+            being inactive and having a zero length.
         :return: Segment without inactive zero length elements.
         """
+        if except_for is None:
+            except_for = []
+
         return Segment(
             elements=[
                 element
                 for element in self.elements
                 if (hasattr(element, "length") and element.length > 0.0)
                 or (hasattr(element, "is_active") and element.is_active)
+                or element.name in except_for
             ],
             name=self.name,
             device=self.device,
         )
 
-    def inactive_elements_as_drifts(self) -> "Segment":
+    def inactive_elements_as_drifts(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
         """
         Return a segment where all inactive elements (that have a length) are replaced
         by drifts. This can be used to speed up tracking through the segment and is a
         valid thing to as inactive elements should basically be no different from drift
         sections.
 
+        :param except_for: List of names of elements that should not be replaced by
+            drifts despite being inactive. Usually these are the elements that are
+            currently inactive but will be activated later.
         :return: Segment with inactive elements replaced by drifts.
         """
+        if except_for is None:
+            except_for = []
+
         return Segment(
             elements=[
                 (
                     element
                     if (hasattr(element, "is_active") and element.is_active)
                     or not hasattr(element, "length")
+                    or element.name in except_for
                     else Drift(element.length)
                 )
                 for element in self.elements
