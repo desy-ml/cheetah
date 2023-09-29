@@ -194,7 +194,7 @@ class CustomTransferMap(Element):
 
         tm = torch.eye(7, device=incoming_beam.device)
         for element in elements:
-            tm = torch.matmul(tm, element.transfer_map(incoming_beam.energy))
+            tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
