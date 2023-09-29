@@ -8,7 +8,7 @@ None
 
 ### 🚀 Features
 
-None
+- Add charge to the `ParameterBeam` and `ParticleBeam` classes (see #86) (@cr-xu)
 
 ### 🐛 Bug fixes
 
