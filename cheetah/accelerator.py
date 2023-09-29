@@ -1127,6 +1127,8 @@ class Marker(Element):
         return torch.eye(7, device=self.device)
 
     def track(self, incoming):
+        # TODO: At some point Markers should be able to be active or inactive. Active
+        # Markers would be able to record the beam tracked through them.
         return incoming
 
     @property
@@ -1726,6 +1728,25 @@ class Segment(Element):
             )
 
         return Segment(elements=merged_elements, name=self.name, device=self.device)
+
+    def without_inactive_markers(self) -> "Segment":
+        """
+        Return a segment where all inactive markers are removed. This can be used to
+        speed up tracking through the segment.
+
+        NOTE: `is_active` has not yet been implemented for Markers. Therefore, this
+        function currently removes all markers.
+
+        :return: Segment without inactive markers.
+        """
+        # TODO: Add check for is_active once that has been implemented for Markers
+        return Segment(
+            elements=[
+                element for element in self.elements if not isinstance(element, Marker)
+            ],
+            name=self.name,
+            device=self.device,
+        )
 
     @classmethod
     def from_lattice_json(cls, filepath: str) -> "Segment":
