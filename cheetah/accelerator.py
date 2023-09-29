@@ -1769,6 +1769,29 @@ class Segment(Element):
             device=self.device,
         )
 
+    def inactive_elements_as_drifts(self) -> "Segment":
+        """
+        Return a segment where all inactive elements (that have a length) are replaced
+        by drifts. This can be used to speed up tracking through the segment and is a
+        valid thing to as inactive elements should basically be no different from drift
+        sections.
+
+        :return: Segment with inactive elements replaced by drifts.
+        """
+        return Segment(
+            elements=[
+                (
+                    element
+                    if (hasattr(element, "is_active") and element.is_active)
+                    or not hasattr(element, "length")
+                    else Drift(element.length)
+                )
+                for element in self.elements
+            ],
+            name=self.name,
+            device=self.device,
+        )
+
     @classmethod
     def from_lattice_json(cls, filepath: str) -> "Segment":
         """
