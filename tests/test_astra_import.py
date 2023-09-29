@@ -19,6 +19,7 @@ def test_astra_to_parameter_beam():
     assert np.allclose(beam.sigma_s, 8.011552381503861e-06)
     assert np.allclose(beam.sigma_p, 0.0022804534528404474)
     assert np.allclose(beam.energy, 107315902.44394557)
+    assert np.allclose(beam.total_charge, 5.000000000010205e-13)
 
 
 def test_astra_to_particle_beam():
@@ -38,3 +39,4 @@ def test_astra_to_particle_beam():
     assert np.allclose(beam.sigma_s, 8.011552381503861e-06)
     assert np.allclose(beam.sigma_p, 0.0022804534528404474)
     assert np.allclose(beam.energy, 107315902.44394557)
+    assert np.allclose(beam.total_charge, 5.000000000010205e-13)

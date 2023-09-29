@@ -86,13 +86,24 @@ class Element(ABC, nn.Module):
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
-            return ParameterBeam(mu, cov, incoming.energy, device=incoming.device)
+            return ParameterBeam(
+                mu,
+                cov,
+                incoming.energy,
+                device=incoming.device,
+                total_charge=incoming.total_charge,
+            )
         elif isinstance(incoming, ParticleBeam):
             if self.device != incoming.device:
                 raise DeviceError
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
-            return ParticleBeam(new_particles, incoming.energy, device=incoming.device)
+            return ParticleBeam(
+                new_particles,
+                incoming.energy,
+                device=incoming.device,
+                particle_charges=incoming.particle_charges,
+            )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
@@ -933,11 +944,20 @@ class Cavity(Element):
                 )
 
         if isinstance(incoming, ParameterBeam):
-            outgoing = ParameterBeam(outgoing_mu, outgoing_cov, outgoing_energy)
+            outgoing = ParameterBeam(
+                outgoing_mu,
+                outgoing_cov,
+                outgoing_energy,
+                total_charge=incoming.total_charge,
+                device=incoming.device,
+            )
             return outgoing
         else:  # ParticleBeam
             outgoing = ParticleBeam(
-                outgoing_particles, outgoing_energy, device=incoming.device
+                outgoing_particles,
+                outgoing_energy,
+                particle_charges=incoming.particle_charges,
+                device=incoming.device,
             )
             return outgoing
 
@@ -1406,10 +1426,21 @@ class Aperture(Element):
             ) <= 1.0
         outgoing_particles = incoming.particles[survived_mask]
 
+        outgoing_particle_charges = incoming.particle_charges[survived_mask]
+
         self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
 
+        self.lost_particle_charges = incoming.particle_charges[
+            torch.logical_not(survived_mask)
+        ]
+
         return (
-            ParticleBeam(outgoing_particles, incoming.energy, device=incoming.device)
+            ParticleBeam(
+                outgoing_particles,
+                incoming.energy,
+                particle_charges=outgoing_particle_charges,
+                device=incoming.device,
+            )
             if outgoing_particles.shape[0] > 0
             else ParticleBeam.empty
         )

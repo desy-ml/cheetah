@@ -342,6 +342,7 @@ def test_quadrupole():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
 
 def test_tilted_quadrupole():
@@ -397,6 +398,7 @@ def test_tilted_quadrupole():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
 
 def test_sbend():
@@ -454,6 +456,7 @@ def test_sbend():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
 
 def test_rbend():
@@ -511,6 +514,7 @@ def test_rbend():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
 
 def test_convert_rbend():
@@ -565,6 +569,7 @@ def test_convert_rbend():
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
     )
+    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
 
 def test_cavity():
@@ -604,6 +609,7 @@ def test_cavity():
         emittance_x=torch.tensor(3.494768647122823e-09),
         emittance_y=torch.tensor(3.497810737006068e-09),
         energy=torch.tensor(6e6),
+        total_charge=5e-9,
     )
     cheetah_cavity = cheetah.Cavity(
         length=torch.tensor(1.0377),
@@ -625,7 +631,7 @@ def test_cavity():
     tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
     tws.E = 6e-3
 
-    p_array = ocelot.generate_parray(tws=tws)
+    p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
     cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
     lattice = ocelot.MagneticLattice(cell)
@@ -639,3 +645,4 @@ def test_cavity():
     assert np.isclose(outgoing_beam.alpha_x, derived_twiss.alpha_x, rtol=1e-2)
     assert np.isclose(outgoing_beam.beta_y, derived_twiss.beta_y, rtol=1e-2)
     assert np.isclose(outgoing_beam.alpha_y, derived_twiss.alpha_y, rtol=1e-2)
+    assert np.isclose(outgoing_beam.total_charge, np.sum(outgoing_parray.q_array))
