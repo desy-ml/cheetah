@@ -1750,8 +1750,8 @@ class Segment(Element):
                             skippable_elements, incoming_beam=tracked_beam
                         )
                     )
-                    skippable_elements = []
                     tracked_beam = merged_elements[-1].track(tracked_beam)
+                skippable_elements = []
 
                 merged_elements.append(element)
                 tracked_beam = element.track(tracked_beam)
