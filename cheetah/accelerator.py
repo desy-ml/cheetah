@@ -162,6 +162,76 @@ class Element(ABC, nn.Module):
         )
 
 
+class CustomTransferMap(Element):
+    """
+    This element can represent any custom transfer map.
+    """
+
+    def __init__(
+        self,
+        transfer_map: Union[torch.Tensor, nn.Parameter],
+        length: Optional[torch.Tensor] = None,
+        name: Optional[str] = None,
+        device: str = "auto",
+    ) -> None:
+        super().__init__(name=name, device=device)
+
+        assert isinstance(transfer_map, torch.Tensor)
+        assert transfer_map.shape == (7, 7)
+
+        self._transfer_map = transfer_map
+        self.length = length if length is not None else torch.tensor(0.0)
+
+    @classmethod
+    def from_merging_elements(
+        cls, elements: list[Element], incoming_beam: Beam
+    ) -> "CustomTransferMap":
+        """
+        Combine the transfer maps of multiple successive elements into a single transfer
+        map. This can be used to speed up tracking through a segment, if no changes
+        are made to the elements in the segment or the energy of the beam being tracked
+        through them.
+
+        :param elements: List of consecutive elements to combine.
+        :param incoming_beam: Beam entering the first element in the segment. NOTE: That
+            this is required because the separate original transfer maps have to be
+            computed before being combined and some of them may depend on the energy of
+            the beam.
+        """
+        assert all(element.is_skippable for element in elements), (
+            "Combining the elements in a Segment that is not skippable will result in"
+            " incorrect tracking results."
+        )
+
+        tm = torch.eye(7, device=incoming_beam.device)
+        for element in elements:
+            tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
+            incoming_beam = element.track(incoming_beam)
+
+        combined_length = sum(
+            element.length for element in elements if hasattr(element, "length")
+        )
+
+        return cls(tm, length=combined_length, device=elements[0].device)
+
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        return self._transfer_map
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
+
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["transfer_map"]
+
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+        return [self]
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        # TODO: At some point think of a nice way to indicate this in a lattice plot
+        pass
+
+
 class Drift(Element):
     """
     Drift section in a particle accelerator.
@@ -1079,6 +1149,8 @@ class Marker(Element):
         return torch.eye(7, device=self.device)
 
     def track(self, incoming):
+        # TODO: At some point Markers should be able to be active or inactive. Active
+        # Markers would be able to record the beam tracked through them.
         return incoming
 
     @property
@@ -1642,6 +1714,145 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name, device=self.device)
+
+    def transfer_maps_merged(
+        self, incoming_beam: Beam, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where the transfer maps of skipable elements are merged into
+        elements of type `CustomTransferMap`. This can be used to speed up tracking
+        through the segment.
+
+        :param incoming_beam: Beam that is incoming to the segment. NOTE: This beam is
+            needed to determine the energy of the beam when entering each element, as
+            the transfer maps of merged elements might depend on the beam energy.
+        :param except_for: List of names of elements that should not be merged despite
+            being skippable. Usually these are the elements that are changed from one
+            tracking to another.
+        :return: Segment with merged transfer maps.
+        """
+        if except_for is None:
+            except_for = []
+
+        merged_elements = []  # Elements for new merged segment
+        skippable_elements = []  # Keep track of elements that are not yet merged
+        tracked_beam = incoming_beam
+        for element in self.elements:
+            if element.is_skippable and element.name not in except_for:
+                skippable_elements.append(element)
+            else:
+                if len(skippable_elements) == 1:
+                    merged_elements.append(skippable_elements[0])
+                    tracked_beam = skippable_elements[0].track(tracked_beam)
+                elif len(skippable_elements) > 1:  # i.e. we need to merge some elements
+                    merged_elements.append(
+                        CustomTransferMap.from_merging_elements(
+                            skippable_elements, incoming_beam=tracked_beam
+                        )
+                    )
+                    tracked_beam = merged_elements[-1].track(tracked_beam)
+                skippable_elements = []
+
+                merged_elements.append(element)
+                tracked_beam = element.track(tracked_beam)
+
+        if len(skippable_elements) > 0:
+            merged_elements.append(
+                CustomTransferMap.from_merging_elements(
+                    skippable_elements, incoming_beam=tracked_beam
+                )
+            )
+
+        return Segment(elements=merged_elements, name=self.name, device=self.device)
+
+    def without_inactive_markers(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where all inactive markers are removed. This can be used to
+        speed up tracking through the segment.
+
+        NOTE: `is_active` has not yet been implemented for Markers. Therefore, this
+        function currently removes all markers.
+
+        :param except_for: List of names of elements that should not be removed despite
+            being inactive.
+        :return: Segment without inactive markers.
+        """
+        # TODO: Add check for is_active once that has been implemented for Markers
+        if except_for is None:
+            except_for = []
+
+        return Segment(
+            elements=[
+                element
+                for element in self.elements
+                if not isinstance(element, Marker) or element.name in except_for
+            ],
+            name=self.name,
+            device=self.device,
+        )
+
+    def without_inactive_zero_length_elements(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where all inactive zero length elements are removed. This can
+        be used to speed up tracking through the segment.
+
+        NOTE: If `is_active` is not implemented for an element, it is assumed to be
+        inactive and will be removed.
+
+        :param except_for: List of names of elements that should not be removed despite
+            being inactive and having a zero length.
+        :return: Segment without inactive zero length elements.
+        """
+        if except_for is None:
+            except_for = []
+
+        return Segment(
+            elements=[
+                element
+                for element in self.elements
+                if (hasattr(element, "length") and element.length > 0.0)
+                or (hasattr(element, "is_active") and element.is_active)
+                or element.name in except_for
+            ],
+            name=self.name,
+            device=self.device,
+        )
+
+    def inactive_elements_as_drifts(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where all inactive elements (that have a length) are replaced
+        by drifts. This can be used to speed up tracking through the segment and is a
+        valid thing to as inactive elements should basically be no different from drift
+        sections.
+
+        :param except_for: List of names of elements that should not be replaced by
+            drifts despite being inactive. Usually these are the elements that are
+            currently inactive but will be activated later.
+        :return: Segment with inactive elements replaced by drifts.
+        """
+        if except_for is None:
+            except_for = []
+
+        return Segment(
+            elements=[
+                (
+                    element
+                    if (hasattr(element, "is_active") and element.is_active)
+                    or not hasattr(element, "length")
+                    or element.name in except_for
+                    else Drift(element.length)
+                )
+                for element in self.elements
+            ],
+            name=self.name,
+            device=self.device,
+        )
 
     @classmethod
     def from_lattice_json(cls, filepath: str) -> "Segment":
