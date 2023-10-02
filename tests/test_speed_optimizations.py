@@ -123,3 +123,35 @@ def test_active_elements_not_replaced_by_drift():
     optimized_segment = segment.inactive_elements_as_drifts()
 
     assert isinstance(optimized_segment.elements[1], cheetah.Quadrupole)
+
+
+def test_skippable_elements_reset():
+    """
+    @cr-xu pointed out that the skippable elements are not always reset appropriately
+    when merging transfer maps (see #88). This test catches the bug he pointed out.
+    """
+    incoming_beam = cheetah.ParameterBeam.from_astra(
+        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+    )
+    original_segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.6)),
+            cheetah.Quadrupole(
+                length=torch.tensor(0.2), k1=torch.tensor(4.2), name="Q1"
+            ),
+            cheetah.Drift(length=torch.tensor(0.4)),
+            cheetah.HorizontalCorrector(
+                length=torch.tensor(0.1), angle=torch.tensor(1e-4), name="HCOR_1"
+            ),
+            cheetah.Drift(length=torch.tensor(0.4)),
+        ]
+    )
+
+    merged_segment = original_segment.transfer_maps_merged(
+        incoming_beam=incoming_beam, except_for=["Q1", "HCOR_1"]
+    )
+
+    original_tm = original_segment.elements[2].transfer_map(energy=incoming_beam.energy)
+    merged_tm = merged_segment.elements[2].transfer_map(energy=incoming_beam.energy)
+
+    assert np.allclose(original_tm, merged_tm)
