@@ -9,6 +9,7 @@ None
 ### 🚀 Features
 
 - Add charge to the `ParameterBeam` and `ParticleBeam` classes (see #86) (@cr-xu)
+- Add opt-in speed optimisations (see #88) (@jank324)
 
 ### 🐛 Bug fixes
 
