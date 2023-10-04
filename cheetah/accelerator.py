@@ -236,6 +236,9 @@ class Drift(Element):
     """
     Drift section in a particle accelerator.
 
+    Note: the transfer map now uses the linear approximation.
+    Including the R_56 = L / (beta**2 * gamma **2)
+
     :param length: Length in meters.
     :param name: Unique identifier of the element.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
@@ -255,11 +258,12 @@ class Drift(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / rest_energy
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
-        tm[4, 5] = self.length * igamma2
+        tm[4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 

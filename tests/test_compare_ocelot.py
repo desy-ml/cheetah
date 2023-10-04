@@ -323,24 +323,7 @@ def test_quadrupole():
 
     # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
     )
     assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
@@ -377,26 +360,8 @@ def test_tilted_quadrupole():
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
     )
     assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
@@ -451,7 +416,6 @@ def test_sbend():
     assert np.allclose(
         outgoing_beam.particles[:, 4],
         outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
     )
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
@@ -509,7 +473,6 @@ def test_rbend():
     assert np.allclose(
         outgoing_beam.particles[:, 4],
         outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
     )
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
@@ -564,7 +527,6 @@ def test_convert_rbend():
     assert np.allclose(
         outgoing_beam.particles[:, 4],
         outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
     )
     assert np.allclose(
         outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
