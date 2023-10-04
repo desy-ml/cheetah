@@ -375,7 +375,7 @@ def test_sbend():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(2e-5))
+    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor(0.1)),
@@ -389,7 +389,7 @@ def test_sbend():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_sbend = ocelot.SBend(l=0.1, angle=2e-5)
+    ocelot_sbend = ocelot.SBend(l=0.1, angle=0.2)
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_sbend, ocelot.Drift(l=0.1)]
     )
@@ -398,27 +398,9 @@ def test_sbend():
         lattice, deepcopy(incoming_p_array), navigator, print_progress=False
     )
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0],
-        outgoing_p_array.rparticles.transpose()[:, 0],
-        rtol=1e-3,
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particles[:, :6],
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
@@ -432,7 +414,7 @@ def test_rbend():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.RBend(length=torch.tensor(0.1), angle=torch.tensor(2e-5))
+    cheetah_dipole = cheetah.RBend(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor(0.1)),
@@ -446,7 +428,7 @@ def test_rbend():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_rbend = ocelot.RBend(l=0.1, angle=2e-5)
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2)
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_rbend, ocelot.Drift(l=0.1)]
     )
@@ -455,27 +437,9 @@ def test_rbend():
         lattice, deepcopy(incoming_p_array), navigator, print_progress=False
     )
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0],
-        outgoing_p_array.rparticles.transpose()[:, 0],
-        rtol=1e-3,
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particles[:, :6],
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
@@ -489,7 +453,7 @@ def test_convert_rbend():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_rbend = ocelot.RBend(l=0.1, angle=2e-5, gap=0.05, fint=0.1, eid="rbend")
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2, gap=0.05, fint=0.1, eid="rbend")
     lattice = ocelot.MagneticLattice(
         [
             ocelot.Drift(l=0.1, eid="drfit_1"),
@@ -509,27 +473,8 @@ def test_convert_rbend():
     cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0],
-        outgoing_p_array.rparticles.transpose()[:, 0],
-        rtol=1e-3,
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
     )
     assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
