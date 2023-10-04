@@ -450,8 +450,8 @@ class Dipole(Element):
         return self.angle != 0
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        R_enter = self._transfer_map_enter(energy)
-        R_exit = self._transfer_map_exit(energy)
+        R_enter = self._transfer_map_enter()
+        R_exit = self._transfer_map_exit()
 
         if self.length != 0.0:  # Bending magnet with finite length
             R = base_rmatrix(
@@ -477,43 +477,39 @@ class Dipole(Element):
 
         return R
 
-    def _transfer_map_enter(self, energy: torch.Tensor) -> torch.Tensor:
-        if self.fringe_integral == 0:
-            return torch.eye(7, device=self.device)
-        else:
-            sec_e = torch.tensor(1.0) / torch.cos(self.e1)
-            phi = (
-                self.fringe_integral
-                * self.hx
-                * self.gap
-                * sec_e
-                * (1 + torch.sin(self.e1) ** 2)
-            )
+    def _transfer_map_enter(self) -> torch.Tensor:
+        """Linear transfer map for the entrance face of the dipole magnet."""
+        sec_e = torch.tensor(1.0) / torch.cos(self.e1)
+        phi = (
+            self.fringe_integral
+            * self.hx
+            * self.gap
+            * sec_e
+            * (1 + torch.sin(self.e1) ** 2)
+        )
 
-            tm = torch.eye(7, device=self.device)
-            tm[1, 0] = self.hx * torch.tan(self.e1)
-            tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        tm = torch.eye(7, device=self.device)
+        tm[1, 0] = self.hx * torch.tan(self.e1)
+        tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
 
-            return tm
+        return tm
 
-    def _transfer_map_exit(self, energy: torch.Tensor) -> torch.Tensor:
-        if self.fringe_integral_exit == 0:
-            return torch.eye(7, device=self.device)
-        else:
-            sec_e = 1.0 / torch.cos(self.e2)
-            phi = (
-                self.fringe_integral
-                * self.hx
-                * self.gap
-                * sec_e
-                * (1 + torch.sin(self.e2) ** 2)
-            )
+    def _transfer_map_exit(self) -> torch.Tensor:
+        """Linear transfer map for the exit face of the dipole magnet."""
+        sec_e = 1.0 / torch.cos(self.e2)
+        phi = (
+            self.fringe_integral
+            * self.hx
+            * self.gap
+            * sec_e
+            * (1 + torch.sin(self.e2) ** 2)
+        )
 
-            tm = torch.eye(7, device=self.device)
-            tm[1, 0] = self.hx * torch.tan(self.e2)
-            tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
+        tm = torch.eye(7, device=self.device)
+        tm[1, 0] = self.hx * torch.tan(self.e2)
+        tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
 
-            return tm
+        return tm
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
