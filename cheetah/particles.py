@@ -444,9 +444,7 @@ class ParameterBeam(Beam):
         cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
 
         energy = torch.tensor(1e9 * parray.E, dtype=torch.float32)
-        total_charge = torch.tensor(
-            torch.sum(parray.particle_charges), dtype=torch.float32
-        )
+        total_charge = torch.tensor(np.sum(parray.q_array), dtype=torch.float32)
 
         return cls(
             mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
@@ -890,7 +888,7 @@ class ParticleBeam(Beam):
         particles[:, :6] = torch.tensor(
             parray.rparticles.transpose(), dtype=torch.float32
         )
-        particle_charges = torch.tensor(parray.particle_charges, dtype=torch.float32)
+        particle_charges = torch.tensor(parray.q_array, dtype=torch.float32)
 
         return cls(
             particles=particles,
