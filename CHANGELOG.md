@@ -13,7 +13,7 @@ None
 
 ### 🐛 Bug fixes
 
-None
+- Fix the transfer map of Drift; Add R56 in horizontal and vertical correctors modelling (see #90) (@cr-xu)
 
 ### 🐆 Other
 
