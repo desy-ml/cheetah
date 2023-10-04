@@ -618,6 +618,8 @@ class RBend(Dipole):
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
+    Note: This is modeled as a drift section with
+        a thin-kick in the horizontal plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
@@ -639,10 +641,15 @@ class HorizontalCorrector(Element):
         self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        beta = torch.sqrt(1 - igamma2)
+
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
         tm[1, 6] = self.angle
         tm[2, 3] = self.length
+        tm[4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -691,6 +698,8 @@ class HorizontalCorrector(Element):
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
+    Note: This is modeled as a drift section with
+        a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
@@ -712,11 +721,15 @@ class VerticalCorrector(Element):
         self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        beta = torch.sqrt(1 - igamma2)
+
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
         tm[3, 6] = self.angle
-
+        tm[4, 5] = -self.length / beta**2 * igamma2
         return tm
 
     @property
