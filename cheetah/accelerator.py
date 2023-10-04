@@ -436,10 +436,12 @@ class Dipole(Element):
         self.e1 = e1 if e1 is not None else torch.tensor(0.0)
         self.e2 = e2 if e2 is not None else torch.tensor(0.0)
 
+    @property
+    def hx(self) -> torch.Tensor:
         if self.length == 0.0:
-            self.hx = torch.tensor(0.0)
+            return torch.tensor(0.0)
         else:
-            self.hx = self.angle / self.length
+            return self.angle / self.length
 
     @property
     def is_skippable(self) -> bool:
