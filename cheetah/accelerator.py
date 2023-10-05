@@ -236,6 +236,9 @@ class Drift(Element):
     """
     Drift section in a particle accelerator.
 
+    Note: the transfer map now uses the linear approximation.
+    Including the R_56 = L / (beta**2 * gamma **2)
+
     :param length: Length in meters.
     :param name: Unique identifier of the element.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
@@ -255,11 +258,12 @@ class Drift(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / rest_energy
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
-        tm[4, 5] = self.length * igamma2
+        tm[4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -432,10 +436,12 @@ class Dipole(Element):
         self.e1 = e1 if e1 is not None else torch.tensor(0.0)
         self.e2 = e2 if e2 is not None else torch.tensor(0.0)
 
+    @property
+    def hx(self) -> torch.Tensor:
         if self.length == 0.0:
-            self.hx = torch.tensor(0.0)
+            return torch.tensor(0.0)
         else:
-            self.hx = self.angle / self.length
+            return self.angle / self.length
 
     @property
     def is_skippable(self) -> bool:
@@ -446,8 +452,8 @@ class Dipole(Element):
         return self.angle != 0
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        R_enter = self._transfer_map_enter(energy)
-        R_exit = self._transfer_map_exit(energy)
+        R_enter = self._transfer_map_enter()
+        R_exit = self._transfer_map_exit()
 
         if self.length != 0.0:  # Bending magnet with finite length
             R = base_rmatrix(
@@ -473,43 +479,39 @@ class Dipole(Element):
 
         return R
 
-    def _transfer_map_enter(self, energy: torch.Tensor) -> torch.Tensor:
-        if self.fringe_integral == 0:
-            return torch.eye(7, device=self.device)
-        else:
-            sec_e = torch.tensor(1.0) / torch.cos(self.e1)
-            phi = (
-                self.fringe_integral
-                * self.hx
-                * self.gap
-                * sec_e
-                * (1 + torch.sin(self.e1) ** 2)
-            )
+    def _transfer_map_enter(self) -> torch.Tensor:
+        """Linear transfer map for the entrance face of the dipole magnet."""
+        sec_e = torch.tensor(1.0) / torch.cos(self.e1)
+        phi = (
+            self.fringe_integral
+            * self.hx
+            * self.gap
+            * sec_e
+            * (1 + torch.sin(self.e1) ** 2)
+        )
 
-            tm = torch.eye(7, device=self.device)
-            tm[1, 0] = self.hx * torch.tan(self.e1)
-            tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        tm = torch.eye(7, device=self.device)
+        tm[1, 0] = self.hx * torch.tan(self.e1)
+        tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
 
-            return tm
+        return tm
 
-    def _transfer_map_exit(self, energy: torch.Tensor) -> torch.Tensor:
-        if self.fringe_integral_exit == 0:
-            return torch.eye(7, device=self.device)
-        else:
-            sec_e = 1.0 / torch.cos(self.e2)
-            phi = (
-                self.fringe_integral
-                * self.hx
-                * self.gap
-                * sec_e
-                * (1 + torch.sin(self.e2) ** 2)
-            )
+    def _transfer_map_exit(self) -> torch.Tensor:
+        """Linear transfer map for the exit face of the dipole magnet."""
+        sec_e = 1.0 / torch.cos(self.e2)
+        phi = (
+            self.fringe_integral
+            * self.hx
+            * self.gap
+            * sec_e
+            * (1 + torch.sin(self.e2) ** 2)
+        )
 
-            tm = torch.eye(7, device=self.device)
-            tm[1, 0] = self.hx * torch.tan(self.e2)
-            tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
+        tm = torch.eye(7, device=self.device)
+        tm[1, 0] = self.hx * torch.tan(self.e2)
+        tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
 
-            return tm
+        return tm
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
@@ -614,6 +616,8 @@ class RBend(Dipole):
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
+    Note: This is modeled as a drift section with
+        a thin-kick in the horizontal plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
@@ -635,10 +639,15 @@ class HorizontalCorrector(Element):
         self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        beta = torch.sqrt(1 - igamma2)
+
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
         tm[1, 6] = self.angle
         tm[2, 3] = self.length
+        tm[4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -687,6 +696,8 @@ class HorizontalCorrector(Element):
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
+    Note: This is modeled as a drift section with
+        a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
@@ -708,11 +719,15 @@ class VerticalCorrector(Element):
         self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        beta = torch.sqrt(1 - igamma2)
+
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
         tm[3, 6] = self.angle
-
+        tm[4, 5] = -self.length / beta**2 * igamma2
         return tm
 
     @property
