@@ -1301,7 +1301,7 @@ class Screen(Element):
         read_beam = self.get_read_beam()
         if read_beam is Beam.empty or read_beam is None:
             image = torch.zeros(
-                (self.effective_resolution[1], self.effective_resolution[0])
+                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
             )
         elif isinstance(read_beam, ParameterBeam):
             transverse_mu = torch.stack([read_beam._mu[0], read_beam._mu[2]])
