@@ -6,7 +6,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ocelot_lattice
 
 
-def test_reading_shows_beam():
+def test_reading_shows_beam_particle():
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """
@@ -22,6 +22,36 @@ def test_reading_shows_beam():
         ],
     )
     beam = cheetah.ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+
+    assert isinstance(segment.my_screen.reading, torch.Tensor)
+    assert segment.my_screen.reading.shape == (100, 100)
+    assert np.allclose(segment.my_screen.reading, 0.0)
+
+    _ = segment.track(beam)
+
+    assert isinstance(segment.my_screen.reading, torch.Tensor)
+    assert segment.my_screen.reading.shape == (100, 100)
+    assert torch.all(segment.my_screen.reading >= 0.0)
+    assert torch.any(segment.my_screen.reading > 0.0)
+
+
+def test_reading_shows_beam_parameter():
+    """
+    Test that a screen has a reading that shows some sign of the beam having hit it.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Screen(
+                resolution=torch.tensor((100, 100)),
+                pixel_size=torch.tensor((1e-5, 1e-5)),
+                is_active=True,
+                name="my_screen",
+            ),
+        ],
+        name="my_segment",
+    )
+    beam = cheetah.ParameterBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
     assert segment.my_screen.reading.shape == (100, 100)

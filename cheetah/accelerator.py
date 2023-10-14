@@ -10,8 +10,8 @@ import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
-from scipy.stats import multivariate_normal
 from torch import nn
+from torch.distributions import MultivariateNormal
 
 from cheetah.converters.dontbmad import convert_bmad_lattice
 from cheetah.error import DeviceError
@@ -1311,8 +1311,8 @@ class Screen(Element):
                     torch.stack([read_beam._cov[2, 0], read_beam._cov[2, 2]]),
                 ]
             )
-            dist = multivariate_normal(
-                mean=transverse_mu, cov=transverse_cov, allow_singular=True
+            dist = MultivariateNormal(
+                loc=transverse_mu, covariance_matrix=transverse_cov
             )
 
             left = self.extent[0]
@@ -1321,9 +1321,11 @@ class Screen(Element):
             bottom = self.extent[2]
             top = self.extent[3]
             vstep = self.pixel_size[1] * self.binning
-            x, y = torch.mgrid[left:right:hstep, bottom:top:vstep]
+            x, y = torch.meshgrid(
+                torch.arange(left, right, hstep), torch.arange(bottom, top, vstep)
+            )
             pos = torch.dstack((x, y))
-            image = dist.pdf(pos)
+            image = dist.log_prob(pos).exp()
             image = torch.flipud(image.T)
         elif isinstance(read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
@@ -1975,7 +1977,7 @@ class Segment(Element):
                     todos[-1].elements.append(element)
 
             for todo in todos:
-                incoming = todo(incoming)
+                incoming = todo.track(incoming)
 
             return incoming
 
