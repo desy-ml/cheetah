@@ -1322,7 +1322,9 @@ class Screen(Element):
             top = self.extent[3]
             vstep = self.pixel_size[1] * self.binning
             x, y = torch.meshgrid(
-                torch.arange(left, right, hstep), torch.arange(bottom, top, vstep)
+                torch.arange(left, right, hstep),
+                torch.arange(bottom, top, vstep),
+                indexing="ij",
             )
             pos = torch.dstack((x, y))
             image = dist.log_prob(pos).exp()
