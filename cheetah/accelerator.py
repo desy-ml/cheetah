@@ -14,6 +14,7 @@ from torch import nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.converters.dontbmad import convert_bmad_lattice
+from cheetah.converters.nxtables import read_nx_tables
 from cheetah.error import DeviceError
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
@@ -1944,6 +1945,22 @@ class Segment(Element):
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return convert_bmad_lattice(bmad_lattice_file_path, environment_variables)
+
+    @classmethod
+    def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
+        """
+        Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
+        `Segment`.
+
+        NOTE: This format is specific to the ARES accelerator at DESY.
+
+        :param filepath: Path to the NX Tables file.
+        :return: Converted Cheetah `Segment`.
+        """
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+
+        return read_nx_tables(filepath)
 
     @property
     def is_skippable(self) -> bool:
