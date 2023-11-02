@@ -1,7 +1,6 @@
 """
 Tests that ensure that both beam types produce (roughly) the same results.
 """
-import numpy as np
 import torch
 
 import cheetah

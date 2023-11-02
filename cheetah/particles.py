@@ -628,9 +628,7 @@ class ParticleBeam(Beam):
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
 
-        self.particles = (
-            particles.to(self.device)
-        )
+        self.particles = particles.to(self.device)
         num_particles = len(self.particles)
         self.particle_charges = (
             particle_charges.to(self.device)
@@ -960,14 +958,25 @@ class ParticleBeam(Beam):
         if total_charge is None:
             particle_charges = self.particle_charges
         elif self.total_charge is None:  # Scale to the new charge
-            particle_charges = self.particle_charges * total_charge.to(self.device) / self.total_charge
+            particle_charges = (
+                self.particle_charges * total_charge.to(self.device) / self.total_charge
+            )
         else:
             particle_charges = (
-                torch.ones(len(self.particles), device=self.device) * total_charge.to(self.device) / len(self.particles)
+                torch.ones(len(self.particles), device=self.device)
+                * total_charge.to(self.device)
+                / len(self.particles)
             )
 
         new_mu = torch.stack(
-            [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0, device=self.device), torch.tensor(0.0, device=self.device)]
+            [
+                mu_x,
+                mu_xp,
+                mu_y,
+                mu_yp,
+                torch.tensor(0.0, device=self.device),
+                torch.tensor(0.0, device=self.device),
+            ]
         )
         new_sigma = torch.stack(
             [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p]
@@ -1003,7 +1012,10 @@ class ParticleBeam(Beam):
         particles[:, :6] = phase_space
 
         return self.__class__(
-            particles=particles, energy=energy, particle_charges=particle_charges, device=self.device
+            particles=particles,
+            energy=energy,
+            particle_charges=particle_charges,
+            device=self.device,
         )
 
     def __len__(self) -> int:

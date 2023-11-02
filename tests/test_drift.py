@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 from cheetah import Drift, ParameterBeam, ParticleBeam
@@ -35,4 +34,6 @@ def test_diverging_particle_beam():
 
     assert outgoing_beam.sigma_x > incoming_beam.sigma_x
     assert outgoing_beam.sigma_y > incoming_beam.sigma_y
-    assert torch.allclose(outgoing_beam.particle_charges, incoming_beam.particle_charges)
+    assert torch.allclose(
+        outgoing_beam.particle_charges, incoming_beam.particle_charges
+    )

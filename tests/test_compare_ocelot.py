@@ -31,7 +31,8 @@ def test_dipole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
 
 
@@ -62,7 +63,8 @@ def test_dipole_with_fringe_field():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
 
 
@@ -163,7 +165,8 @@ def test_solenoid():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
 
 
@@ -200,7 +203,9 @@ def test_ares_ea():
     assert np.isclose(outgoing_beam.mu_xp.cpu().numpy(), outgoing_p_array.px().mean())
     assert np.isclose(outgoing_beam.mu_y.cpu().numpy(), outgoing_p_array.y().mean())
     assert np.isclose(outgoing_beam.mu_yp.cpu().numpy(), outgoing_p_array.py().mean())
-    assert np.isclose(outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean(), atol=1e-7)
+    assert np.isclose(
+        outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean(), atol=1e-7
+    )
     assert np.isclose(outgoing_beam.mu_p.cpu().numpy(), outgoing_p_array.p().mean())
 
     assert np.allclose(outgoing_beam.xs.cpu().numpy(), outgoing_p_array.x())
@@ -232,17 +237,25 @@ def test_twiss_particle_beam():
 
     # Compare
     assert np.isclose(particle_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
-    assert np.isclose(particle_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn)
+    assert np.isclose(
+        particle_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
+    )
     assert np.isclose(
         particle_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4)
+    assert np.isclose(
+        particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+    )
     assert np.isclose(particle_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
-    assert np.isclose(particle_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn)
+    assert np.isclose(
+        particle_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
+    )
     assert np.isclose(
         particle_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4)
+    assert np.isclose(
+        particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+    )
 
 
 def test_twiss_parameter_beam():
@@ -264,17 +277,25 @@ def test_twiss_parameter_beam():
 
     # Compare
     assert np.isclose(parameter_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
-    assert np.isclose(parameter_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn)
+    assert np.isclose(
+        parameter_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
+    )
     assert np.isclose(
         parameter_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4)
+    assert np.isclose(
+        parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+    )
     assert np.isclose(parameter_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
-    assert np.isclose(parameter_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn)
+    assert np.isclose(
+        parameter_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
+    )
     assert np.isclose(
         parameter_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4)
+    assert np.isclose(
+        parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+    )
 
 
 def test_astra_import():
@@ -285,7 +306,9 @@ def test_astra_import():
     beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
     p_array = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
 
-    assert np.allclose(beam.particles[:, :6].cpu().numpy(), p_array.rparticles.transpose())
+    assert np.allclose(
+        beam.particles[:, :6].cpu().numpy(), p_array.rparticles.transpose()
+    )
     assert np.isclose(beam.energy.cpu().numpy(), (p_array.E * 1e9))
 
 
@@ -323,9 +346,12 @@ def test_quadrupole():
 
     # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
-    assert np.allclose(outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array)
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )
 
 
 def test_tilted_quadrupole():
@@ -361,9 +387,12 @@ def test_tilted_quadrupole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
-    assert np.allclose(outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array)
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )
 
 
 def test_sbend():
@@ -402,7 +431,9 @@ def test_sbend():
         outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
-    assert np.allclose(outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array)
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )
 
 
 def test_rbend():
@@ -441,7 +472,9 @@ def test_rbend():
         outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
-    assert np.allclose(outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array)
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )
 
 
 def test_convert_rbend():
@@ -474,9 +507,12 @@ def test_convert_rbend():
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
-    assert np.allclose(outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array)
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )
 
 
 def test_cavity():
@@ -548,8 +584,18 @@ def test_cavity():
     derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
 
     # Compare
-    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x, rtol=1e-2)
-    assert np.isclose(outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-2)
-    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y, rtol=1e-2)
-    assert np.isclose(outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-2)
-    assert np.isclose(outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array))
+    assert np.isclose(
+        outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-2
+    )
+    assert np.isclose(
+        outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
+    )
