@@ -83,7 +83,6 @@ class Element(ABC, nn.Module):
         elif isinstance(incoming, ParameterBeam):
             if self.device != incoming.device:
                 raise DeviceError
-                
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
@@ -97,7 +96,6 @@ class Element(ABC, nn.Module):
         elif isinstance(incoming, ParticleBeam):
             if self.device != incoming.device:
                 raise DeviceError
-                
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
             return ParticleBeam(
@@ -181,8 +179,8 @@ class CustomTransferMap(Element):
         assert isinstance(transfer_map, torch.Tensor)
         assert transfer_map.shape == (7, 7)
 
-        self._transfer_map = transfer_map.to(self.device)
-        self.length = length.to(self.device) if length is not None else torch.tensor(0.0, device=self.device)
+        self._transfer_map = transfer_map
+        self.length = length if length is not None else torch.tensor(0.0)
 
     @classmethod
     def from_merging_elements(
@@ -255,11 +253,11 @@ class Drift(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
+        self.length = length
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / rest_energy.to(self.device)
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=self.device)
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=self.device)
@@ -321,18 +319,18 @@ class Quadrupole(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
-        self.k1 = k1.to(self.device) if k1 is not None else torch.tensor(0.0, device=self.device)
+        self.length = length
+        self.k1 = k1 if k1 is not None else torch.tensor(0.0)
         self.misalignment = (
-            misalignment.to(self.device) if misalignment is not None else torch.tensor([0.0, 0.0], device=self.device)
+            misalignment if misalignment is not None else torch.tensor([0.0, 0.0])
         )
-        self.tilt = tilt.to(self.device) if tilt is not None else torch.tensor(0.0, device=self.device)
+        self.tilt = tilt if tilt is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.device),
+            hx=torch.tensor(0.0),
             tilt=self.tilt,
             energy=energy,
             device=self.device,
@@ -423,25 +421,25 @@ class Dipole(Element):
     ):
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
-        self.angle = angle.to(self.device) if angle is not None else torch.tensor(0.0, device=self.device)
-        self.gap = gap.to(self.device) if gap is not None else torch.tensor(0.0, device=self.device)
-        self.tilt = tilt.to(self.device) if tilt is not None else torch.tensor(0.0, device=self.device)
+        self.length = length
+        self.angle = angle if angle is not None else torch.tensor(0.0)
+        self.gap = gap if gap is not None else torch.tensor(0.0)
+        self.tilt = tilt if tilt is not None else torch.tensor(0.0)
         self.name = name
         self.fringe_integral = (
-            fringe_integral.to(self.device) if fringe_integral is not None else torch.tensor(0.0, device=self.device)
+            fringe_integral if fringe_integral is not None else torch.tensor(0.0)
         )
         self.fringe_integral_exit = (
-            self.fringe_integral if fringe_integral_exit is None else fringe_integral_exit.to(self.device)
+            fringe_integral if fringe_integral_exit is None else fringe_integral_exit
         )
         # Rectangular bend
-        self.e1 = e1.to(self.device) if e1 is not None else torch.tensor(0.0, device=self.device)
-        self.e2 = e2.to(self.device) if e2 is not None else torch.tensor(0.0, device=self.device)
+        self.e1 = e1 if e1 is not None else torch.tensor(0.0)
+        self.e2 = e2 if e2 is not None else torch.tensor(0.0)
 
     @property
     def hx(self) -> torch.Tensor:
         if self.length == 0.0:
-            return torch.tensor(0.0, device=self.device)
+            return torch.tensor(0.0)
         else:
             return self.angle / self.length
 
@@ -483,7 +481,7 @@ class Dipole(Element):
 
     def _transfer_map_enter(self) -> torch.Tensor:
         """Linear transfer map for the entrance face of the dipole magnet."""
-        sec_e = torch.tensor(1.0, device=self.device) / torch.cos(self.e1)
+        sec_e = torch.tensor(1.0) / torch.cos(self.e1)
         phi = (
             self.fringe_integral
             * self.hx
@@ -637,12 +635,12 @@ class HorizontalCorrector(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
-        self.angle = angle.to(self.device) if angle is not None else torch.tensor(0.0, device=self.device)
+        self.length = length
+        self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / rest_energy.to(self.device)
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=self.device)
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=self.device)
@@ -717,12 +715,12 @@ class VerticalCorrector(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
-        self.angle = angle.to(self.device) if angle is not None else torch.tensor(0.0, device=self.device)
+        self.length = length
+        self.angle = angle if angle is not None else torch.tensor(0.0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / rest_energy.to(self.device)
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=self.device)
+        gamma = energy / rest_energy
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=self.device)
@@ -798,10 +796,10 @@ class Cavity(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
-        self.voltage = voltage.to(self.device) if voltage is not None else torch.tensor(0.0, device=self.device)
-        self.phase = phase.to(self.device) if phase is not None else torch.tensor(0.0, device=self.device)
-        self.frequency = frequency.to(self.device) if frequency is not None else torch.tensor(0.0, device=self.device)
+        self.length = length
+        self.voltage = voltage if voltage is not None else torch.tensor(0.0)
+        self.phase = phase if phase is not None else torch.tensor(0.0)
+        self.frequency = frequency if frequency is not None else torch.tensor(0.0)
 
     @property
     def is_active(self) -> bool:
@@ -817,9 +815,9 @@ class Cavity(Element):
         else:
             return base_rmatrix(
                 length=self.length,
-                k1=torch.tensor(0.0, device=self.device),
-                hx=torch.tensor(0.0, device=self.device),
-                tilt=torch.tensor(0.0, device=self.device),
+                k1=torch.tensor(0.0),
+                hx=torch.tensor(0.0),
+                tilt=torch.tensor(0.0),
                 energy=energy,
                 device=self.device,
             )
@@ -841,11 +839,11 @@ class Cavity(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_beam(self, incoming: ParticleBeam) -> ParticleBeam:
-        beta0 = torch.tensor(1.0, device=self.device)
-        igamma2 = torch.tensor(0.0, device=self.device)
-        g0 = torch.tensor(1e10, device=self.device)
+        beta0 = torch.tensor(1.0)
+        igamma2 = torch.tensor(0.0)
+        g0 = torch.tensor(1e10)
         if incoming.energy != 0:
-            g0 = incoming.energy / electron_mass_eV.to(self.device)
+            g0 = incoming.energy / electron_mass_eV
             igamma2 = 1 / g0**2
             beta0 = torch.sqrt(1 - igamma2)
 
@@ -985,7 +983,7 @@ class Cavity(Element):
         phi = torch.deg2rad(self.phase)
         delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, device=self.device)
+        eta = torch.tensor(1.0)
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
@@ -1225,14 +1223,14 @@ class Screen(Element):
         super().__init__(name=name, device=device)
 
         self.resolution = (
-            resolution.to(self.device) if resolution is not None else torch.tensor((1024, 1024), device=self.device)
+            resolution if resolution is not None else torch.tensor((1024, 1024))
         )
         self.pixel_size = (
-            pixel_size.to(self.device) if pixel_size is not None else torch.tensor((1e-3, 1e-3), device=self.device)
+            pixel_size if pixel_size is not None else torch.tensor((1e-3, 1e-3))
         )
-        self.binning = binning.to(self.device) if binning is not None else torch.tensor(1, device=self.device)
+        self.binning = binning if binning is not None else torch.tensor(1)
         self.misalignment = (
-            misalignment.to(self.device) if misalignment is not None else torch.tensor((0.0, 0.0), device=self.device)
+            misalignment if misalignment is not None else torch.tensor((0.0, 0.0))
         )
         self.is_active = is_active
 
@@ -1333,8 +1331,8 @@ class Screen(Element):
             image = torch.flipud(image.T)
         elif isinstance(read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
-                torch.stack((read_beam.xs, read_beam.ys)).T.cpu(),
-                bins=self.pixel_bin_edges.cpu(),
+                torch.stack((read_beam.xs, read_beam.ys)).T,
+                bins=self.pixel_bin_edges,
             )
             image = torch.flipud(image.T)
             image = image.cpu()
@@ -1413,8 +1411,8 @@ class Aperture(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.x_max = x_max.to(self.device)
-        self.y_max = y_max.to(self.device)
+        self.x_max = x_max
+        self.y_max = y_max
         self.shape = shape
         self.is_active = is_active
 
@@ -1526,12 +1524,12 @@ class Undulator(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device)
+        self.length = length
         self.is_active = is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         gamma = energy / rest_energy
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=self.device)
+        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
 
         tm = torch.eye(7, device=self.device)
         tm[0, 1] = self.length
@@ -1596,10 +1594,10 @@ class Solenoid(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.length = length.to(self.device) if length is not None else torch.tensor(0.0, device=self.device)
-        self.k = k.to(self.device) if k is not None else torch.tensor(0.0, device=self.device)
+        self.length = length if length is not None else torch.tensor(0.0)
+        self.k = k if k is not None else torch.tensor(0.0)
         self.misalignment = (
-            misalignment.to(self.device) if misalignment is not None else torch.tensor((0.0, 0.0), device=self.device)
+            misalignment if misalignment is not None else torch.tensor((0.0, 0.0))
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -1610,7 +1608,7 @@ class Solenoid(Element):
             s_k = self.length
         else:
             s_k = s / self.k
-        r56 = torch.tensor(0.0, device=self.device)
+        r56 = torch.tensor(0.0)
         if gamma != 0:
             gamma2 = gamma * gamma
             beta = torch.sqrt(1.0 - 1.0 / gamma2)
