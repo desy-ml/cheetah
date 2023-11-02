@@ -55,6 +55,18 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             angle=torch.tensor(element.angle, dtype=torch.float32),
             name=element.id,
         )
+    elif isinstance(element, ocelot.Bend):
+        return cheetah.Dipole(
+            length=torch.tensor(element.l, dtype=torch.float32),
+            angle=torch.tensor(element.angle, dtype=torch.float32),
+            e1=torch.tensor(element.e1, dtype=torch.float32),
+            e2=torch.tensor(element.e2, dtype=torch.float32),
+            tilt=torch.tensor(element.tilt, dtype=torch.float32),
+            fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
+            fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
+            gap=torch.tensor(element.gap, dtype=torch.float32),
+            name=element.id,
+        )
     elif isinstance(element, ocelot.SBend):
         return cheetah.Dipole(
             length=torch.tensor(element.l, dtype=torch.float32),
