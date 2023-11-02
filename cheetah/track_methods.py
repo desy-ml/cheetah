@@ -60,14 +60,14 @@ def base_rmatrix(
         is selected automatically.
     :return: Transfer matrix for the element.
     """
-
-    tilt = tilt if tilt is not None else torch.tensor(0.0)
-    energy = energy if energy is not None else torch.tensor(0.0)
-
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device)
+    energy = energy if energy is not None else torch.tensor(0.0, device=device)
+
     gamma = energy / REST_ENERGY
-    igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+    igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=device)
 
     beta = torch.sqrt(1 - igamma2)
 
@@ -75,8 +75,8 @@ def base_rmatrix(
         k1 = k1 + torch.tensor(1e-12, device=device)  # Avoid division by zero
     kx2 = k1 + hx**2
     ky2 = -k1
-    kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0)))
-    ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0)))
+    kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0, device=device)))
+    ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
     sy = (torch.sin(ky * length) / ky).real if ky != 0 else length
