@@ -17,7 +17,7 @@ None
 
 ### 🐆 Other
 
-None
+- Add pull request template (see #97) (@jank324)
 
 ## [v0.6.1](https://github.com/desy-ml/cheetah/releases/tag/v0.6.1) (2023-09-17)
 
