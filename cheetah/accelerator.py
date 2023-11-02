@@ -1388,7 +1388,7 @@ class Screen(Element):
                 ]
             )
             dist = MultivariateNormal(
-                loc=transverse_mu, covariance_matrix=transverse_cov
+                loc=transverse_mu.cpu(), covariance_matrix=transverse_cov.cpu()
             )
 
             left = self.extent[0]

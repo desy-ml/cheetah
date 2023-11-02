@@ -70,13 +70,13 @@ def test_reading_shows_beam_ares():
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """
     segment = cheetah.Segment.from_ocelot(
-        ocelot_lattice.cell, warnings=False, device="cpu"
+        ocelot_lattice.cell, warnings=False
     ).subcell("AREASOLA1", "AREABSCR1")
     beam = cheetah.ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
 
-    segment.AREABSCR1.resolution = torch.tensor((2448, 2040))
-    segment.AREABSCR1.pixel_size = torch.tensor((3.3198e-6, 2.4469e-6))
-    segment.AREABSCR1.binning = torch.tensor(1)
+    segment.AREABSCR1.resolution = torch.tensor((2448, 2040), device=segment.device)
+    segment.AREABSCR1.pixel_size = torch.tensor((3.3198e-6, 2.4469e-6), device=segment.device)
+    segment.AREABSCR1.binning = torch.tensor(1, device=segment.device)
     segment.AREABSCR1.is_active = True
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
