@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 import torch
 
@@ -21,7 +20,9 @@ def test_drift_end():
     outgoing_beam_original = original_drift.track(incoming_beam)
     outgoing_beam_split = split_drift.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 @pytest.mark.xfail  # TODO: Fix this
@@ -44,7 +45,9 @@ def test_quadrupole_end():
     outgoing_beam_original = original_quadrupole.track(incoming_beam)
     outgoing_beam_split = split_quadrupole.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 def test_cavity_end():
@@ -67,7 +70,9 @@ def test_cavity_end():
     outgoing_beam_original = original_cavity.track(incoming_beam)
     outgoing_beam_split = split_cavity.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 def test_solenoid_end():
@@ -87,7 +92,9 @@ def test_solenoid_end():
     outgoing_beam_original = original_solenoid.track(incoming_beam)
     outgoing_beam_split = split_solenoid.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 def test_dipole_end():
@@ -105,7 +112,9 @@ def test_dipole_end():
     outgoing_beam_original = original_dipole.track(incoming_beam)
     outgoing_beam_split = split_dipole.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 def test_undulator_end():
@@ -125,7 +134,9 @@ def test_undulator_end():
     outgoing_beam_original = original_undulator.track(incoming_beam)
     outgoing_beam_split = split_undulator.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 @pytest.mark.xfail  # TODO: Fix this
@@ -148,7 +159,9 @@ def test_horizontal_corrector_end():
     outgoing_beam_original = original_horizontal_corrector.track(incoming_beam)
     outgoing_beam_split = split_horizontal_corrector.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
 
 
 @pytest.mark.xfail  # TODO: Fix this
@@ -171,4 +184,6 @@ def test_vertical_corrector_end():
     outgoing_beam_original = original_vertical_corrector.track(incoming_beam)
     outgoing_beam_split = split_vertical_corrector.track(incoming_beam)
 
-    assert torch.allclose(outgoing_beam_original.particles, outgoing_beam_split.particles)
+    assert torch.allclose(
+        outgoing_beam_original.particles, outgoing_beam_split.particles
+    )
