@@ -1408,7 +1408,7 @@ class Screen(Element):
         elif isinstance(read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
                 torch.stack((read_beam.xs, read_beam.ys)).T.cpu(),
-                bins=self.pixel_bin_edges.cpu(),
+                bins=self.pixel_bin_edges,
             )
             image = torch.flipud(image.T)
             image = image.cpu()
