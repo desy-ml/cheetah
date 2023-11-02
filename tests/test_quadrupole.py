@@ -16,8 +16,8 @@ def test_quadrupole_off():
     outbeam_quad = quadrupole(incoming_beam)
     outbeam_drift = drift(incoming_beam)
 
-    quadrupole.k1 = torch.tensor(1.0)
+    quadrupole.k1 = torch.tensor(1.0, device=quadrupole.device)
     outbeam_quad_on = quadrupole(incoming_beam)
 
-    assert np.allclose(outbeam_quad.sigma_x, outbeam_drift.sigma_x)
-    assert not np.allclose(outbeam_quad_on.sigma_x, outbeam_drift.sigma_x)
+    assert torch.allclose(outbeam_quad.sigma_x, outbeam_drift.sigma_x)
+    assert not torch.allclose(outbeam_quad_on.sigma_x, outbeam_drift.sigma_x)
