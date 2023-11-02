@@ -14,6 +14,7 @@ None
 ### 🐛 Bug fixes
 
 - Fix the transfer maps in `Drift` and `Dipole`; Add R56 in horizontal and vertical correctors modelling (see #90) (@cr-xu)
+- Fix error caused by mismatched devices on machines with CUDA GPUs (see #97) (@jank324)
 
 ### 🐆 Other
 
