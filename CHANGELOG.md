@@ -14,6 +14,7 @@ None
 ### 🐛 Bug fixes
 
 - Fix the transfer maps in `Drift` and `Dipole`; Add R56 in horizontal and vertical correctors modelling (see #90) (@cr-xu)
+- Fix fringe_field_exit of `Dipole` is overwritten by `fringe_field` bug (see #99) (@cr-xu)
 
 ### 🐆 Other
 
