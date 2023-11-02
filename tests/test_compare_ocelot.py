@@ -479,6 +479,40 @@ def test_convert_rbend():
     assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
 
 
+def test_asymmetric_bend():
+    """Test the case that bend fringe fields are asymmetric."""
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_bend = ocelot.Bend(
+        l=0.1, angle=0.2, gap=0.05, fint=0.1, fintx=0.2, eid="bend"
+    )
+    lattice = ocelot.MagneticLattice(
+        [
+            ocelot.Drift(l=0.1, eid="drfit_1"),
+            ocelot_bend,
+            ocelot.Drift(l=0.1, eid="drift_2"),
+        ]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    assert np.allclose(
+        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
+    )
+    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
+
+
 def test_cavity():
     """
     Compare tracking through a cavity that is on.

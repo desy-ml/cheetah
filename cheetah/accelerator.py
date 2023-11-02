@@ -431,7 +431,9 @@ class Dipole(Element):
             fringe_integral if fringe_integral is not None else torch.tensor(0.0)
         )
         self.fringe_integral_exit = (
-            fringe_integral if fringe_integral_exit is None else fringe_integral_exit
+            self.fringe_integral
+            if fringe_integral_exit is None
+            else fringe_integral_exit
         )
         # Rectangular bend
         self.e1 = e1 if e1 is not None else torch.tensor(0.0)
@@ -501,7 +503,7 @@ class Dipole(Element):
         """Linear transfer map for the exit face of the dipole magnet."""
         sec_e = 1.0 / torch.cos(self.e2)
         phi = (
-            self.fringe_integral
+            self.fringe_integral_exit
             * self.hx
             * self.gap
             * sec_e
