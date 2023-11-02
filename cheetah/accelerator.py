@@ -542,7 +542,7 @@ class Dipole(Element):
         """Linear transfer map for the exit face of the dipole magnet."""
         sec_e = 1.0 / torch.cos(self.e2)
         phi = (
-            self.fringe_integral
+            self.fringe_integral_exit
             * self.hx
             * self.gap
             * sec_e
