@@ -1479,8 +1479,8 @@ class Aperture(Element):
 
     def __init__(
         self,
-        x_max: Union[torch.Tensor, nn.Parameter] = torch.inf,
-        y_max: Union[torch.Tensor, nn.Parameter] = torch.inf,
+        x_max: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        y_max: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: Optional[str] = None,
@@ -1488,8 +1488,16 @@ class Aperture(Element):
     ) -> None:
         super().__init__(name=name, device=device)
 
-        self.x_max = x_max.to(self.device)
-        self.y_max = y_max.to(self.device)
+        self.x_max = (
+            x_max.to(self.device)
+            if x_max is not None
+            else torch.tensor(float("inf"), device=self.device)
+        )
+        self.y_max = (
+            y_max.to(self.device)
+            if y_max is not None
+            else torch.tensor(float("inf"), device=self.device)
+        )
         self.shape = shape
         self.is_active = is_active
 
