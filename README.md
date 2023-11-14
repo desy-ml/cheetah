@@ -113,3 +113,10 @@ We suggest installing pre-commit hooks to automatically conform with the code fo
 pip install pre-commit
 pre-commit install
 ```
+
+## Acknowledgements
+
+We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser, Chenran Xu, Oliver Stein, Annika Eichler, Andrea Santamaria Garcia and others.
+
+The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
+In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
