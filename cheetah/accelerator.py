@@ -1186,7 +1186,7 @@ class BPM(Element):
         if incoming is Beam.empty:
             self.reading = None
         elif isinstance(incoming, ParameterBeam):
-            self.reading = torch.stack([incoming._mu_x, incoming._mu_y])
+            self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
         elif isinstance(incoming, ParticleBeam):
             self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
         else:
