@@ -114,15 +114,24 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
         element = cheetah.BPM(name=name)
     elif class_name == "SLHG":
         element = cheetah.Aperture(  # TODO: Ask for actual size and shape
-            name=name, x_max=torch.inf, y_max=torch.inf, shape="elliptical"
+            name=name,
+            x_max=torch.tensor(float("inf")),
+            y_max=torch.tensor(float("inf")),
+            shape="elliptical",
         )
     elif class_name == "SLHB":
         element = cheetah.Aperture(  # TODO: Ask for actual size and shape
-            name=name, x_max=torch.inf, y_max=torch.inf, shape="rectangular"
+            name=name,
+            x_max=torch.tensor(float("inf")),
+            y_max=torch.tensor(float("inf")),
+            shape="rectangular",
         )
     elif class_name == "SLHS":
         element = cheetah.Aperture(  # TODO: Ask for actual size and shape
-            name=name, x_max=torch.inf, y_max=torch.inf, shape="rectangular"
+            name=name,
+            x_max=torch.tensor(float("inf")),
+            y_max=torch.tensor(float("inf")),
+            shape="rectangular",
         )
     elif class_name == "MCHM":
         element = cheetah.HorizontalCorrector(name=name, length=torch.tensor(0.02))
