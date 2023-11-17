@@ -628,17 +628,14 @@ class ParticleBeam(Beam):
             device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
 
-        self.particles = (
-            particles.to(device) if isinstance(particles, torch.Tensor) else particles
-        )
-        n_particles = len(self.particles)
+        self.particles = particles.to(self.device)
+        num_particles = len(self.particles)
         self.particle_charges = (
-            particle_charges
+            particle_charges.to(self.device)
             if particle_charges is not None
-            else torch.zeros(n_particles, dtype=torch.float32)
+            else torch.zeros(num_particles, dtype=torch.float32, device=self.device)
         )
-        self.particle_charges = self.particle_charges.to(self.device)
-        self.energy = energy
+        self.energy = energy.to(self.device)
 
     @classmethod
     def from_parameters(
@@ -947,28 +944,39 @@ class ParticleBeam(Beam):
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
-        mu_x = mu_x if mu_x is not None else self.mu_x
-        mu_y = mu_y if mu_y is not None else self.mu_y
-        mu_xp = mu_xp if mu_xp is not None else self.mu_xp
-        mu_yp = mu_yp if mu_yp is not None else self.mu_yp
-        sigma_x = sigma_x if sigma_x is not None else self.sigma_x
-        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
-        sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
-        sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
-        sigma_p = sigma_p if sigma_p is not None else self.sigma_p
-        energy = energy if energy is not None else self.energy
+        mu_x = mu_x.to(self.device) if mu_x is not None else self.mu_x
+        mu_y = mu_y.to(self.device) if mu_y is not None else self.mu_y
+        mu_xp = mu_xp.to(self.device) if mu_xp is not None else self.mu_xp
+        mu_yp = mu_yp.to(self.device) if mu_yp is not None else self.mu_yp
+        sigma_x = sigma_x.to(self.device) if sigma_x is not None else self.sigma_x
+        sigma_y = sigma_y.to(self.device) if sigma_y is not None else self.sigma_y
+        sigma_xp = sigma_xp.to(self.device) if sigma_xp is not None else self.sigma_xp
+        sigma_yp = sigma_yp.to(self.device) if sigma_yp is not None else self.sigma_yp
+        sigma_s = sigma_s.to(self.device) if sigma_s is not None else self.sigma_s
+        sigma_p = sigma_p.to(self.device) if sigma_p is not None else self.sigma_p
+        energy = energy.to(self.device) if energy is not None else self.energy
         if total_charge is None:
             particle_charges = self.particle_charges
-        elif self.total_charge is None:  # scale to the new charge
-            particle_charges = self.particle_charges * total_charge / self.total_charge
+        elif self.total_charge is None:  # Scale to the new charge
+            particle_charges = (
+                self.particle_charges * total_charge.to(self.device) / self.total_charge
+            )
         else:
             particle_charges = (
-                torch.ones(len(self.particles)) * total_charge / len(self.particles)
+                torch.ones(len(self.particles), device=self.device)
+                * total_charge.to(self.device)
+                / len(self.particles)
             )
 
         new_mu = torch.stack(
-            [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
+            [
+                mu_x,
+                mu_xp,
+                mu_y,
+                mu_yp,
+                torch.tensor(0.0, device=self.device),
+                torch.tensor(0.0, device=self.device),
+            ]
         )
         new_sigma = torch.stack(
             [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p]
@@ -980,8 +988,8 @@ class ParticleBeam(Beam):
                 self.mu_xp,
                 self.mu_y,
                 self.mu_yp,
-                torch.tensor(0.0),
-                torch.tensor(0.0),
+                torch.tensor(0.0, device=self.device),
+                torch.tensor(0.0, device=self.device),
             ]
         )
         old_sigma = torch.stack(
@@ -1004,7 +1012,10 @@ class ParticleBeam(Beam):
         particles[:, :6] = phase_space
 
         return self.__class__(
-            particles=particles, energy=energy, particle_charges=particle_charges
+            particles=particles,
+            energy=energy,
+            particle_charges=particle_charges,
+            device=self.device,
         )
 
     def __len__(self) -> int:

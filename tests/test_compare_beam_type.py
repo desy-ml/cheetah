@@ -1,7 +1,6 @@
 """
 Tests that ensure that both beam types produce (roughly) the same results.
 """
-import numpy as np
 import torch
 
 import cheetah
@@ -33,18 +32,18 @@ def test_from_twiss():
         energy=torch.tensor(6e6),
     )
 
-    assert np.isclose(parameter_beam.mu_x, particle_beam.mu_x, atol=1e-6)
-    assert np.isclose(parameter_beam.mu_y, particle_beam.mu_y, atol=1e-6)
-    assert np.isclose(parameter_beam.sigma_x, particle_beam.sigma_x, rtol=1e-3)
-    assert np.isclose(parameter_beam.sigma_y, particle_beam.sigma_y, rtol=1e-3)
-    assert np.isclose(parameter_beam.mu_xp, particle_beam.mu_xp, atol=1e-6)
-    assert np.isclose(parameter_beam.mu_yp, particle_beam.mu_yp, atol=1e-6)
-    assert np.isclose(parameter_beam.sigma_xp, particle_beam.sigma_xp, rtol=1e-3)
-    assert np.isclose(parameter_beam.sigma_yp, particle_beam.sigma_yp, rtol=1e-3)
-    assert np.isclose(parameter_beam.mu_s, particle_beam.mu_s)
-    assert np.isclose(parameter_beam.sigma_s, particle_beam.sigma_s)
-    assert np.isclose(parameter_beam.mu_p, particle_beam.mu_p)
-    assert np.isclose(parameter_beam.sigma_p, particle_beam.sigma_p)
+    assert torch.isclose(parameter_beam.mu_x, particle_beam.mu_x, atol=1e-6)
+    assert torch.isclose(parameter_beam.mu_y, particle_beam.mu_y, atol=1e-6)
+    assert torch.isclose(parameter_beam.sigma_x, particle_beam.sigma_x, rtol=1e-3)
+    assert torch.isclose(parameter_beam.sigma_y, particle_beam.sigma_y, rtol=1e-3)
+    assert torch.isclose(parameter_beam.mu_xp, particle_beam.mu_xp, atol=1e-6)
+    assert torch.isclose(parameter_beam.mu_yp, particle_beam.mu_yp, atol=1e-6)
+    assert torch.isclose(parameter_beam.sigma_xp, particle_beam.sigma_xp, rtol=1e-3)
+    assert torch.isclose(parameter_beam.sigma_yp, particle_beam.sigma_yp, rtol=1e-3)
+    assert torch.isclose(parameter_beam.mu_s, particle_beam.mu_s)
+    assert torch.isclose(parameter_beam.sigma_s, particle_beam.sigma_s)
+    assert torch.isclose(parameter_beam.mu_p, particle_beam.mu_p)
+    assert torch.isclose(parameter_beam.sigma_p, particle_beam.sigma_p)
 
 
 def test_drift():
@@ -66,29 +65,29 @@ def test_drift():
     outgoing_particle_beam = cheetah_drift.track(incoming_particle_beam)
 
     # Compare
-    assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
-    assert np.isclose(
+    assert torch.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert torch.isclose(
         outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
     )
 
@@ -114,29 +113,29 @@ def test_quadrupole():
     outgoing_particle_beam = cheetah_quadrupole.track(incoming_particle_beam)
 
     # Compare
-    assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
-    assert np.isclose(
+    assert torch.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert torch.isclose(
         outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
     )
 
@@ -168,47 +167,47 @@ def test_cavity_from_astra():
     outgoing_particle_beam = cheetah_cavity.track(incoming_particle_beam)
 
     # Compare
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.beta_x, outgoing_particle_beam.beta_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.alpha_x, outgoing_particle_beam.alpha_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.beta_y, outgoing_particle_beam.beta_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.alpha_y, outgoing_particle_beam.alpha_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.emittance_x, outgoing_particle_beam.emittance_x
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.emittance_y, outgoing_particle_beam.emittance_y
     )
-    assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
-    assert np.isclose(
+    assert torch.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert torch.isclose(
         outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
     )
 
@@ -252,46 +251,46 @@ def test_cavity_from_twiss():
     outgoing_particle_beam = cheetah_cavity.track(incoming_particle_beam)
 
     # Compare
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.beta_x, outgoing_particle_beam.beta_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.alpha_x, outgoing_particle_beam.alpha_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.beta_y, outgoing_particle_beam.beta_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.alpha_y, outgoing_particle_beam.alpha_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.emittance_x, outgoing_particle_beam.emittance_x
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.emittance_y, outgoing_particle_beam.emittance_y
     )
-    assert np.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
-    assert np.isclose(
+    assert torch.isclose(outgoing_parameter_beam.energy, outgoing_particle_beam.energy)
+    assert torch.isclose(
         outgoing_parameter_beam.mu_x, outgoing_particle_beam.mu_x, atol=1e-6
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_y, outgoing_particle_beam.mu_y, atol=1e-6
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_x, outgoing_particle_beam.sigma_x, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, atol=1e-6
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, atol=1e-6
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
     )
-    assert np.isclose(
+    assert torch.isclose(
         outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
     )

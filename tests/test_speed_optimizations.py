@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 import cheetah
@@ -28,18 +27,18 @@ def test_merged_transfer_maps_tracking():
     original_beam = original_segment.track(incoming_beam)
     merged_beam = merged_segment.track(incoming_beam)
 
-    assert np.isclose(original_beam.mu_x, merged_beam.mu_x)
-    assert np.isclose(original_beam.mu_xp, merged_beam.mu_xp)
-    assert np.isclose(original_beam.mu_y, merged_beam.mu_y)
-    assert np.isclose(original_beam.mu_yp, merged_beam.mu_yp)
-    assert np.isclose(original_beam.sigma_x, merged_beam.sigma_x)
-    assert np.isclose(original_beam.sigma_xp, merged_beam.sigma_xp)
-    assert np.isclose(original_beam.sigma_y, merged_beam.sigma_y)
-    assert np.isclose(original_beam.sigma_yp, merged_beam.sigma_yp)
-    assert np.isclose(original_beam.sigma_s, merged_beam.sigma_s)
-    assert np.isclose(original_beam.sigma_p, merged_beam.sigma_p)
-    assert np.isclose(original_beam.energy, merged_beam.energy)
-    assert np.isclose(original_beam.total_charge, merged_beam.total_charge)
+    assert torch.isclose(original_beam.mu_x, merged_beam.mu_x)
+    assert torch.isclose(original_beam.mu_xp, merged_beam.mu_xp)
+    assert torch.isclose(original_beam.mu_y, merged_beam.mu_y)
+    assert torch.isclose(original_beam.mu_yp, merged_beam.mu_yp)
+    assert torch.isclose(original_beam.sigma_x, merged_beam.sigma_x)
+    assert torch.isclose(original_beam.sigma_xp, merged_beam.sigma_xp)
+    assert torch.isclose(original_beam.sigma_y, merged_beam.sigma_y)
+    assert torch.isclose(original_beam.sigma_yp, merged_beam.sigma_yp)
+    assert torch.isclose(original_beam.sigma_s, merged_beam.sigma_s)
+    assert torch.isclose(original_beam.sigma_p, merged_beam.sigma_p)
+    assert torch.isclose(original_beam.energy, merged_beam.energy)
+    assert torch.isclose(original_beam.total_charge, merged_beam.total_charge)
 
 
 def test_merged_transfer_maps_num_elements():
@@ -154,4 +153,4 @@ def test_skippable_elements_reset():
     original_tm = original_segment.elements[2].transfer_map(energy=incoming_beam.energy)
     merged_tm = merged_segment.elements[2].transfer_map(energy=incoming_beam.energy)
 
-    assert np.allclose(original_tm, merged_tm)
+    assert torch.allclose(original_tm, merged_tm)
