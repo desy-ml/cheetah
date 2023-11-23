@@ -5,7 +5,7 @@ import cheetah
 
 def test_astra_to_parameter_beam():
     """Test that Astra beams are correctly loaded into parameter beams."""
-    beam = cheetah.ParameterBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     # True values taken from version of Cheetah that is belived to be correct (v0.5.19)
     assert np.allclose(beam.mu_x.cpu().numpy(), 8.24126345833065e-07)
@@ -24,7 +24,7 @@ def test_astra_to_parameter_beam():
 
 def test_astra_to_particle_beam():
     """Test that Astra beams are correctly loaded into particle beams."""
-    beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     # True values taken from version of Cheetah that is belived to be correct (v0.5.19)
     assert beam.num_particles == 100_000

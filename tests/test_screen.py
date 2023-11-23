@@ -21,7 +21,7 @@ def test_reading_shows_beam_particle():
             ),
         ],
     )
-    beam = cheetah.ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
     assert segment.my_screen.reading.shape == (100, 100)
@@ -51,7 +51,7 @@ def test_reading_shows_beam_parameter():
         ],
         name="my_segment",
     )
-    beam = cheetah.ParameterBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
     assert segment.my_screen.reading.shape == (100, 100)
@@ -72,7 +72,7 @@ def test_reading_shows_beam_ares():
     segment = cheetah.Segment.from_ocelot(ocelot_lattice.cell, warnings=False).subcell(
         "AREASOLA1", "AREABSCR1"
     )
-    beam = cheetah.ParticleBeam.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     segment.AREABSCR1.resolution = torch.tensor((2448, 2040), device=segment.device)
     segment.AREABSCR1.pixel_size = torch.tensor(
