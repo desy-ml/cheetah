@@ -16,14 +16,14 @@ def test_dipole():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.1))
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
     lattice = ocelot.MagneticLattice([ocelot_bend])
@@ -43,7 +43,7 @@ def test_dipole_with_fringe_field():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(
         length=torch.tensor(0.1),
@@ -55,7 +55,7 @@ def test_dipole_with_fringe_field():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_bend = ocelot.Bend(l=0.1, angle=0.1, fint=0.1, gap=0.2)
     lattice = ocelot.MagneticLattice([ocelot_bend])
@@ -75,7 +75,7 @@ def test_aperture():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment(
         [
@@ -93,7 +93,7 @@ def test_aperture():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_cell = [ocelot.Aperture(xmax=2e-4, ymax=2e-4), ocelot.Drift(l=0.1)]
     lattice = ocelot.MagneticLattice([ocelot_cell])
@@ -111,7 +111,7 @@ def test_aperture_elliptical():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment(
         [
@@ -129,7 +129,7 @@ def test_aperture_elliptical():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_cell = [
         ocelot.Aperture(xmax=2e-4, ymax=2e-4, type="ellipt"),
@@ -150,14 +150,14 @@ def test_solenoid():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_solenoid = cheetah.Solenoid(length=torch.tensor(0.5), k=torch.tensor(5.0))
     outgoing_beam = cheetah_solenoid.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_solenoid = ocelot.Solenoid(l=0.5, k=5.0)
     lattice = ocelot.MagneticLattice([ocelot_solenoid])
@@ -186,14 +186,14 @@ def test_ares_ea():
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment.from_ocelot(cell)
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     lattice = ocelot.MagneticLattice(cell)
     navigator = ocelot.Navigator(lattice)
@@ -226,12 +226,12 @@ def test_twiss_particle_beam():
     """
     # Cheetah
     particle_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     # Ocelot
     p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
@@ -266,12 +266,12 @@ def test_twiss_parameter_beam():
     """
     # Cheetah
     parameter_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     # Ocelot
     p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
@@ -303,8 +303,8 @@ def test_astra_import():
     Test if the beam imported from Astra in Cheetah matches the beam imported from Astra
     in Ocelot.
     """
-    beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
-    p_array = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+    p_array = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert np.allclose(
         beam.particles[:, :6].cpu().numpy(), p_array.rparticles.transpose()
@@ -319,7 +319,7 @@ def test_quadrupole():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.23), k1=torch.tensor(5.0)
@@ -335,7 +335,7 @@ def test_quadrupole():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5.0)
     lattice = ocelot.MagneticLattice(
@@ -361,7 +361,7 @@ def test_tilted_quadrupole():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.23), k1=torch.tensor(5.0), tilt=torch.tensor(0.79)
@@ -377,7 +377,7 @@ def test_tilted_quadrupole():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5.0, tilt=0.79)
     lattice = ocelot.MagneticLattice(
@@ -402,7 +402,7 @@ def test_sbend():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
@@ -416,7 +416,7 @@ def test_sbend():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_sbend = ocelot.SBend(l=0.1, angle=0.2)
     lattice = ocelot.MagneticLattice(
@@ -443,7 +443,7 @@ def test_rbend():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.RBend(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
@@ -457,7 +457,7 @@ def test_rbend():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2)
     lattice = ocelot.MagneticLattice(
@@ -484,7 +484,7 @@ def test_convert_rbend():
     """
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2, gap=0.05, fint=0.1, eid="rbend")
     lattice = ocelot.MagneticLattice(
@@ -501,7 +501,7 @@ def test_convert_rbend():
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -519,7 +519,7 @@ def test_asymmetric_bend():
     """Test the case that bend fringe fields are asymmetric."""
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_bend = ocelot.Bend(
         l=0.1, angle=0.2, gap=0.05, fint=0.1, fintx=0.2, eid="bend"
@@ -538,7 +538,7 @@ def test_asymmetric_bend():
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
     outgoing_beam = cheetah_segment.track(incoming_beam)

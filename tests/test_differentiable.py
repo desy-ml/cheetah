@@ -23,7 +23,7 @@ def test_simple_quadrupole():
         ]
     )
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     outgoing_beam = segment.track(incoming_beam)
@@ -40,7 +40,7 @@ def test_ea_magnets():
         "AREASOLA1", "AREABSCR1"
     )
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     ea.AREAMQZM2.k1 = nn.Parameter(ea.AREAMQZM2.k1)
@@ -63,7 +63,7 @@ def test_ea_incoming_parameter_beam():
         "AREASOLA1", "AREABSCR1"
     )
     incoming_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     incoming_beam._mu = nn.Parameter(incoming_beam._mu)
@@ -84,7 +84,7 @@ def test_ea_incoming_particle_beam():
         "AREASOLA1", "AREABSCR1"
     )
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     incoming_beam.particles = nn.Parameter(incoming_beam.particles)

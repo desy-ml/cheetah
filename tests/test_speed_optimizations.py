@@ -9,7 +9,7 @@ def test_merged_transfer_maps_tracking():
     original segment did.
     """
     incoming_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     original_segment = cheetah.Segment(
@@ -46,7 +46,7 @@ def test_merged_transfer_maps_num_elements():
     Test that merging transfer maps results in the correct number of elements.
     """
     incoming_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     original_segment = cheetah.Segment(
@@ -130,7 +130,7 @@ def test_skippable_elements_reset():
     when merging transfer maps (see #88). This test catches the bug he pointed out.
     """
     incoming_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     original_segment = cheetah.Segment(
         elements=[

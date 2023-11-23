@@ -36,7 +36,7 @@ def test_screen_conversion(name: str):
 
 
 def test_ocelot_to_parameterbeam():
-    parray = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
     beam = ParameterBeam.from_ocelot(parray)
 
     assert np.allclose(beam.mu_x.cpu().numpy(), np.mean(parray.x()))
@@ -54,7 +54,7 @@ def test_ocelot_to_parameterbeam():
 
 
 def test_ocelot_to_particlebeam():
-    parray = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
     beam = ParticleBeam.from_ocelot(parray)
 
     assert np.allclose(beam.particles[:, 0].cpu().numpy(), parray.x())
