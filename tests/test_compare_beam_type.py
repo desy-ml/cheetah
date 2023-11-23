@@ -54,13 +54,13 @@ def test_drift():
 
     # Parameter beam
     incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_parameter_beam = cheetah_drift.track(incoming_parameter_beam)
 
     # Particle beam
     incoming_particle_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_particle_beam = cheetah_drift.track(incoming_particle_beam)
 
@@ -102,13 +102,13 @@ def test_quadrupole():
 
     # Parameter beam
     incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_parameter_beam = cheetah_quadrupole.track(incoming_parameter_beam)
 
     # Particle beam
     incoming_particle_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_particle_beam = cheetah_quadrupole.track(incoming_particle_beam)
 
@@ -156,13 +156,13 @@ def test_cavity_from_astra():
 
     # Parameter beam
     incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_parameter_beam = cheetah_cavity.track(incoming_parameter_beam)
 
     # Particle beam
     incoming_particle_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/astra/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_particle_beam = cheetah_cavity.track(incoming_particle_beam)
 

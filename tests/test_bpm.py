@@ -15,7 +15,7 @@ def test_no_tracking_error(is_bpm_active, beam_class):
             cheetah.Drift(length=torch.tensor(1.0)),
         ],
     )
-    beam = beam_class.from_astra("benchmark/cheetah/ACHIP_EA1_2021.1351.001")
+    beam = beam_class.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     segment.my_bpm.is_active = is_bpm_active
 
