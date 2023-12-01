@@ -467,7 +467,7 @@ class ParameterBeam(Beam):
         return cls(
             mu=mu,
             cov=cov,
-            energy=torch.tensor(energy),
+            energy=torch.tensor(energy, dtype=torch.float32),
             total_charge=total_charge,
             **kwargs,
         )
@@ -905,7 +905,7 @@ class ParticleBeam(Beam):
         particle_charges = torch.from_numpy(particle_charges)
         return cls(
             particles=particles_7d,
-            energy=torch.tensor(energy),
+            energy=torch.tensor(energy, dtype=torch.float32),
             particle_charges=particle_charges,
             **kwargs,
         )
