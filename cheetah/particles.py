@@ -529,6 +529,7 @@ class ParameterBeam(Beam):
             sigma_s=sigma_s,
             sigma_p=sigma_p,
             energy=energy,
+            total_charge=total_charge,
             device=self.device,
         )
 
