@@ -38,20 +38,22 @@ def test_diverging_particle_beam():
         outgoing_beam.particle_charges, incoming_beam.particle_charges
     )
 
+
 def test_device_like_torch_module():
     """
     Test that when changing the device, Drift reacts like a `torch.nn.Module`.
     """
-    # There is no point in running this test, if there aren't two different devices to move between
+    # There is no point in running this test, if there aren't two different devices to
+    # move between
     if not torch.cuda.is_available():
         return
-    
+
     element = cheetah.Drift(length=torch.tensor(0.2), device="cuda")
 
     assert element.device == "cuda"
     assert element.length.device.type == "cuda"
-    
+
     element = element.cpu()
-    
+
     assert element.device == "cpu"
     assert element.length.device.type == "cpu"
