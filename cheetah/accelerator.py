@@ -1328,12 +1328,14 @@ class Screen(Element):
         return self.pixel_size * self.binning
 
     @property
-    def extent(self) -> tuple[float, float, float, float]:
-        return (
-            -self.resolution[0] * self.pixel_size[0] / 2,
-            self.resolution[0] * self.pixel_size[0] / 2,
-            -self.resolution[1] * self.pixel_size[1] / 2,
-            self.resolution[1] * self.pixel_size[1] / 2,
+    def extent(self) -> torch.Tensor:
+        return torch.stack(
+            [
+                -self.resolution[0] * self.pixel_size[0] / 2,
+                self.resolution[0] * self.pixel_size[0] / 2,
+                -self.resolution[1] * self.pixel_size[1] / 2,
+                self.resolution[1] * self.pixel_size[1] / 2,
+            ]
         )
 
     @property
