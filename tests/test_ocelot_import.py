@@ -29,7 +29,7 @@ def test_screen_conversion(name: str):
     """
     Test on the example of the ARES lattice that all screens are correctly converted to
     `cheetah.Screen`.
-    ˚"""
+    """
     segment = cheetah.Segment.from_ocelot(ares.cell)
     screen = getattr(segment, name)
     assert isinstance(screen, cheetah.Screen)
@@ -66,22 +66,22 @@ def test_ocelot_to_particlebeam():
     assert np.allclose(beam.energy.cpu().numpy(), parray.E * 1e9)
     assert np.allclose(beam.particle_charges.cpu().numpy(), parray.q_array)
 
+
 def test_ocelot_lattice_import():
     """
     Tests if a lattice is importet correctly (and to the device requested).
     """
     cell = [ocelot.Drift(l=0.3), ocelot.Quadrupole(l=0.2), ocelot.Drift(l=1.0)]
     segment = cheetah.Segment.from_ocelot(cell=cell, device="cpu")
-    
+
     assert isinstance(segment.elements[0], cheetah.Drift)
     assert isinstance(segment.elements[1], cheetah.Quadrupole)
     assert isinstance(segment.elements[2], cheetah.Drift)
-    
+
     assert segment.device == "cpu"
     assert all(element.device == "cpu" for element in segment.elements)
-    assert segment.elements[0].length.device == "cpu"
-    assert segment.elements[1].length.device == "cpu"
-    assert segment.elements[1].k1.device == "cpu"
-    assert segment.elements[1].misalignmnets.device == "cpu"
-    assert segment.elements[2].length.device == "cpu"
-    
+    assert segment.elements[0].length.device.type == "cpu"
+    assert segment.elements[1].length.device.type == "cpu"
+    assert segment.elements[1].k1.device.type == "cpu"
+    assert segment.elements[1].misalignment.device.type == "cpu"
+    assert segment.elements[2].length.device.type == "cpu"
