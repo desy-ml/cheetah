@@ -544,9 +544,9 @@ def test_asymmetric_bend():
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(), outgoing_p_array.rparticles.transpose()
     )
-    assert np.allclose(outgoing_beam.particle_charges, outgoing_p_array.q_array)
+    assert np.allclose(outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array)
 
 
 def test_cavity():
