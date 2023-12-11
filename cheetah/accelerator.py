@@ -38,18 +38,14 @@ class Element(ABC, nn.Module):
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
-        super().__init__()
+    def __init__(self, name: Optional[str] = None, **kwargs) -> None:
+        super().__init__(**kwargs)
 
         self.name = name if name is not None else generate_unique_name()
 
-        if device == "auto":
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.device = device
+        
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         """
@@ -175,9 +171,9 @@ class CustomTransferMap(Element):
         transfer_map: Union[torch.Tensor, nn.Parameter],
         length: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name,  **kwargs)
 
         assert isinstance(transfer_map, torch.Tensor)
         assert transfer_map.shape == (7, 7)
@@ -248,17 +244,15 @@ class Drift(Element):
 
     :param length: Length in meters.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
 
@@ -313,8 +307,6 @@ class Quadrupole(Element):
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -324,9 +316,9 @@ class Quadrupole(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
         self.k1 = (
@@ -421,8 +413,6 @@ class Dipole(Element):
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -436,9 +426,9 @@ class Dipole(Element):
         fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ):
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
         self.angle = (
@@ -612,8 +602,6 @@ class RBend(Dipole):
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -627,7 +615,7 @@ class RBend(Dipole):
         fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ):
         angle = angle if angle is not None else torch.tensor(0.0)
         e1 = e1 if e1 is not None else torch.tensor(0.0)
@@ -652,7 +640,7 @@ class RBend(Dipole):
             fringe_integral_exit=fringe_integral_exit,
             gap=gap,
             name=name,
-            device=device,
+            **kwargs
         )
 
 
@@ -665,8 +653,6 @@ class HorizontalCorrector(Element):
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -674,9 +660,9 @@ class HorizontalCorrector(Element):
         length: Union[torch.Tensor, nn.Parameter],
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
         self.angle = (
@@ -751,8 +737,6 @@ class VerticalCorrector(Element):
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -760,9 +744,9 @@ class VerticalCorrector(Element):
         length: Union[torch.Tensor, nn.Parameter],
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
         self.angle = (
@@ -836,8 +820,6 @@ class Cavity(Element):
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -847,9 +829,9 @@ class Cavity(Element):
         phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
         self.voltage = (
@@ -1163,14 +1145,12 @@ class BPM(Element):
     :param is_active: If `True` the BPM is active and will record the beam's position.
         If `False` the BPM is inactive and will not record the beam's position.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
-        self, is_active: bool = False, name: Optional[str] = None, device: str = "auto"
+        self, is_active: bool = False, name: Optional[str] = None, **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.is_active = is_active
         self.reading = None
@@ -1220,12 +1200,10 @@ class Marker(Element):
     General Marker / Monitor element
 
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
-        super().__init__(name=name, device=device)
+    def __init__(self, name: Optional[str] = None, **kwargs) -> None:
+        super().__init__(name=name, **kwargs)
 
     def transfer_map(self, energy):
         return torch.eye(7, device=self.device)
@@ -1273,8 +1251,6 @@ class Screen(Element):
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1285,9 +1261,9 @@ class Screen(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.resolution = (
             resolution.to(self.device)
@@ -1473,8 +1449,6 @@ class Aperture(Element):
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param is_active: If the aperture actually blocks particles.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1484,7 +1458,7 @@ class Aperture(Element):
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
         super().__init__(name=name, device=device)
 
@@ -1596,8 +1570,6 @@ class Undulator(Element):
     :param is_active: Indicates if the undulator is active or not. Currently has no
         effect.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1605,9 +1577,9 @@ class Undulator(Element):
         length: Union[torch.Tensor, nn.Parameter],
         is_active: bool = False,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = length.to(self.device)
         self.is_active = is_active
@@ -1667,8 +1639,6 @@ class Solenoid(Element):
     :param misalignment: Misalignment vector of the solenoid magnet in x- and
         y-directions.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1677,9 +1647,9 @@ class Solenoid(Element):
         k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        **kwargs
     ) -> None:
-        super().__init__(name=name, device=device)
+        super().__init__(name=name, **kwargs)
 
         self.length = (
             length.to(self.device)
@@ -1779,12 +1749,10 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
-        self, elements: list[Element], name: str = "unnamed", device: str = "auto"
+        self, elements: list[Element], name: str = "unnamed", **kwargs
     ) -> None:
         super().__init__(name=name, device=device)
 
