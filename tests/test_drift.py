@@ -1,5 +1,6 @@
-import torch
 import pytest
+import torch
+
 import cheetah
 
 
@@ -38,8 +39,10 @@ def test_diverging_particle_beam():
         outgoing_beam.particle_charges, incoming_beam.particle_charges
     )
 
-    
-@pytest.mark.skip(reason="Requires rewriting all Elements and Beams with relevant variables as buffers if they are not parameters.")
+
+@pytest.mark.skip(
+    reason="Requires rewriting Element and Beam member variables to be buffers."
+)
 def test_device_like_torch_module():
     """
     Test that when changing the device, Drift reacts like a `torch.nn.Module`.
