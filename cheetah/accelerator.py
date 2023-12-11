@@ -2003,7 +2003,13 @@ class Segment(Element):
 
     @classmethod
     def from_ocelot(
-        cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
+        cls,
+        cell,
+        name: Optional[str] = None,
+        warnings: bool = True,
+        device=None,
+        dtype=torch.float32,
+        **kwargs,
     ) -> "Segment":
         """
         Translate an Ocelot cell to a Cheetah `Segment`.
@@ -2022,7 +2028,10 @@ class Segment(Element):
         """
         from cheetah.converters.nocelot import ocelot2cheetah
 
-        converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
+        converted = [
+            ocelot2cheetah(element, warnings=warnings, device=device, dtype=dtype)
+            for element in cell
+        ]
         return cls(converted, name=name, **kwargs)
 
     @classmethod
