@@ -72,14 +72,12 @@ def test_ocelot_lattice_import():
     Tests if a lattice is importet correctly (and to the device requested).
     """
     cell = [ocelot.Drift(l=0.3), ocelot.Quadrupole(l=0.2), ocelot.Drift(l=1.0)]
-    segment = cheetah.Segment.from_ocelot(cell=cell, device="cpu")
+    segment = cheetah.Segment.from_ocelot(cell=cell)
 
     assert isinstance(segment.elements[0], cheetah.Drift)
     assert isinstance(segment.elements[1], cheetah.Quadrupole)
     assert isinstance(segment.elements[2], cheetah.Drift)
 
-    assert segment.device == "cpu"
-    assert all(element.device == "cpu" for element in segment.elements)
     assert segment.elements[0].length.device.type == "cpu"
     assert segment.elements[1].length.device.type == "cpu"
     assert segment.elements[1].k1.device.type == "cpu"
