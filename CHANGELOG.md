@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-None
+- The handling of `device` and `dtype` was overhauled. They might not behave as expected. `Element`s also no longer have a `device` attribute. (see #115) (@jank324)
 
 ### 🚀 Features
 
@@ -15,7 +15,7 @@ None
 
 - Fix the transfer maps in `Drift` and `Dipole`; Add R56 in horizontal and vertical correctors modelling (see #90) (@cr-xu)
 - Fix fringe_field_exit of `Dipole` is overwritten by `fringe_field` bug (see #99) (@cr-xu)
-- Fix error caused by mismatched devices on machines with CUDA GPUs (see #97) (@jank324)
+- Fix error caused by mismatched devices on machines with CUDA GPUs (see #97 and #115) (@jank324)
 - Fix error raised when tracking a `ParameterBeam` through an active `BPM` (see #101) (@jank324)
 - Fix error in ASTRA beam import where the energy was set to `float64` instead of `float32` (see #111) (@jank324)
 - Fix missing passing of `total_charge` in `ParameterBeam.transformed_to` (see #112) (@jank324)
