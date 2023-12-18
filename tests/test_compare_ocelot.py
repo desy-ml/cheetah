@@ -36,6 +36,37 @@ def test_dipole():
     )
 
 
+def test_dipole_with_float64():
+    """
+    Test that the tracking results through a Cheeath `Dipole` element match those
+    through an Oclet `Bend` element using float64 precision.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+    cheetah_dipole = cheetah.Dipole(
+        length=torch.tensor(0.1),
+        angle=torch.tensor(0.1),
+        dtype=torch.float64,
+    )
+    outgoing_beam = cheetah_dipole.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
+    lattice = ocelot.MagneticLattice([ocelot_bend])
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    assert np.allclose(
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
+    )
+
+
 def test_dipole_with_fringe_field():
     """
     Test that the tracking results through a Cheeath `Dipole` element match those
@@ -203,18 +234,14 @@ def test_ares_ea():
     assert np.isclose(outgoing_beam.mu_xp.cpu().numpy(), outgoing_p_array.px().mean())
     assert np.isclose(outgoing_beam.mu_y.cpu().numpy(), outgoing_p_array.y().mean())
     assert np.isclose(outgoing_beam.mu_yp.cpu().numpy(), outgoing_p_array.py().mean())
-    assert np.isclose(
-        outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean(), atol=1e-7
-    )
+    assert np.isclose(outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean())
     assert np.isclose(outgoing_beam.mu_p.cpu().numpy(), outgoing_p_array.p().mean())
 
     assert np.allclose(outgoing_beam.xs.cpu().numpy(), outgoing_p_array.x())
     assert np.allclose(outgoing_beam.xps.cpu().numpy(), outgoing_p_array.px())
     assert np.allclose(outgoing_beam.ys.cpu().numpy(), outgoing_p_array.y())
     assert np.allclose(outgoing_beam.yps.cpu().numpy(), outgoing_p_array.py())
-    assert np.allclose(
-        outgoing_beam.ss.cpu().numpy(), outgoing_p_array.tau(), atol=1e-7, rtol=1e-1
-    )  # TODO: Why do we need such large tolerances?
+    assert np.allclose(outgoing_beam.ss.cpu().numpy(), outgoing_p_array.tau())
     assert np.allclose(outgoing_beam.ps.cpu().numpy(), outgoing_p_array.p())
 
 
@@ -580,24 +607,6 @@ def test_cavity():
      - alpha_x = -1.0160687592932345
      - alpha_y = -1.0160687593664295
     """
-    # Cheetah
-    incoming_beam = cheetah.ParticleBeam.from_twiss(
-        beta_x=torch.tensor(5.91253677),
-        alpha_x=torch.tensor(3.55631308),
-        beta_y=torch.tensor(5.91253677),
-        alpha_y=torch.tensor(3.55631308),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
-        total_charge=5e-9,
-    )
-    cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor(1.0377),
-        voltage=torch.tensor(0.01815975e9),
-        frequency=torch.tensor(1.3e9),
-        phase=torch.tensor(0.0),
-    )
-    outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Ocelot
     tws = ocelot.Twiss()
@@ -620,18 +629,27 @@ def test_cavity():
     _, outgoing_parray = ocelot.track(lattice, deepcopy(p_array), navigator)
     derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
 
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_ocelot(
+        parray=p_array, dtype=torch.float64
+    )
+    cheetah_cavity = cheetah.Cavity(
+        length=1.0377,
+        voltage=0.01815975e9,
+        frequency=1.3e9,
+        phase=0.0,
+        dtype=torch.float64,
+    )
+    outgoing_beam = cheetah_cavity.track(incoming_beam)
+
     # Compare
+    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
     assert np.isclose(
-        outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x, rtol=1e-2
+        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-4
     )
+    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
     assert np.isclose(
-        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-2
-    )
-    assert np.isclose(
-        outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y, rtol=1e-2
-    )
-    assert np.isclose(
-        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-2
+        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-4
     )
     assert np.isclose(
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
