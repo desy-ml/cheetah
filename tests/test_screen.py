@@ -74,11 +74,15 @@ def test_reading_shows_beam_ares():
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
-    segment.AREABSCR1.resolution = torch.tensor((2448, 2040), device=segment.device)
-    segment.AREABSCR1.pixel_size = torch.tensor(
-        (3.3198e-6, 2.4469e-6), device=segment.device
+    segment.AREABSCR1.resolution = torch.tensor(
+        (2448, 2040), device=segment.AREABSCR1.resolution.device
     )
-    segment.AREABSCR1.binning = torch.tensor(1, device=segment.device)
+    segment.AREABSCR1.pixel_size = torch.tensor(
+        (3.3198e-6, 2.4469e-6),
+        device=segment.AREABSCR1.pixel_size.device,
+        dtype=segment.AREABSCR1.pixel_size.dtype,
+    )
+    segment.AREABSCR1.binning = torch.tensor(1, device=segment.AREABSCR1.binning.device)
     segment.AREABSCR1.is_active = True
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
