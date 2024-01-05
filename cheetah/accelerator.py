@@ -76,8 +76,8 @@ class Element(ABC, nn.Module):
             return incoming
         elif isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy)
-            mu = torch.matmul(tm, incoming._mu)
-            cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
+            mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
+            cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
             return ParameterBeam(
                 mu,
                 cov,
@@ -88,7 +88,7 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy)
-            new_particles = torch.matmul(incoming.particles, tm.t())
+            new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
             return ParticleBeam(
                 new_particles,
                 incoming.energy,
@@ -254,21 +254,22 @@ class Drift(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        assert (
+            energy.shape == self.length.shape
+        ), f"Beam shape {energy.shape} does not match element shape {self.length.shape}"
+
         device = self.length.device
         dtype = self.length.dtype
 
         gamma = energy / rest_energy.to(device=device, dtype=dtype)
-        igamma2 = (
-            1 / gamma**2
-            if gamma != 0
-            else torch.tensor(0.0, device=device, dtype=dtype)
-        )
+        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
+        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
         beta = torch.sqrt(1 - igamma2)
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[0, 1] = self.length
-        tm[2, 3] = self.length
-        tm[4, 5] = -self.length / beta**2 * igamma2
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        tm[:, 0, 1] = self.length
+        tm[:, 2, 3] = self.length
+        tm[:, 4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
