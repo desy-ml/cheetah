@@ -2,7 +2,6 @@ from typing import Optional
 
 import numpy as np
 import torch
-from icecream import ic
 from scipy.constants import physical_constants
 from torch import nn
 from torch.distributions import MultivariateNormal
@@ -123,6 +122,32 @@ class Beam(nn.Module):
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
+        # Figure out batch size of the original beam and check that passed arguments
+        # have the same batch size
+        shape = self.mu_x.shape
+        not_nones = [
+            argument
+            for argument in [
+                mu_x,
+                mu_xp,
+                mu_y,
+                mu_yp,
+                sigma_x,
+                sigma_xp,
+                sigma_y,
+                sigma_yp,
+                sigma_s,
+                sigma_p,
+                energy,
+                total_charge,
+            ]
+            if argument is not None
+        ]
+        if len(not_nones) > 0:
+            assert all(
+                argument.shape == shape for argument in not_nones
+            ), "Arguments must have the same shape."
+
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
         mu_y = mu_y if mu_y is not None else self.mu_y
@@ -575,6 +600,32 @@ class ParameterBeam(Beam):
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
+
+        # Figure out batch size of the original beam and check that passed arguments
+        # have the same batch size
+        shape = self.mu_x.shape
+        not_nones = [
+            argument
+            for argument in [
+                mu_x,
+                mu_xp,
+                mu_y,
+                mu_yp,
+                sigma_x,
+                sigma_xp,
+                sigma_y,
+                sigma_yp,
+                sigma_s,
+                sigma_p,
+                energy,
+                total_charge,
+            ]
+            if argument is not None
+        ]
+        if len(not_nones) > 0:
+            assert all(
+                argument.shape == shape for argument in not_nones
+            ), "Arguments must have the same shape."
 
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
@@ -1164,6 +1215,32 @@ class ParticleBeam(Beam):
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
 
+        # Figure out batch size of the original beam and check that passed arguments
+        # have the same batch size
+        shape = self.mu_x.shape
+        not_nones = [
+            argument
+            for argument in [
+                mu_x,
+                mu_xp,
+                mu_y,
+                mu_yp,
+                sigma_x,
+                sigma_xp,
+                sigma_y,
+                sigma_yp,
+                sigma_s,
+                sigma_p,
+                energy,
+                total_charge,
+            ]
+            if argument is not None
+        ]
+        if len(not_nones) > 0:
+            assert all(
+                argument.shape == shape for argument in not_nones
+            ), "Arguments must have the same shape."
+
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_y = mu_y if mu_y is not None else self.mu_y
         mu_xp = mu_xp if mu_xp is not None else self.mu_xp
@@ -1184,20 +1261,17 @@ class ParticleBeam(Beam):
             particle_charges = self.particle_charges * total_charge / self.total_charge
         else:
             particle_charges = (
-                torch.ones(
-                    len(self.particles),
-                    device=total_charge.device,
-                    dtype=total_charge.dtype,
-                )
-                * total_charge
-                / len(self.particles)
+                torch.ones_like(self.particle_charges, device=device, dtype=dtype)
+                * total_charge.view(-1, 1)
+                / self.particle_charges.shape[-1]
             )
 
         new_mu = torch.stack(
-            [mu_x, mu_xp, mu_y, mu_yp, torch.tensor(0.0), torch.tensor(0.0)]
+            [mu_x, mu_xp, mu_y, mu_yp, torch.full(shape, 0.0), torch.full(shape, 0.0)],
+            dim=1,
         )
         new_sigma = torch.stack(
-            [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p]
+            [sigma_x, sigma_xp, sigma_y, sigma_yp, sigma_s, sigma_p], dim=1
         )
 
         old_mu = torch.stack(
@@ -1206,9 +1280,10 @@ class ParticleBeam(Beam):
                 self.mu_xp,
                 self.mu_y,
                 self.mu_yp,
-                torch.tensor(0.0),
-                torch.tensor(0.0),
-            ]
+                torch.full(shape, 0.0),
+                torch.full(shape, 0.0),
+            ],
+            dim=1,
         )
         old_sigma = torch.stack(
             [
@@ -1218,14 +1293,17 @@ class ParticleBeam(Beam):
                 self.sigma_yp,
                 self.sigma_s,
                 self.sigma_p,
-            ]
+            ],
+            dim=1,
         )
 
-        phase_space = self.particles[:, :6]
-        phase_space = (phase_space - old_mu) / old_sigma * new_sigma + new_mu
+        phase_space = self.particles[:, :, :6]
+        phase_space = (phase_space - old_mu.unsqueeze(1)) / old_sigma.unsqueeze(
+            1
+        ) * new_sigma.unsqueeze(1) + new_mu.unsqueeze(1)
 
         particles = torch.ones_like(self.particles)
-        particles[:, :6] = phase_space
+        particles[:, :, :6] = phase_space
 
         return self.__class__(
             particles=particles,
