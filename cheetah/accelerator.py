@@ -172,7 +172,7 @@ class CustomTransferMap(Element):
         super().__init__(name=name)
 
         assert isinstance(transfer_map, torch.Tensor)
-        assert transfer_map.shape == (1, 7, 7)
+        assert transfer_map.shape[-2:] == (7, 7)
 
         self._transfer_map = torch.as_tensor(transfer_map, **factory_kwargs)
         self.length = (
@@ -218,6 +218,13 @@ class CustomTransferMap(Element):
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return self._transfer_map
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            self._transfer_map.repeat((*shape, 1, 1)),
+            length=self.length.repeat(shape),
+            name=self.name,
+        )
 
     @property
     def is_skippable(self) -> bool:
@@ -394,9 +401,9 @@ class Quadrupole(Element):
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.k1) if self.is_active else 1)
+        height = 0.8 * (np.sign(self.k1[0]) if self.is_active else 1)
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:red", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="tab:red", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -621,10 +628,10 @@ class Dipole(Element):
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
+        height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:green", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="tab:green", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -713,7 +720,7 @@ class HorizontalCorrector(Element):
         self.angle = (
             torch.as_tensor(angle, **factory_kwargs)
             if angle is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -758,10 +765,10 @@ class HorizontalCorrector(Element):
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
+        height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:blue", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="tab:blue", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -803,7 +810,7 @@ class VerticalCorrector(Element):
         self.angle = (
             torch.as_tensor(angle, **factory_kwargs)
             if angle is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -847,10 +854,10 @@ class VerticalCorrector(Element):
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
+        height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:cyan", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="tab:cyan", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -1211,7 +1218,7 @@ class Cavity(Element):
         height = 0.4
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="gold", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="gold", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -1771,7 +1778,7 @@ class Undulator(Element):
         height = 0.4
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:purple", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="tab:purple", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -1895,7 +1902,7 @@ class Solenoid(Element):
         height = 0.8
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="tab:orange", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="tab:orange", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
@@ -2251,7 +2258,7 @@ class Segment(Element):
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         element_lengths = [
-            element.length if hasattr(element, "length") else 0.0
+            element.length[0] if hasattr(element, "length") else 0.0
             for element in self.elements
         ]
         element_ss = [0] + [
@@ -2291,7 +2298,7 @@ class Segment(Element):
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
         split_lengths = [
-            split.length if hasattr(split, "length") else 0.0 for split in splits
+            split.length[0] if hasattr(split, "length") else 0.0 for split in splits
         ]
         ss = [0] + [sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)]
 
@@ -2324,7 +2331,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             xs = [
-                float(reference_beam.xs[particle_index].cpu())
+                float(reference_beam.xs[0, particle_index].cpu())
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]
@@ -2335,7 +2342,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             ys = [
-                float(reference_beam.ys[particle_index].cpu())
+                float(reference_beam.ys[0, particle_index].cpu())
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]
