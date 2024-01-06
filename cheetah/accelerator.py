@@ -168,13 +168,13 @@ class CustomTransferMap(Element):
         super().__init__(name=name)
 
         assert isinstance(transfer_map, torch.Tensor)
-        assert transfer_map.shape == (7, 7)
+        assert transfer_map.shape == (1, 7, 7)
 
         self._transfer_map = torch.as_tensor(transfer_map, **factory_kwargs)
         self.length = (
             torch.as_tensor(length, **factory_kwargs)
             if length is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
         )
 
     @classmethod
@@ -326,32 +326,29 @@ class Quadrupole(Element):
         self.k1 = (
             torch.as_tensor(k1, **factory_kwargs)
             if k1 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.misalignment = (
             torch.as_tensor(misalignment, **factory_kwargs)
             if misalignment is not None
-            else torch.tensor([0.0, 0.0], **factory_kwargs)
+            else torch.zeros((*self.length.shape, 2), **factory_kwargs)
         )
         self.tilt = (
             torch.as_tensor(tilt, **factory_kwargs)
             if tilt is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
-
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=device, dtype=dtype),
+            hx=torch.zeros_like(self.length),
             tilt=self.tilt,
             energy=energy,
         )
 
-        if self.misalignment[0] == 0 and self.misalignment[1] == 0:
+        if all(self.misalignment[:, 0] == 0) and all(self.misalignment[:, 1] == 0):
             return R
         else:
             R_exit, R_entry = misalignment_matrix(self.misalignment)
@@ -438,23 +435,23 @@ class Dipole(Element):
         self.angle = (
             torch.as_tensor(angle, **factory_kwargs)
             if angle is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.gap = (
             torch.as_tensor(gap, **factory_kwargs)
             if gap is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.tilt = (
             torch.as_tensor(tilt, **factory_kwargs)
             if tilt is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.name = name
         self.fringe_integral = (
             torch.as_tensor(fringe_integral, **factory_kwargs)
             if fringe_integral is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.fringe_integral_exit = (
             self.fringe_integral
@@ -465,12 +462,12 @@ class Dipole(Element):
         self.e1 = (
             torch.as_tensor(e1, **factory_kwargs)
             if e1 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.e2 = (
             torch.as_tensor(e2, **factory_kwargs)
             if e2 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
 
     @property
@@ -486,7 +483,7 @@ class Dipole(Element):
 
     @property
     def is_active(self):
-        return self.angle != 0
+        return any(self.angle != 0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
@@ -498,20 +495,23 @@ class Dipole(Element):
         if self.length != 0.0:  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
-                k1=torch.tensor(0.0, device=device, dtype=dtype),
+                k1=torch.zeros_like(self.length),
                 hx=self.hx,
-                tilt=torch.tensor(0.0, device=device, dtype=dtype),
+                tilt=torch.zeros_like(self.length),
                 energy=energy,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype)
-            R[0, 1] = self.length
-            R[2, 6] = self.angle
-            R[2, 3] = self.length
+            R = torch.eye(7, device=device, dtype=dtype).repeat(
+                (*self.length.shape, 1, 1)
+            )
+            R[:, 0, 1] = self.length
+            R[:, 2, 6] = self.angle
+            R[:, 2, 3] = self.length
 
         # Apply fringe fields
         R = torch.matmul(R_exit, torch.matmul(R, R_enter))
         # Apply rotation for tilted magnets
+        # TODO: Are we applying tilt twice (here and base_rmatrix)?
         R = torch.matmul(
             rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
         )
@@ -523,7 +523,7 @@ class Dipole(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        sec_e = torch.tensor(1.0, device=device, dtype=dtype) / torch.cos(self.e1)
+        sec_e = 1.0 / torch.cos(self.e1)
         phi = (
             self.fringe_integral
             * self.hx
@@ -532,9 +532,9 @@ class Dipole(Element):
             * (1 + torch.sin(self.e1) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[1, 0] = self.hx * torch.tan(self.e1)
-        tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm[:, 1, 0] = self.hx * torch.tan(self.e1)
+        tm[:, 3, 2] = -self.hx * torch.tan(self.e1 - phi)
 
         return tm
 
@@ -552,9 +552,9 @@ class Dipole(Element):
             * (1 + torch.sin(self.e2) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[1, 0] = self.hx * torch.tan(self.e2)
-        tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
+        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm[:, 1, 0] = self.hx * torch.tan(self.e2)
+        tm[:, 3, 2] = -self.hx * torch.tan(self.e2 - phi)
 
         return tm
 
@@ -885,16 +885,28 @@ class Cavity(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        if self.voltage > 0:
-            return self._cavity_rmatrix(energy)
-        else:
-            return base_rmatrix(
-                length=self.length,
-                k1=torch.tensor(0.0, device=device, dtype=dtype),
-                hx=torch.tensor(0.0, device=device, dtype=dtype),
-                tilt=torch.tensor(0.0, device=device, dtype=dtype),
-                energy=energy,
+        # TODO: This feels weird because I'm computing the all transfer maps for both
+        # cases, but only using one of them. Maybe there is a better way to do this.
+        # ... or am I?
+        tm = torch.empty((*self.length.shape, 7, 7), device=device, dtype=dtype)
+        if any(self.voltage > 0):
+            tm[self.voltage > 0] = self._cavity_rmatrix(energy[self.voltage > 0])
+        if any(self.voltage <= 0):
+            tm[self.voltage <= 0] = base_rmatrix(
+                length=self.length[self.voltage <= 0],
+                k1=torch.zeros_like(
+                    self.length[self.voltage <= 0], device=device, dtype=dtype
+                ),
+                hx=torch.zeros_like(
+                    self.length[self.voltage <= 0], device=device, dtype=dtype
+                ),
+                tilt=torch.zeros_like(
+                    self.length[self.voltage <= 0], device=device, dtype=dtype
+                ),
+                energy=energy[self.voltage <= 0],
             )
+
+        return tm
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -916,22 +928,26 @@ class Cavity(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        beta0 = torch.tensor(1.0, device=device, dtype=dtype)
-        igamma2 = torch.tensor(0.0, device=device, dtype=dtype)
-        g0 = torch.tensor(1e10, device=device, dtype=dtype)
-        if incoming.energy != 0:
-            g0 = incoming.energy / electron_mass_eV.to(device=device, dtype=dtype)
-            igamma2 = 1 / g0**2
-            beta0 = torch.sqrt(1 - igamma2)
+        beta0 = torch.full_like(self.length, 1.0)
+        igamma2 = torch.full_like(self.length, 0.0)
+        g0 = torch.full_like(self.length, 1e10)
+
+        g0[incoming.energy != 0] = incoming.energy / electron_mass_eV.to(
+            device=device, dtype=dtype
+        )
+        igamma2[incoming.energy != 0] = 1 / g0[incoming.energy != 0] ** 2
+        beta0[incoming.energy != 0] = torch.sqrt(1 - igamma2[incoming.energy != 0])
 
         phi = torch.deg2rad(self.phase)
 
         tm = self.transfer_map(incoming.energy)
         if isinstance(incoming, ParameterBeam):
-            outgoing_mu = torch.matmul(tm, incoming._mu)
-            outgoing_cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
+            outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
+            outgoing_cov = torch.matmul(
+                tm, torch.matmul(incoming._cov, tm.transpose(-2, -1))
+            )
         else:  # ParticleBeam
-            outgoing_particles = torch.matmul(incoming.particles, tm.t())
+            outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
         delta_energy = self.voltage * torch.cos(phi)
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
@@ -1309,7 +1325,7 @@ class Screen(Element):
         self.misalignment = (
             torch.as_tensor(misalignment, **factory_kwargs)
             if misalignment is not None
-            else torch.tensor((0.0, 0.0), **factory_kwargs)
+            else torch.tensor([(0.0, 0.0)], **factory_kwargs)
         )
         self.is_active = is_active
 
@@ -1365,11 +1381,11 @@ class Screen(Element):
             copy_of_incoming = deepcopy(incoming)
 
             if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu[0] -= self.misalignment[0]
-                copy_of_incoming._mu[2] -= self.misalignment[1]
+                copy_of_incoming._mu[:, 0] -= self.misalignment[:, 0]
+                copy_of_incoming._mu[:, 2] -= self.misalignment[:, 1]
             elif isinstance(incoming, ParticleBeam):
-                copy_of_incoming.particles[:, 0] -= self.misalignment[0]
-                copy_of_incoming.particles[:, 1] -= self.misalignment[1]
+                copy_of_incoming.particles[:, :, 0] -= self.misalignment[:, 0]
+                copy_of_incoming.particles[:, :, 1] -= self.misalignment[:, 1]
 
             self.set_read_beam(copy_of_incoming)
 
@@ -1385,19 +1401,35 @@ class Screen(Element):
         read_beam = self.get_read_beam()
         if read_beam is Beam.empty or read_beam is None:
             image = torch.zeros(
-                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
+                (
+                    *self.misalignment.shape[:-1],
+                    int(self.effective_resolution[1]),
+                    int(self.effective_resolution[0]),
+                )
             )
         elif isinstance(read_beam, ParameterBeam):
-            transverse_mu = torch.stack([read_beam._mu[0], read_beam._mu[2]])
+            transverse_mu = torch.stack(
+                [read_beam._mu[:, 0], read_beam._mu[:, 2]], dim=1
+            )
             transverse_cov = torch.stack(
                 [
-                    torch.stack([read_beam._cov[0, 0], read_beam._cov[0, 2]]),
-                    torch.stack([read_beam._cov[2, 0], read_beam._cov[2, 2]]),
-                ]
+                    torch.stack(
+                        [read_beam._cov[:, 0, 0], read_beam._cov[:, 0, 2]], dim=1
+                    ),
+                    torch.stack(
+                        [read_beam._cov[:, 2, 0], read_beam._cov[:, 2, 2]], dim=1
+                    ),
+                ],
+                dim=1,
             )
-            dist = MultivariateNormal(
-                loc=transverse_mu.cpu(), covariance_matrix=transverse_cov.cpu()
-            )
+            dist = [
+                MultivariateNormal(
+                    loc=transverse_mu_sample, covariance_matrix=transverse_cov_sample
+                )
+                for transverse_mu_sample, transverse_cov_sample in zip(
+                    transverse_mu.cpu(), transverse_cov.cpu()
+                )
+            ]
 
             left = self.extent[0]
             right = self.extent[1]
@@ -1411,15 +1443,27 @@ class Screen(Element):
                 indexing="ij",
             )
             pos = torch.dstack((x, y))
-            image = dist.log_prob(pos).exp()
-            image = torch.flipud(image.T)
-        elif isinstance(read_beam, ParticleBeam):
-            image, _ = torch.histogramdd(
-                torch.stack((read_beam.xs, read_beam.ys)).T.cpu(),
-                bins=self.pixel_bin_edges,
+            image = torch.stack(
+                [dist_sample.log_prob(pos).exp() for dist_sample in dist]
             )
-            image = torch.flipud(image.T)
-            image = image.cpu()
+            image = torch.flip(image, dims=[1])
+        elif isinstance(read_beam, ParticleBeam):
+            image = torch.zeros(
+                (
+                    *self.misalignment.shape[:-1],
+                    int(self.effective_resolution[1]),
+                    int(self.effective_resolution[0]),
+                )
+            )
+            for i, (xs_sample, ys_sample) in enumerate(zip(read_beam.xs, read_beam.ys)):
+                image_sample, _ = torch.histogramdd(
+                    torch.stack((xs_sample, ys_sample)).T.cpu(),
+                    bins=self.pixel_bin_edges,
+                )
+                image_sample = torch.flipud(image_sample.T)
+                image_sample = image_sample.cpu()
+
+                image[i] = image_sample
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
@@ -1684,7 +1728,7 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: Union[torch.Tensor, nn.Parameter] = None,
         k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
@@ -1694,20 +1738,16 @@ class Solenoid(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = (
-            torch.as_tensor(length, **factory_kwargs)
-            if length is not None
-            else torch.tensor(0.0, **factory_kwargs)
-        )
+        self.length = torch.as_tensor(length, **factory_kwargs)
         self.k = (
             torch.as_tensor(k, **factory_kwargs)
             if k is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.zeros_like(self.length)
         )
         self.misalignment = (
             torch.as_tensor(misalignment, **factory_kwargs)
             if misalignment is not None
-            else torch.tensor((0.0, 0.0), **factory_kwargs)
+            else torch.zeros((*self.length.shape[:-1], 2), **factory_kwargs)
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -1717,34 +1757,35 @@ class Solenoid(Element):
         gamma = energy / rest_energy.to(device=device, dtype=dtype)
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
-        if self.k == 0:
-            s_k = self.length
-        else:
-            s_k = s / self.k
-        r56 = torch.tensor(0.0, device=device, dtype=dtype)
+
+        s_k = torch.empty_like(self.length)
+        s_k[self.k == 0] = self.length[self.k == 0]
+        s_k[self.k != 0] = s[self.k != 0] / self.k[self.k != 0]
+
+        r56 = torch.zeros_like(self.length)
         if gamma != 0:
             gamma2 = gamma * gamma
             beta = torch.sqrt(1.0 - 1.0 / gamma2)
             r56 -= self.length / (beta * beta * gamma2)
 
-        R = torch.eye(7, device=device, dtype=dtype)
-        R[0, 0] = c**2
-        R[0, 1] = c * s_k
-        R[0, 2] = s * c
-        R[0, 3] = s * s_k
-        R[1, 0] = -self.k * s * c
-        R[1, 1] = c**2
-        R[1, 2] = -self.k * s**2
-        R[1, 3] = s * c
-        R[2, 0] = -s * c
-        R[2, 1] = -s * s_k
-        R[2, 2] = c**2
-        R[2, 3] = c * s_k
-        R[3, 0] = self.k * s**2
-        R[3, 1] = -s * c
-        R[3, 2] = -self.k * s * c
-        R[3, 3] = c**2
-        R[4, 5] = r56
+        R = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        R[:, 0, 0] = c**2
+        R[:, 0, 1] = c * s_k
+        R[:, 0, 2] = s * c
+        R[:, 0, 3] = s * s_k
+        R[:, 1, 0] = -self.k * s * c
+        R[:, 1, 1] = c**2
+        R[:, 1, 2] = -self.k * s**2
+        R[:, 1, 3] = s * c
+        R[:, 2, 0] = -s * c
+        R[:, 2, 1] = -s * s_k
+        R[:, 2, 2] = c**2
+        R[:, 2, 3] = c * s_k
+        R[:, 3, 0] = self.k * s**2
+        R[:, 3, 1] = -s * c
+        R[:, 3, 2] = -self.k * s * c
+        R[:, 3, 3] = c**2
+        R[:, 4, 5] = r56
 
         R = R.real
 

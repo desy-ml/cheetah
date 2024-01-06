@@ -387,7 +387,7 @@ class ParameterBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([])
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
         if len(not_nones) > 1:
             assert all(
                 argument.shape == shape for argument in not_nones
@@ -478,7 +478,7 @@ class ParameterBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([])
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
         if len(not_nones) > 1:
             assert all(
                 argument.shape == shape for argument in not_nones
@@ -825,7 +825,7 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([])
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
         if len(not_nones) > 1:
             assert all(
                 argument.shape == shape for argument in not_nones
@@ -931,7 +931,7 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([])
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
         if len(not_nones) > 1:
             assert all(
                 argument.shape == shape for argument in not_nones
@@ -1039,7 +1039,7 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([])
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
         if len(not_nones) > 1:
             assert all(
                 argument.shape == shape for argument in not_nones
