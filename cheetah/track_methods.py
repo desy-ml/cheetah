@@ -59,7 +59,8 @@ def base_rmatrix(
     energy = energy if energy is not None else torch.zeros_like(length)
 
     gamma = energy / REST_ENERGY.to(device=device, dtype=dtype)
-    igamma2 = 1 / gamma**2 if gamma != 0 else torch.zeros_like(length)
+    igamma2 = torch.ones_like(length)
+    igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
 
     beta = torch.sqrt(1 - igamma2)
 
@@ -73,7 +74,8 @@ def base_rmatrix(
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = (torch.sin(ky * length) / ky).real if ky != 0 else length
+    sy = torch.clone(length)
+    sy[ky != 0] = (torch.sin(ky[ky != 0] * length[ky != 0]) / ky[ky != 0]).real
 
     sx = (torch.sin(kx * length) / kx).real
     dx = hx / kx2 * (1.0 - cx)
@@ -97,7 +99,7 @@ def base_rmatrix(
     R[:, 4, 5] = r56
 
     # Rotate the R matrix for skew / vertical magnets
-    if tilt != 0:
+    if any(tilt != 0):
         R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
     return R
 
