@@ -10,7 +10,7 @@ import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
-from torch import nn
+from torch import Size, nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.converters.dontbmad import convert_bmad_lattice
@@ -102,6 +102,10 @@ class Element(ABC, nn.Module):
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
+
+    def broadcast(self, shape: torch.Size) -> "Element":
+        """Broadcast the element to higher batch dimensions."""
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -273,6 +277,9 @@ class Drift(Element):
 
         return tm
 
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(length=self.length.repeat(shape), name=self.name)
+
     @property
     def is_skippable(self) -> bool:
         return True
@@ -354,6 +361,15 @@ class Quadrupole(Element):
             R_exit, R_entry = misalignment_matrix(self.misalignment)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            k1=self.k1.repeat(shape),
+            misalignment=self.misalignment.repeat((*shape, 1)),
+            tilt=self.tilt.repeat(shape),
+            name=self.name,
+        )
 
     @property
     def is_skippable(self) -> bool:
@@ -559,6 +575,19 @@ class Dipole(Element):
 
         return tm
 
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            angle=self.angle.repeat(shape),
+            e1=self.e1.repeat(shape),
+            e2=self.e2.repeat(shape),
+            tilt=self.tilt.repeat(shape),
+            fringe_integral=self.fringe_integral.repeat(shape),
+            fringe_integral_exit=self.fringe_integral_exit.repeat(shape),
+            gap=self.gap.repeat(shape),
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
         # element itself
@@ -692,20 +721,22 @@ class HorizontalCorrector(Element):
         dtype = self.length.dtype
 
         gamma = energy / rest_energy.to(device=device, dtype=dtype)
-        igamma2 = (
-            1 / gamma**2
-            if gamma != 0
-            else torch.tensor(0.0, device=device, dtype=dtype)
-        )
+        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
+        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
         beta = torch.sqrt(1 - igamma2)
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[0, 1] = self.length
-        tm[1, 6] = self.angle
-        tm[2, 3] = self.length
-        tm[4, 5] = -self.length / beta**2 * igamma2
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        tm[:, 0, 1] = self.length
+        tm[:, 1, 6] = self.angle
+        tm[:, 2, 3] = self.length
+        tm[:, 4, 5] = -self.length / beta**2 * igamma2
 
         return tm
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape), angle=self.angle, name=self.name
+        )
 
     @property
     def is_skippable(self) -> bool:
@@ -780,19 +811,21 @@ class VerticalCorrector(Element):
         dtype = self.length.dtype
 
         gamma = energy / rest_energy.to(device=device, dtype=dtype)
-        igamma2 = (
-            1 / gamma**2
-            if gamma != 0
-            else torch.tensor(0.0, device=device, dtype=dtype)
-        )
+        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
+        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
         beta = torch.sqrt(1 - igamma2)
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[0, 1] = self.length
-        tm[2, 3] = self.length
-        tm[3, 6] = self.angle
-        tm[4, 5] = -self.length / beta**2 * igamma2
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        tm[:, 0, 1] = self.length
+        tm[:, 2, 3] = self.length
+        tm[:, 3, 6] = self.angle
+        tm[:, 4, 5] = -self.length / beta**2 * igamma2
         return tm
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape), angle=self.angle, name=self.name
+        )
 
     @property
     def is_skippable(self) -> bool:
@@ -1159,6 +1192,15 @@ class Cavity(Element):
 
         return R
 
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            voltage=self.voltage.repeat(shape),
+            phase=self.phase.repeat(shape),
+            frequency=self.frequency.repeat(shape),
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the
         # element itself
@@ -1221,6 +1263,9 @@ class BPM(Element):
 
         return deepcopy(incoming)
 
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(is_active=self.is_active, name=self.name)
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
@@ -1256,6 +1301,9 @@ class Marker(Element):
         # TODO: At some point Markers should be able to be active or inactive. Active
         # Markers would be able to record the beam tracked through them.
         return incoming
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(name=self.name)
 
     @property
     def is_skippable(self) -> bool:
@@ -1484,6 +1532,16 @@ class Screen(Element):
         self._read_beam = [value]
         self.cached_reading = None
 
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            resolution=self.resolution,
+            pixel_size=self.pixel_size,
+            binning=self.binning,
+            misalignment=self.misalignment.repeat((*shape, 1)),
+            is_active=self.is_active,
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
@@ -1606,6 +1664,15 @@ class Aperture(Element):
             else ParticleBeam.empty
         )
 
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            x_max=self.x_max.repeat(shape),
+            y_max=self.y_max.repeat(shape),
+            shape=self.shape,
+            is_active=self.is_active,
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self
         return [self]
@@ -1683,6 +1750,13 @@ class Undulator(Element):
         tm[4, 5] = self.length * igamma2
 
         return tm
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            is_active=self.is_active,
+            name=self.name,
+        )
 
     @property
     def is_skippable(self) -> bool:
@@ -1796,6 +1870,14 @@ class Solenoid(Element):
             R_exit, R_entry = misalignment_matrix(self.misalignment)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            k=self.k.repeat(shape),
+            misalignment=self.misalignment.repeat(shape),
+            name=self.name,
+        )
 
     @property
     def is_active(self) -> bool:
@@ -2153,6 +2235,12 @@ class Segment(Element):
                 incoming = todo.track(incoming)
 
             return incoming
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            elements=[element.broadcast(shape) for element in self.elements],
+            name=self.name,
+        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [

@@ -2,6 +2,8 @@ import torch
 
 import cheetah
 
+from .resources import ARESlatticeStage3v1_9 as ares
+
 
 def test_segment_length_shape():
     """Test that the shape of a segment's length matches the input."""
@@ -140,3 +142,31 @@ def test_track_parameter_segment_shape():
     assert outgoing.sigma_p.shape == (2,)
     assert outgoing.energy.shape == (2,)
     assert outgoing.total_charge.shape == (2,)
+
+
+def test_enormous_through_ares():
+    """Test ARES EA with a huge number of settings."""
+    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
+    incoming = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    segment_broadcast = segment.broadcast((100_000,))
+    incoming_broadcast = incoming.broadcast((100_000,))
+
+    segment_broadcast.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100_000)
+
+    outgoing = segment_broadcast.track(incoming_broadcast)
+
+    assert outgoing.mu_x.shape == (100_000,)
+    assert outgoing.mu_xp.shape == (100_000,)
+    assert outgoing.mu_y.shape == (100_000,)
+    assert outgoing.mu_yp.shape == (100_000,)
+    assert outgoing.sigma_x.shape == (100_000,)
+    assert outgoing.sigma_xp.shape == (100_000,)
+    assert outgoing.sigma_y.shape == (100_000,)
+    assert outgoing.sigma_yp.shape == (100_000,)
+    assert outgoing.sigma_s.shape == (100_000,)
+    assert outgoing.sigma_p.shape == (100_000,)
+    assert outgoing.energy.shape == (100_000,)
+    assert outgoing.total_charge.shape == (100_000,)

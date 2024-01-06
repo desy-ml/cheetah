@@ -299,6 +299,10 @@ class Beam(nn.Module):
     def alpha_y(self) -> torch.Tensor:
         return -self.sigma_yyp / self.emittance_y
 
+    def broadcast(self, shape: torch.Size) -> "Beam":
+        """Broadcast beam to new shape."""
+        raise NotImplementedError
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_xp={self.mu_xp},"
@@ -712,6 +716,14 @@ class ParameterBeam(Beam):
     @property
     def sigma_yyp(self) -> torch.Tensor:
         return self._cov[:, 2, 3]
+
+    def broadcast(self, shape: torch.Size) -> "ParameterBeam":
+        return self.__class__(
+            mu=self._mu.repeat((*shape, 1)),
+            cov=self._cov.repeat((*shape, 1, 1)),
+            energy=self.energy.repeat(shape),
+            total_charge=self.total_charge.repeat(shape),
+        )
 
     def __repr__(self) -> str:
         return (
@@ -1432,6 +1444,13 @@ class ParticleBeam(Beam):
         return torch.mean(
             (self.ys - self.mu_y.view(-1, 1)) * (self.yps - self.mu_yp.view(-1, 1)),
             dim=1,
+        )
+
+    def broadcast(self, shape: torch.Size) -> "ParticleBeam":
+        return self.__class__(
+            particles=self.particles.repeat((*shape, 1, 1)),
+            energy=self.energy.repeat(shape),
+            particle_charges=self.particle_charges.repeat(shape),
         )
 
     def __repr__(self) -> str:
