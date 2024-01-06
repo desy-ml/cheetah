@@ -1450,7 +1450,7 @@ class ParticleBeam(Beam):
         return self.__class__(
             particles=self.particles.repeat((*shape, 1, 1)),
             energy=self.energy.repeat(shape),
-            particle_charges=self.particle_charges.repeat(shape),
+            particle_charges=self.particle_charges.repeat((*shape, 1)),
         )
 
     def __repr__(self) -> str:
