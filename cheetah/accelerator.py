@@ -361,7 +361,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return self.k1 != 0
+        return any(self.k1 != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
@@ -472,10 +472,11 @@ class Dipole(Element):
 
     @property
     def hx(self) -> torch.Tensor:
-        if self.length == 0.0:
-            return torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype)
-        else:
-            return self.angle / self.length
+        value = torch.zeros_like(self.length)
+        value[self.length != 0] = (
+            self.angle[self.length != 0] / self.length[self.length != 0]
+        )
+        return value
 
     @property
     def is_skippable(self) -> bool:
@@ -712,7 +713,7 @@ class HorizontalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return self.angle != 0
+        return any(self.angle != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
@@ -799,7 +800,7 @@ class VerticalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return self.angle != 0
+        return any(self.angle != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
@@ -875,7 +876,7 @@ class Cavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return self.voltage != 0
+        return any(self.voltage != 0)
 
     @property
     def is_skippable(self) -> bool:
@@ -1798,7 +1799,7 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return self.k != 0
+        return any(self.k != 0)
 
     def is_skippable(self) -> bool:
         return True
