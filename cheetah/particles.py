@@ -264,7 +264,11 @@ class Beam(nn.Module):
     @property
     def emittance_x(self) -> torch.Tensor:
         """Emittance of the beam in x direction in m*rad."""
-        return torch.sqrt(self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2)
+        return torch.sqrt(
+            torch.clamp_min(
+                self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2, 0.0
+            )
+        )
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
@@ -283,7 +287,11 @@ class Beam(nn.Module):
     @property
     def emittance_y(self) -> torch.Tensor:
         """Emittance of the beam in y direction in m*rad."""
-        return torch.sqrt(self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2)
+        return torch.sqrt(
+            torch.clamp_min(
+                self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2, 0.0
+            )
+        )
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
