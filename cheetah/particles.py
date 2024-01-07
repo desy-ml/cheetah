@@ -683,7 +683,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_xp(self) -> torch.Tensor:
-        return torch.sqrt(self._cov[:, 1, 1])
+        return torch.sqrt(self._cov[:, 1, 1]).clamp_min(1e-20)
 
     @property
     def mu_y(self) -> torch.Tensor:
@@ -691,7 +691,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_y(self) -> torch.Tensor:
-        return torch.sqrt(self._cov[:, 2, 2])
+        return torch.sqrt(self._cov[:, 2, 2]).clamp_min(1e-20)
 
     @property
     def mu_yp(self) -> torch.Tensor:
@@ -699,7 +699,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_yp(self) -> torch.Tensor:
-        return torch.sqrt(self._cov[:, 3, 3])
+        return torch.sqrt(self._cov[:, 3, 3]).clamp_min(1e-20)
 
     @property
     def mu_s(self) -> torch.Tensor:
@@ -707,7 +707,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_s(self) -> torch.Tensor:
-        return torch.sqrt(self._cov[:, 4, 4])
+        return torch.sqrt(self._cov[:, 4, 4]).clamp_min(1e-20)
 
     @property
     def mu_p(self) -> torch.Tensor:
@@ -715,7 +715,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_p(self) -> torch.Tensor:
-        return torch.sqrt(self._cov[:, 5, 5])
+        return torch.sqrt(self._cov[:, 5, 5]).clamp_min(1e-20)
 
     @property
     def sigma_xxp(self) -> torch.Tensor:
