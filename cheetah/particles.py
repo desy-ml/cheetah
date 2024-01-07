@@ -515,6 +515,13 @@ class ParameterBeam(Beam):
             total_charge if total_charge is not None else torch.full(shape, 0.0)
         )
 
+        assert all(
+            beta_x > 0
+        ), "Beta function in x direction must be larger than 0 everywhere."
+        assert all(
+            beta_y > 0
+        ), "Beta function in y direction must be larger than 0 everywhere."
+
         sigma_x = torch.sqrt(emittance_x * beta_x)
         sigma_xp = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = torch.sqrt(emittance_y * beta_y)
