@@ -76,7 +76,7 @@ If you use Cheetah, please cite the following two papers:
     @inproceedings{stein2022accelerating,
       title     = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
       author    = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
-      year      = 2022,
+      year      = {2022},
       booktitle = {Proceedings of the 13th International Particle Accelerator Conference}
     }
 
