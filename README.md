@@ -85,15 +85,22 @@ where the optional keyword argument `beam` is the incoming beam represented by t
 
 ## Cite Cheetah
 
-To cite Cheetah in publications:
+If you use Cheetah, please cite the following two papers:
 
 ```bibtex
+@misc{kaiser2024cheetah,
+  title         = {Cheetah: Bridging the Gap Between Machine Learning and Particle Accelerator Physics with High-Speed, Differentiable Simulations},
+  author        = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and {Santamaria Garcia}, Andrea},
+  year          = {2024},
+  eprint        = {2401.05815},
+  archiveprefix = {arXiv},
+  primaryclass  = {physics.acc-ph}
+}
 @inproceedings{stein2022accelerating,
-    title        = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
-    author       = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
-    year         = 2022,
-    booktitle    = {Proceedings of the 13th International Particle Accelerator Conference},
-    url          = {https://github.com/desy-ml/cheetah}
+  title     = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+  author    = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
+  year      = {2022},
+  booktitle = {Proceedings of the 13th International Particle Accelerator Conference}
 }
 ```
 

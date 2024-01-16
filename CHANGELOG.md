@@ -25,6 +25,7 @@
 - Add pull request template (see #97) (@jank324)
 - Add _Acknowledgements_ section to README (see #103) (@jank324)
 - `benchmark` directory was moved to `desy-ml/cheetah-demos` repository (see #108) (@jank324)
+- Update citations to new arXiv preprint (see #117) (@jank324)
 
 ## [v0.6.1](https://github.com/desy-ml/cheetah/releases/tag/v0.6.1) (2023-09-17)
 
