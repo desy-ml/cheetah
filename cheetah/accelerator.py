@@ -23,9 +23,7 @@ from cheetah.utils import UniqueNameGenerator
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge
+    constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
 )  # electron mass
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
@@ -1163,7 +1161,7 @@ class Cavity(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"voltage={repr(self.voltage)}, "
-            + f"phase={repr(self.voltage)}, "
+            + f"phase={repr(self.phase)}, "
             + f"frequency={repr(self.frequency)}, "
             + f"name={repr(self.name)})"
         )
