@@ -1163,7 +1163,7 @@ class Cavity(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"voltage={repr(self.voltage)}, "
-            + f"phase={repr(self.voltage)}, "
+            + f"phase={repr(self.phase)}, "
             + f"frequency={repr(self.frequency)}, "
             + f"name={repr(self.name)})"
         )
