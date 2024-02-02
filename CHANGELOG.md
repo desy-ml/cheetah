@@ -19,6 +19,7 @@
 - Fix error raised when tracking a `ParameterBeam` through an active `BPM` (see #101) (@jank324)
 - Fix error in ASTRA beam import where the energy was set to `float64` instead of `float32` (see #111) (@jank324)
 - Fix missing passing of `total_charge` in `ParameterBeam.transformed_to` (see #112) (@jank324)
+- Fix `Cavitiy.__repr__` printing `voltage` value for `phase` property (see #121) (@jank324)
 
 ### 🐆 Other
 

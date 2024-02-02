@@ -6,9 +6,7 @@ import torch
 from scipy import constants
 
 REST_ENERGY = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge
+    constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
 )  # Electron mass
 
 
