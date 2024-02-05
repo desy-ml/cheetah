@@ -25,8 +25,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 rest_energy = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
-    / constants.elementary_charge
-)  # electron mass
+    / constants.elementary_charge  # electron mass
+)
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
