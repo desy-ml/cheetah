@@ -23,7 +23,9 @@ from cheetah.utils import UniqueNameGenerator
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 rest_energy = torch.tensor(
-    constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
+    constants.electron_mass
+    * constants.speed_of_light**2
+    / constants.elementary_charge
 )  # electron mass
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
@@ -43,21 +45,25 @@ class Element(ABC, nn.Module):
         self.name = name if name is not None else generate_unique_name()
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         Generates the element's transfer map that describes how the beam and its
-        particles are transformed when traveling through the element. The state vector
-        consists of 6 values with a physical meaning:
+        particles are transformed when traveling through the element.
+        The state vector consists of 6 values with a physical meaning:
+        (in the trace space notation)
+
         - x: Position in x direction
-        - xp: Momentum in x direction
+        - xp: Angle in x direction
         - y: Position in y direction
-        - yp: Momentum in y direction
-        - s: Position in z direction, the zero value is set to the middle of the pulse
-        - sp: Momentum in s direction
+        - yp: Angle in y direction
+        - s: Position in longitudinal direction, the zero value is set to the
+        reference position (usually the center of the pulse)
+        - p: Relative energy deviation from the reference particle
+           :math:`p = \frac{\Delta E}{p_0 C}`
         As well as a seventh value used to add constants to some of the prior values if
         necessary. Through this seventh state, the addition of constants can be
         represented using a matrix multiplication.
 
-        :param energy: Energy of the Beam. Read from the fed-in Cheetah Beam.
+        :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
