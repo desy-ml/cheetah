@@ -28,6 +28,7 @@
 - `benchmark` directory was moved to `desy-ml/cheetah-demos` repository (see #108) (@jank324)
 - Update citations to new arXiv preprint (see #117) (@jank324)
 - Improve the docstring with proper units for the phase space dimensions (see #122) (@cr-xu)
+- Link to the new paper (on arXiv) in the documentation (see #125) (@jank324)
 
 ## [v0.6.1](https://github.com/desy-ml/cheetah/releases/tag/v0.6.1) (2023-09-17)
 
