@@ -1,6 +1,16 @@
 # Changelog
 
-## v0.6.2 [🚧 Work in Progress]
+## v0.7.0 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+## [v0.6.2](https://github.com/desy-ml/cheetah/releases/tag/v0.6.2) (2024-02-13)
 
 ### 🚨 Breaking Changes
 
