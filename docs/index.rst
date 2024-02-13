@@ -10,7 +10,7 @@ Welcome to Cheetah's documentation!
 
 GitHub repository: https://github.com/desy-ml/cheetah
 
-Paper: https://accelconf.web.cern.ch/ipac2022/papers/wepoms036.pdf
+Paper: https://arxiv.org/abs/2401.05815
 
 
 Installation
