@@ -69,11 +69,11 @@ class Beam(nn.Module):
         Create a beam from twiss parameters.
 
         :param beta_x: Beta function in x direction in meters.
-        :param alpha_x: Alpha function in x direction in meters.
-        :param emittance_x: Emittance in x direction.
+        :param alpha_x: Alpha function in x direction in rad.
+        :param emittance_x: Emittance in x direction in m*rad.
         :param beta_y: Beta function in y direction in meters.
-        :param alpha_y: Alpha function in y direction in meters.
-        :param emittance_y: Emittance in y direction.
+        :param alpha_y: Alpha function in y direction in rad.
+        :param emittance_y: Emittance in y direction in m*rad.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
@@ -110,15 +110,16 @@ class Beam(nn.Module):
         Create version of this beam that is transformed to new beam parameters.
 
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_xp: Center of the particle distribution on x' in rad.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_yp: Center of the particle distribution on y' in rad.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction,
+        dimensionless.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
@@ -282,6 +283,7 @@ class Beam(nn.Module):
 
     @property
     def alpha_x(self) -> torch.Tensor:
+        """Alpha function in x direction in rad."""
         return -self.sigma_xxp / self.emittance_x
 
     @property
@@ -305,6 +307,7 @@ class Beam(nn.Module):
 
     @property
     def alpha_y(self) -> torch.Tensor:
+        """Alpha function in y direction in rad."""
         return -self.sigma_yyp / self.emittance_y
 
     def broadcast(self, shape: torch.Size) -> "Beam":
@@ -609,15 +612,15 @@ class ParameterBeam(Beam):
 
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
+        :param mu_xp: Center of the particle distribution on x' in rad.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_yp: Center of the particle distribution on y' in rad.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
@@ -818,16 +821,16 @@ class ParticleBeam(Beam):
         :param num_particles: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_yp: Center of the particle distribution on y' in metraders.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
-        :param cor_x: Correlation between x and xp.
-        :param cor_y: Correlation between y and yp.
+        :param sigma_p: Sigma of the particle distribution in p, dimensionless.
+        :param cor_x: Correlation between x and x'.
+        :param cor_y: Correlation between y and y'.
         :param cor_s: Correlation between s and p.
         :param energy: Energy of the beam in eV.
         :total_charge: Total charge of the beam in C.
@@ -1039,14 +1042,14 @@ class ParticleBeam(Beam):
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_yp: Center of the particle distribution on y' in rad.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Energy of the beam in eV.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
@@ -1230,14 +1233,14 @@ class ParticleBeam(Beam):
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_xp: Center of the particle distribution on px in meters.
-        :param mu_yp: Center of the particle distribution on py in meters.
+        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_yp: Center of the particle distribution on y' in rad.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in px direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in py direction in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a

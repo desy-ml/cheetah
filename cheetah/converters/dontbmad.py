@@ -426,7 +426,7 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
         assert property in understood, (
             f"Property {property} with value {properties[property]} for element type"
             f" {properties['element_type']} is currently not understood. Other values"
-            f" in properties are {properties.keys()}."
+            f" in properties are {properties.keys()}."  # noqa: B038
         )
 
 

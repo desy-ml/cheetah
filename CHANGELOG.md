@@ -1,6 +1,16 @@
 # Changelog
 
-## v0.6.2 [🚧 Work in Progress]
+## v0.7.0 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+## [v0.6.2](https://github.com/desy-ml/cheetah/releases/tag/v0.6.2) (2024-02-13)
 
 ### 🚨 Breaking Changes
 
@@ -19,12 +29,16 @@
 - Fix error raised when tracking a `ParameterBeam` through an active `BPM` (see #101) (@jank324)
 - Fix error in ASTRA beam import where the energy was set to `float64` instead of `float32` (see #111) (@jank324)
 - Fix missing passing of `total_charge` in `ParameterBeam.transformed_to` (see #112) (@jank324)
+- Fix `Cavitiy.__repr__` printing `voltage` value for `phase` property (see #121) (@jank324)
 
 ### 🐆 Other
 
 - Add pull request template (see #97) (@jank324)
 - Add _Acknowledgements_ section to README (see #103) (@jank324)
 - `benchmark` directory was moved to `desy-ml/cheetah-demos` repository (see #108) (@jank324)
+- Update citations to new arXiv preprint (see #117) (@jank324)
+- Improve the docstring with proper units for the phase space dimensions (see #122) (@cr-xu)
+- Link to the new paper (on arXiv) in the documentation (see #125) (@jank324)
 
 ## [v0.6.1](https://github.com/desy-ml/cheetah/releases/tag/v0.6.1) (2023-09-17)
 

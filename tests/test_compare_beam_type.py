@@ -1,6 +1,7 @@
 """
 Tests that ensure that both beam types produce (roughly) the same results.
 """
+
 import torch
 
 import cheetah
