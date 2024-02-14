@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix bug in `Cavity` transfer map bug. (see #128) (@cr-xu)
+
 ### 🐆 Other
 
 ## [v0.6.2](https://github.com/desy-ml/cheetah/releases/tag/v0.6.2) (2024-02-13)
