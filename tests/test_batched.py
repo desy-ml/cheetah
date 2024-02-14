@@ -172,10 +172,36 @@ def test_enormous_through_ares():
     assert outgoing.total_charge.shape == (100_000,)
 
 
-def test_before_after_broadcast_tracking_equal():
+def test_before_after_broadcast_tracking_equal_cavity():
     """
     Test that when tracking through a segment after broadcasting, the resulting beam is
-    the same as in the segment before broadcasting.
+    the same as in the segment before broadcasting. A cavity is used as a reference.
+    """
+    cavity = cheetah.Cavity(
+        length=torch.tensor([3.0441]),
+        voltage=torch.tensor([48198468.0]),
+        phase=torch.tensor([-0.0]),
+        frequency=torch.tensor([2.8560e09]),
+        name="k26_2d",
+    )
+    incoming = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    outgoing = cavity.track(incoming)
+
+    broadcast_cavity = cavity.broadcast((10,))
+    broadcast_incoming = incoming.broadcast((10,))
+    broadcast_outgoing = broadcast_cavity.track(broadcast_incoming)
+
+    for i in range(10):
+        assert torch.all(broadcast_outgoing._mu[i] == outgoing._mu[0])
+        assert torch.all(broadcast_outgoing._cov[i] == outgoing._cov[0])
+
+
+def test_before_after_broadcast_tracking_equal_ares_ea():
+    """
+    Test that when tracking through a segment after broadcasting, the resulting beam is
+    the same as in the segment before broadcasting. The ARES EA is used as a reference.
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     incoming = cheetah.ParameterBeam.from_astra(
