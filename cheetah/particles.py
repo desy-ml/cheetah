@@ -266,7 +266,8 @@ class Beam(nn.Module):
         """Emittance of the beam in x direction in m*rad."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2, 1e-20
+                self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2,
+                torch.finfo(self.sigma_x.dtype).tiny,
             )
         )
 
@@ -289,7 +290,8 @@ class Beam(nn.Module):
         """Emittance of the beam in y direction in m*rad."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2, 1e-20
+                self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2,
+                torch.finfo(self.sigma_y.dtype).tiny,
             )
         )
 
