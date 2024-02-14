@@ -172,6 +172,27 @@ def test_enormous_through_ares():
     assert outgoing.total_charge.shape == (100_000,)
 
 
+def test_before_after_broadcast_tracking_equal():
+    """
+    Test that when tracking through a segment after broadcasting, the resulting beam is
+    the same as in the segment before broadcasting.
+    """
+    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
+    incoming = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    segment.AREAMQZM1.k1 = torch.tensor([4.2])
+    outgoing = segment.track(incoming)
+
+    broadcast_segment = segment.broadcast((10,))
+    broadcast_incoming = incoming.broadcast((10,))
+    broadcast_outgoing = broadcast_segment.track(broadcast_incoming)
+
+    for i in range(10):
+        assert torch.all(broadcast_outgoing._mu[i] == outgoing._mu[0])
+        assert torch.all(broadcast_outgoing._cov[i] == outgoing._cov[0])
+
+
 def test_broadcast_customtransfermap():
     """Test that broadcasting a `CustomTransferMap` element gives the correct result."""
     tm = torch.tensor(
