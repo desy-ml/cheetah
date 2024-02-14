@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
