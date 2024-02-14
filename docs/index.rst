@@ -10,7 +10,7 @@ Welcome to Cheetah's documentation!
 
 GitHub repository: https://github.com/desy-ml/cheetah
 
-Paper: https://accelconf.web.cern.ch/ipac2022/papers/wepoms036.pdf
+Paper: https://arxiv.org/abs/2401.05815
 
 
 Installation
@@ -61,18 +61,23 @@ For more advanced usage, please refer to the in-depth documentation.
 Cite Cheetah
 ------------
 
-To cite Cheetah in publications:
+If you use Cheetah, please cite the following two papers:
 
 .. code-block:: bibtex
 
+    @misc{kaiser2024cheetah,
+      title         = {Cheetah: Bridging the Gap Between Machine Learning and Particle Accelerator Physics with High-Speed, Differentiable Simulations},
+      author        = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and {Santamaria Garcia}, Andrea},
+      year          = {2024},
+      eprint        = {2401.05815},
+      archiveprefix = {arXiv},
+      primaryclass  = {physics.acc-ph}
+    }
     @inproceedings{stein2022accelerating,
-        author = {Stein, Oliver and
-                Kaiser, Jan and
-                Eichler, Annika},
-        title = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
-        booktitle = {Proceedings of the 13th International Particle Accelerator Conference},
-        year = {2022},
-        url = {https://github.com/desy-ml/cheetah},
+      title     = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+      author    = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
+      year      = {2022},
+      booktitle = {Proceedings of the 13th International Particle Accelerator Conference}
     }
 
 For Developers
