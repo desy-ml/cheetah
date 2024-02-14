@@ -209,7 +209,9 @@ class CustomTransferMap(Element):
         device = elements[0].transfer_map(incoming_beam.energy).device
         dtype = elements[0].transfer_map(incoming_beam.energy).dtype
 
-        tm = torch.eye(7, device=device, dtype=dtype)
+        tm = torch.eye(7, device=device, dtype=dtype).repeat(
+            (*incoming_beam.energy.shape, 1, 1)
+        )
         for element in elements:
             tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
             incoming_beam = element.track(incoming_beam)
@@ -1278,7 +1280,9 @@ class BPM(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return torch.eye(7, device=energy.device, dtype=energy.dtype)
+        return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
+            (*energy.shape, 1, 1)
+        )
 
     def track(self, incoming: Beam) -> Beam:
         if incoming is Beam.empty:
@@ -1323,10 +1327,12 @@ class Marker(Element):
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name=name)
 
-    def transfer_map(self, energy):
-        return torch.eye(7, device=energy.device, dtype=energy.dtype)
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
+            (*energy.shape, 1, 1)
+        )
 
-    def track(self, incoming):
+    def track(self, incoming: Beam) -> Beam:
         # TODO: At some point Markers should be able to be active or inactive. Active
         # Markers would be able to record the beam tracked through them.
         return incoming
@@ -1452,7 +1458,7 @@ class Screen(Element):
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 
-        return torch.eye(7, device=device, dtype=dtype)
+        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:
@@ -1649,7 +1655,7 @@ class Aperture(Element):
         device = self.x_max.device
         dtype = self.x_max.dtype
 
-        return torch.eye(7, device=device, dtype=dtype)
+        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
@@ -1773,10 +1779,10 @@ class Undulator(Element):
             else torch.tensor(0.0, device=device, dtype=dtype)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[0, 1] = self.length
-        tm[2, 3] = self.length
-        tm[4, 5] = self.length * igamma2
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        tm[:, 0, 1] = self.length
+        tm[:, 2, 3] = self.length
+        tm[:, 4, 5] = self.length * igamma2
 
         return tm
 
@@ -2240,7 +2246,9 @@ class Segment(Element):
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
-            tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
+            tm = torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
+                (*self.length.shape, 1, 1)
+            )
             for element in self.elements:
                 tm = torch.matmul(element.transfer_map(energy), tm)
             return tm
