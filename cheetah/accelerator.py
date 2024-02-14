@@ -1949,7 +1949,7 @@ class Segment(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, elements: list[Element], name: str = "unnamed") -> None:
+    def __init__(self, elements: list[Element], name: Optional[str] = None) -> None:
         super().__init__(name=name)
 
         self.elements = nn.ModuleList(elements)
