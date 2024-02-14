@@ -2256,7 +2256,7 @@ class Segment(Element):
                 if not element.is_skippable:
                     todos.append(element)
                 elif not todos or not todos[-1].is_skippable:
-                    todos.append(Segment([element]))
+                    todos.append(Segment([element], name="temporary_todo"))
                 else:
                     todos[-1].elements.append(element)
 
