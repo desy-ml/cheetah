@@ -218,7 +218,11 @@ class CustomTransferMap(Element):
             element.length for element in elements if hasattr(element, "length")
         )
 
-        return cls(tm, length=combined_length, device=device, dtype=dtype)
+        combined_name = "combined_" + "_".join(element.name for element in elements)
+
+        return cls(
+            tm, length=combined_length, device=device, dtype=dtype, name=combined_name
+        )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return self._transfer_map
