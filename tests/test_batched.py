@@ -170,3 +170,54 @@ def test_enormous_through_ares():
     assert outgoing.sigma_p.shape == (100_000,)
     assert outgoing.energy.shape == (100_000,)
     assert outgoing.total_charge.shape == (100_000,)
+
+
+def test_broadcast_customtransfermap():
+    """Test that broadcasting a `CustomTransferMap` element gives the correct result."""
+    tm = torch.tensor(
+        [
+            [
+                [1.0, 4.0e-02, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0e-05],
+                [0.0, 0.0, 1.0, 4.0e-02, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, -4.6422e-07, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+            ]
+        ]
+    )
+
+    element = cheetah.CustomTransferMap(length=torch.tensor([0.4]), transfer_map=tm)
+    broadcast_element = element.broadcast((10,))
+
+    assert broadcast_element.length.shape == (10,)
+    assert broadcast_element._transfer_map.shape == (10, 7, 7)
+    for i in range(10):
+        assert torch.all(broadcast_element._transfer_map[i] == tm[0])
+
+
+def test_broadcast_drift():
+    """Test that broadcasting a `Drift` element gives the correct result."""
+    element = cheetah.Drift(length=torch.tensor([0.4]))
+    broadcast_element = element.broadcast((10,))
+
+    assert broadcast_element.length.shape == (10,)
+    for i in range(10):
+        assert broadcast_element.length[i] == 0.4
+
+
+def test_broadcast_quadrupole():
+    """Test that broadcasting a `Quadrupole` element gives the correct result."""
+
+    # TODO Add misalignment to the test
+    # TODO Add tilt to the test
+
+    element = cheetah.Quadrupole(length=torch.tensor([0.4]), k1=torch.tensor([4.2]))
+    broadcast_element = element.broadcast((10,))
+
+    assert broadcast_element.length.shape == (10,)
+    assert broadcast_element.k1.shape == (10,)
+    for i in range(10):
+        assert broadcast_element.length[i] == 0.4
+        assert broadcast_element.k1[i] == 4.2
