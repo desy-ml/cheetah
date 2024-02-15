@@ -10,8 +10,6 @@
 
 ### 🐆 Other
 
-# Changelog
-
 ## v0.6.3 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
