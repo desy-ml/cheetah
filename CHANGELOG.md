@@ -19,6 +19,7 @@
 ### 🐛 Bug fixes
 
 - Fix bug in `Cavity` transfer map bug. (see #128) (@cr-xu)
+- Add GPL 3 license (see #130) (@jank324)
 
 ### 🐆 Other
 
