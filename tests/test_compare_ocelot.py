@@ -663,11 +663,11 @@ def test_cavity():
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 5].cpu().numpy(),
+        outgoing_beam.particles[:, :, 5].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 5],
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 4].cpu().numpy(),
+        outgoing_beam.particles[:, :, 4].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 4],
         atol=1e-4,
     )
