@@ -653,12 +653,21 @@ def test_cavity():
     # Compare
     assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
     assert np.isclose(
-        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-4
+        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=2e-5
     )
     assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
     assert np.isclose(
-        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-4
+        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=2e-5
     )
     assert np.isclose(
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5].cpu().numpy(),
+        outgoing_parray.rparticles.transpose()[:, 5],
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4].cpu().numpy(),
+        outgoing_parray.rparticles.transpose()[:, 4],
+        atol=1e-4,
     )
