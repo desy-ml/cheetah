@@ -1011,7 +1011,7 @@ class Cavity(Element):
         T566 = 1.5 * self.length * igamma2 / beta0**3
         T556 = 0.0
         T555 = 0.0
-    
+
         if any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
