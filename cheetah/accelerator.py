@@ -1011,6 +1011,7 @@ class Cavity(Element):
         T566 = 1.5 * self.length * igamma2 / beta0**3
         T556 = 0.0
         T555 = 0.0
+    
         if any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
@@ -1018,23 +1019,12 @@ class Cavity(Element):
             beta1 = torch.sqrt(1 - 1 / g1**2)
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[:, 5] = (
-                    incoming._mu[:, 5]
-                    + incoming.energy * beta0 / (outgoing_energy * beta1)
-                    + self.voltage
-                    * beta0
-                    / (outgoing_energy * beta1)
-                    * (torch.cos(incoming._mu[:, 4] * beta0 * k + phi) - torch.cos(phi))
+                outgoing_mu[:, 5] = incoming._mu[:, 5] * incoming.energy * beta0 / (
+                    outgoing_energy * beta1
+                ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
+                    torch.cos(-incoming._mu[:, 4] * beta0 * k + phi) - torch.cos(phi)
                 )
                 outgoing_cov[:, 5, 5] = incoming._cov[:, 5, 5]
-                # outgoing_cov[5, 5] = (
-                #     incoming._cov[5, 5]
-                #     + incoming.energy * beta0 / (outgoing_energy * beta1)
-                #     + self.voltage
-                #     * beta0
-                #     / (outgoing_energy * beta1)
-                #     * (torch.cos(incoming._mu[4] * beta0 * k + phi) - torch.cos(phi))
-                # )
             else:  # ParticleBeam
                 outgoing_particles[:, :, 5] = (
                     incoming.particles[:, :, 5]
@@ -1095,7 +1085,7 @@ class Cavity(Element):
                 )
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[:, 4] = (
+                outgoing_mu[:, 4] = incoming._mu[:, 4] + (
                     T566 * incoming._mu[:, 5] ** 2
                     + T556 * incoming._mu[:, 4] * incoming._mu[:, 5]
                     + T555 * incoming._mu[:, 4] ** 2
@@ -1112,7 +1102,7 @@ class Cavity(Element):
                 )
                 outgoing_cov[:, 5, 4] = outgoing_cov[:, 4, 5]
             else:  # ParticleBeam
-                outgoing_particles[:, :, 4] = (
+                outgoing_particles[:, :, 4] = incoming.particles[:, :, 4] + (
                     T566.unsqueeze(-1) * incoming.particles[:, :, 5] ** 2
                     + T556 * incoming.particles[:, :, 4] * incoming.particles[:, :, 5]
                     + T555 * incoming.particles[:, :, 4] ** 2
