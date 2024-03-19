@@ -1104,9 +1104,11 @@ class Cavity(Element):
                 outgoing_cov[:, 5, 4] = outgoing_cov[:, 4, 5]
             else:  # ParticleBeam
                 outgoing_particles[:, :, 4] = incoming.particles[:, :, 4] + (
-                    T566 * incoming.particles[:, :, 5] ** 2
-                    + T556 * incoming.particles[:, :, 4] * incoming.particles[:, :, 5]
-                    + T555 * incoming.particles[:, :, 4] ** 2
+                    T566.unsqueeze(-1) * incoming.particles[:, :, 5] ** 2
+                    + T556.unsqueeze(-1)
+                    * incoming.particles[:, :, 4]
+                    * incoming.particles[:, :, 5]
+                    + T555.unsqueeze(-1) * incoming.particles[:, :, 4] ** 2
                 )
 
         if isinstance(incoming, ParameterBeam):
