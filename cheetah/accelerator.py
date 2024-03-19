@@ -1009,8 +1009,8 @@ class Cavity(Element):
         delta_energy = self.voltage * torch.cos(phi)
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
-        T556 = 0.0
-        T555 = 0.0
+        T556 = torch.full_like(self.length, 0.0)
+        T555 = torch.full_like(self.length, 0.0)
 
         if any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
@@ -1026,23 +1026,24 @@ class Cavity(Element):
                 )
                 outgoing_cov[:, 5, 5] = incoming._cov[:, 5, 5]
             else:  # ParticleBeam
-                outgoing_particles[:, :, 5] = (
-                    incoming.particles[:, :, 5]
-                    + incoming.energy.unsqueeze(-1)
-                    * beta0.unsqueeze(-1)
-                    / (outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1))
-                    + self.voltage.unsqueeze(-1)
-                    * beta0.unsqueeze(-1)
-                    / (outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1))
-                    * (
-                        torch.cos(
-                            incoming.particles[:, :, 4]
-                            * beta0.unsqueeze(-1)
-                            * k.unsqueeze(-1)
-                            + phi.unsqueeze(-1)
-                        )
-                        - torch.cos(phi).unsqueeze(-1)
+                outgoing_particles[:, :, 5] = incoming.particles[
+                    :, :, 5
+                ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
+                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
+                ) + self.voltage.unsqueeze(
+                    -1
+                ) * beta0.unsqueeze(
+                    -1
+                ) / (
+                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
+                ) * (
+                    torch.cos(
+                        incoming.particles[:, :, 4]
+                        * beta0.unsqueeze(-1)
+                        * k.unsqueeze(-1)
+                        + phi.unsqueeze(-1)
                     )
+                    - torch.cos(phi).unsqueeze(-1)
                 )
 
             dgamma = self.voltage / electron_mass_eV
@@ -1103,7 +1104,7 @@ class Cavity(Element):
                 outgoing_cov[:, 5, 4] = outgoing_cov[:, 4, 5]
             else:  # ParticleBeam
                 outgoing_particles[:, :, 4] = incoming.particles[:, :, 4] + (
-                    T566.unsqueeze(-1) * incoming.particles[:, :, 5] ** 2
+                    T566 * incoming.particles[:, :, 5] ** 2
                     + T556 * incoming.particles[:, :, 4] * incoming.particles[:, :, 5]
                     + T555 * incoming.particles[:, :, 4] ** 2
                 )
