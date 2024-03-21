@@ -298,6 +298,68 @@ class Drift(Element):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(length={repr(self.length)})"
+    
+
+class SpaceChargeKick(Element):
+    """
+    Simulates space charge effects on a beam.
+    :param length: Length in meters.
+    :param name: Unique identifier of the element.
+    """
+
+    def __init__(
+        self,
+        length: Union[torch.Tensor, nn.Parameter],
+        name: Optional[str] = None,
+        device=None,
+        dtype=torch.float32,
+    ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        device = self.length.device
+        dtype = self.length.dtype
+
+        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+        igamma2 = (
+            1 / gamma**2
+            if gamma != 0
+            else torch.tensor(0.0, device=device, dtype=dtype)
+        )
+        beta = torch.sqrt(1 - igamma2)
+
+        tm = torch.eye(7, device=device, dtype=dtype)
+        tm[0, 1] = self.length
+        tm[2, 3] = self.length
+        tm[4, 5] = -self.length / beta**2 * igamma2
+
+        return tm
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
+
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+        split_elements = []
+        remaining = self.length
+        while remaining > 0:
+            element = Drift(torch.min(resolution, remaining))
+            split_elements.append(element)
+            remaining -= resolution
+        return split_elements
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        pass
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length"]
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(length={repr(self.length)})"
 
 
 class Quadrupole(Element):
