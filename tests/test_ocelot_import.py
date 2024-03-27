@@ -57,12 +57,12 @@ def test_ocelot_to_particlebeam():
     parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
     beam = cheetah.ParticleBeam.from_ocelot(parray)
 
-    assert np.allclose(beam.particles[:, 0].cpu().numpy(), parray.x())
-    assert np.allclose(beam.particles[:, 1].cpu().numpy(), parray.px())
-    assert np.allclose(beam.particles[:, 2].cpu().numpy(), parray.y())
-    assert np.allclose(beam.particles[:, 3].cpu().numpy(), parray.py())
-    assert np.allclose(beam.particles[:, 4].cpu().numpy(), parray.tau())
-    assert np.allclose(beam.particles[:, 5].cpu().numpy(), parray.p())
+    assert np.allclose(beam.particles[0, :, 0].cpu().numpy(), parray.x())
+    assert np.allclose(beam.particles[0, :, 1].cpu().numpy(), parray.px())
+    assert np.allclose(beam.particles[0, :, 2].cpu().numpy(), parray.y())
+    assert np.allclose(beam.particles[0, :, 3].cpu().numpy(), parray.py())
+    assert np.allclose(beam.particles[0, :, 4].cpu().numpy(), parray.tau())
+    assert np.allclose(beam.particles[0, :, 5].cpu().numpy(), parray.p())
     assert np.allclose(beam.energy.cpu().numpy(), parray.E * 1e9)
     assert np.allclose(beam.particle_charges.cpu().numpy(), parray.q_array)
 

@@ -28,15 +28,15 @@ A sequence of accelerator elements (or a lattice) is called a `Segment` in _Chee
 segment = Segment(
     elements=[
         BPM(name="BPM1SMATCH"),
-        Drift(length=torch.tensor(1.0)),
+        Drift(length=torch.tensor([1.0])),
         BPM(name="BPM6SMATCH"),
-        Drift(length=torch.tensor(1.0)),
-        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
-        Drift(length=torch.tensor(0.2)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
-        Drift(length=torch.tensor(7.0)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
-        Drift(length=torch.tensor(0.05)),
+        Drift(length=torch.tensor([1.0])),
+        VerticalCorrector(length=torch.tensor([0.3]), name="V7SMATCH"),
+        Drift(length=torch.tensor([0.2])),
+        HorizontalCorrector(length=torch.tensor([0.3]), name="H10SMATCH"),
+        Drift(length=torch.tensor([7.0])),
+        HorizontalCorrector(length=torch.tensor([0.3]), name="H12SMATCH"),
+        Drift(length=torch.tensor([0.05])),
         BPM(name="BPM13SMATCH"),
     ]
 )
