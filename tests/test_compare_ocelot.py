@@ -661,5 +661,4 @@ def test_cavity():
     assert np.allclose(
         outgoing_beam.particles[:, 4].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 4],
-        atol=1e-4,
     )
