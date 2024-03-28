@@ -10,16 +10,12 @@
 
 ### 🐆 Other
 
-## v0.6.3 [🚧 Work in Progress]
-
-### 🚨 Breaking Changes
-
-### 🚀 Features
+## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
 ### 🐛 Bug fixes
 
 - Fix bug in `Cavity` transfer map bug. (see #129 and #135) (@cr-xu)
-- Add GPL 3 license (see #131) (@jank324)
+- Add GPL 3 licence (see #131) (@jank324)
 
 ### 🐆 Other
 
