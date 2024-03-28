@@ -295,9 +295,9 @@ class Drift(Element):
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
-        tm[:, 0, 1] = self.length
-        tm[:, 2, 3] = self.length
-        tm[:, 4, 5] = -self.length / beta**2 * igamma2
+        tm[..., 0, 1] = self.length
+        tm[..., 2, 3] = self.length
+        tm[..., 4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -379,7 +379,9 @@ class Quadrupole(Element):
             energy=energy,
         )
 
-        if all(self.misalignment[:, 0] == 0) and all(self.misalignment[:, 1] == 0):
+        if torch.all(self.misalignment[:, 0] == 0) and torch.all(
+            self.misalignment[:, 1] == 0
+        ):
             return R
         else:
             R_exit, R_entry = misalignment_matrix(self.misalignment)
@@ -750,10 +752,10 @@ class HorizontalCorrector(Element):
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
-        tm[:, 0, 1] = self.length
-        tm[:, 1, 6] = self.angle
-        tm[:, 2, 3] = self.length
-        tm[:, 4, 5] = -self.length / beta**2 * igamma2
+        tm[..., 0, 1] = self.length
+        tm[..., 1, 6] = self.angle
+        tm[..., 2, 3] = self.length
+        tm[..., 4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -840,10 +842,10 @@ class VerticalCorrector(Element):
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
-        tm[:, 0, 1] = self.length
-        tm[:, 2, 3] = self.length
-        tm[:, 3, 6] = self.angle
-        tm[:, 4, 5] = -self.length / beta**2 * igamma2
+        tm[..., 0, 1] = self.length
+        tm[..., 2, 3] = self.length
+        tm[..., 3, 6] = self.angle
+        tm[..., 4, 5] = -self.length / beta**2 * igamma2
         return tm
 
     def broadcast(self, shape: Size) -> Element:
@@ -940,29 +942,11 @@ class Cavity(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
-
-        # TODO: This feels weird because I'm computing the all transfer maps for both
-        # cases, but only using one of them. Maybe there is a better way to do this.
-        # ... or am I?
-        tm = torch.empty((*self.length.shape, 7, 7), device=device, dtype=dtype)
-        if any(self.voltage > 0):
-            tm[self.voltage > 0] = self._cavity_rmatrix(energy[self.voltage > 0])
-        if any(self.voltage <= 0):
-            tm[self.voltage <= 0] = base_rmatrix(
-                length=self.length[self.voltage <= 0],
-                k1=torch.zeros_like(
-                    self.length[self.voltage <= 0], device=device, dtype=dtype
-                ),
-                hx=torch.zeros_like(
-                    self.length[self.voltage <= 0], device=device, dtype=dtype
-                ),
-                tilt=torch.zeros_like(
-                    self.length[self.voltage <= 0], device=device, dtype=dtype
-                ),
-                energy=energy[self.voltage <= 0],
-            )
+        # There used to be a check for voltage > 0 here, where the cavity transfer map
+        # was only computed for the elements with voltage > 0 and a basermatrix was
+        # used otherwise. This was removed because it was causing issues with the
+        # vectorisation, but I am not sure it is okay to remove.
+        tm = self._cavity_rmatrix(energy)
 
         return tm
 
@@ -990,11 +974,12 @@ class Cavity(Element):
         igamma2 = torch.full_like(self.length, 0.0)
         g0 = torch.full_like(self.length, 1e10)
 
-        g0[incoming.energy != 0] = incoming.energy / electron_mass_eV.to(
+        mask = incoming.energy != 0
+        g0[mask] = incoming.energy[mask] / electron_mass_eV.to(
             device=device, dtype=dtype
         )
-        igamma2[incoming.energy != 0] = 1 / g0[incoming.energy != 0] ** 2
-        beta0[incoming.energy != 0] = torch.sqrt(1 - igamma2[incoming.energy != 0])
+        igamma2[mask] = 1 / g0[mask] ** 2
+        beta0[mask] = torch.sqrt(1 - igamma2[mask])
 
         phi = torch.deg2rad(self.phase)
 
@@ -1012,22 +997,22 @@ class Cavity(Element):
         T556 = torch.full_like(self.length, 0.0)
         T555 = torch.full_like(self.length, 0.0)
 
-        if any(incoming.energy + delta_energy > 0):
+        if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
             g1 = outgoing_energy / electron_mass_eV
             beta1 = torch.sqrt(1 - 1 / g1**2)
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[:, 5] = incoming._mu[:, 5] * incoming.energy * beta0 / (
+                outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (
                     outgoing_energy * beta1
                 ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
-                    torch.cos(-incoming._mu[:, 4] * beta0 * k + phi) - torch.cos(phi)
+                    torch.cos(-incoming._mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
                 )
-                outgoing_cov[:, 5, 5] = incoming._cov[:, 5, 5]
+                outgoing_cov[..., 5, 5] = incoming._cov[..., 5, 5]
             else:  # ParticleBeam
-                outgoing_particles[:, :, 5] = incoming.particles[
-                    :, :, 5
+                outgoing_particles[..., 5] = incoming.particles[
+                    ..., 5
                 ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
                     outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
                 ) + self.voltage.unsqueeze(
@@ -1038,7 +1023,7 @@ class Cavity(Element):
                     outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
                 ) * (
                     torch.cos(
-                        incoming.particles[:, :, 4]
+                        incoming.particles[..., 4]
                         * beta0.unsqueeze(-1)
                         * k.unsqueeze(-1)
                         + phi.unsqueeze(-1)
@@ -1047,7 +1032,7 @@ class Cavity(Element):
                 )
 
             dgamma = self.voltage / electron_mass_eV
-            if any(delta_energy > 0):
+            if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
                     * (beta0**3 * g0**3 - beta1**3 * g1**3)
@@ -1086,29 +1071,29 @@ class Cavity(Element):
                 )
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[:, 4] = outgoing_mu[:, 4] + (
-                    T566 * incoming._mu[:, 5] ** 2
-                    + T556 * incoming._mu[:, 4] * incoming._mu[:, 5]
-                    + T555 * incoming._mu[:, 4] ** 2
+                outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
+                    T566 * incoming._mu[..., 5] ** 2
+                    + T556 * incoming._mu[..., 4] * incoming._mu[..., 5]
+                    + T555 * incoming._mu[..., 4] ** 2
                 )
-                outgoing_cov[:, 4, 4] = (
-                    T566 * incoming._cov[:, 5, 5] ** 2
-                    + T556 * incoming._cov[:, 4, 5] * incoming._cov[:, 5, 5]
-                    + T555 * incoming._cov[:, 4, 4] ** 2
+                outgoing_cov[..., 4, 4] = (
+                    T566 * incoming._cov[..., 5, 5] ** 2
+                    + T556 * incoming._cov[..., 4, 5] * incoming._cov[..., 5, 5]
+                    + T555 * incoming._cov[..., 4, 4] ** 2
                 )
-                outgoing_cov[:, 4, 5] = (
-                    T566 * incoming._cov[:, 5, 5] ** 2
-                    + T556 * incoming._cov[:, 4, 5] * incoming._cov[:, 5, 5]
-                    + T555 * incoming._cov[:, 4, 4] ** 2
+                outgoing_cov[..., 4, 5] = (
+                    T566 * incoming._cov[..., 5, 5] ** 2
+                    + T556 * incoming._cov[..., 4, 5] * incoming._cov[..., 5, 5]
+                    + T555 * incoming._cov[..., 4, 4] ** 2
                 )
-                outgoing_cov[:, 5, 4] = outgoing_cov[:, 4, 5]
+                outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
             else:  # ParticleBeam
-                outgoing_particles[:, :, 4] = outgoing_particles[:, :, 4] + (
-                    T566.unsqueeze(-1) * incoming.particles[:, :, 5] ** 2
+                outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
+                    T566.unsqueeze(-1) * incoming.particles[..., 5] ** 2
                     + T556.unsqueeze(-1)
-                    * incoming.particles[:, :, 4]
-                    * incoming.particles[:, :, 5]
-                    + T555.unsqueeze(-1) * incoming.particles[:, :, 4] ** 2
+                    * incoming.particles[..., 4]
+                    * incoming.particles[..., 5]
+                    + T555.unsqueeze(-1) * incoming.particles[..., 4] ** 2
                 )
 
         if isinstance(incoming, ParameterBeam):
@@ -1143,7 +1128,7 @@ class Cavity(Element):
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
-        assert all(Ei > 0), "Initial energy must be larger than 0"
+        assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
@@ -1179,7 +1164,7 @@ class Cavity(Element):
 
         k = 2 * torch.pi * self.frequency / torch.tensor(constants.speed_of_light)
         r55_cor = 0.0
-        if any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
+        if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
             beta0 = torch.sqrt(1 - 1 / Ei**2)
             beta1 = torch.sqrt(1 - 1 / Ef**2)
 
@@ -1201,18 +1186,18 @@ class Cavity(Element):
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
         R = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
-        R[:, 0, 0] = r11
-        R[:, 0, 1] = r12
-        R[:, 1, 0] = r21
-        R[:, 1, 1] = r22
-        R[:, 2, 2] = r11
-        R[:, 2, 3] = r12
-        R[:, 3, 2] = r21
-        R[:, 3, 3] = r22
-        R[:, 4, 4] = 1 + r55_cor
-        R[:, 4, 5] = r56
-        R[:, 5, 4] = r65
-        R[:, 5, 5] = r66
+        R[..., 0, 0] = r11
+        R[..., 0, 1] = r12
+        R[..., 1, 0] = r21
+        R[..., 1, 1] = r22
+        R[..., 2, 2] = r11
+        R[..., 2, 3] = r12
+        R[..., 3, 2] = r21
+        R[..., 3, 3] = r22
+        R[..., 4, 4] = 1 + r55_cor
+        R[..., 4, 5] = r56
+        R[..., 5, 4] = r65
+        R[..., 5, 5] = r66
 
         return R
 
