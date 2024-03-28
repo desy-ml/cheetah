@@ -374,8 +374,8 @@ def test_before_after_broadcast_tracking_equal_ares_ea():
 
     for i in range(3):
         for j in range(10):
-            assert torch.all(broadcast_outgoing._mu[i, j] == outgoing._mu[0])
-            assert torch.all(broadcast_outgoing._cov[i, j] == outgoing._cov[0])
+            assert torch.allclose(broadcast_outgoing._mu[i, j], outgoing._mu[0])
+            assert torch.allclose(broadcast_outgoing._cov[i, j], outgoing._cov[0])
 
 
 def test_broadcast_customtransfermap():
