@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking Changes
 
+- Cheetah is not vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. (see #116) (@jank324)
+
 ### 🚀 Features
 
 - `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
