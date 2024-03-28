@@ -439,22 +439,22 @@ class ParameterBeam(Beam):
                 torch.full(shape, 0.0),
                 torch.full(shape, 1.0),
             ],
-            dim=1,
+            dim=-1,
         )
 
-        cov = torch.zeros(shape[0], 7, 7)
-        cov[:, 0, 0] = sigma_x**2
-        cov[:, 0, 1] = cor_x
-        cov[:, 1, 0] = cor_x
-        cov[:, 1, 1] = sigma_xp**2
-        cov[:, 2, 2] = sigma_y**2
-        cov[:, 2, 3] = cor_y
-        cov[:, 3, 2] = cor_y
-        cov[:, 3, 3] = sigma_yp**2
-        cov[:, 4, 4] = sigma_s**2
-        cov[:, 4, 5] = cor_s
-        cov[:, 5, 4] = cor_s
-        cov[:, 5, 5] = sigma_p**2
+        cov = torch.zeros(*shape, 7, 7)
+        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 1] = cor_x
+        cov[..., 1, 0] = cor_x
+        cov[..., 1, 1] = sigma_xp**2
+        cov[..., 2, 2] = sigma_y**2
+        cov[..., 2, 3] = cor_y
+        cov[..., 3, 2] = cor_y
+        cov[..., 3, 3] = sigma_yp**2
+        cov[..., 4, 4] = sigma_s**2
+        cov[..., 4, 5] = cor_s
+        cov[..., 5, 4] = cor_s
+        cov[..., 5, 5] = sigma_p**2
 
         return cls(
             mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
@@ -687,59 +687,59 @@ class ParameterBeam(Beam):
 
     @property
     def mu_x(self) -> torch.Tensor:
-        return self._mu[:, 0]
+        return self._mu[..., 0]
 
     @property
     def sigma_x(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[:, 0, 0], 1e-20))
+        return torch.sqrt(torch.clamp_min(self._cov[..., 0, 0], 1e-20))
 
     @property
     def mu_xp(self) -> torch.Tensor:
-        return self._mu[:, 1]
+        return self._mu[..., 1]
 
     @property
     def sigma_xp(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[:, 1, 1], 1e-20))
+        return torch.sqrt(torch.clamp_min(self._cov[..., 1, 1], 1e-20))
 
     @property
     def mu_y(self) -> torch.Tensor:
-        return self._mu[:, 2]
+        return self._mu[..., 2]
 
     @property
     def sigma_y(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[:, 2, 2], 1e-20))
+        return torch.sqrt(torch.clamp_min(self._cov[..., 2, 2], 1e-20))
 
     @property
     def mu_yp(self) -> torch.Tensor:
-        return self._mu[:, 3]
+        return self._mu[..., 3]
 
     @property
     def sigma_yp(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[:, 3, 3], 1e-20))
+        return torch.sqrt(torch.clamp_min(self._cov[..., 3, 3], 1e-20))
 
     @property
     def mu_s(self) -> torch.Tensor:
-        return self._mu[:, 4]
+        return self._mu[..., 4]
 
     @property
     def sigma_s(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[:, 4, 4], 1e-20))
+        return torch.sqrt(torch.clamp_min(self._cov[..., 4, 4], 1e-20))
 
     @property
     def mu_p(self) -> torch.Tensor:
-        return self._mu[:, 5]
+        return self._mu[..., 5]
 
     @property
     def sigma_p(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[:, 5, 5], 1e-20))
+        return torch.sqrt(torch.clamp_min(self._cov[..., 5, 5], 1e-20))
 
     @property
     def sigma_xxp(self) -> torch.Tensor:
-        return self._cov[:, 0, 1]
+        return self._cov[..., 0, 1]
 
     @property
     def sigma_yyp(self) -> torch.Tensor:
-        return self._cov[:, 2, 3]
+        return self._cov[..., 2, 3]
 
     def broadcast(self, shape: torch.Size) -> "ParameterBeam":
         return self.__class__(
@@ -889,39 +889,39 @@ class ParticleBeam(Beam):
             total_charge if total_charge is not None else torch.full(shape, 0.0)
         )
         particle_charges = (
-            torch.ones((shape[0], num_particles), device=device, dtype=dtype)
-            * total_charge.view(-1, 1)
+            torch.ones((*shape, num_particles), device=device, dtype=dtype)
+            * total_charge.unsqueeze(-1)
             / num_particles
         )
 
         mean = torch.stack(
             [mu_x, mu_xp, mu_y, mu_yp, torch.full(shape, 0.0), torch.full(shape, 0.0)],
-            dim=1,
+            dim=-1,
         )
 
-        cov = torch.zeros(shape[0], 6, 6)
-        cov[:, 0, 0] = sigma_x**2
-        cov[:, 0, 1] = cor_x
-        cov[:, 1, 0] = cor_x
-        cov[:, 1, 1] = sigma_xp**2
-        cov[:, 2, 2] = sigma_y**2
-        cov[:, 2, 3] = cor_y
-        cov[:, 3, 2] = cor_y
-        cov[:, 3, 3] = sigma_yp**2
-        cov[:, 4, 4] = sigma_s**2
-        cov[:, 4, 5] = cor_s
-        cov[:, 5, 4] = cor_s
-        cov[:, 5, 5] = sigma_p**2
+        cov = torch.zeros(*shape, 6, 6)
+        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 1] = cor_x
+        cov[..., 1, 0] = cor_x
+        cov[..., 1, 1] = sigma_xp**2
+        cov[..., 2, 2] = sigma_y**2
+        cov[..., 2, 3] = cor_y
+        cov[..., 3, 2] = cor_y
+        cov[..., 3, 3] = sigma_yp**2
+        cov[..., 4, 4] = sigma_s**2
+        cov[..., 4, 5] = cor_s
+        cov[..., 5, 4] = cor_s
+        cov[..., 5, 5] = sigma_p**2
 
-        particles = torch.ones((shape[0], num_particles, 7))
+        particles = torch.ones((*shape, num_particles, 7))
         distributions = [
             MultivariateNormal(sample_mean, covariance_matrix=sample_cov)
-            for sample_mean, sample_cov in zip(mean, cov)
+            for sample_mean, sample_cov in zip(mean.view(-1, 6), cov.view(-1, 6, 6))
         ]
-        particles[:, :, :6] = torch.stack(
+        particles[..., :6] = torch.stack(
             [distribution.sample((num_particles,)) for distribution in distributions],
             dim=0,
-        )
+        ).view(*shape, num_particles, 6)
 
         return cls(
             particles,
@@ -1354,107 +1354,107 @@ class ParticleBeam(Beam):
 
     @property
     def total_charge(self) -> torch.Tensor:
-        return torch.sum(self.particle_charges, dim=1)
+        return torch.sum(self.particle_charges, dim=-1)
 
     @property
     def num_particles(self) -> int:
-        return self.particles.shape[1]
+        return self.particles.shape[-2]
 
     @property
     def xs(self) -> Optional[torch.Tensor]:
-        return self.particles[:, :, 0] if self is not Beam.empty else None
+        return self.particles[..., 0] if self is not Beam.empty else None
 
     @xs.setter
     def xs(self, value: torch.Tensor) -> None:
-        self.particles[:, :, 0] = value
+        self.particles[..., 0] = value
 
     @property
     def mu_x(self) -> Optional[torch.Tensor]:
-        return self.xs.mean(dim=1) if self is not Beam.empty else None
+        return self.xs.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_x(self) -> Optional[torch.Tensor]:
-        return self.xs.std(dim=1) if self is not Beam.empty else None
+        return self.xs.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def xps(self) -> Optional[torch.Tensor]:
-        return self.particles[:, :, 1] if self is not Beam.empty else None
+        return self.particles[..., 1] if self is not Beam.empty else None
 
     @xps.setter
     def xps(self, value: torch.Tensor) -> None:
-        self.particles[:, :, 1] = value
+        self.particles[..., 1] = value
 
     @property
     def mu_xp(self) -> Optional[torch.Tensor]:
-        return self.xps.mean(dim=1) if self is not Beam.empty else None
+        return self.xps.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_xp(self) -> Optional[torch.Tensor]:
-        return self.xps.std(dim=1) if self is not Beam.empty else None
+        return self.xps.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def ys(self) -> Optional[torch.Tensor]:
-        return self.particles[:, :, 2] if self is not Beam.empty else None
+        return self.particles[..., 2] if self is not Beam.empty else None
 
     @ys.setter
     def ys(self, value: torch.Tensor) -> None:
-        self.particles[:, :, 2] = value
+        self.particles[..., 2] = value
 
     @property
     def mu_y(self) -> Optional[float]:
-        return self.ys.mean(dim=1) if self is not Beam.empty else None
+        return self.ys.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_y(self) -> Optional[torch.Tensor]:
-        return self.ys.std(dim=1) if self is not Beam.empty else None
+        return self.ys.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def yps(self) -> Optional[torch.Tensor]:
-        return self.particles[:, :, 3] if self is not Beam.empty else None
+        return self.particles[..., 3] if self is not Beam.empty else None
 
     @yps.setter
     def yps(self, value: torch.Tensor) -> None:
-        self.particles[:, :, 3] = value
+        self.particles[..., 3] = value
 
     @property
     def mu_yp(self) -> Optional[torch.Tensor]:
-        return self.yps.mean(dim=1) if self is not Beam.empty else None
+        return self.yps.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_yp(self) -> Optional[torch.Tensor]:
-        return self.yps.std(dim=1) if self is not Beam.empty else None
+        return self.yps.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def ss(self) -> Optional[torch.Tensor]:
-        return self.particles[:, :, 4] if self is not Beam.empty else None
+        return self.particles[..., 4] if self is not Beam.empty else None
 
     @ss.setter
     def ss(self, value: torch.Tensor) -> None:
-        self.particles[:, :, 4] = value
+        self.particles[..., 4] = value
 
     @property
     def mu_s(self) -> Optional[torch.Tensor]:
-        return self.ss.mean(dim=1) if self is not Beam.empty else None
+        return self.ss.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_s(self) -> Optional[torch.Tensor]:
-        return self.ss.std(dim=1) if self is not Beam.empty else None
+        return self.ss.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def ps(self) -> Optional[torch.Tensor]:
-        return self.particles[:, :, 5] if self is not Beam.empty else None
+        return self.particles[..., 5] if self is not Beam.empty else None
 
     @ps.setter
     def ps(self, value: torch.Tensor) -> None:
-        self.particles[:, :, 5] = value
+        self.particles[..., 5] = value
 
     @property
     def mu_p(self) -> Optional[torch.Tensor]:
-        return self.ps.mean(dim=1) if self is not Beam.empty else None
+        return self.ps.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_p(self) -> Optional[torch.Tensor]:
-        return self.ps.std(dim=1) if self is not Beam.empty else None
+        return self.ps.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_xxp(self) -> torch.Tensor:

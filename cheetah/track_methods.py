@@ -82,22 +82,22 @@ def base_rmatrix(
     r56 = r56 - length / beta**2 * igamma2
 
     R = torch.eye(7, dtype=dtype, device=device).repeat(*length.shape, 1, 1)
-    R[:, 0, 0] = cx
-    R[:, 0, 1] = sx
-    R[:, 0, 5] = dx / beta
-    R[:, 1, 0] = -kx2 * sx
-    R[:, 1, 1] = cx
-    R[:, 1, 5] = sx * hx / beta
-    R[:, 2, 2] = cy
-    R[:, 2, 3] = sy
-    R[:, 3, 2] = -ky2 * sy
-    R[:, 3, 3] = cy
-    R[:, 4, 0] = sx * hx / beta
-    R[:, 4, 1] = dx / beta
-    R[:, 4, 5] = r56
+    R[..., 0, 0] = cx
+    R[..., 0, 1] = sx
+    R[..., 0, 5] = dx / beta
+    R[..., 1, 0] = -kx2 * sx
+    R[..., 1, 1] = cx
+    R[..., 1, 5] = sx * hx / beta
+    R[..., 2, 2] = cy
+    R[..., 2, 3] = sy
+    R[..., 3, 2] = -ky2 * sy
+    R[..., 3, 3] = cy
+    R[..., 4, 0] = sx * hx / beta
+    R[..., 4, 1] = dx / beta
+    R[..., 4, 5] = r56
 
     # Rotate the R matrix for skew / vertical magnets
-    if any(tilt != 0):
+    if torch.any(tilt != 0):
         R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
     return R
 
