@@ -449,3 +449,21 @@ def test_cavity_with_zero_and_non_zero_voltage():
     ).broadcast((3,))
 
     _ = cavity.track(beam)
+
+
+def test_screen_length_shape():
+    """
+    Test that the shape of a screen's length matches the shape of its misalignment.
+    """
+    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2], [0.3, 0.4]]))
+    assert screen.length.shape == screen.misalignment.shape[:-1]
+
+
+def test_screen_length_broadcast_shape():
+    """
+    Test that the shape of a screen's length matches the shape of its misalignment
+    after broadcasting.
+    """
+    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2]]))
+    broadcast_screen = screen.broadcast((3, 10))
+    assert broadcast_screen.length.shape == broadcast_screen.misalignment.shape[:-1]
