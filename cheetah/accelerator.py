@@ -45,7 +45,7 @@ class Element(ABC, nn.Module):
         self.name = name if name is not None else generate_unique_name()
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        r"""
+        """
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element.
         The state vector consists of 6 values with a physical meaning:
@@ -303,13 +303,19 @@ class Drift(Element):
 class SpaceChargeKick(Element):
     """
     Simulates space charge effects on a beam.
-    :param length: Length in meters.
+    :param grid_points: Number of grid points in each dimension.
+    :param grid_dimensions: Dimensions of the grid in meters.
     :param name: Unique identifier of the element.
     """
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
+        nx: Union[torch.Tensor, nn.Parameter],
+        ny: Union[torch.Tensor, nn.Parameter],
+        ns: Union[torch.Tensor, nn.Parameter],
+        dx: Union[torch.Tensor, nn.Parameter],
+        dy: Union[torch.Tensor, nn.Parameter],
+        ds: Union[torch.Tensor, nn.Parameter],
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -317,7 +323,73 @@ class SpaceChargeKick(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.nx = torch.as_tensor(nx, **factory_kwargs)
+        self.ny = torch.as_tensor(ny, **factory_kwargs)
+        self.ns = torch.as_tensor(ns, **factory_kwargs)
+        self.dx = torch.as_tensor(dx, **factory_kwargs)     #in meters
+        self.dy = torch.as_tensor(dy, **factory_kwargs)
+        self.ds = torch.as_tensor(ds, **factory_kwargs)
+
+    def grid_shape(self) -> torch.Tensor:
+        return torch.tensor([self.nx, self.ny, self.ns], device=self.nx.device)    
+    
+    def grid_dimensions(self) -> torch.Tensor:
+        return torch.tensor([self.dx, self.dy, self.ds], device=self.dx.device)
+
+    def create_grid(self) -> torch.Tensor:
+        """
+        Create a 3D grid for the space charge kick.
+        """
+        x = torch.linspace(-self.dx / 2, self.dx / 2, self.nx)    #here centered on 0, may need to change center?
+        y = torch.linspace(-self.dy / 2, self.dy / 2, self.ny)
+        s = torch.linspace(-self.ds / 2, self.ds / 2, self.ns)
+
+        grid = torch.meshgrid(x, y, s)
+        return torch.stack(grid, dim=-1)   
+
+    def space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
+        """
+        Deposition of the beam on the grid.
+        """
+        charge_density = torch.zeros(self.grid_shape, dtype=torch.float32)  # Initialize the charge density grid
+        grid = self.create_grid()
+
+        # Compute the grid cell size
+        cell_size = 2*self.grid_dimensions / self.grid_shape
+
+        # Loop over each particle
+        n_particles = beam.num_particles
+        particle_pos = beam.particles[:, [0,2,4]]
+        particle_charge = beam.particle_charges
+        for p in range(n_particles):
+            # Compute the normalized position of the particle within the grid
+            part_pos = particle_pos[p]
+            normalized_pos = (part_pos + self.grid_dimensions) / cell_size
+
+            # Find the index of the lower corner of the cell containing the particle
+            cell_index = torch.floor(normalized_pos).type(torch.long)
+
+            # Distribute the charge to the surrounding cells
+            for dx in range(2):
+                for dy in range(2):
+                    for ds in range(2):
+                        # Compute the indices of the surrounding cell
+                        idx_x = cell_index[0] + dx
+                        idx_y = cell_index[1] + dy
+                        idx_s = cell_index[2] + ds
+                        index = torch.tensor([idx_x, idx_y, idx_s])
+
+                        # Calculate the weights for the surrounding cells
+                        weights = 1 - torch.abs(normalized_pos - index)
+
+                        # Compute the weight for this cell
+                        weight = weights[0] * weights[1] * weights[2]
+
+                        # Add the charge contribution to the cell
+                        if 0 <= idx_x < self.grid_shape[0] and 0 <= idx_y < self.grid_shape[1] and 0 <= idx_s < self.grid_shape[2]:
+                            charge_density[idx_x, idx_y, idx_s] += weight * particle_charge[p]
+
+        return charge_density
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
@@ -341,15 +413,6 @@ class SpaceChargeKick(Element):
     @property
     def is_skippable(self) -> bool:
         return True
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            element = Drift(torch.min(resolution, remaining))
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         pass
