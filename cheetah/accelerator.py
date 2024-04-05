@@ -334,28 +334,19 @@ class SpaceChargeKick(Element):
     
     def grid_dimensions(self) -> torch.Tensor:
         return torch.tensor([self.dx, self.dy, self.ds], device=self.dx.device)
-
-    def create_grid(self) -> torch.Tensor:
-        """
-        Create a 3D grid for the space charge kick.
-        """
-        x = torch.linspace(-self.dx / 2, self.dx / 2, self.nx)    #here centered on 0, may need to change center?
-        y = torch.linspace(-self.dy / 2, self.dy / 2, self.ny)
-        s = torch.linspace(-self.ds / 2, self.ds / 2, self.ns)
-
-        grid = torch.meshgrid(x, y, s)
-        return torch.stack(grid, dim=-1)   
+      
 
     def space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
         """
         Deposition of the beam on the grid.
         """
-        print(self.grid_shape())
-        charge_density = torch.zeros(self.grid_shape(), dtype=torch.float32)  # Initialize the charge density grid
-        #grid = self.create_grid()
+        grid_shape = self.grid_shape()
+        grid_dimensions = self.grid_dimensions()
+
+        charge_density = torch.zeros(grid_shape, dtype=torch.float32)  # Initialize the charge density grid
 
         # Compute the grid cell size
-        cell_size = 2*self.grid_dimensions / self.grid_shape
+        cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
 
         # Loop over each particle
         n_particles = beam.num_particles
@@ -364,7 +355,7 @@ class SpaceChargeKick(Element):
         for p in range(n_particles):
             # Compute the normalized position of the particle within the grid
             part_pos = particle_pos[p]
-            normalized_pos = (part_pos + self.grid_dimensions) / cell_size
+            normalized_pos = (part_pos + grid_dimensions) / cell_size
 
             # Find the index of the lower corner of the cell containing the particle
             cell_index = torch.floor(normalized_pos).type(torch.long)
@@ -386,10 +377,59 @@ class SpaceChargeKick(Element):
                         weight = weights[0] * weights[1] * weights[2]
 
                         # Add the charge contribution to the cell
-                        if 0 <= idx_x < self.grid_shape[0] and 0 <= idx_y < self.grid_shape[1] and 0 <= idx_s < self.grid_shape[2]:
+                        #print(idx_x, idx_y, idx_s)
+                        if 0 <= idx_x < torch.tensor(grid_shape)[0] and 0 <= idx_y < torch.tensor(grid_shape)[1] and 0 <= idx_s < torch.tensor(grid_shape)[2]:
                             charge_density[idx_x, idx_y, idx_s] += weight * particle_charge[p]
 
         return charge_density
+    
+    def solve_poisson_equation(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
+        """
+        Solves the Poisson equation for the given charge density.
+        """
+        grid_shape = self.grid_shape()
+        grid_dimensions = self.grid_dimensions()
+
+        # Compute the grid cell size
+        cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
+
+        # Compute the charge density
+        charge_density = self.space_charge_deposition(beam)
+
+        # Compute the Fourier transform of the charge density
+        charge_density_ft = torch.fft.fftn(charge_density)
+
+        # Compute the integrated Green's function
+        integrated_green_function = torch.zeros(grid_shape, dtype=torch.float32)
+        for i in range(grid_shape[0]):
+            for j in range(grid_shape[1]):
+                for k in range(grid_shape[2]):
+                    if i != 0 or j != 0 or k != 0:
+                        denominator = (i**2 + j**2 + k**2) * (2 * np.pi)**2
+                        integrated_green_function[i, j, k] = -1 / denominator
+        """# Compute the wave numbers
+        kx = torch.fft.fftfreq(grid_shape[0], cell_size[0])
+        ky = torch.fft.fftfreq(grid_shape[1], cell_size[1])
+        ks = torch.fft.fftfreq(grid_shape[2], cell_size[2])
+
+        # Compute the wave numbers squared
+        kx2 = kx**2
+        ky2 = ky**2
+        ks2 = ks**2
+
+        # Compute the denominator of the Green's function
+        denominator = kx2[:, None, None] + ky2[None, :, None] + ks2[None, None, :]
+
+        # Compute the Green's function
+        green_function = 1 / denominator"""
+
+        # Compute the Fourier transform of the potential
+        potential_ft = charge_density_ft * integrated_green_function
+
+        # Compute the potential
+        potential = torch.fft.ifftn(potential_ft).real
+
+        return potential
     
     def split(self, resolution: torch.Tensor) -> list[Element]:
     # TODO: Implement splitting for cavity properly, for now just returns the
