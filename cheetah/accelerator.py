@@ -39,6 +39,8 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     """
 
+    length: torch.Tensor = torch.zeros((1))
+
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__()
 
@@ -216,9 +218,7 @@ class CustomTransferMap(Element):
             tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
             incoming_beam = element.track(incoming_beam)
 
-        combined_length = sum(
-            element.length for element in elements if hasattr(element, "length")
-        )
+        combined_length = sum(element.length for element in elements)
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
@@ -1275,7 +1275,9 @@ class BPM(Element):
         return deepcopy(incoming)
 
     def broadcast(self, shape: Size) -> Element:
-        return self.__class__(is_active=self.is_active, name=self.name)
+        new_bpm = self.__class__(is_active=self.is_active, name=self.name)
+        new_bpm.length = self.length.repeat(shape)
+        return new_bpm
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
@@ -1316,7 +1318,9 @@ class Marker(Element):
         return incoming
 
     def broadcast(self, shape: Size) -> Element:
-        return self.__class__(name=self.name)
+        new_marker = self.__class__(name=self.name)
+        new_marker.length = self.length.repeat(shape)
+        return new_marker
 
     @property
     def is_skippable(self) -> bool:
@@ -1546,7 +1550,7 @@ class Screen(Element):
         self.cached_reading = None
 
     def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
+        new_screen = self.__class__(
             resolution=self.resolution,
             pixel_size=self.pixel_size,
             binning=self.binning,
@@ -1554,6 +1558,8 @@ class Screen(Element):
             is_active=self.is_active,
             name=self.name,
         )
+        new_screen.length = self.length.repeat(shape)
+        return new_screen
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
@@ -1678,13 +1684,15 @@ class Aperture(Element):
         )
 
     def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
+        new_aperture = self.__class__(
             x_max=self.x_max.repeat(shape),
             y_max=self.y_max.repeat(shape),
             shape=self.shape,
             is_active=self.is_active,
             name=self.name,
         )
+        new_aperture.length = self.length.repeat(shape)
+        return new_aperture
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self
@@ -2075,7 +2083,7 @@ class Segment(Element):
             elements=[
                 element
                 for element in self.elements
-                if (hasattr(element, "length") and element.length > 0.0)
+                if element.length > 0.0
                 or (hasattr(element, "is_active") and element.is_active)
                 or element.name in except_for
             ],
@@ -2104,7 +2112,7 @@ class Segment(Element):
                 (
                     element
                     if (hasattr(element, "is_active") and element.is_active)
-                    or not hasattr(element, "length")
+                    or element.length == 0.0
                     or element.name in except_for
                     else Drift(element.length)
                 )
@@ -2217,7 +2225,7 @@ class Segment(Element):
     @property
     def length(self) -> torch.Tensor:
         lengths = torch.stack(
-            [element.length for element in self.elements if hasattr(element, "length")],
+            [element.length for element in self.elements],
             dim=1,
         )
         return torch.sum(lengths, dim=1)
@@ -2265,10 +2273,7 @@ class Segment(Element):
         ]
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
-        element_lengths = [
-            element.length[0] if hasattr(element, "length") else 0.0
-            for element in self.elements
-        ]
+        element_lengths = [element.length[0] for element in self.elements]
         element_ss = [0] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
         ]
@@ -2305,9 +2310,7 @@ class Segment(Element):
         reference_segment = deepcopy(self)
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
-        split_lengths = [
-            split.length[0] if hasattr(split, "length") else 0.0 for split in splits
-        ]
+        split_lengths = [split.length[0] for split in splits]
         ss = [0] + [sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)]
 
         references = []
@@ -2393,7 +2396,7 @@ class Segment(Element):
         longitudinal_beams = [beam]
         s_positions = [0.0]
         for element in self.elements:
-            if not hasattr(element, "length") or element.length == 0:
+            if element.length == 0:
                 continue
 
             outgoing = element.track(longitudinal_beams[-1])
