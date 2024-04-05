@@ -350,6 +350,7 @@ class SpaceChargeKick(Element):
         """
         Deposition of the beam on the grid.
         """
+        print(self.grid_shape())
         charge_density = torch.zeros(self.grid_shape(), dtype=torch.float32)  # Initialize the charge density grid
         #grid = self.create_grid()
 
