@@ -299,6 +299,35 @@ class Drift(Element):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(length={repr(self.length)})"
     
+class chancla(Element):
+    """
+    Simulates space charge effects on a beam.
+    :param grid_points: Number of grid points in each dimension.
+    :param grid_dimensions: Dimensions of the grid in meters.
+    :param name: Unique identifier of the element.
+    """
+
+    def __init__(
+        self,
+        nx: Union[torch.Tensor, nn.Parameter],
+        ny: Union[torch.Tensor, nn.Parameter],
+        ns: Union[torch.Tensor, nn.Parameter],
+        dx: Union[torch.Tensor, nn.Parameter],
+        dy: Union[torch.Tensor, nn.Parameter],
+        ds: Union[torch.Tensor, nn.Parameter],
+        name: Optional[str] = None,
+        device=None,
+        dtype=torch.float32,
+    ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
+
+        self.nx = torch.as_tensor(nx, **factory_kwargs)
+        self.ny = torch.as_tensor(ny, **factory_kwargs)
+        self.ns = torch.as_tensor(ns, **factory_kwargs)
+        self.dx = torch.as_tensor(dx, **factory_kwargs)     #in meters
+        self.dy = torch.as_tensor(dy, **factory_kwargs)
+        self.ds = torch.as_tensor(ds, **factory_kwargs)
 
 class SpaceChargeKick(Element):
     """
@@ -390,6 +419,12 @@ class SpaceChargeKick(Element):
                             charge_density[idx_x, idx_y, idx_s] += weight * particle_charge[p]
 
         return charge_density
+    
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+    # TODO: Implement splitting for cavity properly, for now just returns the
+    # element itself
+        return [self]
+
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
