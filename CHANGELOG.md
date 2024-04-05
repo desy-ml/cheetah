@@ -9,9 +9,10 @@
 ### 🚀 Features
 
 - `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
-- Now all `Element` have a default length of `torch.zeros((1))`, i.e. also for `Marker`, `BPM`, `Screen`, and `Aperture`.
 
 ### 🐛 Bug fixes
+
+- Now all `Element` have a default length of `torch.zeros((1))`, fixing occasional issues with using elements without length, such as `Marker`, `BPM`, `Screen`, and `Aperture`. (see #143) (@cr-xu)
 
 ### 🐆 Other
 
