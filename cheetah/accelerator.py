@@ -329,8 +329,8 @@ class SpaceChargeKick(Element):
         self.dy = torch.as_tensor(dy, **factory_kwargs)
         self.ds = torch.as_tensor(ds, **factory_kwargs)
 
-    def grid_shape(self) -> tuple[int]:
-        return (self.nx, self.ny, self.ns)  
+    def grid_shape(self) -> tuple[int,int,int]:
+        return (int(self.nx.item()), int(self.ny.item()), int(self.ns.item()))  
     
     def grid_dimensions(self) -> torch.Tensor:
         return torch.tensor([self.dx, self.dy, self.ds], device=self.dx.device)
