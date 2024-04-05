@@ -309,9 +309,9 @@ class SpaceChargeKick(Element):
 
     def __init__(
         self,
-        nx: Union[torch.Tensor, nn.Parameter],
-        ny: Union[torch.Tensor, nn.Parameter],
-        ns: Union[torch.Tensor, nn.Parameter],
+        nx: Union[torch.Tensor, nn.Parameter,int],
+        ny: Union[torch.Tensor, nn.Parameter,int],
+        ns: Union[torch.Tensor, nn.Parameter,int],
         dx: Union[torch.Tensor, nn.Parameter],
         dy: Union[torch.Tensor, nn.Parameter],
         ds: Union[torch.Tensor, nn.Parameter],
@@ -322,9 +322,9 @@ class SpaceChargeKick(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.nx = torch.as_tensor(nx, **factory_kwargs)
-        self.ny = torch.as_tensor(ny, **factory_kwargs)
-        self.ns = torch.as_tensor(ns, **factory_kwargs)
+        self.nx = int(torch.as_tensor(nx, **factory_kwargs))
+        self.ny = int(torch.as_tensor(ny, **factory_kwargs))
+        self.ns = int(torch.as_tensor(ns, **factory_kwargs))
         self.dx = torch.as_tensor(dx, **factory_kwargs)     #in meters
         self.dy = torch.as_tensor(dy, **factory_kwargs)
         self.ds = torch.as_tensor(ds, **factory_kwargs)
