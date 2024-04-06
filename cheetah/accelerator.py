@@ -1393,6 +1393,7 @@ class Screen(Element):
             if misalignment is not None
             else torch.tensor([(0.0, 0.0)], **factory_kwargs)
         )
+        self.length = torch.zeros(self.misalignment.shape[:-1], **factory_kwargs)
         self.is_active = is_active
 
         self.set_read_beam(None)
