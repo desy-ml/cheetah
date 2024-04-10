@@ -30,7 +30,7 @@ rest_energy = torch.tensor(
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
-
+epsilon_0 = torch.tensor(constants.epsilon_0)
 
 class Element(ABC, nn.Module):
     """
@@ -334,7 +334,11 @@ class SpaceChargeKick(Element):
     
     def grid_dimensions(self) -> torch.Tensor:
         return torch.tensor([self.dx, self.dy, self.ds], device=self.dx.device)
-      
+    
+    def cell_size(self) -> torch.Tensor:
+        grid_shape = self.grid_shape()
+        grid_dimensions = self.grid_dimensions()
+        return 2*grid_dimensions / torch.tensor(grid_shape)
 
     def space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
         """
@@ -342,11 +346,9 @@ class SpaceChargeKick(Element):
         """
         grid_shape = self.grid_shape()
         grid_dimensions = self.grid_dimensions()
+        cell_size = self.cell_size()
 
         charge_density = torch.zeros(grid_shape, dtype=torch.float32)  # Initialize the charge density grid
-
-        # Compute the grid cell size
-        cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
 
         # Loop over each particle
         n_particles = beam.num_particles
@@ -383,16 +385,102 @@ class SpaceChargeKick(Element):
 
         return charge_density
     
+    def space_charge_deposition_vect(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Deposition of the beam on the grid using fully vectorized computation.
+        """
+        grid_shape = self.grid_shape()
+        grid_dimensions = self.grid_dimensions()
+        cell_size = self.cell_size()
+
+        # Initialize the charge density grid
+        charge_density = torch.zeros(grid_shape, dtype=torch.float32)
+
+        # Get particle positions and charges
+        n_particles = beam.num_particles
+        particle_pos = beam.particles[:, [0, 2, 4]]
+        particle_charge = beam.particle_charges
+
+        # Compute the normalized positions of the particles within the grid
+        normalized_pos = (particle_pos + grid_dimensions) / cell_size
+
+        # Find the indices of the lower corners of the cells containing the particles
+        cell_indices = torch.floor(normalized_pos).type(torch.long)
+
+        # Calculate the weights for all surrounding cells
+        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+        surrounding_indices = cell_indices.unsqueeze(1) + offsets  # Shape: (n_particles, 8, 3)
+        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  # Shape: (n_particles, 8, 3)
+        cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
+
+        # Add the charge contributions to the cells
+        idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T
+        valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
+                    (idx_y >= 0) & (idx_y < grid_shape[1]) & \
+                    (idx_s >= 0) & (idx_s < grid_shape[2])
+
+        # Accumulate the charge contributions
+        indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]], dim=0)
+        repeated_charges = particle_charge.repeat_interleave(8)
+        values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
+        charge_density.index_put_(tuple(indices), values, accumulate=True)
+
+        return charge_density
+    
+    def integrated_potential(self, x, y, s) -> torch.Tensor:
+        r = torch.sqrt(x**2 + y**2 + s**2)
+        G = (-0.5 * s**2 * torch.atan(x * y / (s * r))
+            -0.5 * y**2 * torch.atan(x * s / (y * r))
+            -0.5 * x**2 * torch.atan(y * s / (x * r))
+            + y * s * torch.asinh(x / torch.sqrt(y**2 + s**2))
+            + x * s * torch.asinh(y / torch.sqrt(x**2 + s**2))
+            + x * y * torch.asinh(s / torch.sqrt(x**2 + y**2)))
+        return G
+    
+    def initialize_green_function(self, beam: ParticleBeam) -> torch.Tensor:
+        dx, dy, ds = self.cell_size()[0], self.cell_size()[1], self.cell_size()[2]
+        nx, ny, ns = self.grid_shape()
+        grid = torch.zeros(2 * nx - 1, 2 * ny - 1, 2 * ns - 1)
+
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(ns):
+                    x = i * dx
+                    y = j * dy
+                    s = k * ds
+                    G_value = 1 / (
+                        self.integrated_potential(x + 0.5 * dx, y + 0.5 * dy, s + 0.5 * ds)
+                        - self.integrated_potential(x - 0.5 * dx, y + 0.5 * dy, s + 0.5 * ds)
+                        - self.integrated_potential(x + 0.5 * dx, y - 0.5 * dy, s + 0.5 * ds)
+                        - self.integrated_potential(x + 0.5 * dx, y + 0.5 * dy, s - 0.5 * ds)
+                        + self.integrated_potential(x + 0.5 * dx, y - 0.5 * dy, s - 0.5 * ds)
+                        + self.integrated_potential(x - 0.5 * dx, y + 0.5 * dy, s - 0.5 * ds)
+                        + self.integrated_potential(x - 0.5 * dx, y - 0.5 * dy, s + 0.5 * ds)
+                        - self.integrated_potential(x - 0.5 * dx, y - 0.5 * dy, s - 0.5 * ds)
+                    )
+                    grid[i, j, k] = G_value
+
+                    # Fill the rest of the array by periodicity
+                    if i > 0:
+                        grid[2 * nx - 2 - i, j, k] = G_value
+                    if j > 0:
+                        grid[i, 2 * ny - 2 - j, k] = G_value
+                    if k > 0:
+                        grid[i, j, 2 * ns - 2 - k] = G_value
+                    if i > 0 and j > 0:
+                        grid[2 * nx - 2 - i, 2 * ny - 2 - j, k] = G_value
+                    if j > 0 and k > 0:
+                        grid[i, 2 * ny - 2 - j, 2 * ns - 2 - k] = G_value
+                    if i > 0 and k > 0:
+                        grid[2 * nx - 2 - i, j, 2 * ns - 2 - k] = G_value
+                    if i > 0 and j > 0 and k > 0:
+                        grid[2 * nx - 2 - i, 2 * ny - 2 - j, 2 * ns - 2 - k] = G_value
+        return grid
+    
     def solve_poisson_equation(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
         """
         Solves the Poisson equation for the given charge density.
         """
-        grid_shape = self.grid_shape()
-        grid_dimensions = self.grid_dimensions()
-
-        # Compute the grid cell size
-        cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
-
         # Compute the charge density
         charge_density = self.space_charge_deposition(beam)
 
@@ -400,34 +488,16 @@ class SpaceChargeKick(Element):
         charge_density_ft = torch.fft.fftn(charge_density)
 
         # Compute the integrated Green's function
-        integrated_green_function = torch.zeros(grid_shape, dtype=torch.float32)
-        for i in range(grid_shape[0]):
-            for j in range(grid_shape[1]):
-                for k in range(grid_shape[2]):
-                    if i != 0 or j != 0 or k != 0:
-                        denominator = (i**2 + j**2 + k**2) * (2 * np.pi)**2
-                        integrated_green_function[i, j, k] = -1 / denominator
-        """# Compute the wave numbers
-        kx = torch.fft.fftfreq(grid_shape[0], cell_size[0])
-        ky = torch.fft.fftfreq(grid_shape[1], cell_size[1])
-        ks = torch.fft.fftfreq(grid_shape[2], cell_size[2])
+        integrated_green_function = self.IGF(beam)
 
-        # Compute the wave numbers squared
-        kx2 = kx**2
-        ky2 = ky**2
-        ks2 = ks**2
-
-        # Compute the denominator of the Green's function
-        denominator = kx2[:, None, None] + ky2[None, :, None] + ks2[None, None, :]
-
-        # Compute the Green's function
-        green_function = 1 / denominator"""
+        # Compute the integrated Green's function's Fourier transform
+        integrated_green_function_ft = torch.fft.fftn(integrated_green_function)
 
         # Compute the Fourier transform of the potential
-        potential_ft = charge_density_ft * integrated_green_function
+        potential_ft = charge_density_ft * integrated_green_function_ft
 
         # Compute the potential
-        potential = torch.fft.ifftn(potential_ft).real
+        potential = (1/4*torch.pi*epsilon_0)*torch.fft.ifftn(potential_ft).real
 
         return potential
     
