@@ -479,19 +479,19 @@ class SpaceChargeKick(Element):
 
                     # Fill the rest of the array by periodicity
                     if i > 0:
-                        grid[2 * nx - 2 - i, j, k] = G_value
+                        grid[2 * nx - i, j, k] = G_value
                     if j > 0:
-                        grid[i, 2 * ny - 2 - j, k] = G_value
+                        grid[i, 2 * ny - j, k] = G_value
                     if k > 0:
-                        grid[i, j, 2 * ns - 2 - k] = G_value
+                        grid[i, j, 2 * ns - k] = G_value
                     if i > 0 and j > 0:
-                        grid[2 * nx - 2 - i, 2 * ny - 2 - j, k] = G_value
+                        grid[2 * nx - i, 2 * ny - j, k] = G_value
                     if j > 0 and k > 0:
-                        grid[i, 2 * ny - 2 - j, 2 * ns - 2 - k] = G_value
+                        grid[i, 2 * ny - j, 2 * ns - k] = G_value
                     if i > 0 and k > 0:
-                        grid[2 * nx - 2 - i, j, 2 * ns - 2 - k] = G_value
+                        grid[2 * nx - i, j, 2 * ns - k] = G_value
                     if i > 0 and j > 0 and k > 0:
-                        grid[2 * nx - 2 - i, 2 * ny - 2 - j, 2 * ns - 2 - k] = G_value
+                        grid[2 * nx - i, 2 * ny - j, 2 * ns - k] = G_value
         return grid
     
     def solve_poisson_equation(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
