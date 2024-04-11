@@ -437,10 +437,27 @@ class SpaceChargeKick(Element):
             + x * y * torch.asinh(s / torch.sqrt(x**2 + y**2)))
         return G
     
-    def initialize_green_function(self, beam: ParticleBeam) -> torch.Tensor:
+    def cyclic_rho(self,beam: ParticleBeam) -> torch.Tensor:
+        """
+        Compute the charge density on the grid using the cyclic deposition method.
+        """
+        grid_shape = self.grid_shape()
+        charge_density = self.space_charge_deposition_vect(beam)
+
+        # Double the dimensions
+        new_dims = tuple(dim * 2 for dim in grid_shape)
+
+        # Create a new tensor with the doubled dimensions, filled with zeros
+        cyclic_charge_density = torch.zeros(new_dims)
+
+        # Copy the original charge_density values to the beginning of the new tensor
+        cyclic_charge_density[:charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
+        return cyclic_charge_density
+        
+    def IGF(self) -> torch.Tensor:
         dx, dy, ds = self.cell_size()[0], self.cell_size()[1], self.cell_size()[2]
         nx, ny, ns = self.grid_shape()
-        grid = torch.zeros(2 * nx - 1, 2 * ny - 1, 2 * ns - 1)
+        grid = torch.zeros(2 * nx, 2 * ny, 2 * ns)
 
         for i in range(nx):
             for j in range(ny):
@@ -448,7 +465,7 @@ class SpaceChargeKick(Element):
                     x = i * dx
                     y = j * dy
                     s = k * ds
-                    G_value = 1 / (
+                    G_value = (
                         self.integrated_potential(x + 0.5 * dx, y + 0.5 * dy, s + 0.5 * ds)
                         - self.integrated_potential(x - 0.5 * dx, y + 0.5 * dy, s + 0.5 * ds)
                         - self.integrated_potential(x + 0.5 * dx, y - 0.5 * dy, s + 0.5 * ds)
@@ -482,13 +499,13 @@ class SpaceChargeKick(Element):
         Solves the Poisson equation for the given charge density.
         """
         # Compute the charge density
-        charge_density = self.space_charge_deposition(beam)
+        charge_density = self.cyclic_rho(beam)
 
         # Compute the Fourier transform of the charge density
         charge_density_ft = torch.fft.fftn(charge_density)
 
         # Compute the integrated Green's function
-        integrated_green_function = self.IGF(beam)
+        integrated_green_function = self.IGF()
 
         # Compute the integrated Green's function's Fourier transform
         integrated_green_function_ft = torch.fft.fftn(integrated_green_function)
@@ -499,7 +516,8 @@ class SpaceChargeKick(Element):
         # Compute the potential
         potential = (1/4*torch.pi*epsilon_0)*torch.fft.ifftn(potential_ft).real
 
-        return potential
+        # Return the physical potential
+        return potential[:charge_density.shape[0]//2, :charge_density.shape[1]//2, :charge_density.shape[2]//2]
     
     def split(self, resolution: torch.Tensor) -> list[Element]:
     # TODO: Implement splitting for cavity properly, for now just returns the
