@@ -329,63 +329,22 @@ class SpaceChargeKick(Element):
         self.dy = torch.as_tensor(dy, **factory_kwargs)
         self.ds = torch.as_tensor(ds, **factory_kwargs)
 
+
     def grid_shape(self) -> tuple[int,int,int]:
         return (int(self.nx), int(self.ny), int(self.ns))  
     
+
     def grid_dimensions(self) -> torch.Tensor:
         return torch.tensor([self.dx, self.dy, self.ds], device=self.dx.device)
     
+
     def cell_size(self) -> torch.Tensor:
         grid_shape = self.grid_shape()
         grid_dimensions = self.grid_dimensions()
         return 2*grid_dimensions / torch.tensor(grid_shape)
-
-    def space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
-        """
-        Deposition of the beam on the grid.
-        """
-        grid_shape = self.grid_shape()
-        grid_dimensions = self.grid_dimensions()
-        cell_size = self.cell_size()
-
-        charge_density = torch.zeros(grid_shape, dtype=torch.float32)  # Initialize the charge density grid
-
-        # Loop over each particle
-        n_particles = beam.num_particles
-        particle_pos = beam.particles[:, [0,2,4]]
-        particle_charge = beam.particle_charges
-        for p in range(n_particles):
-            # Compute the normalized position of the particle within the grid
-            part_pos = particle_pos[p]
-            normalized_pos = (part_pos + grid_dimensions) / cell_size
-
-            # Find the index of the lower corner of the cell containing the particle
-            cell_index = torch.floor(normalized_pos).type(torch.long)
-
-            # Distribute the charge to the surrounding cells
-            for dx in range(2):
-                for dy in range(2):
-                    for ds in range(2):
-                        # Compute the indices of the surrounding cell
-                        idx_x = cell_index[0] + dx
-                        idx_y = cell_index[1] + dy
-                        idx_s = cell_index[2] + ds
-                        index = torch.tensor([idx_x, idx_y, idx_s])
-
-                        # Calculate the weights for the surrounding cells
-                        weights = 1 - torch.abs(normalized_pos - index)
-
-                        # Compute the weight for this cell
-                        weight = weights[0] * weights[1] * weights[2]
-
-                        # Add the charge contribution to the cell
-                        #print(idx_x, idx_y, idx_s)
-                        if 0 <= idx_x < torch.tensor(grid_shape)[0] and 0 <= idx_y < torch.tensor(grid_shape)[1] and 0 <= idx_s < torch.tensor(grid_shape)[2]:
-                            charge_density[idx_x, idx_y, idx_s] += weight * particle_charge[p]
-
-        return charge_density
     
-    def space_charge_deposition_vect(self, beam: ParticleBeam) -> torch.Tensor:
+    
+    def space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:
         """
         Deposition of the beam on the grid using fully vectorized computation.
         """
@@ -394,10 +353,9 @@ class SpaceChargeKick(Element):
         cell_size = self.cell_size()
 
         # Initialize the charge density grid
-        charge_density = torch.zeros(grid_shape, dtype=torch.float32)
+        charge = torch.zeros(grid_shape, dtype=torch.float32)
 
         # Get particle positions and charges
-        n_particles = beam.num_particles
         particle_pos = beam.particles[:, [0, 2, 4]]
         particle_charge = beam.particle_charges
 
@@ -423,10 +381,12 @@ class SpaceChargeKick(Element):
         indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]], dim=0)
         repeated_charges = particle_charge.repeat_interleave(8)
         values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
-        charge_density.index_put_(tuple(indices), values, accumulate=True)
+        charge.index_put_(tuple(indices), values, accumulate=True)
+        cell_volume = cell_size[0] * cell_size[1] * cell_size[2]
 
-        return charge_density
+        return charge/cell_volume  # Normalize by the cell volume, so that the charge density is in C/m^3
     
+
     def integrated_potential(self, x, y, s) -> torch.Tensor:
         r = torch.sqrt(x**2 + y**2 + s**2)
         G = (-0.5 * s**2 * torch.atan(x * y / (s * r))
@@ -437,12 +397,13 @@ class SpaceChargeKick(Element):
             + x * y * torch.asinh(s / torch.sqrt(x**2 + y**2)))
         return G
     
+
     def cyclic_rho(self,beam: ParticleBeam) -> torch.Tensor:
         """
         Compute the charge density on the grid using the cyclic deposition method.
         """
         grid_shape = self.grid_shape()
-        charge_density = self.space_charge_deposition_vect(beam)
+        charge_density = self.space_charge_deposition(beam)
 
         # Double the dimensions
         new_dims = tuple(dim * 2 for dim in grid_shape)
@@ -452,48 +413,47 @@ class SpaceChargeKick(Element):
 
         # Copy the original charge_density values to the beginning of the new tensor
         cyclic_charge_density[:charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
-        return cyclic_charge_density
-        
-    def IGF(self) -> torch.Tensor:
-        dx, dy, ds = self.cell_size()[0], self.cell_size()[1], self.cell_size()[2]
+        return cyclic_charge_density    
+    
+    def IGF(self, beam: ParticleBeam) -> torch.Tensor:
+        gamma = beam.energy / rest_energy
+        dx, dy, ds = self.cell_size()[0], self.cell_size()[1], self.cell_size()[2] * gamma  # ds is scaled by gamma
         nx, ny, ns = self.grid_shape()
+        
+        # Create coordinate grids
+        x = torch.arange(nx) * dx
+        y = torch.arange(ny) * dy
+        s = torch.arange(ns) * ds
+        x_grid, y_grid, s_grid = torch.meshgrid(x, y, s, indexing='ij')
+
+        # Compute the Green's function values
+        G_values = (
+            self.integrated_potential(x_grid + 0.5 * dx, y_grid + 0.5 * dy, s_grid + 0.5 * ds)
+            - self.integrated_potential(x_grid - 0.5 * dx, y_grid + 0.5 * dy, s_grid + 0.5 * ds)
+            - self.integrated_potential(x_grid + 0.5 * dx, y_grid - 0.5 * dy, s_grid + 0.5 * ds)
+            - self.integrated_potential(x_grid + 0.5 * dx, y_grid + 0.5 * dy, s_grid - 0.5 * ds)
+            + self.integrated_potential(x_grid + 0.5 * dx, y_grid - 0.5 * dy, s_grid - 0.5 * ds)
+            + self.integrated_potential(x_grid - 0.5 * dx, y_grid + 0.5 * dy, s_grid - 0.5 * ds)
+            + self.integrated_potential(x_grid - 0.5 * dx, y_grid - 0.5 * dy, s_grid + 0.5 * ds)
+            - self.integrated_potential(x_grid - 0.5 * dx, y_grid - 0.5 * dy, s_grid - 0.5 * ds)
+        )
+
+        # Initialize the grid with double dimensions
         grid = torch.zeros(2 * nx, 2 * ny, 2 * ns)
 
-        for i in range(nx):
-            for j in range(ny):
-                for k in range(ns):
-                    x = i * dx
-                    y = j * dy
-                    s = k * ds
-                    G_value = (
-                        self.integrated_potential(x + 0.5 * dx, y + 0.5 * dy, s + 0.5 * ds)
-                        - self.integrated_potential(x - 0.5 * dx, y + 0.5 * dy, s + 0.5 * ds)
-                        - self.integrated_potential(x + 0.5 * dx, y - 0.5 * dy, s + 0.5 * ds)
-                        - self.integrated_potential(x + 0.5 * dx, y + 0.5 * dy, s - 0.5 * ds)
-                        + self.integrated_potential(x + 0.5 * dx, y - 0.5 * dy, s - 0.5 * ds)
-                        + self.integrated_potential(x - 0.5 * dx, y + 0.5 * dy, s - 0.5 * ds)
-                        + self.integrated_potential(x - 0.5 * dx, y - 0.5 * dy, s + 0.5 * ds)
-                        - self.integrated_potential(x - 0.5 * dx, y - 0.5 * dy, s - 0.5 * ds)
-                    )
-                    grid[i, j, k] = G_value
+        # Fill the grid with G_values and its periodic copies
+        grid[:nx, :ny, :ns] = G_values
+        grid[nx+1:, :ny, :ns] = G_values[1:,:,:].flip(dims=[0]) # Reverse the x dimension, excluding the first element
+        grid[:nx, ny+1:, :ns] = G_values[:, 1:,:].flip(dims=[1])  # Reverse the y dimension, excluding the first element
+        grid[:nx, :ny, ns+1:] = G_values[:, :, 1:].flip(dims=[2]) # Reverse the s dimension, excluding the first element
+        grid[nx+1:, ny+1:, :ns] = G_values[1:, 1:,:].flip(dims=[0, 1]) # Reverse the x and y dimensions
+        grid[:nx, ny+1:, ns+1:] = G_values[:, 1:, 1:].flip(dims=[1, 2]) # Reverse the y and s dimensions
+        grid[nx+1:, :ny, ns+1:] = G_values[1:, :, 1:].flip(dims=[0, 2])  # Reverse the x and s dimensions
+        grid[nx+1:, ny+1:, ns+1:] = G_values[1:, 1:, 1:].flip(dims=[0, 1, 2])  # Reverse all dimensions
 
-                    # Fill the rest of the array by periodicity
-                    if i > 0:
-                        grid[2 * nx - i, j, k] = G_value
-                    if j > 0:
-                        grid[i, 2 * ny - j, k] = G_value
-                    if k > 0:
-                        grid[i, j, 2 * ns - k] = G_value
-                    if i > 0 and j > 0:
-                        grid[2 * nx - i, 2 * ny - j, k] = G_value
-                    if j > 0 and k > 0:
-                        grid[i, 2 * ny - j, 2 * ns - k] = G_value
-                    if i > 0 and k > 0:
-                        grid[2 * nx - i, j, 2 * ns - k] = G_value
-                    if i > 0 and j > 0 and k > 0:
-                        grid[2 * nx - i, 2 * ny - j, 2 * ns - k] = G_value
         return grid
     
+
     def solve_poisson_equation(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
         """
         Solves the Poisson equation for the given charge density.
@@ -505,7 +465,7 @@ class SpaceChargeKick(Element):
         charge_density_ft = torch.fft.fftn(charge_density)
 
         # Compute the integrated Green's function
-        integrated_green_function = self.IGF()
+        integrated_green_function = self.IGF(beam)
 
         # Compute the integrated Green's function's Fourier transform
         integrated_green_function_ft = torch.fft.fftn(integrated_green_function)
@@ -518,7 +478,8 @@ class SpaceChargeKick(Element):
 
         # Return the physical potential
         return potential[:charge_density.shape[0]//2, :charge_density.shape[1]//2, :charge_density.shape[2]//2]
-    
+
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
     # TODO: Implement splitting for cavity properly, for now just returns the
     # element itself
