@@ -1,9 +1,10 @@
 <img src="images/logo.png" align="right" width="25%"/>
 
-![format](https://github.com/desy-ml/cheetah/actions/workflows/format.yml/badge.svg)
-![pytest](https://github.com/desy-ml/cheetah/actions/workflows/pytest.yml/badge.svg)
+![format](https://github.com/desy-ml/cheetah/actions/workflows/format.yaml/badge.svg)
+![pytest](https://github.com/desy-ml/cheetah/actions/workflows/pytest.yaml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/cheetah-accelerator/badge/?version=latest)](https://cheetah-accelerator.readthedocs.io/en/latest/?badge=latest)
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 <!-- [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
 
@@ -85,15 +86,22 @@ where the optional keyword argument `beam` is the incoming beam represented by t
 
 ## Cite Cheetah
 
-To cite Cheetah in publications:
+If you use Cheetah, please cite the following two papers:
 
 ```bibtex
+@misc{kaiser2024cheetah,
+  title         = {Cheetah: Bridging the Gap Between Machine Learning and Particle Accelerator Physics with High-Speed, Differentiable Simulations},
+  author        = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and {Santamaria Garcia}, Andrea},
+  year          = {2024},
+  eprint        = {2401.05815},
+  archiveprefix = {arXiv},
+  primaryclass  = {physics.acc-ph}
+}
 @inproceedings{stein2022accelerating,
-    title        = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
-    author       = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
-    year         = 2022,
-    booktitle    = {Proceedings of the 13th International Particle Accelerator Conference},
-    url          = {https://github.com/desy-ml/cheetah}
+  title     = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+  author    = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
+  year      = {2022},
+  booktitle = {Proceedings of the 13th International Particle Accelerator Conference}
 }
 ```
 
@@ -113,3 +121,10 @@ We suggest installing pre-commit hooks to automatically conform with the code fo
 pip install pre-commit
 pre-commit install
 ```
+
+## Acknowledgements
+
+We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser, Chenran Xu, Oliver Stein, Annika Eichler, Andrea Santamaria Garcia and others.
+
+The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
+In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.

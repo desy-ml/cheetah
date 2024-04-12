@@ -1,22 +1,60 @@
 # Changelog
 
-## v0.6.1 [🚧 Work in Progress]
+## v0.7.0 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
-None
-
 ### 🚀 Features
-
-None
 
 ### 🐛 Bug fixes
 
-None
+### 🐆 Other
+
+## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
+
+### 🐛 Bug fixes
+
+- Fix bug in `Cavity` transfer map bug. (see #129 and #135) (@cr-xu)
 
 ### 🐆 Other
 
-None
+- Add GPL 3 licence (see #131) (@jank324)
+
+## [v0.6.2](https://github.com/desy-ml/cheetah/releases/tag/v0.6.2) (2024-02-13)
+
+### 🚨 Breaking Changes
+
+- The handling of `device` and `dtype` was overhauled. They might not behave as expected. `Element`s also no longer have a `device` attribute. (see #115) (@jank324)
+
+### 🚀 Features
+
+- Add charge to the `ParameterBeam` and `ParticleBeam` classes (see #86) (@cr-xu)
+- Add opt-in speed optimisations (see #88) (@jank324)
+
+### 🐛 Bug fixes
+
+- Fix the transfer maps in `Drift` and `Dipole`; Add R56 in horizontal and vertical correctors modelling (see #90) (@cr-xu)
+- Fix fringe_field_exit of `Dipole` is overwritten by `fringe_field` bug (see #99) (@cr-xu)
+- Fix error caused by mismatched devices on machines with CUDA GPUs (see #97 and #115) (@jank324)
+- Fix error raised when tracking a `ParameterBeam` through an active `BPM` (see #101) (@jank324)
+- Fix error in ASTRA beam import where the energy was set to `float64` instead of `float32` (see #111) (@jank324)
+- Fix missing passing of `total_charge` in `ParameterBeam.transformed_to` (see #112) (@jank324)
+- Fix `Cavitiy.__repr__` printing `voltage` value for `phase` property (see #121) (@jank324)
+
+### 🐆 Other
+
+- Add pull request template (see #97) (@jank324)
+- Add _Acknowledgements_ section to README (see #103) (@jank324)
+- `benchmark` directory was moved to `desy-ml/cheetah-demos` repository (see #108) (@jank324)
+- Update citations to new arXiv preprint (see #117) (@jank324)
+- Improve the docstring with proper units for the phase space dimensions (see #122) (@cr-xu)
+- Link to the new paper (on arXiv) in the documentation (see #125) (@jank324)
+
+## [v0.6.1](https://github.com/desy-ml/cheetah/releases/tag/v0.6.1) (2023-09-17)
+
+### 🐛 Bug fixes
+
+- Fix issue where `converters` submodule was not installed properly (see 1562496) (@jank324)
 
 ## [v0.6.0](https://github.com/desy-ml/cheetah/releases/tag/v0.6.0) (2023-09-15)
 

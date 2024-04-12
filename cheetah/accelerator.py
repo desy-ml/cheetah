@@ -10,11 +10,11 @@ import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
-from scipy.stats import multivariate_normal
 from torch import nn
+from torch.distributions import MultivariateNormal
 
 from cheetah.converters.dontbmad import convert_bmad_lattice
-from cheetah.error import DeviceError
+from cheetah.converters.nxtables import read_nx_tables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
@@ -25,8 +25,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 rest_energy = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
-    / constants.elementary_charge
-)  # electron mass
+    / constants.elementary_charge  # electron mass
+)
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
@@ -37,35 +37,33 @@ class Element(ABC, nn.Module):
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
 
-        if device == "auto":
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.device = device
-
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         Generates the element's transfer map that describes how the beam and its
-        particles are transformed when traveling through the element. The state vector
-        consists of 6 values with a physical meaning:
+        particles are transformed when traveling through the element.
+        The state vector consists of 6 values with a physical meaning:
+        (in the trace space notation)
+
         - x: Position in x direction
-        - xp: Momentum in x direction
+        - xp: Angle in x direction
         - y: Position in y direction
-        - yp: Momentum in y direction
-        - s: Position in z direction, the zero value is set to the middle of the pulse
-        - sp: Momentum in s direction
+        - yp: Angle in y direction
+        - s: Position in longitudinal direction, the zero value is set to the
+        reference position (usually the center of the pulse)
+        - p: Relative energy deviation from the reference particle
+           :math:`p = \frac{\Delta E}{p_0 C}`
         As well as a seventh value used to add constants to some of the prior values if
         necessary. Through this seventh state, the addition of constants can be
         represented using a matrix multiplication.
 
-        :param energy: Energy of the Beam. Read from the fed-in Cheetah Beam.
+        :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
@@ -81,18 +79,27 @@ class Element(ABC, nn.Module):
         if incoming is Beam.empty:
             return incoming
         elif isinstance(incoming, ParameterBeam):
-            if self.device != incoming.device:
-                raise DeviceError
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.t()))
-            return ParameterBeam(mu, cov, incoming.energy, device=incoming.device)
+            return ParameterBeam(
+                mu,
+                cov,
+                incoming.energy,
+                total_charge=incoming.total_charge,
+                device=mu.device,
+                dtype=mu.dtype,
+            )
         elif isinstance(incoming, ParticleBeam):
-            if self.device != incoming.device:
-                raise DeviceError
             tm = self.transfer_map(incoming.energy)
             new_particles = torch.matmul(incoming.particles, tm.t())
-            return ParticleBeam(new_particles, incoming.energy, device=incoming.device)
+            return ParticleBeam(
+                new_particles,
+                incoming.energy,
+                particle_charges=incoming.particle_charges,
+                device=new_particles.device,
+                dtype=new_particles.dtype,
+            )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
@@ -145,40 +152,127 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(name={repr(self.name)},"
-            f" device={repr(self.device)})"
+        return f"{self.__class__.__name__}(name={repr(self.name)})"
+
+
+class CustomTransferMap(Element):
+    """
+    This element can represent any custom transfer map.
+    """
+
+    def __init__(
+        self,
+        transfer_map: Union[torch.Tensor, nn.Parameter],
+        length: Optional[torch.Tensor] = None,
+        name: Optional[str] = None,
+        device=None,
+        dtype=torch.float32,
+    ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
+
+        assert isinstance(transfer_map, torch.Tensor)
+        assert transfer_map.shape == (7, 7)
+
+        self._transfer_map = torch.as_tensor(transfer_map, **factory_kwargs)
+        self.length = (
+            torch.as_tensor(length, **factory_kwargs)
+            if length is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
+
+    @classmethod
+    def from_merging_elements(
+        cls, elements: list[Element], incoming_beam: Beam
+    ) -> "CustomTransferMap":
+        """
+        Combine the transfer maps of multiple successive elements into a single transfer
+        map. This can be used to speed up tracking through a segment, if no changes
+        are made to the elements in the segment or the energy of the beam being tracked
+        through them.
+
+        :param elements: List of consecutive elements to combine.
+        :param incoming_beam: Beam entering the first element in the segment. NOTE: That
+            this is required because the separate original transfer maps have to be
+            computed before being combined and some of them may depend on the energy of
+            the beam.
+        """
+        assert all(element.is_skippable for element in elements), (
+            "Combining the elements in a Segment that is not skippable will result in"
+            " incorrect tracking results."
+        )
+
+        device = elements[0].transfer_map(incoming_beam.energy).device
+        dtype = elements[0].transfer_map(incoming_beam.energy).dtype
+
+        tm = torch.eye(7, device=device, dtype=dtype)
+        for element in elements:
+            tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
+            incoming_beam = element.track(incoming_beam)
+
+        combined_length = sum(
+            element.length for element in elements if hasattr(element, "length")
+        )
+
+        return cls(tm, length=combined_length, device=device, dtype=dtype)
+
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        return self._transfer_map
+
+    @property
+    def is_skippable(self) -> bool:
+        return True
+
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["transfer_map"]
+
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+        return [self]
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        # TODO: At some point think of a nice way to indicate this in a lattice plot
+        pass
 
 
 class Drift(Element):
     """
     Drift section in a particle accelerator.
 
+    Note: the transfer map now uses the linear approximation.
+    Including the R_56 = L / (beta**2 * gamma **2)
+
     :param length: Length in meters.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
+        self.length = torch.as_tensor(length, **factory_kwargs)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / rest_energy
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        device = self.length.device
+        dtype = self.length.dtype
 
-        tm = torch.eye(7, device=self.device)
+        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+        igamma2 = (
+            1 / gamma**2
+            if gamma != 0
+            else torch.tensor(0.0, device=device, dtype=dtype)
+        )
+        beta = torch.sqrt(1 - igamma2)
+
+        tm = torch.eye(7, device=device, dtype=dtype)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
-        tm[4, 5] = self.length * igamma2
+        tm[4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -190,7 +284,7 @@ class Drift(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Drift(torch.min(resolution, remaining), device=self.device)
+            element = Drift(torch.min(resolution, remaining))
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -203,10 +297,7 @@ class Drift(Element):
         return super().defining_features + ["length"]
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)},"
-            f" name={repr(self.name)}, device={repr(self.device)})"
-        )
+        return f"{self.__class__.__name__}(length={repr(self.length)})"
 
 
 class Quadrupole(Element):
@@ -219,8 +310,6 @@ class Quadrupole(Element):
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -230,31 +319,45 @@ class Quadrupole(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
-        self.k1 = k1 if k1 is not None else torch.tensor(0.0)
-        self.misalignment = (
-            misalignment if misalignment is not None else torch.tensor([0.0, 0.0])
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.k1 = (
+            torch.as_tensor(k1, **factory_kwargs)
+            if k1 is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
-        self.tilt = tilt if tilt is not None else torch.tensor(0.0)
+        self.misalignment = (
+            torch.as_tensor(misalignment, **factory_kwargs)
+            if misalignment is not None
+            else torch.tensor([0.0, 0.0], **factory_kwargs)
+        )
+        self.tilt = (
+            torch.as_tensor(tilt, **factory_kwargs)
+            if tilt is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        device = self.length.device
+        dtype = self.length.dtype
+
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0),
+            hx=torch.tensor(0.0, device=device, dtype=dtype),
             tilt=self.tilt,
             energy=energy,
-            device=self.device,
         )
 
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
+            R_exit, R_entry = misalignment_matrix(self.misalignment)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
 
@@ -274,7 +377,6 @@ class Quadrupole(Element):
                 torch.min(resolution, remaining),
                 self.k1,
                 misalignment=self.misalignment,
-                device=self.device,
             )
             split_elements.append(element)
             remaining -= resolution
@@ -298,8 +400,7 @@ class Quadrupole(Element):
             + f"k1={repr(self.k1)}, "
             + f"misalignment={repr(self.misalignment)}, "
             + f"tilt={repr(self.tilt)}, "
-            + f"name={repr(self.name)}, "
-            + f'device="{repr(self.device)}")'
+            + f"name={repr(self.name)})"
         )
 
 
@@ -317,8 +418,6 @@ class Dipole(Element):
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -332,29 +431,57 @@ class Dipole(Element):
         fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ):
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
-        self.angle = angle if angle is not None else torch.tensor(0.0)
-        self.gap = gap if gap is not None else torch.tensor(0.0)
-        self.tilt = tilt if tilt is not None else torch.tensor(0.0)
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.angle = (
+            torch.as_tensor(angle, **factory_kwargs)
+            if angle is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.gap = (
+            torch.as_tensor(gap, **factory_kwargs)
+            if gap is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.tilt = (
+            torch.as_tensor(tilt, **factory_kwargs)
+            if tilt is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
         self.name = name
         self.fringe_integral = (
-            fringe_integral if fringe_integral is not None else torch.tensor(0.0)
+            torch.as_tensor(fringe_integral, **factory_kwargs)
+            if fringe_integral is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
         self.fringe_integral_exit = (
-            fringe_integral if fringe_integral_exit is None else fringe_integral_exit
+            self.fringe_integral
+            if fringe_integral_exit is None
+            else torch.as_tensor(fringe_integral_exit, **factory_kwargs)
         )
         # Rectangular bend
-        self.e1 = e1 if e1 is not None else torch.tensor(0.0)
-        self.e2 = e2 if e2 is not None else torch.tensor(0.0)
+        self.e1 = (
+            torch.as_tensor(e1, **factory_kwargs)
+            if e1 is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.e2 = (
+            torch.as_tensor(e2, **factory_kwargs)
+            if e2 is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
 
+    @property
+    def hx(self) -> torch.Tensor:
         if self.length == 0.0:
-            self.hx = torch.tensor(0.0)
+            return torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype)
         else:
-            self.hx = self.angle / self.length
+            return self.angle / self.length
 
     @property
     def is_skippable(self) -> bool:
@@ -365,20 +492,22 @@ class Dipole(Element):
         return self.angle != 0
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        R_enter = self._transfer_map_enter(energy)
-        R_exit = self._transfer_map_exit(energy)
+        device = self.length.device
+        dtype = self.length.dtype
+
+        R_enter = self._transfer_map_enter()
+        R_exit = self._transfer_map_exit()
 
         if self.length != 0.0:  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
-                k1=torch.tensor(0.0),
+                k1=torch.tensor(0.0, device=device, dtype=dtype),
                 hx=self.hx,
-                tilt=torch.tensor(0.0),
+                tilt=torch.tensor(0.0, device=device, dtype=dtype),
                 energy=energy,
-                device=self.device,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=self.device)
+            R = torch.eye(7, device=device, dtype=dtype)
             R[0, 1] = self.length
             R[2, 6] = self.angle
             R[2, 3] = self.length
@@ -392,43 +521,45 @@ class Dipole(Element):
 
         return R
 
-    def _transfer_map_enter(self, energy: torch.Tensor) -> torch.Tensor:
-        if self.fringe_integral == 0:
-            return torch.eye(7, device=self.device)
-        else:
-            sec_e = torch.tensor(1.0) / torch.cos(self.e1)
-            phi = (
-                self.fringe_integral
-                * self.hx
-                * self.gap
-                * sec_e
-                * (1 + torch.sin(self.e1) ** 2)
-            )
+    def _transfer_map_enter(self) -> torch.Tensor:
+        """Linear transfer map for the entrance face of the dipole magnet."""
+        device = self.length.device
+        dtype = self.length.dtype
 
-            tm = torch.eye(7, device=self.device)
-            tm[1, 0] = self.hx * torch.tan(self.e1)
-            tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        sec_e = torch.tensor(1.0, device=device, dtype=dtype) / torch.cos(self.e1)
+        phi = (
+            self.fringe_integral
+            * self.hx
+            * self.gap
+            * sec_e
+            * (1 + torch.sin(self.e1) ** 2)
+        )
 
-            return tm
+        tm = torch.eye(7, device=device, dtype=dtype)
+        tm[1, 0] = self.hx * torch.tan(self.e1)
+        tm[3, 2] = -self.hx * torch.tan(self.e1 - phi)
 
-    def _transfer_map_exit(self, energy: torch.Tensor) -> torch.Tensor:
-        if self.fringe_integral_exit == 0:
-            return torch.eye(7, device=self.device)
-        else:
-            sec_e = 1.0 / torch.cos(self.e2)
-            phi = (
-                self.fringe_integral
-                * self.hx
-                * self.gap
-                * sec_e
-                * (1 + torch.sin(self.e2) ** 2)
-            )
+        return tm
 
-            tm = torch.eye(7, device=self.device)
-            tm[1, 0] = self.hx * torch.tan(self.e2)
-            tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
+    def _transfer_map_exit(self) -> torch.Tensor:
+        """Linear transfer map for the exit face of the dipole magnet."""
+        device = self.length.device
+        dtype = self.length.dtype
 
-            return tm
+        sec_e = 1.0 / torch.cos(self.e2)
+        phi = (
+            self.fringe_integral_exit
+            * self.hx
+            * self.gap
+            * sec_e
+            * (1 + torch.sin(self.e2) ** 2)
+        )
+
+        tm = torch.eye(7, device=device, dtype=dtype)
+        tm[1, 0] = self.hx * torch.tan(self.e2)
+        tm[3, 2] = -self.hx * torch.tan(self.e2 - phi)
+
+        return tm
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
@@ -445,8 +576,7 @@ class Dipole(Element):
             + f"fringe_integral={repr(self.fringe_integral)},"
             + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
             + f"gap={repr(self.gap)},"
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
     @property
@@ -486,8 +616,6 @@ class RBend(Dipole):
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -501,7 +629,8 @@ class RBend(Dipole):
         fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ):
         angle = angle if angle is not None else torch.tensor(0.0)
         e1 = e1 if e1 is not None else torch.tensor(0.0)
@@ -527,18 +656,19 @@ class RBend(Dipole):
             gap=gap,
             name=name,
             device=device,
+            dtype=dtype,
         )
 
 
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
+    Note: This is modeled as a drift section with
+        a thin-kick in the horizontal plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -546,18 +676,36 @@ class HorizontalCorrector(Element):
         length: Union[torch.Tensor, nn.Parameter],
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
-        self.angle = angle if angle is not None else torch.tensor(0.0)
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.angle = (
+            torch.as_tensor(angle, **factory_kwargs)
+            if angle is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        tm = torch.eye(7, device=self.device)
+        device = self.length.device
+        dtype = self.length.dtype
+
+        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+        igamma2 = (
+            1 / gamma**2
+            if gamma != 0
+            else torch.tensor(0.0, device=device, dtype=dtype)
+        )
+        beta = torch.sqrt(1 - igamma2)
+
+        tm = torch.eye(7, device=device, dtype=dtype)
         tm[0, 1] = self.length
         tm[1, 6] = self.angle
         tm[2, 3] = self.length
+        tm[4, 5] = -self.length / beta**2 * igamma2
 
         return tm
 
@@ -574,9 +722,7 @@ class HorizontalCorrector(Element):
         remaining = self.length
         while remaining > 0:
             length = torch.min(resolution, remaining)
-            element = HorizontalCorrector(
-                length, self.angle * length / self.length, device=self.device
-            )
+            element = HorizontalCorrector(length, self.angle * length / self.length)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -598,20 +744,19 @@ class HorizontalCorrector(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"angle={repr(self.angle)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
+    Note: This is modeled as a drift section with
+        a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -619,19 +764,36 @@ class VerticalCorrector(Element):
         length: Union[torch.Tensor, nn.Parameter],
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
-        self.angle = angle if angle is not None else torch.tensor(0.0)
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.angle = (
+            torch.as_tensor(angle, **factory_kwargs)
+            if angle is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        tm = torch.eye(7, device=self.device)
+        device = self.length.device
+        dtype = self.length.dtype
+
+        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+        igamma2 = (
+            1 / gamma**2
+            if gamma != 0
+            else torch.tensor(0.0, device=device, dtype=dtype)
+        )
+        beta = torch.sqrt(1 - igamma2)
+
+        tm = torch.eye(7, device=device, dtype=dtype)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
         tm[3, 6] = self.angle
-
+        tm[4, 5] = -self.length / beta**2 * igamma2
         return tm
 
     @property
@@ -647,9 +809,7 @@ class VerticalCorrector(Element):
         remaining = self.length
         while remaining > 0:
             length = torch.min(resolution, remaining)
-            element = VerticalCorrector(
-                length, self.angle * length / self.length, device=self.device
-            )
+            element = VerticalCorrector(length, self.angle * length / self.length)
             split_elements.append(element)
             remaining -= resolution
         return split_elements
@@ -671,8 +831,7 @@ class VerticalCorrector(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"angle={repr(self.angle)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
@@ -685,8 +844,6 @@ class Cavity(Element):
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -696,14 +853,28 @@ class Cavity(Element):
         phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
-        self.voltage = voltage if voltage is not None else torch.tensor(0.0)
-        self.phase = phase if phase is not None else torch.tensor(0.0)
-        self.frequency = frequency if frequency is not None else torch.tensor(0.0)
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.voltage = (
+            torch.as_tensor(voltage, **factory_kwargs)
+            if voltage is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.phase = (
+            torch.as_tensor(phase, **factory_kwargs)
+            if phase is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.frequency = (
+            torch.as_tensor(frequency, **factory_kwargs)
+            if frequency is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
 
     @property
     def is_active(self) -> bool:
@@ -714,16 +885,18 @@ class Cavity(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        device = self.length.device
+        dtype = self.length.dtype
+
         if self.voltage > 0:
             return self._cavity_rmatrix(energy)
         else:
             return base_rmatrix(
                 length=self.length,
-                k1=torch.tensor(0.0),
-                hx=torch.tensor(0.0),
-                tilt=torch.tensor(0.0),
+                k1=torch.tensor(0.0, device=device, dtype=dtype),
+                hx=torch.tensor(0.0, device=device, dtype=dtype),
+                tilt=torch.tensor(0.0, device=device, dtype=dtype),
                 energy=energy,
-                device=self.device,
             )
 
     def track(self, incoming: Beam) -> Beam:
@@ -743,11 +916,14 @@ class Cavity(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_beam(self, incoming: ParticleBeam) -> ParticleBeam:
-        beta0 = torch.tensor(1.0)
-        igamma2 = torch.tensor(0.0)
-        g0 = torch.tensor(1e10)
+        device = self.length.device
+        dtype = self.length.dtype
+
+        beta0 = torch.tensor(1.0, device=device, dtype=dtype)
+        igamma2 = torch.tensor(0.0, device=device, dtype=dtype)
+        g0 = torch.tensor(1e10, device=device, dtype=dtype)
         if incoming.energy != 0:
-            g0 = incoming.energy / electron_mass_eV
+            g0 = incoming.energy / electron_mass_eV.to(device=device, dtype=dtype)
             igamma2 = 1 / g0**2
             beta0 = torch.sqrt(1 - igamma2)
 
@@ -764,6 +940,7 @@ class Cavity(Element):
         T566 = 1.5 * self.length * igamma2 / beta0**3
         T556 = 0
         T555 = 0
+
         if incoming.energy + delta_energy > 0:
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
@@ -771,34 +948,23 @@ class Cavity(Element):
             beta1 = torch.sqrt(1 - 1 / g1**2)
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[5] = (
-                    incoming._mu[5]
-                    + incoming.energy * beta0 / (outgoing_energy * beta1)
-                    + self.voltage
-                    * beta0
-                    / (outgoing_energy * beta1)
-                    * (torch.cos(incoming._mu[4] * beta0 * k + phi) - torch.cos(phi))
+                outgoing_mu[5] = incoming._mu[5] * incoming.energy * beta0 / (
+                    outgoing_energy * beta1
+                ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
+                    torch.cos(-incoming._mu[4] * beta0 * k + phi) - torch.cos(phi)
                 )
                 outgoing_cov[5, 5] = incoming._cov[5, 5]
-                # outgoing_cov[5, 5] = (
-                #     incoming._cov[5, 5]
-                #     + incoming.energy * beta0 / (outgoing_energy * beta1)
-                #     + self.voltage
-                #     * beta0
-                #     / (outgoing_energy * beta1)
-                #     * (torch.cos(incoming._mu[4] * beta0 * k + phi) - torch.cos(phi))
-                # )
+
             else:  # ParticleBeam
-                outgoing_particles[:, 5] = (
-                    incoming.particles[:, 5]
-                    + incoming.energy * beta0 / (outgoing_energy * beta1)
-                    + self.voltage
-                    * beta0
-                    / (outgoing_energy * beta1)
-                    * (
-                        torch.cos(incoming.particles[:, 4] * beta0 * k + phi)
-                        - torch.cos(phi)
-                    )
+                outgoing_particles[:, 5] = incoming.particles[
+                    :, 5
+                ] * incoming.energy * beta0 / (
+                    outgoing_energy * beta1
+                ) + self.voltage * beta0 / (
+                    outgoing_energy * beta1
+                ) * (
+                    torch.cos(-incoming.particles[:, 4] * beta0 * k + phi)
+                    - torch.cos(phi)
                 )
 
             dgamma = self.voltage / electron_mass_eV
@@ -841,7 +1007,7 @@ class Cavity(Element):
                 )
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[4] = (
+                outgoing_mu[4] = outgoing_mu[4] + (
                     T566 * incoming._mu[5] ** 2
                     + T556 * incoming._mu[4] * incoming._mu[5]
                     + T555 * incoming._mu[4] ** 2
@@ -858,27 +1024,41 @@ class Cavity(Element):
                 )
                 outgoing_cov[5, 4] = outgoing_cov[4, 5]
             else:  # ParticleBeam
-                outgoing_particles[:, 4] = (
+                outgoing_particles[:, 4] = outgoing_particles[:, 4] + (
                     T566 * incoming.particles[:, 5] ** 2
                     + T556 * incoming.particles[:, 4] * incoming.particles[:, 5]
                     + T555 * incoming.particles[:, 4] ** 2
                 )
 
         if isinstance(incoming, ParameterBeam):
-            outgoing = ParameterBeam(outgoing_mu, outgoing_cov, outgoing_energy)
+            outgoing = ParameterBeam(
+                outgoing_mu,
+                outgoing_cov,
+                outgoing_energy,
+                total_charge=incoming.total_charge,
+                device=outgoing_mu.device,
+                dtype=outgoing_mu.dtype,
+            )
             return outgoing
         else:  # ParticleBeam
             outgoing = ParticleBeam(
-                outgoing_particles, outgoing_energy, device=incoming.device
+                outgoing_particles,
+                outgoing_energy,
+                particle_charges=incoming.particle_charges,
+                device=outgoing_particles.device,
+                dtype=outgoing_particles.dtype,
             )
             return outgoing
 
     def _cavity_rmatrix(self, energy: torch.Tensor) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
+        device = self.length.device
+        dtype = self.length.dtype
+
         phi = torch.deg2rad(self.phase)
         delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0)
+        eta = torch.tensor(1.0, device=device, dtype=dtype)
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
@@ -939,7 +1119,7 @@ class Cavity(Element):
         r66 = Ei / Ef * beta0 / beta1
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
-        R = torch.eye(7, device=self.device)
+        R = torch.eye(7, device=device, dtype=dtype)
         R[0, 0] = r11
         R[0, 1] = r12
         R[1, 0] = r21
@@ -977,10 +1157,9 @@ class Cavity(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"voltage={repr(self.voltage)}, "
-            + f"phase={repr(self.voltage)}, "
+            + f"phase={repr(self.phase)}, "
             + f"frequency={repr(self.frequency)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
@@ -991,14 +1170,10 @@ class BPM(Element):
     :param is_active: If `True` the BPM is active and will record the beam's position.
         If `False` the BPM is inactive and will not record the beam's position.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(
-        self, is_active: bool = False, name: Optional[str] = None, device: str = "auto"
-    ) -> None:
-        super().__init__(name=name, device=device)
+    def __init__(self, is_active: bool = False, name: Optional[str] = None) -> None:
+        super().__init__(name=name)
 
         self.is_active = is_active
         self.reading = None
@@ -1008,13 +1183,13 @@ class BPM(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return torch.eye(7, device=self.device)
+        return torch.eye(7, device=energy.device, dtype=energy.dtype)
 
     def track(self, incoming: Beam) -> Beam:
         if incoming is Beam.empty:
             self.reading = None
         elif isinstance(incoming, ParameterBeam):
-            self.reading = torch.stack([incoming._mu_x, incoming._mu_y])
+            self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
         elif isinstance(incoming, ParticleBeam):
             self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
         else:
@@ -1037,10 +1212,7 @@ class BPM(Element):
         return super().defining_features
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(name={repr(self.name)},"
-            f" device={repr(self.device)})"
-        )
+        return f"{self.__class__.__name__}(name={repr(self.name)})"
 
 
 class Marker(Element):
@@ -1048,17 +1220,17 @@ class Marker(Element):
     General Marker / Monitor element
 
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(self, name: Optional[str] = None, device: str = "auto") -> None:
-        super().__init__(name=name, device=device)
+    def __init__(self, name: Optional[str] = None) -> None:
+        super().__init__(name=name)
 
     def transfer_map(self, energy):
-        return torch.eye(7, device=self.device)
+        return torch.eye(7, device=energy.device, dtype=energy.dtype)
 
     def track(self, incoming):
+        # TODO: At some point Markers should be able to be active or inactive. Active
+        # Markers would be able to record the beam tracked through them.
         return incoming
 
     @property
@@ -1078,10 +1250,7 @@ class Marker(Element):
         return super().defining_features
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(name={repr(self.name)},"
-            f" device={repr(self.device)})"
-        )
+        return f"{self.__class__.__name__}(name={repr(self.name)})"
 
 
 class Screen(Element):
@@ -1099,8 +1268,6 @@ class Screen(Element):
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1111,19 +1278,31 @@ class Screen(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
         self.resolution = (
-            resolution if resolution is not None else torch.tensor((1024, 1024))
+            torch.as_tensor(resolution, device=device)
+            if resolution is not None
+            else torch.tensor((1024, 1024), device=device)
         )
         self.pixel_size = (
-            pixel_size if pixel_size is not None else torch.tensor((1e-3, 1e-3))
+            torch.as_tensor(pixel_size, **factory_kwargs)
+            if pixel_size is not None
+            else torch.tensor((1e-3, 1e-3), **factory_kwargs)
         )
-        self.binning = binning if binning is not None else torch.tensor(1)
+        self.binning = (
+            torch.as_tensor(binning, device=device)
+            if binning is not None
+            else torch.tensor(1, device=device)
+        )
         self.misalignment = (
-            misalignment if misalignment is not None else torch.tensor((0.0, 0.0))
+            torch.as_tensor(misalignment, **factory_kwargs)
+            if misalignment is not None
+            else torch.tensor((0.0, 0.0), **factory_kwargs)
         )
         self.is_active = is_active
 
@@ -1143,12 +1322,14 @@ class Screen(Element):
         return self.pixel_size * self.binning
 
     @property
-    def extent(self) -> tuple[float, float, float, float]:
-        return (
-            -self.resolution[0] * self.pixel_size[0] / 2,
-            self.resolution[0] * self.pixel_size[0] / 2,
-            -self.resolution[1] * self.pixel_size[1] / 2,
-            self.resolution[1] * self.pixel_size[1] / 2,
+    def extent(self) -> torch.Tensor:
+        return torch.stack(
+            [
+                -self.resolution[0] * self.pixel_size[0] / 2,
+                self.resolution[0] * self.pixel_size[0] / 2,
+                -self.resolution[1] * self.pixel_size[1] / 2,
+                self.resolution[1] * self.pixel_size[1] / 2,
+            ]
         )
 
     @property
@@ -1167,7 +1348,10 @@ class Screen(Element):
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return torch.eye(7, device=self.device)
+        device = self.misalignment.device
+        dtype = self.misalignment.dtype
+
+        return torch.eye(7, device=device, dtype=dtype)
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:
@@ -1194,7 +1378,7 @@ class Screen(Element):
         read_beam = self.get_read_beam()
         if read_beam is Beam.empty or read_beam is None:
             image = torch.zeros(
-                (self.effective_resolution[1], self.effective_resolution[0])
+                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
             )
         elif isinstance(read_beam, ParameterBeam):
             transverse_mu = torch.stack([read_beam._mu[0], read_beam._mu[2]])
@@ -1204,8 +1388,8 @@ class Screen(Element):
                     torch.stack([read_beam._cov[2, 0], read_beam._cov[2, 2]]),
                 ]
             )
-            dist = multivariate_normal(
-                mean=transverse_mu, cov=transverse_cov, allow_singular=True
+            dist = MultivariateNormal(
+                loc=transverse_mu.cpu(), covariance_matrix=transverse_cov.cpu()
             )
 
             left = self.extent[0]
@@ -1214,13 +1398,17 @@ class Screen(Element):
             bottom = self.extent[2]
             top = self.extent[3]
             vstep = self.pixel_size[1] * self.binning
-            x, y = torch.mgrid[left:right:hstep, bottom:top:vstep]
+            x, y = torch.meshgrid(
+                torch.arange(left, right, hstep),
+                torch.arange(bottom, top, vstep),
+                indexing="ij",
+            )
             pos = torch.dstack((x, y))
-            image = dist.pdf(pos)
+            image = dist.log_prob(pos).exp()
             image = torch.flipud(image.T)
         elif isinstance(read_beam, ParticleBeam):
             image, _ = torch.histogramdd(
-                torch.stack((read_beam.xs, read_beam.ys)).T,
+                torch.stack((read_beam.xs, read_beam.ys)).T.cpu(),
                 bins=self.pixel_bin_edges,
             )
             image = torch.flipud(image.T)
@@ -1271,8 +1459,7 @@ class Screen(Element):
             + f"binning={repr(self.binning)}, "
             + f"misalignment={repr(self.misalignment)}, "
             + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
@@ -1285,23 +1472,31 @@ class Aperture(Element):
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param is_active: If the aperture actually blocks particles.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
         self,
-        x_max: Union[torch.Tensor, nn.Parameter] = torch.inf,
-        y_max: Union[torch.Tensor, nn.Parameter] = torch.inf,
+        x_max: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        y_max: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.x_max = x_max
-        self.y_max = y_max
+        self.x_max = (
+            torch.as_tensor(x_max, **factory_kwargs)
+            if x_max is not None
+            else torch.tensor(float("inf"), **factory_kwargs)
+        )
+        self.y_max = (
+            torch.as_tensor(y_max, **factory_kwargs)
+            if y_max is not None
+            else torch.tensor(float("inf"), **factory_kwargs)
+        )
         self.shape = shape
         self.is_active = is_active
 
@@ -1312,7 +1507,10 @@ class Aperture(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return torch.eye(7, device=self.device)
+        device = self.x_max.device
+        dtype = self.x_max.dtype
+
+        return torch.eye(7, device=device, dtype=dtype)
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
@@ -1336,10 +1534,22 @@ class Aperture(Element):
             ) <= 1.0
         outgoing_particles = incoming.particles[survived_mask]
 
+        outgoing_particle_charges = incoming.particle_charges[survived_mask]
+
         self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
 
+        self.lost_particle_charges = incoming.particle_charges[
+            torch.logical_not(survived_mask)
+        ]
+
         return (
-            ParticleBeam(outgoing_particles, incoming.energy, device=incoming.device)
+            ParticleBeam(
+                outgoing_particles,
+                incoming.energy,
+                particle_charges=outgoing_particle_charges,
+                device=outgoing_particles.device,
+                dtype=outgoing_particles.dtype,
+            )
             if outgoing_particles.shape[0] > 0
             else ParticleBeam.empty
         )
@@ -1374,8 +1584,7 @@ class Aperture(Element):
             + f"y_max={repr(self.y_max)}, "
             + f"shape={repr(self.shape)}, "
             + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
@@ -1389,8 +1598,6 @@ class Undulator(Element):
     :param is_active: Indicates if the undulator is active or not. Currently has no
         effect.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1398,18 +1605,27 @@ class Undulator(Element):
         length: Union[torch.Tensor, nn.Parameter],
         is_active: bool = False,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length
+        self.length = torch.as_tensor(length, **factory_kwargs)
         self.is_active = is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / rest_energy
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        device = self.length.device
+        dtype = self.length.dtype
 
-        tm = torch.eye(7, device=self.device)
+        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+        igamma2 = (
+            1 / gamma**2
+            if gamma != 0
+            else torch.tensor(0.0, device=device, dtype=dtype)
+        )
+
+        tm = torch.eye(7, device=device, dtype=dtype)
         tm[0, 1] = self.length
         tm[2, 3] = self.length
         tm[4, 5] = self.length * igamma2
@@ -1441,8 +1657,7 @@ class Undulator(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
@@ -1458,8 +1673,6 @@ class Solenoid(Element):
     :param misalignment: Misalignment vector of the solenoid magnet in x- and
         y-directions.
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
     def __init__(
@@ -1468,31 +1681,46 @@ class Solenoid(Element):
         k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
-        device: str = "auto",
+        device=None,
+        dtype=torch.float32,
     ) -> None:
-        super().__init__(name=name, device=device)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
 
-        self.length = length if length is not None else torch.tensor(0.0)
-        self.k = k if k is not None else torch.tensor(0.0)
+        self.length = (
+            torch.as_tensor(length, **factory_kwargs)
+            if length is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.k = (
+            torch.as_tensor(k, **factory_kwargs)
+            if k is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
         self.misalignment = (
-            misalignment if misalignment is not None else torch.tensor((0.0, 0.0))
+            torch.as_tensor(misalignment, **factory_kwargs)
+            if misalignment is not None
+            else torch.tensor((0.0, 0.0), **factory_kwargs)
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        gamma = energy / rest_energy
+        device = self.length.device
+        dtype = self.length.dtype
+
+        gamma = energy / rest_energy.to(device=device, dtype=dtype)
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
         if self.k == 0:
             s_k = self.length
         else:
             s_k = s / self.k
-        r56 = torch.tensor(0.0)
+        r56 = torch.tensor(0.0, device=device, dtype=dtype)
         if gamma != 0:
             gamma2 = gamma * gamma
             beta = torch.sqrt(1.0 - 1.0 / gamma2)
             r56 -= self.length / (beta * beta * gamma2)
 
-        R = torch.eye(7, device=self.device)
+        R = torch.eye(7, device=device, dtype=dtype)
         R[0, 0] = c**2
         R[0, 1] = c * s_k
         R[0, 2] = s * c
@@ -1516,7 +1744,7 @@ class Solenoid(Element):
         if self.misalignment[0] == 0 and self.misalignment[1] == 0:
             return R
         else:
-            R_exit, R_entry = misalignment_matrix(self.misalignment, self.device)
+            R_exit, R_entry = misalignment_matrix(self.misalignment)
             R = torch.matmul(R_exit, torch.matmul(R, R_entry))
             return R
 
@@ -1549,8 +1777,7 @@ class Solenoid(Element):
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"k={repr(self.k)}, "
             + f"misalignment={repr(self.misalignment)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )
 
 
@@ -1560,20 +1787,14 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
     """
 
-    def __init__(
-        self, elements: list[Element], name: str = "unnamed", device: str = "auto"
-    ) -> None:
-        super().__init__(name=name, device=device)
+    def __init__(self, elements: list[Element], name: str = "unnamed") -> None:
+        super().__init__(name=name)
 
         self.elements = nn.ModuleList(elements)
 
         for element in self.elements:
-            element.device = self.device
-
             # Make elements accessible via .name attribute. If multiple elements have
             # the same name, they are accessible via a list.
             if element.name in self.__dict__:
@@ -1584,7 +1805,7 @@ class Segment(Element):
             else:
                 self.__dict__[element.name] = element
 
-    def subcell(self, start: str, end: str, **kwargs) -> "Segment":
+    def subcell(self, start: str, end: str) -> "Segment":
         """Extract a subcell `[start, end]` from an this segment."""
         subcell = []
         is_in_subcell = False
@@ -1596,7 +1817,7 @@ class Segment(Element):
             if element.name == end:
                 break
 
-        return self.__class__(subcell, device=self.device, **kwargs)
+        return self.__class__(subcell)
 
     def flattened(self) -> "Segment":
         """
@@ -1610,7 +1831,143 @@ class Segment(Element):
             else:
                 flattened_elements.append(element)
 
-        return Segment(elements=flattened_elements, name=self.name, device=self.device)
+        return Segment(elements=flattened_elements, name=self.name)
+
+    def transfer_maps_merged(
+        self, incoming_beam: Beam, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where the transfer maps of skipable elements are merged into
+        elements of type `CustomTransferMap`. This can be used to speed up tracking
+        through the segment.
+
+        :param incoming_beam: Beam that is incoming to the segment. NOTE: This beam is
+            needed to determine the energy of the beam when entering each element, as
+            the transfer maps of merged elements might depend on the beam energy.
+        :param except_for: List of names of elements that should not be merged despite
+            being skippable. Usually these are the elements that are changed from one
+            tracking to another.
+        :return: Segment with merged transfer maps.
+        """
+        if except_for is None:
+            except_for = []
+
+        merged_elements = []  # Elements for new merged segment
+        skippable_elements = []  # Keep track of elements that are not yet merged
+        tracked_beam = incoming_beam
+        for element in self.elements:
+            if element.is_skippable and element.name not in except_for:
+                skippable_elements.append(element)
+            else:
+                if len(skippable_elements) == 1:
+                    merged_elements.append(skippable_elements[0])
+                    tracked_beam = skippable_elements[0].track(tracked_beam)
+                elif len(skippable_elements) > 1:  # i.e. we need to merge some elements
+                    merged_elements.append(
+                        CustomTransferMap.from_merging_elements(
+                            skippable_elements, incoming_beam=tracked_beam
+                        )
+                    )
+                    tracked_beam = merged_elements[-1].track(tracked_beam)
+                skippable_elements = []
+
+                merged_elements.append(element)
+                tracked_beam = element.track(tracked_beam)
+
+        if len(skippable_elements) > 0:
+            merged_elements.append(
+                CustomTransferMap.from_merging_elements(
+                    skippable_elements, incoming_beam=tracked_beam
+                )
+            )
+
+        return Segment(elements=merged_elements, name=self.name)
+
+    def without_inactive_markers(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where all inactive markers are removed. This can be used to
+        speed up tracking through the segment.
+
+        NOTE: `is_active` has not yet been implemented for Markers. Therefore, this
+        function currently removes all markers.
+
+        :param except_for: List of names of elements that should not be removed despite
+            being inactive.
+        :return: Segment without inactive markers.
+        """
+        # TODO: Add check for is_active once that has been implemented for Markers
+        if except_for is None:
+            except_for = []
+
+        return Segment(
+            elements=[
+                element
+                for element in self.elements
+                if not isinstance(element, Marker) or element.name in except_for
+            ],
+            name=self.name,
+        )
+
+    def without_inactive_zero_length_elements(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where all inactive zero length elements are removed. This can
+        be used to speed up tracking through the segment.
+
+        NOTE: If `is_active` is not implemented for an element, it is assumed to be
+        inactive and will be removed.
+
+        :param except_for: List of names of elements that should not be removed despite
+            being inactive and having a zero length.
+        :return: Segment without inactive zero length elements.
+        """
+        if except_for is None:
+            except_for = []
+
+        return Segment(
+            elements=[
+                element
+                for element in self.elements
+                if (hasattr(element, "length") and element.length > 0.0)
+                or (hasattr(element, "is_active") and element.is_active)
+                or element.name in except_for
+            ],
+            name=self.name,
+        )
+
+    def inactive_elements_as_drifts(
+        self, except_for: Optional[list[str]] = None
+    ) -> "Segment":
+        """
+        Return a segment where all inactive elements (that have a length) are replaced
+        by drifts. This can be used to speed up tracking through the segment and is a
+        valid thing to as inactive elements should basically be no different from drift
+        sections.
+
+        :param except_for: List of names of elements that should not be replaced by
+            drifts despite being inactive. Usually these are the elements that are
+            currently inactive but will be activated later.
+        :return: Segment with inactive elements replaced by drifts.
+        """
+        if except_for is None:
+            except_for = []
+
+        return Segment(
+            elements=[
+                (
+                    element
+                    if (hasattr(element, "is_active") and element.is_active)
+                    or not hasattr(element, "length")
+                    or element.name in except_for
+                    else Drift(element.length)
+                )
+                for element in self.elements
+            ],
+            name=self.name,
+        )
 
     @classmethod
     def from_lattice_json(cls, filepath: str) -> "Segment":
@@ -1642,7 +1999,13 @@ class Segment(Element):
 
     @classmethod
     def from_ocelot(
-        cls, cell, name: Optional[str] = None, warnings: bool = True, **kwargs
+        cls,
+        cell,
+        name: Optional[str] = None,
+        warnings: bool = True,
+        device=None,
+        dtype=torch.float32,
+        **kwargs,
     ) -> "Segment":
         """
         Translate an Ocelot cell to a Cheetah `Segment`.
@@ -1661,7 +2024,10 @@ class Segment(Element):
         """
         from cheetah.converters.nocelot import ocelot2cheetah
 
-        converted = [ocelot2cheetah(element, warnings=warnings) for element in cell]
+        converted = [
+            ocelot2cheetah(element, warnings=warnings, device=device, dtype=dtype)
+            for element in cell
+        ]
         return cls(converted, name=name, **kwargs)
 
     @classmethod
@@ -1684,12 +2050,28 @@ class Segment(Element):
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return convert_bmad_lattice(bmad_lattice_file_path, environment_variables)
 
+    @classmethod
+    def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
+        """
+        Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
+        `Segment`.
+
+        NOTE: This format is specific to the ARES accelerator at DESY.
+
+        :param filepath: Path to the NX Tables file.
+        :return: Converted Cheetah `Segment`.
+        """
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+
+        return read_nx_tables(filepath)
+
     @property
     def is_skippable(self) -> bool:
         return all(element.is_skippable for element in self.elements)
 
     @property
-    def length(self) -> float:
+    def length(self) -> torch.Tensor:
         lengths = torch.stack(
             [element.length for element in self.elements if hasattr(element, "length")]
         )
@@ -1697,7 +2079,7 @@ class Segment(Element):
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
-            tm = torch.eye(7, dtype=torch.float32, device=self.device)
+            tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
                 tm = torch.matmul(element.transfer_map(energy), tm)
             return tm
@@ -1713,12 +2095,12 @@ class Segment(Element):
                 if not element.is_skippable:
                     todos.append(element)
                 elif not todos or not todos[-1].is_skippable:
-                    todos.append(Segment([element], device=self.device))
+                    todos.append(Segment([element]))
                 else:
                     todos[-1].elements.append(element)
 
             for todo in todos:
-                incoming = todo(incoming)
+                incoming = todo.track(incoming)
 
             return incoming
 
@@ -1901,6 +2283,5 @@ class Segment(Element):
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(elements={repr(self.elements)}, "
-            + f"name={repr(self.name)}, "
-            + f"device={repr(self.device)})"
+            + f"name={repr(self.name)})"
         )

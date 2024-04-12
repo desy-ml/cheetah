@@ -16,14 +16,14 @@ def test_dipole():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.1))
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
     lattice = ocelot.MagneticLattice([ocelot_bend])
@@ -31,7 +31,39 @@ def test_dipole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
+    )
+
+
+def test_dipole_with_float64():
+    """
+    Test that the tracking results through a Cheeath `Dipole` element match those
+    through an Oclet `Bend` element using float64 precision.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+    cheetah_dipole = cheetah.Dipole(
+        length=torch.tensor(0.1),
+        angle=torch.tensor(0.1),
+        dtype=torch.float64,
+    )
+    outgoing_beam = cheetah_dipole.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
+    lattice = ocelot.MagneticLattice([ocelot_bend])
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    assert np.allclose(
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
 
 
@@ -42,7 +74,7 @@ def test_dipole_with_fringe_field():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(
         length=torch.tensor(0.1),
@@ -54,7 +86,7 @@ def test_dipole_with_fringe_field():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_bend = ocelot.Bend(l=0.1, angle=0.1, fint=0.1, gap=0.2)
     lattice = ocelot.MagneticLattice([ocelot_bend])
@@ -62,7 +94,8 @@ def test_dipole_with_fringe_field():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
 
 
@@ -73,7 +106,7 @@ def test_aperture():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment(
         [
@@ -91,7 +124,7 @@ def test_aperture():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_cell = [ocelot.Aperture(xmax=2e-4, ymax=2e-4), ocelot.Drift(l=0.1)]
     lattice = ocelot.MagneticLattice([ocelot_cell])
@@ -109,7 +142,7 @@ def test_aperture_elliptical():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment(
         [
@@ -127,7 +160,7 @@ def test_aperture_elliptical():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_cell = [
         ocelot.Aperture(xmax=2e-4, ymax=2e-4, type="ellipt"),
@@ -148,14 +181,14 @@ def test_solenoid():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_solenoid = cheetah.Solenoid(length=torch.tensor(0.5), k=torch.tensor(5.0))
     outgoing_beam = cheetah_solenoid.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_solenoid = ocelot.Solenoid(l=0.5, k=5.0)
     lattice = ocelot.MagneticLattice([ocelot_solenoid])
@@ -163,7 +196,8 @@ def test_solenoid():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6], outgoing_p_array.rparticles.transpose()
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
 
 
@@ -183,34 +217,32 @@ def test_ares_ea():
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment.from_ocelot(cell)
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     lattice = ocelot.MagneticLattice(cell)
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
-    assert np.isclose(outgoing_beam.mu_x, outgoing_p_array.x().mean())
-    assert np.isclose(outgoing_beam.mu_xp, outgoing_p_array.px().mean())
-    assert np.isclose(outgoing_beam.mu_y, outgoing_p_array.y().mean())
-    assert np.isclose(outgoing_beam.mu_yp, outgoing_p_array.py().mean())
-    assert np.isclose(outgoing_beam.mu_s, outgoing_p_array.tau().mean(), atol=1e-7)
-    assert np.isclose(outgoing_beam.mu_p, outgoing_p_array.p().mean())
+    assert np.isclose(outgoing_beam.mu_x.cpu().numpy(), outgoing_p_array.x().mean())
+    assert np.isclose(outgoing_beam.mu_xp.cpu().numpy(), outgoing_p_array.px().mean())
+    assert np.isclose(outgoing_beam.mu_y.cpu().numpy(), outgoing_p_array.y().mean())
+    assert np.isclose(outgoing_beam.mu_yp.cpu().numpy(), outgoing_p_array.py().mean())
+    assert np.isclose(outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean())
+    assert np.isclose(outgoing_beam.mu_p.cpu().numpy(), outgoing_p_array.p().mean())
 
-    assert np.allclose(outgoing_beam.xs, outgoing_p_array.x())
-    assert np.allclose(outgoing_beam.xps, outgoing_p_array.px())
-    assert np.allclose(outgoing_beam.ys, outgoing_p_array.y())
-    assert np.allclose(outgoing_beam.yps, outgoing_p_array.py())
-    assert np.allclose(
-        outgoing_beam.ss, outgoing_p_array.tau(), atol=1e-7, rtol=1e-1
-    )  # TODO: Why do we need such large tolerances?
-    assert np.allclose(outgoing_beam.ps, outgoing_p_array.p())
+    assert np.allclose(outgoing_beam.xs.cpu().numpy(), outgoing_p_array.x())
+    assert np.allclose(outgoing_beam.xps.cpu().numpy(), outgoing_p_array.px())
+    assert np.allclose(outgoing_beam.ys.cpu().numpy(), outgoing_p_array.y())
+    assert np.allclose(outgoing_beam.yps.cpu().numpy(), outgoing_p_array.py())
+    assert np.allclose(outgoing_beam.ss.cpu().numpy(), outgoing_p_array.tau())
+    assert np.allclose(outgoing_beam.ps.cpu().numpy(), outgoing_p_array.p())
 
 
 def test_twiss_particle_beam():
@@ -221,28 +253,36 @@ def test_twiss_particle_beam():
     """
     # Cheetah
     particle_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     # Ocelot
     p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
     # Compare
-    assert np.isclose(particle_beam.emittance_x, ocelot_twiss.emit_x)
-    assert np.isclose(particle_beam.normalized_emittance_x, ocelot_twiss.emit_xn)
+    assert np.isclose(particle_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
     assert np.isclose(
-        particle_beam.beta_x, ocelot_twiss.beta_x, rtol=1e-4
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(particle_beam.alpha_x, ocelot_twiss.alpha_x, rtol=1e-4)
-    assert np.isclose(particle_beam.emittance_y, ocelot_twiss.emit_y)
-    assert np.isclose(particle_beam.normalized_emittance_y, ocelot_twiss.emit_yn)
+        particle_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
+    )
     assert np.isclose(
-        particle_beam.beta_y, ocelot_twiss.beta_y, rtol=1e-4
+        particle_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(particle_beam.alpha_y, ocelot_twiss.alpha_y, rtol=1e-4)
+    assert np.isclose(
+        particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+    )
+    assert np.isclose(particle_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
+    assert np.isclose(
+        particle_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
+    )
+    assert np.isclose(
+        particle_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
+    )  # TODO: Is tolerance okay?
+    assert np.isclose(
+        particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+    )
 
 
 def test_twiss_parameter_beam():
@@ -253,28 +293,36 @@ def test_twiss_parameter_beam():
     """
     # Cheetah
     parameter_beam = cheetah.ParameterBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     # Ocelot
     p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
     ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
     # Compare
-    assert np.isclose(parameter_beam.emittance_x, ocelot_twiss.emit_x)
-    assert np.isclose(parameter_beam.normalized_emittance_x, ocelot_twiss.emit_xn)
+    assert np.isclose(parameter_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
     assert np.isclose(
-        parameter_beam.beta_x, ocelot_twiss.beta_x, rtol=1e-4
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(parameter_beam.alpha_x, ocelot_twiss.alpha_x, rtol=1e-4)
-    assert np.isclose(parameter_beam.emittance_y, ocelot_twiss.emit_y)
-    assert np.isclose(parameter_beam.normalized_emittance_y, ocelot_twiss.emit_yn)
+        parameter_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
+    )
     assert np.isclose(
-        parameter_beam.beta_y, ocelot_twiss.beta_y, rtol=1e-4
+        parameter_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
     )  # TODO: Is tolerance okay?
-    assert np.isclose(parameter_beam.alpha_y, ocelot_twiss.alpha_y, rtol=1e-4)
+    assert np.isclose(
+        parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+    )
+    assert np.isclose(parameter_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
+    assert np.isclose(
+        parameter_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
+    )
+    assert np.isclose(
+        parameter_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
+    )  # TODO: Is tolerance okay?
+    assert np.isclose(
+        parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+    )
 
 
 def test_astra_import():
@@ -282,11 +330,13 @@ def test_astra_import():
     Test if the beam imported from Astra in Cheetah matches the beam imported from Astra
     in Ocelot.
     """
-    beam = cheetah.ParticleBeam.from_astra("benchmark/astra/ACHIP_EA1_2021.1351.001")
-    p_array = ocelot.astraBeam2particleArray("benchmark/astra/ACHIP_EA1_2021.1351.001")
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+    p_array = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
 
-    assert np.allclose(beam.particles[:, :6], p_array.rparticles.transpose())
-    assert np.isclose(beam.energy, (p_array.E * 1e9))
+    assert np.allclose(
+        beam.particles[:, :6].cpu().numpy(), p_array.rparticles.transpose()
+    )
+    assert np.isclose(beam.energy.cpu().numpy(), (p_array.E * 1e9))
 
 
 def test_quadrupole():
@@ -296,7 +346,7 @@ def test_quadrupole():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.23), k1=torch.tensor(5.0)
@@ -312,7 +362,7 @@ def test_quadrupole():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5.0)
     lattice = ocelot.MagneticLattice(
@@ -323,24 +373,11 @@ def test_quadrupole():
 
     # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
     )
 
 
@@ -351,7 +388,7 @@ def test_tilted_quadrupole():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.23), k1=torch.tensor(5.0), tilt=torch.tensor(0.79)
@@ -367,7 +404,7 @@ def test_tilted_quadrupole():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5.0, tilt=0.79)
     lattice = ocelot.MagneticLattice(
@@ -376,26 +413,12 @@ def test_tilted_quadrupole():
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0], outgoing_p_array.rparticles.transpose()[:, 0]
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
     )
 
 
@@ -406,9 +429,9 @@ def test_sbend():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(2e-5))
+    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor(0.1)),
@@ -420,9 +443,9 @@ def test_sbend():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_sbend = ocelot.SBend(l=0.1, angle=2e-5)
+    ocelot_sbend = ocelot.SBend(l=0.1, angle=0.2)
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_sbend, ocelot.Drift(l=0.1)]
     )
@@ -431,28 +454,12 @@ def test_sbend():
         lattice, deepcopy(incoming_p_array), navigator, print_progress=False
     )
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0],
-        outgoing_p_array.rparticles.transpose()[:, 0],
-        rtol=1e-3,
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
     )
 
 
@@ -463,9 +470,9 @@ def test_rbend():
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.RBend(length=torch.tensor(0.1), angle=torch.tensor(2e-5))
+    cheetah_dipole = cheetah.RBend(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor(0.1)),
@@ -477,9 +484,9 @@ def test_rbend():
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_rbend = ocelot.RBend(l=0.1, angle=2e-5)
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2)
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_rbend, ocelot.Drift(l=0.1)]
     )
@@ -488,28 +495,12 @@ def test_rbend():
         lattice, deepcopy(incoming_p_array), navigator, print_progress=False
     )
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0],
-        outgoing_p_array.rparticles.transpose()[:, 0],
-        rtol=1e-3,
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
     )
 
 
@@ -520,9 +511,9 @@ def test_convert_rbend():
     """
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001", print_params=False
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_rbend = ocelot.RBend(l=0.1, angle=2e-5, gap=0.05, fint=0.1, eid="rbend")
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2, gap=0.05, fint=0.1, eid="rbend")
     lattice = ocelot.MagneticLattice(
         [
             ocelot.Drift(l=0.1, eid="drfit_1"),
@@ -537,33 +528,54 @@ def test_convert_rbend():
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "benchmark/cheetah/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, 0],
-        outgoing_p_array.rparticles.transpose()[:, 0],
-        rtol=1e-3,
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 1], outgoing_p_array.rparticles.transpose()[:, 1]
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )
+
+
+def test_asymmetric_bend():
+    """Test the case that bend fringe fields are asymmetric."""
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
+    )
+    ocelot_bend = ocelot.Bend(
+        l=0.1, angle=0.2, gap=0.05, fint=0.1, fintx=0.2, eid="bend"
+    )
+    lattice = ocelot.MagneticLattice(
+        [
+            ocelot.Drift(l=0.1, eid="drfit_1"),
+            ocelot_bend,
+            ocelot.Drift(l=0.1, eid="drift_2"),
+        ]
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(
+        lattice, deepcopy(incoming_p_array), navigator, print_progress=False
+    )
+
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_segment = cheetah.Segment.from_ocelot(lattice.sequence)
+    outgoing_beam = cheetah_segment.track(incoming_beam)
+
+    assert np.allclose(
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 2], outgoing_p_array.rparticles.transpose()[:, 2]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 3], outgoing_p_array.rparticles.transpose()[:, 3]
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4],
-        outgoing_p_array.rparticles.transpose()[:, 4],
-        atol=1e-6,  # TODO: Is this tolerance already too large?
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 5], outgoing_p_array.rparticles.transpose()[:, 5]
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
     )
 
 
@@ -595,23 +607,6 @@ def test_cavity():
      - alpha_x = -1.0160687592932345
      - alpha_y = -1.0160687593664295
     """
-    # Cheetah
-    incoming_beam = cheetah.ParticleBeam.from_twiss(
-        beta_x=torch.tensor(5.91253677),
-        alpha_x=torch.tensor(3.55631308),
-        beta_y=torch.tensor(5.91253677),
-        alpha_y=torch.tensor(3.55631308),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
-    )
-    cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor(1.0377),
-        voltage=torch.tensor(0.01815975e9),
-        frequency=torch.tensor(1.3e9),
-        phase=torch.tensor(0.0),
-    )
-    outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Ocelot
     tws = ocelot.Twiss()
@@ -625,7 +620,7 @@ def test_cavity():
     tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
     tws.E = 6e-3
 
-    p_array = ocelot.generate_parray(tws=tws)
+    p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
     cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
     lattice = ocelot.MagneticLattice(cell)
@@ -634,8 +629,36 @@ def test_cavity():
     _, outgoing_parray = ocelot.track(lattice, deepcopy(p_array), navigator)
     derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
 
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_ocelot(
+        parray=p_array, dtype=torch.float64
+    )
+    cheetah_cavity = cheetah.Cavity(
+        length=1.0377,
+        voltage=0.01815975e9,
+        frequency=1.3e9,
+        phase=0.0,
+        dtype=torch.float64,
+    )
+    outgoing_beam = cheetah_cavity.track(incoming_beam)
+
     # Compare
-    assert np.isclose(outgoing_beam.beta_x, derived_twiss.beta_x, rtol=1e-2)
-    assert np.isclose(outgoing_beam.alpha_x, derived_twiss.alpha_x, rtol=1e-2)
-    assert np.isclose(outgoing_beam.beta_y, derived_twiss.beta_y, rtol=1e-2)
-    assert np.isclose(outgoing_beam.alpha_y, derived_twiss.alpha_y, rtol=1e-2)
+    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
+    assert np.isclose(
+        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=2e-5
+    )
+    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
+    assert np.isclose(
+        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=2e-5
+    )
+    assert np.isclose(
+        outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 5].cpu().numpy(),
+        outgoing_parray.rparticles.transpose()[:, 5],
+    )
+    assert np.allclose(
+        outgoing_beam.particles[:, 4].cpu().numpy(),
+        outgoing_parray.rparticles.transpose()[:, 4],
+    )
