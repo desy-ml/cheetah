@@ -1,33 +1,26 @@
 """Utility functions for creating transfer maps for the elements."""
 
-from typing import Optional, Union
+from typing import Optional
 
 import torch
 from scipy import constants
 
 REST_ENERGY = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge
-)  # electron mass
+    constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
+)  # Electron mass
 
 
-def rotation_matrix(
-    angle: torch.Tensor, device: Union[str, torch.device] = "auto"
-) -> torch.Tensor:
+def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     """Rotate the transfer map in x-y plane
 
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
         dipole.
-    :param device: Device used for tracking, by default "auto".
     :return: Rotation matrix to be multiplied to the element's transfer matrix.
     """
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
     cs = torch.cos(angle)
     sn = torch.sin(angle)
 
-    tm = torch.eye(7, dtype=torch.float32, device=device)
+    tm = torch.eye(7, dtype=angle.dtype, device=angle.device)
     tm[0, 0] = cs
     tm[0, 2] = sn
     tm[1, 1] = cs
@@ -46,7 +39,6 @@ def base_rmatrix(
     hx: torch.Tensor,
     tilt: Optional[torch.Tensor] = None,
     energy: Optional[torch.Tensor] = None,
-    device: Union[str, torch.device] = "auto",
 ) -> torch.Tensor:
     """
     Create a universal transfer matrix for a beamline element.
@@ -56,27 +48,31 @@ def base_rmatrix(
     :param hx: Curvature (1/radius) of the element in 1/m**2.
     :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
-    :param device: Device where the transfer matrix is created. If "auto", the device
-        is selected automatically.
     :return: Transfer matrix for the element.
     """
+    device = length.device
+    dtype = length.dtype
 
-    tilt = tilt if tilt is not None else torch.tensor(0.0)
-    energy = energy if energy is not None else torch.tensor(0.0)
+    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    energy = (
+        energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    )
 
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    gamma = energy / REST_ENERGY
-    igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+    gamma = energy / REST_ENERGY.to(device=device, dtype=dtype)
+    igamma2 = (
+        1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=device, dtype=dtype)
+    )
 
     beta = torch.sqrt(1 - igamma2)
 
     if k1 == 0:
-        k1 = k1 + torch.tensor(1e-10, device=device)  # Avoid division by zero
+        k1 = k1 + torch.tensor(
+            1e-12, device=device, dtype=dtype
+        )  # Avoid division by zero
     kx2 = k1 + hx**2
     ky2 = -k1
-    kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0)))
-    ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0)))
+    kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0, device=device, dtype=dtype)))
+    ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
     sy = (torch.sin(ky * length) / ky).real if ky != 0 else length
@@ -85,9 +81,9 @@ def base_rmatrix(
     dx = hx / kx2 * (1.0 - cx)
     r56 = hx**2 * (length - sx) / kx2 / beta**2
 
-    r56 -= length / beta**2 * igamma2
+    r56 = r56 - length / beta**2 * igamma2
 
-    R = torch.eye(7, dtype=torch.float32, device=device)
+    R = torch.eye(7, dtype=dtype, device=device)
     R[0, 0] = cx
     R[0, 1] = sx
     R[0, 5] = dx / beta
@@ -109,14 +105,17 @@ def base_rmatrix(
 
 
 def misalignment_matrix(
-    misalignment: torch.Tensor, device: torch.device
+    misalignment: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Shift the beam for tracking beam through misaligned elements"""
-    R_exit = torch.eye(7, dtype=torch.float32, device=device)
+    device = misalignment.device
+    dtype = misalignment.dtype
+
+    R_exit = torch.eye(7, device=device, dtype=dtype)
     R_exit[0, 6] = misalignment[0]
     R_exit[2, 6] = misalignment[1]
 
-    R_entry = torch.eye(7, dtype=torch.float32, device=device)
+    R_entry = torch.eye(7, device=device, dtype=dtype)
     R_entry[0, 6] = -misalignment[0]
     R_entry[2, 6] = -misalignment[1]
 

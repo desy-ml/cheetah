@@ -3,7 +3,9 @@ import torch
 import cheetah
 
 
-def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
+def ocelot2cheetah(
+    element, warnings: bool = True, device=None, dtype=torch.float32
+) -> "cheetah.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
@@ -29,31 +31,56 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
 
     if isinstance(element, ocelot.Drift):
         return cheetah.Drift(
-            length=torch.tensor(element.l, dtype=torch.float32), name=element.id
+            length=torch.tensor(element.l, dtype=torch.float32),
+            name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Quadrupole):
         return cheetah.Quadrupole(
             length=torch.tensor(element.l, dtype=torch.float32),
             k1=torch.tensor(element.k1, dtype=torch.float32),
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Solenoid):
         return cheetah.Solenoid(
             length=torch.tensor(element.l, dtype=torch.float32),
             k=torch.tensor(element.k, dtype=torch.float32),
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Hcor):
         return cheetah.HorizontalCorrector(
             length=torch.tensor(element.l, dtype=torch.float32),
             angle=torch.tensor(element.angle, dtype=torch.float32),
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Vcor):
         return cheetah.VerticalCorrector(
             length=torch.tensor(element.l, dtype=torch.float32),
             angle=torch.tensor(element.angle, dtype=torch.float32),
             name=element.id,
+            device=device,
+            dtype=dtype,
+        )
+    elif isinstance(element, ocelot.Bend):
+        return cheetah.Dipole(
+            length=torch.tensor(element.l, dtype=torch.float32),
+            angle=torch.tensor(element.angle, dtype=torch.float32),
+            e1=torch.tensor(element.e1, dtype=torch.float32),
+            e2=torch.tensor(element.e2, dtype=torch.float32),
+            tilt=torch.tensor(element.tilt, dtype=torch.float32),
+            fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
+            fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
+            gap=torch.tensor(element.gap, dtype=torch.float32),
+            name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.SBend):
         return cheetah.Dipole(
@@ -66,6 +93,8 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
             gap=torch.tensor(element.gap, dtype=torch.float32),
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.RBend):
         return cheetah.RBend(
@@ -78,6 +107,8 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
             gap=torch.tensor(element.gap, dtype=torch.float32),
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Cavity):
         return cheetah.Cavity(
@@ -85,6 +116,9 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             voltage=torch.tensor(element.v, dtype=torch.float32) * 1e9,
             frequency=torch.tensor(element.freq, dtype=torch.float32),
             phase=torch.tensor(element.phi, dtype=torch.float32),
+            name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.TDCavity):
         # TODO: Better replacement at some point?
@@ -93,6 +127,9 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             voltage=torch.tensor(element.v, dtype=torch.float32) * 1e9,
             frequency=torch.tensor(element.freq, dtype=torch.float32),
             phase=torch.tensor(element.phi, dtype=torch.float32),
+            name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
         # NOTE This pattern is very specific to ARES and will need a more complex
@@ -106,6 +143,8 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             resolution=torch.tensor([2448, 2040]),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
         return cheetah.BPM(name=element.id)
@@ -115,7 +154,10 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
         return cheetah.Marker(name=element.id)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
-            torch.tensor(element.l, dtype=torch.float32), name=element.id
+            torch.tensor(element.l, dtype=torch.float32),
+            name=element.id,
+            device=device,
+            dtype=dtype,
         )
     elif isinstance(element, ocelot.Aperture):
         shape_translation = {"rect": "rectangular", "elip": "elliptical"}
@@ -125,6 +167,8 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
             shape=shape_translation[element.type],
             is_active=True,
             name=element.id,
+            device=device,
+            dtype=dtype,
         )
     else:
         if warnings:
@@ -133,7 +177,10 @@ def ocelot2cheetah(element, warnings: bool = True) -> "cheetah.Element":
                 " replacing with drift section."
             )
         return cheetah.Drift(
-            length=torch.tensor(element.l, dtype=torch.float32), name=element.id
+            length=torch.tensor(element.l, dtype=torch.float32),
+            name=element.id,
+            device=device,
+            dtype=dtype,
         )
 
 
