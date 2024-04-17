@@ -9,9 +9,9 @@ def test_diverging_parameter_beam():
     Test that that a parameter beam with sigma_xp > 0 and sigma_yp > 0 increases in
     size in both dimensions when travelling through a drift section.
     """
-    drift = cheetah.Drift(length=torch.tensor(1.0))
+    drift = cheetah.Drift(length=torch.tensor([1.0]))
     incoming_beam = cheetah.ParameterBeam.from_parameters(
-        sigma_xp=torch.tensor(2e-7), sigma_yp=torch.tensor(2e-7)
+        sigma_xp=torch.tensor([2e-7]), sigma_yp=torch.tensor([2e-7])
     )
     outgoing_beam = drift.track(incoming_beam)
 
@@ -25,11 +25,11 @@ def test_diverging_particle_beam():
     Test that that a particle beam with sigma_xp > 0 and sigma_yp > 0 increases in
     size in both dimensions when travelling through a drift section.
     """
-    drift = cheetah.Drift(length=torch.tensor(1.0))
+    drift = cheetah.Drift(length=torch.tensor([1.0]))
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1000),
-        sigma_xp=torch.tensor(2e-7),
-        sigma_yp=torch.tensor(2e-7),
+        sigma_xp=torch.tensor([2e-7]),
+        sigma_yp=torch.tensor([2e-7]),
     )
     outgoing_beam = drift.track(incoming_beam)
 
@@ -52,7 +52,7 @@ def test_device_like_torch_module():
     if not torch.cuda.is_available():
         return
 
-    element = cheetah.Drift(length=torch.tensor(0.2), device="cuda")
+    element = cheetah.Drift(length=torch.tensor([0.2]), device="cuda")
 
     assert element.length.device.type == "cuda"
 
