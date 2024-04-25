@@ -20,8 +20,9 @@ from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator
 
+c = torch.tensor(constants.speed_of_light)
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
+elementary_charge= torch.tensor(constants.elementary_charge)
 rest_energy = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
@@ -30,6 +31,10 @@ rest_energy = torch.tensor(
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
+electron_mass = torch.tensor(
+    physical_constants["electron mass"][0]
+)
+
 epsilon_0 = torch.tensor(constants.epsilon_0)
 
 class Element(ABC, nn.Module):
@@ -302,19 +307,21 @@ class Drift(Element):
 class SpaceChargeKick(Element):
     """
     Simulates space charge effects on a beam.
-    :param grid_points: Number of grid points in each dimension.
-    :param grid_dimensions: Dimensions of the grid in meters.
+    :param grid_precision: Number of grid points in each dimension.
+    :param grid_dimensions: Dimensions of the grid as multiples of sigma of the beam.
     :param name: Unique identifier of the element.
     """
 
     def __init__(
         self,
-        nx: Union[torch.Tensor, nn.Parameter,int],
-        ny: Union[torch.Tensor, nn.Parameter,int],
-        ns: Union[torch.Tensor, nn.Parameter,int],
-        dx: Union[torch.Tensor, nn.Parameter],
-        dy: Union[torch.Tensor, nn.Parameter],
-        ds: Union[torch.Tensor, nn.Parameter],
+        length: Union[torch.Tensor, nn.Parameter],
+        nx: Union[torch.Tensor, nn.Parameter,int]=32,
+        ny: Union[torch.Tensor, nn.Parameter,int]=32,
+        ns: Union[torch.Tensor, nn.Parameter,int]=32,
+        dx: Union[torch.Tensor, nn.Parameter]=3,
+        dy: Union[torch.Tensor, nn.Parameter]=3,
+        ds: Union[torch.Tensor, nn.Parameter]=3,
+        
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -322,10 +329,11 @@ class SpaceChargeKick(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
+        self.length = torch.as_tensor(length, **factory_kwargs)
         self.nx = int(torch.as_tensor(nx, **factory_kwargs))
         self.ny = int(torch.as_tensor(ny, **factory_kwargs))
         self.ns = int(torch.as_tensor(ns, **factory_kwargs))
-        self.dx = torch.as_tensor(dx, **factory_kwargs)     #in meters
+        self.dx = torch.as_tensor(dx, **factory_kwargs) # in multiples of sigma
         self.dy = torch.as_tensor(dy, **factory_kwargs)
         self.ds = torch.as_tensor(ds, **factory_kwargs)
 
@@ -334,29 +342,49 @@ class SpaceChargeKick(Element):
         return (int(self.nx), int(self.ny), int(self.ns))  
     
 
-    def grid_dimensions(self) -> torch.Tensor:
-        return torch.tensor([self.dx, self.dy, self.ds], device=self.dx.device)
+    def grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
+        if beam.particles.shape[0] < 2:
+            sigma_x = torch.tensor(175e-9)
+            sigma_y = torch.tensor(175e-9)
+            sigma_s = torch.tensor(175e-9)
+        else:
+            sigma_x = torch.std(beam.particles[:, 0])
+            sigma_y = torch.std(beam.particles[:, 2])
+            sigma_s = torch.std(beam.particles[:, 4])
+        return torch.tensor([self.dx*sigma_x, self.dy*sigma_y, self.ds*sigma_s], device=self.dx.device)
     
+    def delta_t(self,beam: ParticleBeam) -> torch.Tensor:
+        return self.length / (c*self.betaref(beam))
 
-    def cell_size(self) -> torch.Tensor:
+    def cell_size(self,beam: ParticleBeam) -> torch.Tensor:
         grid_shape = self.grid_shape()
-        grid_dimensions = self.grid_dimensions()
+        grid_dimensions = self.grid_dimensions(beam)
         return 2*grid_dimensions / torch.tensor(grid_shape)
     
+    def gammaref(self,beam: ParticleBeam) -> torch.Tensor:
+        return beam.energy / rest_energy
+    
+    def betaref(self,beam: ParticleBeam) -> torch.Tensor:
+        gamma = self.gammaref(beam)
+        if gamma == 0:
+            return torch.tensor(1.0)
+        return torch.sqrt(1 - 1 / gamma**2)
     
     def space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:
         """
-        Deposition of the beam on the grid using fully vectorized computation.
+        Deposition of the beam on the grid.
         """
         grid_shape = self.grid_shape()
-        grid_dimensions = self.grid_dimensions()
-        cell_size = self.cell_size()
+        grid_dimensions = self.grid_dimensions(beam)
+        cell_size = self.cell_size(beam)
+        betaref = self.betaref(beam)
 
         # Initialize the charge density grid
         charge = torch.zeros(grid_shape, dtype=torch.float32)
 
         # Get particle positions and charges
         particle_pos = beam.particles[:, [0, 2, 4]]
+        particle_pos[:,2] = -particle_pos[:,2]*betaref #modify with the tau transformation
         particle_charge = beam.particle_charges
 
         # Compute the normalized positions of the particles within the grid
@@ -416,8 +444,9 @@ class SpaceChargeKick(Element):
         return cyclic_charge_density    
     
     def IGF(self, beam: ParticleBeam) -> torch.Tensor:
-        gamma = beam.energy / rest_energy
-        dx, dy, ds = self.cell_size()[0], self.cell_size()[1], self.cell_size()[2] * gamma  # ds is scaled by gamma
+        gamma = self.gammaref(beam)
+        cell_size = self.cell_size(beam)
+        dx, dy, ds = cell_size[0], cell_size[1], cell_size[2] * gamma  # ds is scaled by gamma
         nx, ny, ns = self.grid_shape()
         
         # Create coordinate grids
@@ -458,52 +487,157 @@ class SpaceChargeKick(Element):
         """
         Solves the Poisson equation for the given charge density.
         """
-        # Compute the charge density
         charge_density = self.cyclic_rho(beam)
-
-        # Compute the Fourier transform of the charge density
         charge_density_ft = torch.fft.fftn(charge_density)
-
-        # Compute the integrated Green's function
         integrated_green_function = self.IGF(beam)
-
-        # Compute the integrated Green's function's Fourier transform
         integrated_green_function_ft = torch.fft.fftn(integrated_green_function)
-
-        # Compute the Fourier transform of the potential
         potential_ft = charge_density_ft * integrated_green_function_ft
-
-        # Compute the potential
-        potential = (1/4*torch.pi*epsilon_0)*torch.fft.ifftn(potential_ft).real
+        potential = (1/(4*torch.pi*epsilon_0))*torch.fft.ifftn(potential_ft).real
 
         # Return the physical potential
         return potential[:charge_density.shape[0]//2, :charge_density.shape[1]//2, :charge_density.shape[2]//2]
 
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-    # TODO: Implement splitting for cavity properly, for now just returns the
-    # element itself
-        return [self]
-
-
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
-
-        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+    def E_plus_vB_field(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Compute the force field from the potential and the particle positions and speeds.
+        """
+        gamma = self.gammaref(beam)
         igamma2 = (
             1 / gamma**2
             if gamma != 0
-            else torch.tensor(0.0, device=device, dtype=dtype)
+            else torch.tensor(0.0)
         )
-        beta = torch.sqrt(1 - igamma2)
+        potential = self.solve_poisson_equation(beam)
+        cell_size = self.cell_size(beam)
+        potential = potential.unsqueeze(0).unsqueeze(0)
+        
+        # Now apply padding
+        phi_padded = torch.nn.functional.pad(potential, (1, 1, 1, 1, 1, 1), mode='replicate')
+        phi_padded = phi_padded.squeeze(0).squeeze(0)
+        # Compute derivatives using central differences
+        grad_x = (phi_padded[2:, :, :] - phi_padded[:-2, :, :]) / (2 * cell_size[0])
+        grad_y = (phi_padded[:, 2:, :] - phi_padded[:, :-2, :]) / (2 * cell_size[1])
+        grad_z = (phi_padded[:, :, 2:] - phi_padded[:, :, :-2]) / (2 * cell_size[2])
+        
+        # Crop out the padding to maintain the original shape
+        grad_x = -igamma2*grad_x[:, 1:-1, 1:-1]
+        grad_y = -igamma2*grad_y[1:-1, :, 1:-1]
+        grad_z = -igamma2*grad_z[1:-1, 1:-1, :]
 
-        tm = torch.eye(7, device=device, dtype=dtype)
-        tm[0, 1] = self.length
-        tm[2, 3] = self.length
-        tm[4, 5] = -self.length / beta**2 * igamma2
+        return grad_x, grad_y, grad_z
 
-        return tm
+    def cheetah_to_moments(self, beam: ParticleBeam) -> torch.Tensor:
+        N = beam.particles.shape[0]
+        moments = beam.particles
+        gammaref = self.gammaref(beam)
+        betaref = self.betaref(beam)
+        p0 = gammaref*betaref*electron_mass*c
+        gamma = gammaref*(torch.ones(N)+beam.particles[:,5]*betaref)
+        gamma = torch.clamp(gamma, min=1.0)
+        beta = torch.sqrt(1 - 1 / gamma**2)
+        p = gamma*electron_mass*beta*c
+        moments[:,1] = p0*moments[:,1]
+        moments[:,3] = p0*moments[:,3]
+        moments[:,5] = torch.sqrt(p**2 - moments[:,1]**2 - moments[:,3]**2)
+        return moments
+
+    def moments_to_cheetah(self, moments: torch.Tensor, beam: ParticleBeam) -> torch.Tensor:
+        N = moments.shape[0]
+        gammaref = self.gammaref(beam)
+        betaref = self.betaref(beam)
+        p0 = gammaref*betaref*electron_mass*c
+        p = torch.sqrt(moments[:,1]**2 + moments[:,3]**2 + moments[:,5]**2)
+        gamma = torch.sqrt(1 + (p / (electron_mass*c))**2)
+        moments[:,1] = moments[:,1] / p0
+        moments[:,3] = moments[:,3] / p0
+        moments[:,5] = (gamma-gammaref*torch.ones(N))/(betaref*gammaref)
+        return moments
+
+    def read_forces(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Compute the momentum kick from the force field.
+        """
+        grad_x, grad_y, grad_z = self.E_plus_vB_field(beam)
+        grid_shape = self.grid_shape()
+        grid_dimensions = self.grid_dimensions(beam)
+        cell_size = self.cell_size(beam)
+
+        particle_pos = beam.particles[:, [0, 2, 4]] 
+        particle_charge = beam.particle_charges
+
+        normalized_pos = (particle_pos + grid_dimensions) / cell_size
+
+        # Find the indices of the lower corners of the cells containing the particles
+        cell_indices = torch.floor(normalized_pos).type(torch.long)
+
+        # Calculate the weights for all surrounding cells
+        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+        surrounding_indices = cell_indices.unsqueeze(1) + offsets  # Shape: (n_particles, 8, 3)
+        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  # Shape: (n_particles, 8, 3)
+        cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
+
+        # Extract forces from the grids
+        def get_force_values(force_grid):
+            idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T
+            valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
+                        (idx_y >= 0) & (idx_y < grid_shape[1]) & \
+                        (idx_s >= 0) & (idx_s < grid_shape[2])
+            
+            valid_indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]], dim=0)
+            force_values = force_grid[tuple(valid_indices)]
+            return force_values, valid_mask
+
+        Fx_values, valid_mask_x = get_force_values(grad_x)
+        Fy_values, valid_mask_y = get_force_values(grad_y)
+        Fz_values, valid_mask_z = get_force_values(grad_z)
+
+        # Compute interpolated forces
+        interpolated_forces = torch.zeros((particle_pos.shape[0], 3), device=grad_x.device)
+        values_x = cell_weights.view(-1)[valid_mask_x] * Fx_values * particle_charge.repeat_interleave(8)[valid_mask_x]
+        values_y = cell_weights.view(-1)[valid_mask_y] * Fy_values * particle_charge.repeat_interleave(8)[valid_mask_y]
+        values_z = cell_weights.view(-1)[valid_mask_z] * Fz_values * particle_charge.repeat_interleave(8)[valid_mask_z]
+        
+        indices = torch.arange(particle_pos.shape[0]).repeat_interleave(8)
+        interpolated_forces.index_add_(0, indices[valid_mask_x], torch.stack([values_x, torch.zeros_like(values_x), torch.zeros_like(values_x)], dim=1))
+        interpolated_forces.index_add_(0, indices[valid_mask_y], torch.stack([torch.zeros_like(values_y), values_y, torch.zeros_like(values_y)], dim=1))
+        interpolated_forces.index_add_(0, indices[valid_mask_z], torch.stack([torch.zeros_like(values_z), torch.zeros_like(values_z), values_z], dim=1))
+
+        return interpolated_forces
+    
+
+    def track(self, incoming: ParticleBeam) -> ParticleBeam:
+        """
+        Track particles through the element. The input must be a `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        if incoming is Beam.empty:
+            return incoming
+        elif isinstance(incoming, ParticleBeam):
+            forces = self.read_forces(incoming)
+            particles = self.cheetah_to_moments(incoming)
+            particles[:,1] += forces[:,0]*self.delta_t(incoming)
+            particles[:,3] += forces[:,1]*self.delta_t(incoming)
+            particles[:,5] += forces[:,2]*self.delta_t(incoming)
+            particles = self.moments_to_cheetah(particles, incoming)
+            return ParticleBeam(
+                particles,
+                incoming.energy,
+                particle_charges=incoming.particle_charges,
+                device=particles.device,
+                dtype=particles.dtype,
+            )
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+    # TODO: Implement splitting for SpaceCharge properly, for now just returns the
+    # element itself
+        return [self]
+
 
     @property
     def is_skippable(self) -> bool:
