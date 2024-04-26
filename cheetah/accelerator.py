@@ -641,7 +641,7 @@ class SpaceChargeKick(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return True
+        return False
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         pass
@@ -2186,7 +2186,7 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name)
-
+    
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: Optional[list[str]] = None
     ) -> "Segment":
@@ -2427,7 +2427,7 @@ class Segment(Element):
     @property
     def length(self) -> torch.Tensor:
         lengths = torch.stack(
-            [element.length for element in self.elements if hasattr(element, "length")]
+            [element.length for element in self.elements if hasattr(element, "length") and type(element) is not SpaceChargeKick]
         )
         return torch.sum(lengths)
 
@@ -2445,14 +2445,14 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
-            for element in self.elements:
+            for element in self.elements:               
                 if not element.is_skippable:
                     todos.append(element)
                 elif not todos or not todos[-1].is_skippable:
                     todos.append(Segment([element]))
                 else:
                     todos[-1].elements.append(element)
-
+            print(todos)
             for todo in todos:
                 incoming = todo.track(incoming)
 
@@ -2467,7 +2467,7 @@ class Segment(Element):
 
     def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
         element_lengths = [
-            element.length if hasattr(element, "length") else 0.0
+            element.length if hasattr(element, "length") and type(element) is not SpaceChargeKick else 0.0
             for element in self.elements
         ]
         element_ss = [0] + [
@@ -2507,7 +2507,7 @@ class Segment(Element):
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
         split_lengths = [
-            split.length if hasattr(split, "length") else 0.0 for split in splits
+            split.length if hasattr(split, "length") and type(split) is not SpaceChargeKick else 0.0 for split in splits
         ]
         ss = [0] + [sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)]
 
