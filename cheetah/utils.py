@@ -22,7 +22,7 @@ def generate_3d_uniform_ellipsoid(
 ) -> torch.Tensor:
     """Generate the marcroparticles filling a 3D uniform ellipsoid.
     Note: Now we only consider non-batched version,
-    e.g. num_particles, r_x, r_y, r_z are all length-1 tensors.
+    e.g. num_particles, radius_x, radius_y, radius_s are all length-1 tensors.
 
     :param num_particles: The number of macroparticles to be generated.
     :param radius_x: The radius of the ellipsoid along the x-axis in meters.
@@ -42,10 +42,9 @@ def generate_3d_uniform_ellipsoid(
         Ys = (torch.rand(num_particles) - 0.5) * 2 * radius_y
         Zs = (torch.rand(num_particles) - 0.5) * 2 * radius_s
 
-        # Rejection sampling to get the points inside the ellipsoid.
         indices = (
             Xs**2 / radius_x**2 + Ys**2 / radius_y**2 + Zs**2 / radius_s**2
-        ) <= 1
+        ) <= 1  # Rejection sampling to get the points inside the ellipsoid.
 
         num_new_generated = Xs[indices].shape[0]
         num_to_add = min(num_new_generated, int(num_particles - num_generated))
