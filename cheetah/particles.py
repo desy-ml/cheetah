@@ -1020,6 +1020,143 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
+    def uniform_3d_ellispoid(
+        cls,
+        num_particles: Optional[torch.Tensor] = None,
+        radius_x: Optional[torch.Tensor] = None,
+        radius_y: Optional[torch.Tensor] = None,
+        radius_s: Optional[torch.Tensor] = None,
+        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_yp: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        energy: Optional[torch.Tensor] = None,
+        total_charge: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=torch.float32,
+    ):
+        """Generate a particle beam with spatially uniformly distributed particles
+        inside an ellipsoid, i.e. waterbag distribution.
+        Note that
+
+            - the generated particles do not have correlation in the momentum
+            directions, by default a cold beam with no divergence is generated.
+            - for batched generation, parameters that are not None
+            must have the same shape.
+
+        :param num_particles: Number of particles to generate.
+        :param radius_x: Radius of the ellipsoid in x direction in meters.
+        :param radius_y: Radius of the ellipsoid in y direction in meters.
+        :param radius_s: Radius of the ellipsoid in s (longitudinal) direction
+        in meters.
+        :param sigma_xp: Sigma of the particle distribution in x' direction in rad,
+        default is 0.
+        :param sigma_yp: Sigma of the particle distribution in y' direction in rad,
+        default is 0.
+        :param sigma_p: Sigma of the particle distribution in p, dimensionless.
+        :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
+        :param device: Device to move the beam's particle array to.
+        :param dtype: Data type of the generated particles.
+
+        :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
+        """
+
+        def generate_uniform_3d_ellispoid_particles(
+            num_particles: torch.Tensor,
+            radius_x: torch.Tensor,
+            radius_y: torch.Tensor,
+            radius_s: torch.Tensor,
+        ) -> torch.Tensor:
+            """Helper function to generate uniform 3D ellipsoid particles
+            in a non-batched manner
+            """
+            particles = torch.zeros((1, num_particles, 7))
+            particles[0, :, 6] = 1
+
+            num_generated = 0
+
+            while num_generated < num_particles:
+                Xs = (torch.rand(num_particles) - 0.5) * 2 * radius_x
+                Ys = (torch.rand(num_particles) - 0.5) * 2 * radius_y
+                Zs = (torch.rand(num_particles) - 0.5) * 2 * radius_s
+
+                indices = (
+                    Xs**2 / radius_x**2 + Ys**2 / radius_y**2 + Zs**2 / radius_s**2
+                ) <= 1  # Rejection sampling to get the points inside the ellipsoid.
+
+                num_new_generated = Xs[indices].shape[0]
+                num_to_add = min(num_new_generated, int(num_particles - num_generated))
+
+                particles[0, num_generated : num_generated + num_to_add, 0] = Xs[
+                    indices
+                ][:num_to_add]
+                particles[0, num_generated : num_generated + num_to_add, 2] = Ys[
+                    indices
+                ][:num_to_add]
+                particles[0, num_generated : num_generated + num_to_add, 4] = Zs[
+                    indices
+                ][:num_to_add]
+                num_generated += num_to_add
+
+            return particles
+
+        # Figure out if arguments were passed, figure out their shape
+        not_nones = [
+            argument
+            for argument in [
+                radius_x,
+                radius_y,
+                radius_s,
+                sigma_xp,
+                sigma_yp,
+                sigma_p,
+                energy,
+                total_charge,
+            ]
+            if argument is not None
+        ]
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
+        if len(not_nones) > 1:
+            assert all(
+                argument.shape == shape for argument in not_nones
+            ), "Arguments must have the same shape."
+
+        # Set default values without function call in function signature
+        num_particles = (
+            num_particles if num_particles is not None else torch.tensor(1_000_000)
+        )
+        radius_x = radius_x if radius_x is not None else torch.full(shape, 1e-3)
+        radius_y = radius_y if radius_y is not None else torch.full(shape, 1e-3)
+        radius_s = radius_s if radius_s is not None else torch.full(shape, 1e-3)
+
+        # Generate a uncorrelated Gaussian Beam
+        parray = cls.from_parameters(
+            num_particles=num_particles,
+            mu_xp=torch.full(shape, 0.0),
+            mu_yp=torch.full(shape, 0.0),
+            sigma_xp=sigma_xp,
+            sigma_yp=sigma_yp,
+            sigma_p=sigma_p,
+            energy=energy,
+            total_charge=total_charge,
+            device=device,
+            dtype=dtype,
+        )
+
+        # Replace the with uniformly distributed particles inside the ellipsoid
+        particles = parray.particles.view(-1, num_particles, 7)
+        for i, (r_x, r_y, r_s) in enumerate(
+            zip(radius_x.view(-1), radius_y.view(-1), radius_s.view(-1))
+        ):
+            particles[i] = generate_uniform_3d_ellispoid_particles(
+                num_particles, r_x, r_y, r_s
+            )[0]
+        parray.particles = particles.view(*shape, num_particles, 7)
+        parray.particles.to(device=device, dtype=dtype)
+
+        return parray
+
+    @classmethod
     def make_linspaced(
         cls,
         num_particles: Optional[torch.Tensor] = None,
