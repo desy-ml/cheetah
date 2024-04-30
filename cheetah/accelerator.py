@@ -20,7 +20,9 @@ from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator
 
+#Constants
 c = torch.tensor(constants.speed_of_light)
+J_to_eV = torch.tensor(physical_constants["electron volt-joule relationship"][0])
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 elementary_charge= torch.tensor(constants.elementary_charge)
 rest_energy = torch.tensor(
@@ -28,6 +30,7 @@ rest_energy = torch.tensor(
     * constants.speed_of_light**2
     / constants.elementary_charge  # electron mass
 )
+electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
@@ -377,14 +380,12 @@ class SpaceChargeKick(Element):
         grid_shape = self.grid_shape()
         grid_dimensions = self.grid_dimensions(beam)
         cell_size = self.cell_size(beam)
-        betaref = self.betaref(beam)
 
         # Initialize the charge density grid
         charge = torch.zeros(grid_shape, dtype=torch.float32)
 
         # Get particle positions and charges
         particle_pos = beam.particles[:, [0, 2, 4]]
-        particle_pos[:,2] = -particle_pos[:,2]*betaref #modify with the tau transformation
         particle_charge = beam.particle_charges
 
         # Compute the normalized positions of the particles within the grid
@@ -534,11 +535,11 @@ class SpaceChargeKick(Element):
         betaref = self.betaref(beam)
         p0 = gammaref*betaref*electron_mass*c
         gamma = gammaref*(torch.ones(N)+beam.particles[:,5]*betaref)
-        gamma = torch.clamp(gamma, min=1.0)
         beta = torch.sqrt(1 - 1 / gamma**2)
         p = gamma*electron_mass*beta*c
         moments[:,1] = p0*moments[:,1]
         moments[:,3] = p0*moments[:,3]
+        moments[:,4] = -betaref*moments[:,4]
         moments[:,5] = torch.sqrt(p**2 - moments[:,1]**2 - moments[:,3]**2)
         return moments
 
@@ -551,6 +552,7 @@ class SpaceChargeKick(Element):
         gamma = torch.sqrt(1 + (p / (electron_mass*c))**2)
         moments[:,1] = moments[:,1] / p0
         moments[:,3] = moments[:,3] / p0
+        moments[:,4] = -moments[:,4] / betaref
         moments[:,5] = (gamma-gammaref*torch.ones(N))/(betaref*gammaref)
         return moments
 
@@ -594,9 +596,11 @@ class SpaceChargeKick(Element):
 
         # Compute interpolated forces
         interpolated_forces = torch.zeros((particle_pos.shape[0], 3), device=grad_x.device)
-        values_x = cell_weights.view(-1)[valid_mask_x] * Fx_values * particle_charge.repeat_interleave(8)[valid_mask_x]
-        values_y = cell_weights.view(-1)[valid_mask_y] * Fy_values * particle_charge.repeat_interleave(8)[valid_mask_y]
-        values_z = cell_weights.view(-1)[valid_mask_z] * Fz_values * particle_charge.repeat_interleave(8)[valid_mask_z]
+        values_x = cell_weights.view(-1)[valid_mask_x] * Fx_values * elementary_charge
+        values_y = cell_weights.view(-1)[valid_mask_y] * Fy_values * elementary_charge
+        values_z = cell_weights.view(-1)[valid_mask_z] * Fz_values * elementary_charge
+        
+        #particle_charge.repeat_interleave(8)[valid_mask_z]
         
         indices = torch.arange(particle_pos.shape[0]).repeat_interleave(8)
         interpolated_forces.index_add_(0, indices[valid_mask_x], torch.stack([values_x, torch.zeros_like(values_x), torch.zeros_like(values_x)], dim=1))
@@ -616,8 +620,8 @@ class SpaceChargeKick(Element):
         if incoming is Beam.empty:
             return incoming
         elif isinstance(incoming, ParticleBeam):
-            forces = self.read_forces(incoming)
             particles = self.cheetah_to_moments(incoming)
+            forces = self.read_forces(incoming)
             particles[:,1] += forces[:,0]*self.delta_t(incoming)
             particles[:,3] += forces[:,1]*self.delta_t(incoming)
             particles[:,5] += forces[:,2]*self.delta_t(incoming)
@@ -2452,7 +2456,6 @@ class Segment(Element):
                     todos.append(Segment([element]))
                 else:
                     todos[-1].elements.append(element)
-            print(todos)
             for todo in todos:
                 incoming = todo.track(incoming)
 
