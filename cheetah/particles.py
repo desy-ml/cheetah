@@ -1034,14 +1034,15 @@ class ParticleBeam(Beam):
         device=None,
         dtype=torch.float32,
     ):
-        """Generate a particle beam with spatially uniformly distributed particles
-        inside an ellipsoid, i.e. waterbag distribution.
-        Note that
+        """
+        Generate a particle beam with spatially uniformly distributed particles inside
+        an ellipsoid, i.e. a waterbag distribution.
 
-            - the generated particles do not have correlation in the momentum
-            directions, by default a cold beam with no divergence is generated.
-            - for batched generation, parameters that are not None
-            must have the same shape.
+        Note that:
+         - The generated particles do not have correlation in the momentum directions,
+           and by default a cold beam with no divergence is generated.
+         - For batched generation, parameters that are not `None` must have the same
+           shape.
 
         :param num_particles: Number of particles to generate.
         :param radius_x: Radius of the ellipsoid in x direction in meters.
@@ -1060,45 +1061,6 @@ class ParticleBeam(Beam):
 
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
         """
-
-        def generate_uniform_3d_ellispoid_particles(
-            num_particles: torch.Tensor,
-            radius_x: torch.Tensor,
-            radius_y: torch.Tensor,
-            radius_s: torch.Tensor,
-        ) -> torch.Tensor:
-            """Helper function to generate uniform 3D ellipsoid particles
-            in a non-batched manner
-            """
-            particles = torch.zeros((1, num_particles, 7))
-            particles[0, :, 6] = 1
-
-            num_generated = 0
-
-            while num_generated < num_particles:
-                Xs = (torch.rand(num_particles) - 0.5) * 2 * radius_x
-                Ys = (torch.rand(num_particles) - 0.5) * 2 * radius_y
-                Zs = (torch.rand(num_particles) - 0.5) * 2 * radius_s
-
-                indices = (
-                    Xs**2 / radius_x**2 + Ys**2 / radius_y**2 + Zs**2 / radius_s**2
-                ) <= 1  # Rejection sampling to get the points inside the ellipsoid.
-
-                num_new_generated = Xs[indices].shape[0]
-                num_to_add = min(num_new_generated, int(num_particles - num_generated))
-
-                particles[0, num_generated : num_generated + num_to_add, 0] = Xs[
-                    indices
-                ][:num_to_add]
-                particles[0, num_generated : num_generated + num_to_add, 2] = Ys[
-                    indices
-                ][:num_to_add]
-                particles[0, num_generated : num_generated + num_to_add, 4] = Zs[
-                    indices
-                ][:num_to_add]
-                num_generated += num_to_add
-
-            return particles
 
         # Figure out if arguments were passed, figure out their shape
         not_nones = [
@@ -1122,6 +1084,8 @@ class ParticleBeam(Beam):
             ), "Arguments must have the same shape."
 
         # Set default values without function call in function signature
+        # NOTE that this does not need to be done for values that are passed to the
+        # Gaussian beam generation.
         num_particles = (
             num_particles if num_particles is not None else torch.tensor(1_000_000)
         )
@@ -1129,8 +1093,45 @@ class ParticleBeam(Beam):
         radius_y = radius_y if radius_y is not None else torch.full(shape, 1e-3)
         radius_s = radius_s if radius_s is not None else torch.full(shape, 1e-3)
 
-        # Generate a uncorrelated Gaussian Beam
-        parray = cls.from_parameters(
+        # Generate xs, ys and ss within the ellipsoid
+        flattened_xs = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        flattened_ys = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        flattened_ss = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        for i, (r_x, r_y, r_s) in enumerate(
+            zip(radius_x.flatten(), radius_y.flatten(), radius_s.flatten())
+        ):
+            num_successful = 0
+            while num_successful < num_particles:
+                xs = (torch.rand(num_particles) - 0.5) * 2 * r_x
+                ys = (torch.rand(num_particles) - 0.5) * 2 * r_y
+                ss = (torch.rand(num_particles) - 0.5) * 2 * r_s
+
+                is_in_ellipsoid = xs**2 / r_x**2 + ys**2 / r_y**2 + ss**2 / r_s**2 < 1
+                num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
+
+                ic(
+                    xs.shape,
+                    is_in_ellipsoid.shape,
+                    flattened_xs.shape,
+                    xs[is_in_ellipsoid].shape,
+                    num_successful,
+                    num_to_add,
+                    flattened_xs[i, num_successful : num_successful + num_to_add].shape,
+                )
+                flattened_xs[i, num_successful : num_successful + num_to_add] = xs[
+                    is_in_ellipsoid
+                ][:num_to_add]
+                flattened_ys[i, num_successful : num_successful + num_to_add] = ys[
+                    is_in_ellipsoid
+                ][:num_to_add]
+                flattened_ss[i, num_successful : num_successful + num_to_add] = ss[
+                    is_in_ellipsoid
+                ][:num_to_add]
+
+                num_successful += num_to_add
+
+        # Generate an uncorrelated Gaussian beam
+        beam = cls.from_parameters(
             num_particles=num_particles,
             mu_xp=torch.full(shape, 0.0),
             mu_yp=torch.full(shape, 0.0),
@@ -1143,18 +1144,12 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
-        # Replace the with uniformly distributed particles inside the ellipsoid
-        particles = parray.particles.view(-1, num_particles, 7)
-        for i, (r_x, r_y, r_s) in enumerate(
-            zip(radius_x.view(-1), radius_y.view(-1), radius_s.view(-1))
-        ):
-            particles[i] = generate_uniform_3d_ellispoid_particles(
-                num_particles, r_x, r_y, r_s
-            )[0]
-        parray.particles = particles.view(*shape, num_particles, 7)
-        parray.particles.to(device=device, dtype=dtype)
+        # Replace the spatial coordinates with the generated ones
+        beam.xs = flattened_xs.view(*shape, num_particles)
+        beam.ys = flattened_ys.view(*shape, num_particles)
+        beam.ss = flattened_ss.view(*shape, num_particles)
 
-        return parray
+        return beam
 
     @classmethod
     def make_linspaced(
