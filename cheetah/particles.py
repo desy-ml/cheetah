@@ -1109,15 +1109,6 @@ class ParticleBeam(Beam):
                 is_in_ellipsoid = xs**2 / r_x**2 + ys**2 / r_y**2 + ss**2 / r_s**2 < 1
                 num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
 
-                ic(
-                    xs.shape,
-                    is_in_ellipsoid.shape,
-                    flattened_xs.shape,
-                    xs[is_in_ellipsoid].shape,
-                    num_successful,
-                    num_to_add,
-                    flattened_xs[i, num_successful : num_successful + num_to_add].shape,
-                )
                 flattened_xs[i, num_successful : num_successful + num_to_add] = xs[
                     is_in_ellipsoid
                 ][:num_to_add]
