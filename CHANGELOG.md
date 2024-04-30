@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
+- Add a new class method for `ParticleBeam` to generate 3D uniformly distributed ellipsoidal beam. (see #146) (@cr-xu)
 
 ### 🐛 Bug fixes
 
