@@ -13,6 +13,7 @@
 ### 🐛 Bug fixes
 
 - Now all `Element` have a default length of `torch.zeros((1))`, fixing occasional issues with using elements without length, such as `Marker`, `BPM`, `Screen`, and `Aperture`. (see #143) (@cr-xu)
+- Fix bug in `Cavity` `_track_beam` (see [#150](https://github.com/desy-ml/cheetah/issues/150)) (@jp-ga)
 
 ### 🐆 Other
 
