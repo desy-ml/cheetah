@@ -966,7 +966,7 @@ class Cavity(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def _track_beam(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_beam(self, incoming: Beam) -> Beam:
         device = self.length.device
         dtype = self.length.dtype
 
