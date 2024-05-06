@@ -335,16 +335,10 @@ class SpaceChargeKick(Element):
         super().__init__(name=name)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        self.nx = int(torch.as_tensor(nx, **factory_kwargs))
-        self.ny = int(torch.as_tensor(ny, **factory_kwargs))
-        self.ns = int(torch.as_tensor(ns, **factory_kwargs))
+        self.grid_shape = (int(nx), int(ny), int(ns))
         self.dx = torch.as_tensor(dx, **factory_kwargs) # in multiples of sigma
         self.dy = torch.as_tensor(dy, **factory_kwargs)
         self.ds = torch.as_tensor(ds, **factory_kwargs)
-
-
-    def _grid_shape(self) -> tuple[int,int,int]:
-        return (int(self.nx), int(self.ny), int(self.ns))  
     
 
     def _grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
