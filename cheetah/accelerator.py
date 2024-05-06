@@ -434,7 +434,7 @@ class SpaceChargeKick(Element):
         cyclic_charge_density = torch.zeros(new_dims)
 
         # Copy the original charge_density values to the beginning of the new tensor
-        cyclic_charge_density[:charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
+        cyclic_charge_density[..., :charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
         return cyclic_charge_density    
     
     def _IGF(self, beam: ParticleBeam) -> torch.Tensor:
