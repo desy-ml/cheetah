@@ -366,7 +366,7 @@ class SpaceChargeKick(Element):
     
     def _deposit_charge_on_grid(self, beam: ParticleBeam) -> torch.Tensor:
         """
-        Deposition of the beam on the grid.
+        Deposit the charge density of the beam onto a grid.
         """
         grid_shape = self._grid_shape()
         grid_dimensions = self._grid_dimensions(beam)
