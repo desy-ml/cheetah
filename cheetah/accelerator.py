@@ -2180,7 +2180,6 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name)
-    
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: Optional[list[str]] = None
     ) -> "Segment":
