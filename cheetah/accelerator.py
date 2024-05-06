@@ -2439,7 +2439,7 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
-            for element in self.elements:               
+            for element in self.elements:
                 if not element.is_skippable:
                     todos.append(element)
                 elif not todos or not todos[-1].is_skippable:
