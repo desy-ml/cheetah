@@ -406,7 +406,7 @@ class SpaceChargeKick(Element):
         charge.index_put_(tuple(indices), values, accumulate=True)
         inv_cell_volume = 1 / (cell_size[0] * cell_size[1] * cell_size[2])
 
-        return charge/cell_volume  # Normalize by the cell volume, so that the charge density is in C/m^3
+        return charge * inv_cell_volume  # Normalize by the cell volume, so that the charge density is in C/m^3
     
 
     def _integrated_potential(self, x, y, s) -> torch.Tensor:
