@@ -364,7 +364,7 @@ class SpaceChargeKick(Element):
             return torch.tensor(1.0)
         return torch.sqrt(1 - 1 / gamma**2)
     
-    def _space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:
+    def _deposit_charge_on_grid(self, beam: ParticleBeam) -> torch.Tensor:
         """
         Deposition of the beam on the grid.
         """
