@@ -4,7 +4,11 @@ import cheetah
 
 def test_cold_uniform_beam_expansion():
     """
-    Test that that a cold uniform beam doubles in size in both dimensions when travelling through a drift section with space_charge. (cf ImpactX test)
+    Test that that a cold uniform beam doubles in size in both dimensions when
+    travelling through a drift section with space_charge. (cf ImpactX test: 
+    https://impactx.readthedocs.io/en/latest/usage/examples/cfchannel/README.html#constant-focusing-channel-with-space-charge).
+    See Free Expansion of a Cold Uniform Beam in a Drift Section with Space Charge: 
+    https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf
     """
 
     # Simulation parameters

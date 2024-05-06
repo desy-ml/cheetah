@@ -309,24 +309,44 @@ class Drift(Element):
 
 class SpaceChargeKick(Element):
     """
-    Applies the effect of space charge over a length `length`, on the **momentum** (i.e. divergence and energy spread) of the beam. 
-    
-    The positions are unmodified ; this is meant to be combined with another lattice element (e.g. `Drift`) that does modify the positions, but does not take into account space charge.
+    Apply the effect of space charge over a length `length`, on the **momentum** 
+    (i.e. divergence and energy spread) of the beam. 
+    The positions are unmodified ; this is meant to be combined with another lattice
+    element (e.g. `Drift`) that does modify the positions, but does not take into
+    account space charge.
+    This uses the integrated Green function method 
+    (https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.9.044204) to compute 
+    the effect of space charge. This is similar to the method used in Ocelot. 
+    The main difference is that solves the Poisson equation in the beam frame, 
+    while here we solve a modified Poisson equation in the laboratory frame 
+    (https://pubs.aip.org/aip/pop/article-abstract/15/5/056701/1016636/Simulation-of-beams-or-plasmas-crossing-at). 
+    The two methods are in principle equivalent.
+
+    Overview of the method:
+    - Compute the beam charge density on a grid
+    - Convolve the charge density with a Green function (the integrated green function)
+    to find the potential `phi` on the grid. The convolution uses the Hockney method 
+    for open boundaries (allocate 2x larger arrays and perform convolution using FFTs)
+    - Compute the corresponding electromagnetic fields and Lorentz force on the grid
+    - Interpolate the Lorentz force to the particles and update their momentum
+
     :param length: Length of the element in meters.
-    :param grid_precision: Number of grid points in each dimension.
-    :param grid_dimensions: Dimensions of the grid as multiples of sigma of the beam.
+    :param num_grid_points_x, num_grid_points_y, num_grid_points_s: Number of grid
+    points in each dimension.
+    :param grid_extend_x, grid_extend_y, grid_extend_s: Dimensions of the grid on which
+    to compute space-charge, as multiples of sigma of the beam (dimensionless)
     :param name: Unique identifier of the element.
     """
 
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        nx: Union[torch.Tensor, nn.Parameter,int]=32,
-        ny: Union[torch.Tensor, nn.Parameter,int]=32,
-        ns: Union[torch.Tensor, nn.Parameter,int]=32,
-        dx: Union[torch.Tensor, nn.Parameter]=3,
-        dy: Union[torch.Tensor, nn.Parameter]=3,
-        ds: Union[torch.Tensor, nn.Parameter]=3,
+        num_grid_points_x: Union[torch.Tensor, nn.Parameter,int]=32,
+        num_grid_points_y: Union[torch.Tensor, nn.Parameter,int]=32,
+        num_grid_points_s: Union[torch.Tensor, nn.Parameter,int]=32,
+        grid_extend_x: Union[torch.Tensor, nn.Parameter]=3,
+        grid_extend_y: Union[torch.Tensor, nn.Parameter]=3,
+        grid_extend_s: Union[torch.Tensor, nn.Parameter]=3,
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -335,25 +355,20 @@ class SpaceChargeKick(Element):
         super().__init__(name=name)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        self.grid_shape = (int(nx), int(ny), int(ns))
-        self.dx = torch.as_tensor(dx, **factory_kwargs) # in multiples of sigma
-        self.dy = torch.as_tensor(dy, **factory_kwargs)
-        self.ds = torch.as_tensor(ds, **factory_kwargs)
+        self.grid_shape = (int(num_grid_points_x), int(num_grid_points_y), \
+                           int(num_grid_points_s))
+        self.grid_extend_x = torch.as_tensor(grid_extend_x, **factory_kwargs) 
+        # in multiples of sigma
+        self.grid_extend_y = torch.as_tensor(grid_extend_y, **factory_kwargs)
+        self.grid_extend_s = torch.as_tensor(grid_extend_s, **factory_kwargs)
     
 
     def _compute_grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
         sigma_x = torch.std(beam.particles[:, 0])
         sigma_y = torch.std(beam.particles[:, 2])
         sigma_s = torch.std(beam.particles[:, 4])
-        return torch.tensor([self.dx*sigma_x, self.dy*sigma_y, self.ds*sigma_s], device=self.dx.device)
-    
-    def _delta_t(self,beam: ParticleBeam) -> torch.Tensor:
-        return self.length / (c*self._betaref(beam))
-
-    def _cell_size(self,beam: ParticleBeam) -> torch.Tensor:
-        grid_shape = self.grid_shape
-        grid_dimensions = self._compute_grid_dimensions(beam)
-        return 2*grid_dimensions / torch.tensor(grid_shape)
+        return torch.tensor([self.grid_extend_x*sigma_x, self.grid_extend_y*sigma_y\
+                             , self.grid_extend_s*sigma_s])
     
     def _gammaref(self,beam: ParticleBeam) -> torch.Tensor:
         return beam.energy / rest_energy
@@ -364,15 +379,13 @@ class SpaceChargeKick(Element):
             return torch.tensor(1.0)
         return torch.sqrt(1 - 1 / gamma**2)
     
-    def _deposit_charge_on_grid(self, beam: ParticleBeam) -> torch.Tensor:
+    def _deposit_charge_on_grid(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
         """
-        Deposit the charge density of the beam onto a grid, using the nearest grid point method and weighting by the distance to the grid points.
-        Returns agrid of charge density in C/m^3.
+        Deposit the charge density of the beam onto a grid, using the nearest
+        grid point method and weighting by the distance to the grid points.
+        Returns a grid of charge density in C/m^3.
         """
         grid_shape = self.grid_shape
-        grid_dimensions = self._compute_grid_dimensions(beam)
-        cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
-
         # Initialize the charge density grid
         charge = torch.zeros(grid_shape)
 
@@ -387,21 +400,25 @@ class SpaceChargeKick(Element):
         cell_indices = torch.floor(normalized_pos).type(torch.long)
 
         # Calculate the weights for all surrounding cells
-        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
-        surrounding_indices = cell_indices.unsqueeze(1) + offsets  # Shape: (n_particles, 8, 3)
-        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  # Shape: (n_particles, 8, 3)
+        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0]\
+                                , [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+        surrounding_indices = cell_indices.unsqueeze(1) + offsets  
+        # Shape: (n_particles, 8, 3)
+        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  
+        # Shape: (n_particles, 8, 3)
         cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
 
         # Add the charge contributions to the cells
-        idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T
+        idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T    
+        # Shape: (3, n_particles*8)
         # Check that particles are inside the grid
         valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
                     (idx_y >= 0) & (idx_y < grid_shape[1]) & \
                     (idx_s >= 0) & (idx_s < grid_shape[2])
 
         # Accumulate the charge contributions
-        indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]], dim=0)
-        repeated_charges = particle_charge.repeat_interleave(8)
+        indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]], dim=0) # Shape: (3, n_valid) n_valid = number of valid particles=8*n_particles
+        repeated_charges = particle_charge.repeat_interleave(8) # Shape: (8*n_particles)
         values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
         charge.index_put_(tuple(indices), values, accumulate=True)
         cell_volume = cell_size[0] * cell_size[1] * cell_size[2]
@@ -410,6 +427,11 @@ class SpaceChargeKick(Element):
     
 
     def _integrated_potential(self, x, y, s) -> torch.Tensor:
+        """
+        Compute the electrostatic potential using the Integrated Green Function method
+        as in http://dx.doi.org/10.1103/PhysRevSTAB.9.044204.
+        """
+
         r = torch.sqrt(x**2 + y**2 + s**2)
         G = (-0.5 * s**2 * torch.atan(x * y / (s * r))
             -0.5 * y**2 * torch.atan(x * s / (y * r))
@@ -420,14 +442,12 @@ class SpaceChargeKick(Element):
         return G
     
 
-    def _cyclic_rho(self,beam: ParticleBeam) -> torch.Tensor:
+    def _array_rho(self,beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
         """
-        Compute the charge density on the grid using the cyclic deposition method.
+        Allocate a 2x larger array in all dimensions (to perform Hockney's method), and copies the charge density in one of the "quadrants".
         """
         grid_shape = self.grid_shape
-        charge_density = self._deposit_charge_on_grid(beam)
-
-        # Double the dimensions
+        charge_density = self._deposit_charge_on_grid(beam, cell_size, grid_dimensions)
         new_dims = tuple(dim * 2 for dim in grid_shape)
 
         # Create a new tensor with the doubled dimensions, filled with zeros
@@ -437,16 +457,18 @@ class SpaceChargeKick(Element):
         cyclic_charge_density[:charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
         return cyclic_charge_density    
     
-    def _IGF(self, beam: ParticleBeam) -> torch.Tensor:
+    def _IGF(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
+        """
+        Compute the Integrated Green Function (IGF) with periodic boundary conditions (to perform Hockney's method).
+        """
         gamma = self._gammaref(beam)
-        cell_size = self._cell_size(beam)
         dx, dy, ds = cell_size[0], cell_size[1], cell_size[2] * gamma  # ds is scaled by gamma
-        nx, ny, ns = self.grid_shape
+        num_grid_points_x, num_grid_points_y, num_grid_points_s = self.grid_shape
         
         # Create coordinate grids
-        x = torch.arange(nx) * dx
-        y = torch.arange(ny) * dy
-        s = torch.arange(ns) * ds
+        x = torch.arange(num_grid_points_x) * dx
+        y = torch.arange(num_grid_points_y) * dy
+        s = torch.arange(num_grid_points_s) * ds
         x_grid, y_grid, s_grid = torch.meshgrid(x, y, s, indexing='ij')
 
         # Compute the Green's function values
@@ -462,26 +484,26 @@ class SpaceChargeKick(Element):
         )
 
         # Initialize the grid with double dimensions
-        grid = torch.zeros(2 * nx, 2 * ny, 2 * ns)
+        green_func = torch.zeros(2 * num_grid_points_x, 2 * num_grid_points_y, 2 * num_grid_points_s)
 
         # Fill the grid with G_values and its periodic copies
-        grid[:nx, :ny, :ns] = G_values
-        grid[nx+1:, :ny, :ns] = G_values[1:,:,:].flip(dims=[0]) # Reverse the x dimension, excluding the first element
-        grid[:nx, ny+1:, :ns] = G_values[:, 1:,:].flip(dims=[1])  # Reverse the y dimension, excluding the first element
-        grid[:nx, :ny, ns+1:] = G_values[:, :, 1:].flip(dims=[2]) # Reverse the s dimension, excluding the first element
-        grid[nx+1:, ny+1:, :ns] = G_values[1:, 1:,:].flip(dims=[0, 1]) # Reverse the x and y dimensions
-        grid[:nx, ny+1:, ns+1:] = G_values[:, 1:, 1:].flip(dims=[1, 2]) # Reverse the y and s dimensions
-        grid[nx+1:, :ny, ns+1:] = G_values[1:, :, 1:].flip(dims=[0, 2])  # Reverse the x and s dimensions
-        grid[nx+1:, ny+1:, ns+1:] = G_values[1:, 1:, 1:].flip(dims=[0, 1, 2])  # Reverse all dimensions
+        green_func[:num_grid_points_x, :num_grid_points_y, :num_grid_points_s] = G_values
+        green_func[num_grid_points_x+1:, :num_grid_points_y, :num_grid_points_s] = G_values[1:,:,:].flip(dims=[0]) # Reverse the x dimension, excluding the first element
+        green_func[:num_grid_points_x, num_grid_points_y+1:, :num_grid_points_s] = G_values[:, 1:,:].flip(dims=[1])  # Reverse the y dimension, excluding the first element
+        green_func[:num_grid_points_x, :num_grid_points_y, num_grid_points_s+1:] = G_values[:, :, 1:].flip(dims=[2]) # Reverse the s dimension, excluding the first element
+        green_func[num_grid_points_x+1:, num_grid_points_y+1:, :num_grid_points_s] = G_values[1:, 1:,:].flip(dims=[0, 1]) # Reverse the x and y dimensions
+        green_func[:num_grid_points_x, num_grid_points_y+1:, num_grid_points_s+1:] = G_values[:, 1:, 1:].flip(dims=[1, 2]) # Reverse the y and s dimensions
+        green_func[num_grid_points_x+1:, :num_grid_points_y, num_grid_points_s+1:] = G_values[1:, :, 1:].flip(dims=[0, 2])  # Reverse the x and s dimensions
+        green_func[num_grid_points_x+1:, num_grid_points_y+1:, num_grid_points_s+1:] = G_values[1:, 1:, 1:].flip(dims=[0, 1, 2])  # Reverse all dimensions
 
-        return grid
+        return green_func
     
 
-    def _solve_poisson_equation(self, beam: ParticleBeam) -> torch.Tensor:  #works only for ParticleBeam at this stage
+    def _solve_poisson_equation(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:  #works only for ParticleBeam at this stage
         """
-        Solves the Poisson equation for the given charge density.
+        Solve the Poisson equation for the given charge density.
         """
-        charge_density = self._cyclic_rho(beam)
+        charge_density = self._array_rho(beam, cell_size, grid_dimensions)
         charge_density_ft = torch.fft.fftn(charge_density)
         integrated_green_function = self._IGF(beam)
         integrated_green_function_ft = torch.fft.fftn(integrated_green_function)
@@ -492,9 +514,9 @@ class SpaceChargeKick(Element):
         return potential[:charge_density.shape[0]//2, :charge_density.shape[1]//2, :charge_density.shape[2]//2]
 
 
-    def _E_plus_vB_field(self, beam: ParticleBeam) -> torch.Tensor:
+    def _E_plus_vB_field(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
         """
-        Compute the force field from the potential and the particle positions and speeds.
+        Compute the force field from the potential and the particle positions and speeds, as in https://doi.org/10.1063/1.2837054.
         """
         gamma = self._gammaref(beam)
         igamma2 = (
@@ -502,8 +524,7 @@ class SpaceChargeKick(Element):
             if gamma != 0
             else torch.tensor(0.0)
         )
-        potential = self._solve_poisson_equation(beam)
-        cell_size = self._cell_size(beam)
+        potential = self._solve_poisson_equation(beam, cell_size, grid_dimensions)
         potential = potential.unsqueeze(0).unsqueeze(0)
         
         # Now apply padding so that derivatives are 0 at the boundaries
@@ -522,6 +543,9 @@ class SpaceChargeKick(Element):
         return grad_x, grad_y, grad_z
 
     def _cheetah_to_moments(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Convert the Cheetah particle beam parameters to the moments in SI units used in the space charge solver.
+        """
         N = beam.particles.shape[0]
         moments = beam.particles
         gammaref = self._gammaref(beam)
@@ -537,6 +561,9 @@ class SpaceChargeKick(Element):
         return moments
 
     def _moments_to_cheetah(self, moments: torch.Tensor, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Convert the moments in SI units to the Cheetah particle beam parameters.
+        """
         N = moments.shape[0]
         gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
@@ -549,15 +576,12 @@ class SpaceChargeKick(Element):
         moments[:,5] = (gamma-gammaref*torch.ones(N))/(betaref*gammaref)
         return moments
 
-    def _read_forces(self, beam: ParticleBeam) -> torch.Tensor:
+    def _compute_forces(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
         """
-        Compute the momentum kick from the force field.
+        Compute the forces on the particles due to the space charge.
         """
-        grad_x, grad_y, grad_z = self._E_plus_vB_field(beam)
+        grad_x, grad_y, grad_z = self._E_plus_vB_field(beam, cell_size)
         grid_shape = self.grid_shape
-        grid_dimensions = self._compute_grid_dimensions(beam)
-        cell_size = self._cell_size(beam)
-
         particle_pos = beam.particles[:, [0, 2, 4]] 
         normalized_pos = (particle_pos + grid_dimensions) / cell_size
 
@@ -586,7 +610,7 @@ class SpaceChargeKick(Element):
         Fz_values, valid_mask_z = _get_force_values(grad_z)
 
         # Compute interpolated forces
-        interpolated_forces = torch.zeros((particle_pos.shape[0], 3), device=grad_x.device)
+        interpolated_forces = torch.zeros((particle_pos.shape[0], 3))
         values_x = cell_weights.view(-1)[valid_mask_x] * Fx_values * elementary_charge
         values_y = cell_weights.view(-1)[valid_mask_y] * Fy_values * elementary_charge
         values_z = cell_weights.view(-1)[valid_mask_z] * Fz_values * elementary_charge
@@ -602,16 +626,17 @@ class SpaceChargeKick(Element):
     def track(self, incoming: ParticleBeam) -> ParticleBeam:
         """
         Track particles through the element. The input must be a `ParticleBeam`.
-
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty:
+        if incoming is Beam.empty or incoming.particles.shape[0] == 0:
             return incoming
         elif isinstance(incoming, ParticleBeam):
+            grid_dimensions = self._compute_grid_dimensions(incoming)
+            cell_size = 2*grid_dimensions / torch.tensor(self.grid_shape)
+            dt = self.length / (c*self._betaref(incoming))
             particles = self._cheetah_to_moments(incoming)
-            forces = self._read_forces(incoming)
-            dt = self._delta_t(incoming)
+            forces = self._compute_forces(incoming, cell_size, grid_dimensions)
             particles[:,1] += forces[:,0]*dt
             particles[:,3] += forces[:,1]*dt
             particles[:,5] += forces[:,2]*dt
@@ -2446,6 +2471,7 @@ class Segment(Element):
                     todos.append(Segment([element]))
                 else:
                     todos[-1].elements.append(element)
+
             for todo in todos:
                 incoming = todo.track(incoming)
 
