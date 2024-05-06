@@ -377,7 +377,7 @@ class SpaceChargeKick(Element):
         charge = torch.zeros(grid_shape)
 
         # Get particle positions and charges
-        particle_pos = beam.particles[:, [0, 2, 4]]
+        particle_pos = beam.particles[..., [0, 2, 4]]
         particle_charge = beam.particle_charges
 
         # Compute the normalized positions of the particles within the grid
