@@ -366,11 +366,12 @@ class SpaceChargeKick(Element):
     
     def _deposit_charge_on_grid(self, beam: ParticleBeam) -> torch.Tensor:
         """
-        Deposit the charge density of the beam onto a grid.
+        Deposit the charge density of the beam onto a grid, using the nearest grid point method and weighting by the distance to the grid points.
+        Returns agrid of charge density in C/m^3.
         """
         grid_shape = self.grid_shape
         grid_dimensions = self._compute_grid_dimensions(beam)
-        cell_size = self._cell_size(beam)
+        cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
 
         # Initialize the charge density grid
         charge = torch.zeros(grid_shape, dtype=torch.float32)
@@ -393,6 +394,7 @@ class SpaceChargeKick(Element):
 
         # Add the charge contributions to the cells
         idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T
+        # Check that particles are inside the grid
         valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
                     (idx_y >= 0) & (idx_y < grid_shape[1]) & \
                     (idx_s >= 0) & (idx_s < grid_shape[2])
