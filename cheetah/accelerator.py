@@ -404,7 +404,7 @@ class SpaceChargeKick(Element):
         repeated_charges = particle_charge.repeat_interleave(8)
         values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
         charge.index_put_(tuple(indices), values, accumulate=True)
-        cell_volume = cell_size[0] * cell_size[1] * cell_size[2]
+        inv_cell_volume = 1 / (cell_size[0] * cell_size[1] * cell_size[2])
 
         return charge/cell_volume  # Normalize by the cell volume, so that the charge density is in C/m^3
     
