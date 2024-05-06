@@ -309,7 +309,9 @@ class Drift(Element):
 
 class SpaceChargeKick(Element):
     """
-    Simulates space charge effects on a beam.
+    Applies the effect of space charge over a length `length`, on the **momentum** (i.e. divergence and energy spread) of the beam. 
+    
+    The positions are unmodified ; this is meant to be combined with another lattice element (e.g. `Drift`) that does modify the positions, but does not take into account space charge.
     :param length: Length of the element in meters.
     :param grid_precision: Number of grid points in each dimension.
     :param grid_dimensions: Dimensions of the grid as multiples of sigma of the beam.
