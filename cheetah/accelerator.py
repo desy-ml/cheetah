@@ -551,7 +551,7 @@ class SpaceChargeKick(Element):
 
     def _read_forces(self, beam: ParticleBeam) -> torch.Tensor:
         """
-        Compute the momentum kick from the force field.
+        Interpolates the space charge force from the grid onto the macroparticles
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(beam)
         grid_shape = self.grid_shape
