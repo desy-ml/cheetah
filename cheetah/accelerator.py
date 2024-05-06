@@ -374,7 +374,7 @@ class SpaceChargeKick(Element):
         cell_size = 2*grid_dimensions / torch.tensor(grid_shape)
 
         # Initialize the charge density grid
-        charge = torch.zeros(grid_shape, dtype=torch.float32)
+        charge = torch.zeros(grid_shape)
 
         # Get particle positions and charges
         particle_pos = beam.particles[:, [0, 2, 4]]
