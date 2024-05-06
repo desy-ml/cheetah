@@ -341,7 +341,7 @@ class SpaceChargeKick(Element):
         self.ds = torch.as_tensor(ds, **factory_kwargs)
     
 
-    def _grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
+    def _compute_grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
         sigma_x = torch.std(beam.particles[:, 0])
         sigma_y = torch.std(beam.particles[:, 2])
         sigma_s = torch.std(beam.particles[:, 4])
@@ -351,8 +351,8 @@ class SpaceChargeKick(Element):
         return self.length / (c*self._betaref(beam))
 
     def _cell_size(self,beam: ParticleBeam) -> torch.Tensor:
-        grid_shape = self._grid_shape()
-        grid_dimensions = self._grid_dimensions(beam)
+        grid_shape = self.grid_shape
+        grid_dimensions = self._compute_grid_dimensions(beam)
         return 2*grid_dimensions / torch.tensor(grid_shape)
     
     def _gammaref(self,beam: ParticleBeam) -> torch.Tensor:
@@ -364,12 +364,12 @@ class SpaceChargeKick(Element):
             return torch.tensor(1.0)
         return torch.sqrt(1 - 1 / gamma**2)
     
-    def _space_charge_deposition(self, beam: ParticleBeam) -> torch.Tensor:
+    def _deposit_charge_on_grid(self, beam: ParticleBeam) -> torch.Tensor:
         """
         Deposition of the beam on the grid.
         """
-        grid_shape = self._grid_shape()
-        grid_dimensions = self._grid_dimensions(beam)
+        grid_shape = self.grid_shape
+        grid_dimensions = self._compute_grid_dimensions(beam)
         cell_size = self._cell_size(beam)
 
         # Initialize the charge density grid
@@ -422,8 +422,8 @@ class SpaceChargeKick(Element):
         """
         Compute the charge density on the grid using the cyclic deposition method.
         """
-        grid_shape = self._grid_shape()
-        charge_density = self._space_charge_deposition(beam)
+        grid_shape = self.grid_shape
+        charge_density = self._deposit_charge_on_grid(beam)
 
         # Double the dimensions
         new_dims = tuple(dim * 2 for dim in grid_shape)
@@ -439,7 +439,7 @@ class SpaceChargeKick(Element):
         gamma = self._gammaref(beam)
         cell_size = self._cell_size(beam)
         dx, dy, ds = cell_size[0], cell_size[1], cell_size[2] * gamma  # ds is scaled by gamma
-        nx, ny, ns = self._grid_shape()
+        nx, ny, ns = self.grid_shape
         
         # Create coordinate grids
         x = torch.arange(nx) * dx
@@ -552,8 +552,8 @@ class SpaceChargeKick(Element):
         Compute the momentum kick from the force field.
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(beam)
-        grid_shape = self._grid_shape()
-        grid_dimensions = self._grid_dimensions(beam)
+        grid_shape = self.grid_shape
+        grid_dimensions = self._compute_grid_dimensions(beam)
         cell_size = self._cell_size(beam)
 
         particle_pos = beam.particles[:, [0, 2, 4]] 
