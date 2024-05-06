@@ -325,7 +325,6 @@ class SpaceChargeKick(Element):
         dx: Union[torch.Tensor, nn.Parameter]=3,
         dy: Union[torch.Tensor, nn.Parameter]=3,
         ds: Union[torch.Tensor, nn.Parameter]=3,
-        
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
