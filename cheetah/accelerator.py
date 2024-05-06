@@ -388,9 +388,9 @@ class SpaceChargeKick(Element):
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
-        surrounding_indices = cell_indices.unsqueeze(1) + offsets  # Shape: (n_particles, 8, 3)
-        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  # Shape: (n_particles, 8, 3)
-        cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
+        surrounding_indices = cell_indices.unsqueeze(-2) + offsets  # Shape: (..., n_particles, 8, 3)
+        weights = 1 - torch.abs(normalized_pos.unsqueeze(-2) - surrounding_indices)  # Shape: (..., n_particles, 8, 3)
+        cell_weights = weights.prod(dim=-1)  # Shape: (..., n_particles, 8) - product of shapes along x, y and z
 
         # Add the charge contributions to the cells
         idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T
