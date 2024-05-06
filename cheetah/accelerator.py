@@ -348,14 +348,9 @@ class SpaceChargeKick(Element):
     
 
     def _grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
-        if beam.particles.shape[0] < 2:
-            sigma_x = torch.tensor(175e-9)
-            sigma_y = torch.tensor(175e-9)
-            sigma_s = torch.tensor(175e-9)
-        else:
-            sigma_x = torch.std(beam.particles[:, 0])
-            sigma_y = torch.std(beam.particles[:, 2])
-            sigma_s = torch.std(beam.particles[:, 4])
+        sigma_x = torch.std(beam.particles[:, 0])
+        sigma_y = torch.std(beam.particles[:, 2])
+        sigma_s = torch.std(beam.particles[:, 4])
         return torch.tensor([self.dx*sigma_x, self.dy*sigma_y, self.ds*sigma_s], device=self.dx.device)
     
     def _delta_t(self,beam: ParticleBeam) -> torch.Tensor:
