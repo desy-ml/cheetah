@@ -390,7 +390,7 @@ class SpaceChargeKick(Element):
         charge = torch.zeros(grid_shape)
 
         # Get particle positions and charges
-        particle_pos = beam.particles[:, [0, 2, 4]]
+        particle_pos = beam.particles[..., [0, 2, 4]]
         particle_charge = beam.particle_charges
 
         # Compute the normalized positions of the particles within the grid
@@ -400,6 +400,7 @@ class SpaceChargeKick(Element):
         cell_indices = torch.floor(normalized_pos).type(torch.long)
 
         # Calculate the weights for all surrounding cells
+<<<<<<< HEAD
         offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0]\
                                 , [1, 0, 1], [1, 1, 0], [1, 1, 1]])
         surrounding_indices = cell_indices.unsqueeze(1) + offsets  
@@ -407,6 +408,12 @@ class SpaceChargeKick(Element):
         weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  
         # Shape: (n_particles, 8, 3)
         cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
+=======
+        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+        surrounding_indices = cell_indices.unsqueeze(-2) + offsets  # Shape: (..., n_particles, 8, 3)
+        weights = 1 - torch.abs(normalized_pos.unsqueeze(-2) - surrounding_indices)  # Shape: (..., n_particles, 8, 3)
+        cell_weights = weights.prod(dim=-1)  # Shape: (..., n_particles, 8) - product of shapes along x, y and z
+>>>>>>> ea8bac2b8ec1ed6dbb9c88078775c8a243aafa2b
 
         # Add the charge contributions to the cells
         idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T    
@@ -421,9 +428,9 @@ class SpaceChargeKick(Element):
         repeated_charges = particle_charge.repeat_interleave(8) # Shape: (8*n_particles)
         values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
         charge.index_put_(tuple(indices), values, accumulate=True)
-        cell_volume = cell_size[0] * cell_size[1] * cell_size[2]
+        inv_cell_volume = 1 / (cell_size[0] * cell_size[1] * cell_size[2])
 
-        return charge/cell_volume  # Normalize by the cell volume, so that the charge density is in C/m^3
+        return charge * inv_cell_volume  # Normalize by the cell volume, so that the charge density is in C/m^3
     
 
     def _integrated_potential(self, x, y, s) -> torch.Tensor:
@@ -454,7 +461,7 @@ class SpaceChargeKick(Element):
         cyclic_charge_density = torch.zeros(new_dims)
 
         # Copy the original charge_density values to the beginning of the new tensor
-        cyclic_charge_density[:charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
+        cyclic_charge_density[..., :charge_density.shape[0], :charge_density.shape[1], :charge_density.shape[2]] = charge_density
         return cyclic_charge_density    
     
     def _IGF(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
@@ -578,7 +585,11 @@ class SpaceChargeKick(Element):
 
     def _compute_forces(self, beam: ParticleBeam, cell_size, grid_dimensions) -> torch.Tensor:
         """
+<<<<<<< HEAD
         Compute the forces on the particles due to the space charge.
+=======
+        Interpolates the space charge force from the grid onto the macroparticles
+>>>>>>> ea8bac2b8ec1ed6dbb9c88078775c8a243aafa2b
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(beam, cell_size)
         grid_shape = self.grid_shape
@@ -2205,7 +2216,6 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name)
-    
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: Optional[list[str]] = None
     ) -> "Segment":
@@ -2464,7 +2474,7 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
-            for element in self.elements:               
+            for element in self.elements:
                 if not element.is_skippable:
                     todos.append(element)
                 elif not todos or not todos[-1].is_skippable:
