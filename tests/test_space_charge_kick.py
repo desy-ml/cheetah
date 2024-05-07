@@ -13,9 +13,9 @@ def test_cold_uniform_beam_expansion():
 
     # Simulation parameters
     num_particles = 10000
-    total_charge=torch.tensor(1e-9)
-    R0 = torch.tensor(0.001)
-    energy=torch.tensor(2.5e8)
+    total_charge=torch.tensor([1e-9])
+    R0 = torch.tensor([0.001])
+    energy=torch.tensor([2.5e8])
     gamma = energy/cheetah.rest_energy
     beta = torch.sqrt(1-1/gamma**2)
     incoming = cheetah.ParticleBeam.uniform_3d_ellispoid(
@@ -25,9 +25,9 @@ def test_cold_uniform_beam_expansion():
         radius_x = R0,
         radius_y = R0,
         radius_s = R0/gamma,  # radius of the beam in s direction, in the lab frame.
-        sigma_xp = torch.tensor(1e-15),
-        sigma_yp = torch.tensor(1e-15),
-        sigma_p = torch.tensor(1e-15),
+        sigma_xp = torch.tensor([1e-15]),
+        sigma_yp = torch.tensor([1e-15]),
+        sigma_p = torch.tensor([1e-15]),
     )
 
     # Initial beam properties
@@ -69,9 +69,9 @@ def test_incoming_beam_not_modified():
     """
 
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10000),
-        sigma_xp=torch.tensor(2e-7),
-        sigma_yp=torch.tensor(2e-7),
+        num_particles=torch.tensor([10000]),
+        sigma_xp=torch.tensor([2e-7]),
+        sigma_yp=torch.tensor([2e-7]),
     )
     # Initial beam properties
     incoming_particles0 = incoming_beam.particles
