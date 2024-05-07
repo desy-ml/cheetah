@@ -394,9 +394,9 @@ class SpaceChargeKick(Element):
     
 
     def _compute_grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
-        sigma_x = torch.std(beam.particles[:, 0])
-        sigma_y = torch.std(beam.particles[:, 2])
-        sigma_s = torch.std(beam.particles[:, 4])
+        sigma_x = torch.std(beam.particles[..., 0])
+        sigma_y = torch.std(beam.particles[..., 2])
+        sigma_s = torch.std(beam.particles[..., 4])
         return torch.tensor([self.grid_extend_x*sigma_x, self.grid_extend_y*sigma_y\
                              , self.grid_extend_s*sigma_s])
     
