@@ -53,29 +53,27 @@ def base_rmatrix(
     device = length.device
     dtype = length.dtype
 
-    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device, dtype=dtype)
-    energy = (
-        energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
-    )
+    tilt = tilt if tilt is not None else torch.zeros_like(length)
+    energy = energy if energy is not None else torch.zeros_like(length)
 
     gamma = energy / REST_ENERGY.to(device=device, dtype=dtype)
-    igamma2 = (
-        1 / gamma**2 if gamma != 0 else torch.tensor(0.0, device=device, dtype=dtype)
-    )
+    igamma2 = torch.ones_like(length)
+    igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
 
     beta = torch.sqrt(1 - igamma2)
 
-    if k1 == 0:
-        k1 = k1 + torch.tensor(
-            1e-12, device=device, dtype=dtype
-        )  # Avoid division by zero
+    # Avoid division by zero
+    k1 = k1.clone()
+    k1[k1 == 0] = 1e-12
+
     kx2 = k1 + hx**2
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0, device=device, dtype=dtype)))
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = (torch.sin(ky * length) / ky).real if ky != 0 else length
+    sy = torch.clone(length)
+    sy[ky != 0] = (torch.sin(ky[ky != 0] * length[ky != 0]) / ky[ky != 0]).real
 
     sx = (torch.sin(kx * length) / kx).real
     dx = hx / kx2 * (1.0 - cx)
@@ -83,23 +81,23 @@ def base_rmatrix(
 
     r56 = r56 - length / beta**2 * igamma2
 
-    R = torch.eye(7, dtype=dtype, device=device)
-    R[0, 0] = cx
-    R[0, 1] = sx
-    R[0, 5] = dx / beta
-    R[1, 0] = -kx2 * sx
-    R[1, 1] = cx
-    R[1, 5] = sx * hx / beta
-    R[2, 2] = cy
-    R[2, 3] = sy
-    R[3, 2] = -ky2 * sy
-    R[3, 3] = cy
-    R[4, 0] = sx * hx / beta
-    R[4, 1] = dx / beta
-    R[4, 5] = r56
+    R = torch.eye(7, dtype=dtype, device=device).repeat(*length.shape, 1, 1)
+    R[..., 0, 0] = cx
+    R[..., 0, 1] = sx
+    R[..., 0, 5] = dx / beta
+    R[..., 1, 0] = -kx2 * sx
+    R[..., 1, 1] = cx
+    R[..., 1, 5] = sx * hx / beta
+    R[..., 2, 2] = cy
+    R[..., 2, 3] = sy
+    R[..., 3, 2] = -ky2 * sy
+    R[..., 3, 3] = cy
+    R[..., 4, 0] = sx * hx / beta
+    R[..., 4, 1] = dx / beta
+    R[..., 4, 5] = r56
 
     # Rotate the R matrix for skew / vertical magnets
-    if tilt != 0:
+    if torch.any(tilt != 0):
         R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
     return R
 

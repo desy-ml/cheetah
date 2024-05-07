@@ -18,7 +18,9 @@ def test_dipole():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.1))
+    cheetah_dipole = cheetah.Dipole(
+        length=torch.tensor([0.1]), angle=torch.tensor([0.1])
+    )
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
@@ -31,7 +33,7 @@ def test_dipole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -46,8 +48,8 @@ def test_dipole_with_float64():
         "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
     cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor(0.1),
-        angle=torch.tensor(0.1),
+        length=torch.tensor([0.1]),
+        angle=torch.tensor([0.1]),
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_dipole.track(incoming_beam)
@@ -62,7 +64,7 @@ def test_dipole_with_float64():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -77,10 +79,10 @@ def test_dipole_with_fringe_field():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor(0.1),
-        angle=torch.tensor(0.1),
-        fringe_integral=torch.tensor(0.1),
-        gap=torch.tensor(0.2),
+        length=torch.tensor([0.1]),
+        angle=torch.tensor([0.1]),
+        fringe_integral=torch.tensor([0.1]),
+        gap=torch.tensor([0.2]),
     )
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
@@ -94,7 +96,7 @@ def test_dipole_with_fringe_field():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -111,13 +113,13 @@ def test_aperture():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                x_max=torch.tensor(2e-4),
-                y_max=torch.tensor(2e-4),
+                x_max=torch.tensor([2e-4]),
+                y_max=torch.tensor([2e-4]),
                 shape="rectangular",
                 name="aperture",
                 is_active=True,
             ),
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -147,13 +149,13 @@ def test_aperture_elliptical():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                x_max=torch.tensor(2e-4),
-                y_max=torch.tensor(2e-4),
+                x_max=torch.tensor([2e-4]),
+                y_max=torch.tensor([2e-4]),
                 shape="elliptical",
                 name="aperture",
                 is_active=True,
             ),
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -183,7 +185,9 @@ def test_solenoid():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_solenoid = cheetah.Solenoid(length=torch.tensor(0.5), k=torch.tensor(5.0))
+    cheetah_solenoid = cheetah.Solenoid(
+        length=torch.tensor([0.5]), k=torch.tensor([5.0])
+    )
     outgoing_beam = cheetah_solenoid.track(incoming_beam)
 
     # Ocelot
@@ -196,7 +200,7 @@ def test_solenoid():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -334,7 +338,7 @@ def test_astra_import():
     p_array = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert np.allclose(
-        beam.particles[:, :6].cpu().numpy(), p_array.rparticles.transpose()
+        beam.particles[0, :, :6].cpu().numpy(), p_array.rparticles.transpose()
     )
     assert np.isclose(beam.energy.cpu().numpy(), (p_array.E * 1e9))
 
@@ -349,13 +353,13 @@ def test_quadrupole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor(0.23), k1=torch.tensor(5.0)
+        length=torch.tensor([0.23]), k1=torch.tensor([5.0])
     )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
             cheetah_quadrupole,
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -373,7 +377,7 @@ def test_quadrupole():
 
     # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -391,13 +395,13 @@ def test_tilted_quadrupole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor(0.23), k1=torch.tensor(5.0), tilt=torch.tensor(0.79)
+        length=torch.tensor([0.23]), k1=torch.tensor([5.0]), tilt=torch.tensor([0.79])
     )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
             cheetah_quadrupole,
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -414,7 +418,7 @@ def test_tilted_quadrupole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -431,12 +435,14 @@ def test_sbend():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.2))
+    cheetah_dipole = cheetah.Dipole(
+        length=torch.tensor([0.1]), angle=torch.tensor([0.2])
+    )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
             cheetah_dipole,
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -455,7 +461,7 @@ def test_sbend():
     )
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -472,12 +478,14 @@ def test_rbend():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.RBend(length=torch.tensor(0.1), angle=torch.tensor(0.2))
+    cheetah_dipole = cheetah.RBend(
+        length=torch.tensor([0.1]), angle=torch.tensor([0.2])
+    )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
             cheetah_dipole,
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor([0.1])),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -496,7 +504,7 @@ def test_rbend():
     )
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -534,7 +542,7 @@ def test_convert_rbend():
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -571,7 +579,7 @@ def test_asymmetric_bend():
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -634,10 +642,10 @@ def test_cavity():
         parray=p_array, dtype=torch.float64
     )
     cheetah_cavity = cheetah.Cavity(
-        length=1.0377,
-        voltage=0.01815975e9,
-        frequency=1.3e9,
-        phase=0.0,
+        length=torch.tensor([1.0377]),
+        voltage=torch.tensor([0.01815975e9]),
+        frequency=torch.tensor([1.3e9]),
+        phase=torch.tensor([0.0]),
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_cavity.track(incoming_beam)
@@ -655,11 +663,10 @@ def test_cavity():
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 5].cpu().numpy(),
+        outgoing_beam.particles[:, :, 5].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 5],
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 4].cpu().numpy(),
+        outgoing_beam.particles[:, :, 4].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 4],
-        atol=1e-4,
     )

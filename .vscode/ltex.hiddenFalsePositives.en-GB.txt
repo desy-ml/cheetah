@@ -1,0 +1,36 @@
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere the optional keyword argument \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is the incoming beam represented by the reference particles.\\E$"}
+{"rule":"OXFORD_SPELLING_Z_NOT_S","sentence":"^\\QGradient-based optimisation using Cheetah and PyTorch\\E$"}
+{"rule":"OXFORD_SPELLING_Z_NOT_S","sentence":"^\\QCheetah is a differentiable beam dynamics simulation engine, making it ideally suited to gradient-based optimisation, for example for optimisation magnet settings, lattice geometries or even for system identification.\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\Q, pass the file path to \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QUtils\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qutils\n:members:\n:undoc-members:\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qconverters.nocelot\n:members:\n:undoc-members:\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QNOcelot\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QLatticeJSON\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qlatticejson\n:members:\n:undoc-members:\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QDontBmad\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qconverters.dontbmad\n:members:\n:undoc-members:\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QAstralavista\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qconverters.astralavista\n:members:\n:undoc-members:\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qbash\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Q:maxdepth: 2\n:caption: Examples\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qexamples/simple\nexamples/convert\nexamples/gradientbased\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qaccelerator\nastralavista\ndontbmad\nerror\nlatticejson\nnocelot\nparticles\ntrack_methods\nutils\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qbibtex\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qbibtex\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Q@inproceedings{stein2022accelerating,\nauthor = {Stein, Oliver and\nKaiser, Jan and\nEichler, Annika},\ntitle = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},\nbooktitle = {Proceedings of the 13th International Particle Accelerator Conference},\nyear = {2022},\nurl = {https://github.com/desy-ml/cheetah},\n}\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\Q@inproceedings{stein2022accelerating,\nauthor = {Stein, Oliver and\nKaiser, Jan and\nEichler, Annika},\ntitle = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},\nbooktitle = {Proceedings of the 13th International Particle Accelerator Conference},\nyear = {2022},\nurl = {https://github.com/desy-ml/cheetah},\n}\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qpip install -e .\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\Qpip install -e .\\E$"}
+{"rule":"ENGLISH_WORD_REPEAT_RULE","sentence":"^\\Qpip install pre-commit\npre-commit install\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QConvert from Bmad lattices files (see #65) (@jank324)\nAdd proper transfer map for cavity (see #65) (@jank324, @cr-xu)\nTwiss parameter calculation and generate new beam from twiss parameter (see #62) (@jank324, @cr-xu)\nSaving and loading lattices from LatticeJSON (see #9) (@cr-xu)\nNested \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Qs can now be flattened (@jank324)\nOcelot converter adds support for \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q (see #78) (@jank324)\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QFix issue where multivariate_normal() crashes because cov is not positive-semidefinite.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QFaster screen reading simulation by using torch.histogramdd()\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qv0.5.15 (2022-10-12)\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QAdd caching of Screen.reading to avoid expensive recomputation\\E$"}
+{"rule":"LC_AFTER_PERIOD","sentence":"^\\QAdd caching of Screen.reading to avoid expensive recomputation\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qv0.5.13 (2022-07-26)\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qv0.5.14 (2022-09-28)\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qv0.5.17 (2023-02-05)\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QImprove docstrings (@FelixTheilen)\nImplement better testing with pytest (@FelixTheilen)\nSetup formatting with \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q as well as \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q listing (@cr-xu)\nAdd type annotations (@jank324)\nSetup Sphinx documentation on readthedocs (@jank324)\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QFix dependencies on readthedocs (see #54) (@jank324)\nFix error when tracking \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q through segment on CPU (see #68) (@cr-xu)\\E$"}
