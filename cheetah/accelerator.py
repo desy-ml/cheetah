@@ -2442,3 +2442,143 @@ class Segment(Element):
             f"{self.__class__.__name__}(elements={repr(self.elements)}, "
             + f"name={repr(self.name)})"
         )
+
+
+from cheetah.bmadx.interface import track_bmadx_quad
+
+class BmadQuadrupole(Element):
+    """
+    Test Bmad quadrupole element
+
+    :param length: Length in meters.
+    :param k1: Strength of the quadrupole in rad/m.
+    :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
+    :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
+        skew-quadrupole.
+    :param n_steps: Number of kicks in drift-kick-drift tracking.
+    :param name: Unique identifier of the element.
+    """
+
+    def __init__(
+        self,
+        length: Union[torch.Tensor, nn.Parameter],
+        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        num_steps: int = 10,
+        name: Optional[str] = None,
+        device = None,
+        dtype = torch.float32,
+    ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name)
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.k1 = (
+            torch.as_tensor(k1, **factory_kwargs)
+            if k1 is not None
+            else torch.zeros_like(self.length)
+        )
+        self.misalignment = (
+            torch.as_tensor(misalignment, **factory_kwargs)
+            if misalignment is not None
+            else torch.zeros((*self.length.shape, 2), **factory_kwargs)
+        )
+        self.tilt = (
+            torch.as_tensor(tilt, **factory_kwargs)
+            if tilt is not None
+            else torch.zeros_like(self.length)
+        )
+        self.num_steps = num_steps
+
+    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        # TODO Implement transfer map for Bmad Quadrupole using autodiff Jacobian
+        raise NotImplementedError("Transfer map not implemented for Bmad Quadrupole")
+
+    def track(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the Quadrupole. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        if incoming is Beam.empty:
+            return incoming
+        elif isinstance(incoming, (ParameterBeam, ParticleBeam)):
+            return self._track_beam(incoming)
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def _track_beam(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the Quadrupole. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        if isinstance(incoming, ParameterBeam):
+            tm = self.transfer_map(incoming.energy)
+            outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
+            outgoing_cov = torch.matmul(
+                tm, torch.matmul(incoming._cov, tm.transpose(-2, -1))
+            )
+            outgoing = ParameterBeam(
+                outgoing_mu,
+                outgoing_cov,
+                incoming.energy,
+                total_charge=incoming.total_charge,
+                device=self.length.device,
+                dtype=outgoing_mu.dtype,
+            )
+            return outgoing
+        else: # ParticleBeam
+            outgoing = track_bmadx_quad(incoming, self)
+            return outgoing
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            k1=self.k1.repeat(shape),
+            misalignment=self.misalignment.repeat((*shape, 1)),
+            tilt=self.tilt.repeat(shape),
+            n_steps = self.n_steps,
+            name=self.name,
+        )
+
+    @property
+    def is_skippable(self) -> bool:
+        return False
+
+    @property
+    def is_active(self) -> bool:
+        return any(self.k1 != 0)
+
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+        # TODO: Implement splitting for Bmad Quad consistent with n_steps
+        return [self]
+
+    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (np.sign(self.k1[0]) if self.is_active else 1)
+        patch = Rectangle(
+            (s, 0), self.length[0], height, color="tab:red", alpha=alpha, zorder=2
+        )
+        ax.add_patch(patch)
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["length", "k1", "misalignment", "tilt", "n_steps"]
+
+    def __repr__(self) -> None:
+        return (
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"k1={repr(self.k1)}, "
+            + f"misalignment={repr(self.misalignment)}, "
+            + f"tilt={repr(self.tilt)}, "
+            + f"n_steps={repr(self.n_steps)}, "
+            + f"name={repr(self.name)})"
+        )
+    
+
