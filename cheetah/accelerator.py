@@ -337,23 +337,23 @@ class Drift(Element):
 
 class SpaceChargeKick(Element):
     """
-    Applies the effect of space charge over a length `length`, on the **momentum** 
-    (i.e. divergence and energy spread) of the beam. 
+    Applies the effect of space charge over a length `length`, on the **momentum**
+    (i.e. divergence and energy spread) of the beam.
     The positions are unmodified ; this is meant to be combined with another lattice
     element (e.g. `Drift`) that does modify the positions, but does not take into
     account space charge.
-    This uses the integrated Green function method 
-    (https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.9.044204) to compute 
-    the effect of space charge. This is similar to the method used in Ocelot. 
-    The main difference is that it solves the Poisson equation in the beam frame, 
-    while here we solve a modified Poisson equation in the laboratory frame 
+    This uses the integrated Green function method
+    (https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.9.044204) to compute
+    the effect of space charge. This is similar to the method used in Ocelot.
+    The main difference is that it solves the Poisson equation in the beam frame,
+    while here we solve a modified Poisson equation in the laboratory frame
     (https://pubs.aip.org/aip/pop/article-abstract/15/5/056701/1016636/Simulation-of-beams-or-plasmas-crossing-at).
     The two methods are in principle equivalent.
 
     Overview of the method:
     - Compute the beam charge density on a grid
     - Convolve the charge density with a Green function (the integrated green function)
-    to find the potential `phi` on the grid. The convolution uses the Hockney method 
+    to find the potential `phi` on the grid. The convolution uses the Hockney method
     for open boundaries (allocate 2x larger arrays and perform convolution using FFTs)
     - Compute the corresponding electromagnetic fields and Lorentz force on the grid
     - Interpolate the Lorentz force to the particles and update their momentum
@@ -387,11 +387,11 @@ class SpaceChargeKick(Element):
         self.length = torch.as_tensor(length, **self.factory_kwargs)
         self.grid_shape = (int(num_grid_points_x), int(num_grid_points_y), \
                            int(num_grid_points_s))
-        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs) 
+        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs)
         # in multiples of sigma
         self.grid_extend_y = torch.as_tensor(grid_extend_y, **self.factory_kwargs)
         self.grid_extend_s = torch.as_tensor(grid_extend_s, **self.factory_kwargs)
-    
+
 
     def _compute_grid_dimensions(self,beam: ParticleBeam) -> torch.Tensor:
         sigma_x = torch.std(beam.particles[..., 0])
@@ -399,16 +399,16 @@ class SpaceChargeKick(Element):
         sigma_s = torch.std(beam.particles[..., 4])
         return torch.tensor([self.grid_extend_x*sigma_x, self.grid_extend_y*sigma_y\
                              , self.grid_extend_s*sigma_s])
-    
+
     def _gammaref(self,beam: ParticleBeam) -> torch.Tensor:
         return beam.energy / rest_energy
-    
+
     def _betaref(self,beam: ParticleBeam) -> torch.Tensor:
         gamma = self._gammaref(beam)
         if gamma == 0:
             return torch.tensor(1.0)
         return torch.sqrt(1 - 1 / gamma**2)
-    
+
     def _deposit_charge_on_grid(self, beam: ParticleBeam, cell_size, grid_dimensions)\
         -> torch.Tensor:
         """
@@ -416,44 +416,48 @@ class SpaceChargeKick(Element):
         grid point method and weighting by the distance to the grid points.
         Returns a grid of charge density in C/m^3.
         """
-        grid_shape = self.grid_shape
-        charge = torch.zeros(grid_shape)
+        n_batch = beam.particles.shape[0]
+        charge = torch.zeros( (n_batch,) + self.grid_shape )
 
-        # Get particle positions and charges
-        particle_pos = beam.particles[..., [0, 2, 4]]
-        particle_charge = beam.particle_charges
-        normalized_pos = (particle_pos + grid_dimensions) / cell_size
+        # Loop over batch dimension
+        for i_batch in range(n_batch):
+            # Get particle positions and charges
+            particle_pos = beam.particles[i_batch, :, [0, 2, 4]]
+            particle_charge = beam.particle_charges[i_batch]
+            normalized_pos = (particle_pos + grid_dimensions) / cell_size
 
-        # Find the indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_pos).type(torch.long)
+            # Find the indices of the lower corners of the cells containing the particles
+            cell_indices = torch.floor(normalized_pos).type(torch.long)
 
-        # Calculate the weights for all surrounding cells
-        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0]\
-                                , [1, 0, 1], [1, 1, 0], [1, 1, 1]])
-        surrounding_indices = cell_indices.unsqueeze(1) + offsets  
-        # Shape: (n_particles, 8, 3)
-        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  
-        # Shape: (n_particles, 8, 3)
-        cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
+            # Calculate the weights for all surrounding cells
+            offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0]\
+                                    , [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+            surrounding_indices = cell_indices.unsqueeze(-2) + offsets
+            # Shape: (n_particles, 8, 3)
+            weights = 1 - torch.abs(normalized_pos.unsqueeze(-2) - surrounding_indices)
+            # Shape: (n_batch, n_particles, 8, 3)
+            cell_weights = weights.prod(dim=-1)  # Shape: (n_particles, 8)
 
-        # Add the charge contributions to the cells
-        idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T    
-        # Shape: (3, n_particles*8)
-        # Check that particles are inside the grid
-        valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
-                    (idx_y >= 0) & (idx_y < grid_shape[1]) & \
-                    (idx_s >= 0) & (idx_s < grid_shape[2])
+            # Add the charge contributions to the cells
+            idx_x = surrounding_indices[:,:,0].flatten()
+            idx_y = surrounding_indices[:,:,1].flatten()
+            idx_s = surrounding_indices[:,:,2].flatten()
+            # Shape: (8*n_particles,)
+            # Check that particles are inside the grid
+            valid_mask = (idx_x >= 0) & (idx_x < self.grid_shape[0]) & \
+                        (idx_y >= 0) & (idx_y < self.grid_shape[1]) & \
+                        (idx_s >= 0) & (idx_s < self.grid_shape[2])
 
-        # Accumulate the charge contributions
-        indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask],idx_s[valid_mask]]\
-                              , dim=0) # Shape: (3, n_valid) n_valid =8*n_particles
-        repeated_charges = particle_charge.repeat_interleave(8) # Shape:(8*n_particles)
-        values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
-        charge.index_put_(tuple(indices), values, accumulate=True)
+            # Accumulate the charge contributions
+            repeated_charges = particle_charge.repeat_interleave(8) # Shape:(8*n_particles,)
+            values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
+            charge[i_batch].index_put_( (idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]), values, accumulate=True)
+
+        # End of loop over batch
         inv_cell_volume = 1 / (cell_size[0] * cell_size[1] * cell_size[2])
 
         return charge * inv_cell_volume   # Normalize by the cell volume
-    
+
 
     def _integrated_potential(self, x, y, s) -> torch.Tensor:
         """
@@ -469,7 +473,7 @@ class SpaceChargeKick(Element):
             + x * s * torch.asinh(y / torch.sqrt(x**2 + s**2))
             + x * y * torch.asinh(s / torch.sqrt(x**2 + y**2)))
         return G
-    
+
 
     def _array_rho(self,beam: ParticleBeam, cell_size, grid_dimensions) ->torch.Tensor:
         """
@@ -486,8 +490,8 @@ class SpaceChargeKick(Element):
         # Copy the original charge_density values to the beginning of the new tensor
         new_charge_density[..., :charge_density.shape[0], :charge_density.shape[1],\
                                :charge_density.shape[2]] = charge_density
-        return new_charge_density    
-    
+        return new_charge_density
+
     def _IGF(self, beam: ParticleBeam, cell_size) -> torch.Tensor:
         """
         Computes the Integrated Green Function (IGF) with periodic boundary conditions
@@ -496,7 +500,7 @@ class SpaceChargeKick(Element):
         gamma = self._gammaref(beam)
         dx, dy, ds = cell_size[0], cell_size[1], cell_size[2] * gamma  #scaled by gamma
         num_grid_points_x, num_grid_points_y, num_grid_points_s = self.grid_shape
-        
+
         # Create coordinate grids
         x = torch.arange(num_grid_points_x, **self.factory_kwargs) * dx
         y = torch.arange(num_grid_points_y, **self.factory_kwargs) * dy
@@ -546,7 +550,7 @@ class SpaceChargeKick(Element):
               = G_values[1:, 1:, 1:].flip(dims=[0, 1, 2])  # Reverse all dimensions
 
         return green_func
-    
+
 
     def _solve_poisson_equation(self, beam: ParticleBeam, cell_size, grid_dimensions)\
           -> torch.Tensor:  #works only for ParticleBeam at this stage
@@ -579,12 +583,12 @@ class SpaceChargeKick(Element):
             else torch.tensor(0.0)
         )
         potential = self._solve_poisson_equation(beam, cell_size, grid_dimensions)
-        
+
         grad_x = torch.zeros_like(potential)
         grad_y = torch.zeros_like(potential)
         grad_s = torch.zeros_like(potential)
 
-        # Compute the gradients of the potential, using central differences, with 0 
+        # Compute the gradients of the potential, using central differences, with 0
         #boundary conditions.
         grad_x[1:-1, :, :] = ( potential[2:, :, :] - potential[:-2, :, :] )\
               * (0.5 * inv_cell_size[0])
@@ -602,7 +606,7 @@ class SpaceChargeKick(Element):
 
     def _cheetah_to_moments(self, beam: ParticleBeam) -> torch.Tensor:
         """
-        Converts the Cheetah particle beam parameters to the moments in SI units used 
+        Converts the Cheetah particle beam parameters to the moments in SI units used
         in the space charge solver.
         """
         N = beam.particles.shape[0]
@@ -638,12 +642,12 @@ class SpaceChargeKick(Element):
     def _compute_forces(self, beam: ParticleBeam, cell_size, grid_dimensions)\
         -> torch.Tensor:
         """
-        Interpolates the space charge force from the grid onto the macroparticles. 
+        Interpolates the space charge force from the grid onto the macroparticles.
         Reciprocal function of _deposit_charge_on_grid.
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(beam,cell_size, grid_dimensions)
         grid_shape = self.grid_shape
-        particle_pos = beam.particles[:, [0, 2, 4]] 
+        particle_pos = beam.particles[:, [0, 2, 4]]
         normalized_pos = (particle_pos + grid_dimensions) / cell_size
 
         # Find the indices of the lower corners of the cells containing the particles
@@ -654,7 +658,7 @@ class SpaceChargeKick(Element):
                                  [1, 0, 1], [1, 1, 0], [1, 1, 1]])
         surrounding_indices =cell_indices.unsqueeze(1)+offsets #Shape:(n_particles,8,3)
 
-        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)  
+        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)
         # Shape: (n_particles, 8, 3)
         cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
 
@@ -663,7 +667,7 @@ class SpaceChargeKick(Element):
         valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
                     (idx_y >= 0) & (idx_y < grid_shape[1]) & \
                     (idx_s >= 0) & (idx_s < grid_shape[2])
-            
+
         valid_indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask],\
                                       idx_s[valid_mask]], dim=0)
 
@@ -677,7 +681,7 @@ class SpaceChargeKick(Element):
         values_x = valid_cell_weights * Fx_values
         values_y = valid_cell_weights * Fy_values
         values_z = valid_cell_weights * Fz_values
-        
+
         indices = torch.arange(particle_pos.shape[0]).repeat_interleave(8)[valid_mask]
         interpolated_forces.index_add_(0, indices, torch.stack([values_x,\
                     torch.zeros_like(values_x), torch.zeros_like(values_x)], dim=1))
@@ -687,7 +691,7 @@ class SpaceChargeKick(Element):
             [torch.zeros_like(values_z), torch.zeros_like(values_z), values_z], dim=1))
 
         return interpolated_forces
-    
+
 
     def track(self, incoming: ParticleBeam) -> ParticleBeam:
         """
@@ -712,6 +716,9 @@ class SpaceChargeKick(Element):
             grid_dimensions = self._compute_grid_dimensions(outcoming)
             cell_size = 2*grid_dimensions / torch.tensor(self.grid_shape)
             dt = self.length_effect / (c*self._betaref(outcoming))
+            # Flatten the batch dimensions (to simplify later calculation, is undone at the end of `track`)
+            n_particles = outcoming.particles.shape[-2]
+            outcoming.particles.reshape( (-1, n_particles, 7) )
             # Change coordinates to apply the space charge effect
             self._cheetah_to_moments(outcoming)
             particles = outcoming.particles
@@ -720,13 +727,9 @@ class SpaceChargeKick(Element):
             particles[:,3] += forces[:,1]*dt
             particles[:,5] += forces[:,2]*dt
             self._moments_to_cheetah(outcoming)
-            return ParticleBeam(
-                outcoming.particles,
-                incoming.energy,
-                particle_charges=outcoming.particle_charges,
-                device=particles.device,
-                dtype=particles.dtype,
-            )
+            # Unflatten the batch dimensions
+            outcoming.particles.reshape( incoming.particles.shape )
+            return outcoming
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
