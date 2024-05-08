@@ -103,3 +103,44 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.alpha_y.cpu().numpy(), 1.0, rtol=1e-2)
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09, rtol=1e-2)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
+
+
+def test_generate_uniform_ellipsoid_batched():
+    """
+    Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
+    parameters, i.e. the all particles are within the ellipsoid, and that the other
+    beam parameters are as they would be for a Gaussian beam.
+    """
+    radius_x = torch.tensor([1e-3, 2e-3])
+    radius_y = torch.tensor([1e-4, 2e-4])
+    radius_s = torch.tensor([1e-5, 2e-5])
+
+    num_particles = torch.tensor(1_000_000)
+    sigma_xp = torch.tensor([2e-7, 1e-7])
+    sigma_yp = torch.tensor([3e-7, 2e-7])
+    sigma_p = torch.tensor([0.000001, 0.000002])
+    energy = torch.tensor([1e7, 2e7])
+    total_charge = torch.tensor([1e-9, 3e-9])
+
+    num_particles = torch.tensor(1_000_000)
+    beam = ParticleBeam.uniform_3d_ellispoid(
+        num_particles=num_particles,
+        radius_x=radius_x,
+        radius_y=radius_y,
+        radius_s=radius_s,
+        sigma_xp=sigma_xp,
+        sigma_yp=sigma_yp,
+        sigma_p=sigma_p,
+        energy=energy,
+        total_charge=total_charge,
+    )
+
+    assert beam.num_particles == num_particles
+    assert torch.all(beam.xs.abs().transpose(0, 1) <= radius_x)
+    assert torch.all(beam.ys.abs().transpose(0, 1) <= radius_y)
+    assert torch.all(beam.ss.abs().transpose(0, 1) <= radius_s)
+    assert torch.allclose(beam.sigma_xp, sigma_xp)
+    assert torch.allclose(beam.sigma_yp, sigma_yp)
+    assert torch.allclose(beam.sigma_p, sigma_p)
+    assert torch.allclose(beam.energy, energy)
+    assert torch.allclose(beam.total_charge, total_charge)
