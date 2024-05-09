@@ -611,18 +611,17 @@ class SpaceChargeKick(Element):
         Converts the Cheetah particle beam parameters to the moments in SI units used
         in the space charge solver.
         """
-        N = beam.particles.shape[0]
         moments = beam.particles
         gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
         p0 = gammaref*betaref*electron_mass*c
-        gamma = gammaref*(torch.ones(N)+beam.particles[:,5]*betaref)
+        gamma = gammaref[:, None] * ( torch.ones(moments.shape[:-1]) + beam.particles[:,:,5]*betaref[:, None] )
         beta = torch.sqrt(1 - 1 / gamma**2)
         p = gamma*electron_mass*beta*c
-        moments[:,1] = p0*moments[:,1]
-        moments[:,3] = p0*moments[:,3]
-        moments[:,4] = -betaref*moments[:,4]
-        moments[:,5] = torch.sqrt(p**2 - moments[:,1]**2 - moments[:,3]**2)
+        moments[:,:,1] = p0[:, None] * moments[:,:,1]
+        moments[:,:,3] = p0[:, None] * moments[:,:,3]
+        moments[:,:,4] = -betaref[:, None] * moments[:,:,4]
+        moments[:,:,5] = torch.sqrt(p**2 - moments[:,:,1]**2 - moments[:,:,3]**2)
 
     def _moments_to_cheetah(self, beam: ParticleBeam) \
         -> torch.Tensor:
@@ -630,16 +629,15 @@ class SpaceChargeKick(Element):
         Converts the moments in SI units to the Cheetah particle beam parameters.
         """
         moments = beam.particles
-        N = moments.shape[0]
         gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
         p0 = gammaref*betaref*electron_mass*c
-        p = torch.sqrt(moments[:,1]**2 + moments[:,3]**2 + moments[:,5]**2)
+        p = torch.sqrt(moments[:,:,1]**2 + moments[:,:,3]**2 + moments[:,:,5]**2)
         gamma = torch.sqrt(1 + (p / (electron_mass*c))**2)
-        moments[:,1] = moments[:,1] / p0
-        moments[:,3] = moments[:,3] / p0
-        moments[:,4] = -moments[:,4] / betaref
-        moments[:,5] = (gamma-gammaref*torch.ones(N))/(betaref*gammaref)
+        moments[:,:,1] = moments[:,:,1] / p0[:, None]
+        moments[:,:,3] = moments[:,:,3] / p0[:, None]
+        moments[:,:,4] = -moments[:,:,4] / betaref[:, None]
+        moments[:,:,5] = (gamma-gammaref*torch.ones(gamma.shape))/((betaref*gammaref)[:, None])
 
     def _compute_forces(self, beam: ParticleBeam, cell_size, grid_dimensions)\
         -> torch.Tensor:
