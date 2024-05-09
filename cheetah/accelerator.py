@@ -423,7 +423,7 @@ class SpaceChargeKick(Element):
             # Get particle positions and charges
             particle_pos = beam.particles[i_batch, :, [0, 2, 4]]
             particle_charge = beam.particle_charges[i_batch]
-            normalized_pos = (particle_pos + grid_dimensions) / cell_size
+            normalized_pos = (particle_pos[:, :] + grid_dimensions[i_batch, None, :]) / cell_size[i_batch, None, :]
 
             # Find the indices of the lower corners of the cells containing the particles
             cell_indices = torch.floor(normalized_pos).type(torch.long)
@@ -431,9 +431,9 @@ class SpaceChargeKick(Element):
             # Calculate the weights for all surrounding cells
             offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0]\
                                     , [1, 0, 1], [1, 1, 0], [1, 1, 1]])
-            surrounding_indices = cell_indices.unsqueeze(-2) + offsets
+            surrounding_indices = cell_indices[:, None, :] + offsets[None, :, :]
             # Shape: (n_particles, 8, 3)
-            weights = 1 - torch.abs(normalized_pos.unsqueeze(-2) - surrounding_indices)
+            weights = 1 - torch.abs(normalized_pos[:, None, :] - surrounding_indices)
             # Shape: (n_particles, 8, 3)
             cell_weights = weights.prod(dim=-1)  # Shape: (n_particles, 8)
 
@@ -455,7 +455,7 @@ class SpaceChargeKick(Element):
         # End of loop over batch
         inv_cell_volume = 1 / (cell_size[:,0] * cell_size[:,1] * cell_size[:,2])
 
-        return charge * inv_cell_volume   # Normalize by the cell volume
+        return charge * inv_cell_volume[:, None, None, None]   # Normalize by the cell volume
 
 
     def _integrated_potential(self, x, y, s) -> torch.Tensor:
@@ -592,17 +592,17 @@ class SpaceChargeKick(Element):
 
         # Compute the gradients of the potential, using central differences, with 0
         #boundary conditions.
-        grad_x[1:-1, :, :] = ( potential[2:, :, :] - potential[:-2, :, :] )\
-              * (0.5 * inv_cell_size[0])
-        grad_y[:, 1:-1, :] = ( potential[:, 2:, :] - potential[:, :-2, :] )\
-              * (0.5 * inv_cell_size[1])
-        grad_s[:, :, 1:-1] = ( potential[:, :, 2:] - potential[:, :, :-2] )\
-              * (0.5 * inv_cell_size[2])
+        grad_x[:, 1:-1, :, :] = ( potential[:, 2:, :, :] - potential[:, :-2, :, :] )\
+              * (0.5 * inv_cell_size[:, 0, None, None, None])
+        grad_y[:, :, 1:-1, :] = ( potential[:, :, 2:, :] - potential[:, :, :-2, :] )\
+              * (0.5 * inv_cell_size[:, 1, None, None, None])
+        grad_s[:, :, :, 1:-1] = ( potential[:, :, :, 2:] - potential[:, :, :, :-2] )\
+              * (0.5 * inv_cell_size[:, 2, None, None, None])
 
         # Scale the gradients with lorentz factor
-        grad_x = -igamma2*grad_x
-        grad_y = -igamma2*grad_y
-        grad_s = -igamma2*grad_s
+        grad_x = -igamma2[:, None, None, None]*grad_x
+        grad_y = -igamma2[:, None, None, None]*grad_y
+        grad_s = -igamma2[:, None, None, None]*grad_s
 
         return grad_x, grad_y, grad_s
 
@@ -649,48 +649,53 @@ class SpaceChargeKick(Element):
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(beam,cell_size, grid_dimensions)
         grid_shape = self.grid_shape
-        particle_pos = beam.particles[:, [0, 2, 4]]
-        normalized_pos = (particle_pos + grid_dimensions) / cell_size
+        n_particles = beam.particles.shape[1]
+        interpolated_forces = torch.zeros( (self.n_batch, n_particles, 3), **self.factory_kwargs )
 
-        # Find the indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_pos).type(torch.long)
+        # Loop over batch dimension
+        for i_batch in range(self.n_batch):
 
-        # Calculate the weights for all surrounding cells
-        offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0],\
-                                 [1, 0, 1], [1, 1, 0], [1, 1, 1]])
-        surrounding_indices =cell_indices.unsqueeze(1)+offsets #Shape:(n_particles,8,3)
+            # Get particle positions
+            particle_pos = beam.particles[i_batch, :, [0, 2, 4]]
+            normalized_pos = (particle_pos[:, :] + grid_dimensions[i_batch, None, :]) / cell_size[i_batch, None, :]
 
-        weights = 1 - torch.abs(normalized_pos.unsqueeze(1) - surrounding_indices)
-        # Shape: (n_particles, 8, 3)
-        cell_weights = weights.prod(dim=2)  # Shape: (n_particles, 8)
+            # Find the indices of the lower corners of the cells containing the particles
+            cell_indices = torch.floor(normalized_pos).type(torch.long)
 
-        # Extract forces from the grids
-        idx_x,idx_y,idx_s = surrounding_indices.view(-1, 3).T #Shape: (3,n_particles*8)
-        valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
-                    (idx_y >= 0) & (idx_y < grid_shape[1]) & \
-                    (idx_s >= 0) & (idx_s < grid_shape[2])
+            # Calculate the weights for all surrounding cells
+            offsets = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0],\
+                                    [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+            surrounding_indices = cell_indices[:, None, :] + offsets[None, :, :] # Shape:(n_particles,8,3)
+            # Shape: (n_particles, 8, 3)
+            weights = 1 - torch.abs(normalized_pos[:, None, :] - surrounding_indices)
+            # Shape: (n_particles, 8, 3)
+            cell_weights = weights.prod(dim=-1)  # Shape: (n_particles, 8)
 
-        valid_indices = torch.stack([idx_x[valid_mask], idx_y[valid_mask],\
-                                      idx_s[valid_mask]], dim=0)
+            # Extract forces from the grids
+            idx_x, idx_y, idx_s = surrounding_indices.view(-1, 3).T #Shape: (3,n_particles*8)
+            valid_mask = (idx_x >= 0) & (idx_x < grid_shape[0]) & \
+                        (idx_y >= 0) & (idx_y < grid_shape[1]) & \
+                        (idx_s >= 0) & (idx_s < grid_shape[2])
 
-        Fx_values = grad_x[tuple(valid_indices)]
-        Fy_values = grad_y[tuple(valid_indices)]
-        Fz_values = grad_z[tuple(valid_indices)]
+            valid_indices = ( idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask] )
+            Fx_values = grad_x[ i_batch ][ valid_indices ]
+            Fy_values = grad_y[ i_batch ][ valid_indices ]
+            Fz_values = grad_z[ i_batch ][ valid_indices ]
 
-        # Compute interpolated forces
-        interpolated_forces = torch.zeros((particle_pos.shape[0], 3))
-        valid_cell_weights = cell_weights.view(-1)[valid_mask]*elementary_charge
-        values_x = valid_cell_weights * Fx_values
-        values_y = valid_cell_weights * Fy_values
-        values_z = valid_cell_weights * Fz_values
+            # Compute interpolated forces
+            valid_cell_weights = cell_weights.view(-1)[valid_mask]*elementary_charge
+            values_x = valid_cell_weights * Fx_values
+            values_y = valid_cell_weights * Fy_values
+            values_z = valid_cell_weights * Fz_values
 
-        indices = torch.arange(particle_pos.shape[0]).repeat_interleave(8)[valid_mask]
-        interpolated_forces.index_add_(0, indices, torch.stack([values_x,\
-                    torch.zeros_like(values_x), torch.zeros_like(values_x)], dim=1))
-        interpolated_forces.index_add_(0,indices,torch.stack\
-            ([torch.zeros_like(values_y), values_y, torch.zeros_like(values_y)],dim=1))
-        interpolated_forces.index_add_(0, indices, torch.stack(\
-            [torch.zeros_like(values_z), torch.zeros_like(values_z), values_z], dim=1))
+            indices = torch.arange(n_particles).repeat_interleave(8)[valid_mask]
+            interpolated_F = interpolated_forces[i_batch]
+            interpolated_F.index_add_(0, indices, torch.stack([values_x,\
+                        torch.zeros_like(values_x), torch.zeros_like(values_x)], dim=1))
+            interpolated_F.index_add_(0,indices,torch.stack\
+                ([torch.zeros_like(values_y), values_y, torch.zeros_like(values_y)],dim=1))
+            interpolated_F.index_add_(0, indices, torch.stack(\
+                [torch.zeros_like(values_z), torch.zeros_like(values_z), values_z], dim=1))
 
         return interpolated_forces
 
@@ -726,9 +731,9 @@ class SpaceChargeKick(Element):
             self._cheetah_to_moments(outcoming)
             particles = outcoming.particles
             forces = self._compute_forces(outcoming, cell_size, grid_dimensions)
-            particles[:,1] += forces[:,0]*dt
-            particles[:,3] += forces[:,1]*dt
-            particles[:,5] += forces[:,2]*dt
+            particles[:,:,1] += forces[:,:,0]*dt
+            particles[:,:,3] += forces[:,:,1]*dt
+            particles[:,:,5] += forces[:,:,2]*dt
             self._moments_to_cheetah(outcoming)
             # Unflatten the batch dimensions
             outcoming.particles.reshape( incoming.particles.shape )
