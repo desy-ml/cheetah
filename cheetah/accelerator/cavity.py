@@ -1,24 +1,16 @@
-from abc import ABC, abstractmethod
-from copy import deepcopy
-from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Optional, Union
 
 import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import Size, nn
-from torch.distributions import MultivariateNormal
 
-from cheetah.converters.dontbmad import convert_bmad_lattice
-from cheetah.converters.nxtables import read_nx_tables
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.track_methods import base_rmatrix, misalignment_matrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator
+
+from . import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
