@@ -20,15 +20,15 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     cs = torch.cos(angle)
     sn = torch.sin(angle)
 
-    tm = torch.eye(7, dtype=angle.dtype, device=angle.device)
-    tm[0, 0] = cs
-    tm[0, 2] = sn
-    tm[1, 1] = cs
-    tm[1, 3] = sn
-    tm[2, 0] = -sn
-    tm[2, 2] = cs
-    tm[3, 1] = -sn
-    tm[3, 3] = cs
+    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
+    tm[..., 0, 0] = cs
+    tm[..., 0, 2] = sn
+    tm[..., 1, 1] = cs
+    tm[..., 1, 3] = sn
+    tm[..., 2, 0] = -sn
+    tm[..., 2, 2] = cs
+    tm[..., 3, 1] = -sn
+    tm[..., 3, 3] = cs
 
     return tm
 
@@ -98,7 +98,9 @@ def base_rmatrix(
 
     # Rotate the R matrix for skew / vertical magnets
     if torch.any(tilt != 0):
-        R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
+        R = torch.einsum(
+            "...ij,...jk,...kl->...il", rotation_matrix(-tilt), R, rotation_matrix(tilt)
+        )
     return R
 
 
