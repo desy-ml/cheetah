@@ -1020,7 +1020,7 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def uniform_3d_ellispoid(
+    def uniform_3d_ellipsoid(
         cls,
         num_particles: Optional[torch.Tensor] = None,
         radius_x: Optional[torch.Tensor] = None,
