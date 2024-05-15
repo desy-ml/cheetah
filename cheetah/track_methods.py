@@ -110,13 +110,14 @@ def misalignment_matrix(
     """Shift the beam for tracking beam through misaligned elements"""
     device = misalignment.device
     dtype = misalignment.dtype
+    batch_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, device=device, dtype=dtype)
-    R_exit[0, 6] = misalignment[0]
-    R_exit[2, 6] = misalignment[1]
+    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*batch_shape, 1, 1)
+    R_exit[..., 0, 6] = misalignment[..., 0]
+    R_exit[..., 2, 6] = misalignment[..., 1]
 
-    R_entry = torch.eye(7, device=device, dtype=dtype)
-    R_entry[0, 6] = -misalignment[0]
-    R_entry[2, 6] = -misalignment[1]
+    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*batch_shape, 1, 1)
+    R_entry[..., 0, 6] = -misalignment[..., 0]
+    R_entry[..., 2, 6] = -misalignment[..., 1]
 
-    return R_exit, R_entry  # TODO: This order is confusing, should be entry, exit
+    return R_entry, R_exit
