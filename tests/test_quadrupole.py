@@ -20,3 +20,29 @@ def test_quadrupole_off():
 
     assert torch.allclose(outbeam_quad.sigma_x, outbeam_drift.sigma_x)
     assert not torch.allclose(outbeam_quad_on.sigma_x, outbeam_drift.sigma_x)
+
+
+def test_quadrupole_with_misalignments():
+    """
+    Test that a quadrupole with misalignments behaves as expected.
+    """
+
+    quad_with_misalignment = Quadrupole(
+        length=torch.tensor([1.0]),
+        k1=torch.tensor([1.0]),
+        misalignment=torch.tensor([[0.1, 0.1]]),
+    )
+
+    quad_without_misalignment = Quadrupole(
+        length=torch.tensor([1.0]), k1=torch.tensor([1.0])
+    )
+    incoming_beam = ParameterBeam.from_parameters(
+        sigma_xp=torch.tensor([2e-7]), sigma_yp=torch.tensor([2e-7])
+    )
+    outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
+    outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
+
+    assert not torch.allclose(
+        outbeam_quad_with_misalignment.sigma_x,
+        outbeam_quad_without_misalignment.sigma_x,
+    )
