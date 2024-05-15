@@ -545,9 +545,9 @@ class Dipole(Element):
             R = torch.eye(7, device=device, dtype=dtype).repeat(
                 (*self.length.shape, 1, 1)
             )
-            R[:, 0, 1] = self.length
-            R[:, 2, 6] = self.angle
-            R[:, 2, 3] = self.length
+            R[..., 0, 1] = self.length
+            R[..., 2, 6] = self.angle
+            R[..., 2, 3] = self.length
 
         # Apply fringe fields
         R = torch.matmul(R_exit, torch.matmul(R, R_enter))
@@ -574,8 +574,8 @@ class Dipole(Element):
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
-        tm[:, 1, 0] = self.hx * torch.tan(self.e1)
-        tm[:, 3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        tm[..., 1, 0] = self.hx * torch.tan(self.e1)
+        tm[..., 3, 2] = -self.hx * torch.tan(self.e1 - phi)
 
         return tm
 
@@ -594,8 +594,8 @@ class Dipole(Element):
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
-        tm[:, 1, 0] = self.hx * torch.tan(self.e2)
-        tm[:, 3, 2] = -self.hx * torch.tan(self.e2 - phi)
+        tm[..., 1, 0] = self.hx * torch.tan(self.e2)
+        tm[..., 3, 2] = -self.hx * torch.tan(self.e2 - phi)
 
         return tm
 
@@ -1446,11 +1446,11 @@ class Screen(Element):
             copy_of_incoming = deepcopy(incoming)
 
             if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu[:, 0] -= self.misalignment[:, 0]
-                copy_of_incoming._mu[:, 2] -= self.misalignment[:, 1]
+                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
+                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
-                copy_of_incoming.particles[:, :, 0] -= self.misalignment[:, 0]
-                copy_of_incoming.particles[:, :, 1] -= self.misalignment[:, 1]
+                copy_of_incoming.particles[..., :, 0] -= self.misalignment[..., 0]
+                copy_of_incoming.particles[..., :, 1] -= self.misalignment[..., 1]
 
             self.set_read_beam(copy_of_incoming)
 
@@ -1474,18 +1474,18 @@ class Screen(Element):
             )
         elif isinstance(read_beam, ParameterBeam):
             transverse_mu = torch.stack(
-                [read_beam._mu[:, 0], read_beam._mu[:, 2]], dim=1
+                [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
             )
             transverse_cov = torch.stack(
                 [
                     torch.stack(
-                        [read_beam._cov[:, 0, 0], read_beam._cov[:, 0, 2]], dim=1
+                        [read_beam._cov[..., 0, 0], read_beam._cov[..., 0, 2]], dim=-1
                     ),
                     torch.stack(
-                        [read_beam._cov[:, 2, 0], read_beam._cov[:, 2, 2]], dim=1
+                        [read_beam._cov[..., 2, 0], read_beam._cov[..., 2, 2]], dim=-1
                     ),
                 ],
-                dim=1,
+                dim=-1,
             )
             dist = [
                 MultivariateNormal(
@@ -1765,9 +1765,9 @@ class Undulator(Element):
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
-        tm[:, 0, 1] = self.length
-        tm[:, 2, 3] = self.length
-        tm[:, 4, 5] = self.length * igamma2
+        tm[..., 0, 1] = self.length
+        tm[..., 2, 3] = self.length
+        tm[..., 4, 5] = self.length * igamma2
 
         return tm
 
@@ -1864,23 +1864,23 @@ class Solenoid(Element):
             r56 -= self.length / (beta * beta * gamma2)
 
         R = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
-        R[:, 0, 0] = c**2
-        R[:, 0, 1] = c * s_k
-        R[:, 0, 2] = s * c
-        R[:, 0, 3] = s * s_k
-        R[:, 1, 0] = -self.k * s * c
-        R[:, 1, 1] = c**2
-        R[:, 1, 2] = -self.k * s**2
-        R[:, 1, 3] = s * c
-        R[:, 2, 0] = -s * c
-        R[:, 2, 1] = -s * s_k
-        R[:, 2, 2] = c**2
-        R[:, 2, 3] = c * s_k
-        R[:, 3, 0] = self.k * s**2
-        R[:, 3, 1] = -s * c
-        R[:, 3, 2] = -self.k * s * c
-        R[:, 3, 3] = c**2
-        R[:, 4, 5] = r56
+        R[..., 0, 0] = c**2
+        R[..., 0, 1] = c * s_k
+        R[..., 0, 2] = s * c
+        R[..., 0, 3] = s * s_k
+        R[..., 1, 0] = -self.k * s * c
+        R[..., 1, 1] = c**2
+        R[..., 1, 2] = -self.k * s**2
+        R[..., 1, 3] = s * c
+        R[..., 2, 0] = -s * c
+        R[..., 2, 1] = -s * s_k
+        R[..., 2, 2] = c**2
+        R[..., 2, 3] = c * s_k
+        R[..., 3, 0] = self.k * s**2
+        R[..., 3, 1] = -s * c
+        R[..., 3, 2] = -self.k * s * c
+        R[..., 3, 3] = c**2
+        R[..., 4, 5] = r56
 
         R = R.real
 
