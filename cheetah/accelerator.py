@@ -540,7 +540,7 @@ class Dipole(Element):
                 hx=self.hx,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
-            )
+            )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
             R = torch.eye(7, device=device, dtype=dtype).repeat(
                 (*self.length.shape, 1, 1)
@@ -552,11 +552,9 @@ class Dipole(Element):
         # Apply fringe fields
         R = torch.matmul(R_exit, torch.matmul(R, R_enter))
         # Apply rotation for tilted magnets
-        # TODO: Are we applying tilt twice (here and base_rmatrix)?
         R = torch.matmul(
             rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
         )
-
         return R
 
     def _transfer_map_enter(self) -> torch.Tensor:
