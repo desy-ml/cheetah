@@ -101,6 +101,52 @@ def test_dipole_with_fringe_field():
     )
 
 
+def test_dipole_with_fringe_field_and_tilt():
+    """
+    Test that the tracking results through a Cheeath `Dipole` element match those
+    through an Oclet `Bend` element when there are fringe fields and tilt, and the
+    e1 and e2 angles are set.
+    """
+    # Cheetah
+    bend_angle = np.pi / 6
+    tilt_angle = np.pi / 4
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_dipole = cheetah.Dipole(
+        length=torch.tensor([1.0]),
+        angle=torch.tensor([bend_angle]),
+        fringe_integral=torch.tensor([0.1]),
+        gap=torch.tensor([0.2]),
+        tilt=torch.tensor([tilt_angle]),
+        e1=torch.tensor([bend_angle / 2]),
+        e2=torch.tensor([bend_angle / 2]),
+    )
+    outgoing_beam = cheetah_dipole(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_bend = ocelot.Bend(
+        l=1.0,
+        angle=bend_angle,
+        fint=0.1,
+        gap=0.2,
+        tilt=tilt_angle,
+        e1=bend_angle / 2,
+        e2=bend_angle / 2,
+    )
+    lattice = ocelot.MagneticLattice([ocelot_bend, ocelot.Marker()])
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    assert np.allclose(
+        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
+    )
+
+
 def test_aperture():
     """
     Test that the tracking results through a Cheeath `Aperture` element match those
