@@ -7,3 +7,4 @@ Particles
     :members:
     :undoc-members:
     :recursive:
+    :show-inheritance:
