@@ -3,6 +3,6 @@
 Accelerator
 ===========
 
-.. automodule:: accelerator
+.. automodule:: accelerator.aperture
     :members:
     :undoc-members:
