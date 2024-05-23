@@ -26,7 +26,12 @@ extensions = [
     "nbsphinx",  # To render Jupyter notebooks
     "sphinx.ext.autodoc",  # To generate documentation from docstrings
     "sphinx.ext.autosummary",  # To automatically generate recursively
+    "myst_parser",  # To parse markdown files
 ]
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",  # add markdown support
+}
 autosummary_generate = True  # Turn on autosummary
 
 templates_path = ["_templates"]
