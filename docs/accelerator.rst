@@ -3,8 +3,8 @@
 Accelerator
 ===========
 
-.. automodule:: accelerator
-    :members:
-    :undoc-members:
+.. autosummary::
+    :toctree: autosummary
     :recursive:
-    :show-inheritance:
+
+    accelerator

@@ -22,7 +22,12 @@ release = "0.7.0"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.autodoc", "nbsphinx"]
+extensions = [
+    "nbsphinx",  # To render Jupyter notebooks
+    "sphinx.ext.autodoc",  # To generate documentation from docstrings
+    "sphinx.ext.autosummary",  # To automatically generate recursively
+]
+autosummary_generate = True  # Turn on autosummary
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
