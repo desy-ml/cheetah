@@ -16,7 +16,7 @@ class ParticleBeam(Beam):
     Beam of charged particles, where each particle is simulated.
 
     :param particles: List of 7-dimensional particle vectors.
-    :param energy: Energy of the beam in eV.
+    :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
@@ -73,15 +73,17 @@ class ParticleBeam(Beam):
         :param num_particles: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
-        :param mu_yp: Center of the particle distribution on y' in metraders.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
-        :param cor_x: Correlation between x and x'.
+        :param cor_x: Correlation between x and xp.
         :param cor_y: Correlation between y and y'.
         :param cor_s: Correlation between s and p.
         :param energy: Energy of the beam in eV.
@@ -298,13 +300,13 @@ class ParticleBeam(Beam):
         :param radius_x: Radius of the ellipsoid in x direction in meters.
         :param radius_y: Radius of the ellipsoid in y direction in meters.
         :param radius_s: Radius of the ellipsoid in s (longitudinal) direction
-        in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad,
-        default is 0.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad,
-        default is 0.
+            in meters.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless, default is 0.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless, default is 0.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
-        :param energy: Energy of the beam in eV.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to.
         :param dtype: Data type of the generated particles.
@@ -417,12 +419,14 @@ class ParticleBeam(Beam):
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Energy of the beam in eV.
@@ -608,15 +612,17 @@ class ParticleBeam(Beam):
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
-        :param energy: Energy of the beam in eV.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.

@@ -40,20 +40,24 @@ class Element(ABC, nn.Module):
         r"""
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element.
-        The state vector consists of 6 values with a physical meaning:
-        (in the trace space notation)
+        The state vector consists of 6 values with a physical meaning.
+        They represent a particle in the phase space with
 
-        - x: Position in x direction
-        - xp: Angle in x direction
-        - y: Position in y direction
-        - yp: Angle in y direction
-        - s: Position in longitudinal direction, the zero value is set to the
+        - x: Position in x direction (m), relative to the reference particle
+        - xp: Horinzontal momentum normalized over the reference momentum
+            (dimensionless) :math:`xp = P_x / P_0`
+        - y: Position in y direction (m), relative to the reference particle
+        - yp: Vertical momentum normalized over the reference momentum
+            (dimensionless) :math:`yp = P_y / P_0`
+        - s: Position in longitudinal direction (m), the zero value is set to the
         reference position (usually the center of the pulse)
-        - p: Relative energy deviation from the reference particle
-           :math:`p = \frac{\Delta E}{p_0 C}`
-        As well as a seventh value used to add constants to some of the prior values if
-        necessary. Through this seventh state, the addition of constants can be
-        represented using a matrix multiplication.
+        - p: Relative energy deviation from the reference particle (dimensionless)
+        :math:`p = \frac{\Delta E}{p_0 C}`
+
+        As well as a seventh value used to add constants to some of the previous values
+        if necessary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication, i.e. the augmented matrix as in an
+        affine transformation.
 
         :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
         :return: A 7x7 Matrix for further calculations.
