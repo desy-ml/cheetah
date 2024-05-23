@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
@@ -10,7 +10,7 @@ from torch import Size, nn
 
 from cheetah.utils import UniqueNameGenerator
 
-from . import Element
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -92,7 +92,7 @@ class VerticalCorrector(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
 

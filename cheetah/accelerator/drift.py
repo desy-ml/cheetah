@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-import matplotlib
+import matplotlib.pyplot as plt
 import torch
 from scipy import constants
 from scipy.constants import physical_constants
@@ -8,7 +8,7 @@ from torch import Size, nn
 
 from cheetah.utils import UniqueNameGenerator
 
-from . import Element
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -81,7 +81,7 @@ class Drift(Element):
             remaining -= resolution
         return split_elements
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         pass
 
     @property

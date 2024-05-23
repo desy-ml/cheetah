@@ -4,7 +4,7 @@ import torch
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
-from . import Beam
+from .beam import Beam
 
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6

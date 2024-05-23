@@ -1,6 +1,6 @@
 from typing import Literal, Optional, Union
 
-import matplotlib
+import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
@@ -10,7 +10,7 @@ from torch import Size, nn
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
 
-from . import Element
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -130,7 +130,7 @@ class Aperture(Element):
         # TODO: Implement splitting for aperture properly, for now just return self
         return [self]
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 

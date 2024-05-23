@@ -7,7 +7,7 @@ from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
 
-from . import Dipole
+from .dipole import Dipole
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

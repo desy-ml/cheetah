@@ -1,6 +1,6 @@
 from typing import Optional
 
-import matplotlib
+import matplotlib.pyplot as plt
 import torch
 from scipy import constants
 from scipy.constants import physical_constants
@@ -9,7 +9,7 @@ from torch import Size
 from cheetah.particles import Beam
 from cheetah.utils import UniqueNameGenerator
 
-from . import Element
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -55,7 +55,7 @@ class Marker(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         # Do nothing on purpose. Maybe later we decide markers should be shown, but for
         # now they are invisible.
         pass

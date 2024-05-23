@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Optional, Union
 
-import matplotlib
+import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
@@ -12,7 +12,7 @@ from torch.distributions import MultivariateNormal
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
 
-from . import Element
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -249,7 +249,7 @@ class Screen(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
         patch = Rectangle(
             (s, -0.6), 0, 0.6 * 2, color="tab:green", alpha=alpha, zorder=2

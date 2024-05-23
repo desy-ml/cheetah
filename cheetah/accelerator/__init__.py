@@ -1,10 +1,11 @@
 from .aperture import Aperture  # noqa: F401
 from .bpm import BPM  # noqa: F401
 from .cavity import Cavity  # noqa: F401
-from .custom_transfer_map import CustomTransferMa  # noqa: F401
+from .custom_transfer_map import CustomTransferMap  # noqa: F401
 from .dipole import Dipole  # noqa: F401
+from .drift import Drift  # noqa: F401
 from .element import Element  # noqa: F401
-from .horizontal_corrector import HorizontalCorre  # noqa: F401
+from .horizontal_corrector import HorizontalCorrector  # noqa: F401
 from .marker import Marker  # noqa: F401
 from .quadrupole import Quadrupole  # noqa: F401
 from .rbend import RBend  # noqa: F401

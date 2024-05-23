@@ -15,7 +15,10 @@ from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
 
-from . import CustomTransferMap, Drift, Element, Marker
+from .custom_transfer_map import CustomTransferMap
+from .drift import Drift
+from .element import Element
+from .marker import Marker
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -368,7 +371,7 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         element_lengths = [element.length[0] for element in self.elements]
         element_ss = [0] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
@@ -386,8 +389,8 @@ class Segment(Element):
 
     def plot_reference_particle_traces(
         self,
-        axx: matplotlib.axes.Axes,
-        axy: matplotlib.axes.Axes,
+        axx: plt.Axes,
+        axy: plt.Axes,
         beam: Optional[Beam] = None,
         num_particles: int = 10,
         resolution: float = 0.01,

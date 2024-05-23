@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import matplotlib
+import matplotlib.pyplot as plt
 import torch
 from scipy import constants
 from scipy.constants import physical_constants
@@ -138,7 +138,7 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float) -> None:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 
