@@ -127,23 +127,21 @@ class Dipole(Element):
                 hx=self.hx,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
-            )
+            )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
             R = torch.eye(7, device=device, dtype=dtype).repeat(
                 (*self.length.shape, 1, 1)
             )
-            R[:, 0, 1] = self.length
-            R[:, 2, 6] = self.angle
-            R[:, 2, 3] = self.length
+            R[..., 0, 1] = self.length
+            R[..., 2, 6] = self.angle
+            R[..., 2, 3] = self.length
 
         # Apply fringe fields
         R = torch.matmul(R_exit, torch.matmul(R, R_enter))
         # Apply rotation for tilted magnets
-        # TODO: Are we applying tilt twice (here and base_rmatrix)?
         R = torch.matmul(
             rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
         )
-
         return R
 
     def _transfer_map_enter(self) -> torch.Tensor:
@@ -161,8 +159,8 @@ class Dipole(Element):
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
-        tm[:, 1, 0] = self.hx * torch.tan(self.e1)
-        tm[:, 3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        tm[..., 1, 0] = self.hx * torch.tan(self.e1)
+        tm[..., 3, 2] = -self.hx * torch.tan(self.e1 - phi)
 
         return tm
 
@@ -181,8 +179,8 @@ class Dipole(Element):
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
-        tm[:, 1, 0] = self.hx * torch.tan(self.e2)
-        tm[:, 3, 2] = -self.hx * torch.tan(self.e2 - phi)
+        tm[..., 1, 0] = self.hx * torch.tan(self.e2)
+        tm[..., 3, 2] = -self.hx * torch.tan(self.e2 - phi)
 
         return tm
 

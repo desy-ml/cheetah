@@ -61,9 +61,9 @@ class Undulator(Element):
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
-        tm[:, 0, 1] = self.length
-        tm[:, 2, 3] = self.length
-        tm[:, 4, 5] = self.length * igamma2
+        tm[..., 0, 1] = self.length
+        tm[..., 2, 3] = self.length
+        tm[..., 4, 5] = self.length * igamma2
 
         return tm
 

@@ -160,18 +160,18 @@ class Screen(Element):
             )
         elif isinstance(read_beam, ParameterBeam):
             transverse_mu = torch.stack(
-                [read_beam._mu[:, 0], read_beam._mu[:, 2]], dim=1
+                [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
             )
             transverse_cov = torch.stack(
                 [
                     torch.stack(
-                        [read_beam._cov[:, 0, 0], read_beam._cov[:, 0, 2]], dim=1
+                        [read_beam._cov[..., 0, 0], read_beam._cov[..., 0, 2]], dim=-1
                     ),
                     torch.stack(
-                        [read_beam._cov[:, 2, 0], read_beam._cov[:, 2, 2]], dim=1
+                        [read_beam._cov[..., 2, 0], read_beam._cov[..., 2, 2]], dim=-1
                     ),
                 ],
-                dim=1,
+                dim=-1,
             )
             dist = [
                 MultivariateNormal(
