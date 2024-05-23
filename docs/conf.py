@@ -28,6 +28,8 @@ extensions = [
     "sphinx.ext.autosummary",  # To automatically generate recursively
     "myst_parser",  # To parse markdown files
 ]
+myst_enable_extensions = ["dollarmath", "amsmath"]  # Enable math typesetting
+
 source_suffix = {
     ".rst": "restructuredtext",
     ".md": "markdown",  # add markdown support
