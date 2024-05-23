@@ -1,4 +1,4 @@
-.. Documents accelerator.py
+.. Documents accelerator subpackage
 
 Accelerator
 ===========

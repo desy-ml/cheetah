@@ -1,4 +1,4 @@
-.. Documents particles.py
+.. Documents particles subpackage
 
 Particles
 =========
