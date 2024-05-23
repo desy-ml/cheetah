@@ -6,3 +6,4 @@ Accelerator
 .. automodule:: accelerator
     :members:
     :undoc-members:
+    :recursive:

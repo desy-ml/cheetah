@@ -6,3 +6,4 @@ Particles
 .. automodule:: particles
     :members:
     :undoc-members:
+    :recursive:
