@@ -15,9 +15,9 @@ class ParameterBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
 
-    :param mu: Mu vector of the beam.
-    :param cov: Covariance matrix of the beam.
-    :param energy: Energy of the beam in eV.
+    :param mu: Mu vector of the beam (..., 7).
+    :param cov: Covariance matrix of the beam (..., 7, 7).
+    :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
@@ -141,7 +141,12 @@ class ParameterBeam(Beam):
         cov[..., 5, 5] = sigma_p**2
 
         return cls(
-            mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
+            mu=mu,
+            cov=cov,
+            energy=energy,
+            total_charge=total_charge,
+            device=device,
+            dtype=dtype,
         )
 
     @classmethod
@@ -230,6 +235,7 @@ class ParameterBeam(Beam):
             cor_y=cor_y,
             total_charge=total_charge,
             device=device,
+            dtype=dtype,
         )
 
     @classmethod
@@ -298,16 +304,18 @@ class ParameterBeam(Beam):
 
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
-        :param energy: Energy of the beam in eV.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
         device = device if device is not None else self.mu_x.device

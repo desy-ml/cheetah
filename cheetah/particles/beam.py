@@ -8,6 +8,26 @@ electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
 
+r"""
+Cheetah uses a 7D vector to describe the state of a particle.
+It contains the 6D phase space vector (x, xp, y, yp, s, p) and an additional
+dimension (always 1) for convenient calculations.
+
+The phase space vectors contain the canonical variables:
+- x: Position in x direction in meters.
+- xp: Horizontal momentum normalized over the reference momentum (dimensionless).
+    $xp = P_x / P_0$
+- y: Position in y direction in meters.
+- yp: Vertical momentum normalized over the reference momentum (dimensionless).
+    $yp = P_y / P_0$
+- s: Position in longitudinal direction in meters, relative to the reference particle.
+    $s = ct - S/\beta_0$, where S is the position along the beamline.
+    In this notation, particle ahead of the reference particle will have negative s.
+- p: Relative energy deviation from the reference particle (dimensionless).
+    $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
+    $\Delta E = E - E_0$
+"""
+
 
 class Beam(nn.Module):
     empty = "I'm an empty beam!"
@@ -36,17 +56,19 @@ class Beam(nn.Module):
 
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on x'=px/px'
-            (trace space) in rad.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
-        :param energy: Energy of the beam in eV.
+        :param sigma_p: Sigma of the particle distribution in p direction,
+            dimensionless.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
         raise NotImplementedError
@@ -108,17 +130,19 @@ class Beam(nn.Module):
         Create version of this beam that is transformed to new beam parameters.
 
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
         :param sigma_s: Sigma of the particle distribution in s direction in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
-        dimensionless.
-        :param energy: Energy of the beam in eV.
+            dimensionless.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
         # Figure out batch size of the original beam and check that passed arguments
@@ -253,7 +277,7 @@ class Beam(nn.Module):
 
     @property
     def sigma_xxp(self) -> torch.Tensor:
-        # the covariance of (x,x') ~ $\sigma_{xx'}$
+        # the covariance of (x,xp) ~ $\sigma_{xxp}$
         raise NotImplementedError
 
     @property
@@ -262,7 +286,7 @@ class Beam(nn.Module):
 
     @property
     def emittance_x(self) -> torch.Tensor:
-        """Emittance of the beam in x direction in m*rad."""
+        """Emittance of the beam in x direction in m."""
         return torch.sqrt(
             torch.clamp_min(
                 self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2,
@@ -272,7 +296,7 @@ class Beam(nn.Module):
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
-        """Normalized emittance of the beam in x direction in m*rad."""
+        """Normalized emittance of the beam in x direction in m."""
         return self.emittance_x * self.relativistic_beta * self.relativistic_gamma
 
     @property
@@ -282,12 +306,12 @@ class Beam(nn.Module):
 
     @property
     def alpha_x(self) -> torch.Tensor:
-        """Alpha function in x direction in rad."""
+        """Alpha function in x direction, dimensionless."""
         return -self.sigma_xxp / self.emittance_x
 
     @property
     def emittance_y(self) -> torch.Tensor:
-        """Emittance of the beam in y direction in m*rad."""
+        """Emittance of the beam in y direction in m."""
         return torch.sqrt(
             torch.clamp_min(
                 self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2,
@@ -297,7 +321,7 @@ class Beam(nn.Module):
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
-        """Normalized emittance of the beam in y direction in m*rad."""
+        """Normalized emittance of the beam in y direction in m."""
         return self.emittance_y * self.relativistic_beta * self.relativistic_gamma
 
     @property
@@ -307,7 +331,7 @@ class Beam(nn.Module):
 
     @property
     def alpha_y(self) -> torch.Tensor:
-        """Alpha function in y direction in rad."""
+        """Alpha function in y direction, dimensionless."""
         return -self.sigma_yyp / self.emittance_y
 
     def broadcast(self, shape: torch.Size) -> "Beam":
