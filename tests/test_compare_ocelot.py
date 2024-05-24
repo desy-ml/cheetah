@@ -284,14 +284,14 @@ def test_ares_ea():
     assert np.isclose(outgoing_beam.mu_xp.cpu().numpy(), outgoing_p_array.px().mean())
     assert np.isclose(outgoing_beam.mu_y.cpu().numpy(), outgoing_p_array.y().mean())
     assert np.isclose(outgoing_beam.mu_yp.cpu().numpy(), outgoing_p_array.py().mean())
-    assert np.isclose(outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean())
+    assert np.isclose(outgoing_beam.mu_tau.cpu().numpy(), outgoing_p_array.tau().mean())
     assert np.isclose(outgoing_beam.mu_p.cpu().numpy(), outgoing_p_array.p().mean())
 
     assert np.allclose(outgoing_beam.xs.cpu().numpy(), outgoing_p_array.x())
     assert np.allclose(outgoing_beam.xps.cpu().numpy(), outgoing_p_array.px())
     assert np.allclose(outgoing_beam.ys.cpu().numpy(), outgoing_p_array.y())
     assert np.allclose(outgoing_beam.yps.cpu().numpy(), outgoing_p_array.py())
-    assert np.allclose(outgoing_beam.ss.cpu().numpy(), outgoing_p_array.tau())
+    assert np.allclose(outgoing_beam.taus.cpu().numpy(), outgoing_p_array.tau())
     assert np.allclose(outgoing_beam.ps.cpu().numpy(), outgoing_p_array.p())
 
 

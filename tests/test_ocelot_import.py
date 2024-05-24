@@ -47,7 +47,7 @@ def test_ocelot_to_parameterbeam():
     assert np.allclose(beam.sigma_xp.cpu().numpy(), np.std(parray.px()))
     assert np.allclose(beam.sigma_y.cpu().numpy(), np.std(parray.y()))
     assert np.allclose(beam.sigma_yp.cpu().numpy(), np.std(parray.py()))
-    assert np.allclose(beam.sigma_s.cpu().numpy(), np.std(parray.tau()))
+    assert np.allclose(beam.sigma_tau.cpu().numpy(), np.std(parray.tau()))
     assert np.allclose(beam.sigma_p.cpu().numpy(), np.std(parray.p()))
     assert np.allclose(beam.energy.cpu().numpy(), parray.E * 1e9)
     assert np.allclose(beam.total_charge.cpu().numpy(), parray.total_charge)
