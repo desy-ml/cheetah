@@ -10,7 +10,7 @@ electron_mass_eV = torch.tensor(
 
 r"""
 Cheetah uses a 7D vector to describe the state of a particle.
-It contains the 6D phase space vector (x, xp, y, yp, s, p) and an additional
+It contains the 6D phase space vector (x, xp, y, yp, tau, p) and an additional
 dimension (always 1) for convenient calculations.
 
 The phase space vectors contain the canonical variables:
@@ -20,9 +20,9 @@ The phase space vectors contain the canonical variables:
 - y: Position in y direction in meters.
 - yp: Vertical momentum normalized over the reference momentum (dimensionless).
     $yp = P_y / P_0$
-- s: Position in longitudinal direction in meters, relative to the reference particle.
-    $s = ct - S/\beta_0$, where S is the position along the beamline.
-    In this notation, particle ahead of the reference particle will have negative s.
+- tau: Position in longitudinal direction in meters, relative to the reference particle.
+    $\tau = ct - s/\beta_0$, where s is the position along the beamline.
+    In this notation, particle ahead of the reference particle will have negative $\tau$
 - p: Relative energy deviation from the reference particle (dimensionless).
     $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
     $\Delta E = E - E_0$
@@ -43,18 +43,17 @@ class Beam(nn.Module):
         sigma_xp: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_yp: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         cor_x: Optional[torch.Tensor] = None,
         cor_y: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
 
-        :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_xp: Center of the particle distribution on xp, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
@@ -65,9 +64,13 @@ class Beam(nn.Module):
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_yp: Sigma of the particle distribution in yp direction,
             dimensionless.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
+        :param cor_x: Correlation between x and xp.
+        :param cor_y: Correlation between y and yp.
+        :param cor_tau: Correlation between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
@@ -121,7 +124,7 @@ class Beam(nn.Module):
         sigma_xp: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_yp: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
@@ -139,7 +142,8 @@ class Beam(nn.Module):
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_yp: Sigma of the particle distribution in yp direction,
             dimensionless.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
         :param energy: Reference energy of the beam in eV.
@@ -159,7 +163,7 @@ class Beam(nn.Module):
                 sigma_xp,
                 sigma_y,
                 sigma_yp,
-                sigma_s,
+                sigma_tau,
                 sigma_p,
                 energy,
                 total_charge,
@@ -179,7 +183,7 @@ class Beam(nn.Module):
         sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
         sigma_y = sigma_y if sigma_y is not None else self.sigma_y
         sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
+        sigma_tau = sigma_tau if sigma_tau is not None else self.sigma_tau
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
@@ -193,7 +197,7 @@ class Beam(nn.Module):
             sigma_xp=sigma_xp,
             sigma_y=sigma_y,
             sigma_yp=sigma_yp,
-            sigma_s=sigma_s,
+            sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
@@ -210,7 +214,7 @@ class Beam(nn.Module):
             "sigma_xp": self.sigma_xp,
             "sigma_y": self.sigma_y,
             "sigma_yp": self.sigma_yp,
-            "sigma_s": self.sigma_s,
+            "sigma_tau": self.sigma_tau,
             "sigma_p": self.sigma_p,
             "energy": self.energy,
         }
@@ -252,7 +256,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @property
-    def sigma_s(self) -> torch.Tensor:
+    def sigma_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -274,6 +278,11 @@ class Beam(nn.Module):
             1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0] ** 2)
         )
         return relativistic_beta
+
+    @property
+    def p0c(self) -> torch.Tensor:
+        """Get the reference momentum * speed of light in eV."""
+        return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
 
     @property
     def sigma_xxp(self) -> torch.Tensor:
@@ -343,7 +352,7 @@ class Beam(nn.Module):
             f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_xp={self.mu_xp},"
             f" mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x},"
             f" sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y},"
-            f" sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s},"
+            f" sigma_yp={self.sigma_yp}, sigma_tau={self.sigma_tau},"
             f" sigma_p={self.sigma_p}, energy={self.energy}),"
             f" total_charge={self.total_charge})"
         )

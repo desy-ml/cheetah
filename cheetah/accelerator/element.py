@@ -49,7 +49,7 @@ class Element(ABC, nn.Module):
         - y: Position in y direction (m), relative to the reference particle
         - yp: Vertical momentum normalized over the reference momentum
             (dimensionless) :math:`yp = P_y / P_0`
-        - s: Position in longitudinal direction (m), the zero value is set to the
+        - tau: Position in longitudinal direction (m), the zero value is set to the
         reference position (usually the center of the pulse)
         - p: Relative energy deviation from the reference particle (dimensionless)
         :math:`p = \frac{\Delta E}{p_0 C}`
