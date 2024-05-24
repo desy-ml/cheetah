@@ -5,6 +5,7 @@
 ### 🚨 Breaking Changes
 
 - Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157) (@jank324, @cr-xu)
+- The fifth particle coordinate `s` is renamed to `tau`. Now cheetah uses the canonical variables in phase space $(x,xp=\frac{p_x}{p_0},y,yp, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. (see #163) (@cr-xu)
 
 ### 🚀 Features
 
