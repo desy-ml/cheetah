@@ -56,6 +56,10 @@ class Segment(Element):
             else:
                 self.__dict__[element.name] = element
 
+    def _initialize_length(self) -> None:
+        """A hack to allow length to become a `nn.Parameter`"""
+        pass
+
     def subcell(self, start: str, end: str) -> "Segment":
         """Extract a subcell `[start, end]` from an this segment."""
         subcell = []
