@@ -67,7 +67,7 @@ If you use Cheetah, please cite the following two papers:
 
     @article{kaiser2024cheetah,
         title        = {Bridging the gap between machine learning and particle accelerator physics with high-speed, differentiable simulations},
-        author       = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and {Santamaria Garcia}, Andrea},
+        author       = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and Santamaria Garcia, Andrea},
         year         = 2024,
         month        = {May},
         journal      = {Phys. Rev. Accel. Beams},
