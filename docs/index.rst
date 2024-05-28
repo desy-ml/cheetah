@@ -45,6 +45,7 @@ These pages explain how to get started with *Cheetah*.
 .. toctree::
     :maxdepth: 1
     :caption: Getting Started
+    
     coordinate_system.md
 
 Documentation
