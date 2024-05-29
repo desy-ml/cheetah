@@ -1,7 +1,7 @@
 .. Documents converters
 
 Converters
-============
+==========
 
 .. automodule:: converters.astra
     :members:
