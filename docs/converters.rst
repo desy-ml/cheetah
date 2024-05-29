@@ -1,6 +1,6 @@
 .. Documents converters
 
-Astralavista
+Converters
 ============
 
 .. automodule:: converters.astra
