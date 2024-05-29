@@ -23,6 +23,8 @@
 - Update versions of some steps used by GitHub actions to handle Node.js 16 end-of-life (@jank324)
 - Update versions in pre-commit config (see #148) (@jank324)
 - Split `accelerator` and `beam` into separate submodules (see #158) (@jank324)
+- Update reference from arXiv preprint to PRAB publication (see #166) (@jank324)
+- Rename converter modules to the respective name of the accelerator code (see #167) (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 

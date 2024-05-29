@@ -256,7 +256,7 @@ def test_ares_ea():
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES
     accelerator at DESY match those using Ocelot.
     """
-    cell = cheetah.converters.nocelot.subcell_of_ocelot(
+    cell = cheetah.converters.ocelot.subcell_of_ocelot(
         ares.cell, "AREASOLA1", "AREABSCR1"
     )
     ares.areamqzm1.k1 = 5.0
