@@ -48,11 +48,9 @@ For more advanced usage, please refer to the in-depth documentation.
     :caption: Documentation
 
     accelerator
-    astralavista
-    dontbmad
+    converters
     error
     latticejson
-    nocelot
     particles
     track_methods
     utils

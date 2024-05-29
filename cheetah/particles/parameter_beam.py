@@ -256,7 +256,7 @@ class ParameterBeam(Beam):
     @classmethod
     def from_astra(cls, path: str, device=None, dtype=torch.float32) -> "ParameterBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
-        from cheetah.converters.astralavista import from_astrabeam
+        from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
         mu = torch.ones(7)
