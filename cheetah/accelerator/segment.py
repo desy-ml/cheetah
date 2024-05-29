@@ -9,7 +9,7 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from cheetah.converters.dontbmad import convert_bmad_lattice
+from cheetah.converters.bmad import convert_bmad_lattice
 from cheetah.converters.nxtables import read_nx_tables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParticleBeam
@@ -273,7 +273,7 @@ class Segment(Element):
             Cheetah or converted with potentially unexpected behavior.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
-        from cheetah.converters.nocelot import ocelot2cheetah
+        from cheetah.converters.ocelot import ocelot2cheetah
 
         converted = [
             ocelot2cheetah(element, warnings=warnings, device=device, dtype=dtype)
