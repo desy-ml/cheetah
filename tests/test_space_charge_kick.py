@@ -1,8 +1,9 @@
 import pytest
 import torch
-import cheetah
 from scipy import constants
 from scipy.constants import physical_constants
+
+import cheetah
 
 
 def test_cold_uniform_beam_expansion():

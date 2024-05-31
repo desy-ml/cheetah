@@ -1,12 +1,13 @@
 from typing import Optional, Union
 
-import torch
-from torch import nn
 import matplotlib
+import torch
 from scipy import constants
 from scipy.constants import physical_constants
+from torch import nn
 
 from cheetah.particles import Beam, ParticleBeam
+
 from .element import Element
 
 # Constants
