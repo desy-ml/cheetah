@@ -129,7 +129,7 @@ class SpaceChargeKick(Element):
                 particle_pos[:, :] + grid_dimensions[i_batch, None, :]
             ) / cell_size[i_batch, None, :]
 
-            # Find the indices of the lower corners of the cells containing the particles
+            # Find indices of the lower corners of the cells containing the particles
             cell_indices = torch.floor(normalized_pos).type(torch.long)
 
             # Calculate the weights for all surrounding cells
@@ -456,7 +456,7 @@ class SpaceChargeKick(Element):
                 particle_pos[:, :] + grid_dimensions[i_batch, None, :]
             ) / cell_size[i_batch, None, :]
 
-            # Find the indices of the lower corners of the cells containing the particles
+            # Find indices of the lower corners of the cells containing the particles
             cell_indices = torch.floor(normalized_pos).type(torch.long)
 
             # Calculate the weights for all surrounding cells
@@ -552,7 +552,8 @@ class SpaceChargeKick(Element):
                 device=incoming.particles.device,
                 dtype=incoming.particles.dtype,
             )
-            # Flatten the batch dimensions (to simplify later calculation, is undone at the end of `track`)
+            # Flatten the batch dimensions
+            # (to simplify later calculation, is undone at the end of `track`)
             n_particles = outcoming.particles.shape[-2]
             outcoming.particles.reshape((-1, n_particles, 7))
             self.n_batch = outcoming.particles.shape[0]
