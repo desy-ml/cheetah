@@ -103,7 +103,7 @@ def test_incoming_beam_not_modified():
         ]
     )
     # Calling the track method
-    outgoing_beam = segment_space_charge.track(incoming_beam)
+    segment_space_charge.track(incoming_beam)
 
     # Final beam properties
     incoming_particles1 = incoming_beam.particles
