@@ -1,6 +1,8 @@
 import pytest
 import torch
 import cheetah
+from scipy import constants
+from scipy.constants import physical_constants
 
 def test_cold_uniform_beam_expansion():
     """
@@ -16,7 +18,10 @@ def test_cold_uniform_beam_expansion():
     total_charge=torch.tensor([1e-9])
     R0 = torch.tensor([0.001])
     energy=torch.tensor([2.5e8])
-    gamma = energy/cheetah.rest_energy
+    rest_energy = torch.tensor( constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge )
+    elementary_charge = torch.tensor( constants.elementary_charge )
+    electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
+    gamma = energy/rest_energy
     beta = torch.sqrt(1-1/gamma**2)
     incoming = cheetah.ParticleBeam.uniform_3d_ellispoid(
         num_particles=torch.tensor(num_particles),
@@ -37,8 +42,8 @@ def test_cold_uniform_beam_expansion():
 
     # Compute section lenght
     kappa= 1+(torch.sqrt(torch.tensor(2))/4)*torch.log(3+2*torch.sqrt(torch.tensor(2)))
-    Nb = total_charge/cheetah.elementary_charge
-    L=beta*gamma*kappa*torch.sqrt(R0**3/(Nb*cheetah.electron_radius))
+    Nb = total_charge/elementary_charge
+    L=beta*gamma*kappa*torch.sqrt(R0**3/(Nb*electron_radius))
 
     segment_space_charge = cheetah.Segment(
     elements=[
