@@ -268,7 +268,7 @@ class ParticleBeam(Beam):
             device=device,
             dtype=dtype,
         )
-    
+
     @classmethod
     def uniform_3d_ellispoid(
         cls,
