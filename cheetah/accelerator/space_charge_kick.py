@@ -111,7 +111,7 @@ class SpaceChargeKick(Element):
         return torch.sqrt(1 - 1 / gamma**2)
 
     def _deposit_charge_on_grid(
-        self, beam: ParticleBeam, cell_size, grid_dimensions
+        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
     ) -> torch.Tensor:
         """
         Deposits the charge density of the beam onto a grid, using the nearest
@@ -202,7 +202,7 @@ class SpaceChargeKick(Element):
         return G
 
     def _array_rho(
-        self, beam: ParticleBeam, cell_size, grid_dimensions
+        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
     ) -> torch.Tensor:
         """
         Allocates a 2x larger array in all dimensions (to perform Hockney's method),
@@ -226,7 +226,7 @@ class SpaceChargeKick(Element):
         ] = charge_density
         return new_charge_density
 
-    def _IGF(self, beam: ParticleBeam, cell_size) -> torch.Tensor:
+    def _integrated_green_function(self, beam: ParticleBeam, cell_size: torch.Tensor) -> torch.Tensor:
         """
         Computes the Integrated Green Function (IGF) with periodic boundary conditions
         (to perform Hockney's method).
@@ -359,7 +359,7 @@ class SpaceChargeKick(Element):
         ]
 
     def _E_plus_vB_field(
-        self, beam: ParticleBeam, cell_size, grid_dimensions
+        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
     ) -> torch.Tensor:
         """
         Computes the force field from the potential and the particle positions and
@@ -434,7 +434,7 @@ class SpaceChargeKick(Element):
         )
 
     def _compute_forces(
-        self, beam: ParticleBeam, cell_size, grid_dimensions
+        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
     ) -> torch.Tensor:
         """
         Interpolates the space charge force from the grid onto the macroparticles.
