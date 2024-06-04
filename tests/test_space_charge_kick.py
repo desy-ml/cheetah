@@ -29,7 +29,7 @@ def test_cold_uniform_beam_expansion():
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
     beta = torch.sqrt(1 - 1 / gamma**2)
-    incoming = cheetah.ParticleBeam.uniform_3d_ellispoid(
+    incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(num_particles),
         total_charge=total_charge,
         energy=energy,
