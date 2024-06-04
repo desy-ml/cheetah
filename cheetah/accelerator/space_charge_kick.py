@@ -226,7 +226,9 @@ class SpaceChargeKick(Element):
         ] = charge_density
         return new_charge_density
 
-    def _integrated_green_function(self, beam: ParticleBeam, cell_size: torch.Tensor) -> torch.Tensor:
+    def _integrated_green_function(
+        self, beam: ParticleBeam, cell_size: torch.Tensor
+    ) -> torch.Tensor:
         """
         Computes the Integrated Green Function (IGF) with periodic boundary conditions
         (to perform Hockney's method).
