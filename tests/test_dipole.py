@@ -5,7 +5,7 @@ from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Segment
 
 def test_dipole_off():
     """
-    Test that a dipole with k1=0 behaves still like a drift.
+    Test that a dipole with angle=0 behaves still like a drift.
     """
     dipole = Dipole(length=torch.tensor([1.0]), angle=torch.tensor([0.0]))
     drift = Drift(length=torch.tensor([1.0]))
@@ -43,8 +43,8 @@ def test_dipole_batched_execution():
     )
     outgoing = segment(incoming)
 
-    # Check pi/4 and 5/4*pi rotations is the same for quadrupole
+    # Check that dipole with same bend angle produce same output
     assert torch.allclose(outgoing.particles[0], outgoing.particles[2])
 
-    # Check pi/2 rotation is different
+    # Check different angles do make a difference
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
