@@ -120,7 +120,7 @@ class Dipole(Element):
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if self.length != 0.0:  # Bending magnet with finite length
+        if any(self.length != 0.0):  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
                 k1=torch.zeros_like(self.length),
