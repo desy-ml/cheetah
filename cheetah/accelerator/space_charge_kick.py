@@ -89,6 +89,9 @@ class SpaceChargeKick(Element):
         self.grid_extend_s = torch.as_tensor(grid_extend_s, **self.factory_kwargs)
 
     def _compute_grid_dimensions(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Computes the dimensions of the grid on which to compute the space charge effect.
+        """
         sigma_x = torch.std(beam.particles[:, :, 0], dim=1)
         sigma_y = torch.std(beam.particles[:, :, 2], dim=1)
         sigma_s = torch.std(beam.particles[:, :, 4], dim=1)
@@ -102,9 +105,15 @@ class SpaceChargeKick(Element):
         )
 
     def _gammaref(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Returns the Lorentz factor of the reference particle of the beam.
+        """
         return beam.energy / rest_energy
 
     def _betaref(self, beam: ParticleBeam) -> torch.Tensor:
+        """
+        Returns beta (i.e., normalized velocity) for the reference particle of the beam.
+        """
         gamma = self._gammaref(beam)
         if gamma == 0:
             return torch.tensor(1.0)
@@ -184,7 +193,7 @@ class SpaceChargeKick(Element):
             charge * inv_cell_volume[:, None, None, None]
         )  # Normalize by the cell volume
 
-    def _integrated_potential(self, x, y, s) -> torch.Tensor:
+    def _integrated_potential(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
         """
         Computes the electrostatic potential using the Integrated Green Function method
         as in http://dx.doi.org/10.1103/PhysRevSTAB.9.044204.
