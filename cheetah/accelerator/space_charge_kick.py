@@ -199,7 +199,7 @@ class SpaceChargeKick(Element):
             + x * s * torch.asinh(y / torch.sqrt(x**2 + s**2))
             + x * y * torch.asinh(s / torch.sqrt(x**2 + y**2))
         )
-        return G
+        return integrated_potential
 
     def _array_rho(
         self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor

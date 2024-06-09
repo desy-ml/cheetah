@@ -46,40 +46,29 @@ def test_cold_uniform_beam_expansion():
         sigma_p=torch.tensor([1e-15]),
     )
 
-    # Initial beam properties
-    sig_xi = incoming.sigma_x
-    sig_yi = incoming.sigma_y
-    sig_si = incoming.sigma_s
-
     # Compute section lenght
     kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
         3 + 2 * torch.sqrt(torch.tensor(2))
     )
     Nb = total_charge / elementary_charge
-    L = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+    section_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
 
     segment_space_charge = cheetah.Segment(
         elements=[
-            cheetah.Drift(L / 6),
-            cheetah.SpaceChargeKick(L / 3),
-            cheetah.Drift(L / 3),
-            cheetah.SpaceChargeKick(L / 3),
-            cheetah.Drift(L / 3),
-            cheetah.SpaceChargeKick(L / 3),
-            cheetah.Drift(L / 6),
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 6),
         ]
     )
     outgoing_beam = segment_space_charge.track(incoming)
 
-    # Final beam properties
-    sig_xo = outgoing_beam.sigma_x
-    sig_yo = outgoing_beam.sigma_y
-    sig_so = outgoing_beam.sigma_s
-
-    torch.set_printoptions(precision=16)
-    assert torch.isclose(sig_xo, 2 * sig_xi, rtol=2e-2, atol=0.0)
-    assert torch.isclose(sig_yo, 2 * sig_yi, rtol=2e-2, atol=0.0)
-    assert torch.isclose(sig_so, 2 * sig_si, rtol=2e-2, atol=0.0)
+    assert torch.isclose(outgoing_beam.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
+    assert torch.isclose(outgoing_beam.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
+    assert torch.isclose(outgoing_beam.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
 
 
 def test_incoming_beam_not_modified():
@@ -93,25 +82,24 @@ def test_incoming_beam_not_modified():
         sigma_yp=torch.tensor([2e-7]),
     )
     # Initial beam properties
-    incoming_particles0 = incoming_beam.particles
+    incoming_beam_before = incoming_beam.particles
 
-    L = torch.tensor([1.0])
+    section_length = torch.tensor([1.0])
     segment_space_charge = cheetah.Segment(
         elements=[
-            cheetah.Drift(L / 6),
-            cheetah.SpaceChargeKick(L / 3),
-            cheetah.Drift(L / 3),
-            cheetah.SpaceChargeKick(L / 3),
-            cheetah.Drift(L / 3),
-            cheetah.SpaceChargeKick(L / 3),
-            cheetah.Drift(L / 6),
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 6),
         ]
     )
     # Calling the track method
     segment_space_charge.track(incoming_beam)
 
     # Final beam properties
-    incoming_particles1 = incoming_beam.particles
+    incoming_beam_after = incoming_beam.particles
 
-    torch.set_printoptions(precision=16)
-    assert torch.allclose(incoming_particles0, incoming_particles1)
+    assert torch.allclose(incoming_beam_before, incoming_beam_after)
