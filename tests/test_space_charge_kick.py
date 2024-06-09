@@ -66,9 +66,15 @@ def test_cold_uniform_beam_expansion():
     )
     outgoing_beam = segment_space_charge.track(incoming)
 
-    assert torch.isclose(outgoing_beam.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
-    assert torch.isclose(outgoing_beam.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
-    assert torch.isclose(outgoing_beam.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
+    assert torch.isclose(
+        outgoing_beam.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0
+    )
+    assert torch.isclose(
+        outgoing_beam.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0
+    )
+    assert torch.isclose(
+        outgoing_beam.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0
+    )
 
 
 def test_incoming_beam_not_modified():

@@ -193,7 +193,9 @@ class SpaceChargeKick(Element):
             charge * inv_cell_volume[:, None, None, None]
         )  # Normalize by the cell volume
 
-    def _integrated_potential(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
+    def _integrated_potential(
+        self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor
+    ) -> torch.Tensor:
         """
         Computes the electrostatic potential using the Integrated Green Function method
         as in http://dx.doi.org/10.1103/PhysRevSTAB.9.044204.
@@ -303,9 +305,9 @@ class SpaceChargeKick(Element):
         )
 
         # Fill the grid with G_values and its periodic copies
-        green_func_values[:, :num_grid_points_x, :num_grid_points_y, :num_grid_points_s] = (
-            G_values
-        )
+        green_func_values[
+            :, :num_grid_points_x, :num_grid_points_y, :num_grid_points_s
+        ] = G_values
         green_func_values[
             :, num_grid_points_x + 1 :, :num_grid_points_y, :num_grid_points_s
         ] = G_values[:, 1:, :, :].flip(
