@@ -294,7 +294,7 @@ class SpaceChargeKick(Element):
         )
 
         # Initialize the grid with double dimensions
-        green_func = torch.zeros(
+        green_func_values = torch.zeros(
             self.n_batch,
             2 * num_grid_points_x,
             2 * num_grid_points_y,
@@ -303,46 +303,46 @@ class SpaceChargeKick(Element):
         )
 
         # Fill the grid with G_values and its periodic copies
-        green_func[:, :num_grid_points_x, :num_grid_points_y, :num_grid_points_s] = (
+        green_func_values[:, :num_grid_points_x, :num_grid_points_y, :num_grid_points_s] = (
             G_values
         )
-        green_func[
+        green_func_values[
             :, num_grid_points_x + 1 :, :num_grid_points_y, :num_grid_points_s
         ] = G_values[:, 1:, :, :].flip(
             dims=[1]
         )  # Reverse x, excluding the first element
-        green_func[
+        green_func_values[
             :, :num_grid_points_x, num_grid_points_y + 1 :, :num_grid_points_s
         ] = G_values[:, :, 1:, :].flip(
             dims=[2]
         )  # Reverse y, excluding the first element
-        green_func[
+        green_func_values[
             :, :num_grid_points_x, :num_grid_points_y, num_grid_points_s + 1 :
         ] = G_values[:, :, :, 1:].flip(
             dims=[3]
         )  # Reverse s,excluding the first element
-        green_func[
+        green_func_values[
             :, num_grid_points_x + 1 :, num_grid_points_y + 1 :, :num_grid_points_s
         ] = G_values[:, 1:, 1:, :].flip(
             dims=[1, 2]
         )  # Reverse the x and y dimensions
-        green_func[
+        green_func_values[
             :, :num_grid_points_x, num_grid_points_y + 1 :, num_grid_points_s + 1 :
         ] = G_values[:, :, 1:, 1:].flip(
             dims=[2, 3]
         )  # Reverse the y and s dimensions
-        green_func[
+        green_func_values[
             :, num_grid_points_x + 1 :, :num_grid_points_y, num_grid_points_s + 1 :
         ] = G_values[:, 1:, :, 1:].flip(
             dims=[1, 3]
         )  # Reverse the x and s dimensions
-        green_func[
+        green_func_values[
             :, num_grid_points_x + 1 :, num_grid_points_y + 1 :, num_grid_points_s + 1 :
         ] = G_values[:, 1:, 1:, 1:].flip(
             dims=[1, 2, 3]
         )  # Reverse all dimensions
 
-        return green_func
+        return green_func_values
 
     def _solve_poisson_equation(
         self, beam: ParticleBeam, cell_size, grid_dimensions
@@ -554,10 +554,10 @@ class SpaceChargeKick(Element):
             return incoming
         elif isinstance(incoming, ParticleBeam):
             # Copy the array of coordinates to avoid modifying the incoming beam
-            outcoming_particles = torch.empty_like(incoming.particles)
-            outcoming_particles[...] = incoming.particles
-            outcoming = ParticleBeam(
-                outcoming_particles,
+            outgoing_particles = torch.empty_like(incoming.particles)
+            outgoing_particles[...] = incoming.particles
+            outgoing = ParticleBeam(
+                outgoing_particles,
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
                 device=incoming.particles.device,
@@ -565,24 +565,23 @@ class SpaceChargeKick(Element):
             )
             # Flatten the batch dimensions
             # (to simplify later calculation, is undone at the end of `track`)
-            n_particles = outcoming.particles.shape[-2]
-            outcoming.particles.reshape((-1, n_particles, 7))
-            self.n_batch = outcoming.particles.shape[0]
+            outgoing.particles.reshape((-1, outgoing.num_particles, 7))
+            self.n_batch = outgoing.particles.shape[0]
             # Compute useful quantities
-            grid_dimensions = self._compute_grid_dimensions(outcoming)
+            grid_dimensions = self._compute_grid_dimensions(outgoing)
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
-            dt = self.length_effect / (c * self._betaref(outcoming))
+            dt = self.length_effect / (c * self._betaref(outgoing))
             # Change coordinates to apply the space charge effect
-            self._cheetah_to_moments(outcoming)
-            particles = outcoming.particles
-            forces = self._compute_forces(outcoming, cell_size, grid_dimensions)
+            self._cheetah_to_moments(outgoing)
+            particles = outgoing.particles
+            forces = self._compute_forces(outgoing, cell_size, grid_dimensions)
             particles[:, :, 1] += forces[:, :, 0] * dt
             particles[:, :, 3] += forces[:, :, 1] * dt
             particles[:, :, 5] += forces[:, :, 2] * dt
-            self._moments_to_cheetah(outcoming)
+            self._moments_to_cheetah(outgoing)
             # Unflatten the batch dimensions
-            outcoming.particles.reshape(incoming.particles.shape)
-            return outcoming
+            outgoing.particles.reshape(incoming.particles.shape)
+            return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
