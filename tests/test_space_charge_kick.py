@@ -5,6 +5,11 @@ from scipy.constants import physical_constants
 
 import cheetah
 
+# For reproducibility, we set the seed for the random number generator.
+# This is used when the particles positions are initialized randomly,
+# Random fluctuations in the initial density can cause the tests to fail.
+torch.manual_seed(0)
+
 
 def test_cold_uniform_beam_expansion():
     """
