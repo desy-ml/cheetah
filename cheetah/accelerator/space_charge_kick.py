@@ -191,7 +191,7 @@ class SpaceChargeKick(Element):
         """
 
         r = torch.sqrt(x**2 + y**2 + s**2)
-        G = (
+        integrated_potential = (
             -0.5 * s**2 * torch.atan(x * y / (s * r))
             - 0.5 * y**2 * torch.atan(x * s / (y * r))
             - 0.5 * x**2 * torch.atan(y * s / (x * r))
