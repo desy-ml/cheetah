@@ -226,7 +226,7 @@ class SpaceChargeKick(Element):
 
         # Create a new tensor with the doubled dimensions, filled with zeros
         new_charge_density = torch.zeros(
-            (self.n_batch,) + new_dims, **self.factory_kwargs
+            (self.batch_size,) + new_dims, **self.factory_kwargs
         )
 
         # Copy the original charge_density values to the beginning of the new tensor
@@ -263,10 +263,10 @@ class SpaceChargeKick(Element):
         )  # Shape: [batch_size, nx, ny, nz]
         y_grid = (
             iy_grid[None, :, :, :] * dy[:, None, None, None]
-        )  # Shape: [n_batch, nx, ny, nz]
+        )  # Shape: [batch_size, nx, ny, nz]
         s_grid = (
             is_grid[None, :, :, :] * ds[:, None, None, None]
-        )  # Shape: [n_batch, nx, ny, nz]
+        )  # Shape: [batch_size, nx, ny, nz]
 
         # Compute the Green's function values
         G_values = (
@@ -298,7 +298,7 @@ class SpaceChargeKick(Element):
 
         # Initialize the grid with double dimensions
         green_func_values = torch.zeros(
-            self.n_batch,
+            self.batch_size,
             2 * num_grid_points_x,
             2 * num_grid_points_y,
             2 * num_grid_points_s,
@@ -458,11 +458,11 @@ class SpaceChargeKick(Element):
         grid_shape = self.grid_shape
         n_particles = beam.particles.shape[1]
         interpolated_forces = torch.zeros(
-            (self.n_batch, n_particles, 3), **self.factory_kwargs
+            (self.batch_size, n_particles, 3), **self.factory_kwargs
         )
 
         # Loop over batch dimension
-        for i_batch in range(self.n_batch):
+        for i_batch in range(self.batch_size):
 
             # Get particle positions
             particle_pos = beam.particles[i_batch, :, [0, 2, 4]]
