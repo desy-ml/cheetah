@@ -127,10 +127,11 @@ class SpaceChargeKick(Element):
         grid point method and weighting by the distance to the grid points.
         Returns a grid of charge density in C/m^3.
         """
-        charge = torch.zeros((self.n_batch,) + self.grid_shape, **self.factory_kwargs)
+        charge = torch.zeros((self.batch_size,) + self.grid_shape, **self.factory_kwargs)
 
         # Loop over batch dimension
-        for i_batch in range(self.n_batch):
+        # Loop over samples in one batch (does vectorization)
+        for i_batch in range(self.batch_size):
             # Get particle positions and charges
             particle_pos = beam.particles[i_batch, :, [0, 2, 4]]
             particle_charge = beam.particle_charges[i_batch]
@@ -259,7 +260,7 @@ class SpaceChargeKick(Element):
         ix_grid, iy_grid, is_grid = torch.meshgrid(x, y, s, indexing="ij")
         x_grid = (
             ix_grid[None, :, :, :] * dx[:, None, None, None]
-        )  # Shape: [n_batch, nx, ny, nz]
+        )  # Shape: [batch_size, nx, ny, nz]
         y_grid = (
             iy_grid[None, :, :, :] * dy[:, None, None, None]
         )  # Shape: [n_batch, nx, ny, nz]
@@ -568,7 +569,7 @@ class SpaceChargeKick(Element):
             # Flatten the batch dimensions
             # (to simplify later calculation, is undone at the end of `track`)
             outgoing.particles.reshape((-1, outgoing.num_particles, 7))
-            self.n_batch = outgoing.particles.shape[0]
+            self.batch_size = outgoing.particles.shape[0]
             # Compute useful quantities
             grid_dimensions = self._compute_grid_dimensions(outgoing)
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
