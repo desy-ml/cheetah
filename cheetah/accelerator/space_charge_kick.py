@@ -127,7 +127,9 @@ class SpaceChargeKick(Element):
         grid point method and weighting by the distance to the grid points.
         Returns a grid of charge density in C/m^3.
         """
-        charge = torch.zeros((self.batch_size,) + self.grid_shape, **self.factory_kwargs)
+        charge = torch.zeros(
+            (self.batch_size,) + self.grid_shape, **self.factory_kwargs
+        )
 
         # Loop over batch dimension
         # Loop over samples in one batch (does vectorization)
