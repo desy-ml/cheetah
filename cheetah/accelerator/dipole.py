@@ -103,8 +103,6 @@ class Dipole(Element):
         value[self.length != 0] = (
             self.angle[self.length != 0] / self.length[self.length != 0]
         )
-        # non_zero_mask = self.length != 0
-        # value[non_zero_mask] = self.angle[non_zero_mask] / self.length[non_zero_mask]
         return value
 
     @property
