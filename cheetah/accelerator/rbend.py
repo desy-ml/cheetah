@@ -51,18 +51,19 @@ class RBend(Dipole):
         device=None,
         dtype=torch.float32,
     ):
-        angle = angle if angle is not None else torch.tensor(0.0)
-        e1 = e1 if e1 is not None else torch.tensor(0.0)
-        e2 = e2 if e2 is not None else torch.tensor(0.0)
-        tilt = tilt if tilt is not None else torch.tensor(0.0)
-        fringe_integral = (
-            fringe_integral if fringe_integral is not None else torch.tensor(0.0)
+        super().__init__(
+            length=length,
+            angle=angle,
+            e1=e1,
+            e2=e2,
+            tilt=tilt,
+            fringe_integral=fringe_integral,
+            fringe_integral_exit=fringe_integral_exit,
+            gap=gap,
+            name=name,
+            device=device,
+            dtype=dtype,
         )
-        # fringe_integral_exit is left out on purpose
-        gap = gap if gap is not None else torch.tensor(0.0)
-
-        e1 = e1 + angle / 2
-        e2 = e2 + angle / 2
 
         super().__init__(
             length=length,
@@ -77,3 +78,7 @@ class RBend(Dipole):
             device=device,
             dtype=dtype,
         )
+
+        # Rectangular bend
+        self.e1 = self.e1 + self.angle / 2
+        self.e2 = self.e2 + self.angle / 2
