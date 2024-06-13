@@ -525,7 +525,10 @@ def test_rbend():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.RBend(
-        length=torch.tensor([0.1]), angle=torch.tensor([0.2])
+        length=torch.tensor([0.1]),
+        angle=torch.tensor([0.2]),
+        fringe_integral=torch.tensor([0.1]),
+        gap=torch.tensor([0.2]),
     )
     cheetah_segment = cheetah.Segment(
         [
@@ -540,7 +543,7 @@ def test_rbend():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2)
+    ocelot_rbend = ocelot.RBend(l=0.1, angle=0.2, fint=0.1, gap=0.2)
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_rbend, ocelot.Drift(l=0.1)]
     )
