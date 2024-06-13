@@ -85,7 +85,7 @@ class Dipole(Element):
             if fringe_integral_exit is None
             else torch.as_tensor(fringe_integral_exit, **factory_kwargs)
         )
-        # Rectangular bend
+        # Sector bend if not specified
         self.e1 = (
             torch.as_tensor(e1, **factory_kwargs)
             if e1 is not None
