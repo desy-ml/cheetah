@@ -19,8 +19,6 @@ def test_cold_uniform_beam_expansion():
     torch.manual_seed(42)
 
     # Simulation parameters
-    num_particles = 10_000
-    total_charge = torch.tensor([1e-9])
     R0 = torch.tensor([0.001])
     energy = torch.tensor([2.5e8])
     rest_energy = torch.tensor(
@@ -34,12 +32,12 @@ def test_cold_uniform_beam_expansion():
     beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(num_particles),
-        total_charge=total_charge,
+        num_particles=torch.tensor(10_000),
+        total_charge=torch.tensor([1e-9]),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_s=R0 / gamma,  # Radius of the beam in s direction, in the lab frame.
+        radius_s=R0 / gamma,  # Radius of the beam in s direction in the lab frame
         sigma_xp=torch.tensor([1e-15]),
         sigma_yp=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
@@ -49,10 +47,10 @@ def test_cold_uniform_beam_expansion():
     kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
         3 + 2 * torch.sqrt(torch.tensor(2))
     )
-    Nb = total_charge / elementary_charge
+    Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
 
-    segment_space_charge = cheetah.Segment(
+    segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
             cheetah.SpaceChargeKick(section_length / 3),
@@ -63,11 +61,58 @@ def test_cold_uniform_beam_expansion():
             cheetah.Drift(section_length / 6),
         ]
     )
-    outgoing = segment_space_charge.track(incoming)
+    outgoing = segment.track(incoming)
 
     assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
     assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
     assert torch.isclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
+
+
+def test_vectorized():
+    """
+    Tests that the space charge kick can be applied to a vectorized beam.
+    """
+
+    # Simulation parameters
+    section_length = torch.tensor([0.42])
+    R0 = torch.tensor([0.001])
+    energy = torch.tensor([2.5e8])
+    rest_energy = torch.tensor(
+        constants.electron_mass
+        * constants.speed_of_light**2
+        / constants.elementary_charge
+    )
+    gamma = energy / rest_energy
+
+    incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
+        num_particles=torch.tensor(10_000),
+        total_charge=torch.tensor([[1e-9, 2e-9], [3e-9, 4e-9], [5e-9, 6e-9]]),
+        energy=energy.repeat(3, 2),
+        radius_x=R0.repeat(3, 2),
+        radius_y=R0.repeat(3, 2),
+        radius_s=(R0 / gamma).repeat(
+            3, 2
+        ),  # Radius of the beam in s direction in the lab frame
+        sigma_xp=torch.tensor([1e-15]).repeat(3, 2),
+        sigma_yp=torch.tensor([1e-15]).repeat(3, 2),
+        sigma_p=torch.tensor([1e-15]).repeat(3, 2),
+    )
+
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 6),
+        ]
+    ).broadcast(shape=(3, 2))
+
+    outgoing = segment.track(incoming)
+
+    assert outgoing.particles.shape == (2, 2, 10_000, 7)
 
 
 def test_incoming_beam_not_modified():
