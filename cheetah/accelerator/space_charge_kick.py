@@ -192,7 +192,7 @@ class SpaceChargeKick(Element):
                 8
             )  # Shape:(8 * n_particles,)
             values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
-            charge[i_batch] = charge[i_batch].index_put(
+            charge[i_batch].index_put_(
                 (idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]),
                 values,
                 accumulate=True,
@@ -565,7 +565,7 @@ class SpaceChargeKick(Element):
 
             indices = torch.arange(beam.num_particles).repeat_interleave(8)[valid_mask]
             interpolated_F = interpolated_forces[i_batch]
-            interpolated_F = interpolated_F.index_add(
+            interpolated_F.index_add_(
                 0,
                 indices,
                 torch.stack(
@@ -573,7 +573,7 @@ class SpaceChargeKick(Element):
                     dim=1,
                 ),
             )
-            interpolated_F = interpolated_F.index_add(
+            interpolated_F.index_add_(
                 0,
                 indices,
                 torch.stack(
@@ -581,7 +581,7 @@ class SpaceChargeKick(Element):
                     dim=1,
                 ),
             )
-            interpolated_F = interpolated_F.index_add(
+            interpolated_F.index_add_(
                 0,
                 indices,
                 torch.stack(
