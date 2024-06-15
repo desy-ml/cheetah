@@ -11,7 +11,7 @@ from cheetah.particles import Beam, ParticleBeam
 from .element import Element
 
 # Constants
-c = torch.tensor(constants.speed_of_light)
+speed_of_light = torch.tensor(constants.speed_of_light)
 J_to_eV = torch.tensor(physical_constants["electron volt-joule relationship"][0])
 elementary_charge = torch.tensor(constants.elementary_charge)
 rest_energy = torch.tensor(
@@ -122,7 +122,11 @@ class SpaceChargeKick(Element):
         return torch.sqrt(1 - 1 / gamma**2)
 
     def _deposit_charge_on_grid(
-        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
+        self,
+        beam: ParticleBeam,
+        moments: torch.Tensor,
+        cell_size: torch.Tensor,
+        grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
         Deposits the charge density of the beam onto a grid, using the nearest grid
@@ -137,8 +141,8 @@ class SpaceChargeKick(Element):
         # vectorization)
         for i_batch in range(self.batch_size):
             # Get particle positions and charges
-            particle_positions = beam.particles[i_batch, :, [0, 2, 4]]
-            particle_charge = beam.particle_charges[i_batch]
+            particle_positions = moments[i_batch, :, [0, 2, 4]]
+            particle_charges = beam.particle_charges[i_batch]
             normalized_positions = (
                 particle_positions[:, :] + grid_dimensions[i_batch, None, :]
             ) / cell_size[i_batch, None, :]
@@ -184,7 +188,7 @@ class SpaceChargeKick(Element):
             )
 
             # Accumulate the charge contributions
-            repeated_charges = particle_charge.repeat_interleave(
+            repeated_charges = particle_charges.repeat_interleave(
                 8
             )  # Shape:(8 * n_particles,)
             values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
@@ -221,14 +225,20 @@ class SpaceChargeKick(Element):
         return integrated_potential
 
     def _array_rho(
-        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
+        self,
+        beam: ParticleBeam,
+        moments: torch.Tensor,
+        cell_size: torch.Tensor,
+        grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
         Allocates a 2x larger array in all dimensions (to perform Hockney's method), and
         copies the charge density in one of the "quadrants".
         """
         grid_shape = self.grid_shape
-        charge_density = self._deposit_charge_on_grid(beam, cell_size, grid_dimensions)
+        charge_density = self._deposit_charge_on_grid(
+            beam, moments, cell_size, grid_dimensions
+        )
         new_dims = tuple(dim * 2 for dim in grid_shape)
 
         # Create a new tensor with the doubled dimensions, filled with zeros
@@ -356,12 +366,12 @@ class SpaceChargeKick(Element):
         return green_func_values
 
     def _solve_poisson_equation(
-        self, beam: ParticleBeam, cell_size, grid_dimensions
+        self, beam: ParticleBeam, moments: torch.Tensor, cell_size, grid_dimensions
     ) -> torch.Tensor:  # Works only for ParticleBeam at this stage
         """
         Solves the Poisson equation for the given charge density, using FFT convolution.
         """
-        charge_density = self._array_rho(beam, cell_size, grid_dimensions)
+        charge_density = self._array_rho(beam, moments, cell_size, grid_dimensions)
         charge_density_ft = torch.fft.fftn(charge_density, dim=[1, 2, 3])
         integrated_green_function = self._integrated_green_function(beam, cell_size)
         integrated_green_function_ft = torch.fft.fftn(
@@ -381,7 +391,11 @@ class SpaceChargeKick(Element):
         ]
 
     def _E_plus_vB_field(
-        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
+        self,
+        beam: ParticleBeam,
+        moments: torch.Tensor,
+        cell_size: torch.Tensor,
+        grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
         Computes the force field from the potential and the particle positions and
@@ -390,7 +404,9 @@ class SpaceChargeKick(Element):
         inv_cell_size = 1 / cell_size
         gamma = self._gammaref(beam)
         igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
-        potential = self._solve_poisson_equation(beam, cell_size, grid_dimensions)
+        potential = self._solve_poisson_equation(
+            beam, moments, cell_size, grid_dimensions
+        )
 
         grad_x = torch.zeros_like(potential)
         grad_y = torch.zeros_like(potential)
@@ -420,60 +436,79 @@ class SpaceChargeKick(Element):
         Converts the Cheetah particle beam parameters to the moments in SI units used in
         the space charge solver.
         """
-        moments = beam.particles
         gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
-        p0 = gammaref * betaref * electron_mass * c
-        gamma = gammaref[:, None] * (
-            torch.ones(moments.shape[:-1]) + beam.particles[:, :, 5] * betaref[:, None]
+
+        p0 = gammaref * betaref * electron_mass * speed_of_light
+        gamma = gammaref.unsqueeze(-1) * (
+            torch.ones(beam.particles.shape[:-1])
+            + beam.particles[:, :, 5] * betaref.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
-        p = gamma * electron_mass * beta * c
-        moments[:, :, 1] = p0[:, None] * moments[:, :, 1]
-        moments[:, :, 3] = p0[:, None] * moments[:, :, 3]
-        moments[:, :, 4] = -betaref[:, None] * moments[:, :, 4]
-        moments[:, :, 5] = torch.sqrt(
-            p**2 - moments[:, :, 1] ** 2 - moments[:, :, 3] ** 2
-        )
+        p = gamma * electron_mass * beta * speed_of_light
 
-    def _moments_to_cheetah(self, beam: ParticleBeam) -> torch.Tensor:
+        moments_xp = beam.particles[:, :, 1] * p0.unsqueeze(-1)
+        moments_yp = beam.particles[:, :, 3] * p0.unsqueeze(-1)
+        moments_s = beam.particles[:, :, 4] * -betaref.unsqueeze(-1)
+        moments_p = torch.sqrt(p**2 - moments_xp**2 - moments_yp**2)
+
+        moments = beam.particles.clone()
+        moments[:, :, 1] = moments_xp
+        moments[:, :, 3] = moments_yp
+        moments[:, :, 4] = moments_s
+        moments[:, :, 5] = moments_p
+
+        return moments
+
+    def _moments_to_cheetah(
+        self, moments: torch.Tensor, beam: ParticleBeam
+    ) -> torch.Tensor:
         """
         Converts the moments in SI units to the Cheetah particle beam parameters.
         """
-        moments = beam.particles
+        particles = moments.clone()
+
         gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
-        p0 = gammaref * betaref * electron_mass * c
+        p0 = gammaref * betaref * electron_mass * speed_of_light
         p = torch.sqrt(
             moments[:, :, 1] ** 2 + moments[:, :, 3] ** 2 + moments[:, :, 5] ** 2
         )
-        gamma = torch.sqrt(1 + (p / (electron_mass * c)) ** 2)
-        moments[:, :, 1] = moments[:, :, 1] / p0[:, None]
-        moments[:, :, 3] = moments[:, :, 3] / p0[:, None]
-        moments[:, :, 4] = -moments[:, :, 4] / betaref[:, None]
-        moments[:, :, 5] = (gamma - gammaref * torch.ones(gamma.shape)) / (
-            (betaref * gammaref)[:, None]
+        gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
+
+        particles[:, :, 1] = moments[:, :, 1] / p0.unsqueeze(-1)
+        particles[:, :, 3] = moments[:, :, 3] / p0.unsqueeze(-1)
+        particles[:, :, 4] = -moments[:, :, 4] / betaref.unsqueeze(-1)
+        particles[:, :, 5] = (gamma - gammaref * torch.ones(gamma.shape)) / (
+            (betaref * gammaref).unsqueeze(-1)
         )
 
+        return particles
+
     def _compute_forces(
-        self, beam: ParticleBeam, cell_size: torch.Tensor, grid_dimensions: torch.Tensor
+        self,
+        beam: ParticleBeam,
+        moments: torch.Tensor,
+        cell_size: torch.Tensor,
+        grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
         Interpolates the space charge force from the grid onto the macroparticles.
         Reciprocal function of _deposit_charge_on_grid.
         """
-        grad_x, grad_y, grad_z = self._E_plus_vB_field(beam, cell_size, grid_dimensions)
+        grad_x, grad_y, grad_z = self._E_plus_vB_field(
+            beam, moments, cell_size, grid_dimensions
+        )
         grid_shape = self.grid_shape
-        n_particles = beam.particles.shape[1]
         interpolated_forces = torch.zeros(
-            (self.batch_size, n_particles, 3), **self.factory_kwargs
+            (self.batch_size, beam.num_particles, 3), **self.factory_kwargs
         )
 
-        # Loop over batch dimension
+        # Loop over vectorisation dimension, i.e. the samples in one batch (does
+        # vectorization)
         for i_batch in range(self.batch_size):
-
             # Get particle positions
-            particle_positions = beam.particles[i_batch, :, [0, 2, 4]]
+            particle_positions = moments[i_batch, :, [0, 2, 4]]
             normalized_positions = (
                 particle_positions[:, :] + grid_dimensions[i_batch, None, :]
             ) / cell_size[i_batch, None, :]
@@ -496,18 +531,18 @@ class SpaceChargeKick(Element):
             )
             surrounding_indices = (
                 cell_indices[:, None, :] + offsets[None, :, :]
-            )  # Shape:(n_particles, 8, 3)
-            # Shape: (n_particles, 8, 3)
+            )  # Shape:(beam.num_particles, 8, 3)
+            # Shape: (beam.num_particles, 8, 3)
             weights = 1 - torch.abs(
                 normalized_positions[:, None, :] - surrounding_indices
             )
-            # Shape: (n_particles, 8, 3)
-            cell_weights = weights.prod(dim=-1)  # Shape: (n_particles, 8)
+            # Shape: (beam.num_particles, 8, 3)
+            cell_weights = weights.prod(dim=-1)  # Shape: (beam.num_particles, 8)
 
             # Extract forces from the grids
             idx_x, idx_y, idx_s = surrounding_indices.view(
                 -1, 3
-            ).T  # Shape: (3, n_particles * 8)
+            ).T  # Shape: (3, beam.num_particles * 8)
             valid_mask = (
                 (idx_x >= 0)
                 & (idx_x < grid_shape[0])
@@ -528,7 +563,7 @@ class SpaceChargeKick(Element):
             values_y = valid_cell_weights * Fy_values
             values_z = valid_cell_weights * Fz_values
 
-            indices = torch.arange(n_particles).repeat_interleave(8)[valid_mask]
+            indices = torch.arange(beam.num_particles).repeat_interleave(8)[valid_mask]
             interpolated_F = interpolated_forces[i_batch]
             interpolated_F = interpolated_F.index_add(
                 0,
@@ -567,38 +602,35 @@ class SpaceChargeKick(Element):
         if incoming is Beam.empty or incoming.particles.shape[0] == 0:
             return incoming
         elif isinstance(incoming, ParticleBeam):
-            # Copy the array of coordinates to avoid modifying the incoming beam
-            outgoing_particles = torch.empty_like(incoming.particles)
-            outgoing_particles[...] = incoming.particles
+            # Flatten the batch dimensions
+            # (to simplify later calculation, is undone at the end of `track`)
+            original_shape = incoming.particles.shape
+            incoming.particles.reshape((-1, incoming.num_particles, 7))
+            self.batch_size = incoming.particles.shape[0]
+
+            # Compute useful quantities
+            grid_dimensions = self._compute_grid_dimensions(incoming)
+            cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
+            dt = self.length_effect / (speed_of_light * self._betaref(incoming))
+
+            # Change coordinates to apply the space charge effect
+            moments = self._cheetah_to_moments(incoming)
+            forces = self._compute_forces(incoming, moments, cell_size, grid_dimensions)
+            moments[:, :, 1] = moments[:, :, 1] + forces[:, :, 0] * dt
+            moments[:, :, 3] = moments[:, :, 3] + forces[:, :, 1] * dt
+            moments[:, :, 5] = moments[:, :, 5] + forces[:, :, 2] * dt
+
             outgoing = ParticleBeam(
-                outgoing_particles,
-                incoming.energy,
+                particles=self._moments_to_cheetah(moments, incoming),
+                energy=incoming.energy,
                 particle_charges=incoming.particle_charges,
                 device=incoming.particles.device,
                 dtype=incoming.particles.dtype,
             )
 
-            # Flatten the batch dimensions
-            # (to simplify later calculation, is undone at the end of `track`)
-            outgoing.particles.reshape((-1, outgoing.num_particles, 7))
-            self.batch_size = outgoing.particles.shape[0]
-
-            # Compute useful quantities
-            grid_dimensions = self._compute_grid_dimensions(outgoing)
-            cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
-            dt = self.length_effect / (c * self._betaref(outgoing))
-
-            # Change coordinates to apply the space charge effect
-            self._cheetah_to_moments(outgoing)
-            particles = outgoing.particles
-            forces = self._compute_forces(outgoing, cell_size, grid_dimensions)
-            particles[:, :, 1] += forces[:, :, 0] * dt
-            particles[:, :, 3] += forces[:, :, 1] * dt
-            particles[:, :, 5] += forces[:, :, 2] * dt
-            self._moments_to_cheetah(outgoing)
-
             # Unflatten the batch dimensions
-            outgoing.particles.reshape(incoming.particles.shape)
+            outgoing.particles.reshape(original_shape)
+
             return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
