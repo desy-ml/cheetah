@@ -17,7 +17,7 @@ elementary_charge = torch.tensor(constants.elementary_charge)
 rest_energy = torch.tensor(
     constants.electron_mass
     * constants.speed_of_light**2
-    / constants.elementary_charge  # electron mass
+    / constants.elementary_charge  # Electron mass
 )
 electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
 electron_mass_eV = torch.tensor(

@@ -1,14 +1,8 @@
-import pytest
 import torch
 from scipy import constants
 from scipy.constants import physical_constants
 
 import cheetah
-
-# For reproducibility, we set the seed for the random number generator.
-# This is used when the particles positions are initialized randomly,
-# Random fluctuations in the initial density can cause the tests to fail.
-torch.manual_seed(0)
 
 
 def test_cold_uniform_beam_expansion():
@@ -20,8 +14,11 @@ def test_cold_uniform_beam_expansion():
     https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf.
     """
 
+    # Random fluctuations in the initial density can cause the tests to fail
+    torch.manual_seed(0)
+
     # Simulation parameters
-    num_particles = 10000
+    num_particles = 10_000
     total_charge = torch.tensor([1e-9])
     R0 = torch.tensor([0.001])
     energy = torch.tensor([2.5e8])
@@ -34,13 +31,14 @@ def test_cold_uniform_beam_expansion():
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
     beta = torch.sqrt(1 - 1 / gamma**2)
+
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(num_particles),
         total_charge=total_charge,
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_s=R0 / gamma,  # radius of the beam in s direction, in the lab frame.
+        radius_s=R0 / gamma,  # Radius of the beam in s direction, in the lab frame.
         sigma_xp=torch.tensor([1e-15]),
         sigma_yp=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
@@ -81,6 +79,9 @@ def test_incoming_beam_not_modified():
     """
     Tests that the incoming beam is not modified when calling the track method.
     """
+
+    # Random fluctuations in the initial density can cause the tests to fail
+    torch.manual_seed(0)
 
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor([10000]),
