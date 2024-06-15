@@ -1,6 +1,7 @@
 import torch
 from scipy import constants
 from scipy.constants import physical_constants
+from torch import nn
 
 import cheetah
 
@@ -110,3 +111,34 @@ def test_incoming_beam_not_modified():
     incoming_beam_after = incoming_beam.particles
 
     assert torch.allclose(incoming_beam_before, incoming_beam_after)
+
+
+def test_gradient():
+    """
+    Tests that the gradient of the track method is computed withouth throwing an error.
+    """
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=torch.tensor([10_000]),
+        sigma_xp=torch.tensor([2e-7]),
+        sigma_yp=torch.tensor([2e-7]),
+    )
+
+    segment_length = nn.Parameter(torch.tensor([1.0]))
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(segment_length / 6),
+            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.Drift(segment_length / 3),
+            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.Drift(segment_length / 3),
+            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.Drift(segment_length / 6),
+        ]
+    )
+
+    # Track the beam
+    outgoing_beam = segment.track(incoming_beam)
+
+    # Compute and check the gradient
+    outgoing_beam.sigma_x.mean().backward()
+    assert isinstance(incoming_beam.sigma_x.grad, torch.Tensor)
