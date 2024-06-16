@@ -1,6 +1,6 @@
 import torch
 
-from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Segment
+from lynx import Dipole, Drift, ParameterBeam, ParticleBeam, Segment
 
 
 def test_dipole_off():

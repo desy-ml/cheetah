@@ -1,4 +1,4 @@
-import cheetah
+import lynx
 
 
 def test_no_error():
@@ -6,9 +6,9 @@ def test_no_error():
     Just test that reading ARES from NX Tables doesn't throw an error and produces
     something somewhat plausbile.
     """
-    segment = cheetah.Segment.from_nx_tables("tests/resources/Stage4v3_9.txt")
+    segment = lynx.Segment.from_nx_tables("tests/resources/Stage4v3_9.txt")
 
-    assert isinstance(segment, cheetah.Segment)
+    assert isinstance(segment, lynx.Segment)
     assert len(segment.elements) > 1
     assert 40.0 < segment.length < 50.0
 
@@ -20,6 +20,6 @@ def test_length():
     produces this length. NOTE, that this not to say that that is actually the correct
     length.
     """
-    segment = cheetah.Segment.from_nx_tables("tests/resources/Stage4v3_9.txt")
+    segment = lynx.Segment.from_nx_tables("tests/resources/Stage4v3_9.txt")
 
     assert segment.length == 44.2215

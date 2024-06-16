@@ -4,14 +4,14 @@ Tests that ensure that both beam types produce (roughly) the same results.
 
 import torch
 
-import cheetah
+import lynx
 
 
 def test_from_twiss():
     """
     Test that a beams created from Twiss parameters have the same properties.
     """
-    parameter_beam = cheetah.ParameterBeam.from_twiss(
+    parameter_beam = lynx.ParameterBeam.from_twiss(
         beta_x=torch.tensor([5.91253676811640894]),
         alpha_x=torch.tensor([3.55631307633660354]),
         emittance_x=torch.tensor([3.494768647122823e-09]),
@@ -20,7 +20,7 @@ def test_from_twiss():
         emittance_y=torch.tensor([3.497810737006068e-09]),
         energy=torch.tensor([6e6]),
     )
-    particle_beam = cheetah.ParticleBeam.from_twiss(
+    particle_beam = lynx.ParticleBeam.from_twiss(
         num_particles=torch.tensor(
             [10_000_000]
         ),  # Large number of particles reduces noise
@@ -51,16 +51,16 @@ def test_drift():
     """Test that the drift output for both beam types is roughly the same."""
 
     # Set up lattice
-    cheetah_drift = cheetah.Drift(length=torch.tensor([1.0]))
+    cheetah_drift = lynx.Drift(length=torch.tensor([1.0]))
 
     # Parameter beam
-    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
+    incoming_parameter_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_parameter_beam = cheetah_drift.track(incoming_parameter_beam)
 
     # Particle beam
-    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
+    incoming_particle_beam = lynx.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_particle_beam = cheetah_drift.track(incoming_particle_beam)
@@ -97,18 +97,18 @@ def test_quadrupole():
     """Test that the quadrupole output for both beam types is roughly the same."""
 
     # Set up lattice
-    cheetah_quadrupole = cheetah.Quadrupole(
+    cheetah_quadrupole = lynx.Quadrupole(
         length=torch.tensor([0.15]), k1=torch.tensor([4.2])
     )
 
     # Parameter beam
-    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
+    incoming_parameter_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_parameter_beam = cheetah_quadrupole.track(incoming_parameter_beam)
 
     # Particle beam
-    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
+    incoming_particle_beam = lynx.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_particle_beam = cheetah_quadrupole.track(incoming_particle_beam)
@@ -148,7 +148,7 @@ def test_cavity_from_astra():
     """
 
     # Set up lattice
-    cheetah_cavity = cheetah.Cavity(
+    cheetah_cavity = lynx.Cavity(
         length=torch.tensor([1.0377]),
         voltage=torch.tensor([0.01815975e9]),
         frequency=torch.tensor([1.3e9]),
@@ -156,13 +156,13 @@ def test_cavity_from_astra():
     )
 
     # Parameter beam
-    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
+    incoming_parameter_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_parameter_beam = cheetah_cavity.track(incoming_parameter_beam)
 
     # Particle beam
-    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
+    incoming_particle_beam = lynx.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     outgoing_particle_beam = cheetah_cavity.track(incoming_particle_beam)
@@ -220,7 +220,7 @@ def test_cavity_from_twiss():
     """
 
     # Set up lattice
-    cheetah_cavity = cheetah.Cavity(
+    cheetah_cavity = lynx.Cavity(
         length=torch.tensor([1.0377]),
         voltage=torch.tensor([0.01815975e9]),
         frequency=torch.tensor([1.3e9]),
@@ -228,7 +228,7 @@ def test_cavity_from_twiss():
     )
 
     # Parameter beam
-    incoming_parameter_beam = cheetah.ParameterBeam.from_twiss(
+    incoming_parameter_beam = lynx.ParameterBeam.from_twiss(
         beta_x=torch.tensor([5.91253677]),
         alpha_x=torch.tensor([3.55631308]),
         beta_y=torch.tensor([5.91253677]),
@@ -240,7 +240,7 @@ def test_cavity_from_twiss():
     outgoing_parameter_beam = cheetah_cavity.track(incoming_parameter_beam)
 
     # Particle beam
-    incoming_particle_beam = cheetah.ParticleBeam.from_twiss(
+    incoming_particle_beam = lynx.ParticleBeam.from_twiss(
         beta_x=torch.tensor([5.91253677]),
         alpha_x=torch.tensor([3.55631308]),
         beta_y=torch.tensor([5.91253677]),

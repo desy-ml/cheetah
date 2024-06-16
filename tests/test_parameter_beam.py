@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from cheetah import ParameterBeam
+from lynx import ParameterBeam
 
 
 def test_create_from_parameters():

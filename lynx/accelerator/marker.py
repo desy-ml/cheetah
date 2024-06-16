@@ -6,8 +6,8 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch import Size
 
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
+from lynx.particles import Beam
+from lynx.utils import UniqueNameGenerator
 
 from .element import Element
 

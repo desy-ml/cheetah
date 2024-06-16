@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import torch
 
-import cheetah
+import lynx
 
 
 def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
@@ -52,120 +52,120 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
         return None
     elif class_name == "MCXG":  # TODO: Check length with Willi
         assert name[6] == "X"
-        horizontal_coil = cheetah.HorizontalCorrector(
+        horizontal_coil = lynx.HorizontalCorrector(
             name=name[:6] + "H" + name[6 + 1 :], length=torch.tensor([5e-05])
         )
-        vertical_coil = cheetah.VerticalCorrector(
+        vertical_coil = lynx.VerticalCorrector(
             name=name[:6] + "V" + name[6 + 1 :], length=torch.tensor([5e-05])
         )
-        element = cheetah.Segment(elements=[horizontal_coil, vertical_coil], name=name)
+        element = lynx.Segment(elements=[horizontal_coil, vertical_coil], name=name)
     elif class_name == "BSCX":
-        element = cheetah.Screen(
+        element = lynx.Screen(
             name=name,
             resolution=torch.tensor((2464, 2056)),
             pixel_size=torch.tensor((0.00343e-3, 0.00247e-3)),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCR":
-        element = cheetah.Screen(
+        element = lynx.Screen(
             name=name,
             resolution=torch.tensor([2448, 2040]),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCM":
-        element = cheetah.Screen(  # TODO: Ask for actual parameters
+        element = lynx.Screen(  # TODO: Ask for actual parameters
             name=name,
             resolution=torch.tensor([2448, 2040]),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCO":
-        element = cheetah.Screen(  # TODO: Ask for actual parameters
+        element = lynx.Screen(  # TODO: Ask for actual parameters
             name=name,
             resolution=torch.tensor([2448, 2040]),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCA":
-        element = cheetah.Screen(  # TODO: Ask for actual parameters
+        element = lynx.Screen(  # TODO: Ask for actual parameters
             name=name,
             resolution=torch.tensor([2448, 2040]),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCE":
-        element = cheetah.Screen(  # TODO: Ask for actual parameters
+        element = lynx.Screen(  # TODO: Ask for actual parameters
             name=name,
             resolution=torch.tensor((2464, 2056)),
             pixel_size=torch.tensor((0.00998e-3, 0.00715e-3)),
             binning=torch.tensor(1),
         )
     elif class_name == "SCRD":
-        element = cheetah.Screen(  # TODO: Ask for actual parameters
+        element = lynx.Screen(  # TODO: Ask for actual parameters
             name=name,
             resolution=torch.tensor((2464, 2056)),
             pixel_size=torch.tensor((0.00998e-3, 0.00715e-3)),
             binning=torch.tensor(1),
         )
     elif class_name == "BPMG":
-        element = cheetah.BPM(name=name)
+        element = lynx.BPM(name=name)
     elif class_name == "BPML":
-        element = cheetah.BPM(name=name)
+        element = lynx.BPM(name=name)
     elif class_name == "SLHG":
-        element = cheetah.Aperture(  # TODO: Ask for actual size and shape
+        element = lynx.Aperture(  # TODO: Ask for actual size and shape
             name=name,
             x_max=torch.tensor([float("inf")]),
             y_max=torch.tensor([float("inf")]),
             shape="elliptical",
         )
     elif class_name == "SLHB":
-        element = cheetah.Aperture(  # TODO: Ask for actual size and shape
+        element = lynx.Aperture(  # TODO: Ask for actual size and shape
             name=name,
             x_max=torch.tensor([float("inf")]),
             y_max=torch.tensor([float("inf")]),
             shape="rectangular",
         )
     elif class_name == "SLHS":
-        element = cheetah.Aperture(  # TODO: Ask for actual size and shape
+        element = lynx.Aperture(  # TODO: Ask for actual size and shape
             name=name,
             x_max=torch.tensor([float("inf")]),
             y_max=torch.tensor([float("inf")]),
             shape="rectangular",
         )
     elif class_name == "MCHM":
-        element = cheetah.HorizontalCorrector(name=name, length=torch.tensor([0.02]))
+        element = lynx.HorizontalCorrector(name=name, length=torch.tensor([0.02]))
     elif class_name == "MCVM":
-        element = cheetah.VerticalCorrector(name=name, length=torch.tensor([0.02]))
+        element = lynx.VerticalCorrector(name=name, length=torch.tensor([0.02]))
     elif class_name == "MBHL":
-        element = cheetah.Dipole(name=name, length=torch.tensor([0.322]))
+        element = lynx.Dipole(name=name, length=torch.tensor([0.322]))
     elif class_name == "MBHB":
-        element = cheetah.Dipole(name=name, length=torch.tensor([0.22]))
+        element = lynx.Dipole(name=name, length=torch.tensor([0.22]))
     elif class_name == "MBHO":
-        element = cheetah.Dipole(
+        element = lynx.Dipole(
             name=name,
             length=torch.tensor([0.43852543421396856]),
             angle=torch.tensor([0.8203047484373349]),
             e2=torch.tensor([-0.7504915783575616]),
         )
     elif class_name == "MQZM":
-        element = cheetah.Quadrupole(name=name, length=torch.tensor([0.122]))
+        element = lynx.Quadrupole(name=name, length=torch.tensor([0.122]))
     elif class_name == "RSBL":
-        element = cheetah.Cavity(
+        element = lynx.Cavity(
             name=name,
             length=torch.tensor([4.139]),
             frequency=torch.tensor([2.998e9]),
             voltage=torch.tensor([76e6]),
         )
     elif class_name == "RXBD":
-        element = cheetah.Cavity(  # TODO: TD? and tilt?
+        element = lynx.Cavity(  # TODO: TD? and tilt?
             name=name,
             length=torch.tensor([1.0]),
             frequency=torch.tensor([11.9952e9]),
             voltage=torch.tensor([0.0]),
         )
     elif class_name == "UNDA":  # TODO: Figure out actual length
-        element = cheetah.Undulator(name=name, length=torch.tensor([0.25]))
+        element = lynx.Undulator(name=name, length=torch.tensor([0.25]))
     elif class_name in [
         "SOLG",
         "BCMG",
@@ -198,14 +198,14 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
         "LINA",
         "EOLX",
     ]:
-        element = cheetah.Marker(name=name)
+        element = lynx.Marker(name=name)
     else:
         raise ValueError(f"Encountered unknown class {class_name} for element {name}")
 
     return {"element": element, "s_position": s_position}
 
 
-def read_nx_tables(filepath: Path) -> "cheetah.Element":
+def read_nx_tables(filepath: Path) -> "lynx.Element":
     """
     Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
     `Segment`.
@@ -250,7 +250,7 @@ def read_nx_tables(filepath: Path) -> "cheetah.Element":
 
         if drift_length > 0.0:
             filled_with_drifts.append(
-                cheetah.Drift(
+                lynx.Drift(
                     name=f"DRIFT_{previous['element'].name}_{current['element'].name}",
                     length=torch.as_tensor([drift_length]),
                 )
@@ -258,7 +258,7 @@ def read_nx_tables(filepath: Path) -> "cheetah.Element":
 
         filled_with_drifts.append(current["element"])
 
-    segment = cheetah.Segment(elements=filled_with_drifts, name=filepath.stem)
+    segment = lynx.Segment(elements=filled_with_drifts, name=filepath.stem)
 
     # Return flattened because conversion prduces nested segments
     return segment.flattened()

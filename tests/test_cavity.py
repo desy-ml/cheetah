@@ -1,6 +1,6 @@
 import torch
 
-import cheetah
+import lynx
 
 
 def test_assert_ei_greater_zero():
@@ -17,14 +17,14 @@ def test_assert_ei_greater_zero():
     RuntimeError: Boolean value of Tensor with more than one value is ambiguous
     ```
     """
-    cavity = cheetah.Cavity(
+    cavity = lynx.Cavity(
         length=torch.tensor([3.0441, 3.0441, 3.0441]),
         voltage=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
         phase=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
         frequency=torch.tensor([2.8560e09, 2.8560e09, 2.8560e09]),
         name="k26_2a",
     )
-    beam = cheetah.ParticleBeam.from_parameters(
+    beam = lynx.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5])
     ).broadcast((3,))
 

@@ -7,8 +7,8 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from cheetah.track_methods import misalignment_matrix
-from cheetah.utils import UniqueNameGenerator
+from lynx.track_methods import misalignment_matrix
+from lynx.utils import UniqueNameGenerator
 
 from .element import Element
 

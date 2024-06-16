@@ -1,6 +1,6 @@
 import torch
 
-import cheetah
+import lynx
 
 
 def test_merged_transfer_maps_tracking():
@@ -8,16 +8,16 @@ def test_merged_transfer_maps_tracking():
     Test that tracking through merged transfer maps results in the same beam as the
     original segment did.
     """
-    incoming_beam = cheetah.ParameterBeam.from_astra(
+    incoming_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    original_segment = cheetah.Segment(
+    original_segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
-            cheetah.Drift(length=torch.tensor([0.4])),
-            cheetah.HorizontalCorrector(
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
+            lynx.Drift(length=torch.tensor([0.4])),
+            lynx.HorizontalCorrector(
                 length=torch.tensor([0.1]), angle=torch.tensor([1e-4])
             ),
         ]
@@ -46,16 +46,16 @@ def test_merged_transfer_maps_tracking_vectorized():
     Test that tracking through merged transfer maps results in the same beam as the
     original segment did in a vectorised setup.
     """
-    incoming_beam = cheetah.ParameterBeam.from_astra(
+    incoming_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     ).broadcast((10,))
 
-    original_segment = cheetah.Segment(
+    original_segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
-            cheetah.Drift(length=torch.tensor([0.4])),
-            cheetah.HorizontalCorrector(
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
+            lynx.Drift(length=torch.tensor([0.4])),
+            lynx.HorizontalCorrector(
                 length=torch.tensor([0.1]), angle=torch.tensor([1e-4])
             ),
         ]
@@ -83,16 +83,16 @@ def test_merged_transfer_maps_num_elements():
     """
     Test that merging transfer maps results in the correct number of elements.
     """
-    incoming_beam = cheetah.ParameterBeam.from_astra(
+    incoming_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    original_segment = cheetah.Segment(
+    original_segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
-            cheetah.Drift(length=torch.tensor([0.4])),
-            cheetah.HorizontalCorrector(
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
+            lynx.Drift(length=torch.tensor([0.4])),
+            lynx.HorizontalCorrector(
                 length=torch.tensor([0.1]), angle=torch.tensor([1e-4])
             ),
         ]
@@ -107,22 +107,22 @@ def test_no_markers_left_after_removal():
     """
     Test that when removing markers, no markers are left in the segment.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
-            cheetah.Marker(),
-            cheetah.Drift(length=torch.tensor([0.4])),
-            cheetah.HorizontalCorrector(
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
+            lynx.Marker(),
+            lynx.Drift(length=torch.tensor([0.4])),
+            lynx.HorizontalCorrector(
                 length=torch.tensor([0.1]), angle=torch.tensor([1e-4])
             ),
-            cheetah.Marker(),
+            lynx.Marker(),
         ]
     )
     optimized_segment = segment.without_inactive_markers()
 
     assert not any(
-        isinstance(element, cheetah.Marker) for element in optimized_segment.elements
+        isinstance(element, lynx.Marker) for element in optimized_segment.elements
     )
 
 
@@ -130,18 +130,18 @@ def test_inactive_magnet_is_replaced_by_drift():
     """
     Test that an inactive magnet is replaced by a drift as expected.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([0.0])),
-            cheetah.Drift(length=torch.tensor([0.4])),
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([0.0])),
+            lynx.Drift(length=torch.tensor([0.4])),
         ]
     )
 
     optimized_segment = segment.inactive_elements_as_drifts()
 
     assert all(
-        isinstance(element, cheetah.Drift) for element in optimized_segment.elements
+        isinstance(element, lynx.Drift) for element in optimized_segment.elements
     )
 
 
@@ -149,17 +149,17 @@ def test_active_elements_not_replaced_by_drift():
     """
     Test that an active magnet is not replaced by a drift.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
-            cheetah.Drift(length=torch.tensor([0.4])),
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(length=torch.tensor([0.2]), k1=torch.tensor([4.2])),
+            lynx.Drift(length=torch.tensor([0.4])),
         ]
     )
 
     optimized_segment = segment.inactive_elements_as_drifts()
 
-    assert isinstance(optimized_segment.elements[1], cheetah.Quadrupole)
+    assert isinstance(optimized_segment.elements[1], lynx.Quadrupole)
 
 
 def test_skippable_elements_reset():
@@ -167,20 +167,20 @@ def test_skippable_elements_reset():
     @cr-xu pointed out that the skippable elements are not always reset appropriately
     when merging transfer maps (see #88). This test catches the bug he pointed out.
     """
-    incoming_beam = cheetah.ParameterBeam.from_astra(
+    incoming_beam = lynx.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    original_segment = cheetah.Segment(
+    original_segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([0.6])),
+            lynx.Quadrupole(
                 length=torch.tensor([0.2]), k1=torch.tensor([4.2]), name="Q1"
             ),
-            cheetah.Drift(length=torch.tensor([0.4])),
-            cheetah.HorizontalCorrector(
+            lynx.Drift(length=torch.tensor([0.4])),
+            lynx.HorizontalCorrector(
                 length=torch.tensor([0.1]), angle=torch.tensor([1e-4]), name="HCOR_1"
             ),
-            cheetah.Drift(length=torch.tensor([0.4])),
+            lynx.Drift(length=torch.tensor([0.4])),
         ]
     )
 

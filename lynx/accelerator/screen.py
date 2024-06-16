@@ -9,8 +9,8 @@ from scipy.constants import physical_constants
 from torch import Size, nn
 from torch.distributions import MultivariateNormal
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from lynx.particles import Beam, ParameterBeam, ParticleBeam
+from lynx.utils import UniqueNameGenerator
 
 from .element import Element
 

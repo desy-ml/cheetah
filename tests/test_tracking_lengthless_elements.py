@@ -1,13 +1,13 @@
 import torch
 
-import cheetah
+import lynx
 
-beam_in = cheetah.ParticleBeam.from_parameters(num_particles=100)
+beam_in = lynx.ParticleBeam.from_parameters(num_particles=100)
 
 
 # Only Marker
 def test_tracking_marker_only():
-    segment = cheetah.Segment([cheetah.Marker(name="start")])
+    segment = lynx.Segment([lynx.Marker(name="start")])
 
     beam_out = segment.track(beam_in)
 
@@ -16,13 +16,13 @@ def test_tracking_marker_only():
 
 # Only length-less elements between non-skippable elements
 def test_tracking_lengthless_elements():
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         [
-            cheetah.Cavity(
+            lynx.Cavity(
                 length=torch.tensor([0.1]), voltage=torch.tensor([1e6]), name="C2"
             ),
-            cheetah.Marker(name="start"),
-            cheetah.Cavity(
+            lynx.Marker(name="start"),
+            lynx.Cavity(
                 length=torch.tensor([0.1]), voltage=torch.tensor([1e6]), name="C1"
             ),
         ]

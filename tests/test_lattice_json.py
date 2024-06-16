@@ -1,4 +1,4 @@
-from cheetah import Segment
+from lynx import Segment
 
 from .resources import ARESlatticeStage3v1_9 as ares
 

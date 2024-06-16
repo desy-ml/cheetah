@@ -7,8 +7,8 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from lynx.particles import Beam, ParameterBeam, ParticleBeam
+from lynx.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

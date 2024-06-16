@@ -1,6 +1,6 @@
 import torch
 
-from cheetah import Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
+from lynx import Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
 
 
 def test_quadrupole_off():

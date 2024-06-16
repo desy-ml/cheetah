@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from cheetah import Drift, Quadrupole, Segment
+from lynx import Drift, Quadrupole, Segment
 
 
 @pytest.mark.skip(reason="Equality is broken since making elements nn.Modules.")

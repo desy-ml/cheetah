@@ -5,7 +5,7 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
 
-from cheetah.utils import UniqueNameGenerator
+from lynx.utils import UniqueNameGenerator
 
 from .dipole import Dipole
 

@@ -1,23 +1,21 @@
 import torch
 
-import cheetah
+import lynx
 
 
 def test_bmad_tutorial():
     """Test importing the lattice example file from the Bmad and Tao tutorial."""
     file_path = "tests/resources/bmad_tutorial_lattice.bmad"
-    converted = cheetah.Segment.from_bmad(file_path)
+    converted = lynx.Segment.from_bmad(file_path)
     converted.name = "bmad_tutorial"
 
-    correct = cheetah.Segment(
+    correct = lynx.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.5), name="d"),
-            cheetah.Dipole(
+            lynx.Drift(length=torch.tensor(0.5), name="d"),
+            lynx.Dipole(
                 length=torch.tensor(0.5), e1=torch.tensor(0.1), name="b"
             ),  # TODO: What are g and dg?
-            cheetah.Quadrupole(
-                length=torch.tensor(0.6), k1=torch.tensor(0.23), name="q"
-            ),
+            lynx.Quadrupole(length=torch.tensor(0.6), k1=torch.tensor(0.23), name="q"),
         ],
         name="bmad_tutorial",
     )

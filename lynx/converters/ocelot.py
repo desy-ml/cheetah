@@ -1,11 +1,11 @@
 import torch
 
-import cheetah
+import lynx
 
 
 def ocelot2cheetah(
     element, warnings: bool = True, device=None, dtype=torch.float32
-) -> "cheetah.Element":
+) -> "lynx.Element":
     """
     Translate an Ocelot element to a Cheetah element.
 
@@ -30,14 +30,14 @@ def ocelot2cheetah(
         )
 
     if isinstance(element, ocelot.Drift):
-        return cheetah.Drift(
+        return lynx.Drift(
             length=torch.tensor([element.l], dtype=torch.float32),
             name=element.id,
             device=device,
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Quadrupole):
-        return cheetah.Quadrupole(
+        return lynx.Quadrupole(
             length=torch.tensor([element.l], dtype=torch.float32),
             k1=torch.tensor([element.k1], dtype=torch.float32),
             name=element.id,
@@ -45,7 +45,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Solenoid):
-        return cheetah.Solenoid(
+        return lynx.Solenoid(
             length=torch.tensor([element.l], dtype=torch.float32),
             k=torch.tensor([element.k], dtype=torch.float32),
             name=element.id,
@@ -53,7 +53,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Hcor):
-        return cheetah.HorizontalCorrector(
+        return lynx.HorizontalCorrector(
             length=torch.tensor([element.l], dtype=torch.float32),
             angle=torch.tensor([element.angle], dtype=torch.float32),
             name=element.id,
@@ -61,7 +61,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Vcor):
-        return cheetah.VerticalCorrector(
+        return lynx.VerticalCorrector(
             length=torch.tensor([element.l], dtype=torch.float32),
             angle=torch.tensor([element.angle], dtype=torch.float32),
             name=element.id,
@@ -69,7 +69,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Bend):
-        return cheetah.Dipole(
+        return lynx.Dipole(
             length=torch.tensor([element.l], dtype=torch.float32),
             angle=torch.tensor([element.angle], dtype=torch.float32),
             e1=torch.tensor([element.e1], dtype=torch.float32),
@@ -83,7 +83,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.SBend):
-        return cheetah.Dipole(
+        return lynx.Dipole(
             length=torch.tensor([element.l], dtype=torch.float32),
             angle=torch.tensor([element.angle], dtype=torch.float32),
             e1=torch.tensor([element.e1], dtype=torch.float32),
@@ -97,7 +97,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.RBend):
-        return cheetah.RBend(
+        return lynx.RBend(
             length=torch.tensor([element.l], dtype=torch.float32),
             angle=torch.tensor([element.angle], dtype=torch.float32),
             e1=torch.tensor([element.e1], dtype=torch.float32) - element.angle / 2,
@@ -111,7 +111,7 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Cavity):
-        return cheetah.Cavity(
+        return lynx.Cavity(
             length=torch.tensor([element.l], dtype=torch.float32),
             voltage=torch.tensor([element.v], dtype=torch.float32) * 1e9,
             frequency=torch.tensor([element.freq], dtype=torch.float32),
@@ -122,7 +122,7 @@ def ocelot2cheetah(
         )
     elif isinstance(element, ocelot.TDCavity):
         # TODO: Better replacement at some point?
-        return cheetah.Cavity(
+        return lynx.Cavity(
             length=torch.tensor([element.l], dtype=torch.float32),
             voltage=torch.tensor([element.v], dtype=torch.float32) * 1e9,
             frequency=torch.tensor([element.freq], dtype=torch.float32),
@@ -139,7 +139,7 @@ def ocelot2cheetah(
                 "WARNING: Diagnostic screen was converted with default screen"
                 " properties."
             )
-        return cheetah.Screen(
+        return lynx.Screen(
             resolution=torch.tensor([2448, 2040]),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             name=element.id,
@@ -147,13 +147,13 @@ def ocelot2cheetah(
             dtype=dtype,
         )
     elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
-        return cheetah.BPM(name=element.id)
+        return lynx.BPM(name=element.id)
     elif isinstance(element, ocelot.Marker):
-        return cheetah.Marker(name=element.id)
+        return lynx.Marker(name=element.id)
     elif isinstance(element, ocelot.Monitor):
-        return cheetah.Marker(name=element.id)
+        return lynx.Marker(name=element.id)
     elif isinstance(element, ocelot.Undulator):
-        return cheetah.Undulator(
+        return lynx.Undulator(
             torch.tensor(element.l, dtype=torch.float32),
             name=element.id,
             device=device,
@@ -161,7 +161,7 @@ def ocelot2cheetah(
         )
     elif isinstance(element, ocelot.Aperture):
         shape_translation = {"rect": "rectangular", "elip": "elliptical"}
-        return cheetah.Aperture(
+        return lynx.Aperture(
             x_max=torch.tensor([element.xmax], dtype=torch.float32),
             y_max=torch.tensor([element.ymax], dtype=torch.float32),
             shape=shape_translation[element.type],
@@ -176,7 +176,7 @@ def ocelot2cheetah(
                 f"WARNING: Unknown element {element.id} of type {type(element)},"
                 " replacing with drift section."
             )
-        return cheetah.Drift(
+        return lynx.Drift(
             length=torch.tensor([element.l], dtype=torch.float32),
             name=element.id,
             device=device,

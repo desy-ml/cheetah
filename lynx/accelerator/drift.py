@@ -1,14 +1,12 @@
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
-from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from cheetah.utils import UniqueNameGenerator
+from lynx.utils import UniqueNameGenerator
 
 from .element import Element
 
@@ -24,21 +22,20 @@ electron_mass_eV = torch.tensor(
 )
 
 
-class VerticalCorrector(Element):
+class Drift(Element):
     """
-    Verticle corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the vertical plane.
+    Drift section in a particle accelerator.
+
+    Note: the transfer map now uses the linear approximation.
+    Including the R_56 = L / (beta**2 * gamma **2)
 
     :param length: Length in meters.
-    :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
     """
 
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -47,13 +44,12 @@ class VerticalCorrector(Element):
         super().__init__(name=name)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        self.angle = (
-            torch.as_tensor(angle, **factory_kwargs)
-            if angle is not None
-            else torch.zeros_like(self.length)
-        )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        assert (
+            energy.shape == self.length.shape
+        ), f"Beam shape {energy.shape} does not match element shape {self.length.shape}"
+
         device = self.length.device
         dtype = self.length.dtype
 
@@ -65,49 +61,32 @@ class VerticalCorrector(Element):
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
-        tm[..., 3, 6] = self.angle
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
+
         return tm
 
     def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape), angle=self.angle, name=self.name
-        )
+        return self.__class__(length=self.length.repeat(shape), name=self.name)
 
     @property
     def is_skippable(self) -> bool:
         return True
 
-    @property
-    def is_active(self) -> bool:
-        return any(self.angle != 0)
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            length = torch.min(resolution, remaining)
-            element = VerticalCorrector(length, self.angle * length / self.length)
+            element = Drift(torch.min(resolution, remaining))
             split_elements.append(element)
             remaining -= resolution
         return split_elements
 
     def plot(self, ax: plt.Axes, s: float) -> None:
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
-
-        patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:cyan", alpha=alpha, zorder=2
-        )
-        ax.add_patch(patch)
+        pass
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "angle"]
+        return super().defining_features + ["length"]
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"angle={repr(self.angle)}, "
-            + f"name={repr(self.name)})"
-        )
+        return f"{self.__class__.__name__}(length={repr(self.length)})"

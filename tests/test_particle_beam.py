@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from cheetah import ParticleBeam
+from lynx import ParticleBeam
 
 
 def test_create_from_parameters():

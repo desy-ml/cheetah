@@ -1,19 +1,19 @@
 import torch
 
-import cheetah
+import lynx
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
 def test_segment_length_shape():
     """Test that the shape of a segment's length matches the input."""
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6, 0.5])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([0.6, 0.5])),
+            lynx.Quadrupole(
                 length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
             ),
-            cheetah.Drift(length=torch.tensor([0.4, 0.3])),
+            lynx.Drift(length=torch.tensor([0.4, 0.3])),
         ]
     )
 
@@ -25,14 +25,14 @@ def test_segment_length_shape_2d():
     Test that the shape of a segment's length matches the input for a batch with
     multiple dimensions.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.4, 0.3]])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.4, 0.3]])),
+            lynx.Quadrupole(
                 length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.3, 0.35]]),
                 k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.3, 4.3]]),
             ),
-            cheetah.Drift(length=torch.tensor([[0.4, 0.3], [0.2, 0.1], [0.2, 0.1]])),
+            lynx.Drift(length=torch.tensor([[0.4, 0.3], [0.2, 0.1], [0.2, 0.1]])),
         ]
     )
 
@@ -43,10 +43,10 @@ def test_track_particle_single_element_shape():
     """
     Test that the shape of a beam tracked through a single element matches the input.
     """
-    quadrupole = cheetah.Quadrupole(
+    quadrupole = lynx.Quadrupole(
         length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
+    incoming = lynx.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5, 2e-5])
     )
 
@@ -75,11 +75,11 @@ def test_track_particle_single_element_shape_2d():
     Test that the shape of a beam tracked through a single element matches the input for
     an n-dimensional batch.
     """
-    quadrupole = cheetah.Quadrupole(
+    quadrupole = lynx.Quadrupole(
         length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
         k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
+    incoming = lynx.ParticleBeam.from_parameters(
         num_particles=100_000,
         sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]]),
     )
@@ -108,16 +108,16 @@ def test_track_particle_segment_shape():
     """
     Test that the shape of a beam tracked through a segment matches the input.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6, 0.5])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([0.6, 0.5])),
+            lynx.Quadrupole(
                 length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
             ),
-            cheetah.Drift(length=torch.tensor([0.4, 0.3])),
+            lynx.Drift(length=torch.tensor([0.4, 0.3])),
         ]
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
+    incoming = lynx.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5, 2e-5])
     )
 
@@ -146,17 +146,17 @@ def test_track_particle_segment_shape_2d():
     Test that the shape of a beam tracked through a segment matches the input for the
     case of a multi-dimensional batch.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.2, 0.1]])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.2, 0.1]])),
+            lynx.Quadrupole(
                 length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
                 k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
             ),
-            cheetah.Drift(length=torch.tensor([[0.4, 0.3], [0.6, 0.5], [0.8, 0.7]])),
+            lynx.Drift(length=torch.tensor([[0.4, 0.3], [0.6, 0.5], [0.8, 0.7]])),
         ]
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
+    incoming = lynx.ParticleBeam.from_parameters(
         num_particles=100_000,
         sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]]),
     )
@@ -185,10 +185,10 @@ def test_track_parameter_single_element_shape():
     """
     Test that the shape of a beam tracked through a single element matches the input.
     """
-    quadrupole = cheetah.Quadrupole(
+    quadrupole = lynx.Quadrupole(
         length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
     )
-    incoming = cheetah.ParameterBeam.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
+    incoming = lynx.ParameterBeam.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
 
     outgoing = quadrupole.track(incoming)
 
@@ -211,11 +211,11 @@ def test_track_parameter_single_element_shape_2d():
     Test that the shape of a beam tracked through a single element matches the input for
     an n-dimensional batch.
     """
-    quadrupole = cheetah.Quadrupole(
+    quadrupole = lynx.Quadrupole(
         length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
         k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
     )
-    incoming = cheetah.ParameterBeam.from_parameters(
+    incoming = lynx.ParameterBeam.from_parameters(
         sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
     )
 
@@ -239,16 +239,16 @@ def test_track_parameter_segment_shape():
     """
     Test that the shape of a beam tracked through a segment matches the input.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6, 0.5])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([0.6, 0.5])),
+            lynx.Quadrupole(
                 length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
             ),
-            cheetah.Drift(length=torch.tensor([0.4, 0.3])),
+            lynx.Drift(length=torch.tensor([0.4, 0.3])),
         ]
     )
-    incoming = cheetah.ParameterBeam.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
+    incoming = lynx.ParameterBeam.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
 
     outgoing = segment.track(incoming)
 
@@ -271,17 +271,17 @@ def test_track_parameter_segment_shape_2d():
     Test that the shape of a beam tracked through a segment matches the input for the
     case of a multi-dimensional batch.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.2, 0.1]])),
-            cheetah.Quadrupole(
+            lynx.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.2, 0.1]])),
+            lynx.Quadrupole(
                 length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
                 k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
             ),
-            cheetah.Drift(length=torch.tensor([[0.4, 0.3], [0.6, 0.5], [0.8, 0.7]])),
+            lynx.Drift(length=torch.tensor([[0.4, 0.3], [0.6, 0.5], [0.8, 0.7]])),
         ]
     )
-    incoming = cheetah.ParameterBeam.from_parameters(
+    incoming = lynx.ParameterBeam.from_parameters(
         sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
     )
 
@@ -303,10 +303,8 @@ def test_track_parameter_segment_shape_2d():
 
 def test_enormous_through_ares():
     """Test ARES EA with a huge number of settings."""
-    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    segment = lynx.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
+    incoming = lynx.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     segment_broadcast = segment.broadcast((3, 100_000))
     incoming_broadcast = incoming.broadcast((3, 100_000))
@@ -334,16 +332,14 @@ def test_before_after_broadcast_tracking_equal_cavity():
     Test that when tracking through a segment after broadcasting, the resulting beam is
     the same as in the segment before broadcasting. A cavity is used as a reference.
     """
-    cavity = cheetah.Cavity(
+    cavity = lynx.Cavity(
         length=torch.tensor([3.0441]),
         voltage=torch.tensor([48198468.0]),
         phase=torch.tensor([-0.0]),
         frequency=torch.tensor([2.8560e09]),
         name="k26_2d",
     )
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    incoming = lynx.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
     outgoing = cavity.track(incoming)
 
     broadcast_cavity = cavity.broadcast((3, 10))
@@ -361,10 +357,8 @@ def test_before_after_broadcast_tracking_equal_ares_ea():
     Test that when tracking through a segment after broadcasting, the resulting beam is
     the same as in the segment before broadcasting. The ARES EA is used as a reference.
     """
-    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    segment = lynx.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
+    incoming = lynx.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
     segment.AREAMQZM1.k1 = torch.tensor([4.2])
     outgoing = segment.track(incoming)
 
@@ -394,7 +388,7 @@ def test_broadcast_customtransfermap():
         ]
     )
 
-    element = cheetah.CustomTransferMap(length=torch.tensor([0.4]), transfer_map=tm)
+    element = lynx.CustomTransferMap(length=torch.tensor([0.4]), transfer_map=tm)
     broadcast_element = element.broadcast((3, 10))
 
     assert broadcast_element.length.shape == (3, 10)
@@ -406,7 +400,7 @@ def test_broadcast_customtransfermap():
 
 def test_broadcast_drift():
     """Test that broadcasting a `Drift` element gives the correct result."""
-    element = cheetah.Drift(length=torch.tensor([0.4]))
+    element = lynx.Drift(length=torch.tensor([0.4]))
     broadcast_element = element.broadcast((3, 10))
 
     assert broadcast_element.length.shape == (3, 10)
@@ -421,7 +415,7 @@ def test_broadcast_quadrupole():
     # TODO Add misalignment to the test
     # TODO Add tilt to the test
 
-    element = cheetah.Quadrupole(length=torch.tensor([0.4]), k1=torch.tensor([4.2]))
+    element = lynx.Quadrupole(length=torch.tensor([0.4]), k1=torch.tensor([4.2]))
     broadcast_element = element.broadcast((3, 10))
 
     assert broadcast_element.length.shape == (3, 10)
@@ -437,14 +431,14 @@ def test_cavity_with_zero_and_non_zero_voltage():
     Tests that if zero and non-zero voltages are passed to a cavity in a single batch,
     there are no errors. This test does NOT check physical correctness.
     """
-    cavity = cheetah.Cavity(
+    cavity = lynx.Cavity(
         length=torch.tensor([3.0441, 3.0441, 3.0441]),
         voltage=torch.tensor([0.0, 48198468.0, 0.0]),
         phase=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
         frequency=torch.tensor([2.8560e09, 2.8560e09, 2.8560e09]),
         name="my_test_cavity",
     )
-    beam = cheetah.ParticleBeam.from_parameters(
+    beam = lynx.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5])
     ).broadcast((3,))
 
@@ -455,7 +449,7 @@ def test_screen_length_shape():
     """
     Test that the shape of a screen's length matches the shape of its misalignment.
     """
-    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2], [0.3, 0.4]]))
+    screen = lynx.Screen(misalignment=torch.tensor([[0.1, 0.2], [0.3, 0.4]]))
     assert screen.length.shape == screen.misalignment.shape[:-1]
 
 
@@ -464,6 +458,6 @@ def test_screen_length_broadcast_shape():
     Test that the shape of a screen's length matches the shape of its misalignment
     after broadcasting.
     """
-    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2]]))
+    screen = lynx.Screen(misalignment=torch.tensor([[0.1, 0.2]]))
     broadcast_screen = screen.broadcast((3, 10))
     assert broadcast_screen.length.shape == broadcast_screen.misalignment.shape[:-1]

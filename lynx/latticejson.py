@@ -3,7 +3,7 @@ from typing import Any, Optional, Tuple
 
 import torch
 
-import cheetah
+import lynx
 
 
 def feature2nontorch(value: Any) -> Any:
@@ -23,7 +23,7 @@ def feature2nontorch(value: Any) -> Any:
     )
 
 
-def convert_element(element: "cheetah.Element"):
+def convert_element(element: "lynx.Element"):
     """
     Deconstruct an element into its name, class and parameters for saving to JSON.
 
@@ -38,7 +38,7 @@ def convert_element(element: "cheetah.Element"):
     return element.name, element.__class__.__name__, params
 
 
-def convert_segment(segment: "cheetah.Segment") -> Tuple[dict, dict]:
+def convert_segment(segment: "lynx.Segment") -> Tuple[dict, dict]:
     """
     Deconstruct a segment into its name, a list of its elements and a dictionary of
     its element parameters for saving to JSON.
@@ -53,7 +53,7 @@ def convert_segment(segment: "cheetah.Segment") -> Tuple[dict, dict]:
     cell = []
 
     for element in segment.elements:
-        if isinstance(element, cheetah.Segment):
+        if isinstance(element, lynx.Segment):
             segment_elements, segment_lattices = convert_segment(element)
 
             elements.update(segment_elements)
@@ -71,7 +71,7 @@ def convert_segment(segment: "cheetah.Segment") -> Tuple[dict, dict]:
 
 
 def save_cheetah_model(
-    segment: "cheetah.Segment",
+    segment: "lynx.Segment",
     filename: str,
     title: Optional[str] = None,
     info: str = "This is a placeholder lattice description",
@@ -142,14 +142,14 @@ def nontorch2feature(value: Any) -> Any:
     return value if isinstance(value, (str, bool)) else torch.tensor(value)
 
 
-def parse_element(name: str, lattice_dict: dict) -> "cheetah.Element":
+def parse_element(name: str, lattice_dict: dict) -> "lynx.Element":
     """
     Parse an `Element` named `name` from a `lattice_dict`.
 
     :param name: Name of the `Element` to parse.
     :param lattice_dict: Dictionary containing the lattice information.
     """
-    element_class = getattr(cheetah, lattice_dict["elements"][name][0])
+    element_class = getattr(lynx, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
 
     converted_params = {key: nontorch2feature(value) for key, value in params.items()}
@@ -157,7 +157,7 @@ def parse_element(name: str, lattice_dict: dict) -> "cheetah.Element":
     return element_class(name=name, **converted_params)
 
 
-def parse_segment(name: str, lattice_dict: dict) -> "cheetah.Segment":
+def parse_segment(name: str, lattice_dict: dict) -> "lynx.Segment":
     """
     Parse a `Segment` named `name` from a `lattice_dict`.
 
@@ -175,10 +175,10 @@ def parse_segment(name: str, lattice_dict: dict) -> "cheetah.Segment":
         # Append the element to the list of elements
         elements.append(new_element)
 
-    return cheetah.Segment(elements=elements, name=name)
+    return lynx.Segment(elements=elements, name=name)
 
 
-def load_cheetah_model(filename: str) -> "cheetah.Segment":
+def load_cheetah_model(filename: str) -> "lynx.Segment":
     """
     Load a Cheetah model from a JSON file.
 

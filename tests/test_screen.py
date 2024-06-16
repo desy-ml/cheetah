@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-import cheetah
+import lynx
 
 from .resources import ARESlatticeStage3v1_9 as ocelot_lattice
 
@@ -10,10 +10,10 @@ def test_reading_shows_beam_particle():
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
-            cheetah.Screen(
+            lynx.Drift(length=torch.tensor([1.0])),
+            lynx.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 is_active=True,
@@ -21,7 +21,7 @@ def test_reading_shows_beam_particle():
             ),
         ],
     )
-    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+    beam = lynx.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
     assert segment.my_screen.reading.shape == (1, 100, 100)
@@ -39,10 +39,10 @@ def test_reading_shows_beam_parameter():
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """
-    segment = cheetah.Segment(
+    segment = lynx.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
-            cheetah.Screen(
+            lynx.Drift(length=torch.tensor([1.0])),
+            lynx.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 is_active=True,
@@ -51,7 +51,7 @@ def test_reading_shows_beam_parameter():
         ],
         name="my_segment",
     )
-    beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+    beam = lynx.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
     assert segment.my_screen.reading.shape == (1, 100, 100)
@@ -69,10 +69,10 @@ def test_reading_shows_beam_ares():
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """
-    segment = cheetah.Segment.from_ocelot(ocelot_lattice.cell, warnings=False).subcell(
+    segment = lynx.Segment.from_ocelot(ocelot_lattice.cell, warnings=False).subcell(
         "AREASOLA1", "AREABSCR1"
     )
-    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+    beam = lynx.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     segment.AREABSCR1.resolution = torch.tensor(
         (2448, 2040), device=segment.AREABSCR1.resolution.device
