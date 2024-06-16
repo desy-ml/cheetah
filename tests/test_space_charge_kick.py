@@ -112,7 +112,7 @@ def test_vectorized():
 
     outgoing = segment.track(incoming)
 
-    assert outgoing.particles.shape == (2, 2, 10_000, 7)
+    assert outgoing.particles.shape == (3, 2, 10_000, 7)
 
 
 def test_incoming_beam_not_modified():
