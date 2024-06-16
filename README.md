@@ -1,4 +1,4 @@
-<img src="images/logo.png" align="right" width="25%"/>
+<img src="images/logo.webp" align="right" width="25%"/>
 
 ![format](https://github.com/jank324/lynx/actions/workflows/format.yaml/badge.svg)
 ![pytest](https://github.com/jank324/lynx/actions/workflows/pytest.yaml/badge.svg)
