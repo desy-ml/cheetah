@@ -94,14 +94,12 @@ class SpaceChargeKick(Element):
         """
         Computes the dimensions of the grid on which to compute the space charge effect.
         """
-        sigma_x = torch.std(beam.particles[:, :, 0], dim=1)
-        sigma_y = torch.std(beam.particles[:, :, 2], dim=1)
-        sigma_s = torch.std(beam.particles[:, :, 4], dim=1)
+        # TODO: Refactor ... might not need to be a method
         return torch.stack(
             [
-                self.grid_extend_x * sigma_x,
-                self.grid_extend_y * sigma_y,
-                self.grid_extend_s * sigma_s,
+                self.grid_extend_x * beam.sigma_x,
+                self.grid_extend_y * beam.sigma_y,
+                self.grid_extend_s * beam.sigma_s,
             ],
             dim=-1,
         )
@@ -117,9 +115,7 @@ class SpaceChargeKick(Element):
         Returns beta (i.e., normalized velocity) for the reference particle of the beam.
         """
         gamma = self._gammaref(beam)
-        if gamma == 0:
-            return torch.tensor(1.0)
-        return torch.sqrt(1 - 1 / gamma**2)
+        return torch.where(gamma == 0, torch.tensor(1.0), torch.sqrt(1 - 1 / gamma**2))
 
     def _deposit_charge_on_grid(
         self,
@@ -134,75 +130,67 @@ class SpaceChargeKick(Element):
         charge density in C/m^3.
         """
         charge = torch.zeros(
-            (self.batch_size,) + self.grid_shape, **self.factory_kwargs
+            beam.particles.shape[:-2] + self.grid_shape, **self.factory_kwargs
         )
 
-        # Loop over vectorisation dimension, i.e. the samples in one batch (does
-        # vectorization)
-        for i_batch in range(self.batch_size):
-            # Get particle positions and charges
-            particle_positions = moments[i_batch, :, [0, 2, 4]]
-            particle_charges = beam.particle_charges[i_batch]
-            normalized_positions = (
-                particle_positions[:, :] + grid_dimensions[i_batch, None, :]
-            ) / cell_size[i_batch, None, :]
+        # Get particle positions
+        particle_positions = moments[..., [0, 2, 4]]
+        normalized_positions = (
+            particle_positions + grid_dimensions.unsqueeze(-2)
+        ) / cell_size.unsqueeze(-2)
 
-            # Find indices of the lower corners of the cells containing the particles
-            cell_indices = torch.floor(normalized_positions).type(torch.long)
+        # Find indices of the lower corners of the cells containing the particles
+        cell_indices = torch.floor(normalized_positions).type(torch.long)
 
-            # Calculate the weights for all surrounding cells
-            offsets = torch.tensor(
-                [
-                    [0, 0, 0],
-                    [0, 0, 1],
-                    [0, 1, 0],
-                    [0, 1, 1],
-                    [1, 0, 0],
-                    [1, 0, 1],
-                    [1, 1, 0],
-                    [1, 1, 1],
-                ]
-            )
-            surrounding_indices = cell_indices[:, None, :] + offsets[None, :, :]
-            # Shape: (n_particles, 8, 3)
-            weights = 1 - torch.abs(
-                normalized_positions[:, None, :] - surrounding_indices
-            )
-            # Shape: (n_particles, 8, 3)
-            cell_weights = weights.prod(dim=-1)  # Shape: (n_particles, 8)
+        # Calculate the weights for all surrounding cells
+        offsets = torch.tensor(
+            [
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 1, 0],
+                [0, 1, 1],
+                [1, 0, 0],
+                [1, 0, 1],
+                [1, 1, 0],
+                [1, 1, 1],
+            ]
+        )
+        surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
+        # Shape: (..., num_particles, 8, 3)
+        weights = 1 - torch.abs(
+            normalized_positions.unsqueeze(-2) - surrounding_indices
+        )
+        # Shape: (.., num_particles, 8, 3)
+        cell_weights = weights.prod(dim=-1)  # Shape: (.., num_particles, 8)
 
-            # Add the charge contributions to the cells
-            idx_x = surrounding_indices[:, :, 0].flatten()
-            idx_y = surrounding_indices[:, :, 1].flatten()
-            idx_s = surrounding_indices[:, :, 2].flatten()
-            # Shape: (8 * n_particles,)
+        # Add the charge contributions to the cells
+        idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
+        idx_y = surrounding_indices[..., 1].flatten(start_dim=-2)
+        idx_s = surrounding_indices[..., 2].flatten(start_dim=-2)
+        # Shape: (..., 8 * num_particles)
 
-            # Check that particles are inside the grid
-            valid_mask = (
-                (idx_x >= 0)
-                & (idx_x < self.grid_shape[0])
-                & (idx_y >= 0)
-                & (idx_y < self.grid_shape[1])
-                & (idx_s >= 0)
-                & (idx_s < self.grid_shape[2])
-            )
+        # Check that particles are inside the grid
+        valid_mask = (
+            (idx_x >= 0)
+            & (idx_x < self.grid_shape[0])
+            & (idx_y >= 0)
+            & (idx_y < self.grid_shape[1])
+            & (idx_s >= 0)
+            & (idx_s < self.grid_shape[2])
+        )
 
-            # Accumulate the charge contributions
-            repeated_charges = particle_charges.repeat_interleave(
-                8
-            )  # Shape:(8 * n_particles,)
-            values = (cell_weights.view(-1) * repeated_charges)[valid_mask]
-            charge[i_batch].index_put_(
-                (idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]),
-                values,
-                accumulate=True,
-            )
-
-        # End of loop over batch
-        inv_cell_volume = 1 / (cell_size[:, 0] * cell_size[:, 1] * cell_size[:, 2])
+        # Accumulate the charge contributions
+        repeated_charges = beam.particle_charges.repeat_interleave(
+            repeats=8, dim=-1
+        )  # Shape:(..., 8 * num_particles)
+        values = (cell_weights.flatten(start_dim=-2) * repeated_charges)[valid_mask]
+        charge[..., idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]] += values
 
         return (
-            charge * inv_cell_volume[:, None, None, None]
+            charge
+            / (cell_size[..., 0] * cell_size[..., 1] * cell_size[..., 2])[
+                ..., None, None, None
+            ]
         )  # Normalize by the cell volume
 
     def _integrated_potential(
@@ -243,15 +231,15 @@ class SpaceChargeKick(Element):
 
         # Create a new tensor with the doubled dimensions, filled with zeros
         new_charge_density = torch.zeros(
-            (self.batch_size,) + new_dims, **self.factory_kwargs
+            beam.particles.shape[:-2] + new_dims, **self.factory_kwargs
         )
 
         # Copy the original charge_density values to the beginning of the new tensor
         new_charge_density[
-            :,
-            : charge_density.shape[1],
-            : charge_density.shape[2],
-            : charge_density.shape[3],
+            ...,
+            : charge_density.shape[-3],
+            : charge_density.shape[-2],
+            : charge_density.shape[-1],
         ] = charge_density
 
         return new_charge_density
@@ -265,10 +253,10 @@ class SpaceChargeKick(Element):
         """
         gamma = self._gammaref(beam)
         dx, dy, ds = (
-            cell_size[:, 0],
-            cell_size[:, 1],
-            cell_size[:, 2] * gamma,
-        )  # scaled by gamma
+            cell_size[..., 0],
+            cell_size[..., 1],
+            cell_size[..., 2] * gamma,
+        )  # Scaled by gamma
         num_grid_points_x, num_grid_points_y, num_grid_points_s = self.grid_shape
 
         # Create coordinate grids
@@ -277,90 +265,111 @@ class SpaceChargeKick(Element):
         s = torch.arange(num_grid_points_s, **self.factory_kwargs)
         ix_grid, iy_grid, is_grid = torch.meshgrid(x, y, s, indexing="ij")
         x_grid = (
-            ix_grid[None, :, :, :] * dx[:, None, None, None]
-        )  # Shape: [batch_size, nx, ny, nz]
+            ix_grid[None, :, :, :] * dx[..., None, None, None]
+        )  # Shape: [..., nx, ny, nz]
         y_grid = (
-            iy_grid[None, :, :, :] * dy[:, None, None, None]
-        )  # Shape: [batch_size, nx, ny, nz]
+            iy_grid[None, :, :, :] * dy[..., None, None, None]
+        )  # Shape: [..., nx, ny, nz]
         s_grid = (
-            is_grid[None, :, :, :] * ds[:, None, None, None]
-        )  # Shape: [batch_size, nx, ny, nz]
+            is_grid[None, :, :, :] * ds[..., None, None, None]
+        )  # Shape: [..., nx, ny, nz]
 
         # Compute the Green's function values
         G_values = (
             self._integrated_potential(
-                x_grid + 0.5 * dx, y_grid + 0.5 * dy, s_grid + 0.5 * ds
+                x_grid + 0.5 * dx[..., None, None, None],
+                y_grid + 0.5 * dy[..., None, None, None],
+                s_grid + 0.5 * ds[..., None, None, None],
             )
             - self._integrated_potential(
-                x_grid - 0.5 * dx, y_grid + 0.5 * dy, s_grid + 0.5 * ds
+                x_grid - 0.5 * dx[..., None, None, None],
+                y_grid + 0.5 * dy[..., None, None, None],
+                s_grid + 0.5 * ds[..., None, None, None],
             )
             - self._integrated_potential(
-                x_grid + 0.5 * dx, y_grid - 0.5 * dy, s_grid + 0.5 * ds
+                x_grid + 0.5 * dx[..., None, None, None],
+                y_grid - 0.5 * dy[..., None, None, None],
+                s_grid + 0.5 * ds[..., None, None, None],
             )
             - self._integrated_potential(
-                x_grid + 0.5 * dx, y_grid + 0.5 * dy, s_grid - 0.5 * ds
+                x_grid + 0.5 * dx[..., None, None, None],
+                y_grid + 0.5 * dy[..., None, None, None],
+                s_grid - 0.5 * ds[..., None, None, None],
             )
             + self._integrated_potential(
-                x_grid + 0.5 * dx, y_grid - 0.5 * dy, s_grid - 0.5 * ds
+                x_grid + 0.5 * dx[..., None, None, None],
+                y_grid - 0.5 * dy[..., None, None, None],
+                s_grid - 0.5 * ds[..., None, None, None],
             )
             + self._integrated_potential(
-                x_grid - 0.5 * dx, y_grid + 0.5 * dy, s_grid - 0.5 * ds
+                x_grid - 0.5 * dx[..., None, None, None],
+                y_grid + 0.5 * dy[..., None, None, None],
+                s_grid - 0.5 * ds[..., None, None, None],
             )
             + self._integrated_potential(
-                x_grid - 0.5 * dx, y_grid - 0.5 * dy, s_grid + 0.5 * ds
+                x_grid - 0.5 * dx[..., None, None, None],
+                y_grid - 0.5 * dy[..., None, None, None],
+                s_grid + 0.5 * ds[..., None, None, None],
             )
             - self._integrated_potential(
-                x_grid - 0.5 * dx, y_grid - 0.5 * dy, s_grid - 0.5 * ds
+                x_grid - 0.5 * dx[..., None, None, None],
+                y_grid - 0.5 * dy[..., None, None, None],
+                s_grid - 0.5 * ds[..., None, None, None],
             )
         )
 
         # Initialize the grid with double dimensions
         green_func_values = torch.zeros(
-            self.batch_size,
-            2 * num_grid_points_x,
-            2 * num_grid_points_y,
-            2 * num_grid_points_s,
+            (
+                *beam.particles.shape[:-2],
+                2 * num_grid_points_x,
+                2 * num_grid_points_y,
+                2 * num_grid_points_s,
+            ),
             **self.factory_kwargs,
         )
 
         # Fill the grid with G_values and its periodic copies
         green_func_values[
-            :, :num_grid_points_x, :num_grid_points_y, :num_grid_points_s
+            ..., :num_grid_points_x, :num_grid_points_y, :num_grid_points_s
         ] = G_values
         green_func_values[
-            :, num_grid_points_x + 1 :, :num_grid_points_y, :num_grid_points_s
-        ] = G_values[:, 1:, :, :].flip(
-            dims=[1]
+            ..., num_grid_points_x + 1 :, :num_grid_points_y, :num_grid_points_s
+        ] = G_values[..., 1:, :, :].flip(
+            dims=[-3]
         )  # Reverse x, excluding the first element
         green_func_values[
-            :, :num_grid_points_x, num_grid_points_y + 1 :, :num_grid_points_s
-        ] = G_values[:, :, 1:, :].flip(
-            dims=[2]
+            ..., :num_grid_points_x, num_grid_points_y + 1 :, :num_grid_points_s
+        ] = G_values[..., :, 1:, :].flip(
+            dims=[-2]
         )  # Reverse y, excluding the first element
         green_func_values[
-            :, :num_grid_points_x, :num_grid_points_y, num_grid_points_s + 1 :
-        ] = G_values[:, :, :, 1:].flip(
-            dims=[3]
+            ..., :num_grid_points_x, :num_grid_points_y, num_grid_points_s + 1 :
+        ] = G_values[..., :, :, 1:].flip(
+            dims=[-1]
         )  # Reverse s, excluding the first element
         green_func_values[
-            :, num_grid_points_x + 1 :, num_grid_points_y + 1 :, :num_grid_points_s
-        ] = G_values[:, 1:, 1:, :].flip(
-            dims=[1, 2]
+            ..., num_grid_points_x + 1 :, num_grid_points_y + 1 :, :num_grid_points_s
+        ] = G_values[..., 1:, 1:, :].flip(
+            dims=[-3, -2]
         )  # Reverse the x and y dimensions
         green_func_values[
-            :, :num_grid_points_x, num_grid_points_y + 1 :, num_grid_points_s + 1 :
-        ] = G_values[:, :, 1:, 1:].flip(
-            dims=[2, 3]
+            ..., :num_grid_points_x, num_grid_points_y + 1 :, num_grid_points_s + 1 :
+        ] = G_values[..., :, 1:, 1:].flip(
+            dims=[-2, -1]
         )  # Reverse the y and s dimensions
         green_func_values[
-            :, num_grid_points_x + 1 :, :num_grid_points_y, num_grid_points_s + 1 :
-        ] = G_values[:, 1:, :, 1:].flip(
-            dims=[1, 3]
+            ..., num_grid_points_x + 1 :, :num_grid_points_y, num_grid_points_s + 1 :
+        ] = G_values[..., 1:, :, 1:].flip(
+            dims=[-3, -1]
         )  # Reverse the x and s dimensions
         green_func_values[
-            :, num_grid_points_x + 1 :, num_grid_points_y + 1 :, num_grid_points_s + 1 :
-        ] = G_values[:, 1:, 1:, 1:].flip(
-            dims=[1, 2, 3]
+            ...,
+            num_grid_points_x + 1 :,
+            num_grid_points_y + 1 :,
+            num_grid_points_s + 1 :,
+        ] = G_values[..., 1:, 1:, 1:].flip(
+            dims=[-3, -2, -1]
         )  # Reverse all dimensions
 
         return green_func_values
@@ -384,10 +393,10 @@ class SpaceChargeKick(Element):
 
         # Return the physical potential
         return potential[
-            :,
-            : charge_density.shape[1] // 2,
-            : charge_density.shape[2] // 2,
-            : charge_density.shape[3] // 2,
+            ...,
+            : charge_density.shape[-3] // 2,
+            : charge_density.shape[-2] // 2,
+            : charge_density.shape[-1] // 2,
         ]
 
     def _E_plus_vB_field(
@@ -403,7 +412,8 @@ class SpaceChargeKick(Element):
         """
         inv_cell_size = 1 / cell_size
         gamma = self._gammaref(beam)
-        igamma2 = 1 / gamma**2 if gamma != 0 else torch.tensor(0.0)
+        igamma2 = torch.zeros_like(gamma)
+        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
         potential = self._solve_poisson_equation(
             beam, moments, cell_size, grid_dimensions
         )
@@ -414,20 +424,20 @@ class SpaceChargeKick(Element):
 
         # Compute the gradients of the potential, using central differences, with 0
         # boundary conditions
-        grad_x[:, 1:-1, :, :] = (potential[:, 2:, :, :] - potential[:, :-2, :, :]) * (
-            0.5 * inv_cell_size[:, 0, None, None, None]
-        )
-        grad_y[:, :, 1:-1, :] = (potential[:, :, 2:, :] - potential[:, :, :-2, :]) * (
-            0.5 * inv_cell_size[:, 1, None, None, None]
-        )
-        grad_s[:, :, :, 1:-1] = (potential[:, :, :, 2:] - potential[:, :, :, :-2]) * (
-            0.5 * inv_cell_size[:, 2, None, None, None]
-        )
+        grad_x[..., 1:-1, :, :] = (
+            potential[..., 2:, :, :] - potential[..., :-2, :, :]
+        ) * (0.5 * inv_cell_size[..., 0, None, None, None])
+        grad_y[..., :, 1:-1, :] = (
+            potential[..., :, 2:, :] - potential[..., :, :-2, :]
+        ) * (0.5 * inv_cell_size[..., 1, None, None, None])
+        grad_s[..., :, :, 1:-1] = (
+            potential[..., :, :, 2:] - potential[..., :, :, :-2]
+        ) * (0.5 * inv_cell_size[..., 2, None, None, None])
 
         # Scale the gradients with lorentz factor
-        grad_x = -igamma2[:, None, None, None] * grad_x
-        grad_y = -igamma2[:, None, None, None] * grad_y
-        grad_s = -igamma2[:, None, None, None] * grad_s
+        grad_x = -igamma2[..., None, None, None] * grad_x
+        grad_y = -igamma2[..., None, None, None] * grad_y
+        grad_s = -igamma2[..., None, None, None] * grad_s
 
         return grad_x, grad_y, grad_s
 
@@ -442,21 +452,21 @@ class SpaceChargeKick(Element):
         p0 = gammaref * betaref * electron_mass * speed_of_light
         gamma = gammaref.unsqueeze(-1) * (
             torch.ones(beam.particles.shape[:-1])
-            + beam.particles[:, :, 5] * betaref.unsqueeze(-1)
+            + beam.particles[..., 5] * betaref.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
         p = gamma * electron_mass * beta * speed_of_light
 
-        moments_xp = beam.particles[:, :, 1] * p0.unsqueeze(-1)
-        moments_yp = beam.particles[:, :, 3] * p0.unsqueeze(-1)
-        moments_s = beam.particles[:, :, 4] * -betaref.unsqueeze(-1)
+        moments_xp = beam.particles[..., 1] * p0.unsqueeze(-1)
+        moments_yp = beam.particles[..., 3] * p0.unsqueeze(-1)
+        moments_s = beam.particles[..., 4] * -betaref.unsqueeze(-1)
         moments_p = torch.sqrt(p**2 - moments_xp**2 - moments_yp**2)
 
         moments = beam.particles.clone()
-        moments[:, :, 1] = moments_xp
-        moments[:, :, 3] = moments_yp
-        moments[:, :, 4] = moments_s
-        moments[:, :, 5] = moments_p
+        moments[..., 1] = moments_xp
+        moments[..., 3] = moments_yp
+        moments[..., 4] = moments_s
+        moments[..., 5] = moments_p
 
         return moments
 
@@ -472,14 +482,14 @@ class SpaceChargeKick(Element):
         betaref = self._betaref(beam)
         p0 = gammaref * betaref * electron_mass * speed_of_light
         p = torch.sqrt(
-            moments[:, :, 1] ** 2 + moments[:, :, 3] ** 2 + moments[:, :, 5] ** 2
+            moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
         )
         gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
 
-        particles[:, :, 1] = moments[:, :, 1] / p0.unsqueeze(-1)
-        particles[:, :, 3] = moments[:, :, 3] / p0.unsqueeze(-1)
-        particles[:, :, 4] = -moments[:, :, 4] / betaref.unsqueeze(-1)
-        particles[:, :, 5] = (gamma - gammaref * torch.ones(gamma.shape)) / (
+        particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
+        particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
+        particles[..., 4] = -moments[..., 4] / betaref.unsqueeze(-1)
+        particles[..., 5] = (gamma - gammaref.unsqueeze(-1)) / (
             (betaref * gammaref).unsqueeze(-1)
         )
 
@@ -501,94 +511,103 @@ class SpaceChargeKick(Element):
         )
         grid_shape = self.grid_shape
         interpolated_forces = torch.zeros(
-            (self.batch_size, beam.num_particles, 3), **self.factory_kwargs
+            (*beam.particles.shape[:-1], 3), **self.factory_kwargs
         )
 
-        # Loop over vectorisation dimension, i.e. the samples in one batch (does
-        # vectorization)
-        for i_batch in range(self.batch_size):
-            # Get particle positions
-            particle_positions = moments[i_batch, :, [0, 2, 4]]
-            normalized_positions = (
-                particle_positions[:, :] + grid_dimensions[i_batch, None, :]
-            ) / cell_size[i_batch, None, :]
+        # Get particle positions
+        particle_positions = moments[..., [0, 2, 4]]
+        normalized_positions = (
+            particle_positions + grid_dimensions.unsqueeze(-2)
+        ) / cell_size.unsqueeze(-2)
 
-            # Find indices of the lower corners of the cells containing the particles
-            cell_indices = torch.floor(normalized_positions).type(torch.long)
+        # Find indices of the lower corners of the cells containing the particles
+        cell_indices = torch.floor(normalized_positions).type(torch.long)
 
-            # Calculate the weights for all surrounding cells
-            offsets = torch.tensor(
-                [
-                    [0, 0, 0],
-                    [0, 0, 1],
-                    [0, 1, 0],
-                    [0, 1, 1],
-                    [1, 0, 0],
-                    [1, 0, 1],
-                    [1, 1, 0],
-                    [1, 1, 1],
-                ]
+        # Calculate the weights for all surrounding cells
+        offsets = torch.tensor(
+            [
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 1, 0],
+                [0, 1, 1],
+                [1, 0, 0],
+                [1, 0, 1],
+                [1, 1, 0],
+                [1, 1, 1],
+            ]
+        )
+        surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
+            -3
+        )  # Shape:(.., num_particles, 8, 3)
+        weights = 1 - torch.abs(
+            normalized_positions.unsqueeze(-2) - surrounding_indices
+        )  # Shape: (..., num_particles, 8, 3)
+        cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
+
+        # Extract forces from the grids
+        surrounding_indices_flattened = surrounding_indices.flatten(
+            start_dim=-3, end_dim=-2
+        )  # Shape: (..., num_particles * 8, 3)
+        idx_x = surrounding_indices_flattened[..., 0]
+        idx_y = surrounding_indices_flattened[..., 1]
+        idx_s = surrounding_indices_flattened[..., 2]
+        valid_mask = (
+            (idx_x >= 0)
+            & (idx_x < grid_shape[0])
+            & (idx_y >= 0)
+            & (idx_y < grid_shape[1])
+            & (idx_s >= 0)
+            & (idx_s < grid_shape[2])
+        )
+
+        # TODO: Is there a better alternative to this loop? (maybe torch.vmap?)
+        for (
+            vector_idx_x,
+            vector_idx_y,
+            vector_idx_s,
+            vector_valid_mask,
+            vector_grad_x,
+            vector_grad_y,
+            vector_grad_z,
+            vector_cell_weights,
+            vector_interpolated_forces,
+        ) in zip(
+            idx_x.flatten(end_dim=-2),
+            idx_y.flatten(end_dim=-2),
+            idx_s.flatten(end_dim=-2),
+            valid_mask.flatten(end_dim=-2),
+            grad_x.flatten(end_dim=-4),
+            grad_y.flatten(end_dim=-4),
+            grad_z.flatten(end_dim=-4),
+            cell_weights.flatten(end_dim=-3),
+            interpolated_forces.flatten(end_dim=-3),
+        ):
+            vector_valid_indices = (
+                vector_idx_x[vector_valid_mask],
+                vector_idx_y[vector_valid_mask],
+                vector_idx_s[vector_valid_mask],
             )
-            surrounding_indices = (
-                cell_indices[:, None, :] + offsets[None, :, :]
-            )  # Shape:(beam.num_particles, 8, 3)
-            # Shape: (beam.num_particles, 8, 3)
-            weights = 1 - torch.abs(
-                normalized_positions[:, None, :] - surrounding_indices
-            )
-            # Shape: (beam.num_particles, 8, 3)
-            cell_weights = weights.prod(dim=-1)  # Shape: (beam.num_particles, 8)
 
-            # Extract forces from the grids
-            idx_x, idx_y, idx_s = surrounding_indices.view(
-                -1, 3
-            ).T  # Shape: (3, beam.num_particles * 8)
-            valid_mask = (
-                (idx_x >= 0)
-                & (idx_x < grid_shape[0])
-                & (idx_y >= 0)
-                & (idx_y < grid_shape[1])
-                & (idx_s >= 0)
-                & (idx_s < grid_shape[2])
-            )
-
-            valid_indices = (idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask])
-            Fx_values = grad_x[i_batch][valid_indices]
-            Fy_values = grad_y[i_batch][valid_indices]
-            Fz_values = grad_z[i_batch][valid_indices]
+            vector_Fx_values = vector_grad_x[vector_valid_indices]
+            vector_Fy_values = vector_grad_y[vector_valid_indices]
+            vector_Fz_values = vector_grad_z[vector_valid_indices]
 
             # Compute interpolated forces
-            valid_cell_weights = cell_weights.view(-1)[valid_mask] * elementary_charge
-            values_x = valid_cell_weights * Fx_values
-            values_y = valid_cell_weights * Fy_values
-            values_z = valid_cell_weights * Fz_values
+            vector_valid_cell_weights = (
+                vector_cell_weights.flatten(start_dim=-2)[vector_valid_mask]
+                * elementary_charge
+            )
+            vector_values_x = vector_valid_cell_weights * vector_Fx_values
+            vector_values_y = vector_valid_cell_weights * vector_Fy_values
+            vector_values_z = vector_valid_cell_weights * vector_Fz_values
 
-            indices = torch.arange(beam.num_particles).repeat_interleave(8)[valid_mask]
-            interpolated_F = interpolated_forces[i_batch]
-            interpolated_F.index_add_(
-                0,
-                indices,
-                torch.stack(
-                    [values_x, torch.zeros_like(values_x), torch.zeros_like(values_x)],
-                    dim=1,
-                ),
-            )
-            interpolated_F.index_add_(
-                0,
-                indices,
-                torch.stack(
-                    [torch.zeros_like(values_y), values_y, torch.zeros_like(values_y)],
-                    dim=1,
-                ),
-            )
-            interpolated_F.index_add_(
-                0,
-                indices,
-                torch.stack(
-                    [torch.zeros_like(values_z), torch.zeros_like(values_z), values_z],
-                    dim=1,
-                ),
-            )
+            vector_indices = torch.arange(beam.num_particles).repeat_interleave(8)[
+                vector_valid_mask
+            ]
+
+            vector_interpolated_forces[vector_indices, 0] += vector_values_x
+            vector_interpolated_forces[vector_indices, 1] += vector_values_y
+            vector_interpolated_forces[vector_indices, 2] += vector_values_z
 
         return interpolated_forces
 
@@ -602,12 +621,6 @@ class SpaceChargeKick(Element):
         if incoming is Beam.empty or incoming.particles.shape[0] == 0:
             return incoming
         elif isinstance(incoming, ParticleBeam):
-            # Flatten the batch dimensions
-            # (to simplify later calculation, is undone at the end of `track`)
-            original_shape = incoming.particles.shape
-            incoming.particles.reshape((-1, incoming.num_particles, 7))
-            self.batch_size = incoming.particles.shape[0]
-
             # Compute useful quantities
             grid_dimensions = self._compute_grid_dimensions(incoming)
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
@@ -616,9 +629,9 @@ class SpaceChargeKick(Element):
             # Change coordinates to apply the space charge effect
             moments = self._cheetah_to_moments(incoming)
             forces = self._compute_forces(incoming, moments, cell_size, grid_dimensions)
-            moments[:, :, 1] = moments[:, :, 1] + forces[:, :, 0] * dt
-            moments[:, :, 3] = moments[:, :, 3] + forces[:, :, 1] * dt
-            moments[:, :, 5] = moments[:, :, 5] + forces[:, :, 2] * dt
+            moments[..., 1] = moments[..., 1] + forces[..., 0] * dt.unsqueeze(-1)
+            moments[..., 3] = moments[..., 3] + forces[..., 1] * dt.unsqueeze(-1)
+            moments[..., 5] = moments[..., 5] + forces[..., 2] * dt.unsqueeze(-1)
 
             outgoing = ParticleBeam(
                 particles=self._moments_to_cheetah(moments, incoming),
@@ -628,12 +641,28 @@ class SpaceChargeKick(Element):
                 dtype=incoming.particles.dtype,
             )
 
-            # Unflatten the batch dimensions
-            outgoing.particles.reshape(original_shape)
-
             return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def broadcast(self, shape: torch.Size) -> "SpaceChargeKick":
+        """
+        Broadcast the element to higher batch dimensions.
+
+        :param shape: Shape to broadcast the element to.
+        :returns: Broadcasted element.
+        """
+        return self.__class__(
+            length_effect=self.length_effect,
+            length=self.length,
+            num_grid_points_x=self.grid_shape[0],
+            num_grid_points_y=self.grid_shape[1],
+            num_grid_points_s=self.grid_shape[2],
+            grid_extend_x=self.grid_extend_x,
+            grid_extend_y=self.grid_extend_y,
+            grid_extend_s=self.grid_extend_s,
+            name=self.name,
+        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for SpaceCharge properly, for now just returns the
