@@ -115,7 +115,7 @@ def test_vectorized():
     assert outgoing.particles.shape == (3, 2, 10_000, 7)
 
 
-def test_cold_uniform_beam_expansion_vectorized():
+def test_vectorized_cold_uniform_beam_expansion():
     """
     Same as `test_cold_uniform_beam_expansion` but testing that all results in a
     vectorised setup are correct.
