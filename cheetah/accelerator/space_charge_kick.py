@@ -106,16 +106,6 @@ class SpaceChargeKick(Element):
             dim=-1,
         )
 
-    def _betaref(self, beam: ParticleBeam) -> torch.Tensor:
-        """
-        Returns beta (i.e., normalized velocity) for the reference particle of the beam.
-        """
-        return torch.where(
-            beam.relativistic_gamma == 0,
-            torch.tensor(1.0),
-            torch.sqrt(1 - 1 / beam.relativistic_gamma**2),
-        )
-
     def _deposit_charge_on_grid(
         self,
         beam: ParticleBeam,
@@ -456,19 +446,22 @@ class SpaceChargeKick(Element):
         Converts the Cheetah particle beam parameters to the moments in SI units used in
         the space charge solver.
         """
-        betaref = self._betaref(beam)
-
-        p0 = beam.relativistic_gamma * betaref * electron_mass * speed_of_light
+        p0 = (
+            beam.relativistic_gamma
+            * beam.relativistic_beta
+            * electron_mass
+            * speed_of_light
+        )
         gamma = beam.relativistic_gamma.unsqueeze(-1) * (
             torch.ones(beam.particles.shape[:-1])
-            + beam.particles[..., 5] * betaref.unsqueeze(-1)
+            + beam.particles[..., 5] * beam.relativistic_beta.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
         p = gamma * electron_mass * beta * speed_of_light
 
         moments_xp = beam.particles[..., 1] * p0.unsqueeze(-1)
         moments_yp = beam.particles[..., 3] * p0.unsqueeze(-1)
-        moments_s = beam.particles[..., 4] * -betaref.unsqueeze(-1)
+        moments_s = beam.particles[..., 4] * -beam.relativistic_beta.unsqueeze(-1)
         moments_p = torch.sqrt(p**2 - moments_xp**2 - moments_yp**2)
 
         moments = beam.particles.clone()
@@ -487,8 +480,12 @@ class SpaceChargeKick(Element):
         """
         particles = moments.clone()
 
-        betaref = self._betaref(beam)
-        p0 = beam.relativistic_gamma * betaref * electron_mass * speed_of_light
+        p0 = (
+            beam.relativistic_gamma
+            * beam.relativistic_beta
+            * electron_mass
+            * speed_of_light
+        )
         p = torch.sqrt(
             moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
         )
@@ -496,9 +493,9 @@ class SpaceChargeKick(Element):
 
         particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
         particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
-        particles[..., 4] = -moments[..., 4] / betaref.unsqueeze(-1)
+        particles[..., 4] = -moments[..., 4] / beam.relativistic_beta.unsqueeze(-1)
         particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
-            (betaref * beam.relativistic_gamma).unsqueeze(-1)
+            (beam.relativistic_beta * beam.relativistic_gamma).unsqueeze(-1)
         )
 
         return particles
@@ -627,7 +624,7 @@ class SpaceChargeKick(Element):
             grid_dimensions = self._compute_grid_dimensions(flattened_incoming)
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
             dt = flattened_length_effect / (
-                speed_of_light * self._betaref(flattened_incoming)
+                speed_of_light * flattened_incoming.relativistic_beta
             )
 
             # Change coordinates to apply the space charge effect
