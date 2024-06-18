@@ -20,15 +20,15 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     cs = torch.cos(angle)
     sn = torch.sin(angle)
 
-    tm = torch.eye(7, dtype=angle.dtype, device=angle.device)
-    tm[0, 0] = cs
-    tm[0, 2] = sn
-    tm[1, 1] = cs
-    tm[1, 3] = sn
-    tm[2, 0] = -sn
-    tm[2, 2] = cs
-    tm[3, 1] = -sn
-    tm[3, 3] = cs
+    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
+    tm[..., 0, 0] = cs
+    tm[..., 0, 2] = sn
+    tm[..., 1, 1] = cs
+    tm[..., 1, 3] = sn
+    tm[..., 2, 0] = -sn
+    tm[..., 2, 2] = cs
+    tm[..., 3, 1] = -sn
+    tm[..., 3, 3] = cs
 
     return tm
 
@@ -98,7 +98,9 @@ def base_rmatrix(
 
     # Rotate the R matrix for skew / vertical magnets
     if torch.any(tilt != 0):
-        R = torch.matmul(torch.matmul(rotation_matrix(-tilt), R), rotation_matrix(tilt))
+        R = torch.einsum(
+            "...ij,...jk,...kl->...il", rotation_matrix(-tilt), R, rotation_matrix(tilt)
+        )
     return R
 
 
@@ -108,13 +110,14 @@ def misalignment_matrix(
     """Shift the beam for tracking beam through misaligned elements"""
     device = misalignment.device
     dtype = misalignment.dtype
+    batch_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, device=device, dtype=dtype)
-    R_exit[0, 6] = misalignment[0]
-    R_exit[2, 6] = misalignment[1]
+    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*batch_shape, 1, 1)
+    R_exit[..., 0, 6] = misalignment[..., 0]
+    R_exit[..., 2, 6] = misalignment[..., 1]
 
-    R_entry = torch.eye(7, device=device, dtype=dtype)
-    R_entry[0, 6] = -misalignment[0]
-    R_entry[2, 6] = -misalignment[1]
+    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*batch_shape, 1, 1)
+    R_entry[..., 0, 6] = -misalignment[..., 0]
+    R_entry[..., 2, 6] = -misalignment[..., 1]
 
-    return R_exit, R_entry  # TODO: This order is confusing, should be entry, exit
+    return R_entry, R_exit

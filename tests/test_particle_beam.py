@@ -123,7 +123,7 @@ def test_generate_uniform_ellipsoid_batched():
     total_charge = torch.tensor([1e-9, 3e-9])
 
     num_particles = torch.tensor(1_000_000)
-    beam = ParticleBeam.uniform_3d_ellispoid(
+    beam = ParticleBeam.uniform_3d_ellipsoid(
         num_particles=num_particles,
         radius_x=radius_x,
         radius_y=radius_y,

@@ -4,12 +4,13 @@
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116) (@jank324)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173) (@jank324, @cr-xu)
 
 ### 🚀 Features
 
 - `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
 - Add a new class method for `ParticleBeam` to generate a 3D uniformly distributed ellipsoidal beam (see #146) (@cr-xu, @jank324)
+- Add Python 3.12 support (see #161) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -20,6 +21,9 @@
 
 - Update versions of some steps used by GitHub actions to handle Node.js 16 end-of-life (@jank324)
 - Update versions in pre-commit config (see #148) (@jank324)
+- Split `accelerator` and `beam` into separate submodules (see #158) (@jank324)
+- Update reference from arXiv preprint to PRAB publication (see #166) (@jank324)
+- Rename converter modules to the respective name of the accelerator code (see #167) (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
