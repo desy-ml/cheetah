@@ -115,6 +115,65 @@ def test_vectorized():
     assert outgoing.particles.shape == (3, 2, 10_000, 7)
 
 
+def test_cold_uniform_beam_expansion_vectorized():
+    """
+    Same as `test_cold_uniform_beam_expansion` but testing that all results in a
+    vectorised setup are correct.
+    """
+
+    # Random fluctuations in the initial density can cause the tests to fail
+    torch.manual_seed(42)
+
+    # Simulation parameters
+    R0 = torch.tensor([0.001])
+    energy = torch.tensor([2.5e8])
+    rest_energy = torch.tensor(
+        constants.electron_mass
+        * constants.speed_of_light**2
+        / constants.elementary_charge
+    )
+    elementary_charge = torch.tensor(constants.elementary_charge)
+    electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
+    gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
+
+    incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
+        num_particles=torch.tensor(10_000),
+        total_charge=torch.tensor([1e-9]),
+        energy=energy,
+        radius_x=R0,
+        radius_y=R0,
+        radius_s=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        sigma_xp=torch.tensor([1e-15]),
+        sigma_yp=torch.tensor([1e-15]),
+        sigma_p=torch.tensor([1e-15]),
+    ).broadcast(shape=(2, 3))
+
+    # Compute section lenght
+    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
+        3 + 2 * torch.sqrt(torch.tensor(2))
+    )
+    Nb = incoming.total_charge / elementary_charge
+    section_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 6),
+        ]
+    ).broadcast(shape=(2, 3))
+    outgoing = segment.track(incoming)
+
+    assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
+    assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
+    assert torch.isclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
+
+
 def test_incoming_beam_not_modified():
     """
     Tests that the incoming beam is not modified when calling the track method.
