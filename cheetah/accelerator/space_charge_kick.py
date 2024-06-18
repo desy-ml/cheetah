@@ -62,7 +62,9 @@ class SpaceChargeKick(Element):
 
     def __init__(
         self,
-        length_effect: Union[torch.Tensor, nn.Parameter],
+        length_effect: Union[
+            torch.Tensor, nn.Parameter
+        ],  # TODO: Rename to effective_length
         length: Union[torch.Tensor, nn.Parameter] = 0.0,
         num_grid_points_x: Union[torch.Tensor, nn.Parameter, int] = 32,
         num_grid_points_y: Union[torch.Tensor, nn.Parameter, int] = 32,
@@ -642,11 +644,12 @@ class SpaceChargeKick(Element):
                 device=incoming.particles.device,
                 dtype=incoming.particles.dtype,
             )
+            flattened_length_effect = self.length_effect.flatten(end_dim=-1)
 
             # Compute useful quantities
             grid_dimensions = self._compute_grid_dimensions(flattened_incoming)
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
-            dt = self.length_effect / (
+            dt = flattened_length_effect / (
                 speed_of_light * self._betaref(flattened_incoming)
             )
 
