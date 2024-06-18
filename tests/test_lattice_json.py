@@ -1,4 +1,4 @@
-from cheetah.accelerator import Segment
+from cheetah import Segment
 
 from .resources import ARESlatticeStage3v1_9 as ares
 

@@ -48,11 +48,9 @@ For more advanced usage, please refer to the in-depth documentation.
     :caption: Documentation
 
     accelerator
-    astralavista
-    dontbmad
+    converters
     error
     latticejson
-    nocelot
     particles
     track_methods
     utils
@@ -65,20 +63,27 @@ If you use Cheetah, please cite the following two papers:
 
 .. code-block:: bibtex
 
-    @misc{kaiser2024cheetah,
-      title         = {Cheetah: Bridging the Gap Between Machine Learning and Particle Accelerator Physics with High-Speed, Differentiable Simulations},
-      author        = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and {Santamaria Garcia}, Andrea},
-      year          = {2024},
-      eprint        = {2401.05815},
-      archiveprefix = {arXiv},
-      primaryclass  = {physics.acc-ph}
+    @article{kaiser2024cheetah,
+        title        = {Bridging the gap between machine learning and particle accelerator physics with high-speed, differentiable simulations},
+        author       = {Kaiser, Jan and Xu, Chenran and Eichler, Annika and Santamaria Garcia, Andrea},
+        year         = 2024,
+        month        = {May},
+        journal      = {Phys. Rev. Accel. Beams},
+        publisher    = {American Physical Society},
+        volume       = 27,
+        pages        = {054601},
+        doi          = {10.1103/PhysRevAccelBeams.27.054601},
+        url          = {https://link.aps.org/doi/10.1103/PhysRevAccelBeams.27.054601},
+        issue        = 5,
+        numpages     = 17
     }
     @inproceedings{stein2022accelerating,
-      title     = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
-      author    = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
-      year      = {2022},
-      booktitle = {Proceedings of the 13th International Particle Accelerator Conference}
+        title        = {Accelerating Linear Beam Dynamics Simulations for Machine Learning Applications},
+        author       = {Stein, Oliver and Kaiser, Jan and Eichler, Annika},
+        year         = 2022,
+        booktitle    = {Proceedings of the 13th International Particle Accelerator Conference}
     }
+
 
 For Developers
 --------------
