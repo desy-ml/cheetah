@@ -11,21 +11,9 @@ from cheetah.particles import Beam, ParticleBeam
 from .element import Element
 
 # Constants
-speed_of_light = torch.tensor(constants.speed_of_light)
-J_to_eV = torch.tensor(physical_constants["electron volt-joule relationship"][0])
 elementary_charge = torch.tensor(constants.elementary_charge)
-rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge  # Electron mass
-)
-electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
-electron_mass = torch.tensor(physical_constants["electron mass"][0])
-
 epsilon_0 = torch.tensor(constants.epsilon_0)
+speed_of_light = torch.tensor(constants.speed_of_light)
 
 
 class SpaceChargeKick(Element):
