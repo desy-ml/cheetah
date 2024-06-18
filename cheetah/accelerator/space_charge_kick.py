@@ -237,11 +237,10 @@ class SpaceChargeKick(Element):
         Allocates a 2x larger array in all dimensions (to perform Hockney's method), and
         copies the charge density in one of the "quadrants".
         """
-        grid_shape = self.grid_shape
         charge_density = self._deposit_charge_on_grid(
             beam, moments, cell_size, grid_dimensions
         )
-        new_dims = tuple(dim * 2 for dim in grid_shape)
+        new_dims = tuple(2 * dim for dim in self.grid_shape)
 
         # Create a new tensor with the doubled dimensions, filled with zeros
         new_charge_density = torch.zeros(
@@ -562,6 +561,9 @@ class SpaceChargeKick(Element):
         surrounding_indices_flattened = surrounding_indices.flatten(
             start_dim=-3, end_dim=-2
         )  # Shape: (..., num_particles * 8, 3)
+        idx_vector = (
+            torch.arange(cell_indices.shape[0]).repeat(8 * beam.num_particles, 1).T
+        )
         idx_x = surrounding_indices_flattened[..., 0]
         idx_y = surrounding_indices_flattened[..., 1]
         idx_s = surrounding_indices_flattened[..., 2]
@@ -574,54 +576,34 @@ class SpaceChargeKick(Element):
             & (idx_s < grid_shape[2])
         )
 
-        # TODO: Is there a better alternative to this loop? (maybe torch.vmap?)
-        for (
-            vector_idx_x,
-            vector_idx_y,
-            vector_idx_s,
-            vector_valid_mask,
-            vector_grad_x,
-            vector_grad_y,
-            vector_grad_z,
-            vector_cell_weights,
-            vector_interpolated_forces,
-        ) in zip(
-            idx_x.flatten(end_dim=-2),
-            idx_y.flatten(end_dim=-2),
-            idx_s.flatten(end_dim=-2),
-            valid_mask.flatten(end_dim=-2),
-            grad_x.flatten(end_dim=-4),
-            grad_y.flatten(end_dim=-4),
-            grad_z.flatten(end_dim=-4),
-            cell_weights.flatten(end_dim=-3),
-            interpolated_forces.flatten(end_dim=-3),
-        ):
-            vector_valid_indices = (
-                vector_idx_x[vector_valid_mask],
-                vector_idx_y[vector_valid_mask],
-                vector_idx_s[vector_valid_mask],
-            )
+        valid_indices = (
+            idx_vector[valid_mask],
+            idx_x[valid_mask],
+            idx_y[valid_mask],
+            idx_s[valid_mask],
+        )
 
-            vector_Fx_values = vector_grad_x[vector_valid_indices]
-            vector_Fy_values = vector_grad_y[vector_valid_indices]
-            vector_Fz_values = vector_grad_z[vector_valid_indices]
+        Fx_values = grad_x[valid_indices]
+        Fy_values = grad_y[valid_indices]
+        Fz_values = grad_z[valid_indices]
 
-            # Compute interpolated forces
-            vector_valid_cell_weights = (
-                vector_cell_weights.flatten(start_dim=-2)[vector_valid_mask]
-                * elementary_charge
-            )
-            vector_values_x = vector_valid_cell_weights * vector_Fx_values
-            vector_values_y = vector_valid_cell_weights * vector_Fy_values
-            vector_values_z = vector_valid_cell_weights * vector_Fz_values
+        # Compute interpolated forces
+        valid_cell_weights = (
+            cell_weights.flatten(start_dim=-2)[valid_mask] * elementary_charge
+        )
+        values_x = valid_cell_weights * Fx_values
+        values_y = valid_cell_weights * Fy_values
+        values_z = valid_cell_weights * Fz_values
 
-            vector_indices = torch.arange(beam.num_particles).repeat_interleave(8)[
-                vector_valid_mask
-            ]
+        indices = (
+            torch.arange(beam.num_particles)
+            .repeat_interleave(8)
+            .repeat(cell_weights.shape[0], 1)[valid_mask]
+        )  # TODO: Indicies of what?
 
-            vector_interpolated_forces[vector_indices, 0] += vector_values_x
-            vector_interpolated_forces[vector_indices, 1] += vector_values_y
-            vector_interpolated_forces[vector_indices, 2] += vector_values_z
+        interpolated_forces[:, indices, 0] += values_x
+        interpolated_forces[:, indices, 1] += values_y
+        interpolated_forces[:, indices, 2] += values_z
 
         return interpolated_forces
 
