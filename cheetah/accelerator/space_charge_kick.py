@@ -49,9 +49,7 @@ class SpaceChargeKick(Element):
 
     def __init__(
         self,
-        effect_length: Union[
-            torch.Tensor, nn.Parameter
-        ],  # TODO: Rename to effective_length
+        effect_length: Union[torch.Tensor, nn.Parameter],
         num_grid_points_x: Union[torch.Tensor, nn.Parameter, int] = 32,
         num_grid_points_y: Union[torch.Tensor, nn.Parameter, int] = 32,
         num_grid_points_s: Union[torch.Tensor, nn.Parameter, int] = 32,
