@@ -166,12 +166,12 @@ def test_vectorized_cold_uniform_beam_expansion():
             cheetah.SpaceChargeKick(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
-    ).broadcast(shape=(2, 3))
+    )
     outgoing = segment.track(incoming)
 
-    assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
-    assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
-    assert torch.isclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
+    assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
+    assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
+    assert torch.allclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
 
 
 def test_incoming_beam_not_modified():
@@ -239,3 +239,25 @@ def test_gradient():
 
     # Compute the gradient ... would throw an error if in-place operations are used
     outgoing_beam.sigma_x.mean().backward()
+
+
+def test_does_not_break_segment_length():
+    """
+    Test that the computation of a `Segment`'s length does not break when
+    `SpaceChargeKick` is used.
+    """
+    section_length = torch.tensor([1.0])
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.Drift(section_length / 6),
+        ]
+    ).broadcast(shape=(3, 2))
+
+    assert segment.length.shape == (3, 2)
+    assert torch.allclose(segment.length, torch.tensor([1.0]).repeat(3, 2))
