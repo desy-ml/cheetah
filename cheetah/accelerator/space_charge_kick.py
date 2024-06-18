@@ -106,18 +106,15 @@ class SpaceChargeKick(Element):
             dim=-1,
         )
 
-    def _gammaref(self, beam: ParticleBeam) -> torch.Tensor:
-        """
-        Returns the Lorentz factor of the reference particle of the beam.
-        """
-        return beam.energy / rest_energy
-
     def _betaref(self, beam: ParticleBeam) -> torch.Tensor:
         """
         Returns beta (i.e., normalized velocity) for the reference particle of the beam.
         """
-        gamma = self._gammaref(beam)
-        return torch.where(gamma == 0, torch.tensor(1.0), torch.sqrt(1 - 1 / gamma**2))
+        return torch.where(
+            beam.relativistic_gamma == 0,
+            torch.tensor(1.0),
+            torch.sqrt(1 - 1 / beam.relativistic_gamma**2),
+        )
 
     def _deposit_charge_on_grid(
         self,
@@ -264,11 +261,10 @@ class SpaceChargeKick(Element):
         Computes the Integrated Green Function (IGF) with periodic boundary conditions
         (to perform Hockney's method).
         """
-        gamma = self._gammaref(beam)
         dx, dy, ds = (
             cell_size[..., 0],
             cell_size[..., 1],
-            cell_size[..., 2] * gamma,
+            cell_size[..., 2] * beam.relativistic_gamma,
         )  # Scaled by gamma
         num_grid_points_x, num_grid_points_y, num_grid_points_s = self.grid_shape
 
@@ -424,9 +420,10 @@ class SpaceChargeKick(Element):
         speeds, as in https://doi.org/10.1063/1.2837054.
         """
         inv_cell_size = 1 / cell_size
-        gamma = self._gammaref(beam)
-        igamma2 = torch.zeros_like(gamma)
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
+        igamma2 = torch.zeros_like(beam.relativistic_gamma)
+        igamma2[beam.relativistic_gamma != 0] = (
+            1 / beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
+        )
         potential = self._solve_poisson_equation(
             beam, moments, cell_size, grid_dimensions
         )
@@ -459,11 +456,10 @@ class SpaceChargeKick(Element):
         Converts the Cheetah particle beam parameters to the moments in SI units used in
         the space charge solver.
         """
-        gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
 
-        p0 = gammaref * betaref * electron_mass * speed_of_light
-        gamma = gammaref.unsqueeze(-1) * (
+        p0 = beam.relativistic_gamma * betaref * electron_mass * speed_of_light
+        gamma = beam.relativistic_gamma.unsqueeze(-1) * (
             torch.ones(beam.particles.shape[:-1])
             + beam.particles[..., 5] * betaref.unsqueeze(-1)
         )
@@ -491,9 +487,8 @@ class SpaceChargeKick(Element):
         """
         particles = moments.clone()
 
-        gammaref = self._gammaref(beam)
         betaref = self._betaref(beam)
-        p0 = gammaref * betaref * electron_mass * speed_of_light
+        p0 = beam.relativistic_gamma * betaref * electron_mass * speed_of_light
         p = torch.sqrt(
             moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
         )
@@ -502,8 +497,8 @@ class SpaceChargeKick(Element):
         particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
         particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
         particles[..., 4] = -moments[..., 4] / betaref.unsqueeze(-1)
-        particles[..., 5] = (gamma - gammaref.unsqueeze(-1)) / (
-            (betaref * gammaref).unsqueeze(-1)
+        particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
+            (betaref * beam.relativistic_gamma).unsqueeze(-1)
         )
 
         return particles
