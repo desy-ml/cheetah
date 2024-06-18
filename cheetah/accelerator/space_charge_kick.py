@@ -3,7 +3,6 @@ from typing import Optional, Union
 import matplotlib
 import torch
 from scipy import constants
-from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.particles import Beam, ParticleBeam
@@ -50,10 +49,9 @@ class SpaceChargeKick(Element):
 
     def __init__(
         self,
-        length_effect: Union[
+        effect_length: Union[
             torch.Tensor, nn.Parameter
         ],  # TODO: Rename to effective_length
-        length: Union[torch.Tensor, nn.Parameter] = 0.0,
         num_grid_points_x: Union[torch.Tensor, nn.Parameter, int] = 32,
         num_grid_points_y: Union[torch.Tensor, nn.Parameter, int] = 32,
         num_grid_points_s: Union[torch.Tensor, nn.Parameter, int] = 32,
@@ -68,8 +66,7 @@ class SpaceChargeKick(Element):
 
         super().__init__(name=name)
 
-        self.length_effect = torch.as_tensor(length_effect, **self.factory_kwargs)
-        self.length = torch.as_tensor(length, **self.factory_kwargs)
+        self.effect_length = torch.as_tensor(effect_length, **self.factory_kwargs)
         self.grid_shape = (
             int(num_grid_points_x),
             int(num_grid_points_y),
@@ -547,7 +544,7 @@ class SpaceChargeKick(Element):
                 device=incoming.particles.device,
                 dtype=incoming.particles.dtype,
             )
-            flattened_length_effect = self.length_effect.flatten(end_dim=-1)
+            flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
             # Compute useful quantities
             grid_dimensions = self._compute_grid_dimensions(flattened_incoming)
@@ -584,9 +581,8 @@ class SpaceChargeKick(Element):
         :param shape: Shape to broadcast the element to.
         :returns: Broadcasted element.
         """
-        return self.__class__(
-            length_effect=self.length_effect,
-            length=self.length,
+        new_space_charge_kick = self.__class__(
+            effect_length=self.effect_length,
             num_grid_points_x=self.grid_shape[0],
             num_grid_points_y=self.grid_shape[1],
             num_grid_points_s=self.grid_shape[2],
@@ -595,6 +591,8 @@ class SpaceChargeKick(Element):
             grid_extend_s=self.grid_extend_s,
             name=self.name,
         )
+        new_space_charge_kick.length = self.length.repeat(shape)
+        return new_space_charge_kick
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for SpaceCharge properly, for now just returns the
