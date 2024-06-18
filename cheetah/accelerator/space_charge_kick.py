@@ -164,10 +164,13 @@ class SpaceChargeKick(Element):
         cell_weights = weights.prod(dim=-1)  # Shape: (.., num_particles, 8)
 
         # Add the charge contributions to the cells
+        # Shape: (..., 8 * num_particles)
+        idx_vector = (
+            torch.arange(cell_indices.shape[0]).repeat(8 * beam.num_particles, 1).T
+        )
         idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
         idx_y = surrounding_indices[..., 1].flatten(start_dim=-2)
         idx_s = surrounding_indices[..., 2].flatten(start_dim=-2)
-        # Shape: (..., 8 * num_particles)
 
         # Check that particles are inside the grid
         valid_mask = (
@@ -184,7 +187,16 @@ class SpaceChargeKick(Element):
             repeats=8, dim=-1
         )  # Shape:(..., 8 * num_particles)
         values = (cell_weights.flatten(start_dim=-2) * repeated_charges)[valid_mask]
-        charge[..., idx_x[valid_mask], idx_y[valid_mask], idx_s[valid_mask]] += values
+        charge.index_put_(
+            (
+                idx_vector[valid_mask],
+                idx_x[valid_mask],
+                idx_y[valid_mask],
+                idx_s[valid_mask],
+            ),
+            values,
+            accumulate=True,
+        )
 
         return (
             charge
@@ -621,20 +633,36 @@ class SpaceChargeKick(Element):
         if incoming is Beam.empty or incoming.particles.shape[0] == 0:
             return incoming
         elif isinstance(incoming, ParticleBeam):
+            # This flattening is a hack to only think about one vector dimension in the
+            # following code. It is reversed at the end of the function.
+            flattened_incoming = ParticleBeam(
+                particles=incoming.particles.flatten(end_dim=-3),
+                energy=incoming.energy.flatten(end_dim=-1),
+                particle_charges=incoming.particle_charges.flatten(end_dim=-2),
+                device=incoming.particles.device,
+                dtype=incoming.particles.dtype,
+            )
+
             # Compute useful quantities
-            grid_dimensions = self._compute_grid_dimensions(incoming)
+            grid_dimensions = self._compute_grid_dimensions(flattened_incoming)
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
-            dt = self.length_effect / (speed_of_light * self._betaref(incoming))
+            dt = self.length_effect / (
+                speed_of_light * self._betaref(flattened_incoming)
+            )
 
             # Change coordinates to apply the space charge effect
-            moments = self._cheetah_to_moments(incoming)
-            forces = self._compute_forces(incoming, moments, cell_size, grid_dimensions)
+            moments = self._cheetah_to_moments(flattened_incoming)
+            forces = self._compute_forces(
+                flattened_incoming, moments, cell_size, grid_dimensions
+            )
             moments[..., 1] = moments[..., 1] + forces[..., 0] * dt.unsqueeze(-1)
             moments[..., 3] = moments[..., 3] + forces[..., 1] * dt.unsqueeze(-1)
             moments[..., 5] = moments[..., 5] + forces[..., 2] * dt.unsqueeze(-1)
 
             outgoing = ParticleBeam(
-                particles=self._moments_to_cheetah(moments, incoming),
+                particles=self._moments_to_cheetah(
+                    moments, flattened_incoming
+                ).unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
                 energy=incoming.energy,
                 particle_charges=incoming.particle_charges,
                 device=incoming.particles.device,
