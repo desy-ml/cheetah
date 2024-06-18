@@ -1,6 +1,7 @@
 from typing import Optional
 
 import torch
+from scipy import constants
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
@@ -9,6 +10,7 @@ from .beam import Beam
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
+speed_of_light = torch.tensor(constants.speed_of_light)
 
 
 class ParticleBeam(Beam):
@@ -721,6 +723,72 @@ class ParticleBeam(Beam):
             device=device,
             dtype=dtype,
         )
+
+    @classmethod
+    def from_moments(
+        cls,
+        moments: torch.Tensor,
+        energy: torch.Tensor,
+        particle_charges: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=torch.float32,
+    ) -> torch.Tensor:
+        """Converts the moments in SI units to a `ParticleBeam`."""
+        beam = cls(
+            particles=moments.clone(),
+            energy=energy,
+            particle_charges=particle_charges,
+            device=device,
+            dtype=dtype,
+        )
+
+        p0 = (
+            beam.relativistic_gamma
+            * beam.relativistic_beta
+            * electron_mass_eV
+            * speed_of_light
+        )
+        p = torch.sqrt(
+            moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
+        )
+        gamma = torch.sqrt(1 + (p / (electron_mass_eV * speed_of_light)) ** 2)
+
+        beam.particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
+        beam.particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
+        beam.particles[..., 4] = -moments[..., 4] / beam.relativistic_beta.unsqueeze(-1)
+        beam.particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
+            (beam.relativistic_beta * beam.relativistic_gamma).unsqueeze(-1)
+        )
+
+        return beam
+
+    def to_moments(self) -> torch.Tensor:
+        """Moments in SI units as converted from the beam's `particles`."""
+        p0 = (
+            self.relativistic_gamma
+            * self.relativistic_beta
+            * electron_mass_eV
+            * speed_of_light
+        )
+        gamma = self.relativistic_gamma.unsqueeze(-1) * (
+            torch.ones(self.particles.shape[:-1])
+            + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+        )
+        beta = torch.sqrt(1 - 1 / gamma**2)
+        p = gamma * electron_mass_eV * beta * speed_of_light
+
+        moments_xp = self.particles[..., 1] * p0.unsqueeze(-1)
+        moments_yp = self.particles[..., 3] * p0.unsqueeze(-1)
+        moments_s = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
+        moments_p = torch.sqrt(p**2 - moments_xp**2 - moments_yp**2)
+
+        moments = self.particles.clone()
+        moments[..., 1] = moments_xp
+        moments[..., 3] = moments_yp
+        moments[..., 4] = moments_s
+        moments[..., 5] = moments_p
+
+        return moments
 
     def __len__(self) -> int:
         return int(self.num_particles)

@@ -441,65 +441,6 @@ class SpaceChargeKick(Element):
 
         return grad_x, grad_y, grad_s
 
-    def _cheetah_to_moments(self, beam: ParticleBeam) -> torch.Tensor:
-        """
-        Converts the Cheetah particle beam parameters to the moments in SI units used in
-        the space charge solver.
-        """
-        p0 = (
-            beam.relativistic_gamma
-            * beam.relativistic_beta
-            * electron_mass
-            * speed_of_light
-        )
-        gamma = beam.relativistic_gamma.unsqueeze(-1) * (
-            torch.ones(beam.particles.shape[:-1])
-            + beam.particles[..., 5] * beam.relativistic_beta.unsqueeze(-1)
-        )
-        beta = torch.sqrt(1 - 1 / gamma**2)
-        p = gamma * electron_mass * beta * speed_of_light
-
-        moments_xp = beam.particles[..., 1] * p0.unsqueeze(-1)
-        moments_yp = beam.particles[..., 3] * p0.unsqueeze(-1)
-        moments_s = beam.particles[..., 4] * -beam.relativistic_beta.unsqueeze(-1)
-        moments_p = torch.sqrt(p**2 - moments_xp**2 - moments_yp**2)
-
-        moments = beam.particles.clone()
-        moments[..., 1] = moments_xp
-        moments[..., 3] = moments_yp
-        moments[..., 4] = moments_s
-        moments[..., 5] = moments_p
-
-        return moments
-
-    def _moments_to_cheetah(
-        self, moments: torch.Tensor, beam: ParticleBeam
-    ) -> torch.Tensor:
-        """
-        Converts the moments in SI units to the Cheetah particle beam parameters.
-        """
-        particles = moments.clone()
-
-        p0 = (
-            beam.relativistic_gamma
-            * beam.relativistic_beta
-            * electron_mass
-            * speed_of_light
-        )
-        p = torch.sqrt(
-            moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
-        )
-        gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
-
-        particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
-        particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
-        particles[..., 4] = -moments[..., 4] / beam.relativistic_beta.unsqueeze(-1)
-        particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
-            (beam.relativistic_beta * beam.relativistic_gamma).unsqueeze(-1)
-        )
-
-        return particles
-
     def _compute_forces(
         self,
         beam: ParticleBeam,
@@ -628,7 +569,7 @@ class SpaceChargeKick(Element):
             )
 
             # Change coordinates to apply the space charge effect
-            moments = self._cheetah_to_moments(flattened_incoming)
+            moments = flattened_incoming.to_moments()
             forces = self._compute_forces(
                 flattened_incoming, moments, cell_size, grid_dimensions
             )
@@ -636,14 +577,12 @@ class SpaceChargeKick(Element):
             moments[..., 3] = moments[..., 3] + forces[..., 1] * dt.unsqueeze(-1)
             moments[..., 5] = moments[..., 5] + forces[..., 2] * dt.unsqueeze(-1)
 
-            outgoing = ParticleBeam(
-                particles=self._moments_to_cheetah(
-                    moments, flattened_incoming
-                ).unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
-                energy=incoming.energy,
-                particle_charges=incoming.particle_charges,
-                device=incoming.particles.device,
-                dtype=incoming.particles.dtype,
+            outgoing = ParticleBeam.from_moments(
+                moments.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
+                incoming.energy,
+                incoming.particle_charges,
+                incoming.particles.device,
+                incoming.particles.dtype,
             )
 
             return outgoing
