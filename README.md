@@ -51,7 +51,7 @@ segment = Segment.from_ocelot(cell)
 All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
 
 ```python
-segment.AREAMQZM2.k1 = torch.tensor(4.2)
+segment.AREAMQZM2.k1 = torch.tensor([4.2])
 ```
 
 In order to track a beam through the segment, simply call the segment like so
