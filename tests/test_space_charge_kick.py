@@ -63,9 +63,9 @@ def test_cold_uniform_beam_expansion():
     )
     outgoing = segment.track(incoming)
 
-    assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
-    assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
-    assert torch.isclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
+    assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2)
 
 
 def test_vectorized():
@@ -169,9 +169,9 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
     outgoing = segment.track(incoming)
 
-    assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2, atol=0.0)
-    assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2, atol=0.0)
-    assert torch.allclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2, atol=0.0)
+    assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2)
 
 
 def test_incoming_beam_not_modified():

@@ -444,7 +444,7 @@ class SpaceChargeKick(Element):
         grid_shape = self.grid_shape
         interpolated_forces = torch.zeros(
             (*beam.particles.shape[:-1], 3), **self.factory_kwargs
-        )  # (n_batch, n_particles, 3)
+        )  # (..., num_particles, 3)
 
         # Get particle positions
         particle_positions = moments[..., [0, 2, 4]]
