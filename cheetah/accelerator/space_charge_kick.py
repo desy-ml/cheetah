@@ -138,7 +138,9 @@ class SpaceChargeKick(Element):
         # Add the charge contributions to the cells
         # Shape: (..., 8 * num_particles)
         idx_vector = (
-            torch.arange(cell_indices.shape[0]).repeat(8 * beam.num_particles, 1).T
+            torch.arange(cell_indices.shape[0])
+            .repeat(8 * beam.particles.shape[-2], 1)
+            .T
         )
         idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
         idx_y = surrounding_indices[..., 1].flatten(start_dim=-2)
@@ -434,6 +436,7 @@ class SpaceChargeKick(Element):
         """
         Interpolates the space charge force from the grid onto the macroparticles.
         Reciprocal function of _deposit_charge_on_grid.
+        Beam needs to have a flattened batch shape.
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(
             beam, moments, cell_size, grid_dimensions
@@ -441,7 +444,7 @@ class SpaceChargeKick(Element):
         grid_shape = self.grid_shape
         interpolated_forces = torch.zeros(
             (*beam.particles.shape[:-1], 3), **self.factory_kwargs
-        )
+        )  # (n_batch, n_particles, 3)
 
         # Get particle positions
         particle_positions = moments[..., [0, 2, 4]]
@@ -478,8 +481,10 @@ class SpaceChargeKick(Element):
             start_dim=-3, end_dim=-2
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
-            torch.arange(cell_indices.shape[0]).repeat(8 * beam.num_particles, 1).T
-        )
+            torch.arange(cell_indices.shape[0])
+            .repeat(8 * beam.particles.shape[-2], 1)
+            .T
+        )  # Shape: (..., num_particles * 8)
         idx_x = surrounding_indices_flattened[..., 0]
         idx_y = surrounding_indices_flattened[..., 1]
         idx_s = surrounding_indices_flattened[..., 2]
@@ -492,36 +497,38 @@ class SpaceChargeKick(Element):
             & (idx_s < grid_shape[2])
         )
 
-        valid_indices = (
-            idx_vector[valid_mask],
-            idx_x[valid_mask],
-            idx_y[valid_mask],
-            idx_s[valid_mask],
-        )
+        # Keep dimensions, and set F to zero if non-valid
+        force_indices = (idx_vector, idx_x, idx_y, idx_s)
 
-        Fx_values = grad_x[valid_indices]
-        Fy_values = grad_y[valid_indices]
-        Fz_values = grad_z[valid_indices]
+        Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
+        Fy_values = torch.where(valid_mask, grad_y[force_indices], 0)
+        Fz_values = torch.where(
+            valid_mask, grad_z[force_indices], 0
+        )  # (..., 8 * num_particles)
 
         # Compute interpolated forces
-        valid_cell_weights = (
-            cell_weights.flatten(start_dim=-2)[valid_mask] * elementary_charge
-        )
-        values_x = valid_cell_weights * Fx_values
-        values_y = valid_cell_weights * Fy_values
-        values_z = valid_cell_weights * Fz_values
+        # Cell weights validation is taken care of by the F_x, F_y, F_z values
+        cell_weights_with_e = cell_weights.flatten(start_dim=-2) * elementary_charge
+        values_x = cell_weights_with_e * Fx_values
+        values_y = cell_weights_with_e * Fy_values
+        values_z = cell_weights_with_e * Fz_values
 
-        indices = (
+        forces_to_add = torch.stack([values_x, values_y, values_z], dim=-1)
+
+        index_tensor = (
             torch.arange(beam.num_particles)
             .repeat_interleave(8)
-            .repeat(cell_weights.shape[0], 1)[valid_mask]
-        )  # TODO: Indicies of what?
+            .unsqueeze(0)
+            .unsqueeze(-1)
+            .expand(beam.particles.shape[0], 8 * beam.particles.shape[-2], 3)
+        )
 
-        interpolated_forces[:, indices, 0] += values_x
-        interpolated_forces[:, indices, 1] += values_y
-        interpolated_forces[:, indices, 2] += values_z
+        # Add the forces to the particles
+        accumulated_forces = torch.scatter_add(
+            interpolated_forces, dim=1, index=index_tensor, src=forces_to_add
+        )
 
-        return interpolated_forces
+        return accumulated_forces
 
     def track(self, incoming: ParticleBeam) -> ParticleBeam:
         """

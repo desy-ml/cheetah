@@ -183,7 +183,7 @@ def test_incoming_beam_not_modified():
     torch.manual_seed(42)
 
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor([10000]),
+        num_particles=torch.tensor(10000),
         sigma_xp=torch.tensor([2e-7]),
         sigma_yp=torch.tensor([2e-7]),
     )
