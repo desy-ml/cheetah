@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-import matplotlib
+import matplotlib.pyplot as plt
 import torch
 from scipy import constants
 from torch import nn
@@ -613,8 +613,15 @@ class SpaceChargeKick(Element):
     def is_skippable(self) -> bool:
         return False
 
-    def plot(self, ax: matplotlib.axes.Axes, s: float) -> None:
-        pass
+    def plot(self, ax: plt.Axes, s: float) -> None:
+        ax.axvspan(
+            s - self.effect_length[0],
+            s,
+            facecolor="none",
+            edgecolor="orange",
+            alpha=1.0,
+            hatch="/",
+        )
 
     @property
     def defining_features(self) -> list[str]:
