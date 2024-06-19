@@ -498,7 +498,12 @@ class SpaceChargeKick(Element):
         )
 
         # Keep dimensions, and set F to zero if non-valid
-        force_indices = (idx_vector, idx_x, idx_y, idx_s)
+        force_indices = (
+            idx_vector,
+            torch.clamp(idx_x, max=grid_shape[0] - 1),
+            torch.clamp(idx_y, max=grid_shape[1] - 1),
+            torch.clamp(idx_s, max=grid_shape[2] - 1),
+        )
 
         Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
         Fy_values = torch.where(valid_mask, grad_y[force_indices], 0)
