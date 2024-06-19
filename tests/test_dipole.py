@@ -18,6 +18,7 @@ def test_dipole_off():
     dipole.angle = torch.tensor([1.0], device=dipole.angle.device)
     outbeam_dipole_on = dipole(incoming_beam)
 
+    assert dipole.name is not None
     assert torch.allclose(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
     assert not torch.allclose(outbeam_dipole_on.sigma_x, outbeam_drift.sigma_x)
 

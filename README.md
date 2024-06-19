@@ -25,6 +25,9 @@ pip install cheetah-accelerator
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
 ```python
+import torch
+from cheetah import BPM, Drift, HorizontalCorrector, Segment, VerticalCorrector
+
 segment = Segment(
     elements=[
         BPM(name="BPM1SMATCH"),
