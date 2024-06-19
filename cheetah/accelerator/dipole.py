@@ -74,7 +74,6 @@ class Dipole(Element):
             if tilt is not None
             else torch.zeros_like(self.length)
         )
-        self.name = name
         self.fringe_integral = (
             torch.as_tensor(fringe_integral, **factory_kwargs)
             if fringe_integral is not None
