@@ -10,6 +10,7 @@ from .beam import Beam
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
+electron_mass = torch.tensor(physical_constants["electron mass"][0])
 speed_of_light = torch.tensor(constants.speed_of_light)
 
 
@@ -745,13 +746,13 @@ class ParticleBeam(Beam):
         p0 = (
             beam.relativistic_gamma
             * beam.relativistic_beta
-            * electron_mass_eV
+            * electron_mass
             * speed_of_light
         )
         p = torch.sqrt(
             moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
         )
-        gamma = torch.sqrt(1 + (p / (electron_mass_eV * speed_of_light)) ** 2)
+        gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
 
         beam.particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
         beam.particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
@@ -767,7 +768,7 @@ class ParticleBeam(Beam):
         p0 = (
             self.relativistic_gamma
             * self.relativistic_beta
-            * electron_mass_eV
+            * electron_mass
             * speed_of_light
         )
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
@@ -775,7 +776,7 @@ class ParticleBeam(Beam):
             + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
-        p = gamma * electron_mass_eV * beta * speed_of_light
+        p = gamma * electron_mass * beta * speed_of_light
 
         moments_xp = self.particles[..., 1] * p0.unsqueeze(-1)
         moments_yp = self.particles[..., 3] * p0.unsqueeze(-1)
