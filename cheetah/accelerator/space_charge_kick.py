@@ -112,7 +112,7 @@ class SpaceChargeKick(Element):
         ) / cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_positions).type(torch.long)
+        cell_indices = torch.floor(normalized_positions).type(torch.int)
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor(
@@ -453,7 +453,7 @@ class SpaceChargeKick(Element):
         ) / cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_positions).type(torch.long)
+        cell_indices = torch.floor(normalized_positions).type(torch.int)
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor(
