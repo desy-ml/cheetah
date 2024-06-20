@@ -627,4 +627,13 @@ class SpaceChargeKick(Element):
         ]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(length={repr(self.length)})"
+        return (
+            f"{self.__class__.__name__}(effect_length={repr(self.effect_length)}, "
+            + f"num_grid_points_x={repr(self.grid_shape[0])}, "
+            + f"num_grid_points_y={repr(self.grid_shape[1])}, "
+            + f"num_grid_points_s={repr(self.grid_shape[2])}, "
+            + f"grid_extend_x={repr(self.grid_extend_x)}, "
+            + f"grid_extend_y={repr(self.grid_extend_y)}, "
+            + f"grid_extend_s={repr(self.grid_extend_s)}, "
+            + f"name={repr(self.name)})"
+        )
