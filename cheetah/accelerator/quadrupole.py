@@ -158,23 +158,23 @@ class Quadrupole(Element):
         pz = bmad_coords[..., 5]
 
         # quad params:
-        l = self.length
+        length = self.length
         k1 = self.k1.clone()
         n_step = self.num_steps
-        step_len = l / n_step
+        step_len = length / n_step
 
         x_off = self.misalignment[..., 0]
         y_off = self.misalignment[..., 1]
         tilt = self.tilt
 
-        b1 = k1 * l
+        b1 = k1 * length
 
         # Begin bmadx tracking:
         x, px, y, py = offset_particle_set(x_off, y_off, tilt, x, px, y, py)
 
         for i in range(n_step):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
-            k1 = b1 / (l * rel_p)
+            k1 = b1 / (length * rel_p)
 
             tx, dzx = quad_mat2_calc(-k1, step_len, rel_p)
             ty, dzy = quad_mat2_calc(k1, step_len, rel_p)
