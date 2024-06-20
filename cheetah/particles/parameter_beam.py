@@ -2,13 +2,8 @@ from typing import Optional
 
 import numpy as np
 import torch
-from scipy.constants import physical_constants
 
 from .beam import Beam
-
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class ParameterBeam(Beam):

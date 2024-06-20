@@ -4,8 +4,6 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy import constants
-from scipy.constants import physical_constants
 from torch import Size
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
@@ -14,15 +12,6 @@ from cheetah.utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge  # electron mass
-)
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class BPM(Element):
