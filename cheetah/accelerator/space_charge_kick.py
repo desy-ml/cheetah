@@ -564,7 +564,7 @@ class SpaceChargeKick(Element):
             )
 
             # Change coordinates to apply the space charge effect
-            moments = flattened_incoming.to_moments()
+            moments = flattened_incoming.to_xyz_pxpypz()
             forces = self._compute_forces(
                 flattened_incoming, moments, cell_size, grid_dimensions
             )
@@ -572,7 +572,7 @@ class SpaceChargeKick(Element):
             moments[..., 3] = moments[..., 3] + forces[..., 1] * dt.unsqueeze(-1)
             moments[..., 5] = moments[..., 5] + forces[..., 2] * dt.unsqueeze(-1)
 
-            outgoing = ParticleBeam.from_moments(
+            outgoing = ParticleBeam.from_xyz_pxpypz(
                 moments.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
                 incoming.energy,
                 incoming.particle_charges,
