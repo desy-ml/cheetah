@@ -726,7 +726,7 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_moments(
+    def from_xyz_pxpypz(
         cls,
         moments: torch.Tensor,
         energy: torch.Tensor,
@@ -763,7 +763,7 @@ class ParticleBeam(Beam):
 
         return beam
 
-    def to_moments(self) -> torch.Tensor:
+    def to_xyz_pxpypz(self) -> torch.Tensor:
         """Moments in SI units as converted from the beam's `particles`."""
         p0 = (
             self.relativistic_gamma
