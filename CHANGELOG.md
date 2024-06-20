@@ -15,7 +15,8 @@
 ### 🐛 Bug fixes
 
 - Now all `Element` have a default length of `torch.zeros((1))`, fixing occasional issues with using elements without length, such as `Marker`, `BPM`, `Screen`, and `Aperture`. (see #143) (@cr-xu)
-- Fix bug in `Cavity` `_track_beam` (see [#150](https://github.com/desy-ml/cheetah/issues/150)) (@jp-ga)
+- Fix bug in `Cavity` `_track_beam` (see #150) (@jp-ga)
+- Fix issue where dipoles would not get a unique name by default (see #186) (@hespe)
 
 ### 🐆 Other
 
@@ -24,6 +25,8 @@
 - Split `accelerator` and `beam` into separate submodules (see #158) (@jank324)
 - Update reference from arXiv preprint to PRAB publication (see #166) (@jank324)
 - Rename converter modules to the respective name of the accelerator code (see #167) (@jank324)
+- Added imports to the code example in the README (see #188) (@jank324)
+- Refactor definitions of physical constants (see #189) (@hespe)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
