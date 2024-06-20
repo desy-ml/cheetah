@@ -618,7 +618,13 @@ class SpaceChargeKick(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length"]
+        return super().defining_features + [
+            "effect_length",
+            "grid_shape",
+            "grid_extend_x",
+            "grid_extend_y",
+            "grid_extend_s",
+        ]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(length={repr(self.length)})"
