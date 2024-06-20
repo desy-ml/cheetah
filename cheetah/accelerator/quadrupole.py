@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
+from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
@@ -22,6 +23,10 @@ from cheetah.bmadx_utils import (
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
+
+electron_mass_eV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+)
 
 
 class Quadrupole(Element):
