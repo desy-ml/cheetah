@@ -614,14 +614,7 @@ class SpaceChargeKick(Element):
         return False
 
     def plot(self, ax: plt.Axes, s: float) -> None:
-        ax.axvspan(
-            s - self.effect_length[0],
-            s,
-            facecolor="none",
-            edgecolor="orange",
-            alpha=1.0,
-            hatch="/",
-        )
+        ax.axvline(s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
 
     @property
     def defining_features(self) -> list[str]:
