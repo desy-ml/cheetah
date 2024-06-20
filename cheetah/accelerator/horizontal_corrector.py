@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from scipy import constants
 from scipy.constants import physical_constants
 from torch import Size, nn
 
@@ -14,11 +13,6 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge  # electron mass
-)
 electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
@@ -57,7 +51,7 @@ class HorizontalCorrector(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / rest_energy.to(device=device, dtype=dtype)
+        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
         igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
         igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
         beta = torch.sqrt(1 - igamma2)
