@@ -3,11 +3,11 @@
 from typing import Optional
 
 import torch
-from scipy import constants
+from scipy.constants import physical_constants
 
-REST_ENERGY = torch.tensor(
-    constants.electron_mass * constants.speed_of_light**2 / constants.elementary_charge
-)  # Electron mass
+electron_mass_eV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+)
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
@@ -56,7 +56,7 @@ def base_rmatrix(
     tilt = tilt if tilt is not None else torch.zeros_like(length)
     energy = energy if energy is not None else torch.zeros_like(length)
 
-    gamma = energy / REST_ENERGY.to(device=device, dtype=dtype)
+    gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
     igamma2 = torch.ones_like(length)
     igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
 
