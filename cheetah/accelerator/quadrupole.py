@@ -172,7 +172,7 @@ class Quadrupole(Element):
         # Begin bmadx tracking:
         x, px, y, py = offset_particle_set(x_off, y_off, tilt, x, px, y, py)
 
-        for i in range(n_step):
+        for _i in range(n_step):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
             k1 = b1 / (length * rel_p)
 
