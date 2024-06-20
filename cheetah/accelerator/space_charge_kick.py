@@ -70,8 +70,8 @@ class SpaceChargeKick(Element):
             int(num_grid_points_y),
             int(num_grid_points_s),
         )
-        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs)
         # In multiples of sigma
+        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs)
         self.grid_extend_y = torch.as_tensor(grid_extend_y, **self.factory_kwargs)
         self.grid_extend_s = torch.as_tensor(grid_extend_s, **self.factory_kwargs)
 
