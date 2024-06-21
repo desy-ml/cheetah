@@ -763,7 +763,7 @@ class ParticleBeam(Beam):
         """
         Moments in SI units as converted from the beam's `particles`. Returns the
         moments tensor with shape (..., n_particles, 7). For each particle, the moment
-        vector is \((x, p_x, y, p_y, z, p_z, 1)\).
+        vector is $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         p0 = (
             self.relativistic_gamma
