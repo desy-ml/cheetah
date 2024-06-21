@@ -730,7 +730,11 @@ class ParticleBeam(Beam):
         device=None,
         dtype=torch.float32,
     ) -> torch.Tensor:
-        """Converts the moments in SI units to a `ParticleBeam`."""
+        """
+        Create a beam from a tensor of moments in SI units. The moments tensor should
+        have shape (..., n_particles, 7), where the last dimension is the moment vector
+        $(x, p_x, y, p_y, z, p_z, 1)$.
+        """
         beam = cls(
             particles=moments.clone(),
             energy=energy,
