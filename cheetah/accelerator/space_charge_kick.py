@@ -17,11 +17,11 @@ speed_of_light = torch.tensor(constants.speed_of_light)
 
 class SpaceChargeKick(Element):
     """
-    Applies the effect of space charge over a length `effect_length`, on the **momentum**
-    (i.e. divergence and energy spread) of the beam. The positions are unmodified; this
-    is meant to be combined with another lattice element (e.g. `Drift`) that does modify
-    the positions, but does not take into account space charge.
-    The integrated Green function method
+    Applies the effect of space charge over a length `effect_length`, on the
+    **momentum** (i.e. divergence and energy spread) of the beam. The positions are
+    unmodified; this is meant to be combined with another lattice element (e.g. `Drift`)
+    that does modify the positions, but does not take into account space charge. The
+    integrated Green function method
     (https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.9.044204) is used to
     compute the effect of space charge. This is similar to the method used in Ocelot.
     The main difference is that it solves the Poisson equation in the beam frame, while
