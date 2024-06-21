@@ -17,33 +17,36 @@ speed_of_light = torch.tensor(constants.speed_of_light)
 
 class SpaceChargeKick(Element):
     """
-    Applies the effect of space charge over a length `length`, on the **momentum**
-    (i.e. divergence and energy spread) of the beam.
-    The positions are unmodified ; this is meant to be combined with another lattice
-    element (e.g. `Drift`) that does modify the positions, but does not take into
-    account space charge.
-    This uses the integrated Green function method
-    (https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.9.044204) to compute
-    the effect of space charge. This is similar to the method used in Ocelot.
-    The main difference is that it solves the Poisson equation in the beam frame,
-    while here we solve a modified Poisson equation in the laboratory frame
+    Applies the effect of space charge over a length `effect_length`, on the **momentum**
+    (i.e. divergence and energy spread) of the beam. The positions are unmodified; this
+    is meant to be combined with another lattice element (e.g. `Drift`) that does modify
+    the positions, but does not take into account space charge.
+    The integrated Green function method
+    (https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.9.044204) is used to
+    compute the effect of space charge. This is similar to the method used in Ocelot.
+    The main difference is that it solves the Poisson equation in the beam frame, while
+    here we solve a modified Poisson equation in the laboratory frame
     (https://pubs.aip.org/aip/pop/article-abstract/15/5/056701/1016636/Simulation-of-beams-or-plasmas-crossing-at).
     The two methods are in principle equivalent.
 
     Overview of the method:
-    - Compute the beam charge density on a grid
+    - Compute the beam charge density on a grid.
     - Convolve the charge density with a Green function (the integrated green function)
-    to find the potential `phi` on the grid. The convolution uses the Hockney method
-    for open boundaries (allocate 2x larger arrays and perform convolution using FFTs)
-    - Compute the corresponding electromagnetic fields and Lorentz force on the grid
-    - Interpolate the Lorentz force to the particles and update their momentum
+    to find the potential `phi` on the grid. The convolution uses the Hockney method for
+    open boundaries (allocate 2x larger arrays and perform convolution using FFTs).
+    - Compute the corresponding electromagnetic fields and Lorentz force on the grid.
+    - Interpolate the Lorentz force to the particles and update their momentum.
 
-    :param length_effect: Length over which the effect applies in meters.
-    :param length: Physical length of the element in meters (=0)
-    :param num_grid_points_x, num_grid_points_y, num_grid_points_s: Number of grid
-    points in each dimension.
-    :param grid_extend_x, grid_extend_y, grid_extend_s: Dimensions of the grid on which
-    to compute space-charge, as multiples of sigma of the beam (dimensionless)
+    :param effect_length: Length over which the effect is applied in meters.
+    :param num_grid_points_x: Number of grid points in the x direction.
+    :param num_grid_points_y: Number of grid points in the y direction.
+    :param num_grid_points_s: Number of grid points in the s direction.
+    :param grid_extend_x: Dimensions of the grid on which to compute space-charge, as
+        multiples of sigma of the beam (dimensionless).
+    :param grid_extend_y: Dimensions of the grid on which to compute space-charge, as
+        multiples of sigma of the beam (dimensionless).
+    :param grid_extend_s: Dimensions of the grid on which to compute space-charge, as
+        multiples of sigma of the beam (dimensionless).
     :param name: Unique identifier of the element.
     """
 
