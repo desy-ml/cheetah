@@ -32,9 +32,9 @@ class SpaceChargeKick(Element):
     Overview of the method:
      - Compute the beam charge density on a grid.
      - Convolve the charge density with a Green function (the integrated green function)
-        to find the potential `phi` on the grid. The convolution uses the Hockney method
-        for open boundaries (allocate 2x larger arrays and perform convolution using
-        FFTs).
+       to find the potential `phi` on the grid. The convolution uses the Hockney method
+       for open boundaries (allocate 2x larger arrays and perform convolution using
+       FFTs).
      - Compute the corresponding electromagnetic fields and Lorentz force on the grid.
      - Interpolate the Lorentz force to the particles and update their momentum.
 
