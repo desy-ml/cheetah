@@ -94,11 +94,14 @@ class SpaceChargeKick(Element):
             beam.particles.shape[:-2] + self.grid_shape, **self.factory_kwargs
         )
 
+        # Compute inverse cell size (to avoid multiple divisions later on)
+        inv_cell_size = 1 / cell_size
+
         # Get particle positions
         particle_positions = moments[..., [0, 2, 4]]
         normalized_positions = (
             particle_positions + grid_dimensions.unsqueeze(-2)
-        ) / cell_size.unsqueeze(-2)
+        ) * inv_cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
         cell_indices = torch.floor(normalized_positions).type(torch.int)
@@ -161,12 +164,12 @@ class SpaceChargeKick(Element):
             accumulate=True,
         )
 
-        return (
-            charge
-            / (cell_size[..., 0] * cell_size[..., 1] * cell_size[..., 2])[
-                ..., None, None, None
-            ]
-        )  # Normalize by the cell volume
+        # Normalize by the cell volume
+        inv_cell_volume = (
+            inv_cell_size[..., 0] * inv_cell_size[..., 1] * inv_cell_size[..., 2]
+        )
+
+        return charge * inv_cell_volume[..., None, None, None]
 
     def _integrated_potential(
         self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor
