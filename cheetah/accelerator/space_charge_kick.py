@@ -87,8 +87,8 @@ class SpaceChargeKick(Element):
         grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Deposits the charge density of the beam onto a grid, using the Cloud-In-Cell (CIC)
-        method. Returns a grid of charge density in C/m^3.
+        Deposits the charge density of the beam onto a grid, using the
+        Cloud-In-Cell (CIC) method. Returns a grid of charge density in C/m^3.
         """
         charge = torch.zeros(
             beam.particles.shape[:-2] + self.grid_shape, **self.factory_kwargs
@@ -235,8 +235,8 @@ class SpaceChargeKick(Element):
             cell_size[..., 0],
             cell_size[..., 1],
             cell_size[..., 2] * beam.relativistic_gamma,
-            # The longitudinal dimension is scaled by gamma, since we are solving
-            # a modified Poisson equation in the lab frame (see the docstring of the class)
+            # The longitudinal dimension is scaled by gamma, since we are solving a
+            # modified Poisson equation in the lab frame (see docstring of the class)
         )
         num_grid_points_x, num_grid_points_y, num_grid_points_s = self.grid_shape
 
