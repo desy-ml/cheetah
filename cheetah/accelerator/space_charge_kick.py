@@ -79,20 +79,6 @@ class SpaceChargeKick(Element):
         self.grid_extend_y = torch.as_tensor(grid_extend_y, **self.factory_kwargs)
         self.grid_extend_s = torch.as_tensor(grid_extend_s, **self.factory_kwargs)
 
-    def _compute_grid_dimensions(self, beam: ParticleBeam) -> torch.Tensor:
-        """
-        Computes the dimensions of the grid on which to compute the space charge effect.
-        """
-        # TODO: Refactor ... might not need to be a method
-        return torch.stack(
-            [
-                self.grid_extend_x * beam.sigma_x,
-                self.grid_extend_y * beam.sigma_y,
-                self.grid_extend_s * beam.sigma_s,
-            ],
-            dim=-1,
-        )
-
     def _deposit_charge_on_grid(
         self,
         beam: ParticleBeam,
@@ -101,9 +87,8 @@ class SpaceChargeKick(Element):
         grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Deposits the charge density of the beam onto a grid, using the nearest grid
-        point method and weighting by the distance to the grid points. Returns a grid of
-        charge density in C/m^3.
+        Deposits the charge density of the beam onto a grid, using the Cloud-In-Cell (CIC)
+        method. Returns a grid of charge density in C/m^3.
         """
         charge = torch.zeros(
             beam.particles.shape[:-2] + self.grid_shape, **self.factory_kwargs
@@ -561,7 +546,14 @@ class SpaceChargeKick(Element):
             flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
             # Compute useful quantities
-            grid_dimensions = self._compute_grid_dimensions(flattened_incoming)
+            grid_dimensions = torch.stack(
+                [
+                    self.grid_extend_x * flattened_incoming.sigma_x,
+                    self.grid_extend_y * flattened_incoming.sigma_y,
+                    self.grid_extend_s * flattened_incoming.sigma_s,
+                ],
+                dim=-1,
+            )
             cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
             dt = flattened_length_effect / (
                 speed_of_light * flattened_incoming.relativistic_beta
