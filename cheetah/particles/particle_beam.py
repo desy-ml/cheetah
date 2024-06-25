@@ -724,19 +724,19 @@ class ParticleBeam(Beam):
     @classmethod
     def from_xyz_pxpypz(
         cls,
-        moments: torch.Tensor,
+        xp_coords: torch.Tensor,
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
     ) -> torch.Tensor:
         """
-        Create a beam from a tensor of moments in SI units. The moments tensor should
-        have shape (..., n_particles, 7), where the last dimension is the moment vector
-        $(x, p_x, y, p_y, z, p_z, 1)$.
+        Create a beam from a tensor of position and momentum coordinates in SI units.
+        This tensor should have shape (..., n_particles, 7), where the last dimension
+        is the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         beam = cls(
-            particles=moments.clone(),
+            particles=xp_coords.clone(),
             energy=energy,
             particle_charges=particle_charges,
             device=device,
@@ -750,13 +750,15 @@ class ParticleBeam(Beam):
             * speed_of_light
         )
         p = torch.sqrt(
-            moments[..., 1] ** 2 + moments[..., 3] ** 2 + moments[..., 5] ** 2
+            xp_coords[..., 1] ** 2 + xp_coords[..., 3] ** 2 + xp_coords[..., 5] ** 2
         )
         gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
 
-        beam.particles[..., 1] = moments[..., 1] / p0.unsqueeze(-1)
-        beam.particles[..., 3] = moments[..., 3] / p0.unsqueeze(-1)
-        beam.particles[..., 4] = -moments[..., 4] / beam.relativistic_beta.unsqueeze(-1)
+        beam.particles[..., 1] = xp_coords[..., 1] / p0.unsqueeze(-1)
+        beam.particles[..., 3] = xp_coords[..., 3] / p0.unsqueeze(-1)
+        beam.particles[..., 4] = -xp_coords[..., 4] / beam.relativistic_beta.unsqueeze(
+            -1
+        )
         beam.particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
             (beam.relativistic_beta * beam.relativistic_gamma).unsqueeze(-1)
         )
@@ -765,9 +767,9 @@ class ParticleBeam(Beam):
 
     def to_xyz_pxpypz(self) -> torch.Tensor:
         """
-        Moments in SI units as converted from the beam's `particles`. Returns the
-        moments tensor with shape (..., n_particles, 7). For each particle, the moment
-        vector is $(x, p_x, y, p_y, z, p_z, 1)$.
+        Extracts the position and momentum coordinates in SI units, from the
+        beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
+        For each particle, the moment vector is $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         p0 = (
             self.relativistic_gamma
@@ -782,18 +784,18 @@ class ParticleBeam(Beam):
         beta = torch.sqrt(1 - 1 / gamma**2)
         p = gamma * electron_mass * beta * speed_of_light
 
-        moments_xp = self.particles[..., 1] * p0.unsqueeze(-1)
-        moments_yp = self.particles[..., 3] * p0.unsqueeze(-1)
-        moments_s = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        moments_p = torch.sqrt(p**2 - moments_xp**2 - moments_yp**2)
+        px = self.particles[..., 1] * p0.unsqueeze(-1)
+        py = self.particles[..., 3] * p0.unsqueeze(-1)
+        s = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
+        ps = torch.sqrt(p**2 - px**2 - py**2)
 
-        moments = self.particles.clone()
-        moments[..., 1] = moments_xp
-        moments[..., 3] = moments_yp
-        moments[..., 4] = moments_s
-        moments[..., 5] = moments_p
+        xp_coords = self.particles.clone()
+        xp_coords[..., 1] = px
+        xp_coords[..., 3] = py
+        xp_coords[..., 4] = s
+        xp_coords[..., 5] = ps
 
-        return moments
+        return xp_coords
 
     def __len__(self) -> int:
         return int(self.num_particles)
