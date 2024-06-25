@@ -175,8 +175,11 @@ class SpaceChargeKick(Element):
         self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor
     ) -> torch.Tensor:
         """
-        Computes the electrostatic potential using the Integrated Green Function method
-        as in http://dx.doi.org/10.1103/PhysRevSTAB.9.044204.
+        Computes the integrate potential as in
+        https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.10.129901
+        The formula used here is slightly different than the one used in
+        the above paper, but is equivalent (up to integration constants),
+        and is more robust to numerical errors.
         """
 
         r = torch.sqrt(x**2 + y**2 + s**2)
@@ -225,14 +228,16 @@ class SpaceChargeKick(Element):
         self, beam: ParticleBeam, cell_size: torch.Tensor
     ) -> torch.Tensor:
         """
-        Computes the Integrated Green Function (IGF) with periodic boundary conditions
-        (to perform Hockney's method).
+        Computes the Integrated Green Function (IGF) in the 2x larger array,
+        as needed for the Hockney method.
         """
         dx, dy, ds = (
             cell_size[..., 0],
             cell_size[..., 1],
             cell_size[..., 2] * beam.relativistic_gamma,
-        )  # Scaled by gamma
+            # The longitudinal dimension is scaled by gamma, since we are solving
+            # a modified Poisson equation in the lab frame (see the docstring of the class)
+        )
         num_grid_points_x, num_grid_points_y, num_grid_points_s = self.grid_shape
 
         # Create coordinate grids
