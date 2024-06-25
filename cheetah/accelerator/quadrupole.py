@@ -13,7 +13,7 @@ from cheetah.bmadx_utils import (
     low_energy_z_correction,
     offset_particle_set,
     offset_particle_unset,
-    quad_mat2_calc,
+    calculate_quadrupole_coefficients,
 )
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
@@ -176,8 +176,8 @@ class Quadrupole(Element):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
             k1 = b1 / (length * rel_p)
 
-            tx, dzx = quad_mat2_calc(-k1, step_len, rel_p)
-            ty, dzy = quad_mat2_calc(k1, step_len, rel_p)
+            tx, dzx = calculate_quadrupole_coefficients(-k1, step_len, rel_p)
+            ty, dzy = calculate_quadrupole_coefficients(k1, step_len, rel_p)
 
             z = (
                 z

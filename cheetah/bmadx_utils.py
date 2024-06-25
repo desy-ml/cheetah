@@ -4,7 +4,8 @@ import torch
 def cheetah_to_bmad_coords(
     cheetah_coords: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
-    """Transforms Cheetah coordinates to Bmad coordinates.
+    """
+    Transforms Cheetah coordinates to Bmad coordinates.
     :param cheetah_coords: 7-dimensional particle vectors in Cheetah coordinates.
     :param ref_energy: reference energy in eV.
     """
@@ -33,7 +34,8 @@ def cheetah_to_bmad_coords(
 def bmad_to_cheetah_coords(
     bmad_coords: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
-    """Transforms Bmad coordinates to Cheetah coordinates.
+    """
+    Transforms Bmad coordinates to Cheetah coordinates.
     :param bmad_coords: 6-dimensional particle vectors in Bmad coordinates.
     :param p0c: reference momentum in eV/c.
     """
@@ -62,7 +64,26 @@ def bmad_to_cheetah_coords(
     return cheetah_coords, ref_energy
 
 
-def offset_particle_set(x_offset, y_offset, tilt, x_lab, px_lab, y_lab, py_lab):
+def offset_particle_set(
+    x_offset: torch.Tensor,
+    y_offset: torch.Tensor,
+    tilt: torch.Tensor,
+    x_lab: torch.Tensor,
+    px_lab: torch.Tensor,
+    y_lab: torch.Tensor,
+    py_lab: torch.Tensor,
+) -> list[torch.Tensor]:
+    """
+    Transforms particle coordinates from lab to element frame.
+    :param x_offset: element x-coordinate offset.
+    :param y_offset: element y-coordinate offset.
+    :param tilt: tilt angle (rad).
+    :param x_lab: x-coordinate in lab frame.
+    :param px_lab: x-momentum in lab frame.
+    :param y_lab: y-coordinate in lab frame.
+    :param py_lab: y-momentum in lab frame.
+    :return: x, px, y, py coordinates in element frame.
+    """
     s = torch.sin(tilt)
     c = torch.cos(tilt)
     x_ele_int = x_lab - x_offset
@@ -71,10 +92,30 @@ def offset_particle_set(x_offset, y_offset, tilt, x_lab, px_lab, y_lab, py_lab):
     y_ele = -x_ele_int * s + y_ele_int * c
     px_ele = px_lab * c + py_lab * s
     py_ele = -px_lab * s + py_lab * c
+
     return x_ele, px_ele, y_ele, py_ele
 
 
-def offset_particle_unset(x_offset, y_offset, tilt, x_ele, px_ele, y_ele, py_ele):
+def offset_particle_unset(
+    x_offset: torch.Tensor,
+    y_offset: torch.Tensor,
+    tilt: torch.Tensor,
+    x_ele: torch.Tensor,
+    px_ele: torch.Tensor,
+    y_ele: torch.Tensor,
+    py_ele: torch.Tensor,
+) -> list[torch.Tensor]:
+    """
+    Transforms particle coordinates from element to lab frame.
+    :param x_offset: element x-coordinate offset.
+    :param y_offset: element y-coordinate offset.
+    :param tilt: tilt angle (rad).
+    :param x_ele: x-coordinate in element frame.
+    :param px_ele: x-momentum in element frame.
+    :param y_ele: y-coordinate in element frame.
+    :param py_ele: y-momentum in element frame.
+    :return: x, px, y, py coordinates in lab frame.
+    """
     s = torch.sin(tilt)
     c = torch.cos(tilt)
     x_lab_int = x_ele * c - y_ele * s
@@ -83,10 +124,13 @@ def offset_particle_unset(x_offset, y_offset, tilt, x_ele, px_ele, y_ele, py_ele
     y_lab = y_lab_int + y_offset
     px_lab = px_ele * c - py_ele * s
     py_lab = px_ele * s + py_ele * c
+
     return x_lab, px_lab, y_lab, py_lab
 
 
-def low_energy_z_correction(pz, p0c, mc2, ds):
+def low_energy_z_correction(
+    pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor, ds: torch.Tensor
+) -> torch.Tensor:
     """Corrects the change in z-coordinate due to speed < c_light.
     Input:
         p0c -- reference particle momentum in eV
@@ -113,7 +157,9 @@ def low_energy_z_correction(pz, p0c, mc2, ds):
     return dz
 
 
-def quad_mat2_calc(k1, length, rel_p):
+def calculate_quadrupole_coefficients(
+    k1: torch.Tensor, length: torch.Tensor, rel_p: torch.Tensor
+) -> torch.Tensor:
     """Returns 2x2 transfer matrix elements aij and the
     coefficients to calculate the change in z position.
     Input:
