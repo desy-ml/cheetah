@@ -368,13 +368,13 @@ class SpaceChargeKick(Element):
         charge_density = self._array_rho(
             beam, xp_coordinates, cell_size, grid_dimensions
         )
-        charge_density_ft = torch.fft.fftn(charge_density, dim=[1, 2, 3])
+        charge_density_ft = torch.fft.rfftn(charge_density, dim=[1, 2, 3])
         integrated_green_function = self._integrated_green_function(beam, cell_size)
-        integrated_green_function_ft = torch.fft.fftn(
+        integrated_green_function_ft = torch.fft.rfftn(
             integrated_green_function, dim=[1, 2, 3]
         )
         potential_ft = charge_density_ft * integrated_green_function_ft
-        potential = (1 / (4 * torch.pi * epsilon_0)) * torch.fft.ifftn(
+        potential = (1 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
             potential_ft, dim=[1, 2, 3]
         ).real
 
