@@ -82,7 +82,7 @@ class SpaceChargeKick(Element):
     def _deposit_charge_on_grid(
         self,
         beam: ParticleBeam,
-        moments: torch.Tensor,
+        xp_coordinates: torch.Tensor,
         cell_size: torch.Tensor,
         grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
@@ -98,7 +98,7 @@ class SpaceChargeKick(Element):
         inv_cell_size = 1 / cell_size
 
         # Get particle positions
-        particle_positions = moments[..., [0, 2, 4]]
+        particle_positions = xp_coordinates[..., [0, 2, 4]]
         normalized_positions = (
             particle_positions + grid_dimensions.unsqueeze(-2)
         ) * inv_cell_size.unsqueeze(-2)
@@ -196,7 +196,7 @@ class SpaceChargeKick(Element):
     def _array_rho(
         self,
         beam: ParticleBeam,
-        moments: torch.Tensor,
+        xp_coordinates: torch.Tensor,
         cell_size: torch.Tensor,
         grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
@@ -205,7 +205,7 @@ class SpaceChargeKick(Element):
         copies the charge density in one of the "quadrants".
         """
         charge_density = self._deposit_charge_on_grid(
-            beam, moments, cell_size, grid_dimensions
+            beam, xp_coordinates, cell_size, grid_dimensions
         )
         new_dims = tuple(2 * dim for dim in self.grid_shape)
 
@@ -356,12 +356,18 @@ class SpaceChargeKick(Element):
         return green_func_values
 
     def _solve_poisson_equation(
-        self, beam: ParticleBeam, moments: torch.Tensor, cell_size, grid_dimensions
+        self,
+        beam: ParticleBeam,
+        xp_coordinates: torch.Tensor,
+        cell_size,
+        grid_dimensions,
     ) -> torch.Tensor:  # Works only for ParticleBeam at this stage
         """
         Solves the Poisson equation for the given charge density, using FFT convolution.
         """
-        charge_density = self._array_rho(beam, moments, cell_size, grid_dimensions)
+        charge_density = self._array_rho(
+            beam, xp_coordinates, cell_size, grid_dimensions
+        )
         charge_density_ft = torch.fft.fftn(charge_density, dim=[1, 2, 3])
         integrated_green_function = self._integrated_green_function(beam, cell_size)
         integrated_green_function_ft = torch.fft.fftn(
@@ -383,13 +389,13 @@ class SpaceChargeKick(Element):
     def _E_plus_vB_field(
         self,
         beam: ParticleBeam,
-        moments: torch.Tensor,
+        xp_coordinates: torch.Tensor,
         cell_size: torch.Tensor,
         grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
         """
         Computes the force field from the potential and the particle positions and
-        speeds, as in https://doi.org/10.1063/1.2837054.
+        velocities, as in https://doi.org/10.1063/1.2837054.
         """
         inv_cell_size = 1 / cell_size
         igamma2 = torch.zeros_like(beam.relativistic_gamma)
@@ -397,7 +403,7 @@ class SpaceChargeKick(Element):
             1 / beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
         )
         potential = self._solve_poisson_equation(
-            beam, moments, cell_size, grid_dimensions
+            beam, xp_coordinates, cell_size, grid_dimensions
         )
 
         grad_x = torch.zeros_like(potential)
@@ -426,7 +432,7 @@ class SpaceChargeKick(Element):
     def _compute_forces(
         self,
         beam: ParticleBeam,
-        moments: torch.Tensor,
+        xp_coordinates: torch.Tensor,
         cell_size: torch.Tensor,
         grid_dimensions: torch.Tensor,
     ) -> torch.Tensor:
@@ -436,7 +442,7 @@ class SpaceChargeKick(Element):
         Beam needs to have a flattened batch shape.
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(
-            beam, moments, cell_size, grid_dimensions
+            beam, xp_coordinates, cell_size, grid_dimensions
         )
         grid_shape = self.grid_shape
         interpolated_forces = torch.zeros(
@@ -444,7 +450,7 @@ class SpaceChargeKick(Element):
         )  # (..., num_particles, 3)
 
         # Get particle positions
-        particle_positions = moments[..., [0, 2, 4]]
+        particle_positions = xp_coordinates[..., [0, 2, 4]]
         normalized_positions = (
             particle_positions + grid_dimensions.unsqueeze(-2)
         ) / cell_size.unsqueeze(-2)
@@ -568,16 +574,22 @@ class SpaceChargeKick(Element):
             )
 
             # Change coordinates to apply the space charge effect
-            moments = flattened_incoming.to_xyz_pxpypz()
+            xp_coordinates = flattened_incoming.to_xyz_pxpypz()
             forces = self._compute_forces(
-                flattened_incoming, moments, cell_size, grid_dimensions
+                flattened_incoming, xp_coordinates, cell_size, grid_dimensions
             )
-            moments[..., 1] = moments[..., 1] + forces[..., 0] * dt.unsqueeze(-1)
-            moments[..., 3] = moments[..., 3] + forces[..., 1] * dt.unsqueeze(-1)
-            moments[..., 5] = moments[..., 5] + forces[..., 2] * dt.unsqueeze(-1)
+            xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[
+                ..., 0
+            ] * dt.unsqueeze(-1)
+            xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[
+                ..., 1
+            ] * dt.unsqueeze(-1)
+            xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[
+                ..., 2
+            ] * dt.unsqueeze(-1)
 
             outgoing = ParticleBeam.from_xyz_pxpypz(
-                moments.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
+                xp_coordinates.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
                 incoming.energy,
                 incoming.particle_charges,
                 incoming.particles.device,
