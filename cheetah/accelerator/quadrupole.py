@@ -7,11 +7,14 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from cheetah.bmadx_utils import (bmad_to_cheetah_coords,
-                                 calculate_quadrupole_coefficients,
-                                 cheetah_to_bmad_coords,
-                                 low_energy_z_correction, offset_particle_set,
-                                 offset_particle_unset)
+from cheetah.bmadx_utils import (
+    bmad_to_cheetah_coords,
+    calculate_quadrupole_coefficients,
+    cheetah_to_bmad_coords,
+    low_energy_z_correction,
+    offset_particle_set,
+    offset_particle_unset,
+)
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator
