@@ -1,3 +1,3 @@
-git+https://github.com/ocelot-collab/ocelot@v22.12.0 # Ocelot
+git+https://github.com/cr-xu/ocelot@update-scipy-compatibility # Ocelot
 pytest
 pytest-cov
