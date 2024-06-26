@@ -31,3 +31,26 @@ def test_bmad_tutorial():
     assert converted.b.e1 == correct.b.e1
     assert converted.q.length == correct.q.length
     assert converted.q.k1 == correct.q.k1
+
+
+def test_device_passing():
+    """Test that the device is passed correctly."""
+    file_path = "tests/resources/bmad_tutorial_lattice.bmad"
+
+    # Check if CUDA or MPS are available
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
+    # Convert the lattice while passing the device
+    converted = cheetah.Segment.from_bmad(file_path, device=device)
+
+    # Check that the properties of the loaded elements are on the correct device
+    assert converted.d.length.device == torch.device("cpu")
+    assert converted.b.length.device == torch.device("cpu")
+    assert converted.b.e1.device == torch.device("cpu")
+    assert converted.q.length.device == torch.device("cpu")
+    assert converted.q.k1.device == torch.device("cpu")
