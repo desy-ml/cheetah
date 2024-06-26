@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -33,24 +34,34 @@ def test_bmad_tutorial():
     assert converted.q.k1 == correct.q.k1
 
 
-def test_device_passing():
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not torch.backends.mps.is_available(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_device_passing(device: torch.device):
     """Test that the device is passed correctly."""
     file_path = "tests/resources/bmad_tutorial_lattice.bmad"
-
-    # Check if CUDA or MPS are available
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
 
     # Convert the lattice while passing the device
     converted = cheetah.Segment.from_bmad(file_path, device=device)
 
     # Check that the properties of the loaded elements are on the correct device
-    assert converted.d.length.device == torch.device("cpu")
-    assert converted.b.length.device == torch.device("cpu")
-    assert converted.b.e1.device == torch.device("cpu")
-    assert converted.q.length.device == torch.device("cpu")
-    assert converted.q.k1.device == torch.device("cpu")
+    assert converted.d.length.device.type == device.type
+    assert converted.b.length.device.type == device.type
+    assert converted.b.e1.device.type == device.type
+    assert converted.q.length.device.type == device.type
+    assert converted.q.k1.device.type == device.type
