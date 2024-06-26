@@ -1,17 +1,13 @@
 {
-    "spellright.language": [
-        "en_GB"
-    ],
-    "spellright.documentTypes": [
-        "markdown",
-        "latex",
-        "plaintext"
-    ],
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true,
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
-    },
-    "python.formatting.provider": "none",
-    "esbonio.sphinx.confDir": ""
+  "spellright.language": ["en_GB"],
+  "spellright.documentTypes": ["markdown", "latex", "plaintext"],
+  "python.linting.flake8Enabled": true,
+  "python.linting.enabled": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "python.formatting.provider": "none",
+  "esbonio.sphinx.confDir": "",
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }
