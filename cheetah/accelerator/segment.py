@@ -272,7 +272,10 @@ class Segment(Element):
 
     @classmethod
     def from_bmad(
-        cls, bmad_lattice_file_path: str, environment_variables: Optional[dict] = None
+        cls,
+        bmad_lattice_file_path: str,
+        environment_variables: Optional[dict] = None,
+        device: Optional[Union[str, torch.device]] = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -285,10 +288,13 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
+        :param device: Device to place the lattice elements on.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return convert_bmad_lattice(bmad_lattice_file_path, environment_variables)
+        return convert_bmad_lattice(
+            bmad_lattice_file_path, environment_variables, device
+        )
 
     @classmethod
     def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
