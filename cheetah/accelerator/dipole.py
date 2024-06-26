@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from scipy import constants
-from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.track_methods import base_rmatrix, rotation_matrix
@@ -14,15 +12,6 @@ from cheetah.utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge  # electron mass
-)
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class Dipole(Element):
@@ -74,7 +63,6 @@ class Dipole(Element):
             if tilt is not None
             else torch.zeros_like(self.length)
         )
-        self.name = name
         self.fringe_integral = (
             torch.as_tensor(fringe_integral, **factory_kwargs)
             if fringe_integral is not None
@@ -85,7 +73,7 @@ class Dipole(Element):
             if fringe_integral_exit is None
             else torch.as_tensor(fringe_integral_exit, **factory_kwargs)
         )
-        # Rectangular bend
+        # Sector bend if not specified
         self.e1 = (
             torch.as_tensor(e1, **factory_kwargs)
             if e1 is not None
@@ -120,7 +108,7 @@ class Dipole(Element):
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if self.length != 0.0:  # Bending magnet with finite length
+        if any(self.length != 0.0):  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
                 k1=torch.zeros_like(self.length),

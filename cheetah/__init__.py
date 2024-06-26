@@ -13,6 +13,7 @@ from cheetah.accelerator import (  # noqa: F401
     Screen,
     Segment,
     Solenoid,
+    SpaceChargeKick,
     Undulator,
     VerticalCorrector,
 )

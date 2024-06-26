@@ -25,6 +25,9 @@ pip install cheetah-accelerator
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
 ```python
+import torch
+from cheetah import BPM, Drift, HorizontalCorrector, Segment, VerticalCorrector
+
 segment = Segment(
     elements=[
         BPM(name="BPM1SMATCH"),
@@ -51,7 +54,7 @@ segment = Segment.from_ocelot(cell)
 All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
 
 ```python
-segment.AREAMQZM2.k1 = torch.tensor(4.2)
+segment.AREAMQZM2.k1 = torch.tensor([4.2])
 ```
 
 In order to track a beam through the segment, simply call the segment like so

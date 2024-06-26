@@ -3,23 +3,12 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
-from scipy import constants
-from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge  # electron mass
-)
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class Element(ABC, nn.Module):
