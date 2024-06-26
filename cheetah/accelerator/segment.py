@@ -5,8 +5,6 @@ from typing import Any, Optional, Union
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
-from scipy import constants
-from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.converters.bmad import convert_bmad_lattice
@@ -21,15 +19,6 @@ from .element import Element
 from .marker import Marker
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-rest_energy = torch.tensor(
-    constants.electron_mass
-    * constants.speed_of_light**2
-    / constants.elementary_charge  # electron mass
-)
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class Segment(Element):

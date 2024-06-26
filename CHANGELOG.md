@@ -12,11 +12,13 @@
 - `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
 - Add a new class method for `ParticleBeam` to generate a 3D uniformly distributed ellipsoidal beam (see #146) (@cr-xu, @jank324)
 - Add Python 3.12 support (see #161) (@jank324)
+- Implement space charge using Green's function in a `SpaceChargeKick` element (see #142) (@greglenerd, @RemiLehe, @ax3l, @cr-xu, @jank324)
 
 ### 🐛 Bug fixes
 
 - Now all `Element` have a default length of `torch.zeros((1))`, fixing occasional issues with using elements without length, such as `Marker`, `BPM`, `Screen`, and `Aperture`. (see #143) (@cr-xu)
-- Fix bug in `Cavity` `_track_beam` (see [#150](https://github.com/desy-ml/cheetah/issues/150)) (@jp-ga)
+- Fix bug in `Cavity` `_track_beam` (see #150) (@jp-ga)
+- Fix issue where dipoles would not get a unique name by default (see #186) (@hespe)
 
 ### 🐆 Other
 
@@ -25,6 +27,8 @@
 - Split `accelerator` and `beam` into separate submodules (see #158) (@jank324)
 - Update reference from arXiv preprint to PRAB publication (see #166) (@jank324)
 - Rename converter modules to the respective name of the accelerator code (see #167) (@jank324)
+- Added imports to the code example in the README (see #188) (@jank324)
+- Refactor definitions of physical constants (see #189) (@hespe)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
