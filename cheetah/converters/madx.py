@@ -94,7 +94,11 @@ def convert_madx_element(df_row):
             name=df_row["name"],
         )
     else:
-        pass
+        print(df_row["name"])
+        return cheetah.Drift(
+            length=torch.tensor([df_row.l]),
+            name=df_row["name"],
+        )
 
 
 def convert_madx_lattice(madx_tfs_file_path):
