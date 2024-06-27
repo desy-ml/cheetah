@@ -269,6 +269,7 @@ class Screen(Element):
             "pixel_size",
             "binning",
             "misalignment",
+            "kde_bandwith",
             "is_active",
         ]
 
@@ -278,6 +279,7 @@ class Screen(Element):
             + f"pixel_size={repr(self.pixel_size)}, "
             + f"binning={repr(self.binning)}, "
             + f"misalignment={repr(self.misalignment)}, "
+            + f"kde_bandwith={repr(self.kde_bandwith)}, "
             + f"is_active={repr(self.is_active)}, "
             + f"name={repr(self.name)})"
         )
