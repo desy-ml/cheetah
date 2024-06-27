@@ -83,4 +83,7 @@ class Drift(Element):
         return super().defining_features + ["length"]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(length={repr(self.length)})"
+        return (
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"name={repr(self.name)})"
+        )
