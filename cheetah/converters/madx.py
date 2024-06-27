@@ -29,7 +29,6 @@ def tfs_to_pandas(madx_tfs_file_path):
     }
     tfs_df = pd.DataFrame(tfs_dict_updated)
     # madx_rbends_pd = tfs_df[tfs_df['keyword'] == 'rbend']
-    # print(type(tfs_df.name))
 
     return tfs_df, tfs_header, tfs_col_names, tfs_keywords
 
@@ -67,7 +66,7 @@ def convert_madx_element(df_row):
             fringe_integral=torch.tensor([df_row.fint]),
             fringe_integral_exit=torch.tensor([df_row.fintx]),
             gap=torch.tensor([df_row.hgap]),
-            name=df_row.name,
+            name=df_row["name"],
         )
 
     # QUADRUPOLE -------------------------------------------------------------------
@@ -92,7 +91,7 @@ def convert_madx_element(df_row):
             length=torch.tensor([df_row.l]),
             k1=torch.tensor([df_row.k1l]),
             tilt=torch.tensor([df_row.tilt]),
-            name=df_row.name,
+            name=df_row["name"],
         )
     else:
         pass
