@@ -99,7 +99,7 @@ class Dipole(Element):
 
     @property
     def is_active(self):
-        return any(self.angle != 0)
+        return torch.any(self.angle != 0)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
@@ -108,7 +108,7 @@ class Dipole(Element):
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if any(self.length != 0.0):  # Bending magnet with finite length
+        if torch.any(self.length != 0.0):  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
                 k1=torch.zeros_like(self.length),
