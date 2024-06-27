@@ -29,6 +29,7 @@ def tfs_to_pandas(madx_tfs_file_path):
     }
     tfs_df = pd.DataFrame(tfs_dict_updated)
     # madx_rbends_pd = tfs_df[tfs_df['keyword'] == 'rbend']
+    # print(type(tfs_df.name))
 
     return tfs_df, tfs_header, tfs_col_names, tfs_keywords
 
@@ -39,24 +40,23 @@ def convert_madx_element(df_row):
     """
 
     # RBEND -------------------------------------------------------------------
-    """
-    Rectangular bending magnet.
+    # Rectangular bending magnet.
 
-    L --> param length: Length in meters.
-    ANGLE --> param angle: Deflection angle in rad.
-    E1 --> param e1: The angle of inclination of the entrance face [rad].
-    E2 --> param e2: The angle of inclination of the exit face [rad].
-    TILT (horizontal, pi/2 turns it to vertical bend 
-        --> param tilt: Tilt of the magnet in x-y plane [rad].
-    FINT --> param fringe_integral: Fringe field integral (of the enterance face).
-    FINTX --> param fringe_integral_exit: (only set if different from `fint`)
-        Fringe field integral of the exit face.
-    HGAP --> param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
-    NAME --> param name: Unique identifier of the element.
+    # L --> param length: Length in meters.
+    # ANGLE --> param angle: Deflection angle in rad.
+    # E1 --> param e1: The angle of inclination of the entrance face [rad].
+    # E2 --> param e2: The angle of inclination of the exit face [rad].
+    # TILT (horizontal, pi/2 turns it to vertical bend
+    #     --> param tilt: Tilt of the magnet in x-y plane [rad].
+    # FINT --> param fringe_integral: Fringe field integral (of the enterance face).
+    # FINTX --> param fringe_integral_exit: (only set if different from `fint`)
+    #     Fringe field integral of the exit face.
+    # HGAP --> param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    # NAME --> param name: Unique identifier of the element.
 
-    Not available:
-    - K0: assignment of relative field errors to a bending magnet
-    """
+    # Ignored:
+    # - K0L: The integrated strength of the dipole component of the field in the magnet.
+
     if df_row.keyword == "rbend":
         return cheetah.RBend(
             length=torch.tensor([df_row.l]),
@@ -67,6 +67,31 @@ def convert_madx_element(df_row):
             fringe_integral=torch.tensor([df_row.fint]),
             fringe_integral_exit=torch.tensor([df_row.fintx]),
             gap=torch.tensor([df_row.hgap]),
+            name=df_row.name,
+        )
+
+    # QUADRUPOLE -------------------------------------------------------------------
+    # Quadrupole magnet in a particle accelerator.
+
+    # L --> param length: Length in meters.
+    # K1L (1/m) --> param k1: Strength of the quadrupole in rad/m.
+    # not available :param misalignment: Misalignment vector of the quadrupole in
+    # x- and y-directions.
+    # TILT (rad) --> param tilt: Tilt angle of the quadrupole in x-y plane [rad].
+    # pi/4 for skew-quadrupole.
+
+    # Not available in Cheetah:
+    # - K1S (m^-2): skew quadrupole coeff.
+    # - KTAP: The relative change of the quadrupoles strengths (both K1 and K1S)
+    # to account for energy change of the reference particle due to RF cavities or
+    # synchrotron radiation. The actual strength of the quadrupole is calculated
+    # as K1act = K1 * (1 + KTAP)
+
+    elif df_row.keyword == "quadrupole":
+        return cheetah.Quadrupole(
+            length=torch.tensor([df_row.l]),
+            k1=torch.tensor([df_row.k1l]),
+            tilt=torch.tensor([df_row.tilt]),
             name=df_row.name,
         )
     else:
