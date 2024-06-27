@@ -1,8 +1,9 @@
-import pyoptics.tfsdata as tfs
 import pandas as pd
+import pyoptics.tfsdata as tfs
+import torch
 
 import cheetah
-import torch
+
 
 def load_tfs(madx_tfs_file_path) -> dict:
     """
@@ -17,14 +18,17 @@ def tfs_to_pandas(madx_tfs_file_path):
     To do: add the header info as metadata to the dataframe, or similar
     """
     tfs_dict = load_tfs(madx_tfs_file_path)
-    tfs_header = tfs_dict['header']
-    tfs_col_names = tfs_dict['_col_names']
-    tfs_keywords = list(set(tfs_dict['keyword']))
+    tfs_header = tfs_dict["header"]
+    tfs_col_names = tfs_dict["_col_names"]
+    tfs_keywords = list(set(tfs_dict["keyword"]))
     # print(tfs_keywords)
 
-    keys_to_remove = ['header', '_col_names', '_header_names', '_filename']
-    tfs_dict_updated = {key: value for key, value in tfs_dict.items() if key not in keys_to_remove}
+    keys_to_remove = ["header", "_col_names", "_header_names", "_filename"]
+    tfs_dict_updated = {
+        key: value for key, value in tfs_dict.items() if key not in keys_to_remove
+    }
     tfs_df = pd.DataFrame(tfs_dict_updated)
+    # madx_rbends_pd = tfs_df[tfs_df['keyword'] == 'rbend']
 
     return tfs_df, tfs_header, tfs_col_names, tfs_keywords
 
@@ -42,17 +46,18 @@ def convert_madx_element(df_row):
     ANGLE --> param angle: Deflection angle in rad.
     E1 --> param e1: The angle of inclination of the entrance face [rad].
     E2 --> param e2: The angle of inclination of the exit face [rad].
-    TILT (horizontal, pi/2 turns it to vertical bend) --> param tilt: Tilt of the magnet in x-y plane [rad].
+    TILT (horizontal, pi/2 turns it to vertical bend 
+        --> param tilt: Tilt of the magnet in x-y plane [rad].
     FINT --> param fringe_integral: Fringe field integral (of the enterance face).
-    FINTX --> param fringe_integral_exit: (only set if different from `fint`) Fringe field
-        integral of the exit face.
+    FINTX --> param fringe_integral_exit: (only set if different from `fint`)
+        Fringe field integral of the exit face.
     HGAP --> param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     NAME --> param name: Unique identifier of the element.
 
     Not available:
     - K0: assignment of relative field errors to a bending magnet
     """
-    if df_row.keyword == 'rbend':
+    if df_row.keyword == "rbend":
         return cheetah.RBend(
             length=torch.tensor([df_row.l]),
             angle=torch.tensor([df_row.angle]),
@@ -82,13 +87,3 @@ def convert_madx_lattice(madx_tfs_file_path):
             elements.append(cheetah_element)
     # print(elements)
     return cheetah.Segment(elements)
-
-#     # To do: list of MAD-X elements, then compare to loaded keywords
-
-#     madx_rbends_pd = tfs_df[tfs_df['keyword'] == 'rbend']
-#     madx_quads_pd = tfs_df[tfs_df['keyword'] == 'quadrupole']
-#     madx_kicker_pd = tfs_df[tfs_df['keyword'] == 'kicker']
-#     madx_instrument_pd = tfs_df[tfs_df['keyword'] == 'instrument']
-#     madx_drifts_pd = tfs_df[tfs_df['keyword'] == 'drift']
-#     print(madx_kicker_pd)
-# # ---------------------------------------------------------------
