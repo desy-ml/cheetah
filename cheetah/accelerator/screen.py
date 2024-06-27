@@ -8,7 +8,7 @@ from torch import Size, nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
 
 from .element import Element
 
@@ -20,12 +20,14 @@ class Screen(Element):
     Diagnostic screen in a particle accelerator.
 
     :param resolution: Resolution of the camera sensor looking at the screen given as
-        Tensor `(width, height)`.
+        Tensor `(width, height)` in pixels.
     :param pixel_size: Size of a pixel on the screen in meters given as a Tensor
         `(width, height)`.
     :param binning: Binning used by the camera.
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
+    :param kde_bandwith: Bandwidth used for the kernel density estimation in meters.
+        Controls the smoothness of the distribution.
     :param is_active: If `True` the screen is active and will record the beam's
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
@@ -38,6 +40,7 @@ class Screen(Element):
         pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        kde_bandwith: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
         name: Optional[str] = None,
         device=None,
@@ -65,6 +68,11 @@ class Screen(Element):
             torch.as_tensor(misalignment, **factory_kwargs)
             if misalignment is not None
             else torch.tensor([(0.0, 0.0)], **factory_kwargs)
+        )
+        self.kde_bandwith = (
+            torch.as_tensor(kde_bandwith, **factory_kwargs)
+            if kde_bandwith is not None
+            else torch.clone(self.pixel_size[0])
         )
         self.length = torch.zeros(self.misalignment.shape[:-1], **factory_kwargs)
         self.is_active = is_active
@@ -110,6 +118,13 @@ class Screen(Element):
             ),
         )
 
+    @property
+    def pixel_bin_centers(self) -> tuple[torch.Tensor, torch.Tensor]:
+        return (
+            (self.pixel_bin_edges[0][1:] + self.pixel_bin_edges[0][:-1]) / 2,
+            (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
+        )
+
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.misalignment.device
         dtype = self.misalignment.dtype
@@ -121,11 +136,11 @@ class Screen(Element):
             copy_of_incoming = deepcopy(incoming)
 
             if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu[:, 0] -= self.misalignment[:, 0]
-                copy_of_incoming._mu[:, 2] -= self.misalignment[:, 1]
+                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
+                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
-                copy_of_incoming.particles[:, :, 0] -= self.misalignment[:, 0]
-                copy_of_incoming.particles[:, :, 1] -= self.misalignment[:, 1]
+                copy_of_incoming.particles[..., :, 0] -= self.misalignment[..., 0]
+                copy_of_incoming.particles[..., :, 1] -= self.misalignment[..., 1]
 
             self.set_read_beam(copy_of_incoming)
 
@@ -195,15 +210,17 @@ class Screen(Element):
                     int(self.effective_resolution[0]),
                 )
             )
-            for i, (xs_sample, ys_sample) in enumerate(zip(read_beam.xs, read_beam.ys)):
-                image_sample, _ = torch.histogramdd(
-                    torch.stack((xs_sample, ys_sample)).T.cpu(),
-                    bins=self.pixel_bin_edges,
-                )
-                image_sample = torch.flipud(image_sample.T)
-                image_sample = image_sample.cpu()
-
-                image[i] = image_sample
+            image = kde_histogram_2d(
+                x1=read_beam.xs,
+                x2=read_beam.ys,
+                bins1=self.pixel_bin_centers[0],
+                bins2=self.pixel_bin_centers[1],
+                bandwidth=self.kde_bandwith,
+            )
+            # Change the x, y positions
+            image = torch.transpose(image, -2, -1)
+            # Flip up an down, now row 0 corresponds to the top
+            image = torch.flip(image, dims=[-2])
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
