@@ -31,6 +31,9 @@ class Screen(Element):
     :param is_active: If `True` the screen is active and will record the beam's
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
+    :param method: Method used to generate the screen's reading. Can be either
+        "histogram" or "kde", defaults to "histogram".
+        KDE will be slower but allows backward differentiation.
     :param name: Unique identifier of the element.
     """
 
@@ -42,6 +45,7 @@ class Screen(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         kde_bandwith: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
+        method: str = "histogram",
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -69,6 +73,11 @@ class Screen(Element):
             if misalignment is not None
             else torch.tensor([(0.0, 0.0)], **factory_kwargs)
         )
+        assert method in [
+            "histogram",
+            "kde",
+        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
+        self.method = method
         self.kde_bandwith = (
             torch.as_tensor(kde_bandwith, **factory_kwargs)
             if kde_bandwith is not None
@@ -203,24 +212,38 @@ class Screen(Element):
             )
             image = torch.flip(image, dims=[1])
         elif isinstance(read_beam, ParticleBeam):
-            image = torch.zeros(
-                (
-                    *self.misalignment.shape[:-1],
-                    int(self.effective_resolution[1]),
-                    int(self.effective_resolution[0]),
+
+            if self.method == "histogram":
+                image = torch.zeros(
+                    (
+                        *self.misalignment.shape[:-1],
+                        int(self.effective_resolution[1]),
+                        int(self.effective_resolution[0]),
+                    )
                 )
-            )
-            image = kde_histogram_2d(
-                x1=read_beam.xs,
-                x2=read_beam.ys,
-                bins1=self.pixel_bin_centers[0],
-                bins2=self.pixel_bin_centers[1],
-                bandwidth=self.kde_bandwith,
-            )
-            # Change the x, y positions
-            image = torch.transpose(image, -2, -1)
-            # Flip up an down, now row 0 corresponds to the top
-            image = torch.flip(image, dims=[-2])
+                for i, (xs_sample, ys_sample) in enumerate(
+                    zip(read_beam.xs, read_beam.ys)
+                ):
+                    image_sample, _ = torch.histogramdd(
+                        torch.stack((xs_sample, ys_sample)).T.cpu(),
+                        bins=self.pixel_bin_edges,
+                    )
+                    image_sample = torch.flipud(image_sample.T)
+                    image_sample = image_sample.cpu()
+
+                    image[i] = image_sample
+            elif self.method == "kde":
+                image = kde_histogram_2d(
+                    x1=read_beam.xs,
+                    x2=read_beam.ys,
+                    bins1=self.pixel_bin_centers[0],
+                    bins2=self.pixel_bin_centers[1],
+                    bandwidth=self.kde_bandwith,
+                )
+                # Change the x, y positions
+                image = torch.transpose(image, -2, -1)
+                # Flip up an down, now row 0 corresponds to the top
+                image = torch.flip(image, dims=[-2])
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
@@ -269,6 +292,7 @@ class Screen(Element):
             "pixel_size",
             "binning",
             "misalignment",
+            "method",
             "kde_bandwith",
             "is_active",
         ]
@@ -279,6 +303,7 @@ class Screen(Element):
             + f"pixel_size={repr(self.pixel_size)}, "
             + f"binning={repr(self.binning)}, "
             + f"misalignment={repr(self.misalignment)}, "
+            + f"method={repr(self.method)}, "
             + f"kde_bandwith={repr(self.kde_bandwith)}, "
             + f"is_active={repr(self.is_active)}, "
             + f"name={repr(self.name)})"
