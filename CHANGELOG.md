@@ -20,6 +20,7 @@
 - Fix bug in `Cavity` `_track_beam` (see #150) (@jp-ga)
 - Fix issue where dipoles would not get a unique name by default (see #186) (@hespe)
 - Add `name` to `Drift` element `__repr__` (see #201) (@ansantam)
+- Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 
 ### 🐆 Other
 
