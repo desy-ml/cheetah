@@ -60,8 +60,13 @@ class Beam(nn.Module):
         beta_y: Optional[torch.Tensor] = None,
         alpha_y: Optional[torch.Tensor] = None,
         emittance_y: Optional[torch.Tensor] = None,
+        sigma_s: Optional[torch.Tensor] = None,
+        sigma_p: Optional[torch.Tensor] = None,
+        cor_s: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=torch.float32,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -72,8 +77,13 @@ class Beam(nn.Module):
         :param beta_y: Beta function in y direction in meters.
         :param alpha_y: Alpha function in y direction in rad.
         :param emittance_y: Emittance in y direction in m*rad.
+        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction in meters.
+        :param cor_s: Correlation of the particle distribution in s direction.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param device: Device to create the beam on.
+        :param dtype: Data type of the beam.
         """
         raise NotImplementedError
 
