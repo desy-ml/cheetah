@@ -114,7 +114,7 @@ class Quadrupole(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "k1", "misalignment", "tilt"]
 
-    def __repr__(self) -> None:
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"k1={repr(self.k1)}, "

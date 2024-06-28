@@ -3,7 +3,7 @@ import os
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 import scipy
@@ -430,11 +430,15 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
         )
 
 
-def convert_element(name: str, context: dict) -> "cheetah.Element":
+def convert_element(
+    name: str, context: dict, device: Optional[Union[str, torch.device]] = None
+) -> "cheetah.Element":
     """Convert a parsed Bmad element dict to a cheetah Element.
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
+    :param device: Device to put the element on. If `None`, the device is set to
+        `torch.device("cpu")`.
     :return: Converted cheetah Element. If you are calling this function yourself
         as a user of Cheetah, this is most likely a `Segment`.
     """
@@ -443,7 +447,8 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
             elements=[
-                convert_element(element_name, context) for element_name in bmad_parsed
+                convert_element(element_name, context, device)
+                for element_name in bmad_parsed
             ],
             name=name,
         )
@@ -466,7 +471,9 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 ["element_type", "alias", "type", "l"], bmad_parsed
             )
             if "l" in bmad_parsed:
-                return cheetah.Drift(length=torch.tensor([bmad_parsed["l"]]), name=name)
+                return cheetah.Drift(
+                    length=torch.tensor([bmad_parsed["l"]]), name=name, device=device
+                )
             else:
                 return cheetah.Marker(name=name)
         elif bmad_parsed["element_type"] == "instrument":
@@ -474,19 +481,25 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 ["element_type", "alias", "type", "l"], bmad_parsed
             )
             if "l" in bmad_parsed:
-                return cheetah.Drift(length=torch.tensor([bmad_parsed["l"]]), name=name)
+                return cheetah.Drift(
+                    length=torch.tensor([bmad_parsed["l"]]), name=name, device=device
+                )
             else:
                 return cheetah.Marker(name=name)
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
                 ["element_type", "alias", "type", "l", "descrip"], bmad_parsed
             )
-            return cheetah.Drift(length=torch.tensor([bmad_parsed["l"]]), name=name)
+            return cheetah.Drift(
+                length=torch.tensor([bmad_parsed["l"]]), name=name, device=device
+            )
         elif bmad_parsed["element_type"] == "drift":
             validate_understood_properties(
                 ["element_type", "l", "type", "descrip"], bmad_parsed
             )
-            return cheetah.Drift(length=torch.tensor([bmad_parsed["l"]]), name=name)
+            return cheetah.Drift(
+                length=torch.tensor([bmad_parsed["l"]]), name=name, device=device
+            )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(
                 ["element_type", "type", "alias"], bmad_parsed
@@ -495,6 +508,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 length=torch.tensor([bmad_parsed.get("l", 0.0)]),
                 angle=torch.tensor([bmad_parsed.get("kick", 0.0)]),
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
@@ -504,6 +518,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 length=torch.tensor([bmad_parsed.get("l", 0.0)]),
                 angle=torch.tensor([bmad_parsed.get("kick", 0.0)]),
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "sbend":
             validate_understood_properties(
@@ -539,6 +554,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                     else None
                 ),
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
             # TODO: Aperture for quadrupoles?
@@ -551,6 +567,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 k1=torch.tensor([bmad_parsed["k1"]]),
                 tilt=torch.tensor([bmad_parsed.get("tilt", 0.0)]),
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(
@@ -560,6 +577,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 length=torch.tensor([bmad_parsed["l"]]),
                 k=torch.tensor([bmad_parsed["ks"]]),
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "lcavity":
             validate_understood_properties(
@@ -584,6 +602,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 ),
                 frequency=torch.tensor([bmad_parsed["rf_frequency"]]),
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
@@ -595,6 +614,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 y_max=torch.tensor([bmad_parsed.get("y_limit", np.inf)]),
                 shape="rectangular",
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "ecollimator":
             validate_understood_properties(
@@ -606,6 +626,7 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 y_max=torch.tensor([bmad_parsed.get("y_limit", np.inf)]),
                 shape="elliptical",
                 name=name,
+                device=device,
             )
         elif bmad_parsed["element_type"] == "wiggler":
             validate_understood_properties(
@@ -622,12 +643,16 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
                 ],
                 bmad_parsed,
             )
-            return cheetah.Undulator(length=torch.tensor([bmad_parsed["l"]]), name=name)
+            return cheetah.Undulator(
+                length=torch.tensor([bmad_parsed["l"]]), name=name, device=device
+            )
         elif bmad_parsed["element_type"] == "patch":
             # TODO: Does this need to be implemented in Cheetah in a more proper way?
             validate_understood_properties(["element_type", "tilt"], bmad_parsed)
             return cheetah.Drift(
-                length=torch.tensor([bmad_parsed.get("l", 0.0)]), name=name
+                length=torch.tensor([bmad_parsed.get("l", 0.0)]),
+                name=name,
+                device=device,
             )
         else:
             print(
@@ -636,14 +661,18 @@ def convert_element(name: str, context: dict) -> "cheetah.Element":
             )
             # TODO: Remove the length if by adding markers to Cheeath
             return cheetah.Drift(
-                name=name, length=torch.tensor([bmad_parsed.get("l", 0.0)])
+                name=name,
+                length=torch.tensor([bmad_parsed.get("l", 0.0)]),
+                device=device,
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")
 
 
 def convert_bmad_lattice(
-    bmad_lattice_file_path: Path, environment_variables: Optional[dict] = None
+    bmad_lattice_file_path: Path,
+    environment_variables: Optional[dict] = None,
+    device: Optional[Union[str, torch.device]] = None,
 ) -> "cheetah.Element":
     """
     Convert a Bmad lattice file to a Cheetah `Segment`.
@@ -656,6 +685,8 @@ def convert_bmad_lattice(
     :param bmad_lattice_file_path: Path to the Bmad lattice file.
     :param environment_variables: Dictionary of environment variables to use when
         parsing the lattice file.
+    :param device: Device to use for the lattice. If `None`, the device is set to
+        `torch.device("cpu")`.
     :return: Cheetah `Segment` representing the Bmad lattice.
     """
 
@@ -693,4 +724,4 @@ def convert_bmad_lattice(
     context = parse_lines(merged_lines)
 
     # Convert the parsed lattice info to Cheetah elements
-    return convert_element(context["__use__"], context)
+    return convert_element(context["__use__"], context, device)

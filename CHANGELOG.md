@@ -4,19 +4,22 @@
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173) (@jank324, @cr-xu)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198) (@jank324, @cr-xu)
 
 ### 🚀 Features
 
 - `CustomTransferMap` elements created by combining multiple other elements will now reflect that in their `name` attribute (see #100) (@jank324)
 - Add a new class method for `ParticleBeam` to generate a 3D uniformly distributed ellipsoidal beam (see #146) (@cr-xu, @jank324)
 - Add Python 3.12 support (see #161) (@jank324)
+- Implement space charge using Green's function in a `SpaceChargeKick` element (see #142) (@greglenerd, @RemiLehe, @ax3l, @cr-xu, @jank324)
+- `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` (see #196) (@jank324)
 
 ### 🐛 Bug fixes
 
 - Now all `Element` have a default length of `torch.zeros((1))`, fixing occasional issues with using elements without length, such as `Marker`, `BPM`, `Screen`, and `Aperture`. (see #143) (@cr-xu)
 - Fix bug in `Cavity` `_track_beam` (see #150) (@jp-ga)
 - Fix issue where dipoles would not get a unique name by default (see #186) (@hespe)
+- Add `name` to `Drift` element `__repr__` (see #201) (@ansantam)
 
 ### 🐆 Other
 
