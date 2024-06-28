@@ -12,7 +12,7 @@
 - Add a new class method for `ParticleBeam` to generate a 3D uniformly distributed ellipsoidal beam (see #146) (@cr-xu, @jank324)
 - Add Python 3.12 support (see #161) (@jank324)
 - Implement space charge using Green's function in a `SpaceChargeKick` element (see #142) (@greglenerd, @RemiLehe, @ax3l, @cr-xu, @jank324)
-- `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` (see #196) (@jank324)
+- `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` and dtypes other than `torch.float32` (see #196, #206) (@jank324)
 
 ### 🐛 Bug fixes
 
