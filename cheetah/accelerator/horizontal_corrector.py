@@ -52,3 +52,10 @@ class HorizontalCorrector(Corrector):
     @angle.setter
     def angle(self, value: torch.Tensor) -> None:
         self.horizontal_angle = value
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "length",
+            "angle",
+        ]
