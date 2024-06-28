@@ -57,48 +57,6 @@ class Corrector(Element):
             else torch.zeros_like(self.length)
         )
 
-    def horizontal_transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
-
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-        beta = torch.sqrt(1 - igamma2)
-
-        h_tm = torch.eye(7, device=device, dtype=dtype).repeat(
-            (*self.length.shape, 1, 1)
-        )
-        h_tm[..., 0, 1] = self.length
-        h_tm[..., 1, 6] = self.horizontal_angle
-        h_tm[..., 2, 3] = self.length
-        h_tm[..., 4, 5] = -self.length / beta**2 * igamma2
-
-        # print(h_tm)
-
-        return h_tm
-
-    def vertical_transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
-
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-        beta = torch.sqrt(1 - igamma2)
-
-        v_tm = torch.eye(7, device=device, dtype=dtype).repeat(
-            (*self.length.shape, 1, 1)
-        )
-        v_tm[..., 0, 1] = self.length
-        v_tm[..., 2, 3] = self.length
-        v_tm[..., 3, 6] = self.vertical_angle
-        v_tm[..., 4, 5] = -self.length / beta**2 * igamma2
-
-        # print(v_tm)
-
-        return v_tm
-
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
