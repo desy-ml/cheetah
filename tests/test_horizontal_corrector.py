@@ -10,7 +10,7 @@ def test_horizontal_corrector_off():
     """
     corrector = HorizontalCorrector(
         length=torch.tensor([0.3]),
-        horizontal_angle=torch.tensor([0.0]),
+        angle=torch.tensor([0.0]),
     )
     drift = Drift(length=torch.tensor([1.0]))
     incoming_beam = ParameterBeam.from_twiss(
@@ -21,48 +21,32 @@ def test_horizontal_corrector_off():
     outbeam_corrector_off = corrector(incoming_beam)
     outbeam_drift = drift(incoming_beam)
 
-    corrector.horizontal_angle = torch.tensor(
-        [7.0], device=corrector.horizontal_angle.device
-    )
+    corrector.angle = torch.tensor([7.0], device=corrector.angle.device)
     outbeam_corrector_on = corrector(incoming_beam)
 
     assert corrector.name is not None
     assert torch.allclose(outbeam_corrector_off.mu_xp, outbeam_drift.mu_xp)
     assert torch.allclose(outbeam_corrector_on.mu_yp, outbeam_drift.mu_yp)
-    assert torch.allclose(outbeam_corrector_on.mu_xp, corrector.horizontal_angle)
+    assert torch.allclose(outbeam_corrector_on.mu_xp, corrector.angle)
     assert not torch.allclose(outbeam_corrector_on.mu_xp, outbeam_drift.mu_xp)
 
 
-def test_horizontal_angle_only():
-    """
-    Test that the horizontal corrector behaves as expected.
-    """
+def test_vertical_angle_property():
     try:
         HorizontalCorrector(
             length=torch.tensor([0.3]),
-            horizontal_angle=torch.tensor([5.0]),
-            vertical_angle=torch.tensor([7.0]),
+            vertical_angle=torch.tensor([0.0]),
         )
     except TypeError:
         pass
 
-    HorizontalCorrector(
-        length=torch.tensor([0.3]),
-        horizontal_angle=torch.tensor([5.0]),
-    )
 
-    corrector = HorizontalCorrector(
-        length=torch.tensor([0.3]),
-        horizontal_angle=torch.tensor([5.0]),
-    )
-    print(corrector.horizontal_angle)
-
+def test_horizontal_angle_property():
     try:
-        corrector = HorizontalCorrector(
+        HorizontalCorrector(
             length=torch.tensor([0.3]),
-            horizontal_angle=torch.tensor([5.0]),
+            vertical_angle=torch.tensor([0.0]),
         )
-        print(corrector.vertical_angle)
     except TypeError:
         pass
 
@@ -80,7 +64,7 @@ def test_corrector_batched_execution():
         [
             HorizontalCorrector(
                 length=torch.tensor([0.04, 0.04, 0.04]),
-                horizontal_angle=torch.tensor([0.001, 0.003, 0.001]),
+                angle=torch.tensor([0.001, 0.003, 0.001]),
             ),
             Drift(length=torch.tensor([0.5])).broadcast(batch_shape),
         ]

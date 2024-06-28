@@ -24,16 +24,23 @@ class HorizontalCorrector(Corrector):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        horizontal_angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        # vertical_angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
     ):
         super().__init__(
             length=length,
-            horizontal_angle=horizontal_angle,
+            horizontal_angle=angle,
             name=name,
             device=device,
             dtype=dtype,
         )
+
+    @property
+    def angle(self) -> torch.Tensor:
+        return self.horizontal_angle
+
+    @angle.setter
+    def angle(self, value: torch.Tensor) -> None:
+        self.horizontal_angle = value
