@@ -1,11 +1,12 @@
 from typing import Optional, Union
 
 import torch
-from torch import nn
+from torch import Size, nn
 
 from cheetah.utils import UniqueNameGenerator
 
 from .corrector import Corrector
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -35,6 +36,13 @@ class VerticalCorrector(Corrector):
             name=name,
             device=device,
             dtype=dtype,
+        )
+
+    def broadcast(self, shape: Size) -> Element:
+        return self.__class__(
+            length=self.length.repeat(shape),
+            angle=self.angle,
+            name=self.name,
         )
 
     @property
