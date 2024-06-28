@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pyoptics.tfsdata as tfs
 import torch
@@ -53,7 +54,7 @@ def convert_madx_element(df_row):
     # HGAP --> param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
     # NAME --> param name: Unique identifier of the element.
 
-    # Ignored:
+    # Not available in Cheetah:
     # - K0L: The integrated strength of the dipole component of the field in the magnet.
 
     if df_row.keyword == "rbend":
@@ -74,17 +75,18 @@ def convert_madx_element(df_row):
 
     # L --> param length: Length in meters.
     # K1L (1/m) --> param k1: Strength of the quadrupole in rad/m.
-    # not available :param misalignment: Misalignment vector of the quadrupole in
-    # x- and y-directions.
+    # ! VERIFICATION NEEDED THAT K1L UNITS ARE CORRECT (SIN MIGHT BE MISSING)
+    # not available in MAD-X: param misalignment: Misalignment vector of the quadrupole
+    # in x- and y-directions.
     # TILT (rad) --> param tilt: Tilt angle of the quadrupole in x-y plane [rad].
-    # pi/4 for skew-quadrupole.
+    #   pi/4 for skew-quadrupole.
 
     # Not available in Cheetah:
     # - K1S (m^-2): skew quadrupole coeff.
     # - KTAP: The relative change of the quadrupoles strengths (both K1 and K1S)
-    # to account for energy change of the reference particle due to RF cavities or
-    # synchrotron radiation. The actual strength of the quadrupole is calculated
-    # as K1act = K1 * (1 + KTAP)
+    #   to account for energy change of the reference particle due to RF cavities or
+    #   synchrotron radiation. The actual strength of the quadrupole is calculated
+    #   as K1act = K1 * (1 + KTAP)
 
     elif df_row.keyword == "quadrupole":
         return cheetah.Quadrupole(
@@ -93,6 +95,47 @@ def convert_madx_element(df_row):
             tilt=torch.tensor([df_row.tilt]),
             name=df_row["name"],
         )
+
+    # KICKERS -------------------------------------------------------------------
+
+    # Horizontal and vertical magnetic correctors
+    # L --> param length: Length in meters.
+    # HKICK/VKICK --> ARCSIN(param angle): Particle deflection angle in the
+    #   horizontal plane in rad.
+    # HKICK/VKICK is the momentum change DPX/DP0 or DPY/DP0. In order to get
+    #   the deviation angle:
+    #   sin(angle) = HKICK = DPX/DP0
+    #   sin(angle) = VKICK = DPX/DP0
+
+    # Not available in Cheetah:
+    # - TILT (rad): The roll angle about the longitudinal axis
+
+    elif df_row.keyword == "hkicker":
+        return cheetah.HorizontalCorrector(
+            length=torch.tensor([df_row.l]),
+            angle=torch.tensor([np.arcsin(df_row.hkick)]),
+            name=df_row["name"],
+        )
+
+    elif df_row.keyword == "vkicker":
+        return cheetah.VerticalCorrector(
+            length=torch.tensor([df_row.l]),
+            angle=torch.tensor([np.arcsin(df_row.vkick)]),
+            name=df_row["name"],
+        )
+
+    # Corrector for both planes
+    # NOT AVAILABLE IN CHEETAH YET
+    # elif df_row.keyword == "kicker":
+    #     return cheetah.Corrector(
+    #         length=torch.tensor([df_row.l]),
+    #         angle_v=torch.tensor([np.arcsin(df_row.vkick)]),
+    #         angle_h=torch.tensor([np.arcsin(df_row.hkick)]),
+    #         name=df_row["name"],
+    #     )
+
+    # UNKNOWN ELEMENTS -----------------------------------------------------------------
+    # Transformed to drifts and keeping the original name
     else:
         print(df_row["name"])
         return cheetah.Drift(
