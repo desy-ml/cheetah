@@ -3,6 +3,7 @@ from cheetah.accelerator import (  # noqa: F401
     BPM,
     Aperture,
     Cavity,
+    Corrector,
     CustomTransferMap,
     Dipole,
     Drift,
