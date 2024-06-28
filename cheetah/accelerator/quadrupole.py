@@ -19,7 +19,7 @@ class Quadrupole(Element):
     Quadrupole magnet in a particle accelerator.
 
     :param length: Length in meters.
-    :param k1: Strength of the quadrupole in rad/m.
+    :param k1: Strength of the quadrupole in 1/m^-2.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
