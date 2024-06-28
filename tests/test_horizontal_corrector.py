@@ -1,17 +1,16 @@
 import torch
 
-from cheetah import Corrector, Drift, ParameterBeam, ParticleBeam, Segment
+from cheetah import Drift, HorizontalCorrector, ParameterBeam, ParticleBeam, Segment
 
 
-def test_corrector_off():
+def test_horizontal_corrector_off():
     """
-    Test that a corrector with horizontal_angle=0 and vertical_angle=0 behaves
-    still like a drift.
+    Test that a corrector with horizontal_angle=0 behaves
+    still like a drift and that the angle translates properly.
     """
-    corrector = Corrector(
+    corrector = HorizontalCorrector(
         length=torch.tensor([0.3]),
         horizontal_angle=torch.tensor([0.0]),
-        vertical_angle=torch.tensor([0.0]),
     )
     drift = Drift(length=torch.tensor([1.0]))
     incoming_beam = ParameterBeam.from_twiss(
@@ -23,25 +22,55 @@ def test_corrector_off():
     outbeam_drift = drift(incoming_beam)
 
     corrector.horizontal_angle = torch.tensor(
-        [2.0], device=corrector.horizontal_angle.device
-    )
-    corrector.vertical_angle = torch.tensor(
-        [2.0], device=corrector.vertical_angle.device
+        [7.0], device=corrector.horizontal_angle.device
     )
     outbeam_corrector_on = corrector(incoming_beam)
 
-    print(outbeam_corrector_off)
-    print(outbeam_drift)
-    print(outbeam_corrector_on)
-
     assert corrector.name is not None
     assert torch.allclose(outbeam_corrector_off.mu_xp, outbeam_drift.mu_xp)
-    assert torch.allclose(outbeam_corrector_off.mu_yp, outbeam_drift.mu_yp)
+    assert torch.allclose(outbeam_corrector_on.mu_yp, outbeam_drift.mu_yp)
+    assert torch.allclose(outbeam_corrector_on.mu_xp, corrector.horizontal_angle)
     assert not torch.allclose(outbeam_corrector_on.mu_xp, outbeam_drift.mu_xp)
-    assert not torch.allclose(outbeam_corrector_on.mu_yp, outbeam_drift.mu_yp)
 
 
-test_corrector_off()
+def test_horizontal_angle_only():
+    """
+    Test that the horizontal corrector behaves as expected.
+    """
+    try:
+        HorizontalCorrector(
+            length=torch.tensor([0.3]),
+            horizontal_angle=torch.tensor([5.0]),
+            vertical_angle=torch.tensor([7.0]),
+        )
+    except TypeError:
+        assert True
+
+    try:
+        HorizontalCorrector(
+            length=torch.tensor([0.3]),
+            horizontal_angle=torch.tensor([5.0]),
+        )
+    except TypeError:
+        assert False
+
+    try:
+        corrector = HorizontalCorrector(
+            length=torch.tensor([0.3]),
+            horizontal_angle=torch.tensor([5.0]),
+        )
+        print(corrector.horizontal_angle)
+    except TypeError:
+        assert False
+
+    try:
+        corrector = HorizontalCorrector(
+            length=torch.tensor([0.3]),
+            horizontal_angle=torch.tensor([5.0]),
+        )
+        print(corrector.vertical_angle)
+    except TypeError:
+        assert True
 
 
 def test_corrector_batched_execution():
@@ -55,10 +84,9 @@ def test_corrector_batched_execution():
     ).broadcast(batch_shape)
     segment = Segment(
         [
-            Corrector(
+            HorizontalCorrector(
                 length=torch.tensor([0.04, 0.04, 0.04]),
                 horizontal_angle=torch.tensor([0.001, 0.003, 0.001]),
-                vertical_angle=torch.tensor([0.001, 0.002, 0.001]),
             ),
             Drift(length=torch.tensor([0.5])).broadcast(batch_shape),
         ]
