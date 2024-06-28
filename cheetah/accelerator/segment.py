@@ -202,7 +202,11 @@ class Segment(Element):
                     if (hasattr(element, "is_active") and element.is_active)
                     or element.length == 0.0
                     or element.name in except_for
-                    else Drift(element.length)
+                    else Drift(
+                        element.length,
+                        device=element.length.device,
+                        dtype=element.length.dtype,
+                    )
                 )
                 for element in self.elements
             ],
