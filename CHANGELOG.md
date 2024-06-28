@@ -5,6 +5,7 @@
 ### 🚨 Breaking Changes
 
 - Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198) (@jank324, @cr-xu)
+- New `Corrector` class and modification of `HorizontalCorrector` and `VerticalCorrector` properties (see #207) (@ansantam)
 
 ### 🚀 Features
 
