@@ -44,24 +44,18 @@ def test_vertical_angle_only():
             horizontal_angle=torch.tensor([7.0]),
         )
     except TypeError:
-        assert True
+        pass
 
-    try:
-        VerticalCorrector(
-            length=torch.tensor([0.3]),
-            vertical_angle=torch.tensor([5.0]),
-        )
-    except TypeError:
-        assert False
+    VerticalCorrector(
+        length=torch.tensor([0.3]),
+        vertical_angle=torch.tensor([5.0]),
+    )
 
-    try:
-        corrector = VerticalCorrector(
-            length=torch.tensor([0.3]),
-            vertical_angle=torch.tensor([5.0]),
-        )
-        print(corrector.vertical_angle)
-    except TypeError:
-        assert False
+    corrector = VerticalCorrector(
+        length=torch.tensor([0.3]),
+        vertical_angle=torch.tensor([5.0]),
+    )
+    print(corrector.vertical_angle)
 
     try:
         corrector = VerticalCorrector(
@@ -70,7 +64,7 @@ def test_vertical_angle_only():
         )
         print(corrector.horizontal_angle)
     except TypeError:
-        assert True
+        pass
 
 
 def test_corrector_batched_execution():
