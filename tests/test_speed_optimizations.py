@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -160,6 +161,27 @@ def test_active_elements_not_replaced_by_drift():
     optimized_segment = segment.inactive_elements_as_drifts()
 
     assert isinstance(optimized_segment.elements[1], cheetah.Quadrupole)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
+    """
+    Test that when an inactive magnet is replaced by a drift, the drift has the same
+    dtype as the original element.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor([0.6]), dtype=dtype),
+            cheetah.Quadrupole(
+                length=torch.tensor([0.2]), k1=torch.tensor([0.0]), dtype=dtype
+            ),
+            cheetah.Drift(length=torch.tensor([0.4]), dtype=dtype),
+        ]
+    )
+
+    optimized_segment = segment.inactive_elements_as_drifts()
+
+    assert all(element.length.dtype == dtype for element in optimized_segment.elements)
 
 
 def test_skippable_elements_reset():
