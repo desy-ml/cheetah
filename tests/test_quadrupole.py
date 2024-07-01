@@ -124,3 +124,35 @@ def test_tilted_quadrupole_multiple_batch_dimension():
     outgoing = segment(incoming)
 
     assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[0, 1])
+
+
+def test_quadrupole_bmadx_tracking():
+    incoming_beam = torch.load("tests/resources/quadrupole_bmadx/incoming_beam.pt")
+    # quadrupole params
+    l_quad = torch.tensor([1.0])
+    k1_quad = torch.tensor([10.0])
+    tilt = torch.tensor([0.5])
+    offsets = torch.tensor([0.01, -0.02])
+    # bmadx tracking method
+    cheetah_quad_bmadx = Quadrupole(
+        l_quad,
+        k1_quad,
+        misalignment=offsets,
+        tilt=tilt,
+        num_steps=10,
+        tracking_method="bmadx",
+        dtype=torch.double,
+    )
+    cheetah_segment_bmadx = Segment(elements=[cheetah_quad_bmadx])
+    cheetah_bmadx_outgoing_beam = cheetah_segment_bmadx.track(incoming_beam)
+    # load result from bmadx library
+    bmadx_out_with_cheetah_coords = torch.load(
+        "tests/resources/quadrupole_bmadx/bmadx_out_with_cheetah_coords.pt"
+    )
+
+    assert torch.allclose(
+        bmadx_out_with_cheetah_coords,
+        cheetah_bmadx_outgoing_beam.particles,
+        atol=1e-7,
+        rtol=1e-7,
+    )
