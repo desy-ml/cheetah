@@ -96,3 +96,30 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.alpha_y.cpu().numpy(), 2e-7)
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
+
+
+def test_from_twiss_dtype():
+    """
+    Test that a `ParameterBeam` created from twiss parameters has the requested `dtype`.
+    """
+    beam = ParameterBeam.from_twiss(
+        beta_x=torch.tensor([5.91253676811640894]),
+        alpha_x=torch.tensor([3.55631307633660354]),
+        emittance_x=torch.tensor([3.494768647122823e-09]),
+        beta_y=torch.tensor([5.91253676811640982]),
+        alpha_y=torch.tensor([2e-7]),
+        emittance_y=torch.tensor([3.497810737006068e-09]),
+        energy=torch.tensor([6e6]),
+        dtype=torch.float64,
+    )
+
+    assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894)
+    assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55631307633660354)
+    assert np.isclose(beam.emittance_x.cpu().numpy(), 3.494768647122823e-09)
+    assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982)
+    assert np.isclose(beam.alpha_y.cpu().numpy(), 2e-7)
+    assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
+    assert np.isclose(beam.energy.cpu().numpy(), 6e6)
+
+    assert beam._mu.dtype == torch.float64
+    assert beam._cov.dtype == torch.float64

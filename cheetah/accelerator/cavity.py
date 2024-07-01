@@ -62,7 +62,7 @@ class Cavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return any(self.voltage != 0)
+        return torch.any(self.voltage != 0)
 
     @property
     def is_skippable(self) -> bool:
