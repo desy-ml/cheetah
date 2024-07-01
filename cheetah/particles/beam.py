@@ -279,10 +279,12 @@ class Beam(nn.Module):
 
     @property
     def relativistic_gamma(self) -> torch.Tensor:
+        """Reference relativistic gamma of the beam."""
         return self.energy / electron_mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
+        """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
         relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = torch.sqrt(
             1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0] ** 2)
