@@ -37,7 +37,7 @@ def test_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_s=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
         sigma_xp=torch.tensor([1e-15]),
         sigma_yp=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
@@ -65,7 +65,7 @@ def test_cold_uniform_beam_expansion():
 
     assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
     assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.isclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized():
@@ -90,7 +90,7 @@ def test_vectorized():
         energy=energy.repeat(3, 2),
         radius_x=R0.repeat(3, 2),
         radius_y=R0.repeat(3, 2),
-        radius_s=(R0 / gamma).repeat(
+        radius_tau=(R0 / gamma).repeat(
             3, 2
         ),  # Radius of the beam in s direction in the lab frame
         sigma_xp=torch.tensor([1e-15]).repeat(3, 2),
@@ -143,7 +143,7 @@ def test_vectorized_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_s=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
         sigma_xp=torch.tensor([1e-15]),
         sigma_yp=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
@@ -171,7 +171,7 @@ def test_vectorized_cold_uniform_beam_expansion():
 
     assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
     assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_s, 2 * incoming.sigma_s, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
 
 
 def test_incoming_beam_not_modified():

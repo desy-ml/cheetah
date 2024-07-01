@@ -41,8 +41,8 @@ def test_from_twiss():
     assert torch.isclose(parameter_beam.mu_yp, particle_beam.mu_yp, atol=1e-6)
     assert torch.isclose(parameter_beam.sigma_xp, particle_beam.sigma_xp, rtol=1e-3)
     assert torch.isclose(parameter_beam.sigma_yp, particle_beam.sigma_yp, rtol=1e-3)
-    assert torch.isclose(parameter_beam.mu_s, particle_beam.mu_s)
-    assert torch.isclose(parameter_beam.sigma_s, particle_beam.sigma_s)
+    assert torch.isclose(parameter_beam.mu_tau, particle_beam.mu_tau)
+    assert torch.isclose(parameter_beam.sigma_tau, particle_beam.sigma_tau)
     assert torch.isclose(parameter_beam.mu_p, particle_beam.mu_p)
     assert torch.isclose(parameter_beam.sigma_p, particle_beam.sigma_p)
 

@@ -17,7 +17,7 @@ def test_astra_to_parameter_beam():
     assert np.allclose(beam.sigma_xp.cpu().numpy(), 3.679402198031312e-06)
     assert np.allclose(beam.sigma_y.cpu().numpy(), 0.00017519544053357095)
     assert np.allclose(beam.sigma_yp.cpu().numpy(), 3.6941000871593133e-06)
-    assert np.allclose(beam.sigma_s.cpu().numpy(), 8.011552381503861e-06)
+    assert np.allclose(beam.sigma_tau.cpu().numpy(), 8.011552381503861e-06)
     assert np.allclose(beam.sigma_p.cpu().numpy(), 0.0022804534528404474)
     assert np.allclose(beam.energy.cpu().numpy(), 107315902.44394557)
     assert np.allclose(beam.total_charge.cpu().numpy(), 5.000000000010205e-13)
@@ -37,7 +37,7 @@ def test_astra_to_particle_beam():
     assert np.allclose(beam.sigma_xp.cpu().numpy(), 3.679402198031312e-06)
     assert np.allclose(beam.sigma_y.cpu().numpy(), 0.00017519544053357095)
     assert np.allclose(beam.sigma_yp.cpu().numpy(), 3.6941000871593133e-06)
-    assert np.allclose(beam.sigma_s.cpu().numpy(), 8.011552381503861e-06)
+    assert np.allclose(beam.sigma_tau.cpu().numpy(), 8.011552381503861e-06)
     assert np.allclose(beam.sigma_p.cpu().numpy(), 0.0022804534528404474)
     assert np.allclose(beam.energy.cpu().numpy(), 107315902.44394557)
     assert np.allclose(beam.total_charge.cpu().numpy(), 5.000000000010205e-13)
@@ -55,7 +55,7 @@ def test_astra_to_parameter_beam_dtypes():
     assert beam.sigma_xp.dtype == torch.float32
     assert beam.sigma_y.dtype == torch.float32
     assert beam.sigma_yp.dtype == torch.float32
-    assert beam.sigma_s.dtype == torch.float32
+    assert beam.sigma_tau.dtype == torch.float32
     assert beam.sigma_p.dtype == torch.float32
     assert beam.energy.dtype == torch.float32
     assert beam.total_charge.dtype == torch.float32

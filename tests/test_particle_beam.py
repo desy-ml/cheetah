@@ -18,11 +18,11 @@ def test_create_from_parameters():
         sigma_xp=torch.tensor([2e-7]),
         sigma_y=torch.tensor([1.75e-7]),
         sigma_yp=torch.tensor([2e-7]),
-        sigma_s=torch.tensor([0.000001]),
+        sigma_tau=torch.tensor([0.000001]),
         sigma_p=torch.tensor([0.000001]),
         cor_x=torch.tensor([0.0]),
         cor_y=torch.tensor([0.0]),
-        cor_s=torch.tensor([0.0]),
+        cor_tau=torch.tensor([0.0]),
         energy=torch.tensor([1e7]),
         total_charge=torch.tensor([1e-9]),
     )
@@ -36,7 +36,7 @@ def test_create_from_parameters():
     assert np.isclose(beam.sigma_xp.cpu().numpy(), 2e-7)
     assert np.isclose(beam.sigma_y.cpu().numpy(), 1.75e-7)
     assert np.isclose(beam.sigma_yp.cpu().numpy(), 2e-7)
-    assert np.isclose(beam.sigma_s.cpu().numpy(), 0.000001)
+    assert np.isclose(beam.sigma_tau.cpu().numpy(), 0.000001)
     assert np.isclose(beam.sigma_p.cpu().numpy(), 0.000001)
     assert np.isclose(beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(beam.total_charge.cpu().numpy(), 1e-9)
@@ -57,7 +57,7 @@ def test_transform_to():
         sigma_xp=torch.tensor([2e-7]),
         sigma_y=torch.tensor([1.75e-7]),
         sigma_yp=torch.tensor([2e-7]),
-        sigma_s=torch.tensor([0.000001]),
+        sigma_tau=torch.tensor([0.000001]),
         sigma_p=torch.tensor([0.000001]),
         energy=torch.tensor([1e7]),
         total_charge=torch.tensor([1e-9]),
@@ -74,7 +74,7 @@ def test_transform_to():
     assert np.isclose(transformed_beam.sigma_xp.cpu().numpy(), 2e-7)
     assert np.isclose(transformed_beam.sigma_y.cpu().numpy(), 1.75e-7)
     assert np.isclose(transformed_beam.sigma_yp.cpu().numpy(), 2e-7)
-    assert np.isclose(transformed_beam.sigma_s.cpu().numpy(), 0.000001)
+    assert np.isclose(transformed_beam.sigma_tau.cpu().numpy(), 0.000001)
     assert np.isclose(transformed_beam.sigma_p.cpu().numpy(), 0.000001)
     assert np.isclose(transformed_beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(transformed_beam.total_charge.cpu().numpy(), 1e-9)
@@ -113,7 +113,7 @@ def test_generate_uniform_ellipsoid_batched():
     """
     radius_x = torch.tensor([1e-3, 2e-3])
     radius_y = torch.tensor([1e-4, 2e-4])
-    radius_s = torch.tensor([1e-5, 2e-5])
+    radius_tau = torch.tensor([1e-5, 2e-5])
 
     num_particles = torch.tensor(1_000_000)
     sigma_xp = torch.tensor([2e-7, 1e-7])
@@ -127,7 +127,7 @@ def test_generate_uniform_ellipsoid_batched():
         num_particles=num_particles,
         radius_x=radius_x,
         radius_y=radius_y,
-        radius_s=radius_s,
+        radius_tau=radius_tau,
         sigma_xp=sigma_xp,
         sigma_yp=sigma_yp,
         sigma_p=sigma_p,
@@ -138,7 +138,7 @@ def test_generate_uniform_ellipsoid_batched():
     assert beam.num_particles == num_particles
     assert torch.all(beam.xs.abs().transpose(0, 1) <= radius_x)
     assert torch.all(beam.ys.abs().transpose(0, 1) <= radius_y)
-    assert torch.all(beam.ss.abs().transpose(0, 1) <= radius_s)
+    assert torch.all(beam.taus.abs().transpose(0, 1) <= radius_tau)
     assert torch.allclose(beam.sigma_xp, sigma_xp)
     assert torch.allclose(beam.sigma_yp, sigma_yp)
     assert torch.allclose(beam.sigma_p, sigma_p)

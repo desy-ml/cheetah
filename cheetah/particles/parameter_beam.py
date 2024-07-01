@@ -10,9 +10,9 @@ class ParameterBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
 
-    :param mu: Mu vector of the beam.
-    :param cov: Covariance matrix of the beam.
-    :param energy: Energy of the beam in eV.
+    :param mu: Mu vector of the beam (..., 7).
+    :param cov: Covariance matrix of the beam (..., 7, 7).
+    :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
@@ -51,11 +51,11 @@ class ParameterBeam(Beam):
         sigma_xp: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_yp: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         cor_x: Optional[torch.Tensor] = None,
         cor_y: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -73,11 +73,11 @@ class ParameterBeam(Beam):
                 sigma_xp,
                 sigma_y,
                 sigma_yp,
-                sigma_s,
+                sigma_tau,
                 sigma_p,
                 cor_x,
                 cor_y,
-                cor_s,
+                cor_tau,
                 energy,
                 total_charge,
             ]
@@ -98,11 +98,11 @@ class ParameterBeam(Beam):
         sigma_xp = sigma_xp if sigma_xp is not None else torch.full(shape, 2e-7)
         sigma_y = sigma_y if sigma_y is not None else torch.full(shape, 175e-9)
         sigma_yp = sigma_yp if sigma_yp is not None else torch.full(shape, 2e-7)
-        sigma_s = sigma_s if sigma_s is not None else torch.full(shape, 1e-6)
+        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
         sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
         cor_x = cor_x if cor_x is not None else torch.full(shape, 0.0)
         cor_y = cor_y if cor_y is not None else torch.full(shape, 0.0)
-        cor_s = cor_s if cor_s is not None else torch.full(shape, 0.0)
+        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
         energy = energy if energy is not None else torch.full(shape, 1e8)
         total_charge = (
             total_charge if total_charge is not None else torch.full(shape, 0.0)
@@ -130,9 +130,9 @@ class ParameterBeam(Beam):
         cov[..., 2, 3] = cor_y
         cov[..., 3, 2] = cor_y
         cov[..., 3, 3] = sigma_yp**2
-        cov[..., 4, 4] = sigma_s**2
-        cov[..., 4, 5] = cor_s
-        cov[..., 5, 4] = cor_s
+        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 4, 5] = cor_tau
+        cov[..., 5, 4] = cor_tau
         cov[..., 5, 5] = sigma_p**2
 
         return cls(
@@ -153,9 +153,9 @@ class ParameterBeam(Beam):
         beta_y: Optional[torch.Tensor] = None,
         alpha_y: Optional[torch.Tensor] = None,
         emittance_y: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -171,9 +171,9 @@ class ParameterBeam(Beam):
                 beta_y,
                 alpha_y,
                 emittance_y,
-                sigma_s,
+                sigma_tau,
                 sigma_p,
-                cor_s,
+                cor_tau,
                 energy,
                 total_charge,
             ]
@@ -196,9 +196,9 @@ class ParameterBeam(Beam):
         emittance_y = (
             emittance_y if emittance_y is not None else torch.full(shape, 7.1971891e-13)
         )
-        sigma_s = sigma_s if sigma_s is not None else torch.full(shape, 1e-6)
+        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
         sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
-        cor_s = cor_s if cor_s is not None else torch.full(shape, 0.0)
+        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
         energy = energy if energy is not None else torch.full(shape, 1e8)
         total_charge = (
             total_charge if total_charge is not None else torch.full(shape, 0.0)
@@ -222,10 +222,10 @@ class ParameterBeam(Beam):
             sigma_xp=sigma_xp,
             sigma_y=sigma_y,
             sigma_yp=sigma_yp,
-            sigma_s=sigma_s,
+            sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
-            cor_s=cor_s,
+            cor_tau=cor_tau,
             cor_x=cor_x,
             cor_y=cor_y,
             total_charge=total_charge,
@@ -287,7 +287,7 @@ class ParameterBeam(Beam):
         sigma_xp: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_yp: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
@@ -297,18 +297,20 @@ class ParameterBeam(Beam):
         """
         Create version of this beam that is transformed to new beam parameters.
 
-        :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_xp: Center of the particle distribution on xp, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_yp: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_xp: Sigma of the particle distribution in xp direction,
+            dimensionless.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_yp: Sigma of the particle distribution in yp direction,
+            dimensionless.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
-        :param energy: Energy of the beam in eV.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
         device = device if device is not None else self.mu_x.device
@@ -328,7 +330,7 @@ class ParameterBeam(Beam):
                 sigma_xp,
                 sigma_y,
                 sigma_yp,
-                sigma_s,
+                sigma_tau,
                 sigma_p,
                 energy,
                 total_charge,
@@ -348,7 +350,7 @@ class ParameterBeam(Beam):
         sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
         sigma_y = sigma_y if sigma_y is not None else self.sigma_y
         sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
+        sigma_tau = sigma_tau if sigma_tau is not None else self.sigma_tau
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
@@ -362,7 +364,7 @@ class ParameterBeam(Beam):
             sigma_xp=sigma_xp,
             sigma_y=sigma_y,
             sigma_yp=sigma_yp,
-            sigma_s=sigma_s,
+            sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
@@ -403,11 +405,11 @@ class ParameterBeam(Beam):
         return torch.sqrt(torch.clamp_min(self._cov[..., 3, 3], 1e-20))
 
     @property
-    def mu_s(self) -> torch.Tensor:
+    def mu_tau(self) -> torch.Tensor:
         return self._mu[..., 4]
 
     @property
-    def sigma_s(self) -> torch.Tensor:
+    def sigma_tau(self) -> torch.Tensor:
         return torch.sqrt(torch.clamp_min(self._cov[..., 4, 4], 1e-20))
 
     @property
@@ -440,7 +442,7 @@ class ParameterBeam(Beam):
             f" mu_xp={repr(self.mu_xp)}, mu_y={repr(self.mu_y)},"
             f" mu_yp={repr(self.mu_yp)}, sigma_x={repr(self.sigma_x)},"
             f" sigma_xp={repr(self.sigma_xp)}, sigma_y={repr(self.sigma_y)},"
-            f" sigma_yp={repr(self.sigma_yp)}, sigma_s={repr(self.sigma_s)},"
+            f" sigma_yp={repr(self.sigma_yp)}, sigma_tau={repr(self.sigma_tau)},"
             f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
             f" total_charge={repr(self.total_charge)})"
         )
