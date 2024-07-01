@@ -6,8 +6,11 @@ from torch.distributions import MultivariateNormal
 
 from .beam import Beam
 
-speed_of_light = torch.tensor(constants.speed_of_light)
-electron_mass = torch.tensor(constants.electron_mass)
+speed_of_light = torch.tensor(constants.speed_of_light)  # in m/s
+electron_mass = torch.tensor(constants.electron_mass)  # in kg
+electron_mass_eV = torch.tensor(
+    constants.physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+)  # in eV
 
 
 class ParticleBeam(Beam):
@@ -278,7 +281,7 @@ class ParticleBeam(Beam):
         num_particles: Optional[torch.Tensor] = None,
         radius_x: Optional[torch.Tensor] = None,
         radius_y: Optional[torch.Tensor] = None,
-        radius_s: Optional[torch.Tensor] = None,
+        radius_tau: Optional[torch.Tensor] = None,
         sigma_xp: Optional[torch.Tensor] = None,
         sigma_yp: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
@@ -300,7 +303,7 @@ class ParticleBeam(Beam):
         :param num_particles: Number of particles to generate.
         :param radius_x: Radius of the ellipsoid in x direction in meters.
         :param radius_y: Radius of the ellipsoid in y direction in meters.
-        :param radius_s: Radius of the ellipsoid in s (longitudinal) direction
+        :param radius_tau: Radius of the ellipsoid in tau (longitudinal) direction
             in meters.
         :param sigma_xp: Sigma of the particle distribution in xp direction,
             dimensionless, default is 0.
@@ -321,7 +324,7 @@ class ParticleBeam(Beam):
             for argument in [
                 radius_x,
                 radius_y,
-                radius_s,
+                radius_tau,
                 sigma_xp,
                 sigma_yp,
                 sigma_p,
@@ -344,22 +347,24 @@ class ParticleBeam(Beam):
         )
         radius_x = radius_x if radius_x is not None else torch.full(shape, 1e-3)
         radius_y = radius_y if radius_y is not None else torch.full(shape, 1e-3)
-        radius_s = radius_s if radius_s is not None else torch.full(shape, 1e-3)
+        radius_tau = radius_tau if radius_tau is not None else torch.full(shape, 1e-3)
 
         # Generate xs, ys and ss within the ellipsoid
         flattened_xs = torch.empty(*shape, num_particles).flatten(end_dim=-2)
         flattened_ys = torch.empty(*shape, num_particles).flatten(end_dim=-2)
         flattened_taus = torch.empty(*shape, num_particles).flatten(end_dim=-2)
-        for i, (r_x, r_y, r_s) in enumerate(
-            zip(radius_x.flatten(), radius_y.flatten(), radius_s.flatten())
+        for i, (r_x, r_y, r_tau) in enumerate(
+            zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
         ):
             num_successful = 0
             while num_successful < num_particles:
                 xs = (torch.rand(num_particles) - 0.5) * 2 * r_x
                 ys = (torch.rand(num_particles) - 0.5) * 2 * r_y
-                ss = (torch.rand(num_particles) - 0.5) * 2 * r_s
+                taus = (torch.rand(num_particles) - 0.5) * 2 * r_tau
 
-                is_in_ellipsoid = xs**2 / r_x**2 + ys**2 / r_y**2 + ss**2 / r_s**2 < 1
+                is_in_ellipsoid = (
+                    xs**2 / r_x**2 + ys**2 / r_y**2 + taus**2 / r_tau**2 < 1
+                )
                 num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
 
                 flattened_xs[i, num_successful : num_successful + num_to_add] = xs[
@@ -368,7 +373,7 @@ class ParticleBeam(Beam):
                 flattened_ys[i, num_successful : num_successful + num_to_add] = ys[
                     is_in_ellipsoid
                 ][:num_to_add]
-                flattened_taus[i, num_successful : num_successful + num_to_add] = ss[
+                flattened_taus[i, num_successful : num_successful + num_to_add] = taus[
                     is_in_ellipsoid
                 ][:num_to_add]
 
@@ -391,7 +396,7 @@ class ParticleBeam(Beam):
         # Replace the spatial coordinates with the generated ones
         beam.xs = flattened_xs.view(*shape, num_particles)
         beam.ys = flattened_ys.view(*shape, num_particles)
-        beam.ss = flattened_taus.view(*shape, num_particles)
+        beam.taus = flattened_taus.view(*shape, num_particles)
 
         return beam
 
@@ -779,14 +784,14 @@ class ParticleBeam(Beam):
         """
         Extracts the position and momentum coordinates in SI units, from the
         beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
-        For each particle, the moment vector is $(x, p_x, y, p_y, z, p_z, 1)$.
+        For each particle, the obtained vector is $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         p0 = (
             self.relativistic_gamma
             * self.relativistic_beta
             * electron_mass
             * speed_of_light
-        )
+        )  # Reference momentum in (kg m/s)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
             torch.ones(self.particles.shape[:-1])
             + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
@@ -796,13 +801,13 @@ class ParticleBeam(Beam):
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
-        s = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
+        zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
         ps = torch.sqrt(p**2 - px**2 - py**2)
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px
         xp_coords[..., 3] = py
-        xp_coords[..., 4] = s
+        xp_coords[..., 4] = zs
         xp_coords[..., 5] = ps
 
         return xp_coords
