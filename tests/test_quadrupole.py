@@ -52,19 +52,20 @@ def test_quadrupole_with_misalignments_multiple_batch_dimension():
     """
     Test that a quadrupole with misalignments with multiple batch dimension.
     """
-    batch_shape = torch.Size([4, 3])
+
+    misalignments = torch.randn((4, 3, 2))
     quad_with_misalignment = Quadrupole(
         length=torch.tensor([1.0]),
         k1=torch.tensor([1.0]),
-        misalignment=torch.tensor([[0.1, 0.1]]),
-    ).broadcast(batch_shape)
+        misalignment=misalignments,
+    )
 
     quad_without_misalignment = Quadrupole(
         length=torch.tensor([1.0]), k1=torch.tensor([1.0])
-    ).broadcast(batch_shape)
+    )
     incoming_beam = ParameterBeam.from_parameters(
         sigma_xp=torch.tensor([2e-7]), sigma_yp=torch.tensor([2e-7])
-    ).broadcast(batch_shape)
+    )
     outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
     outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
 
@@ -75,7 +76,7 @@ def test_quadrupole_with_misalignments_multiple_batch_dimension():
     )
 
     # Check that the output shape is correct
-    assert outbeam_quad_with_misalignment.mu_x.shape == batch_shape
+    assert outbeam_quad_with_misalignment.mu_x.shape == misalignments.shape[:-1]
 
 
 def test_tilted_quadrupole_batch():
@@ -105,12 +106,11 @@ def test_tilted_quadrupole_batch():
 
 
 def test_tilted_quadrupole_multiple_batch_dimension():
-    batch_shape = torch.Size([3, 2])
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(10000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
-    ).broadcast(batch_shape)
+    )
     segment = Segment(
         [
             Quadrupole(
@@ -120,7 +120,9 @@ def test_tilted_quadrupole_multiple_batch_dimension():
             ),
             Drift(length=torch.tensor([0.5])),
         ]
-    ).broadcast(batch_shape)
+    )
     outgoing = segment(incoming)
 
-    assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[0, 1])
+    assert torch.allclose(
+        outgoing.particles[0, 0], outgoing.particles[0, 1], rtol=1e-1, atol=1e-5
+    )

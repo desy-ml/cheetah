@@ -72,9 +72,7 @@ def base_rmatrix(
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = torch.ones_like(cx) * length
-    sy[ky != 0] = (torch.sin(ky[ky != 0] * length) / ky[ky != 0]).real
-
+    sy = (torch.sin(ky * length) / ky).real
     sx = (torch.sin(kx * length) / kx).real
     dx = hx / kx2 * (1.0 - cx)
     r56 = hx**2 * (length - sx) / kx2 / beta**2
