@@ -55,10 +55,13 @@ class HorizontalCorrector(Corrector):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + [
-            "length",
-            "angle",
+        features_with_both_angles = super().defining_features
+        cleaned_features = [
+            feature
+            for feature in features_with_both_angles
+            if feature not in ["horizontal_angle", "vertical_angle"]
         ]
+        return cleaned_features + ["length", "angle"]
 
     def __repr__(self) -> str:
         return (
