@@ -20,16 +20,16 @@ electron_mass_eV = torch.tensor(
 
 class Corrector(Element):
     """
-    Corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the horizontal plane followed by
-        a thin-kick in the vertical plane.
+    Combined corrector magnet in a particle accelerator.
+
+    Note: This is modeled as a drift section with a thin-kick in the horizontal plane
+          followed by a thin-kick in the vertical plane.
 
     :param length: Length in meters.
-    :param horizontal_angle: Particle deflection horizontal_angle in
-        the horizontal plane in rad.
-    :param vertical_angle: Particle deflection vertical_angle in
-        the vertical plane in rad.
+    :param horizontal_angle: Particle deflection horizontal_angle in the horizontal
+        plane in rad.
+    :param vertical_angle: Particle deflection vertical_angle in the vertical plane in
+        rad.
     :param name: Unique identifier of the element.
     """
 
