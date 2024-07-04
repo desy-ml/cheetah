@@ -38,8 +38,8 @@ def test_cold_uniform_beam_expansion():
         radius_x=R0,
         radius_y=R0,
         radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_xp=torch.tensor([1e-15]),
-        sigma_yp=torch.tensor([1e-15]),
+        sigma_px=torch.tensor([1e-15]),
+        sigma_py=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
     )
 
@@ -93,8 +93,8 @@ def test_vectorized():
         radius_tau=(R0 / gamma).repeat(
             3, 2
         ),  # Radius of the beam in s direction in the lab frame
-        sigma_xp=torch.tensor([1e-15]).repeat(3, 2),
-        sigma_yp=torch.tensor([1e-15]).repeat(3, 2),
+        sigma_px=torch.tensor([1e-15]).repeat(3, 2),
+        sigma_py=torch.tensor([1e-15]).repeat(3, 2),
         sigma_p=torch.tensor([1e-15]).repeat(3, 2),
     )
 
@@ -144,8 +144,8 @@ def test_vectorized_cold_uniform_beam_expansion():
         radius_x=R0,
         radius_y=R0,
         radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_xp=torch.tensor([1e-15]),
-        sigma_yp=torch.tensor([1e-15]),
+        sigma_px=torch.tensor([1e-15]),
+        sigma_py=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
     ).broadcast(shape=(2, 3))
 
@@ -184,8 +184,8 @@ def test_incoming_beam_not_modified():
 
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(10_000),
-        sigma_xp=torch.tensor([2e-7]),
-        sigma_yp=torch.tensor([2e-7]),
+        sigma_px=torch.tensor([2e-7]),
+        sigma_py=torch.tensor([2e-7]),
     )
     # Initial beam properties
     incoming_beam_before = incoming_beam.particles
@@ -217,8 +217,8 @@ def test_gradient():
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor([10_000]),
-        sigma_xp=torch.tensor([2e-7]),
-        sigma_yp=torch.tensor([2e-7]),
+        sigma_px=torch.tensor([2e-7]),
+        sigma_py=torch.tensor([2e-7]),
     )
 
     segment_length = nn.Parameter(torch.tensor([1.0]))

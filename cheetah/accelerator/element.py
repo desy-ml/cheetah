@@ -33,11 +33,11 @@ class Element(ABC, nn.Module):
         They represent a particle in the phase space with
 
         - x: Position in x direction (m), relative to the reference particle
-        - xp: Horinzontal momentum normalized over the reference momentum
-            (dimensionless) :math:`xp = P_x / P_0`
+        - px: Horinzontal momentum normalized over the reference momentum
+            (dimensionless) :math:`px = P_x / P_0`
         - y: Position in y direction (m), relative to the reference particle
-        - yp: Vertical momentum normalized over the reference momentum
-            (dimensionless) :math:`yp = P_y / P_0`
+        - py: Vertical momentum normalized over the reference momentum
+            (dimensionless) :math:`py = P_y / P_0`
         - tau: Position in longitudinal direction (m), the zero value is set to the
         reference position (usually the center of the pulse)
         - p: Relative energy deviation from the reference particle (dimensionless)

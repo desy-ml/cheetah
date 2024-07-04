@@ -2,7 +2,7 @@
 
 In _Cheetah_, the coordinates of the particles are defined by a 7-dimensional vector
 
-$$\vec{x} = (x, xp, y, yp, \tau, \delta, 1)$$
+$$\vec{x} = (x, px, y, py, \tau, \delta, 1)$$
 
 The first 6 values are the canonical variables in the phase space.
 The trailing $1$ is augmented as in affine transformation, for convenient calculations of thin-length kicks, misalignmenents, etc.
@@ -11,16 +11,16 @@ The phase space coordinates are defined in the curvelinear coordinate system wit
 
 - $x$ is the horizontal position in m
 - $y$ is the vertical position in m
-- $xp$ is the normalized horizontal momentum, dimensionless
-- $yp$ is the normalized vertical momentum, dimensionless
+- $px$ is the normalized horizontal momentum, dimensionless
+- $py$ is the normalized vertical momentum, dimensionless
 - $\tau$ is _approximately_ the longitudinal offset with respect to the reference particle in m
 - $\delta$ is the energy offset over the reference momentum, dimensionless
 
 The new variables are
 
-$$ xp = p_x / p_0  $$
+$$ px = P_x / p_0  $$
 
-$p_x$ is the horizontal momentum and $p_0$ is the _reference momentum_.
+$P_x$ is the horizontal momentum and $p_0$ is the _reference momentum_.
 
 $$ \tau = c\Delta t = ct- \frac{s}{\beta_0} $$
 
@@ -46,7 +46,7 @@ Note that in OCELOT the energy has the unit of GeV, while in Cheetah the energy 
 
 <https://www.classe.cornell.edu/bmad/>
 
-The transverse coordinates $(x, xp, y, yp)$ are identical to the Bmad coordinates.
+The transverse coordinates $(x, px, y, py)$ are identical to the Bmad coordinates.
 
 The longitudinal coordinate in Bmad is defined as
 
@@ -76,7 +76,7 @@ In many literatures, the trace space, or _slope_ notation is used.
 
 $$ x' := \frac{dx}{ds} $$
 
-In paraxial approximation, they are approximately the same $xp \sim x'$.
+In paraxial approximation, they are approximately the same $px \sim x'$.
 
 In general
 
