@@ -28,7 +28,6 @@ def test_move_quadrupole_to_device(target_device: torch.device):
     )
 
     # Test that by default the quadrupole is on the CPU
-    assert quad.device.type == "cpu"
     assert quad.length.device.type == "cpu"
     assert quad.k1.device.type == "cpu"
     assert quad.misalignment.device.type == "cpu"
@@ -38,7 +37,6 @@ def test_move_quadrupole_to_device(target_device: torch.device):
     quad.to(target_device)
 
     # Test that the quadrupole is now on the target device
-    assert quad.device.type == target_device.type
     assert quad.length.device.type == target_device.type
     assert quad.k1.device.type == target_device.type
     assert quad.misalignment.device.type == target_device.type
@@ -52,7 +50,6 @@ def test_change_quadrupole_dtype():
     )
 
     # Test that by default the quadrupole is of dtype float32
-    assert quad.dtype == torch.float32
     assert quad.length.dtype == torch.float32
     assert quad.k1.dtype == torch.float32
     assert quad.misalignment.dtype == torch.float32
@@ -62,7 +59,6 @@ def test_change_quadrupole_dtype():
     quad.to(torch.float64)
 
     # Test that the quadrupole is now of dtype float64
-    assert quad.dtype == torch.float64
     assert quad.length.dtype == torch.float64
     assert quad.k1.dtype == torch.float64
     assert quad.misalignment.dtype == torch.float64

@@ -18,8 +18,6 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     """
 
-    length: torch.Tensor = torch.zeros((1))
-
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__()
 
