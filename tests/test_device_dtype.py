@@ -44,7 +44,9 @@ def test_move_quadrupole_to_device(target_device: torch.device):
 
 
 def test_change_quadrupole_dtype():
-    """Test that a quadrupole magnet can be successfully changed to a different dtype."""
+    """
+    Test that a quadrupole magnet can be successfully changed to a different dtype.
+    """
     quad = cheetah.Quadrupole(
         length=torch.tensor([0.2]), k1=torch.tensor([4.2]), name="my_quad"
     )
