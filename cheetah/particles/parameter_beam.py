@@ -136,7 +136,12 @@ class ParameterBeam(Beam):
         cov[..., 5, 5] = sigma_p**2
 
         return cls(
-            mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
+            mu=mu,
+            cov=cov,
+            energy=energy,
+            total_charge=total_charge,
+            device=device,
+            dtype=dtype,
         )
 
     @classmethod
@@ -225,6 +230,7 @@ class ParameterBeam(Beam):
             cor_y=cor_y,
             total_charge=total_charge,
             device=device,
+            dtype=dtype,
         )
 
     @classmethod

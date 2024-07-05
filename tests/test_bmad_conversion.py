@@ -65,3 +65,19 @@ def test_device_passing(device: torch.device):
     assert converted.b.e1.device.type == device.type
     assert converted.q.length.device.type == device.type
     assert converted.q.k1.device.type == device.type
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_dtype_passing(dtype: torch.dtype):
+    """Test that the dtype is passed correctly."""
+    file_path = "tests/resources/bmad_tutorial_lattice.bmad"
+
+    # Convert the lattice while passing the dtype
+    converted = cheetah.Segment.from_bmad(file_path, dtype=dtype)
+
+    # Check that the properties of the loaded elements are of the correct dtype
+    assert converted.d.length.dtype == dtype
+    assert converted.b.length.dtype == dtype
+    assert converted.b.e1.dtype == dtype
+    assert converted.q.length.dtype == dtype
+    assert converted.q.k1.dtype == dtype
