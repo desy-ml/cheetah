@@ -45,7 +45,7 @@ class Screen(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         kde_bandwith: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
-        method: str = "histogram",
+        method: Literal["histogram", "kde"] = "histogram",
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
