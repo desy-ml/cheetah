@@ -1,5 +1,3 @@
-"""Utility functions"""
-
 import math
 from typing import Optional, Tuple, Union
 
@@ -20,28 +18,20 @@ class UniqueNameGenerator:
         return name
 
 
-# Kernel density Estimation functionalities
-# Modified from kornia.enhance.histogram
-
-
 def kde_marginal_pdf(
     values: torch.Tensor,
     bins: torch.Tensor,
     sigma: torch.Tensor,
     weights: Optional[Union[Tensor, float]] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Calculate the 1D marginal probability distribution function of the input tensor
-      based on the number of histogram bins.
+    """
+    Calculate the 1D marginal probability distribution function of the input tensor
+    based on the number of histogram bins.
 
-    Args:
-        values: shape [BxNx1].
-        bins: shape [NUM_BINS].
-        sigma: shape [1], gaussian smoothing factor.
-
-    Returns:
-        Tuple[torch.Tensor, torch.Tensor]:
-          - torch.Tensor: shape [BxN].
-          - torch.Tensor: shape [BxNxNUM_BINS].
+    :param values: Shape :math:`(B, N, 1)`.
+    :param bins: Shape :math:`(N_{bins})`.
+    :param sigma: Gaussian smoothing factor with shape `(1,)`.
+    :return: Tuple of two tensors.
     """
 
     if not isinstance(values, torch.Tensor):
@@ -82,16 +72,15 @@ def kde_marginal_pdf(
 def kde_joint_pdf_2d(
     kernel_values1: torch.Tensor, kernel_values2: torch.Tensor, epsilon: float = 1e-10
 ) -> torch.Tensor:
-    """Calculate the joint probability distribution function of the input tensors based
-    on the number of histogram bins.
+    """
+    Calculate the joint probability distribution function of the input tensors based on
+    the number of histogram bins.
 
-    Args:
-        kernel_values1: shape [BxNxNUM_BINS].
-        kernel_values2: shape [BxNxNUM_BINS].
-        epsilon: scalar, for numerical stability.
-
-    Returns:
-        shape [BxNUM_BINSxNUM_BINS].
+    :param kernel_values1: shape :math:`(B, N, N_{bins})`.
+    :param kernel_values2: shape :math:`(B, N, N_{bins})`.
+    :param epsilon: A scalar, for numerical stability. Default: 1e-10.
+    :return: Kernel density estimation of the joint probability distribution function of
+        shape :math:`(B, N_{bins}, N_{bins})`.
     """
 
     if not isinstance(kernel_values1, torch.Tensor):
@@ -119,19 +108,17 @@ def kde_joint_pdf_2d(
 def kde_histogram_1d(
     x: torch.Tensor, bins: torch.Tensor, bandwidth: torch.Tensor, epsilon: float = 1e-10
 ) -> torch.Tensor:
-    """Estimate the histogram using KDE of the input tensor.
+    """
+    Estimate the histogram using KDE of the input tensor.
 
     The calculation uses kernel density estimation which requires a bandwidth
     (smoothing) parameter.
 
-    Args:
-        x: Input tensor to compute the histogram with shape :math:`(B, D)`.
-        bins: The number of bins to use the histogram :math:`(N_{bins})`.
-        bandwidth: Gaussian smoothing factor with shape shape [1].
-        epsilon: A scalar, for numerical stability.
-
-    Returns:
-        Computed histogram of shape :math:`(B, N_{bins})`.
+    :param x: Input tensor to compute the histogram with shape :math:`(B, D)`.
+    :param bins: The number of bins to use the histogram :math:`(N_{bins})`.
+    :param bandwidth: Gaussian smoothing factor with shape shape [1].
+    :param epsilon: A scalar, for numerical stability. Default: 1e-10.
+    :return: Computed histogram of shape :math:`(B, N_{bins})`.
 
     Examples:
         >>> x = torch.rand(1, 10)
@@ -155,20 +142,20 @@ def kde_histogram_2d(
     weights=None,
     epsilon: Union[float, torch.Tensor] = 1e-10,
 ) -> torch.Tensor:
-    """Estimate the 2d histogram of the input tensor.
+    """
+    Estimate the 2D histogram of the input tensor.
 
     The calculation uses kernel density estimation which requires a bandwidth
     (smoothing) parameter.
 
-    Args:
-        x1: Input tensor to compute the histogram with shape :math:`(B, D1)`.
-        x2: Input tensor to compute the histogram with shape :math:`(B, D2)`.
-        bins: bin coordinates.
-        bandwidth: Gaussian smoothing factor with shape shape [1].
-        epsilon: A scalar, for numerical stability. Default: 1e-10.
+    This is a modified version of the kornia.enhance.histogram implementation.
 
-    Returns:
-        Computed histogram of shape :math:`(B, N_{bins}), N_{bins})`.
+    :param x1: Input tensor to compute the histogram with shape :math:`(B, D1)`.
+    :param x2: Input tensor to compute the histogram with shape :math:`(B, D2)`.
+    :param bins: Bin coordinates.
+    :param bandwidth: Gaussian smoothing factor with shape shape `(1,)`.
+    :param epsilon: A scalar, for numerical stability. Default: 1e-10.
+    :return: Computed histogram of shape :math:`(B, N_{bins}, N_{bins})`.
 
     Examples:
         >>> x1 = torch.rand(2, 32)
