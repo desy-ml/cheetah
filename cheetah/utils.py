@@ -116,7 +116,7 @@ def kde_histogram_1d(
 
     :param x: Input tensor to compute the histogram with shape :math:`(B, D)`.
     :param bins: The number of bins to use the histogram :math:`(N_{bins})`.
-    :param bandwidth: Gaussian smoothing factor with shape shape [1].
+    :param bandwidth: Gaussian smoothing factor with shape shape `(1,)`.
     :param epsilon: A scalar, for numerical stability. Default: 1e-10.
     :return: Computed histogram of shape :math:`(B, N_{bins})`.
 
