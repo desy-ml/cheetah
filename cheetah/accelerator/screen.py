@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
@@ -32,8 +32,8 @@ class Screen(Element):
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
     :param method: Method used to generate the screen's reading. Can be either
-        "histogram" or "kde", defaults to "histogram".
-        KDE will be slower but allows backward differentiation.
+        "histogram" or "kde", defaults to "histogram". KDE will be slower but allows
+        backward differentiation.
     :param name: Unique identifier of the element.
     """
 
@@ -45,7 +45,7 @@ class Screen(Element):
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         kde_bandwith: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
-        method: str = "histogram",
+        method: Literal["histogram", "kde"] = "histogram",
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
