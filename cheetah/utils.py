@@ -18,7 +18,7 @@ class UniqueNameGenerator:
         return name
 
 
-def kde_marginal_pdf(
+def _kde_marginal_pdf(
     values: torch.Tensor,
     bins: torch.Tensor,
     sigma: torch.Tensor,
@@ -69,7 +69,7 @@ def kde_marginal_pdf(
     return prob_mass, kernel_values
 
 
-def kde_joint_pdf_2d(
+def _kde_joint_pdf_2d(
     kernel_values1: torch.Tensor, kernel_values2: torch.Tensor, epsilon: float = 1e-10
 ) -> torch.Tensor:
     """
@@ -105,7 +105,7 @@ def kde_joint_pdf_2d(
     return pdf
 
 
-def kde_histogram_1d(
+def _kde_histogram_1d(
     x: torch.Tensor, bins: torch.Tensor, bandwidth: torch.Tensor, epsilon: float = 1e-10
 ) -> torch.Tensor:
     """
@@ -128,7 +128,7 @@ def kde_histogram_1d(
         torch.Size([1, 128])
     """
 
-    pdf, _ = kde_marginal_pdf(x.unsqueeze(-1), bins, bandwidth, epsilon)
+    pdf, _ = _kde_marginal_pdf(x.unsqueeze(-1), bins, bandwidth, epsilon)
 
     return pdf
 
@@ -166,9 +166,9 @@ def kde_histogram_2d(
         torch.Size([2, 128, 128])
     """
 
-    _, kernel_values1 = kde_marginal_pdf(x1.unsqueeze(-1), bins1, bandwidth, weights)
-    _, kernel_values2 = kde_marginal_pdf(x2.unsqueeze(-1), bins2, bandwidth, weights)
+    _, kernel_values1 = _kde_marginal_pdf(x1.unsqueeze(-1), bins1, bandwidth, weights)
+    _, kernel_values2 = _kde_marginal_pdf(x2.unsqueeze(-1), bins2, bandwidth, weights)
 
-    pdf = kde_joint_pdf_2d(kernel_values1, kernel_values2, epsilon=epsilon)
+    pdf = _kde_joint_pdf_2d(kernel_values1, kernel_values2, epsilon=epsilon)
 
     return pdf
