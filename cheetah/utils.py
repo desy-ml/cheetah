@@ -148,7 +148,7 @@ def kde_histogram_2d(
     The calculation uses kernel density estimation which requires a bandwidth
     (smoothing) parameter.
 
-    This is a modified version of the kornia.enhance.histogram implementation.
+    This is a modified version of the `kornia.enhance.histogram` implementation.
 
     :param x1: Input tensor to compute the histogram with shape :math:`(B, D1)`.
     :param x2: Input tensor to compute the histogram with shape :math:`(B, D2)`.
