@@ -191,3 +191,27 @@ def test_vertical_corrector_end():
     assert torch.allclose(
         outgoing_beam_original.particles, outgoing_beam_split.particles
     )
+
+
+@pytest.mark.parametrize(
+    "ElementType",
+    [
+        cheetah.Drift,
+        cheetah.Quadrupole,
+        cheetah.Cavity,
+        cheetah.Solenoid,
+        cheetah.Dipole,
+        cheetah.Undulator,
+        cheetah.HorizontalCorrector,
+        cheetah.VerticalCorrector,
+    ],
+)
+def test_split_preserves_dtype(ElementType):
+    """
+    Test that the dtype of a drift section's splits is the same as the original drift.
+    """
+    original = ElementType(length=torch.tensor([2.0]), dtype=torch.float64)
+    splits = original.split(resolution=torch.tensor(0.1))
+
+    for split in splits:
+        assert original.length.dtype == split.length.dtype
