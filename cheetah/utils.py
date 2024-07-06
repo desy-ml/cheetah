@@ -45,13 +45,11 @@ def _kde_marginal_pdf(
 
     if not bins.dim() == 1:
         raise ValueError(
-            "Input bins must be a of the shape NUM_BINS" " Got {}".format(bins.shape)
+            f"Input bins must be a of the shape NUM_BINS. Got {bins.shape}"
         )
 
     if not sigma.dim() == 0:
-        raise ValueError(
-            "Input sigma must be a of the shape 1" " Got {}".format(sigma.shape)
-        )
+        raise ValueError(f"Input sigma must be a of the shape (1,). Got {sigma.shape}")
 
     if isinstance(weights, float):
         weights = torch.ones(values.shape[:-1])
