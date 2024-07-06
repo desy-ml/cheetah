@@ -82,7 +82,12 @@ class HorizontalCorrector(Element):
         remaining = self.length
         while remaining > 0:
             length = torch.min(resolution, remaining)
-            element = HorizontalCorrector(length, self.angle * length / self.length)
+            element = HorizontalCorrector(
+                length,
+                self.angle * length / self.length,
+                dtype=self.length.dtype,
+                device=self.length.device,
+            )
             split_elements.append(element)
             remaining -= resolution
         return split_elements

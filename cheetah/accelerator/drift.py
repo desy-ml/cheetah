@@ -70,7 +70,11 @@ class Drift(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Drift(torch.min(resolution, remaining))
+            element = Drift(
+                torch.min(resolution, remaining),
+                dtype=self.length.dtype,
+                device=self.length.device,
+            )
             split_elements.append(element)
             remaining -= resolution
         return split_elements

@@ -196,13 +196,14 @@ def test_vertical_corrector_end():
 @pytest.mark.parametrize(
     "ElementType",
     [
-        cheetah.Drift,
-        cheetah.Quadrupole,
         cheetah.Cavity,
-        cheetah.Solenoid,
         cheetah.Dipole,
-        cheetah.Undulator,
+        cheetah.Drift,
         cheetah.HorizontalCorrector,
+        cheetah.Quadrupole,
+        cheetah.RBend,
+        cheetah.Solenoid,
+        cheetah.Undulator,
         cheetah.VerticalCorrector,
     ],
 )
