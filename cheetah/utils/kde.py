@@ -5,19 +5,6 @@ import torch
 from torch import Tensor
 
 
-class UniqueNameGenerator:
-    """Generates a unique name given a prefix."""
-
-    def __init__(self, prefix: str):
-        self._prefix = prefix
-        self._counter = 0
-
-    def __call__(self):
-        name = f"{self._prefix}_{self._counter}"
-        self._counter += 1
-        return name
-
-
 def _kde_marginal_pdf(
     values: torch.Tensor,
     bins: torch.Tensor,
@@ -31,7 +18,11 @@ def _kde_marginal_pdf(
     :param values: Shape :math:`(B, N, 1)`.
     :param bins: Shape :math:`(N_{bins})`.
     :param sigma: Gaussian smoothing factor with shape `(1,)`.
-    :return: Tuple of two tensors.
+    :return: Tuple of two tensors: (pdf, kernel_values).
+        - pdf: Sum of the kernel values, gives an estimation of the marginal
+        probability distribution function of shape :math:`(B, N_{bins})`.
+        - kernel_values: Kernel values of all the input tensors of shape
+        :math:`(B, N, N_{bins})`.
     """
 
     if not isinstance(values, torch.Tensor):
@@ -103,7 +94,7 @@ def _kde_joint_pdf_2d(
     return pdf
 
 
-def _kde_histogram_1d(
+def kde_histogram_1d(
     x: torch.Tensor, bins: torch.Tensor, bandwidth: torch.Tensor, epsilon: float = 1e-10
 ) -> torch.Tensor:
     """
