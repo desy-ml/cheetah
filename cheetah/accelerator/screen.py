@@ -26,7 +26,7 @@ class Screen(Element):
     :param binning: Binning used by the camera.
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
-    :param kde_bandwith: Bandwidth used for the kernel density estimation in meters.
+    :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
         Controls the smoothness of the distribution.
     :param is_active: If `True` the screen is active and will record the beam's
         distribution. If `False` the screen is inactive and will not record the beam's
@@ -43,7 +43,7 @@ class Screen(Element):
         pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        kde_bandwith: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         is_active: bool = False,
         method: Literal["histogram", "kde"] = "histogram",
         name: Optional[str] = None,
@@ -94,10 +94,13 @@ class Screen(Element):
             "kde",
         ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
         self.method = method
-        self.kde_bandwith = (
-            torch.as_tensor(kde_bandwith, **factory_kwargs)
-            if kde_bandwith is not None
-            else torch.clone(self.pixel_size[0])
+        self.register_buffer(
+            "kde_bandwidth",
+            (
+                torch.as_tensor(kde_bandwidth, **factory_kwargs)
+                if kde_bandwidth is not None
+                else torch.clone(self.pixel_size[0])
+            ),
         )
         self.is_active = is_active
 
@@ -253,7 +256,7 @@ class Screen(Element):
                     x2=read_beam.ys,
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
-                    bandwidth=self.kde_bandwith,
+                    bandwidth=self.kde_bandwidth,
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)
@@ -308,7 +311,7 @@ class Screen(Element):
             "binning",
             "misalignment",
             "method",
-            "kde_bandwith",
+            "kde_bandwidth",
             "is_active",
         ]
 
@@ -319,7 +322,7 @@ class Screen(Element):
             + f"binning={repr(self.binning)}, "
             + f"misalignment={repr(self.misalignment)}, "
             + f"method={repr(self.method)}, "
-            + f"kde_bandwith={repr(self.kde_bandwith)}, "
+            + f"kde_bandwidth={repr(self.kde_bandwidth)}, "
             + f"is_active={repr(self.is_active)}, "
             + f"name={repr(self.name)})"
         )
