@@ -53,25 +53,41 @@ class Screen(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.resolution = (
-            torch.as_tensor(resolution, device=device)
-            if resolution is not None
-            else torch.tensor((1024, 1024), device=device)
+        self.register_buffer(
+            "resolution",
+            (
+                torch.as_tensor(resolution, **factory_kwargs)
+                if resolution is not None
+                else torch.tensor((1024, 1024), **factory_kwargs)
+            ),
         )
-        self.pixel_size = (
-            torch.as_tensor(pixel_size, **factory_kwargs)
-            if pixel_size is not None
-            else torch.tensor((1e-3, 1e-3), **factory_kwargs)
+        self.register_buffer(
+            "pixel_size",
+            (
+                torch.as_tensor(pixel_size, **factory_kwargs)
+                if pixel_size is not None
+                else torch.tensor((1e-3, 1e-3), **factory_kwargs)
+            ),
         )
-        self.binning = (
-            torch.as_tensor(binning, device=device)
-            if binning is not None
-            else torch.tensor(1, device=device)
+        self.register_buffer(
+            "binning",
+            (
+                torch.as_tensor(binning, **factory_kwargs)
+                if binning is not None
+                else torch.tensor(1, **factory_kwargs)
+            ),
         )
-        self.misalignment = (
-            torch.as_tensor(misalignment, **factory_kwargs)
-            if misalignment is not None
-            else torch.tensor([(0.0, 0.0)], **factory_kwargs)
+        self.register_buffer(
+            "misalignment",
+            (
+                torch.as_tensor(misalignment, **factory_kwargs)
+                if misalignment is not None
+                else torch.tensor([(0.0, 0.0)], **factory_kwargs)
+            ),
+        )
+        self.register_buffer(
+            "length",
+            torch.zeros(self.misalignment.shape[:-1], **factory_kwargs),
         )
         assert method in [
             "histogram",
@@ -83,7 +99,6 @@ class Screen(Element):
             if kde_bandwith is not None
             else torch.clone(self.pixel_size[0])
         )
-        self.length = torch.zeros(self.misalignment.shape[:-1], **factory_kwargs)
         self.is_active = is_active
 
         self.set_read_beam(None)

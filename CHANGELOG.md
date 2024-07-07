@@ -14,6 +14,7 @@
 - Implement space charge using Green's function in a `SpaceChargeKick` element (see #142) (@greglenerd, @RemiLehe, @ax3l, @cr-xu, @jank324)
 - `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` and dtypes other than `torch.float32` (see #196, #206) (@jank324)
 - `Screen` will now use KDE for differentiable images. (see #200) (@cr-xu, @roussel-ryan)
+- Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 
 ### 🐛 Bug fixes
 
