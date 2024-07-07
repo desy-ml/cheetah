@@ -43,21 +43,30 @@ class Cavity(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
-        self.voltage = (
-            torch.as_tensor(voltage, **factory_kwargs)
-            if voltage is not None
-            else torch.tensor(0.0, **factory_kwargs)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.register_buffer(
+            "voltage",
+            (
+                torch.as_tensor(voltage, **factory_kwargs)
+                if voltage is not None
+                else torch.tensor(0.0, **factory_kwargs)
+            ),
         )
-        self.phase = (
-            torch.as_tensor(phase, **factory_kwargs)
-            if phase is not None
-            else torch.tensor(0.0, **factory_kwargs)
+        self.register_buffer(
+            "phase",
+            (
+                torch.as_tensor(phase, **factory_kwargs)
+                if phase is not None
+                else torch.tensor(0.0, **factory_kwargs)
+            ),
         )
-        self.frequency = (
-            torch.as_tensor(frequency, **factory_kwargs)
-            if frequency is not None
-            else torch.tensor(0.0, **factory_kwargs)
+        self.register_buffer(
+            "frequency",
+            (
+                torch.as_tensor(frequency, **factory_kwargs)
+                if frequency is not None
+                else torch.tensor(0.0, **factory_kwargs)
+            ),
         )
 
     @property
