@@ -37,7 +37,7 @@ class Drift(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         assert (
