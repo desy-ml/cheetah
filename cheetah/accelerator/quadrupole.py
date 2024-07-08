@@ -106,6 +106,9 @@ class Quadrupole(Element):
                 torch.min(resolution, remaining),
                 self.k1,
                 misalignment=self.misalignment,
+                tilt=self.tilt,
+                dtype=self.length.dtype,
+                device=self.length.device,
             )
             split_elements.append(element)
             remaining -= resolution
