@@ -8,6 +8,7 @@ from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.track_methods import base_rmatrix
 from cheetah.utils import UniqueNameGenerator
 
 from .element import Element
@@ -82,7 +83,17 @@ class Cavity(Element):
         # was only computed for the elements with voltage > 0 and a basermatrix was
         # used otherwise. This was removed because it was causing issues with the
         # vectorisation, but I am not sure it is okay to remove.
-        tm = self._cavity_rmatrix(energy)
+        tm = torch.where(
+            self.voltage != 0,
+            self._cavity_rmatrix(energy),
+            base_rmatrix(
+                length=self.length,
+                k1=torch.zeros_like(self.length),
+                hx=torch.zeros_like(self.length),
+                tilt=torch.zeros_like(self.length),
+                energy=energy,
+            ),
+        )
 
         return tm
 
