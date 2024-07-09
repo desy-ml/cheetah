@@ -84,7 +84,12 @@ class VerticalCorrector(Element):
         remaining = self.length
         while remaining > 0:
             length = torch.min(resolution, remaining)
-            element = VerticalCorrector(length, self.angle * length / self.length)
+            element = VerticalCorrector(
+                length,
+                self.angle * length / self.length,
+                device=self.length.device,
+                dtype=self.length.dtype,
+            )
             split_elements.append(element)
             remaining -= resolution
         return split_elements
