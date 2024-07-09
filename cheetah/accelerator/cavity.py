@@ -2,7 +2,6 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
-from icecream import ic
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
