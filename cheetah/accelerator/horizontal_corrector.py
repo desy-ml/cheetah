@@ -40,11 +40,14 @@ class HorizontalCorrector(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
-        self.angle = (
-            torch.as_tensor(angle, **factory_kwargs)
-            if angle is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.register_buffer(
+            "angle",
+            (
+                torch.as_tensor(angle, **factory_kwargs)
+                if angle is not None
+                else torch.zeros_like(self.length)
+            ),
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -82,7 +85,12 @@ class HorizontalCorrector(Element):
         remaining = self.length
         while remaining > 0:
             length = torch.min(resolution, remaining)
-            element = HorizontalCorrector(length, self.angle * length / self.length)
+            element = HorizontalCorrector(
+                length,
+                self.angle * length / self.length,
+                dtype=self.length.dtype,
+                device=self.length.device,
+            )
             split_elements.append(element)
             remaining -= resolution
         return split_elements

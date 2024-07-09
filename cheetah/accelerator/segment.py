@@ -202,7 +202,11 @@ class Segment(Element):
                     if (hasattr(element, "is_active") and element.is_active)
                     or element.length == 0.0
                     or element.name in except_for
-                    else Drift(element.length)
+                    else Drift(
+                        element.length,
+                        device=element.length.device,
+                        dtype=element.length.dtype,
+                    )
                 )
                 for element in self.elements
             ],
@@ -272,7 +276,11 @@ class Segment(Element):
 
     @classmethod
     def from_bmad(
-        cls, bmad_lattice_file_path: str, environment_variables: Optional[dict] = None
+        cls,
+        bmad_lattice_file_path: str,
+        environment_variables: Optional[dict] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        dtype: torch.dtype = torch.float32,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -285,10 +293,14 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return convert_bmad_lattice(bmad_lattice_file_path, environment_variables)
+        return convert_bmad_lattice(
+            bmad_lattice_file_path, environment_variables, device, dtype
+        )
 
     @classmethod
     def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
@@ -421,7 +433,16 @@ class Segment(Element):
                 sigma_s=beam.sigma_s,
                 sigma_p=beam.sigma_p,
                 energy=beam.energy,
-                device="cpu",
+                dtype=(
+                    beam.particles.dtype
+                    if isinstance(beam, ParticleBeam)
+                    else beam._mu.dtype
+                ),
+                device=(
+                    beam.particles.device
+                    if isinstance(beam, ParticleBeam)
+                    else beam._mu.device
+                ),
             )
             references.append(initial)
         for split in splits:
