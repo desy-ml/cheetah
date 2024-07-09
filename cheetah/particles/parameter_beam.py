@@ -30,15 +30,17 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        self._mu = torch.as_tensor(mu, **factory_kwargs)
-        self._cov = torch.as_tensor(cov, **factory_kwargs)
+        self.register_buffer("_mu", torch.as_tensor(mu, **factory_kwargs))
+        self.register_buffer("_cov", torch.as_tensor(cov, **factory_kwargs))
         total_charge = (
             total_charge
             if total_charge is not None
             else torch.tensor([0.0], **factory_kwargs)
         )
-        self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
-        self.energy = torch.as_tensor(energy, **factory_kwargs)
+        self.register_buffer(
+            "total_charge", torch.as_tensor(total_charge, **factory_kwargs)
+        )
+        self.register_buffer("energy", torch.as_tensor(energy, **factory_kwargs))
 
     @classmethod
     def from_parameters(
@@ -136,7 +138,12 @@ class ParameterBeam(Beam):
         cov[..., 5, 5] = sigma_p**2
 
         return cls(
-            mu=mu, cov=cov, energy=energy, total_charge=total_charge, device=device
+            mu=mu,
+            cov=cov,
+            energy=energy,
+            total_charge=total_charge,
+            device=device,
+            dtype=dtype,
         )
 
     @classmethod
@@ -225,6 +232,7 @@ class ParameterBeam(Beam):
             cor_y=cor_y,
             total_charge=total_charge,
             device=device,
+            dtype=dtype,
         )
 
     @classmethod

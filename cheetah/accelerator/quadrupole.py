@@ -33,7 +33,7 @@ class Quadrupole(Element):
     Quadrupole magnet in a particle accelerator.
 
     :param length: Length in meters.
-    :param k1: Strength of the quadrupole in rad/m.
+    :param k1: Strength of the quadrupole in 1/m^-2.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
@@ -58,21 +58,30 @@ class Quadrupole(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
-        self.k1 = (
-            torch.as_tensor(k1, **factory_kwargs)
-            if k1 is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.register_buffer(
+            "k1",
+            (
+                torch.as_tensor(k1, **factory_kwargs)
+                if k1 is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.misalignment = (
-            torch.as_tensor(misalignment, **factory_kwargs)
-            if misalignment is not None
-            else torch.zeros((*self.length.shape, 2), **factory_kwargs)
+        self.register_buffer(
+            "misalignment",
+            (
+                torch.as_tensor(misalignment, **factory_kwargs)
+                if misalignment is not None
+                else torch.zeros((*self.length.shape, 2), **factory_kwargs)
+            ),
         )
-        self.tilt = (
-            torch.as_tensor(tilt, **factory_kwargs)
-            if tilt is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "tilt",
+            (
+                torch.as_tensor(tilt, **factory_kwargs)
+                if tilt is not None
+                else torch.zeros_like(self.length)
+            ),
         )
         self.num_steps = num_steps
         self.tracking_method = tracking_method
@@ -250,6 +259,9 @@ class Quadrupole(Element):
                 torch.min(resolution, remaining),
                 self.k1,
                 misalignment=self.misalignment,
+                tilt=self.tilt,
+                dtype=self.length.dtype,
+                device=self.length.device,
             )
             split_elements.append(element)
             remaining -= resolution
@@ -267,7 +279,7 @@ class Quadrupole(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "k1", "misalignment", "tilt"]
 
-    def __repr__(self) -> None:
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"k1={repr(self.k1)}, "

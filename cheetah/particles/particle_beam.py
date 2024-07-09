@@ -1,9 +1,13 @@
 from typing import Optional
 
 import torch
+from scipy import constants
 from torch.distributions import MultivariateNormal
 
 from .beam import Beam
+
+speed_of_light = torch.tensor(constants.speed_of_light)
+electron_mass = torch.tensor(constants.electron_mass)
 
 
 class ParticleBeam(Beam):
@@ -32,13 +36,16 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.particles = particles.to(**factory_kwargs)
-        self.particle_charges = (
-            particle_charges.to(**factory_kwargs)
-            if particle_charges is not None
-            else torch.zeros(particles.shape[:2], **factory_kwargs)
+        self.register_buffer("particles", particles.to(**factory_kwargs))
+        self.register_buffer(
+            "particle_charges",
+            (
+                particle_charges.to(**factory_kwargs)
+                if particle_charges is not None
+                else torch.zeros(particles.shape[:2], **factory_kwargs)
+            ),
         )
-        self.energy = energy.to(**factory_kwargs)
+        self.register_buffer("energy", energy.to(**factory_kwargs))
 
     @classmethod
     def from_parameters(
@@ -716,6 +723,82 @@ class ParticleBeam(Beam):
             device=device,
             dtype=dtype,
         )
+
+    @classmethod
+    def from_xyz_pxpypz(
+        cls,
+        xp_coords: torch.Tensor,
+        energy: torch.Tensor,
+        particle_charges: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=torch.float32,
+    ) -> torch.Tensor:
+        """
+        Create a beam from a tensor of position and momentum coordinates in SI units.
+        This tensor should have shape (..., n_particles, 7), where the last dimension
+        is the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
+        """
+        beam = cls(
+            particles=xp_coords.clone(),
+            energy=energy,
+            particle_charges=particle_charges,
+            device=device,
+            dtype=dtype,
+        )
+
+        p0 = (
+            beam.relativistic_gamma
+            * beam.relativistic_beta
+            * electron_mass
+            * speed_of_light
+        )
+        p = torch.sqrt(
+            xp_coords[..., 1] ** 2 + xp_coords[..., 3] ** 2 + xp_coords[..., 5] ** 2
+        )
+        gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
+
+        beam.particles[..., 1] = xp_coords[..., 1] / p0.unsqueeze(-1)
+        beam.particles[..., 3] = xp_coords[..., 3] / p0.unsqueeze(-1)
+        beam.particles[..., 4] = -xp_coords[..., 4] / beam.relativistic_beta.unsqueeze(
+            -1
+        )
+        beam.particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
+            (beam.relativistic_beta * beam.relativistic_gamma).unsqueeze(-1)
+        )
+
+        return beam
+
+    def to_xyz_pxpypz(self) -> torch.Tensor:
+        """
+        Extracts the position and momentum coordinates in SI units, from the
+        beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
+        For each particle, the moment vector is $(x, p_x, y, p_y, z, p_z, 1)$.
+        """
+        p0 = (
+            self.relativistic_gamma
+            * self.relativistic_beta
+            * electron_mass
+            * speed_of_light
+        )
+        gamma = self.relativistic_gamma.unsqueeze(-1) * (
+            torch.ones(self.particles.shape[:-1])
+            + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+        )
+        beta = torch.sqrt(1 - 1 / gamma**2)
+        p = gamma * electron_mass * beta * speed_of_light
+
+        px = self.particles[..., 1] * p0.unsqueeze(-1)
+        py = self.particles[..., 3] * p0.unsqueeze(-1)
+        s = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
+        ps = torch.sqrt(p**2 - px**2 - py**2)
+
+        xp_coords = self.particles.clone()
+        xp_coords[..., 1] = px
+        xp_coords[..., 3] = py
+        xp_coords[..., 4] = s
+        xp_coords[..., 5] = ps
+
+        return xp_coords
 
     def __len__(self) -> int:
         return int(self.num_particles)
