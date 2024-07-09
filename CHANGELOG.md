@@ -24,6 +24,7 @@
 - Add `name` to `Drift` element `__repr__` (see #201) (@ansantam)
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
+- Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
 
 ### 🐆 Other
 
