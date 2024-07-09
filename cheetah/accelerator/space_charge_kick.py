@@ -68,16 +68,24 @@ class SpaceChargeKick(Element):
 
         super().__init__(name=name)
 
-        self.effect_length = torch.as_tensor(effect_length, **self.factory_kwargs)
+        self.register_buffer(
+            "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
+        )
         self.grid_shape = (
             int(num_grid_points_x),
             int(num_grid_points_y),
             int(num_grid_points_s),
         )
         # In multiples of sigma
-        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs)
-        self.grid_extend_y = torch.as_tensor(grid_extend_y, **self.factory_kwargs)
-        self.grid_extend_s = torch.as_tensor(grid_extend_s, **self.factory_kwargs)
+        self.register_buffer(
+            "grid_extend_x", torch.as_tensor(grid_extend_x, **self.factory_kwargs)
+        )
+        self.register_buffer(
+            "grid_extend_y", torch.as_tensor(grid_extend_y, **self.factory_kwargs)
+        )
+        self.register_buffer(
+            "grid_extend_s", torch.as_tensor(grid_extend_s, **self.factory_kwargs)
+        )
 
     def _deposit_charge_on_grid(
         self,

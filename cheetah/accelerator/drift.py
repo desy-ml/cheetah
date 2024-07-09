@@ -37,7 +37,7 @@ class Drift(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         assert (
@@ -70,7 +70,11 @@ class Drift(Element):
         split_elements = []
         remaining = self.length
         while remaining > 0:
-            element = Drift(torch.min(resolution, remaining))
+            element = Drift(
+                torch.min(resolution, remaining),
+                dtype=self.length.dtype,
+                device=self.length.device,
+            )
             split_elements.append(element)
             remaining -= resolution
         return split_elements
