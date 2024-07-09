@@ -1,5 +1,4 @@
 import torch
-from icecream import ic
 
 import cheetah
 
@@ -32,9 +31,12 @@ def test_assert_ei_greater_zero():
     _ = cavity.track(beam)
 
 
-def test_cavity_producing_nan():
+def test_vectorized_cavity_zero_voltage():
     """
-    Describe later from LCLS.
+    Tests that a vectorised cavity with zero voltage does not produce NaNs. This was a
+    bug introduced during the vectorisation of Cheetah, when the special case of zero
+    was removed and the `_cavity_rmatrix` method was also used in the case of zero
+    voltage. The latter produced NaNs in the transfer matrix when the voltage is zero.
     """
     cavity = cheetah.Cavity(
         length=torch.tensor([3.0441]),
@@ -62,7 +64,7 @@ def test_cavity_producing_nan():
 
     outgoing = cavity.track(incoming)
 
-    ic(outgoing, outgoing._mu, outgoing._cov, incoming._mu, incoming._cov)
+    assert not torch.isnan(cavity.transfer_map(incoming.energy)).any()
 
     assert not torch.isnan(outgoing.sigma_x).any()
     assert not torch.isnan(outgoing.sigma_y).any()
