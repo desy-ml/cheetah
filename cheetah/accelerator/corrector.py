@@ -45,16 +45,22 @@ class Corrector(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
-        self.horizontal_angle = (
-            torch.as_tensor(horizontal_angle, **factory_kwargs)
-            if horizontal_angle is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.register_buffer(
+            "horizontal_angle",
+            (
+                torch.as_tensor(horizontal_angle, **factory_kwargs)
+                if horizontal_angle is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.vertical_angle = (
-            torch.as_tensor(vertical_angle, **factory_kwargs)
-            if vertical_angle is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "vertical_angle",
+            (
+                torch.as_tensor(vertical_angle, **factory_kwargs)
+                if vertical_angle is not None
+                else torch.zeros_like(self.length)
+            ),
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:

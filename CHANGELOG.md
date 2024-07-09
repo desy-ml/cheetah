@@ -13,7 +13,9 @@
 - Add a new class method for `ParticleBeam` to generate a 3D uniformly distributed ellipsoidal beam (see #146) (@cr-xu, @jank324)
 - Add Python 3.12 support (see #161) (@jank324)
 - Implement space charge using Green's function in a `SpaceChargeKick` element (see #142) (@greglenerd, @RemiLehe, @ax3l, @cr-xu, @jank324)
-- `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` (see #196) (@jank324)
+- `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` and dtypes other than `torch.float32` (see #196, #206) (@jank324)
+- `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
+- Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -21,6 +23,9 @@
 - Fix bug in `Cavity` `_track_beam` (see #150) (@jp-ga)
 - Fix issue where dipoles would not get a unique name by default (see #186) (@hespe)
 - Add `name` to `Drift` element `__repr__` (see #201) (@ansantam)
+- Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
+- Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
+- Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
 
 ### 🐆 Other
 
@@ -31,6 +36,7 @@
 - Rename converter modules to the respective name of the accelerator code (see #167) (@jank324)
 - Added imports to the code example in the README (see #188) (@jank324)
 - Refactor definitions of physical constants (see #189) (@hespe)
+- Fix the quadrupole strength units in the quadrupole docstring (see #202) (@ansantam)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
