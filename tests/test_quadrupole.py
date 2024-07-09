@@ -48,9 +48,10 @@ def test_quadrupole_with_misalignments_batched():
     )
 
 
-def test_quadrupole_with_misalignments_multiple_batch_dimension():
+def test_quadrupole_with_misalignments_multiple_batch_dimensions():
     """
-    Test that a quadrupole with misalignments with multiple batch dimension.
+    Test that a quadrupole with misalignments that have multiple batch dimensions does
+    not raise an error and behaves as expected.
     """
 
     misalignments = torch.randn((4, 3, 2))
@@ -80,9 +81,12 @@ def test_quadrupole_with_misalignments_multiple_batch_dimension():
 
 
 def test_tilted_quadrupole_batch():
+    """
+    Test that a quadrupole with a multiple tilts behaves as expected.
+    """
     batch_shape = torch.Size([3])
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1000000),
+        num_particles=torch.tensor(1_000_000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
     ).broadcast(batch_shape)
@@ -105,24 +109,58 @@ def test_tilted_quadrupole_batch():
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
 
-def test_tilted_quadrupole_multiple_batch_dimension():
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10000),
-        energy=torch.tensor([1e9]),
-        mu_x=torch.tensor([1e-5]),
+# TODO Change batched to vectorised
+def test_tilted_quadrupole_multiple_batch_dimensions():
+    """
+    Test that a quadrupole with tilts that have multiple vectorisation dimensions does
+    not raise an error and behaves as expected.
+    """
+    tilts = torch.tensor(
+        [
+            [torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4],
+            [torch.pi * 5 / 4, torch.pi / 2, torch.pi / 4],
+        ]
     )
     segment = Segment(
         [
-            Quadrupole(
-                length=torch.tensor([0.5]),
-                k1=torch.tensor([1.0]),
-                tilt=torch.tensor([torch.pi / 4]),
-            ),
+            Quadrupole(length=torch.tensor([0.5]), k1=torch.tensor([1.0]), tilt=tilts),
             Drift(length=torch.tensor([0.5])),
         ]
     )
+
+    incoming = ParticleBeam.from_parameters(
+        num_particles=torch.tensor(10_000),
+        energy=torch.tensor([1e9]),
+        mu_x=torch.tensor([1e-5]),
+    )
+
     outgoing = segment(incoming)
 
     assert torch.allclose(
         outgoing.particles[0, 0], outgoing.particles[0, 1], rtol=1e-1, atol=1e-5
     )
+    assert outgoing.particles.shape == (2, 3, 10_000, 7)
+
+
+def test_quadrupole_length_multiple_batch_dimensions():
+    """
+    Test that a quadrupole with lengths that have multiple vectorisation dimensions does
+    not raise an error and behaves as expected.
+    """
+    lengths = torch.tensor([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]])
+    segment = Segment(
+        [
+            Quadrupole(length=lengths, k1=torch.tensor([4.2])),
+            Drift(length=lengths * 2),
+        ]
+    )
+
+    incoming = ParticleBeam.from_parameters(
+        num_particles=torch.tensor(10_000),
+        energy=torch.tensor([1e9]),
+        mu_x=torch.tensor([1e-5]),
+    )
+
+    outgoing = segment(incoming)
+
+    assert outgoing.particles.shape == (2, 3, 10_000, 7)
