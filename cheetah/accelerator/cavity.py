@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
+from icecream import ic
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
@@ -79,12 +80,8 @@ class Cavity(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        # There used to be a check for voltage > 0 here, where the cavity transfer map
-        # was only computed for the elements with voltage > 0 and a basermatrix was
-        # used otherwise. This was removed because it was causing issues with the
-        # vectorisation, but I am not sure it is okay to remove.
-        tm = torch.where(
-            self.voltage != 0,
+        return torch.where(
+            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy),
             base_rmatrix(
                 length=self.length,
@@ -94,8 +91,6 @@ class Cavity(Element):
                 energy=energy,
             ),
         )
-
-        return tm
 
     def track(self, incoming: Beam) -> Beam:
         """
