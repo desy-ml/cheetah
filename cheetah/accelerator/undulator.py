@@ -66,6 +66,7 @@ class Undulator(Element):
             length=self.length.repeat(shape),
             is_active=self.is_active,
             name=self.name,
+            device=self.length.device,
         )
 
     @property

@@ -90,6 +90,8 @@ class CustomTransferMap(Element):
             self._transfer_map.repeat((*shape, 1, 1)),
             length=self.length.repeat(shape),
             name=self.name,
+            device=self._transfer_map.device,
+            dtype=self._transfer_map.dtype,
         )
 
     @property

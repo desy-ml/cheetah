@@ -88,6 +88,8 @@ class Quadrupole(Element):
             misalignment=self.misalignment.repeat((*shape, 1)),
             tilt=self.tilt.repeat(shape),
             name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     @property
