@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -31,18 +32,25 @@ def test_assert_ei_greater_zero():
     _ = cavity.track(beam)
 
 
-def test_vectorized_cavity_zero_voltage():
+@pytest.mark.parametrize(
+    "voltage",
+    [torch.tensor([0.0, 0.0]), torch.tensor([0.0, 1e6]), torch.tensor([1e6, 1e6])],
+)
+def test_vectorized_cavity_zero_voltage(voltage):
     """
-    Tests that a vectorised cavity with zero voltage does not produce NaNs. This was a
-    bug introduced during the vectorisation of Cheetah, when the special case of zero
-    was removed and the `_cavity_rmatrix` method was also used in the case of zero
-    voltage. The latter produced NaNs in the transfer matrix when the voltage is zero.
+    Tests that a vectorised cavity with zero voltage does not produce NaNs and that
+    zero voltage can be batched with non-zero voltage.
+
+    This was a bug introduced during the vectorisation of Cheetah, when the special
+    case of zero was removed and the `_cavity_rmatrix` method was also used in the case
+    of zero voltage. The latter produced NaNs in the transfer matrix when the voltage
+    is zero.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441]),
-        voltage=torch.tensor([0.0]),
-        phase=torch.tensor([-0.0]),
-        frequency=torch.tensor([2.8560e09]),
+        length=torch.tensor([3.0441, 3.0441]),
+        voltage=voltage,
+        phase=torch.tensor([-0.0, -0.0]),
+        frequency=torch.tensor([2.8560e09, 2.8560e09]),
         name="k27_1a",
         dtype=torch.float64,
     )
@@ -60,7 +68,7 @@ def test_vectorized_cavity_zero_voltage():
         energy=torch.tensor([8.0000e09]),
         total_charge=torch.tensor([0.0]),
         dtype=torch.float64,
-    )
+    ).broadcast((2,))
 
     outgoing = cavity.track(incoming)
 
