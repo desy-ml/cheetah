@@ -926,6 +926,8 @@ class ParticleBeam(Beam):
             particles=self.particles.repeat((*shape, 1, 1)),
             energy=self.energy.repeat(shape),
             particle_charges=self.particle_charges.repeat((*shape, 1)),
+            device=self.particles.device,
+            dtype=self.particles.dtype,
         )
 
     def __repr__(self) -> str:
