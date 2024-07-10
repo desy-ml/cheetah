@@ -8,6 +8,7 @@ from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.track_methods import base_rmatrix
 from cheetah.utils import UniqueNameGenerator
 
 from .element import Element
@@ -78,13 +79,17 @@ class Cavity(Element):
         return not self.is_active
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        # There used to be a check for voltage > 0 here, where the cavity transfer map
-        # was only computed for the elements with voltage > 0 and a basermatrix was
-        # used otherwise. This was removed because it was causing issues with the
-        # vectorisation, but I am not sure it is okay to remove.
-        tm = self._cavity_rmatrix(energy)
-
-        return tm
+        return torch.where(
+            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
+            self._cavity_rmatrix(energy),
+            base_rmatrix(
+                length=self.length,
+                k1=torch.zeros_like(self.length),
+                hx=torch.zeros_like(self.length),
+                tilt=torch.zeros_like(self.length),
+                energy=energy,
+            ),
+        )
 
     def track(self, incoming: Beam) -> Beam:
         """
