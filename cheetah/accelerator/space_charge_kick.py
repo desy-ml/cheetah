@@ -624,6 +624,8 @@ class SpaceChargeKick(Element):
             grid_extend_y=self.grid_extend_y,
             grid_extend_s=self.grid_extend_s,
             name=self.name,
+            device=self.effect_length.device,
+            dtype=self.effect_length.dtype,
         )
         new_space_charge_kick.length = self.length.repeat(shape)
         return new_space_charge_kick

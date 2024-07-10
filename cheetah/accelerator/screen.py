@@ -289,6 +289,8 @@ class Screen(Element):
             misalignment=self.misalignment.repeat((*shape, 1)),
             is_active=self.is_active,
             name=self.name,
+            device=self.resolution.device,
+            dtype=self.resolution.dtype,
         )
         new_screen.length = self.length.repeat(shape)
         return new_screen
