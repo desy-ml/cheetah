@@ -204,6 +204,8 @@ class Dipole(Element):
             fringe_integral_exit=self.fringe_integral_exit.repeat(shape),
             gap=self.gap.repeat(shape),
             name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
