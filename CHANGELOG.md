@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198) (@jank324, @cr-xu)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #218) (@jank324, @cr-xu)
 
 ### 🚀 Features
 
@@ -25,7 +25,6 @@
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
-- Fix an issue where the `dtype` and `device` are set back to default when broadcasting elements or beams. (see #218) (@cr-xu)
 
 ### 🐆 Other
 
