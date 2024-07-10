@@ -345,6 +345,8 @@ class Cavity(Element):
             phase=self.phase.repeat(shape),
             frequency=self.frequency.repeat(shape),
             name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:

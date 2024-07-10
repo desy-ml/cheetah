@@ -114,6 +114,8 @@ class Solenoid(Element):
             k=self.k.repeat(shape),
             misalignment=self.misalignment.repeat(shape),
             name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     @property

@@ -68,7 +68,11 @@ class VerticalCorrector(Element):
 
     def broadcast(self, shape: Size) -> Element:
         return self.__class__(
-            length=self.length.repeat(shape), angle=self.angle, name=self.name
+            length=self.length.repeat(shape),
+            angle=self.angle,
+            name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     @property

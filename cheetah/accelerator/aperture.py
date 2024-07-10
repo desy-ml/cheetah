@@ -117,6 +117,8 @@ class Aperture(Element):
             shape=self.shape,
             is_active=self.is_active,
             name=self.name,
+            device=self.x_max.device,
+            dtype=self.x_max.dtype,
         )
         new_aperture.length = self.length.repeat(shape)
         return new_aperture

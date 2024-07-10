@@ -434,6 +434,8 @@ class ParameterBeam(Beam):
             cov=self._cov.repeat((*shape, 1, 1)),
             energy=self.energy.repeat(shape),
             total_charge=self.total_charge.repeat(shape),
+            device=self._mu.device,
+            dtype=self._mu.dtype,
         )
 
     def __repr__(self) -> str:
