@@ -4,12 +4,11 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -280,18 +279,6 @@ class Screen(Element):
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = [value]
         self.cached_reading = None
-
-    def broadcast(self, shape: Size) -> Element:
-        new_screen = self.__class__(
-            resolution=self.resolution,
-            pixel_size=self.pixel_size,
-            binning=self.binning,
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            is_active=self.is_active,
-            name=self.name,
-        )
-        new_screen.length = self.length.repeat(shape)
-        return new_screen
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]

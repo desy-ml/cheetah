@@ -2,11 +2,9 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
-from torch import Size
 
 from cheetah.particles import Beam
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -31,11 +29,6 @@ class Marker(Element):
         # TODO: At some point Markers should be able to be active or inactive. Active
         # Markers would be able to record the beam tracked through them.
         return incoming
-
-    def broadcast(self, shape: Size) -> Element:
-        new_marker = self.__class__(name=self.name)
-        new_marker.length = self.length.repeat(shape)
-        return new_marker
 
     @property
     def is_skippable(self) -> bool:
