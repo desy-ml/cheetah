@@ -8,7 +8,6 @@ from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
 
-from ..utils.batching import get_batch_shape
 from ..utils.physics import calculate_relativistic_factors
 from .element import Element
 
@@ -53,7 +52,7 @@ class HorizontalCorrector(Element):
 
         _, igamma2, beta = calculate_relativistic_factors(energy)
 
-        batch_shape = get_batch_shape(self.length, self.angle, beta)
+        batch_shape = torch.broadcast_tensors(self.length, self.angle, beta)[0].shape
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*batch_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 1, 6] = self.angle

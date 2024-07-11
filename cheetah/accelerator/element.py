@@ -88,6 +88,17 @@ class Element(ABC, nn.Module):
         return self.track(incoming)
 
     @property
+    def batch_shape(self) -> torch.Size:
+        tensors = []
+        # Get all parameters
+        for param in self.parameters():
+            tensors.append(param)
+        # Get all buffers
+        for buffer in self.buffers():
+            tensors.append(buffer)
+        return torch.broadcast_tensors(*tensors)[0].shape
+
+    @property
     @abstractmethod
     def is_skippable(self) -> bool:
         """
