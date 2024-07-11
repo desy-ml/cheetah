@@ -4,7 +4,7 @@ from typing import Optional
 
 import torch
 
-from cheetah.utils.physics import calculate_inverse_gamma_squared
+from cheetah.utils.physics import calculate_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
@@ -53,9 +53,7 @@ def base_rmatrix(
     tilt = tilt if tilt is not None else torch.zeros_like(length)
     energy = energy if energy is not None else torch.zeros(1)
 
-    igamma2 = calculate_inverse_gamma_squared(energy)
-
-    beta = torch.sqrt(1 - igamma2)
+    _, igamma2, beta = calculate_relativistic_factors(energy)
 
     # Avoid division by zero
     k1 = k1.clone()
