@@ -324,11 +324,8 @@ class Segment(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        lengths = torch.stack(
-            [element.length for element in self.elements],
-            dim=1,
-        )
-        return torch.sum(lengths, dim=1)
+        lengths = [element.length for element in self.elements]
+        return torch.add(*lengths)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
