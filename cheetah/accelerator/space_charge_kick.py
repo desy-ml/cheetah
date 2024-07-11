@@ -608,26 +608,6 @@ class SpaceChargeKick(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def broadcast(self, shape: torch.Size) -> "SpaceChargeKick":
-        """
-        Broadcast the element to higher batch dimensions.
-
-        :param shape: Shape to broadcast the element to.
-        :returns: Broadcasted element.
-        """
-        new_space_charge_kick = self.__class__(
-            effect_length=self.effect_length,
-            num_grid_points_x=self.grid_shape[0],
-            num_grid_points_y=self.grid_shape[1],
-            num_grid_points_s=self.grid_shape[2],
-            grid_extend_x=self.grid_extend_x,
-            grid_extend_y=self.grid_extend_y,
-            grid_extend_s=self.grid_extend_s,
-            name=self.name,
-        )
-        new_space_charge_kick.length = self.length.repeat(shape)
-        return new_space_charge_kick
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for SpaceCharge properly, for now just returns the
         # element itself

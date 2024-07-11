@@ -4,11 +4,10 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -107,14 +106,6 @@ class Solenoid(Element):
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
             return R
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            k=self.k.repeat(shape),
-            misalignment=self.misalignment.repeat(shape),
-            name=self.name,
-        )
 
     @property
     def is_active(self) -> bool:
