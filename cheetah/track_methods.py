@@ -3,11 +3,8 @@
 from typing import Optional
 
 import torch
-from scipy.constants import physical_constants
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+from cheetah.utils.physics import calculate_inverse_gamma_squared
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
@@ -54,11 +51,9 @@ def base_rmatrix(
     dtype = length.dtype
 
     tilt = tilt if tilt is not None else torch.zeros_like(length)
-    energy = energy if energy is not None else torch.zeros_like(length)
+    energy = energy if energy is not None else torch.zeros(1)
 
-    gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-    igamma2 = torch.ones_like(length)
-    igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
+    igamma2 = calculate_inverse_gamma_squared(energy)
 
     beta = torch.sqrt(1 - igamma2)
 
