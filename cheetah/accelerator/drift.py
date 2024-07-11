@@ -3,10 +3,11 @@ from typing import Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
 
+from ..utils.physics import calculate_inverse_gamma_squared
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -40,16 +41,11 @@ class Drift(Element):
         self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        assert (
-            energy.shape == self.length.shape
-        ), f"Beam shape {energy.shape} does not match element shape {self.length.shape}"
 
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
+        igamma2 = calculate_inverse_gamma_squared(energy)
         beta = torch.sqrt(1 - igamma2)
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
@@ -58,9 +54,6 @@ class Drift(Element):
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
 
         return tm
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(length=self.length.repeat(shape), name=self.name)
 
     @property
     def is_skippable(self) -> bool:
