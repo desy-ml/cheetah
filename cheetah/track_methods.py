@@ -4,7 +4,6 @@ from typing import Optional
 
 import torch
 
-from cheetah.utils.batching import get_batch_shape
 from cheetah.utils.physics import calculate_relativistic_factors
 
 
@@ -73,7 +72,7 @@ def base_rmatrix(
 
     r56 = r56 - length / beta**2 * igamma2
 
-    batch_shape = get_batch_shape(dx, sx, beta, cx)
+    batch_shape = torch.broadcast_tensors(length, k1, hx, tilt, energy)[0].shape
     R = torch.eye(7, dtype=dtype, device=device).repeat(*batch_shape, 1, 1)
     R[..., 0, 0] = cx
     R[..., 0, 1] = sx
