@@ -349,31 +349,29 @@ class ParticleBeam(Beam):
         radius_y = radius_y if radius_y is not None else torch.full(shape, 1e-3)
         radius_tau = radius_tau if radius_tau is not None else torch.full(shape, 1e-3)
 
-        # Generate xs, ys and ss within the ellipsoid
-        flattened_xs = torch.empty(*shape, num_particles).flatten(end_dim=-2)
-        flattened_ys = torch.empty(*shape, num_particles).flatten(end_dim=-2)
-        flattened_taus = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        # Generate x, y and ss within the ellipsoid
+        flattened_x = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        flattened_y = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        flattened_tau = torch.empty(*shape, num_particles).flatten(end_dim=-2)
         for i, (r_x, r_y, r_tau) in enumerate(
             zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
         ):
             num_successful = 0
             while num_successful < num_particles:
-                xs = (torch.rand(num_particles) - 0.5) * 2 * r_x
-                ys = (torch.rand(num_particles) - 0.5) * 2 * r_y
-                taus = (torch.rand(num_particles) - 0.5) * 2 * r_tau
+                x = (torch.rand(num_particles) - 0.5) * 2 * r_x
+                y = (torch.rand(num_particles) - 0.5) * 2 * r_y
+                tau = (torch.rand(num_particles) - 0.5) * 2 * r_tau
 
-                is_in_ellipsoid = (
-                    xs**2 / r_x**2 + ys**2 / r_y**2 + taus**2 / r_tau**2 < 1
-                )
+                is_in_ellipsoid = x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
                 num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
 
-                flattened_xs[i, num_successful : num_successful + num_to_add] = xs[
+                flattened_x[i, num_successful : num_successful + num_to_add] = x[
                     is_in_ellipsoid
                 ][:num_to_add]
-                flattened_ys[i, num_successful : num_successful + num_to_add] = ys[
+                flattened_y[i, num_successful : num_successful + num_to_add] = y[
                     is_in_ellipsoid
                 ][:num_to_add]
-                flattened_taus[i, num_successful : num_successful + num_to_add] = taus[
+                flattened_tau[i, num_successful : num_successful + num_to_add] = tau[
                     is_in_ellipsoid
                 ][:num_to_add]
 
@@ -394,9 +392,9 @@ class ParticleBeam(Beam):
         )
 
         # Replace the spatial coordinates with the generated ones
-        beam.xs = flattened_xs.view(*shape, num_particles)
-        beam.ys = flattened_ys.view(*shape, num_particles)
-        beam.taus = flattened_taus.view(*shape, num_particles)
+        beam.x = flattened_x.view(*shape, num_particles)
+        beam.y = flattened_y.view(*shape, num_particles)
+        beam.tau = flattened_tau.view(*shape, num_particles)
 
         return beam
 
@@ -797,18 +795,18 @@ class ParticleBeam(Beam):
             + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
-        p = gamma * electron_mass * beta * speed_of_light
+        momentum = gamma * electron_mass * beta * speed_of_light
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
         zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        ps = torch.sqrt(p**2 - px**2 - py**2)
+        p = torch.sqrt(momentum**2 - px**2 - py**2)
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px
         xp_coords[..., 3] = py
         xp_coords[..., 4] = zs
-        xp_coords[..., 5] = ps
+        xp_coords[..., 5] = p
 
         return xp_coords
 
@@ -824,119 +822,119 @@ class ParticleBeam(Beam):
         return self.particles.shape[-2]
 
     @property
-    def xs(self) -> Optional[torch.Tensor]:
+    def x(self) -> Optional[torch.Tensor]:
         return self.particles[..., 0] if self is not Beam.empty else None
 
-    @xs.setter
-    def xs(self, value: torch.Tensor) -> None:
+    @x.setter
+    def x(self, value: torch.Tensor) -> None:
         self.particles[..., 0] = value
 
     @property
     def mu_x(self) -> Optional[torch.Tensor]:
-        return self.xs.mean(dim=-1) if self is not Beam.empty else None
+        return self.x.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_x(self) -> Optional[torch.Tensor]:
-        return self.xs.std(dim=-1) if self is not Beam.empty else None
+        return self.x.std(dim=-1) if self is not Beam.empty else None
 
     @property
-    def pxs(self) -> Optional[torch.Tensor]:
+    def px(self) -> Optional[torch.Tensor]:
         return self.particles[..., 1] if self is not Beam.empty else None
 
-    @pxs.setter
-    def pxs(self, value: torch.Tensor) -> None:
+    @px.setter
+    def px(self, value: torch.Tensor) -> None:
         self.particles[..., 1] = value
 
     @property
     def mu_px(self) -> Optional[torch.Tensor]:
-        return self.pxs.mean(dim=-1) if self is not Beam.empty else None
+        return self.px.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_px(self) -> Optional[torch.Tensor]:
-        return self.pxs.std(dim=-1) if self is not Beam.empty else None
+        return self.px.std(dim=-1) if self is not Beam.empty else None
 
     @property
-    def ys(self) -> Optional[torch.Tensor]:
+    def y(self) -> Optional[torch.Tensor]:
         return self.particles[..., 2] if self is not Beam.empty else None
 
-    @ys.setter
-    def ys(self, value: torch.Tensor) -> None:
+    @y.setter
+    def y(self, value: torch.Tensor) -> None:
         self.particles[..., 2] = value
 
     @property
     def mu_y(self) -> Optional[float]:
-        return self.ys.mean(dim=-1) if self is not Beam.empty else None
+        return self.y.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_y(self) -> Optional[torch.Tensor]:
-        return self.ys.std(dim=-1) if self is not Beam.empty else None
+        return self.y.std(dim=-1) if self is not Beam.empty else None
 
     @property
-    def pys(self) -> Optional[torch.Tensor]:
+    def py(self) -> Optional[torch.Tensor]:
         return self.particles[..., 3] if self is not Beam.empty else None
 
-    @pys.setter
-    def pys(self, value: torch.Tensor) -> None:
+    @py.setter
+    def py(self, value: torch.Tensor) -> None:
         self.particles[..., 3] = value
 
     @property
     def mu_py(self) -> Optional[torch.Tensor]:
-        return self.pys.mean(dim=-1) if self is not Beam.empty else None
+        return self.py.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_py(self) -> Optional[torch.Tensor]:
-        return self.pys.std(dim=-1) if self is not Beam.empty else None
+        return self.py.std(dim=-1) if self is not Beam.empty else None
 
     @property
-    def taus(self) -> Optional[torch.Tensor]:
+    def tau(self) -> Optional[torch.Tensor]:
         return self.particles[..., 4] if self is not Beam.empty else None
 
-    @taus.setter
-    def taus(self, value: torch.Tensor) -> None:
+    @tau.setter
+    def tau(self, value: torch.Tensor) -> None:
         self.particles[..., 4] = value
 
     @property
     def mu_tau(self) -> Optional[torch.Tensor]:
-        return self.taus.mean(dim=-1) if self is not Beam.empty else None
+        return self.tau.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_tau(self) -> Optional[torch.Tensor]:
-        return self.taus.std(dim=-1) if self is not Beam.empty else None
+        return self.tau.std(dim=-1) if self is not Beam.empty else None
 
     @property
-    def ps(self) -> Optional[torch.Tensor]:
+    def p(self) -> Optional[torch.Tensor]:
         return self.particles[..., 5] if self is not Beam.empty else None
 
-    @ps.setter
-    def ps(self, value: torch.Tensor) -> None:
+    @p.setter
+    def p(self, value: torch.Tensor) -> None:
         self.particles[..., 5] = value
 
     @property
     def mu_p(self) -> Optional[torch.Tensor]:
-        return self.ps.mean(dim=-1) if self is not Beam.empty else None
+        return self.p.mean(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_p(self) -> Optional[torch.Tensor]:
-        return self.ps.std(dim=-1) if self is not Beam.empty else None
+        return self.p.std(dim=-1) if self is not Beam.empty else None
 
     @property
     def sigma_xpx(self) -> torch.Tensor:
         return torch.mean(
-            (self.xs - self.mu_x.view(-1, 1)) * (self.pxs - self.mu_px.view(-1, 1)),
+            (self.x - self.mu_x.view(-1, 1)) * (self.px - self.mu_px.view(-1, 1)),
             dim=1,
         )
 
     @property
     def sigma_ypy(self) -> torch.Tensor:
         return torch.mean(
-            (self.ys - self.mu_y.view(-1, 1)) * (self.pys - self.mu_py.view(-1, 1)),
+            (self.y - self.mu_y.view(-1, 1)) * (self.py - self.mu_py.view(-1, 1)),
             dim=1,
         )
 
     @property
     def energies(self) -> torch.Tensor:
         """Get the energies of the individual particles."""
-        return self.ps * self.p0c + self.energy
+        return self.p * self.p0c + self.energy
 
     @property
     def momenta(self) -> torch.Tensor:
