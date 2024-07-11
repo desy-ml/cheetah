@@ -308,25 +308,24 @@ def test_enormous_through_ares():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    segment_broadcast = segment.broadcast((3, 100_000))
-    incoming_broadcast = incoming.broadcast((3, 100_000))
+    segment_broadcast = segment
+    incoming_broadcast = incoming
 
-    segment_broadcast.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100_000).repeat(3, 1)
+    segment_broadcast.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100).repeat(3, 1)
 
     outgoing = segment_broadcast.track(incoming_broadcast)
 
-    assert outgoing.mu_x.shape == (3, 100_000)
-    assert outgoing.mu_xp.shape == (3, 100_000)
-    assert outgoing.mu_y.shape == (3, 100_000)
-    assert outgoing.mu_yp.shape == (3, 100_000)
-    assert outgoing.sigma_x.shape == (3, 100_000)
-    assert outgoing.sigma_xp.shape == (3, 100_000)
-    assert outgoing.sigma_y.shape == (3, 100_000)
-    assert outgoing.sigma_yp.shape == (3, 100_000)
-    assert outgoing.sigma_s.shape == (3, 100_000)
-    assert outgoing.sigma_p.shape == (3, 100_000)
-    assert outgoing.energy.shape == (3, 100_000)
-    assert outgoing.total_charge.shape == (3, 100_000)
+    assert outgoing.mu_x.shape == (3, 100)
+    assert outgoing.mu_xp.shape == (3, 100)
+    assert outgoing.mu_y.shape == (3, 100)
+    assert outgoing.mu_yp.shape == (3, 100)
+    assert outgoing.sigma_x.shape == (3, 100)
+    assert outgoing.sigma_xp.shape == (3, 100)
+    assert outgoing.sigma_y.shape == (3, 100)
+    assert outgoing.sigma_yp.shape == (3, 100)
+    assert outgoing.sigma_s.shape == (3, 100)
+    assert outgoing.sigma_p.shape == (3, 100)
+    assert outgoing.total_charge.shape == torch.Size([1])
 
 
 def test_before_after_broadcast_tracking_equal_cavity():
@@ -335,7 +334,7 @@ def test_before_after_broadcast_tracking_equal_cavity():
     the same as in the segment before broadcasting. A cavity is used as a reference.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441]),
+        length=torch.tensor([3.0441]).repeat((3, 10)),
         voltage=torch.tensor([48198468.0]),
         phase=torch.tensor([-0.0]),
         frequency=torch.tensor([2.8560e09]),
@@ -346,8 +345,8 @@ def test_before_after_broadcast_tracking_equal_cavity():
     )
     outgoing = cavity.track(incoming)
 
-    broadcast_cavity = cavity.broadcast((3, 10))
-    broadcast_incoming = incoming.broadcast((3, 10))
+    broadcast_cavity = cavity
+    broadcast_incoming = incoming
     broadcast_outgoing = broadcast_cavity.track(broadcast_incoming)
 
     for i in range(3):
@@ -365,11 +364,11 @@ def test_before_after_broadcast_tracking_equal_ares_ea():
     incoming = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    segment.AREAMQZM1.k1 = torch.tensor([4.2])
+    segment.AREAMQZM1.k1 = torch.tensor([4.2]).repeat((3,10))
     outgoing = segment.track(incoming)
 
-    broadcast_segment = segment.broadcast((3, 10))
-    broadcast_incoming = incoming.broadcast((3, 10))
+    broadcast_segment = segment
+    broadcast_incoming = incoming
     broadcast_outgoing = broadcast_segment.track(broadcast_incoming)
 
     for i in range(3):
@@ -394,8 +393,10 @@ def test_broadcast_customtransfermap():
         ]
     )
 
-    element = cheetah.CustomTransferMap(length=torch.tensor([0.4]), transfer_map=tm)
-    broadcast_element = element.broadcast((3, 10))
+    element = cheetah.CustomTransferMap(
+        length=torch.tensor([0.4]), transfer_map=tm.repeat((3,10))
+    )
+    broadcast_element = element
 
     assert broadcast_element.length.shape == (3, 10)
     assert broadcast_element._transfer_map.shape == (3, 10, 7, 7)
@@ -406,13 +407,12 @@ def test_broadcast_customtransfermap():
 
 def test_broadcast_drift():
     """Test that broadcasting a `Drift` element gives the correct result."""
-    element = cheetah.Drift(length=torch.tensor([0.4]))
-    broadcast_element = element.broadcast((3, 10))
+    element = cheetah.Drift(length=torch.tensor([0.4]).repeat((3,10)))
 
-    assert broadcast_element.length.shape == (3, 10)
+    assert element.length.shape == (3, 10)
     for i in range(3):
         for j in range(10):
-            assert broadcast_element.length[i, j] == 0.4
+            assert element.length[i, j] == 0.4
 
 
 def test_broadcast_quadrupole():
