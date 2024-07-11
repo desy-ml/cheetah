@@ -240,9 +240,7 @@ class Screen(Element):
                     )
                 )
 
-                for i, (x_sample, y_sample) in enumerate(
-                    zip(read_beam.x, read_beam.y)
-                ):
+                for i, (x_sample, y_sample) in enumerate(zip(read_beam.x, read_beam.y)):
                     image_sample, _ = torch.histogramdd(
                         torch.stack((x_sample, y_sample)).T.cpu(),
                         bins=self.pixel_bin_edges,
