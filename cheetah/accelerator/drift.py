@@ -41,14 +41,13 @@ class Drift(Element):
         self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-
         device = self.length.device
         dtype = self.length.dtype
 
         _, igamma2, beta = calculate_relativistic_factors(energy)
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((
-            *(self.length*igamma2).shape, 1, 1)
+        tm = torch.eye(7, device=device, dtype=dtype).repeat(
+            (*(self.length * igamma2).shape, 1, 1)
         )
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length

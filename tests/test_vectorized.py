@@ -1,6 +1,5 @@
-import torch
-
 import cheetah
+import torch
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -364,7 +363,7 @@ def test_before_after_broadcast_tracking_equal_ares_ea():
     incoming = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    segment.AREAMQZM1.k1 = torch.tensor([4.2]).repeat((3,10))
+    segment.AREAMQZM1.k1 = torch.tensor([4.2]).repeat((3, 10))
     outgoing = segment.track(incoming)
 
     broadcast_segment = segment
@@ -394,7 +393,7 @@ def test_broadcast_customtransfermap():
     )
 
     element = cheetah.CustomTransferMap(
-        length=torch.tensor([0.4]), transfer_map=tm.repeat((3,10))
+        length=torch.tensor([0.4]), transfer_map=tm.repeat((3, 10))
     )
     broadcast_element = element
 
@@ -407,7 +406,7 @@ def test_broadcast_customtransfermap():
 
 def test_broadcast_drift():
     """Test that broadcasting a `Drift` element gives the correct result."""
-    element = cheetah.Drift(length=torch.tensor([0.4]).repeat((3,10)))
+    element = cheetah.Drift(length=torch.tensor([0.4]).repeat((3, 10)))
 
     assert element.length.shape == (3, 10)
     for i in range(3):
