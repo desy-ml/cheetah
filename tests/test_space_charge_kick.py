@@ -108,7 +108,7 @@ def test_vectorized():
             cheetah.SpaceChargeKick(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
-    ).broadcast(shape=(3, 2))
+    )
 
     outgoing = segment.track(incoming)
 

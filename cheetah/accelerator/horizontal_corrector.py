@@ -4,18 +4,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
 
+from ..utils.physics import calculate_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class HorizontalCorrector(Element):
@@ -54,10 +50,7 @@ class HorizontalCorrector(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-        beta = torch.sqrt(1 - igamma2)
+        _, igamma2, beta = calculate_relativistic_factors(energy)
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
         tm[..., 0, 1] = self.length
@@ -66,11 +59,6 @@ class HorizontalCorrector(Element):
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
 
         return tm
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape), angle=self.angle, name=self.name
-        )
 
     @property
     def is_skippable(self) -> bool:

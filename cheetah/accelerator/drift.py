@@ -47,7 +47,7 @@ class Drift(Element):
 
         _, igamma2, beta = calculate_relativistic_factors(energy)
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
