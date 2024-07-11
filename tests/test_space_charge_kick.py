@@ -1,9 +1,8 @@
+import cheetah
 import torch
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
-
-import cheetah
 
 
 def test_cold_uniform_beam_expansion():
@@ -246,7 +245,7 @@ def test_does_not_break_segment_length():
     Test that the computation of a `Segment`'s length does not break when
     `SpaceChargeKick` is used.
     """
-    section_length = torch.tensor([1.0]).repeat((3,2))
+    section_length = torch.tensor([1.0]).repeat((3, 2))
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),

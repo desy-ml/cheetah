@@ -7,8 +7,8 @@ from matplotlib.patches import Rectangle
 from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
-from ..utils.batching import get_batch_shape
 
+from ..utils.batching import get_batch_shape
 from ..utils.physics import calculate_relativistic_factors
 from .element import Element
 
