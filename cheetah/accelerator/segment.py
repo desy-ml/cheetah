@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import reduce
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -324,8 +325,11 @@ class Segment(Element):
 
     @property
     def length(self) -> torch.Tensor:
+        if len(self.elements) == 1:
+            return self.elements[0].length
+
         lengths = [element.length for element in self.elements]
-        return torch.add(*lengths)
+        return reduce(torch.add, lengths)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:

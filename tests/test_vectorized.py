@@ -421,15 +421,10 @@ def test_broadcast_quadrupole():
     # TODO Add misalignment to the test
     # TODO Add tilt to the test
 
-    element = cheetah.Quadrupole(length=torch.tensor([0.4]), k1=torch.tensor([4.2]))
-    broadcast_element = element.broadcast((3, 10))
+    element = cheetah.Quadrupole(length=torch.randn((3, 10)), k1=torch.tensor([4.2]))
 
-    assert broadcast_element.length.shape == (3, 10)
-    assert broadcast_element.k1.shape == (3, 10)
-    for i in range(3):
-        for j in range(10):
-            assert broadcast_element.length[i, j] == 0.4
-            assert broadcast_element.k1[i, j] == 4.2
+    assert element.length.shape == (3, 10)
+    assert element.k1.shape == (1,)
 
 
 def test_cavity_with_zero_and_non_zero_voltage():

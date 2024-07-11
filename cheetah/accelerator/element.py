@@ -87,10 +87,6 @@ class Element(ABC, nn.Module):
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
 
-    def broadcast(self, shape: torch.Size) -> "Element":
-        """Broadcast the element to higher batch dimensions."""
-        raise NotImplementedError
-
     @property
     @abstractmethod
     def is_skippable(self) -> bool:

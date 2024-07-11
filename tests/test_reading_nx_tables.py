@@ -1,3 +1,5 @@
+import torch
+
 import cheetah
 
 
@@ -22,4 +24,4 @@ def test_length():
     """
     segment = cheetah.Segment.from_nx_tables("tests/resources/Stage4v3_9.txt")
 
-    assert segment.length == 44.2215
+    assert segment.length == torch.tensor(44.2215)

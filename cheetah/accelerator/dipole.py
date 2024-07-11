@@ -108,11 +108,7 @@ class Dipole(Element):
 
     @property
     def hx(self) -> torch.Tensor:
-        value = torch.zeros_like(self.length)
-        value[self.length != 0] = (
-            self.angle[self.length != 0] / self.length[self.length != 0]
-        )
-        return value
+        return torch.where(self.length == 0.0, 0.0, self.angle / self.length)
 
     @property
     def is_skippable(self) -> bool:
