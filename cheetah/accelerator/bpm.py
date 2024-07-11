@@ -4,11 +4,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -49,11 +47,6 @@ class BPM(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
         return deepcopy(incoming)
-
-    def broadcast(self, shape: Size) -> Element:
-        new_bpm = self.__class__(is_active=self.is_active, name=self.name)
-        new_bpm.length = self.length.repeat(shape)
-        return new_bpm
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]

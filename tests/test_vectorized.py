@@ -1,5 +1,6 @@
-import cheetah
 import torch
+
+import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -393,7 +394,8 @@ def test_broadcast_customtransfermap():
     )
 
     element = cheetah.CustomTransferMap(
-        length=torch.tensor([0.4]), transfer_map=tm.repeat((3, 10))
+        length=torch.tensor([0.4]).repeat((3, 10)),
+        transfer_map=tm.repeat((3, 10, 1, 1)),
     )
     broadcast_element = element
 

@@ -4,10 +4,9 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -60,13 +59,6 @@ class Undulator(Element):
         tm[..., 4, 5] = self.length * igamma2
 
         return tm
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            is_active=self.is_active,
-            name=self.name,
-        )
 
     @property
     def is_skippable(self) -> bool:

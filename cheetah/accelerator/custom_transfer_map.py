@@ -2,11 +2,10 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
-from torch import Size, nn
+from torch import nn
 
 from cheetah.particles import Beam
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -84,13 +83,6 @@ class CustomTransferMap(Element):
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return self._transfer_map
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            self._transfer_map.repeat((*shape, 1, 1)),
-            length=self.length.repeat(shape),
-            name=self.name,
-        )
 
     @property
     def is_skippable(self) -> bool:
