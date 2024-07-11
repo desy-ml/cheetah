@@ -26,6 +26,6 @@ def test_assert_ei_greater_zero():
     )
     beam = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5])
-    ).broadcast((3,))
+    )
 
     _ = cavity.track(beam)

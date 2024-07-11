@@ -7,7 +7,7 @@ from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
 
-from ..utils.physics import calculate_inverse_gamma_squared
+from ..utils.physics import calculate_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -45,8 +45,7 @@ class Drift(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        igamma2 = calculate_inverse_gamma_squared(energy)
-        beta = torch.sqrt(1 - igamma2)
+        _, igamma2, beta = calculate_relativistic_factors(energy)
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
         tm[..., 0, 1] = self.length

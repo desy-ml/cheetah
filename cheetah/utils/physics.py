@@ -6,7 +6,15 @@ electron_mass_eV = torch.tensor(
 )
 
 
-def calculate_inverse_gamma_squared(energy):
+def calculate_relativistic_factors(energy):
+    """
+    calculates relativistic factors gamma, inverse gamma squared, beta
+    for electrons
+
+    :param energy: Energy in eV
+    :return: gamma, igamma2, beta
+    """
     gamma = energy / electron_mass_eV.to(energy)
     igamma2 = torch.where(gamma == 0.0, 0.0, 1 / gamma**2)
-    return igamma2
+    beta = torch.sqrt(1 - igamma2)
+    return gamma, igamma2, beta
