@@ -4,11 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 
 from cheetah.track_methods import base_rmatrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -188,19 +187,6 @@ class Dipole(Element):
         tm[..., 3, 2] = -self.hx * torch.tan(self.e2 - phi)
 
         return tm
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            angle=self.angle.repeat(shape),
-            e1=self.e1.repeat(shape),
-            e2=self.e2.repeat(shape),
-            tilt=self.tilt.repeat(shape),
-            fringe_integral=self.fringe_integral.repeat(shape),
-            fringe_integral_exit=self.fringe_integral_exit.repeat(shape),
-            gap=self.gap.repeat(shape),
-            name=self.name,
-        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
