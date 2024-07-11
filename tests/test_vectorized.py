@@ -404,6 +404,28 @@ def test_broadcast_customtransfermap():
             assert torch.all(broadcast_element._transfer_map[i, j] == tm[0])
 
 
+def test_broadcast_element_keeps_dtype():
+    """Test that broadcasting an element keeps the same dtype."""
+    element = cheetah.Drift(length=torch.tensor([0.4]), dtype=torch.float64)
+    broadcast_element = element.broadcast((3, 10))
+
+    assert broadcast_element.length.dtype == torch.float64
+
+
+def test_broadcast_beam_keeps_dtype():
+    """Test that broadcasting a beam keeps the same dtype."""
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, sigma_x=torch.tensor([1e-5]), dtype=torch.float64
+    )
+    broadcast_beam = beam.broadcast((2,))
+    drift = cheetah.Drift(length=torch.tensor([0.4, 0.4]), dtype=torch.float64)
+
+    assert broadcast_beam.particles.dtype == torch.float64
+
+    # This should not raise an error
+    _ = drift(broadcast_beam)
+
+
 def test_broadcast_drift():
     """Test that broadcasting a `Drift` element gives the correct result."""
     element = cheetah.Drift(length=torch.tensor([0.4]))

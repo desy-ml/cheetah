@@ -18,12 +18,11 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     """
 
-    length: torch.Tensor = torch.zeros((1))
-
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
+        self.register_buffer("length", torch.zeros((1,)))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         r"""

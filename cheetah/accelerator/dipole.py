@@ -47,42 +47,63 @@ class Dipole(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
-        self.angle = (
-            torch.as_tensor(angle, **factory_kwargs)
-            if angle is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.register_buffer(
+            "angle",
+            (
+                torch.as_tensor(angle, **factory_kwargs)
+                if angle is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.gap = (
-            torch.as_tensor(gap, **factory_kwargs)
-            if gap is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "gap",
+            (
+                torch.as_tensor(gap, **factory_kwargs)
+                if gap is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.tilt = (
-            torch.as_tensor(tilt, **factory_kwargs)
-            if tilt is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "tilt",
+            (
+                torch.as_tensor(tilt, **factory_kwargs)
+                if tilt is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.fringe_integral = (
-            torch.as_tensor(fringe_integral, **factory_kwargs)
-            if fringe_integral is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "fringe_integral",
+            (
+                torch.as_tensor(fringe_integral, **factory_kwargs)
+                if fringe_integral is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.fringe_integral_exit = (
-            self.fringe_integral
-            if fringe_integral_exit is None
-            else torch.as_tensor(fringe_integral_exit, **factory_kwargs)
+        self.register_buffer(
+            "fringe_integral_exit",
+            (
+                self.fringe_integral
+                if fringe_integral_exit is None
+                else torch.as_tensor(fringe_integral_exit, **factory_kwargs)
+            ),
         )
         # Sector bend if not specified
-        self.e1 = (
-            torch.as_tensor(e1, **factory_kwargs)
-            if e1 is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "e1",
+            (
+                torch.as_tensor(e1, **factory_kwargs)
+                if e1 is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.e2 = (
-            torch.as_tensor(e2, **factory_kwargs)
-            if e2 is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "e2",
+            (
+                torch.as_tensor(e2, **factory_kwargs)
+                if e2 is not None
+                else torch.zeros_like(self.length)
+            ),
         )
 
     @property
@@ -183,6 +204,8 @@ class Dipole(Element):
             fringe_integral_exit=self.fringe_integral_exit.repeat(shape),
             gap=self.gap.repeat(shape),
             name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:

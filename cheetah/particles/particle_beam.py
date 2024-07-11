@@ -39,13 +39,16 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.particles = particles.to(**factory_kwargs)
-        self.particle_charges = (
-            particle_charges.to(**factory_kwargs)
-            if particle_charges is not None
-            else torch.zeros(particles.shape[:2], **factory_kwargs)
+        self.register_buffer("particles", particles.to(**factory_kwargs))
+        self.register_buffer(
+            "particle_charges",
+            (
+                particle_charges.to(**factory_kwargs)
+                if particle_charges is not None
+                else torch.zeros(particles.shape[:2], **factory_kwargs)
+            ),
         )
-        self.energy = energy.to(**factory_kwargs)
+        self.register_buffer("energy", energy.to(**factory_kwargs))
 
     @classmethod
     def from_parameters(
@@ -946,6 +949,8 @@ class ParticleBeam(Beam):
             particles=self.particles.repeat((*shape, 1, 1)),
             energy=self.energy.repeat(shape),
             particle_charges=self.particle_charges.repeat((*shape, 1)),
+            device=self.particles.device,
+            dtype=self.particles.dtype,
         )
 
     def __repr__(self) -> str:

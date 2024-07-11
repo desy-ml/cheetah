@@ -31,11 +31,16 @@ class CustomTransferMap(Element):
         assert isinstance(transfer_map, torch.Tensor)
         assert transfer_map.shape[-2:] == (7, 7)
 
-        self._transfer_map = torch.as_tensor(transfer_map, **factory_kwargs)
-        self.length = (
-            torch.as_tensor(length, **factory_kwargs)
-            if length is not None
-            else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
+        self.register_buffer(
+            "_transfer_map", torch.as_tensor(transfer_map, **factory_kwargs)
+        )
+        self.register_buffer(
+            "length",
+            (
+                torch.as_tensor(length, **factory_kwargs)
+                if length is not None
+                else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
+            ),
         )
 
     @classmethod
@@ -85,6 +90,8 @@ class CustomTransferMap(Element):
             self._transfer_map.repeat((*shape, 1, 1)),
             length=self.length.repeat(shape),
             name=self.name,
+            device=self._transfer_map.device,
+            dtype=self._transfer_map.dtype,
         )
 
     @property

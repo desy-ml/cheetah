@@ -433,7 +433,16 @@ class Segment(Element):
                 sigma_tau=beam.sigma_tau,
                 sigma_p=beam.sigma_p,
                 energy=beam.energy,
-                device="cpu",
+                dtype=(
+                    beam.particles.dtype
+                    if isinstance(beam, ParticleBeam)
+                    else beam._mu.dtype
+                ),
+                device=(
+                    beam.particles.device
+                    if isinstance(beam, ParticleBeam)
+                    else beam._mu.device
+                ),
             )
             references.append(initial)
         for split in splits:
