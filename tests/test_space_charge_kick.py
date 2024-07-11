@@ -246,7 +246,7 @@ def test_does_not_break_segment_length():
     Test that the computation of a `Segment`'s length does not break when
     `SpaceChargeKick` is used.
     """
-    section_length = torch.tensor([1.0])
+    section_length = torch.tensor([1.0]).repeat((3,2))
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
@@ -257,7 +257,7 @@ def test_does_not_break_segment_length():
             cheetah.SpaceChargeKick(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
-    ).broadcast(shape=(3, 2))
+    )
 
     assert segment.length.shape == (3, 2)
     assert torch.allclose(segment.length, torch.tensor([1.0]).repeat(3, 2))
