@@ -8,8 +8,9 @@ from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
-from .element import Element
+
 from ..utils.physics import calculate_relativistic_factors, electron_mass_eV
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
