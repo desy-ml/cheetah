@@ -39,21 +39,30 @@ class Quadrupole(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
-        self.k1 = (
-            torch.as_tensor(k1, **factory_kwargs)
-            if k1 is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.register_buffer(
+            "k1",
+            (
+                torch.as_tensor(k1, **factory_kwargs)
+                if k1 is not None
+                else torch.zeros_like(self.length)
+            ),
         )
-        self.misalignment = (
-            torch.as_tensor(misalignment, **factory_kwargs)
-            if misalignment is not None
-            else torch.zeros((*self.length.shape, 2), **factory_kwargs)
+        self.register_buffer(
+            "misalignment",
+            (
+                torch.as_tensor(misalignment, **factory_kwargs)
+                if misalignment is not None
+                else torch.zeros((*self.length.shape, 2), **factory_kwargs)
+            ),
         )
-        self.tilt = (
-            torch.as_tensor(tilt, **factory_kwargs)
-            if tilt is not None
-            else torch.zeros_like(self.length)
+        self.register_buffer(
+            "tilt",
+            (
+                torch.as_tensor(tilt, **factory_kwargs)
+                if tilt is not None
+                else torch.zeros_like(self.length)
+            ),
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -79,6 +88,8 @@ class Quadrupole(Element):
             misalignment=self.misalignment.repeat((*shape, 1)),
             tilt=self.tilt.repeat(shape),
             name=self.name,
+            device=self.length.device,
+            dtype=self.length.dtype,
         )
 
     @property
@@ -97,6 +108,9 @@ class Quadrupole(Element):
                 torch.min(resolution, remaining),
                 self.k1,
                 misalignment=self.misalignment,
+                tilt=self.tilt,
+                dtype=self.length.dtype,
+                device=self.length.device,
             )
             split_elements.append(element)
             remaining -= resolution

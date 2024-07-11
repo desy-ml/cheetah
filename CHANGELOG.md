@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198) (@jank324, @cr-xu)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #215, #218) (@jank324, @cr-xu)
 - The fifth particle coordinate `s` is renamed to `tau`. Now cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. (see #163) (@cr-xu)
 
 ### 🚀 Features
@@ -14,6 +14,8 @@
 - Add Python 3.12 support (see #161) (@jank324)
 - Implement space charge using Green's function in a `SpaceChargeKick` element (see #142) (@greglenerd, @RemiLehe, @ax3l, @cr-xu, @jank324)
 - `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` and dtypes other than `torch.float32` (see #196, #206) (@jank324)
+- `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
+- Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -23,6 +25,7 @@
 - Add `name` to `Drift` element `__repr__` (see #201) (@ansantam)
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
+- Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
 
 ### 🐆 Other
 

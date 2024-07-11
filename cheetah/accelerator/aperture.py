@@ -37,15 +37,21 @@ class Aperture(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.x_max = (
-            torch.as_tensor(x_max, **factory_kwargs)
-            if x_max is not None
-            else torch.tensor(float("inf"), **factory_kwargs)
+        self.register_buffer(
+            "x_max",
+            (
+                torch.as_tensor(x_max, **factory_kwargs)
+                if x_max is not None
+                else torch.tensor(float("inf"), **factory_kwargs)
+            ),
         )
-        self.y_max = (
-            torch.as_tensor(y_max, **factory_kwargs)
-            if y_max is not None
-            else torch.tensor(float("inf"), **factory_kwargs)
+        self.register_buffer(
+            "y_max",
+            (
+                torch.as_tensor(y_max, **factory_kwargs)
+                if y_max is not None
+                else torch.tensor(float("inf"), **factory_kwargs)
+            ),
         )
         self.shape = shape
         self.is_active = is_active
@@ -111,6 +117,8 @@ class Aperture(Element):
             shape=self.shape,
             is_active=self.is_active,
             name=self.name,
+            device=self.x_max.device,
+            dtype=self.x_max.dtype,
         )
         new_aperture.length = self.length.repeat(shape)
         return new_aperture
