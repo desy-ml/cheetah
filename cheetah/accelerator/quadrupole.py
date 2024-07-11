@@ -4,11 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator
-
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -80,15 +79,6 @@ class Quadrupole(Element):
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
             return R
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            k1=self.k1.repeat(shape),
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            tilt=self.tilt.repeat(shape),
-            name=self.name,
-        )
 
     @property
     def is_skippable(self) -> bool:

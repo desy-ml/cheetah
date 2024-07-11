@@ -84,12 +84,11 @@ def test_tilted_quadrupole_batch():
     """
     Test that a quadrupole with a multiple tilts behaves as expected.
     """
-    batch_shape = torch.Size([3])
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000_000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
-    ).broadcast(batch_shape)
+    )
     segment = Segment(
         [
             Quadrupole(
@@ -97,7 +96,7 @@ def test_tilted_quadrupole_batch():
                 k1=torch.tensor([1.0, 1.0, 1.0]),
                 tilt=torch.tensor([torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4]),
             ),
-            Drift(length=torch.tensor([0.5])).broadcast(batch_shape),
+            Drift(length=torch.tensor([0.5])),
         ]
     )
     outgoing = segment(incoming)
