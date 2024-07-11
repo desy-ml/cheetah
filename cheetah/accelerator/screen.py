@@ -195,9 +195,9 @@ class Screen(Element):
                     int(self.effective_resolution[0]),
                 )
             )
-            for i, (xs_sample, ys_sample) in enumerate(zip(read_beam.xs, read_beam.ys)):
+            for i, (x_sample, y_sample) in enumerate(zip(read_beam.x, read_beam.y)):
                 image_sample, _ = torch.histogramdd(
-                    torch.stack((xs_sample, ys_sample)).T.cpu(),
+                    torch.stack((x_sample, y_sample)).T.cpu(),
                     bins=self.pixel_bin_edges,
                 )
                 image_sample = torch.flipud(image_sample.T)

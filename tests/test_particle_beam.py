@@ -136,9 +136,9 @@ def test_generate_uniform_ellipsoid_batched():
     )
 
     assert beam.num_particles == num_particles
-    assert torch.all(beam.xs.abs().transpose(0, 1) <= radius_x)
-    assert torch.all(beam.ys.abs().transpose(0, 1) <= radius_y)
-    assert torch.all(beam.taus.abs().transpose(0, 1) <= radius_tau)
+    assert torch.all(beam.x.abs().transpose(0, 1) <= radius_x)
+    assert torch.all(beam.y.abs().transpose(0, 1) <= radius_y)
+    assert torch.all(beam.tau.abs().transpose(0, 1) <= radius_tau)
     assert torch.allclose(beam.sigma_px, sigma_px)
     assert torch.allclose(beam.sigma_py, sigma_py)
     assert torch.allclose(beam.sigma_p, sigma_p)
