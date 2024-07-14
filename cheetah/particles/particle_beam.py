@@ -10,7 +10,7 @@ speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
 electron_mass = torch.tensor(constants.electron_mass)  # In kg
 electron_mass_eV = torch.tensor(
     constants.physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)  # in eV
+)  # In eV
 
 
 class ParticleBeam(Beam):
@@ -936,12 +936,12 @@ class ParticleBeam(Beam):
 
     @property
     def energies(self) -> torch.Tensor:
-        """Get the energies of the individual particles."""
+        """Energies of the individual particles."""
         return self.p * self.p0c + self.energy
 
     @property
     def momenta(self) -> torch.Tensor:
-        """Get the momenta of the individual particles."""
+        """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
 
     def broadcast(self, shape: torch.Size) -> "ParticleBeam":
