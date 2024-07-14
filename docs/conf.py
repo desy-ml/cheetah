@@ -32,7 +32,7 @@ myst_enable_extensions = ["dollarmath", "amsmath"]  # Enable math typesetting
 
 source_suffix = {
     ".rst": "restructuredtext",
-    ".md": "markdown",  # add markdown support
+    ".md": "markdown",  # Add markdown support
 }
 autosummary_generate = True  # Turn on autosummary
 

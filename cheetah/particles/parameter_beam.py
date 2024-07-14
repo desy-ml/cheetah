@@ -10,8 +10,8 @@ class ParameterBeam(Beam):
     """
     Beam of charged particles, where each particle is simulated.
 
-    :param mu: Mu vector of the beam (..., 7).
-    :param cov: Covariance matrix of the beam (..., 7, 7).
+    :param mu: Mu vector of the beam with shape `(..., 7)`.
+    :param cov: Covariance matrix of the beam with shape `(..., 7, 7)`.
     :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
