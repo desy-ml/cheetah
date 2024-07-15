@@ -5,7 +5,7 @@ In _Cheetah_, the coordinates of the particles are defined by a 7-dimensional ve
 $$\vec{x} = (x, px, y, py, \tau, \delta, 1)$$
 
 The first 6 values are the canonical variables in the phase space.
-The trailing $1$ is augmented as in affine transformation, for convenient calculations of thin-length kicks, misalignmenents, etc.
+The trailing $1$ is augmented as in affine transformation, for convenient calculations of thin-lens kicks, misalignmenents, etc.
 
 The phase space coordinates are defined in the curvelinear coordinate system with respect to a reference particle at a position $s$ along the beamline:
 
