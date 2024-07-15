@@ -49,7 +49,7 @@ def test_merged_transfer_maps_tracking_vectorized():
     """
     incoming_beam = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast(torch.Size([10]))
+    )
 
     original_segment = cheetah.Segment(
         elements=[
