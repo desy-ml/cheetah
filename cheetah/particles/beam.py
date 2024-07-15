@@ -8,28 +8,32 @@ electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
 
-r"""
-Cheetah uses a 7D vector to describe the state of a particle.
-It contains the 6D phase space vector (x, px, y, yp, tau, p) and an additional
-dimension (always 1) for convenient calculations.
-
-The phase space vectors contain the canonical variables:
-- x: Position in x direction in meters.
-- px: Horizontal momentum normalized over the reference momentum (dimensionless).
-    $px = P_x / P_0$
-- y: Position in y direction in meters.
-- py: Vertical momentum normalized over the reference momentum (dimensionless).
-    $py = P_y / P_0$
-- tau: Position in longitudinal direction in meters, relative to the reference particle.
-    $\tau = ct - s/\beta_0$, where s is the position along the beamline.
-    In this notation, particle ahead of the reference particle will have negative $\tau$
-- p: Relative energy deviation from the reference particle (dimensionless).
-    $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
-    $\Delta E = E - E_0$
-"""
-
 
 class Beam(nn.Module):
+    r"""
+    Parent class to represent a beam of particles. You should not instantiate this
+    class directly, but use one of the subclasses.
+
+    Cheetah uses a 7D vector to describe the state of a particle.
+    It contains the 6D phase space vector (x, px, y, yp, tau, p) and an additional
+    dimension (always 1) for convenient calculations.
+
+    The phase space vectors contain the canonical variables:
+    - x: Position in x direction in meters.
+    - px: Horizontal momentum normalized over the reference momentum (dimensionless).
+        $px = P_x / P_0$
+    - y: Position in y direction in meters.
+    - py: Vertical momentum normalized over the reference momentum (dimensionless).
+        $py = P_y / P_0$
+    - tau: Position in longitudinal direction in meters, relative to the reference
+        particle. $\tau = ct - s/\beta_0$, where s is the position along the beamline.
+        In this notation, particle ahead of the reference particle will have negative
+        $\tau$.
+    - p: Relative energy deviation from the reference particle (dimensionless).
+        $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
+        $\Delta E = E - E_0$
+    """
+
     empty = "I'm an empty beam!"
 
     @classmethod
