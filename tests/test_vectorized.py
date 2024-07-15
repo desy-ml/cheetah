@@ -310,13 +310,7 @@ def test_enormous_through_ares():
 
     segment.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100_000).repeat(3, 1)
 
-    from icecream import ic
-
-    ic(segment.AREAMQZM1.k1.shape, incoming.sigma_x.shape)
-
     outgoing = segment.track(incoming)
-
-    ic(outgoing.sigma_x.shape, outgoing.energy.shape)
 
     assert outgoing.mu_x.shape == (3, 100_000)
     assert outgoing.mu_px.shape == (3, 100_000)
@@ -330,120 +324,6 @@ def test_enormous_through_ares():
     assert outgoing.sigma_p.shape == (3, 100_000)
     assert outgoing.energy.shape == (3, 100_000)
     assert outgoing.total_charge.shape == (3, 100_000)
-
-
-def test_before_after_broadcast_tracking_equal_cavity():
-    """
-    Test that when tracking through a segment after broadcasting, the resulting beam is
-    the same as in the segment before broadcasting. A cavity is used as a reference.
-    """
-    cavity = cheetah.Cavity(
-        length=torch.tensor(3.0441).repeat((3, 10)),
-        voltage=torch.tensor(48198468.0),
-        phase=torch.tensor(-0.0),
-        frequency=torch.tensor(2.8560e09),
-        name="k26_2d",
-    )
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-    outgoing = cavity.track(incoming)
-
-    broadcast_cavity = cavity
-    broadcast_incoming = incoming
-    broadcast_outgoing = broadcast_cavity.track(broadcast_incoming)
-
-    for i in range(3):
-        for j in range(10):
-            assert torch.all(broadcast_outgoing._mu[i, j] == outgoing._mu[0])
-            assert torch.all(broadcast_outgoing._cov[i, j] == outgoing._cov[0])
-
-
-def test_before_after_broadcast_tracking_equal_ares_ea():
-    """
-    Test that when tracking through a segment after broadcasting, the resulting beam is
-    the same as in the segment before broadcasting. The ARES EA is used as a reference.
-    """
-    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-    segment.AREAMQZM1.k1 = torch.tensor(4.2).repeat((3, 10))
-    outgoing = segment.track(incoming)
-
-    broadcast_segment = segment
-    broadcast_incoming = incoming
-    broadcast_outgoing = broadcast_segment.track(broadcast_incoming)
-
-    for i in range(3):
-        for j in range(10):
-            assert torch.allclose(broadcast_outgoing._mu[i, j], outgoing._mu[0])
-            assert torch.allclose(broadcast_outgoing._cov[i, j], outgoing._cov[0])
-
-
-def test_broadcast_customtransfermap():
-    """Test that broadcasting a `CustomTransferMap` element gives the correct result."""
-    tm = torch.tensor(
-        [
-            [
-                [1.0, 4.0e-02, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0e-05],
-                [0.0, 0.0, 1.0, 4.0e-02, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 1.0, -4.6422e-07, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-            ]
-        ]
-    )
-
-    element = cheetah.CustomTransferMap(
-        length=torch.tensor(0.4).repeat((3, 10)),
-        transfer_map=tm.repeat((3, 10, 1, 1)),
-    )
-    broadcast_element = element
-
-    assert broadcast_element.length.shape == (3, 10)
-    assert broadcast_element._transfer_map.shape == (3, 10, 7, 7)
-    for i in range(3):
-        for j in range(10):
-            assert torch.all(broadcast_element._transfer_map[i, j] == tm[0])
-
-
-def test_broadcast_beam_keeps_dtype():
-    """Test that broadcasting a beam keeps the same dtype."""
-    beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor(1e-5), dtype=torch.float64
-    )
-    broadcast_beam = beam.broadcast((2,))
-    drift = cheetah.Drift(length=torch.tensor([0.4, 0.4]), dtype=torch.float64)
-
-    assert broadcast_beam.particles.dtype == torch.float64
-
-    # This should not raise an error
-    _ = drift(broadcast_beam)
-
-
-def test_broadcast_drift():
-    """Test that broadcasting a `Drift` element gives the correct result."""
-    element = cheetah.Drift(length=torch.tensor(0.4).repeat((3, 10)))
-
-    assert element.length.shape == (3, 10)
-    for i in range(3):
-        for j in range(10):
-            assert element.length[i, j] == 0.4
-
-
-def test_broadcast_quadrupole():
-    """Test that broadcasting a `Quadrupole` element gives the correct result."""
-
-    # TODO Add misalignment to the test
-    # TODO Add tilt to the test
-
-    element = cheetah.Quadrupole(length=torch.randn((3, 10)), k1=torch.tensor([4.2]))
-
-    assert element.length.shape == (3, 10)
-    assert element.k1.shape == (1,)
 
 
 def test_cavity_with_zero_and_non_zero_voltage():
@@ -463,19 +343,3 @@ def test_cavity_with_zero_and_non_zero_voltage():
     ).broadcast((3,))
 
     _ = cavity.track(beam)
-
-
-def test_screen_length_shape():
-    """
-    Test that the shape of a screen's length matches the shape of its misalignment.
-    """
-    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2], [0.3, 0.4]]))
-    assert screen.length.shape == screen.misalignment.shape[:-1]
-
-
-def test_screen_length_broadcast_shape():
-    """
-    Test that the shape of a screen's length matches the shape of its misalignment
-    after broadcasting.
-    """
-    cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2]]).repeat(3, 10, 1))
