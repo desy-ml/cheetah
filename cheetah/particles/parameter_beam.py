@@ -430,16 +430,6 @@ class ParameterBeam(Beam):
     def sigma_ypy(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
 
-    def broadcast(self, shape: torch.Size) -> "ParameterBeam":
-        return self.__class__(
-            mu=self._mu.repeat((*shape, 1)),
-            cov=self._cov.repeat((*shape, 1, 1)),
-            energy=self.energy.repeat(shape),
-            total_charge=self.total_charge.repeat(shape),
-            device=self._mu.device,
-            dtype=self._mu.dtype,
-        )
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={repr(self.mu_x)},"

@@ -340,6 +340,6 @@ def test_cavity_with_zero_and_non_zero_voltage():
     )
     beam = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor(1e-5)
-    ).broadcast((3,))
+    )
 
     _ = cavity.track(beam)

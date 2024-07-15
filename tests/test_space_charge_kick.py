@@ -147,7 +147,7 @@ def test_vectorized_cold_uniform_beam_expansion():
         sigma_px=torch.tensor([1e-15]),
         sigma_py=torch.tensor([1e-15]),
         sigma_p=torch.tensor([1e-15]),
-    ).broadcast(shape=(2, 3))
+    )
 
     # Compute section length
     kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(

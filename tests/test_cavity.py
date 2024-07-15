@@ -68,7 +68,7 @@ def test_vectorized_cavity_zero_voltage(voltage):
         energy=torch.tensor([8.0000e09]),
         total_charge=torch.tensor([0.0]),
         dtype=torch.float64,
-    ).broadcast((2,))
+    )
 
     outgoing = cavity.track(incoming)
 

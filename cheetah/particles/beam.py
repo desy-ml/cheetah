@@ -359,10 +359,6 @@ class Beam(nn.Module):
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
 
-    def broadcast(self, shape: torch.Size) -> "Beam":
-        """Broadcast beam to new shape."""
-        raise NotImplementedError
-
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_px={self.mu_px},"
