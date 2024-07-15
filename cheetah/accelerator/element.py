@@ -31,13 +31,13 @@ class Element(ABC, nn.Module):
         The state vector consists of 6 values with a physical meaning.
         They represent a particle in the phase space with
 
-        - x: Position in x direction (m), relative to the reference particle
+        - x: Position in x direction (m) relative to the reference particle
         - px: Horinzontal momentum normalized over the reference momentum
             (dimensionless) :math:`px = P_x / P_0`
-        - y: Position in y direction (m), relative to the reference particle
+        - y: Position in y direction (m) relative to the reference particle
         - py: Vertical momentum normalized over the reference momentum
             (dimensionless) :math:`py = P_y / P_0`
-        - tau: Position in longitudinal direction (m), the zero value is set to the
+        - tau: Position in longitudinal direction (m) with the zero value set to the
         reference position (usually the center of the pulse)
         - p: Relative energy deviation from the reference particle (dimensionless)
         :math:`p = \frac{\Delta E}{p_0 C}`
