@@ -13,6 +13,7 @@ from cheetah.converters.nxtables import read_nx_tables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
+
 from .custom_transfer_map import CustomTransferMap
 from .drift import Drift
 from .element import Element
