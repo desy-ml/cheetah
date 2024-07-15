@@ -58,16 +58,14 @@ def test_quadrupole_with_misalignments_multiple_batch_dimensions():
 
     misalignments = torch.randn((4, 3, 2))
     quad_with_misalignment = Quadrupole(
-        length=torch.tensor([1.0]),
-        k1=torch.tensor([1.0]),
-        misalignment=misalignments,
+        length=torch.tensor(1.0), k1=torch.tensor(1.0), misalignment=misalignments
     )
 
     quad_without_misalignment = Quadrupole(
-        length=torch.tensor([1.0]), k1=torch.tensor([1.0])
+        length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
     incoming_beam = ParameterBeam.from_parameters(
-        sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
+        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
     outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
     outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
@@ -88,8 +86,8 @@ def test_tilted_quadrupole_batch():
     """
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000_000),
-        energy=torch.tensor([1e9]),
-        mu_x=torch.tensor([1e-5]),
+        energy=torch.tensor(1e9),
+        mu_x=torch.tensor(1e-5),
     )
     segment = Segment(
         [
@@ -98,7 +96,7 @@ def test_tilted_quadrupole_batch():
                 k1=torch.tensor([1.0, 1.0, 1.0]),
                 tilt=torch.tensor([torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4]),
             ),
-            Drift(length=torch.tensor([0.5])),
+            Drift(length=torch.tensor(0.5)),
         ]
     )
     outgoing = segment(incoming)
@@ -124,15 +122,15 @@ def test_tilted_quadrupole_multiple_batch_dimensions():
     )
     segment = Segment(
         [
-            Quadrupole(length=torch.tensor([0.5]), k1=torch.tensor([1.0]), tilt=tilts),
-            Drift(length=torch.tensor([0.5])),
+            Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0), tilt=tilts),
+            Drift(length=torch.tensor(0.5)),
         ]
     )
 
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(10_000),
-        energy=torch.tensor([1e9]),
-        mu_x=torch.tensor([1e-5]),
+        energy=torch.tensor(1e9),
+        mu_x=torch.tensor(1e-5),
     )
 
     outgoing = segment(incoming)
@@ -151,15 +149,15 @@ def test_quadrupole_length_multiple_batch_dimensions():
     lengths = torch.tensor([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]])
     segment = Segment(
         [
-            Quadrupole(length=lengths, k1=torch.tensor([4.2])),
+            Quadrupole(length=lengths, k1=torch.tensor(4.2)),
             Drift(length=lengths * 2),
         ]
     )
 
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(10_000),
-        energy=torch.tensor([1e9]),
-        mu_x=torch.tensor([1e-5]),
+        energy=torch.tensor(1e9),
+        mu_x=torch.tensor(1e-5),
     )
 
     outgoing = segment(incoming)

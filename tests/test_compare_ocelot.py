@@ -18,9 +18,7 @@ def test_dipole():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor([0.1]), angle=torch.tensor([0.1])
-    )
+    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.1))
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
@@ -48,9 +46,7 @@ def test_dipole_with_float64():
         "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
     cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor([0.1]),
-        angle=torch.tensor([0.1]),
-        dtype=torch.float64,
+        length=torch.tensor(0.1), angle=torch.tensor(0.1), dtype=torch.float64
     )
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
@@ -79,10 +75,10 @@ def test_dipole_with_fringe_field():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor([0.1]),
-        angle=torch.tensor([0.1]),
-        fringe_integral=torch.tensor([0.1]),
-        gap=torch.tensor([0.2]),
+        length=torch.tensor(0.1),
+        angle=torch.tensor(0.1),
+        fringe_integral=torch.tensor(0.1),
+        gap=torch.tensor(0.2),
     )
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
@@ -114,13 +110,13 @@ def test_dipole_with_fringe_field_and_tilt():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor([1.0]),
-        angle=torch.tensor([bend_angle]),
-        fringe_integral=torch.tensor([0.1]),
-        gap=torch.tensor([0.2]),
-        tilt=torch.tensor([tilt_angle]),
-        e1=torch.tensor([bend_angle / 2]),
-        e2=torch.tensor([bend_angle / 2]),
+        length=torch.tensor(1.0),
+        angle=torch.tensor(bend_angle),
+        fringe_integral=torch.tensor(0.1),
+        gap=torch.tensor(0.2),
+        tilt=torch.tensor(tilt_angle),
+        e1=torch.tensor(bend_angle / 2),
+        e2=torch.tensor(bend_angle / 2),
     )
     outgoing_beam = cheetah_dipole(incoming_beam)
 
@@ -159,13 +155,13 @@ def test_aperture():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                x_max=torch.tensor([2e-4]),
-                y_max=torch.tensor([2e-4]),
+                x_max=torch.tensor(2e-4),
+                y_max=torch.tensor(2e-4),
                 shape="rectangular",
                 name="aperture",
                 is_active=True,
             ),
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -195,13 +191,13 @@ def test_aperture_elliptical():
     cheetah_segment = cheetah.Segment(
         [
             cheetah.Aperture(
-                x_max=torch.tensor([2e-4]),
-                y_max=torch.tensor([2e-4]),
+                x_max=torch.tensor(2e-4),
+                y_max=torch.tensor(2e-4),
                 shape="elliptical",
                 name="aperture",
                 is_active=True,
             ),
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -231,9 +227,7 @@ def test_solenoid():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_solenoid = cheetah.Solenoid(
-        length=torch.tensor([0.5]), k=torch.tensor([5.0])
-    )
+    cheetah_solenoid = cheetah.Solenoid(length=torch.tensor(0.5), k=torch.tensor(5.0))
     outgoing_beam = cheetah_solenoid.track(incoming_beam)
 
     # Ocelot
@@ -399,13 +393,13 @@ def test_quadrupole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor([0.23]), k1=torch.tensor([5.0])
+        length=torch.tensor(0.23), k1=torch.tensor(5.0)
     )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
             cheetah_quadrupole,
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -441,13 +435,13 @@ def test_tilted_quadrupole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor([0.23]), k1=torch.tensor([5.0]), tilt=torch.tensor([0.79])
+        length=torch.tensor(0.23), k1=torch.tensor(5.0), tilt=torch.tensor(0.79)
     )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
             cheetah_quadrupole,
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -481,14 +475,12 @@ def test_sbend():
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor([0.1]), angle=torch.tensor([0.2])
-    )
+    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.2))
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
             cheetah_dipole,
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -525,16 +517,16 @@ def test_rbend():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_dipole = cheetah.RBend(
-        length=torch.tensor([0.1]),
-        angle=torch.tensor([0.2]),
-        fringe_integral=torch.tensor([0.1]),
-        gap=torch.tensor([0.2]),
+        length=torch.tensor(0.1),
+        angle=torch.tensor(0.2),
+        fringe_integral=torch.tensor(0.1),
+        gap=torch.tensor(0.2),
     )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
             cheetah_dipole,
-            cheetah.Drift(length=torch.tensor([0.1])),
+            cheetah.Drift(length=torch.tensor(0.1)),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -691,10 +683,10 @@ def test_cavity():
         parray=p_array, dtype=torch.float64
     )
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
-        frequency=torch.tensor([1.3e9]),
-        phase=torch.tensor([0.0]),
+        length=torch.tensor(1.0377),
+        voltage=torch.tensor(0.01815975e9),
+        frequency=torch.tensor(1.3e9),
+        phase=torch.tensor(0.0),
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_cavity.track(incoming_beam)
@@ -745,10 +737,10 @@ def test_cavity_non_zero_phase():
         parray=p_array, dtype=torch.float64
     )
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
-        frequency=torch.tensor([1.3e9]),
-        phase=torch.tensor([30.0]),
+        length=torch.tensor(1.0377),
+        voltage=torch.tensor(0.01815975e9),
+        frequency=torch.tensor(1.3e9),
+        phase=torch.tensor(30.0),
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_cavity.track(incoming_beam)

@@ -19,8 +19,8 @@ def test_cold_uniform_beam_expansion():
     torch.manual_seed(42)
 
     # Simulation parameters
-    R0 = torch.tensor([0.001])
-    energy = torch.tensor([2.5e8])
+    R0 = torch.tensor(0.001)
+    energy = torch.tensor(2.5e8)
     rest_energy = torch.tensor(
         constants.electron_mass
         * constants.speed_of_light**2
@@ -33,14 +33,14 @@ def test_cold_uniform_beam_expansion():
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(10_000),
-        total_charge=torch.tensor([1e-9]),
+        total_charge=torch.tensor(1e-9),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
         radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_px=torch.tensor([1e-15]),
-        sigma_py=torch.tensor([1e-15]),
-        sigma_p=torch.tensor([1e-15]),
+        sigma_px=torch.tensor(1e-15),
+        sigma_py=torch.tensor(1e-15),
+        sigma_p=torch.tensor(1e-15),
     )
 
     # Compute section length
@@ -74,9 +74,9 @@ def test_vectorized():
     """
 
     # Simulation parameters
-    section_length = torch.tensor([0.42])
-    R0 = torch.tensor([0.001])
-    energy = torch.tensor([2.5e8])
+    section_length = torch.tensor(0.42)
+    R0 = torch.tensor(0.001)
+    energy = torch.tensor(2.5e8)
     rest_energy = torch.tensor(
         constants.electron_mass
         * constants.speed_of_light**2
@@ -246,7 +246,7 @@ def test_does_not_break_segment_length():
     Test that the computation of a `Segment`'s length does not break when
     `SpaceChargeKick` is used.
     """
-    section_length = torch.tensor([1.0]).repeat((3, 2))
+    section_length = torch.tensor(1.0).repeat((3, 2))
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
@@ -260,4 +260,4 @@ def test_does_not_break_segment_length():
     )
 
     assert segment.length.shape == (3, 2)
-    assert torch.allclose(segment.length, torch.tensor([1.0]).repeat(3, 2))
+    assert torch.allclose(segment.length, torch.tensor(1.0).repeat(3, 2))

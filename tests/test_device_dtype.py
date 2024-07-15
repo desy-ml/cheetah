@@ -24,7 +24,7 @@ import cheetah
 def test_move_quadrupole_to_device(target_device: torch.device):
     """Test that a quadrupole magnet can be successfully moved to a different device."""
     quad = cheetah.Quadrupole(
-        length=torch.tensor([0.2]), k1=torch.tensor([4.2]), name="my_quad"
+        length=torch.tensor(0.2), k1=torch.tensor(4.2), name="my_quad"
     )
 
     # Test that by default the quadrupole is on the CPU
@@ -48,7 +48,7 @@ def test_change_quadrupole_dtype():
     Test that a quadrupole magnet can be successfully changed to a different dtype.
     """
     quad = cheetah.Quadrupole(
-        length=torch.tensor([0.2]), k1=torch.tensor([4.2]), name="my_quad"
+        length=torch.tensor(0.2), k1=torch.tensor(4.2), name="my_quad"
     )
 
     # Test that by default the quadrupole is of dtype float32
