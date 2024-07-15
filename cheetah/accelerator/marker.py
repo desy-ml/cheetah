@@ -3,9 +3,8 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import torch
 
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

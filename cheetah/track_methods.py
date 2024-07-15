@@ -1,10 +1,10 @@
-"""Utility functions for creating transfer maps for the elements."""
+"""Utility functions for creating transfer maps for elements."""
 
 from typing import Optional
 
 import torch
 
-from cheetah.utils.physics import calculate_relativistic_factors
+from .utils.physics import calculate_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:

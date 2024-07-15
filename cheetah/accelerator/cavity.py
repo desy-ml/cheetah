@@ -6,10 +6,9 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.track_methods import base_rmatrix
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..track_methods import base_rmatrix
+from ..utils import UniqueNameGenerator
 from ..utils.physics import calculate_relativistic_factors, electron_mass_eV
 from .element import Element
 

@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
