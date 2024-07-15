@@ -7,6 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
+
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

@@ -5,6 +5,7 @@ import torch
 
 from cheetah.particles import Beam
 from cheetah.utils import UniqueNameGenerator
+
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
