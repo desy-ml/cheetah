@@ -56,8 +56,6 @@ def test_weighted_samples_2d():
     hist_neglect_weights = kde_histogram_2d(
         x_weighted[:, 0], x_weighted[:, 1], bins1, bins2, sigma
     )
-    print(hist_unweighted[5])
-    print(hist_weighted[5])
-    print(hist_neglect_weights[5])
+
     assert torch.allclose(hist_unweighted, hist_weighted)
     assert not torch.allclose(hist_weighted, hist_neglect_weights)
