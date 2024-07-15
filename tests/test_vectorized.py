@@ -308,12 +308,15 @@ def test_enormous_through_ares():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    segment_broadcast = segment
-    incoming_broadcast = incoming
+    segment.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100_000).repeat(3, 1)
 
-    segment_broadcast.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100).repeat(3, 1)
+    from icecream import ic
 
-    outgoing = segment_broadcast.track(incoming_broadcast)
+    ic(segment.AREAMQZM1.k1.shape, incoming.sigma_x.shape)
+
+    outgoing = segment.track(incoming)
+
+    ic(outgoing.sigma_x.shape, outgoing.energy.shape)
 
     assert outgoing.mu_x.shape == (3, 100_000)
     assert outgoing.mu_px.shape == (3, 100_000)
@@ -335,10 +338,10 @@ def test_before_after_broadcast_tracking_equal_cavity():
     the same as in the segment before broadcasting. A cavity is used as a reference.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441]).repeat((3, 10)),
-        voltage=torch.tensor([48198468.0]),
-        phase=torch.tensor([-0.0]),
-        frequency=torch.tensor([2.8560e09]),
+        length=torch.tensor(3.0441).repeat((3, 10)),
+        voltage=torch.tensor(48198468.0),
+        phase=torch.tensor(-0.0),
+        frequency=torch.tensor(2.8560e09),
         name="k26_2d",
     )
     incoming = cheetah.ParameterBeam.from_astra(
@@ -365,7 +368,7 @@ def test_before_after_broadcast_tracking_equal_ares_ea():
     incoming = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    segment.AREAMQZM1.k1 = torch.tensor([4.2]).repeat((3, 10))
+    segment.AREAMQZM1.k1 = torch.tensor(4.2).repeat((3, 10))
     outgoing = segment.track(incoming)
 
     broadcast_segment = segment
@@ -395,7 +398,7 @@ def test_broadcast_customtransfermap():
     )
 
     element = cheetah.CustomTransferMap(
-        length=torch.tensor([0.4]).repeat((3, 10)),
+        length=torch.tensor(0.4).repeat((3, 10)),
         transfer_map=tm.repeat((3, 10, 1, 1)),
     )
     broadcast_element = element
@@ -407,18 +410,10 @@ def test_broadcast_customtransfermap():
             assert torch.all(broadcast_element._transfer_map[i, j] == tm[0])
 
 
-def test_broadcast_element_keeps_dtype():
-    """Test that broadcasting an element keeps the same dtype."""
-    element = cheetah.Drift(length=torch.tensor([0.4]), dtype=torch.float64)
-    broadcast_element = element.broadcast((3, 10))
-
-    assert broadcast_element.length.dtype == torch.float64
-
-
 def test_broadcast_beam_keeps_dtype():
     """Test that broadcasting a beam keeps the same dtype."""
     beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5]), dtype=torch.float64
+        num_particles=100_000, sigma_x=torch.tensor(1e-5), dtype=torch.float64
     )
     broadcast_beam = beam.broadcast((2,))
     drift = cheetah.Drift(length=torch.tensor([0.4, 0.4]), dtype=torch.float64)
@@ -431,7 +426,7 @@ def test_broadcast_beam_keeps_dtype():
 
 def test_broadcast_drift():
     """Test that broadcasting a `Drift` element gives the correct result."""
-    element = cheetah.Drift(length=torch.tensor([0.4]).repeat((3, 10)))
+    element = cheetah.Drift(length=torch.tensor(0.4).repeat((3, 10)))
 
     assert element.length.shape == (3, 10)
     for i in range(3):
@@ -464,7 +459,7 @@ def test_cavity_with_zero_and_non_zero_voltage():
         name="my_test_cavity",
     )
     beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5])
+        num_particles=100_000, sigma_x=torch.tensor(1e-5)
     ).broadcast((3,))
 
     _ = cavity.track(beam)
