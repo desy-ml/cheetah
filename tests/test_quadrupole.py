@@ -67,7 +67,7 @@ def test_quadrupole_with_misalignments_multiple_batch_dimensions():
         length=torch.tensor([1.0]), k1=torch.tensor([1.0])
     )
     incoming_beam = ParameterBeam.from_parameters(
-        sigma_xp=torch.tensor([2e-7]), sigma_yp=torch.tensor([2e-7])
+        sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
     )
     outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
     outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
