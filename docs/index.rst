@@ -51,7 +51,7 @@ These pages explain how to get started with *Cheetah*.
 Documentation
 -------------
 
-For more advanced usage, please refer to the in-depth documentation of the modules.
+For more advanced usage, please refer to the in-depth documentation.
 
 .. toctree::
     :maxdepth: 1
