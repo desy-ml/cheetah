@@ -37,6 +37,16 @@ We provide some examples to demonstrate some features of *Cheetah* and show how 
     examples/optimize_speed
     examples/gradientbased
 
+Getting Started
+---------------
+
+These pages explain how to get started with *Cheetah*.
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Getting Started
+    
+    coordinate_system.md
 
 Documentation
 -------------

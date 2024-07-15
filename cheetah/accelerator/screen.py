@@ -9,6 +9,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
+
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -238,11 +239,10 @@ class Screen(Element):
                         int(self.effective_resolution[0]),
                     )
                 )
-                for i, (xs_sample, ys_sample) in enumerate(
-                    zip(read_beam.xs, read_beam.ys)
-                ):
+
+                for i, (x_sample, y_sample) in enumerate(zip(read_beam.x, read_beam.y)):
                     image_sample, _ = torch.histogramdd(
-                        torch.stack((xs_sample, ys_sample)).T.cpu(),
+                        torch.stack((x_sample, y_sample)).T.cpu(),
                         bins=self.pixel_bin_edges,
                     )
                     image_sample = torch.flipud(image_sample.T)
@@ -251,8 +251,8 @@ class Screen(Element):
                     image[i] = image_sample
             elif self.method == "kde":
                 image = kde_histogram_2d(
-                    x1=read_beam.xs,
-                    x2=read_beam.ys,
+                    x1=read_beam.x,
+                    x2=read_beam.y,
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
