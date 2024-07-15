@@ -26,7 +26,14 @@ extensions = [
     "nbsphinx",  # To render Jupyter notebooks
     "sphinx.ext.autodoc",  # To generate documentation from docstrings
     "sphinx.ext.autosummary",  # To automatically generate recursively
+    "myst_parser",  # To parse markdown files
 ]
+myst_enable_extensions = ["dollarmath", "amsmath"]  # Enable math typesetting
+
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",  # Add markdown support
+}
 autosummary_generate = True  # Turn on autosummary
 
 templates_path = ["_templates"]
