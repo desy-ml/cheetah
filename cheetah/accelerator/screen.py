@@ -7,9 +7,8 @@ from matplotlib.patches import Rectangle
 from torch import nn
 from torch.distributions import MultivariateNormal
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
-
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..utils import UniqueNameGenerator, kde_histogram_2d
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

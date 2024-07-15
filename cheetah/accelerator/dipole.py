@@ -6,9 +6,8 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from cheetah.track_methods import base_rmatrix, rotation_matrix
-from cheetah.utils import UniqueNameGenerator
-
+from ..track_methods import base_rmatrix, rotation_matrix
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

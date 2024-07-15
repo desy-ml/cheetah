@@ -5,8 +5,7 @@ import torch
 from scipy import constants
 from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-
+from ..particles import Beam, ParticleBeam
 from .element import Element
 
 # Constants

@@ -5,8 +5,7 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-from cheetah.utils import UniqueNameGenerator
-
+from ..utils import UniqueNameGenerator
 from ..utils.physics import calculate_relativistic_factors
 from .element import Element
 

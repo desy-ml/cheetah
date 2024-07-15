@@ -5,9 +5,8 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam, ParticleBeam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
