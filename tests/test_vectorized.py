@@ -55,14 +55,14 @@ def test_track_particle_single_element_shape():
     assert outgoing.particles.shape == incoming.particles.shape
     assert outgoing.particles.shape == (2, 100_000, 7)
     assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
     assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
     assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
     assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
     assert outgoing.energy.shape == (2,)
     assert outgoing.total_charge.shape == (2,)
@@ -89,14 +89,14 @@ def test_track_particle_single_element_shape_2d():
     assert outgoing.particles.shape == incoming.particles.shape
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
     assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
     assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
     assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
     assert outgoing.energy.shape == (3, 2)
     assert outgoing.total_charge.shape == (3, 2)
@@ -126,14 +126,14 @@ def test_track_particle_segment_shape():
     assert outgoing.particles.shape == incoming.particles.shape
     assert outgoing.particles.shape == (2, 100_000, 7)
     assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
     assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
     assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
     assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
     assert outgoing.energy.shape == (2,)
     assert outgoing.total_charge.shape == (2,)
@@ -166,14 +166,14 @@ def test_track_particle_segment_shape_2d():
     assert outgoing.particles.shape == incoming.particles.shape
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
     assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
     assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
     assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
     assert outgoing.energy.shape == (3, 2)
     assert outgoing.total_charge.shape == (3, 2)
@@ -193,14 +193,14 @@ def test_track_parameter_single_element_shape():
     outgoing = quadrupole.track(incoming)
 
     assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
     assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
     assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
     assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
     assert outgoing.energy.shape == (2,)
     assert outgoing.total_charge.shape == (2,)
@@ -222,14 +222,14 @@ def test_track_parameter_single_element_shape_2d():
     outgoing = quadrupole.track(incoming)
 
     assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
     assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
     assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
     assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
     assert outgoing.energy.shape == (3, 2)
     assert outgoing.total_charge.shape == (3, 2)
@@ -253,14 +253,14 @@ def test_track_parameter_segment_shape():
     outgoing = segment.track(incoming)
 
     assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
     assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
     assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
     assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
     assert outgoing.energy.shape == (2,)
     assert outgoing.total_charge.shape == (2,)
@@ -288,14 +288,14 @@ def test_track_parameter_segment_shape_2d():
     outgoing = segment.track(incoming)
 
     assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
     assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
     assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
     assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
     assert outgoing.energy.shape == (3, 2)
     assert outgoing.total_charge.shape == (3, 2)
@@ -315,17 +315,18 @@ def test_enormous_through_ares():
 
     outgoing = segment_broadcast.track(incoming_broadcast)
 
-    assert outgoing.mu_x.shape == (3, 100)
-    assert outgoing.mu_xp.shape == (3, 100)
-    assert outgoing.mu_y.shape == (3, 100)
-    assert outgoing.mu_yp.shape == (3, 100)
-    assert outgoing.sigma_x.shape == (3, 100)
-    assert outgoing.sigma_xp.shape == (3, 100)
-    assert outgoing.sigma_y.shape == (3, 100)
-    assert outgoing.sigma_yp.shape == (3, 100)
-    assert outgoing.sigma_s.shape == (3, 100)
-    assert outgoing.sigma_p.shape == (3, 100)
-    assert outgoing.total_charge.shape == torch.Size([1])
+    assert outgoing.mu_x.shape == (3, 100_000)
+    assert outgoing.mu_px.shape == (3, 100_000)
+    assert outgoing.mu_y.shape == (3, 100_000)
+    assert outgoing.mu_py.shape == (3, 100_000)
+    assert outgoing.sigma_x.shape == (3, 100_000)
+    assert outgoing.sigma_px.shape == (3, 100_000)
+    assert outgoing.sigma_y.shape == (3, 100_000)
+    assert outgoing.sigma_py.shape == (3, 100_000)
+    assert outgoing.sigma_tau.shape == (3, 100_000)
+    assert outgoing.sigma_p.shape == (3, 100_000)
+    assert outgoing.energy.shape == (3, 100_000)
+    assert outgoing.total_charge.shape == (3, 100_000)
 
 
 def test_before_after_broadcast_tracking_equal_cavity():
@@ -404,6 +405,28 @@ def test_broadcast_customtransfermap():
     for i in range(3):
         for j in range(10):
             assert torch.all(broadcast_element._transfer_map[i, j] == tm[0])
+
+
+def test_broadcast_element_keeps_dtype():
+    """Test that broadcasting an element keeps the same dtype."""
+    element = cheetah.Drift(length=torch.tensor([0.4]), dtype=torch.float64)
+    broadcast_element = element.broadcast((3, 10))
+
+    assert broadcast_element.length.dtype == torch.float64
+
+
+def test_broadcast_beam_keeps_dtype():
+    """Test that broadcasting a beam keeps the same dtype."""
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, sigma_x=torch.tensor([1e-5]), dtype=torch.float64
+    )
+    broadcast_beam = beam.broadcast((2,))
+    drift = cheetah.Drift(length=torch.tensor([0.4, 0.4]), dtype=torch.float64)
+
+    assert broadcast_beam.particles.dtype == torch.float64
+
+    # This should not raise an error
+    _ = drift(broadcast_beam)
 
 
 def test_broadcast_drift():

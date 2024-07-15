@@ -8,6 +8,7 @@ from torch import nn
 
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import UniqueNameGenerator
+
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

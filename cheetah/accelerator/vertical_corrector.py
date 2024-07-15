@@ -8,6 +8,7 @@ from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.utils import UniqueNameGenerator
+
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
