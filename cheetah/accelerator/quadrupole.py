@@ -86,7 +86,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return any(self.k1 != 0)
+        return bool(torch.any(self.k1 != 0))
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
