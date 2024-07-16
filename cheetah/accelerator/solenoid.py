@@ -8,8 +8,8 @@ from torch import nn
 
 from ..track_methods import misalignment_matrix
 from ..utils import UniqueNameGenerator
-from .element import Element
 from ..utils.physics import calculate_relativistic_factors
+from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -33,13 +33,13 @@ class Solenoid(Element):
     """
 
     def __init__(
-            self,
-            length: Union[torch.Tensor, nn.Parameter] = None,
-            k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-            misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-            name: Optional[str] = None,
-            device=None,
-            dtype=torch.float32,
+        self,
+        length: Union[torch.Tensor, nn.Parameter] = None,
+        k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        name: Optional[str] = None,
+        device=None,
+        dtype=torch.float32,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
@@ -83,22 +83,22 @@ class Solenoid(Element):
             r56 -= self.length / (beta * beta * gamma2)
 
         R = torch.eye(7, device=device, dtype=dtype).repeat((*batch_shape, 1, 1))
-        R[..., 0, 0] = c ** 2
+        R[..., 0, 0] = c**2
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c
         R[..., 0, 3] = s * s_k
         R[..., 1, 0] = -self.k * s * c
-        R[..., 1, 1] = c ** 2
-        R[..., 1, 2] = -self.k * s ** 2
+        R[..., 1, 1] = c**2
+        R[..., 1, 2] = -self.k * s**2
         R[..., 1, 3] = s * c
         R[..., 2, 0] = -s * c
         R[..., 2, 1] = -s * s_k
-        R[..., 2, 2] = c ** 2
+        R[..., 2, 2] = c**2
         R[..., 2, 3] = c * s_k
-        R[..., 3, 0] = self.k * s ** 2
+        R[..., 3, 0] = self.k * s**2
         R[..., 3, 1] = -s * c
         R[..., 3, 2] = -self.k * s * c
-        R[..., 3, 3] = c ** 2
+        R[..., 3, 3] = c**2
         R[..., 4, 5] = r56
 
         R = R.real
@@ -136,8 +136,8 @@ class Solenoid(Element):
 
     def __repr__(self) -> str:
         return (
-                f"{self.__class__.__name__}(length={repr(self.length)}, "
-                + f"k={repr(self.k)}, "
-                + f"misalignment={repr(self.misalignment)}, "
-                + f"name={repr(self.name)})"
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"k={repr(self.k)}, "
+            + f"misalignment={repr(self.misalignment)}, "
+            + f"name={repr(self.name)})"
         )
