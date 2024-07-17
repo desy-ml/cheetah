@@ -19,5 +19,5 @@ setup(
     long_description_content_type="text/markdown",
     packages=[package for package in find_packages() if package.startswith("cheetah")],
     python_requires=">=3.9",
-    install_requires=["matplotlib", "numpy", "scipy", "torch"],
+    install_requires=["matplotlib", "numpy<2.0", "scipy", "torch"],
 )
