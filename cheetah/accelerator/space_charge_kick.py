@@ -557,6 +557,15 @@ class SpaceChargeKick(Element):
         elif isinstance(incoming, ParticleBeam):
             # This flattening is a hack to only think about one vector dimension in the
             # following code. It is reversed at the end of the function.
+
+            # Make sure that the incoming beam has at least one batch dimension
+            incoming_batched = True
+            if len(incoming.particles.shape) == 2:
+                incoming_batched = False
+                incoming.particles = incoming.particles.unsqueeze(0)
+                incoming.energy = incoming.energy.unsqueeze(0)
+                incoming.particle_charges = incoming.particle_charges.unsqueeze(0)
+
             flattened_incoming = ParticleBeam(
                 particles=incoming.particles.flatten(end_dim=-3),
                 energy=incoming.energy.flatten(end_dim=-1),
@@ -595,14 +604,26 @@ class SpaceChargeKick(Element):
                 ..., 2
             ] * dt.unsqueeze(-1)
 
-            outgoing = ParticleBeam.from_xyz_pxpypz(
-                xp_coordinates.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
-                incoming.energy,
-                incoming.particle_charges,
-                incoming.particles.device,
-                incoming.particles.dtype,
-            )
-
+            if not incoming_batched:
+                # Reshape to the original shape
+                outgoing = ParticleBeam.from_xyz_pxpypz(
+                    xp_coordinates.squeeze(0),
+                    incoming.energy.squeeze(0),
+                    incoming.particle_charges.squeeze(0),
+                    incoming.particles.device,
+                    incoming.particles.dtype,
+                )
+            else:
+                # Reverse the flattening
+                outgoing = ParticleBeam.from_xyz_pxpypz(
+                    xp_coordinates.unflatten(
+                        dim=0, sizes=incoming.particles.shape[:-2]
+                    ),
+                    incoming.energy,
+                    incoming.particle_charges,
+                    incoming.particles.device,
+                    incoming.particles.dtype,
+                )
             return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
