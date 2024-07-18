@@ -237,7 +237,7 @@ def define_element(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_]+)\s*\:\s*([a-z0-9_]+)(\,(.*))?"
+    pattern = r"([a-z0-9_.]+)\s*\:\s*([a-z0-9_]+)(\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
@@ -372,7 +372,7 @@ def parse_lines(lines: str) -> dict:
     """
     property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
     variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
-    element_definition_pattern = r"[a-z0-9_]+\s*\:\s*[a-z0-9_]+.*"
+    element_definition_pattern = r"[a-z0-9_.]+\s*\:\s*[a-z0-9_]+.*"
     line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
     overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
     use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
