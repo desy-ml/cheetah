@@ -58,7 +58,7 @@ class Screen(Element):
             (
                 torch.as_tensor(resolution, **factory_kwargs)
                 if resolution is not None
-                else torch.tensor((1024, 1024), **factory_kwargs)
+                else torch.tensor((1_024, 1_024), **factory_kwargs)
             ),
         )
         self.register_buffer(

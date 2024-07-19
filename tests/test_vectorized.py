@@ -335,10 +335,10 @@ def test_before_after_broadcast_tracking_equal_cavity():
     the same as in the segment before broadcasting. A cavity is used as a reference.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441]),
-        voltage=torch.tensor([48198468.0]),
+        length=torch.tensor([3.0_441]),
+        voltage=torch.tensor([48_198_468.0]),
         phase=torch.tensor([-0.0]),
-        frequency=torch.tensor([2.8560e09]),
+        frequency=torch.tensor([2.8_560e09]),
         name="k26_2d",
     )
     incoming = cheetah.ParameterBeam.from_astra(
@@ -387,7 +387,7 @@ def test_broadcast_customtransfermap():
                 [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0e-05],
                 [0.0, 0.0, 1.0, 4.0e-02, 0.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 1.0, -4.6422e-07, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0, -4.6_422e-07, 0.0],
                 [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
             ]
@@ -460,10 +460,10 @@ def test_cavity_with_zero_and_non_zero_voltage():
     there are no errors. This test does NOT check physical correctness.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441, 3.0441, 3.0441]),
-        voltage=torch.tensor([0.0, 48198468.0, 0.0]),
-        phase=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
-        frequency=torch.tensor([2.8560e09, 2.8560e09, 2.8560e09]),
+        length=torch.tensor([3.0_441, 3.0_441, 3.0_441]),
+        voltage=torch.tensor([0.0, 48_198_468.0, 0.0]),
+        phase=torch.tensor([48_198_468.0, 48_198_468.0, 48_198_468.0]),
+        frequency=torch.tensor([2.8_560e09, 2.8_560e09, 2.8_560e09]),
         name="my_test_cavity",
     )
     beam = cheetah.ParticleBeam.from_parameters(

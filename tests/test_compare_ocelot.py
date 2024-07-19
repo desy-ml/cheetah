@@ -667,19 +667,19 @@ def test_cavity():
 
     # Ocelot
     tws = ocelot.Twiss()
-    tws.beta_x = 5.91253677
-    tws.alpha_x = 3.55631308
-    tws.beta_y = 5.91253677
-    tws.alpha_y = 3.55631308
-    tws.emit_x = 3.494768647122823e-09
-    tws.emit_y = 3.497810737006068e-09
+    tws.beta_x = 5.91_253_677
+    tws.alpha_x = 3.55_631_308
+    tws.beta_y = 5.91_253_677
+    tws.alpha_y = 3.55_631_308
+    tws.emit_x = 3.494_768_647_122_823e-09
+    tws.emit_y = 3.497_810_737_006_068e-09
     tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
     tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
     tws.E = 6e-3
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
-    cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
+    cell = [ocelot.Cavity(l=1.0_377, v=0.01_815_975, freq=1.3e9, phi=0.0)]
     lattice = ocelot.MagneticLattice(cell)
     navigator = ocelot.Navigator(lattice=lattice)
 
@@ -691,8 +691,8 @@ def test_cavity():
         parray=p_array, dtype=torch.float64
     )
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
+        length=torch.tensor([1.0_377]),
+        voltage=torch.tensor([0.01_815_975e9]),
         frequency=torch.tensor([1.3e9]),
         phase=torch.tensor([0.0]),
         dtype=torch.float64,
@@ -721,19 +721,19 @@ def test_cavity_non_zero_phase():
     """Compare tracking through a cavity with a phase offset."""
     # Ocelot
     tws = ocelot.Twiss()
-    tws.beta_x = 5.91253677
-    tws.alpha_x = 3.55631308
-    tws.beta_y = 5.91253677
-    tws.alpha_y = 3.55631308
-    tws.emit_x = 3.494768647122823e-09
-    tws.emit_y = 3.497810737006068e-09
+    tws.beta_x = 5.91_253_677
+    tws.alpha_x = 3.55_631_308
+    tws.beta_y = 5.91_253_677
+    tws.alpha_y = 3.55_631_308
+    tws.emit_x = 3.494_768_647_122_823e-09
+    tws.emit_y = 3.497_810_737_006_068e-09
     tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
     tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
     tws.E = 6e-3
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
-    cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=30.0)]
+    cell = [ocelot.Cavity(l=1.0_377, v=0.01_815_975, freq=1.3e9, phi=30.0)]
     lattice = ocelot.MagneticLattice(cell)
     navigator = ocelot.Navigator(lattice=lattice)
 
@@ -745,8 +745,8 @@ def test_cavity_non_zero_phase():
         parray=p_array, dtype=torch.float64
     )
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
+        length=torch.tensor([1.0_377]),
+        voltage=torch.tensor([0.01_815_975e9]),
         frequency=torch.tensor([1.3e9]),
         phase=torch.tensor([30.0]),
         dtype=torch.float64,

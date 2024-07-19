@@ -27,7 +27,7 @@ def test_diverging_particle_beam():
     """
     drift = cheetah.Drift(length=torch.tensor([1.0]))
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1000),
+        num_particles=torch.tensor(1_000),
         sigma_px=torch.tensor([2e-7]),
         sigma_py=torch.tensor([2e-7]),
     )

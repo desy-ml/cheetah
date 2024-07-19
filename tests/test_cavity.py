@@ -19,10 +19,10 @@ def test_assert_ei_greater_zero():
     ```
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441, 3.0441, 3.0441]),
-        voltage=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
-        phase=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
-        frequency=torch.tensor([2.8560e09, 2.8560e09, 2.8560e09]),
+        length=torch.tensor([3.0_441, 3.0_441, 3.0_441]),
+        voltage=torch.tensor([48_198_468.0, 48_198_468.0, 48_198_468.0]),
+        phase=torch.tensor([48_198_468.0, 48_198_468.0, 48_198_468.0]),
+        frequency=torch.tensor([2.8_560e09, 2.8_560e09, 2.8_560e09]),
         name="k26_2a",
     )
     beam = cheetah.ParticleBeam.from_parameters(
@@ -47,10 +47,10 @@ def test_vectorized_cavity_zero_voltage(voltage):
     is zero.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441, 3.0441]),
+        length=torch.tensor([3.0_441, 3.0_441]),
         voltage=voltage,
         phase=torch.tensor([-0.0, -0.0]),
-        frequency=torch.tensor([2.8560e09, 2.8560e09]),
+        frequency=torch.tensor([2.8_560e09, 2.8_560e09]),
         name="k27_1a",
         dtype=torch.float64,
     )
@@ -59,13 +59,13 @@ def test_vectorized_cavity_zero_voltage(voltage):
         mu_px=torch.tensor([0.0]),
         mu_y=torch.tensor([0.0]),
         mu_py=torch.tensor([0.0]),
-        sigma_x=torch.tensor([4.8492e-06]),
-        sigma_px=torch.tensor([1.5603e-07]),
-        sigma_y=torch.tensor([4.1209e-07]),
-        sigma_py=torch.tensor([1.1035e-08]),
-        sigma_tau=torch.tensor([1.0000e-10]),
-        sigma_p=torch.tensor([1.0000e-06]),
-        energy=torch.tensor([8.0000e09]),
+        sigma_x=torch.tensor([4.8_492e-06]),
+        sigma_px=torch.tensor([1.5_603e-07]),
+        sigma_y=torch.tensor([4.1_209e-07]),
+        sigma_py=torch.tensor([1.1_035e-08]),
+        sigma_tau=torch.tensor([1.0_000e-10]),
+        sigma_p=torch.tensor([1.0_000e-06]),
+        energy=torch.tensor([8.0_000e09]),
         total_charge=torch.tensor([0.0]),
         dtype=torch.float64,
     ).broadcast((2,))

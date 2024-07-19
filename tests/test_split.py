@@ -56,8 +56,8 @@ def test_cavity_end():
     the original cavity.
     """
     original_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
+        length=torch.tensor([1.0_377]),
+        voltage=torch.tensor([0.01_815_975e9]),
         frequency=torch.tensor([1.3e9]),
         phase=torch.tensor([0.0]),
     )

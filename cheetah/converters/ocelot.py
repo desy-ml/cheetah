@@ -140,8 +140,8 @@ def ocelot2cheetah(
                 " properties."
             )
         return cheetah.Screen(
-            resolution=torch.tensor([2448, 2040]),
-            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
+            resolution=torch.tensor([2_448, 2_040]),
+            pixel_size=torch.tensor([3.5_488e-6, 2.5_003e-6]),
             name=element.id,
             device=device,
             dtype=dtype,

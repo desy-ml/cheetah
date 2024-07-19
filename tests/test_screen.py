@@ -114,10 +114,10 @@ def test_reading_shows_beam_ares(screen_method):
     segment.AREABSCR1.method = screen_method
 
     segment.AREABSCR1.resolution = torch.tensor(
-        (2448, 2040), device=segment.AREABSCR1.resolution.device
+        (2_448, 2_040), device=segment.AREABSCR1.resolution.device
     )
     segment.AREABSCR1.pixel_size = torch.tensor(
-        (3.3198e-6, 2.4469e-6),
+        (3.3_198e-6, 2.4_469e-6),
         device=segment.AREABSCR1.pixel_size.device,
         dtype=segment.AREABSCR1.pixel_size.dtype,
     )
@@ -125,12 +125,12 @@ def test_reading_shows_beam_ares(screen_method):
     segment.AREABSCR1.is_active = True
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
-    assert segment.AREABSCR1.reading.shape == (1, 2040, 2448)
+    assert segment.AREABSCR1.reading.shape == (1, 2_040, 2_448)
     assert np.allclose(segment.AREABSCR1.reading, 0.0)
 
     _ = segment.track(beam)
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
-    assert segment.AREABSCR1.reading.shape == (1, 2040, 2448)
+    assert segment.AREABSCR1.reading.shape == (1, 2_040, 2_448)
     assert torch.all(segment.AREABSCR1.reading >= 0.0)
     assert torch.any(segment.AREABSCR1.reading > 0.0)
