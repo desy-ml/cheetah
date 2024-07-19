@@ -121,26 +121,7 @@ def convert_element(
             return cheetah.Marker(name=name)
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
-                [
-                    "element_type",
-                    "l",
-                    "order",
-                    "c2",
-                    "c4",
-                    "r11",
-                    "r12",
-                    "r21",
-                    "r22",
-                    "r23",
-                    "r33",
-                    "r34",
-                    "r41",
-                    "r43",
-                    "r44",
-                    "r55",
-                    "r56",
-                    "r66",
-                ],
+                ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]"],
                 parsed,
             )
 
@@ -149,22 +130,11 @@ def convert_element(
 
             # Initially zero in elegant by convention
             R = torch.zeros((7, 7), device=device, dtype=dtype)
-            R[0, 0] = parsed.get("r11", 0.0)
-            R[0, 1] = parsed.get("r12", 0.0)
-            R[1, 0] = parsed.get("r21", 0.0)
-            R[1, 1] = parsed.get("r22", 0.0)
-            R[1, 2] = parsed.get("r23", 0.0)
-            R[2, 2] = parsed.get("r33", 0.0)
-            R[2, 3] = parsed.get("r34", 0.0)
-            R[3, 0] = parsed.get("r41", 0.0)
-            R[3, 2] = parsed.get("r43", 0.0)
-            R[3, 3] = parsed.get("r44", 0.0)
-            R[4, 4] = parsed.get("r55", 0.0)
-            R[4, 5] = parsed.get("r56", 0.0)
-            R[5, 5] = parsed.get("r66", 0.0)
-            R[1, 6] = parsed.get("c2", 0.0)
-            R[3, 6] = parsed.get("c4", 0.0)
-            # TODO Ensure that usage of C2 & C4 is correct
+            R[:6, :6] = torch.tensor(
+                [[parsed.get(f"r{i+1}{j+1}", 0.0) for j in range(6)] for i in range(6)]
+            )
+            R[:6, 6] = torch.tensor([parsed.get(f"c{i+1}", 0.0) for i in range(6)])
+            # TODO Ensure that usage of c{i} is correct
 
             return cheetah.CustomTransferMap(
                 length=torch.tensor([parsed["l"]]),
