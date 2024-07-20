@@ -9,15 +9,7 @@ from torch import Size, nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator
-from cheetah.utils.bmadx import (
-    bmad_to_cheetah_coords,
-    calculate_quadrupole_coefficients,
-    cheetah_to_bmad_coords,
-    low_energy_z_correction,
-    offset_particle_set,
-    offset_particle_unset,
-)
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 from .element import Element
 
@@ -37,8 +29,8 @@ class Quadrupole(Element):
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
-    :param num_steps: Number of drift-kick-drift steps to use for tracking
-        through the element when tracking method is set to bmadx.
+    :param num_steps: Number of drift-kick-drift steps to use for tracking through the
+        element when tracking method is set to `"bmadx"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
     """
@@ -104,7 +96,8 @@ class Quadrupole(Element):
 
     def track(self, incoming: Beam) -> Beam:
         """
-        Track particles through the quad.
+        Track particles through the quadrupole element.
+
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
@@ -152,11 +145,11 @@ class Quadrupole(Element):
                 )
 
     def _bmadx_track(self, incoming: ParticleBeam) -> ParticleBeam:
-        # compute bmad coords and p0c:
+        # Compute Bmad coords and p0c
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
-        bmad_coords, p0c = cheetah_to_bmad_coords(
+        bmad_coords, p0c = bmadx.cheetah_to_bmad_coords(
             incoming.particles, incoming.energy, mc2
         )
         x = bmad_coords[..., 0]
@@ -178,15 +171,15 @@ class Quadrupole(Element):
 
         b1 = k1 * length
 
-        # Begin bmadx tracking:
-        x, px, y, py = offset_particle_set(x_off, y_off, tilt, x, px, y, py)
+        # Begin Bmadx tracking
+        x, px, y, py = bmadx.offset_particle_set(x_off, y_off, tilt, x, px, y, py)
 
         for _i in range(n_step):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
             k1 = b1 / (length * rel_p)
 
-            tx, dzx = calculate_quadrupole_coefficients(-k1, step_len, rel_p)
-            ty, dzy = calculate_quadrupole_coefficients(k1, step_len, rel_p)
+            tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_len, rel_p)
+            ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_len, rel_p)
 
             z = (
                 z
@@ -205,12 +198,12 @@ class Quadrupole(Element):
 
             x, px, y, py = x_next, px_next, y_next, py_next
 
-            z = z + low_energy_z_correction(pz, p0c, mc2, step_len)
+            z = z + bmadx.low_energy_z_correction(pz, p0c, mc2, step_len)
 
         # s = s + l
-        x, px, y, py = offset_particle_unset(x_off, y_off, tilt, x, px, y, py)
+        x, px, y, py = bmadx.offset_particle_unset(x_off, y_off, tilt, x, px, y, py)
 
-        # end of bmadx tracking.
+        # End of bmadx tracking
         bmad_coords[..., 0] = x
         bmad_coords[..., 1] = px
         bmad_coords[..., 2] = y
@@ -218,10 +211,10 @@ class Quadrupole(Element):
         bmad_coords[..., 4] = z
         bmad_coords[..., 5] = pz
 
-        # compute cheetah coordinates and reference energy:
-        cheetah_coords, ref_energy = bmad_to_cheetah_coords(bmad_coords, p0c, mc2)
+        # Compute Cheetah coordinates and reference energy
+        cheetah_coords, ref_energy = bmadx.bmad_to_cheetah_coords(bmad_coords, p0c, mc2)
 
-        # cheetah ParticleBeam:
+        # Cheetah ParticleBeam:
         outgoing_beam = ParticleBeam(
             cheetah_coords,
             ref_energy,

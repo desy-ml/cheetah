@@ -6,17 +6,18 @@ def cheetah_to_bmad_coords(
 ) -> torch.Tensor:
     """
     Transforms Cheetah coordinates to Bmad coordinates.
+
     :param cheetah_coords: 7-dimensional particle vectors in Cheetah coordinates.
-    :param ref_energy: reference energy in eV.
+    :param ref_energy: Reference energy in eV.
     """
-    # initialize Bmad coordinates:
+    # Initialize Bmad coordinates
     bmad_coords = cheetah_coords[..., :6].clone()
 
-    # Cheetah longitudinal coords:
+    # Cheetah longitudinal coordinates
     tau = cheetah_coords[..., 4]
     delta = cheetah_coords[..., 5]
 
-    # compute p0c and bmad z, pz
+    # Compute p0c and Bmad z, pz
     p0c = torch.sqrt(ref_energy**2 - mc2**2)
     energy = ref_energy + delta * p0c
     p = torch.sqrt(energy**2 - mc2**2)
@@ -24,7 +25,7 @@ def cheetah_to_bmad_coords(
     z = -beta * tau
     pz = (p - p0c) / p0c
 
-    # Bmad coords:
+    # Bmad coordinates
     bmad_coords[..., 4] = z
     bmad_coords[..., 5] = pz
 
@@ -36,20 +37,21 @@ def bmad_to_cheetah_coords(
 ) -> torch.Tensor:
     """
     Transforms Bmad coordinates to Cheetah coordinates.
+
     :param bmad_coords: 6-dimensional particle vectors in Bmad coordinates.
-    :param p0c: reference momentum in eV/c.
+    :param p0c: Reference momentum in eV/c.
     """
-    # initialize Cheetah coordinates:
+    # Initialize Cheetah coordinates
     cheetah_coords = torch.ones(
         (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
     )
     cheetah_coords[..., :6] = bmad_coords.clone()
 
-    # Bmad longitudinal coords:
+    # Bmad longitudinal coordinates
     z = bmad_coords[..., 4]
     pz = bmad_coords[..., 5]
 
-    # compute ref_energy and Cheetah tau, delta
+    # Compute ref_energy and Cheetah tau, delta
     ref_energy = torch.sqrt(p0c**2 + mc2**2)
     p = (1 + pz) * p0c
     energy = torch.sqrt(p**2 + mc2**2)
@@ -57,7 +59,7 @@ def bmad_to_cheetah_coords(
     tau = -z / beta
     delta = (energy - ref_energy) / p0c
 
-    # Cheetah coords:
+    # Cheetah coordinates
     cheetah_coords[..., 4] = tau
     cheetah_coords[..., 5] = delta
 
@@ -75,9 +77,10 @@ def offset_particle_set(
 ) -> list[torch.Tensor]:
     """
     Transforms particle coordinates from lab to element frame.
-    :param x_offset: element x-coordinate offset.
-    :param y_offset: element y-coordinate offset.
-    :param tilt: tilt angle (rad).
+
+    :param x_offset: Element x-coordinate offset.
+    :param y_offset: Element y-coordinate offset.
+    :param tilt: Tilt angle (rad).
     :param x_lab: x-coordinate in lab frame.
     :param px_lab: x-momentum in lab frame.
     :param y_lab: y-coordinate in lab frame.
@@ -107,9 +110,10 @@ def offset_particle_unset(
 ) -> list[torch.Tensor]:
     """
     Transforms particle coordinates from element to lab frame.
-    :param x_offset: element x-coordinate offset.
-    :param y_offset: element y-coordinate offset.
-    :param tilt: tilt angle (rad).
+
+    :param x_offset: Element x-coordinate offset.
+    :param y_offset: Element y-coordinate offset.
+    :param tilt: Tilt angle (rad).
     :param x_ele: x-coordinate in element frame.
     :param px_ele: x-momentum in element frame.
     :param y_ele: y-coordinate in element frame.
@@ -131,13 +135,14 @@ def offset_particle_unset(
 def low_energy_z_correction(
     pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor, ds: torch.Tensor
 ) -> torch.Tensor:
-    """Corrects the change in z-coordinate due to speed < c_light.
-    Input:
-        p0c -- reference particle momentum in eV
-        mc2 -- particle mass in eV
-        ds -- drift length
-    Output:
-        dz -- dz=(ds-d_particle) + ds*(beta - beta_ref)/beta_ref
+    """
+    Corrects the change in z-coordinate due to speed < c_light.
+
+    :param pz: Particle longitudinal momentum.
+    :param p0c: Reference particle momentum in eV.
+    :param mc2: Particle mass in eV.
+    :param ds: Drift length.
+    :return: dz=(ds-d_particle) + ds*(beta - beta_ref)/beta_ref
     """
     beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
     beta0 = p0c / torch.sqrt(p0c**2 + mc2**2)
@@ -159,20 +164,24 @@ def low_energy_z_correction(
 
 def calculate_quadrupole_coefficients(
     k1: torch.Tensor, length: torch.Tensor, rel_p: torch.Tensor
-) -> torch.Tensor:
-    """Returns 2x2 transfer matrix elements aij and the
-    coefficients to calculate the change in z position.
-    Input:
-        k1_ref -- Quad strength: k1 > 0 ==> defocus
-        length -- Quad length
-        rel_p -- Relative momentum P/P0
-    Output:
-        a11, a12, a21, a22 -- transfer matrix elements
-        c1, c2, c3 -- second order derivatives of z such that
-                    z = c1 * x_0^2 + c2 * x_0 * px_0 + c3* px_0^2
-    **NOTE**: accumulated error due to machine epsilon. REVISIT
+) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
-    eps = 2.220446049250313e-16  # machine epsilon to double precission
+    Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
+    change in z position.
+
+    NOTE: Accumulated error due to machine epsilon.
+
+    :param k1: Quadrupole strength (k1 > 0 ==> defocus).
+    :param length: Quadrupole length.
+    :param rel_p: Relative momentum P/P0.
+    :return: Tuple of transfer matrix elements and coefficients.
+        a11, a12, a21, a22: Transfer matrix elements.
+        c1, c2, c3: Second order derivatives of z such that
+            z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
+    """
+    # TODO: Revisit to fix accumulated error due to machine epsilon
+
+    eps = 2.220446049250313e-16  # Machine epsilon to double precission
 
     sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
     sk_l = sqrt_k * length
