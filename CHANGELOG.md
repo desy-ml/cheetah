@@ -16,6 +16,7 @@
 - `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` and dtypes other than `torch.float32` (see #196, #206) (@jank324)
 - `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
+- `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
 
 ### 🐛 Bug fixes
 
