@@ -211,10 +211,7 @@ class Quadrupole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        if self.tracking_method == "cheetah":
-            return True
-        else:
-            return False
+        return self.tracking_method == "cheetah"
 
     @property
     def is_active(self) -> bool:
