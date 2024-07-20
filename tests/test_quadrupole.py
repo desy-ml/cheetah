@@ -173,6 +173,8 @@ def test_tracking_method_vectorization(tracking_method):
     quadrupole = Quadrupole(
         length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
         k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
+        misalignment=torch.zeros((3, 2, 2)),
+        tilt=torch.zeros((3, 2)),
         tracking_method=tracking_method,
     )
     incoming = ParticleBeam.from_parameters(
