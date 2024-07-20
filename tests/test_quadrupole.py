@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from cheetah import Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
@@ -161,3 +162,34 @@ def test_quadrupole_bmadx_tracking():
     assert torch.allclose(
         outgoing.particles, bmadx_out_with_cheetah_coords, atol=1e-7, rtol=1e-7
     )
+
+
+@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+def test_tracking_method_vectorization(tracking_method):
+    """
+    Test that the quadruople vectorisation works correctly with both tracking methods.
+    Only checks the shapes, not the physical correctness of the results.
+    """
+    quadrupole = Quadrupole(
+        length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
+        k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
+        tracking_method=tracking_method,
+    )
+    incoming = ParticleBeam.from_parameters(
+        sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
+    )
+
+    outgoing = quadrupole.track(incoming)
+
+    assert outgoing.mu_x.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
+    assert outgoing.mu_y.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
+    assert outgoing.sigma_x.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
+    assert outgoing.sigma_y.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
+    assert outgoing.sigma_p.shape == (3, 2)
+    assert outgoing.energy.shape == (3, 2)
+    assert outgoing.total_charge.shape == (3, 2)
