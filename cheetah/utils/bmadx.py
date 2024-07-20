@@ -10,6 +10,8 @@ def cheetah_to_bmad_coords(
     :param cheetah_coords: 7-dimensional particle vectors in Cheetah coordinates.
     :param ref_energy: Reference energy in eV.
     """
+    # TODO This can probably be moved to the `ParticleBeam` class at some point
+
     # Initialize Bmad coordinates
     bmad_coords = cheetah_coords[..., :6].clone()
 
@@ -41,6 +43,8 @@ def bmad_to_cheetah_coords(
     :param bmad_coords: 6-dimensional particle vectors in Bmad coordinates.
     :param p0c: Reference momentum in eV/c.
     """
+    # TODO This can probably be moved to the `ParticleBeam` class at some point
+
     # Initialize Cheetah coordinates
     cheetah_coords = torch.ones(
         (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
