@@ -4,9 +4,7 @@ exclude =
     __pycache__,
     build,
     dist,
-    .ipynb_checkpoints,
-    tests/resources,
-    docs/examples
+    .ipynb_checkpoints
 max-line-length = 88
 extend-ignore = E203, W503
 ignore = BLK100
