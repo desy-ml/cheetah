@@ -37,12 +37,12 @@ def test_from_twiss():
     assert torch.isclose(parameter_beam.mu_y, particle_beam.mu_y, atol=1e-6)
     assert torch.isclose(parameter_beam.sigma_x, particle_beam.sigma_x, rtol=1e-3)
     assert torch.isclose(parameter_beam.sigma_y, particle_beam.sigma_y, rtol=1e-3)
-    assert torch.isclose(parameter_beam.mu_xp, particle_beam.mu_xp, atol=1e-6)
-    assert torch.isclose(parameter_beam.mu_yp, particle_beam.mu_yp, atol=1e-6)
-    assert torch.isclose(parameter_beam.sigma_xp, particle_beam.sigma_xp, rtol=1e-3)
-    assert torch.isclose(parameter_beam.sigma_yp, particle_beam.sigma_yp, rtol=1e-3)
-    assert torch.isclose(parameter_beam.mu_s, particle_beam.mu_s)
-    assert torch.isclose(parameter_beam.sigma_s, particle_beam.sigma_s)
+    assert torch.isclose(parameter_beam.mu_px, particle_beam.mu_px, atol=1e-6)
+    assert torch.isclose(parameter_beam.mu_py, particle_beam.mu_py, atol=1e-6)
+    assert torch.isclose(parameter_beam.sigma_px, particle_beam.sigma_px, rtol=1e-3)
+    assert torch.isclose(parameter_beam.sigma_py, particle_beam.sigma_py, rtol=1e-3)
+    assert torch.isclose(parameter_beam.mu_tau, particle_beam.mu_tau)
+    assert torch.isclose(parameter_beam.sigma_tau, particle_beam.sigma_tau)
     assert torch.isclose(parameter_beam.mu_p, particle_beam.mu_p)
     assert torch.isclose(parameter_beam.sigma_p, particle_beam.sigma_p)
 
@@ -80,16 +80,16 @@ def test_drift():
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
+        outgoing_parameter_beam.mu_px, outgoing_particle_beam.mu_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
+        outgoing_parameter_beam.mu_py, outgoing_particle_beam.mu_py, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+        outgoing_parameter_beam.sigma_px, outgoing_particle_beam.sigma_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+        outgoing_parameter_beam.sigma_py, outgoing_particle_beam.sigma_py, rtol=1e-2
     )
 
 
@@ -128,16 +128,16 @@ def test_quadrupole():
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
+        outgoing_parameter_beam.mu_px, outgoing_particle_beam.mu_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
+        outgoing_parameter_beam.mu_py, outgoing_particle_beam.mu_py, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+        outgoing_parameter_beam.sigma_px, outgoing_particle_beam.sigma_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+        outgoing_parameter_beam.sigma_py, outgoing_particle_beam.sigma_py, rtol=1e-2
     )
 
 
@@ -200,16 +200,16 @@ def test_cavity_from_astra():
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, rtol=1e-2
+        outgoing_parameter_beam.mu_px, outgoing_particle_beam.mu_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, rtol=1e-2
+        outgoing_parameter_beam.mu_py, outgoing_particle_beam.mu_py, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+        outgoing_parameter_beam.sigma_px, outgoing_particle_beam.sigma_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+        outgoing_parameter_beam.sigma_py, outgoing_particle_beam.sigma_py, rtol=1e-2
     )
 
 
@@ -284,14 +284,14 @@ def test_cavity_from_twiss():
         outgoing_parameter_beam.sigma_y, outgoing_particle_beam.sigma_y, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_xp, outgoing_particle_beam.mu_xp, atol=1e-6
+        outgoing_parameter_beam.mu_px, outgoing_particle_beam.mu_px, atol=1e-6
     )
     assert torch.isclose(
-        outgoing_parameter_beam.mu_yp, outgoing_particle_beam.mu_yp, atol=1e-6
+        outgoing_parameter_beam.mu_py, outgoing_particle_beam.mu_py, atol=1e-6
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_xp, outgoing_particle_beam.sigma_xp, rtol=1e-2
+        outgoing_parameter_beam.sigma_px, outgoing_particle_beam.sigma_px, rtol=1e-2
     )
     assert torch.isclose(
-        outgoing_parameter_beam.sigma_yp, outgoing_particle_beam.sigma_yp, rtol=1e-2
+        outgoing_parameter_beam.sigma_py, outgoing_particle_beam.sigma_py, rtol=1e-2
     )

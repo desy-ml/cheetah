@@ -281,18 +281,18 @@ def test_ares_ea():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.isclose(outgoing_beam.mu_x.cpu().numpy(), outgoing_p_array.x().mean())
-    assert np.isclose(outgoing_beam.mu_xp.cpu().numpy(), outgoing_p_array.px().mean())
+    assert np.isclose(outgoing_beam.mu_px.cpu().numpy(), outgoing_p_array.px().mean())
     assert np.isclose(outgoing_beam.mu_y.cpu().numpy(), outgoing_p_array.y().mean())
-    assert np.isclose(outgoing_beam.mu_yp.cpu().numpy(), outgoing_p_array.py().mean())
-    assert np.isclose(outgoing_beam.mu_s.cpu().numpy(), outgoing_p_array.tau().mean())
+    assert np.isclose(outgoing_beam.mu_py.cpu().numpy(), outgoing_p_array.py().mean())
+    assert np.isclose(outgoing_beam.mu_tau.cpu().numpy(), outgoing_p_array.tau().mean())
     assert np.isclose(outgoing_beam.mu_p.cpu().numpy(), outgoing_p_array.p().mean())
 
-    assert np.allclose(outgoing_beam.xs.cpu().numpy(), outgoing_p_array.x())
-    assert np.allclose(outgoing_beam.xps.cpu().numpy(), outgoing_p_array.px())
-    assert np.allclose(outgoing_beam.ys.cpu().numpy(), outgoing_p_array.y())
-    assert np.allclose(outgoing_beam.yps.cpu().numpy(), outgoing_p_array.py())
-    assert np.allclose(outgoing_beam.ss.cpu().numpy(), outgoing_p_array.tau())
-    assert np.allclose(outgoing_beam.ps.cpu().numpy(), outgoing_p_array.p())
+    assert np.allclose(outgoing_beam.x.cpu().numpy(), outgoing_p_array.x())
+    assert np.allclose(outgoing_beam.px.cpu().numpy(), outgoing_p_array.px())
+    assert np.allclose(outgoing_beam.y.cpu().numpy(), outgoing_p_array.y())
+    assert np.allclose(outgoing_beam.py.cpu().numpy(), outgoing_p_array.py())
+    assert np.allclose(outgoing_beam.tau.cpu().numpy(), outgoing_p_array.tau())
+    assert np.allclose(outgoing_beam.p.cpu().numpy(), outgoing_p_array.p())
 
 
 def test_twiss_particle_beam():

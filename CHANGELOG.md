@@ -4,7 +4,8 @@
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198) (@jank324, @cr-xu)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #215, #218) (@jank324, @cr-xu)
+- The fifth particle coordinate `s` is renamed to `tau`. Now Cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. In addition, the trailing "s" was removed from some beam property names (e.g. `beam.xs` becomes `beam.x`). (see #163) (@cr-xu)
 
 ### 🚀 Features
 
@@ -25,6 +26,7 @@
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
+- Pin to NumPy 1.X due to compatibility issues on Windows (see #220) (@hespe)
 
 ### 🐆 Other
 
