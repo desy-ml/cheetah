@@ -81,7 +81,7 @@ def test_quadrupole_with_misalignments_multiple_batch_dimension():
 def test_tilted_quadrupole_batch():
     batch_shape = torch.Size([3])
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1000000),
+        num_particles=torch.tensor(1_000_000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
     ).broadcast(batch_shape)
@@ -107,7 +107,7 @@ def test_tilted_quadrupole_batch():
 def test_tilted_quadrupole_multiple_batch_dimension():
     batch_shape = torch.Size([3, 2])
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10000),
+        num_particles=torch.tensor(10_000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
     ).broadcast(batch_shape)

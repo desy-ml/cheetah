@@ -18,8 +18,8 @@ def test_create_from_parameters():
         sigma_px=torch.tensor([2e-7]),
         sigma_y=torch.tensor([1.75e-7]),
         sigma_py=torch.tensor([2e-7]),
-        sigma_tau=torch.tensor([0.000001]),
-        sigma_p=torch.tensor([0.000001]),
+        sigma_tau=torch.tensor([0.000_001]),
+        sigma_p=torch.tensor([0.000_001]),
         cor_x=torch.tensor([0.0]),
         cor_y=torch.tensor([0.0]),
         cor_tau=torch.tensor([0.0]),
@@ -36,8 +36,8 @@ def test_create_from_parameters():
     assert np.isclose(beam.sigma_px.cpu().numpy(), 2e-7)
     assert np.isclose(beam.sigma_y.cpu().numpy(), 1.75e-7)
     assert np.isclose(beam.sigma_py.cpu().numpy(), 2e-7)
-    assert np.isclose(beam.sigma_tau.cpu().numpy(), 0.000001)
-    assert np.isclose(beam.sigma_p.cpu().numpy(), 0.000001)
+    assert np.isclose(beam.sigma_tau.cpu().numpy(), 0.000_001)
+    assert np.isclose(beam.sigma_p.cpu().numpy(), 0.000_001)
     assert np.isclose(beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(beam.total_charge.cpu().numpy(), 1e-9)
 
@@ -57,8 +57,8 @@ def test_transform_to():
         sigma_px=torch.tensor([2e-7]),
         sigma_y=torch.tensor([1.75e-7]),
         sigma_py=torch.tensor([2e-7]),
-        sigma_tau=torch.tensor([0.000001]),
-        sigma_p=torch.tensor([0.000001]),
+        sigma_tau=torch.tensor([0.000_001]),
+        sigma_p=torch.tensor([0.000_001]),
         energy=torch.tensor([1e7]),
         total_charge=torch.tensor([1e-9]),
     )
@@ -74,8 +74,8 @@ def test_transform_to():
     assert np.isclose(transformed_beam.sigma_px.cpu().numpy(), 2e-7)
     assert np.isclose(transformed_beam.sigma_y.cpu().numpy(), 1.75e-7)
     assert np.isclose(transformed_beam.sigma_py.cpu().numpy(), 2e-7)
-    assert np.isclose(transformed_beam.sigma_tau.cpu().numpy(), 0.000001)
-    assert np.isclose(transformed_beam.sigma_p.cpu().numpy(), 0.000001)
+    assert np.isclose(transformed_beam.sigma_tau.cpu().numpy(), 0.000_001)
+    assert np.isclose(transformed_beam.sigma_p.cpu().numpy(), 0.000_001)
     assert np.isclose(transformed_beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(transformed_beam.total_charge.cpu().numpy(), 1e-9)
 
@@ -87,21 +87,25 @@ def test_from_twiss_to_twiss():
     """
     beam = ParticleBeam.from_twiss(
         num_particles=torch.tensor([10_000_000]),
-        beta_x=torch.tensor([5.91253676811640894]),
-        alpha_x=torch.tensor([3.55631307633660354]),
-        emittance_x=torch.tensor([3.494768647122823e-09]),
-        beta_y=torch.tensor([5.91253676811640982]),
+        beta_x=torch.tensor([5.91_253_676_811_640_894]),
+        alpha_x=torch.tensor([3.55_631_307_633_660_354]),
+        emittance_x=torch.tensor([3.494_768_647_122_823e-09]),
+        beta_y=torch.tensor([5.91_253_676_811_640_982]),
         alpha_y=torch.tensor([1.0]),  # TODO: set realistic value
-        emittance_y=torch.tensor([3.497810737006068e-09]),
+        emittance_y=torch.tensor([3.497_810_737_006_068e-09]),
         energy=torch.tensor([6e6]),
     )
     # rather loose rtol is needed here due to the random sampling of the beam
-    assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894, rtol=1e-2)
-    assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55631307633660354, rtol=1e-2)
-    assert np.isclose(beam.emittance_x.cpu().numpy(), 3.494768647122823e-09, rtol=1e-2)
-    assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982, rtol=1e-2)
+    assert np.isclose(beam.beta_x.cpu().numpy(), 5.91_253_676_811_640_894, rtol=1e-2)
+    assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55_631_307_633_660_354, rtol=1e-2)
+    assert np.isclose(
+        beam.emittance_x.cpu().numpy(), 3.494_768_647_122_823e-09, rtol=1e-2
+    )
+    assert np.isclose(beam.beta_y.cpu().numpy(), 5.91_253_676_811_640_982, rtol=1e-2)
     assert np.isclose(beam.alpha_y.cpu().numpy(), 1.0, rtol=1e-2)
-    assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09, rtol=1e-2)
+    assert np.isclose(
+        beam.emittance_y.cpu().numpy(), 3.497_810_737_006_068e-09, rtol=1e-2
+    )
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
@@ -118,7 +122,7 @@ def test_generate_uniform_ellipsoid_batched():
     num_particles = torch.tensor(1_000_000)
     sigma_px = torch.tensor([2e-7, 1e-7])
     sigma_py = torch.tensor([3e-7, 2e-7])
-    sigma_p = torch.tensor([0.000001, 0.000002])
+    sigma_p = torch.tensor([0.000_001, 0.000_002])
     energy = torch.tensor([1e7, 2e7])
     total_charge = torch.tensor([1e-9, 3e-9])
 

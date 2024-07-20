@@ -13,8 +13,8 @@ from ocelot import (
 )
 
 # Drifts
-drift_arlisolg1 = Drift(l=0.19600000000000006, eid="Drift_ARLISOLG1")
-drift_arlimsog1p = Drift(l=0.1659, eid="Drift_ARLIMSOG1p")
+drift_arlisolg1 = Drift(l=0.196_000_000_000_000_06, eid="Drift_ARLISOLG1")
+drift_arlimsog1p = Drift(l=0.1_659, eid="Drift_ARLIMSOG1p")
 drift_arlimcvg1 = Drift(l=0.18949999999999995, eid="Drift_ARLIMCVG1")
 drift_arlibscl1 = Drift(l=0.14449999999999996, eid="Drift_ARLIBSCL1")
 drift_arlibaml1 = Drift(l=0.3025, eid="Drift_ARLIBAML1")

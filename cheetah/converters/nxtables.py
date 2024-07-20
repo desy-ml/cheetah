@@ -62,50 +62,50 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
     elif class_name == "BSCX":
         element = cheetah.Screen(
             name=name,
-            resolution=torch.tensor((2464, 2056)),
-            pixel_size=torch.tensor((0.00343e-3, 0.00247e-3)),
+            resolution=torch.tensor((2_464, 2_056)),
+            pixel_size=torch.tensor((0.00_343e-3, 0.00_247e-3)),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCR":
         element = cheetah.Screen(
             name=name,
-            resolution=torch.tensor([2448, 2040]),
-            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
+            resolution=torch.tensor([2_448, 2_040]),
+            pixel_size=torch.tensor([3.5_488e-6, 2.5_003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCM":
         element = cheetah.Screen(  # TODO: Ask for actual parameters
             name=name,
-            resolution=torch.tensor([2448, 2040]),
-            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
+            resolution=torch.tensor([2_448, 2_040]),
+            pixel_size=torch.tensor([3.5_488e-6, 2.5_003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCO":
         element = cheetah.Screen(  # TODO: Ask for actual parameters
             name=name,
-            resolution=torch.tensor([2448, 2040]),
-            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
+            resolution=torch.tensor([2_448, 2_040]),
+            pixel_size=torch.tensor([3.5_488e-6, 2.5_003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCA":
         element = cheetah.Screen(  # TODO: Ask for actual parameters
             name=name,
-            resolution=torch.tensor([2448, 2040]),
-            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
+            resolution=torch.tensor([2_448, 2_040]),
+            pixel_size=torch.tensor([3.5_488e-6, 2.5_003e-6]),
             binning=torch.tensor(1),
         )
     elif class_name == "BSCE":
         element = cheetah.Screen(  # TODO: Ask for actual parameters
             name=name,
-            resolution=torch.tensor((2464, 2056)),
-            pixel_size=torch.tensor((0.00998e-3, 0.00715e-3)),
+            resolution=torch.tensor((2_464, 2_056)),
+            pixel_size=torch.tensor((0.00_998e-3, 0.00_715e-3)),
             binning=torch.tensor(1),
         )
     elif class_name == "SCRD":
         element = cheetah.Screen(  # TODO: Ask for actual parameters
             name=name,
-            resolution=torch.tensor((2464, 2056)),
-            pixel_size=torch.tensor((0.00998e-3, 0.00715e-3)),
+            resolution=torch.tensor((2_464, 2_056)),
+            pixel_size=torch.tensor((0.00_998e-3, 0.00_715e-3)),
             binning=torch.tensor(1),
         )
     elif class_name == "BPMG":
@@ -144,9 +144,9 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
     elif class_name == "MBHO":
         element = cheetah.Dipole(
             name=name,
-            length=torch.tensor([0.43852543421396856]),
-            angle=torch.tensor([0.8203047484373349]),
-            e2=torch.tensor([-0.7504915783575616]),
+            length=torch.tensor([0.43_852_543_421_396_856]),
+            angle=torch.tensor([0.8_203_047_484_373_349]),
+            e2=torch.tensor([-0.7_504_915_783_575_616]),
         )
     elif class_name == "MQZM":
         element = cheetah.Quadrupole(name=name, length=torch.tensor([0.122]))
@@ -161,7 +161,7 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
         element = cheetah.Cavity(  # TODO: TD? and tilt?
             name=name,
             length=torch.tensor([1.0]),
-            frequency=torch.tensor([11.9952e9]),
+            frequency=torch.tensor([11.9_952e9]),
             voltage=torch.tensor([0.0]),
         )
     elif class_name == "UNDA":  # TODO: Figure out actual length

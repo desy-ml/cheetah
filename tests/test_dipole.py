@@ -29,7 +29,7 @@ def test_dipole_batched_execution():
     """
     batch_shape = torch.Size([3])
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1000000),
+        num_particles=torch.tensor(1_000_000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
     ).broadcast(batch_shape)

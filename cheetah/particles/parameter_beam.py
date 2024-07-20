@@ -191,12 +191,16 @@ class ParameterBeam(Beam):
         beta_x = beta_x if beta_x is not None else torch.full(shape, 1.0)
         alpha_x = alpha_x if alpha_x is not None else torch.full(shape, 0.0)
         emittance_x = (
-            emittance_x if emittance_x is not None else torch.full(shape, 7.1971891e-13)
+            emittance_x
+            if emittance_x is not None
+            else torch.full(shape, 7.1_971_891e-13)
         )
         beta_y = beta_y if beta_y is not None else torch.full(shape, 1.0)
         alpha_y = alpha_y if alpha_y is not None else torch.full(shape, 0.0)
         emittance_y = (
-            emittance_y if emittance_y is not None else torch.full(shape, 7.1971891e-13)
+            emittance_y
+            if emittance_y is not None
+            else torch.full(shape, 7.1_971_891e-13)
         )
         sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
         sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
