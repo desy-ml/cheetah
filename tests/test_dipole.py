@@ -10,7 +10,7 @@ def test_dipole_off():
     dipole = Dipole(length=torch.tensor([1.0]), angle=torch.tensor([0.0]))
     drift = Drift(length=torch.tensor([1.0]))
     incoming_beam = ParameterBeam.from_parameters(
-        sigma_xp=torch.tensor([2e-7]), sigma_yp=torch.tensor([2e-7])
+        sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
     )
     outbeam_dipole_off = dipole(incoming_beam)
     outbeam_drift = drift(incoming_beam)

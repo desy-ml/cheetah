@@ -423,14 +423,14 @@ class Segment(Element):
             initial = ParticleBeam.make_linspaced(
                 num_particles=num_particles,
                 mu_x=beam.mu_x,
-                mu_xp=beam.mu_xp,
+                mu_px=beam.mu_px,
                 mu_y=beam.mu_y,
-                mu_yp=beam.mu_yp,
+                mu_py=beam.mu_py,
                 sigma_x=beam.sigma_x,
-                sigma_xp=beam.sigma_xp,
+                sigma_px=beam.sigma_px,
                 sigma_y=beam.sigma_y,
-                sigma_yp=beam.sigma_yp,
-                sigma_s=beam.sigma_s,
+                sigma_py=beam.sigma_py,
+                sigma_tau=beam.sigma_tau,
                 sigma_p=beam.sigma_p,
                 energy=beam.energy,
                 dtype=(
@@ -451,7 +451,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             xs = [
-                float(reference_beam.xs[0, particle_index].cpu())
+                float(reference_beam.x[0, particle_index].cpu())
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]
