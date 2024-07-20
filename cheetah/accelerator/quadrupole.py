@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx
 
@@ -101,50 +101,27 @@ class Quadrupole(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if incoming is Beam.empty:
-            return incoming
-        elif self.tracking_method == "cheetah":
-            if isinstance(incoming, ParameterBeam):
-                tm = self.transfer_map(incoming.energy)
-                mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
-                cov = torch.matmul(
-                    tm, torch.matmul(incoming._cov, tm.transpose(-2, -1))
-                )
-                return ParameterBeam(
-                    mu,
-                    cov,
-                    incoming.energy,
-                    total_charge=incoming.total_charge,
-                    device=mu.device,
-                    dtype=mu.dtype,
-                )
-            elif isinstance(incoming, ParticleBeam):
-                tm = self.transfer_map(incoming.energy)
-                new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
-                return ParticleBeam(
-                    new_particles,
-                    incoming.energy,
-                    particle_charges=incoming.particle_charges,
-                    device=new_particles.device,
-                    dtype=new_particles.dtype,
-                )
-            else:
-                raise TypeError(
-                    f"Parameter incoming is of invalid type {type(incoming)}"
-                )
+        if self.tracking_method == "cheetah":
+            return super().track(incoming)
         elif self.tracking_method == "bmadx":
-            if isinstance(incoming, ParameterBeam):
-                raise NotImplementedError(
-                    "ParameterBeam tracking is not supported for bmadx tracking method."
-                )
-            elif isinstance(incoming, ParticleBeam):
-                return self._track_bmadx(incoming)
-            else:
-                raise TypeError(
-                    f"Parameter incoming is of invalid type {type(incoming)}"
-                )
+            assert isinstance(
+                incoming, ParticleBeam
+            ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
+            return self._track_bmadx(incoming)
+        else:
+            raise ValueError(
+                f"Invalid tracking method {self.tracking_method}. "
+                + "Supported methods are 'cheetah' and 'bmadx'."
+            )
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+        """
+        Track particles through the quadrupole element using the Bmad-X tracking method.
+
+        :param incoming: Beam entering the element. Currently only supports
+            `ParticleBeam`.
+        :return: Beam exiting the element.
+        """
         # Compute Bmad coordinates and p0c
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
@@ -165,7 +142,7 @@ class Quadrupole(Element):
         step_length = self.length / self.num_steps
         b1 = self.k1 * self.length
 
-        # Begin Bmadx tracking
+        # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
@@ -201,7 +178,7 @@ class Quadrupole(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        # End of bmadx tracking
+        # End of Bmad-X tracking
         bmad_coords[..., 0] = x
         bmad_coords[..., 1] = px
         bmad_coords[..., 2] = y
