@@ -79,6 +79,9 @@ def test_quadrupole_with_misalignments_multiple_batch_dimension():
 
 
 def test_tilted_quadrupole_batch():
+    """
+    Test that a quadrupole with a tilt behaves as expected in vectorised mode.
+    """
     batch_shape = torch.Size([3])
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(1000000),
@@ -105,6 +108,10 @@ def test_tilted_quadrupole_batch():
 
 
 def test_tilted_quadrupole_multiple_batch_dimension():
+    """
+    Test that a quadrupole with a tilt behaves as expected in vectorised mode with
+    multiple vectorisation dimensions.
+    """
     batch_shape = torch.Size([3, 2])
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(10000),
@@ -127,32 +134,30 @@ def test_tilted_quadrupole_multiple_batch_dimension():
 
 
 def test_quadrupole_bmadx_tracking():
-    incoming_beam = torch.load("tests/resources/quadrupole_bmadx/incoming_beam.pt")
-    # quadrupole params
-    l_quad = torch.tensor([1.0])
-    k1_quad = torch.tensor([10.0])
-    tilt = torch.tensor([0.5])
-    offsets = torch.tensor([0.01, -0.02])
-    # bmadx tracking method
-    cheetah_quad_bmadx = Quadrupole(
-        l_quad,
-        k1_quad,
-        misalignment=offsets,
-        tilt=tilt,
+    """
+    Test that the results of tracking through a quadrupole with the `"bmadx"` tracking
+    method match the results from Bmad-X.
+    """
+    incoming = torch.load("tests/resources/quadrupole_bmadx/incoming_beam.pt")
+    quadrupole = Quadrupole(
+        length=torch.tensor([1.0]),
+        k1=torch.tensor([10.0]),
+        misalignment=torch.tensor([[0.01, -0.02]]),
+        tilt=torch.tensor([0.5]),
         num_steps=10,
         tracking_method="bmadx",
         dtype=torch.double,
     )
-    cheetah_segment_bmadx = Segment(elements=[cheetah_quad_bmadx])
-    cheetah_bmadx_outgoing_beam = cheetah_segment_bmadx.track(incoming_beam)
-    # load result from bmadx library
+    segment = Segment(elements=[quadrupole])
+
+    # Run tracking
+    outgoing = segment.track(incoming)
+
+    # Load reference result computed with Bmad-X
     bmadx_out_with_cheetah_coords = torch.load(
         "tests/resources/quadrupole_bmadx/bmadx_out_with_cheetah_coords.pt"
     )
 
     assert torch.allclose(
-        bmadx_out_with_cheetah_coords,
-        cheetah_bmadx_outgoing_beam.particles,
-        atol=1e-7,
-        rtol=1e-7,
+        outgoing.particles, bmadx_out_with_cheetah_coords, atol=1e-7, rtol=1e-7
     )
