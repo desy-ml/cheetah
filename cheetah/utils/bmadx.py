@@ -21,11 +21,11 @@ def cheetah_to_bmad_coords(
 
     # Compute p0c and Bmad z, pz
     p0c = torch.sqrt(ref_energy**2 - mc2**2)
-    energy = ref_energy + delta * p0c
+    energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
     p = torch.sqrt(energy**2 - mc2**2)
     beta = p / energy
     z = -beta * tau
-    pz = (p - p0c) / p0c
+    pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
 
     # Bmad coordinates
     bmad_coords[..., 4] = z
@@ -57,11 +57,11 @@ def bmad_to_cheetah_coords(
 
     # Compute ref_energy and Cheetah tau, delta
     ref_energy = torch.sqrt(p0c**2 + mc2**2)
-    p = (1 + pz) * p0c
+    p = (1 + pz) * p0c.unsqueeze(-1)
     energy = torch.sqrt(p**2 + mc2**2)
     beta = p / energy
     tau = -z / beta
-    delta = (energy - ref_energy) / p0c
+    delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
 
     # Cheetah coordinates
     cheetah_coords[..., 4] = tau
@@ -93,12 +93,12 @@ def offset_particle_set(
     """
     s = torch.sin(tilt)
     c = torch.cos(tilt)
-    x_ele_int = x_lab - x_offset
-    y_ele_int = y_lab - y_offset
-    x_ele = x_ele_int * c + y_ele_int * s
-    y_ele = -x_ele_int * s + y_ele_int * c
-    px_ele = px_lab * c + py_lab * s
-    py_ele = -px_lab * s + py_lab * c
+    x_ele_int = x_lab - x_offset.unsqueeze(-1)
+    y_ele_int = y_lab - y_offset.unsqueeze(-1)
+    x_ele = x_ele_int * c.unsqueeze(-1) + y_ele_int * s.unsqueeze(-1)
+    y_ele = -x_ele_int * s.unsqueeze(-1) + y_ele_int * c.unsqueeze(-1)
+    px_ele = px_lab * c.unsqueeze(-1) + py_lab * s.unsqueeze(-1)
+    py_ele = -px_lab * s.unsqueeze(-1) + py_lab * c.unsqueeze(-1)
 
     return x_ele, px_ele, y_ele, py_ele
 
@@ -126,12 +126,12 @@ def offset_particle_unset(
     """
     s = torch.sin(tilt)
     c = torch.cos(tilt)
-    x_lab_int = x_ele * c - y_ele * s
-    y_lab_int = x_ele * s + y_ele * c
-    x_lab = x_lab_int + x_offset
-    y_lab = y_lab_int + y_offset
-    px_lab = px_ele * c - py_ele * s
-    py_lab = px_ele * s + py_ele * c
+    x_lab_int = x_ele * c.unsqueeze(-1) - y_ele * s.unsqueeze(-1)
+    y_lab_int = x_ele * s.unsqueeze(-1) + y_ele * c.unsqueeze(-1)
+    x_lab = x_lab_int + x_offset.unsqueeze(-1)
+    y_lab = y_lab_int + y_offset.unsqueeze(-1)
+    px_lab = px_ele * c.unsqueeze(-1) - py_ele * s.unsqueeze(-1)
+    py_lab = px_ele * s.unsqueeze(-1) + py_ele * c.unsqueeze(-1)
 
     return x_lab, px_lab, y_lab, py_lab
 
@@ -148,19 +148,25 @@ def low_energy_z_correction(
     :param ds: Drift length.
     :return: dz=(ds-d_particle) + ds*(beta - beta_ref)/beta_ref
     """
-    beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
+    beta = (
+        (1 + pz)
+        * p0c.unsqueeze(-1)
+        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+    )
     beta0 = p0c / torch.sqrt(p0c**2 + mc2**2)
     e_tot = torch.sqrt(p0c**2 + mc2**2)
 
-    evaluation = mc2 * (beta0 * pz) ** 2
-    dz = ds * pz * (
+    evaluation = mc2 * (beta0.unsqueeze(-1) * pz) ** 2
+    dz = ds.unsqueeze(-1) * pz * (
         1
-        - 3 * (pz * beta0**2) / 2
-        + pz**2 * beta0**2 * (2 * beta0**2 - (mc2 / e_tot) ** 2 / 2)
-    ) * (mc2 / e_tot) ** 2 * (evaluation < 3e-7 * e_tot) + (
-        ds * (beta - beta0) / beta0
+        - 3 * (pz * beta0.unsqueeze(-1) ** 2) / 2
+        + pz**2
+        * beta0.unsqueeze(-1) ** 2
+        * (2 * beta0.unsqueeze(-1) ** 2 - (mc2 / e_tot.unsqueeze(-1)) ** 2 / 2)
+    ) * (mc2 / e_tot.unsqueeze(-1)) ** 2 * (evaluation < 3e-7 * e_tot.unsqueeze(-1)) + (
+        ds.unsqueeze(-1) * (beta - beta0.unsqueeze(-1)) / beta0.unsqueeze(-1)
     ) * (
-        evaluation >= 3e-7 * e_tot
+        evaluation >= 3e-7 * e_tot.unsqueeze(-1)
     )
 
     return dz
@@ -188,7 +194,7 @@ def calculate_quadrupole_coefficients(
     eps = 2.220446049250313e-16  # Machine epsilon to double precission
 
     sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
-    sk_l = sqrt_k * length
+    sk_l = sqrt_k * length.unsqueeze(-1)
 
     cx = torch.cos(sk_l) * (k1 <= 0) + torch.cosh(sk_l) * (k1 > 0)
     sx = (torch.sin(sk_l) / (sqrt_k)) * (k1 <= 0) + (torch.sinh(sk_l) / (sqrt_k)) * (
@@ -200,8 +206,8 @@ def calculate_quadrupole_coefficients(
     a21 = k1 * sx * rel_p
     a22 = cx
 
-    c1 = k1 * (-cx * sx + length) / 4
+    c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4
     c2 = -k1 * sx**2 / (2 * rel_p)
-    c3 = -(cx * sx + length) / (4 * rel_p**2)
+    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p**2)
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]

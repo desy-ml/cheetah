@@ -149,7 +149,7 @@ class Quadrupole(Element):
 
         for _ in range(self.num_steps):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
-            k1 = b1 / (self.length * rel_p)
+            k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
 
             tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
             ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
