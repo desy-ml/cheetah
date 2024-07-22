@@ -226,6 +226,8 @@ class Quadrupole(Element):
                 self.k1,
                 misalignment=self.misalignment,
                 tilt=self.tilt,
+                num_steps=self.num_steps,
+                tracking_method=self.tracking_method,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
