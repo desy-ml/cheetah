@@ -3,6 +3,8 @@ import torch
 
 import cheetah
 
+from . import is_mps_available_and_functional
+
 
 @pytest.mark.parametrize(
     "target_device",
@@ -16,7 +18,7 @@ import cheetah
         pytest.param(
             torch.device("mps"),
             marks=pytest.mark.skipif(
-                not torch.backends.mps.is_available(), reason="MPS not available"
+                not is_mps_available_and_functional(), reason="MPS not available"
             ),
         ),
     ],
@@ -79,7 +81,7 @@ def test_change_quadrupole_dtype():
         pytest.param(
             torch.device("mps"),
             marks=pytest.mark.skipif(
-                not torch.backends.mps.is_available(), reason="MPS not available"
+                not is_mps_available_and_functional(), reason="MPS not available"
             ),
         ),
     ],

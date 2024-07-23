@@ -3,6 +3,8 @@ import torch
 
 import cheetah
 
+from . import is_mps_available_and_functional
+
 
 def test_bmad_tutorial():
     """Test importing the lattice example file from the Bmad and Tao tutorial."""
@@ -47,7 +49,7 @@ def test_bmad_tutorial():
         pytest.param(
             torch.device("mps"),
             marks=pytest.mark.skipif(
-                not torch.backends.mps.is_available(), reason="MPS not available"
+                not is_mps_available_and_functional(), reason="MPS not available"
             ),
         ),
     ],
