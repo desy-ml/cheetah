@@ -3,6 +3,7 @@ import torch
 
 double_precision_epsilon = np.finfo(np.float64).eps
 
+
 def cheetah_to_bmad_coords(
     cheetah_coords: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
