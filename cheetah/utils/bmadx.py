@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 
@@ -173,7 +174,10 @@ def low_energy_z_correction(
 
 
 def calculate_quadrupole_coefficients(
-    k1: torch.Tensor, length: torch.Tensor, rel_p: torch.Tensor
+    k1: torch.Tensor,
+    length: torch.Tensor,
+    rel_p: torch.Tensor,
+    eps: float=np.finfo(np.float64).eps,
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
     Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
@@ -184,6 +188,7 @@ def calculate_quadrupole_coefficients(
     :param k1: Quadrupole strength (k1 > 0 ==> defocus).
     :param length: Quadrupole length.
     :param rel_p: Relative momentum P/P0.
+    :param eps: Machine precision epsilon, default to double precision.
     :return: Tuple of transfer matrix elements and coefficients.
         a11, a12, a21, a22: Transfer matrix elements.
         c1, c2, c3: Second order derivatives of z such that
@@ -191,7 +196,6 @@ def calculate_quadrupole_coefficients(
     """
     # TODO: Revisit to fix accumulated error due to machine epsilon
 
-    eps = 2.220446049250313e-16  # Machine epsilon to double precission
 
     sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
     sk_l = sqrt_k * length.unsqueeze(-1)
