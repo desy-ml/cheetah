@@ -1,7 +1,6 @@
-import numpy as np
 import torch
 
-double_precision_epsilon = np.finfo(np.float64).eps
+double_precision_epsilon = torch.finfo(torch.float64).eps
 
 
 def cheetah_to_bmad_coords(
