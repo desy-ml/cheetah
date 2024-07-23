@@ -195,8 +195,6 @@ def calculate_quadrupole_coefficients(
             z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
     """
     # TODO: Revisit to fix accumulated error due to machine epsilon
-
-
     sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
     sk_l = sqrt_k * length.unsqueeze(-1)
 
