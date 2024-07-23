@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+double_precision_epsilon = np.finfo(np.float64).eps
 
 def cheetah_to_bmad_coords(
     cheetah_coords: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
@@ -177,7 +178,7 @@ def calculate_quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     rel_p: torch.Tensor,
-    eps: float = np.finfo(np.float64).eps,
+    eps: float = double_precision_epsilon,
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
     Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
