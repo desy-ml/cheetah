@@ -206,10 +206,10 @@ class ParameterBeam(Beam):
             total_charge if total_charge is not None else torch.full(shape, 0.0)
         )
 
-        assert all(
+        assert torch.all(
             beta_x > 0
         ), "Beta function in x direction must be larger than 0 everywhere."
-        assert all(
+        assert torch.all(
             beta_y > 0
         ), "Beta function in y direction must be larger than 0 everywhere."
 
