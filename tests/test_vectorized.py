@@ -322,8 +322,8 @@ def test_enormous_through_ares():
     assert outgoing.sigma_py.shape == (3, 100_000)
     assert outgoing.sigma_tau.shape == (3, 100_000)
     assert outgoing.sigma_p.shape == (3, 100_000)
-    assert outgoing.energy.shape == torch.Size([1])
-    assert outgoing.total_charge.shape == torch.Size([1])
+    assert outgoing.energy.shape == (3, 100_000)
+    assert outgoing.total_charge.shape == (3, 100_000)
 
 
 def test_cavity_with_zero_and_non_zero_voltage():
