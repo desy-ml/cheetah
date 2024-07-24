@@ -1,8 +1,8 @@
 import torch
 
 
-# Check if MPS is available and functional (for GitHub Actions)
 def is_mps_available_and_functional():
+    """Check if MPS is available and functional (for GitHub Actions)."""
     if not torch.backends.mps.is_available():
         return False
     try:

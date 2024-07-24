@@ -1,4 +1,4 @@
-name: macos-pytest
+name: pytest-macos
 
 on: [push, pull_request]
 
