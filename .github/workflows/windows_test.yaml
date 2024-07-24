@@ -1,4 +1,4 @@
-name: windows-pytest
+name: pytest-windows
 
 on: [push, pull_request]
 
