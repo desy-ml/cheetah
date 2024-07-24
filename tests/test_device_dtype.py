@@ -2,8 +2,7 @@ import pytest
 import torch
 
 import cheetah
-
-from . import is_mps_available_and_functional
+from cheetah.utils import is_mps_available_and_functional
 
 
 @pytest.mark.parametrize(
