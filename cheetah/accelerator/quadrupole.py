@@ -1,17 +1,23 @@
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
+from scipy.constants import physical_constants
 from torch import Size, nn
 
+from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
+
+electron_mass_eV = torch.tensor(
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+)
 
 
 class Quadrupole(Element):
@@ -23,6 +29,9 @@ class Quadrupole(Element):
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
+    :param num_steps: Number of drift-kick-drift steps to use for tracking through the
+        element when tracking method is set to `"bmadx"`.
+    :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
     """
 
@@ -32,6 +41,8 @@ class Quadrupole(Element):
         k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        num_steps: int = 1,
+        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -64,6 +75,8 @@ class Quadrupole(Element):
                 else torch.zeros_like(self.length)
             ),
         )
+        self.num_steps = num_steps
+        self.tracking_method = tracking_method
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         R = base_rmatrix(
@@ -81,6 +94,110 @@ class Quadrupole(Element):
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
             return R
 
+    def track(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the quadrupole element.
+
+        :param incoming: Beam entering the element.
+        :return: Beam exiting the element.
+        """
+        if self.tracking_method == "cheetah":
+            return super().track(incoming)
+        elif self.tracking_method == "bmadx":
+            assert isinstance(
+                incoming, ParticleBeam
+            ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
+            return self._track_bmadx(incoming)
+        else:
+            raise ValueError(
+                f"Invalid tracking method {self.tracking_method}. "
+                + "Supported methods are 'cheetah' and 'bmadx'."
+            )
+
+    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+        """
+        Track particles through the quadrupole element using the Bmad-X tracking method.
+
+        :param incoming: Beam entering the element. Currently only supports
+            `ParticleBeam`.
+        :return: Beam exiting the element.
+        """
+        # Compute Bmad coordinates and p0c
+        mc2 = electron_mass_eV.to(
+            device=incoming.particles.device, dtype=incoming.particles.dtype
+        )
+        bmad_coords, p0c = bmadx.cheetah_to_bmad_coords(
+            incoming.particles, incoming.energy, mc2
+        )
+        x = bmad_coords[..., 0]
+        px = bmad_coords[..., 1]
+        y = bmad_coords[..., 2]
+        py = bmad_coords[..., 3]
+        z = bmad_coords[..., 4]
+        pz = bmad_coords[..., 5]
+
+        x_offset = self.misalignment[..., 0]
+        y_offset = self.misalignment[..., 1]
+
+        step_length = self.length / self.num_steps
+        b1 = self.k1 * self.length
+
+        # Begin Bmad-X tracking
+        x, px, y, py = bmadx.offset_particle_set(
+            x_offset, y_offset, self.tilt, x, px, y, py
+        )
+
+        for _ in range(self.num_steps):
+            rel_p = 1 + pz  # Particle's relative momentum (P/P0)
+            k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
+
+            tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
+            ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
+
+            z = (
+                z
+                + dzx[0] * x**2
+                + dzx[1] * x * px
+                + dzx[2] * px**2
+                + dzy[0] * y**2
+                + dzy[1] * y * py
+                + dzy[2] * py**2
+            )
+
+            x_next = tx[0][0] * x + tx[0][1] * px
+            px_next = tx[1][0] * x + tx[1][1] * px
+            y_next = ty[0][0] * y + ty[0][1] * py
+            py_next = ty[1][0] * y + ty[1][1] * py
+
+            x, px, y, py = x_next, px_next, y_next, py_next
+
+            z = z + bmadx.low_energy_z_correction(pz, p0c, mc2, step_length)
+
+        # s = s + l
+        x, px, y, py = bmadx.offset_particle_unset(
+            x_offset, y_offset, self.tilt, x, px, y, py
+        )
+
+        # End of Bmad-X tracking
+        bmad_coords[..., 0] = x
+        bmad_coords[..., 1] = px
+        bmad_coords[..., 2] = y
+        bmad_coords[..., 3] = py
+        bmad_coords[..., 4] = z
+        bmad_coords[..., 5] = pz
+
+        # Convert back to Cheetah coordinates
+        cheetah_coords, ref_energy = bmadx.bmad_to_cheetah_coords(bmad_coords, p0c, mc2)
+
+        outgoing_beam = ParticleBeam(
+            cheetah_coords,
+            ref_energy,
+            particle_charges=incoming.particle_charges,
+            device=incoming.particles.device,
+            dtype=incoming.particles.dtype,
+        )
+        return outgoing_beam
+
     def broadcast(self, shape: Size) -> Element:
         return self.__class__(
             length=self.length.repeat(shape),
@@ -94,7 +211,7 @@ class Quadrupole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return True
+        return self.tracking_method == "cheetah"
 
     @property
     def is_active(self) -> bool:
@@ -109,6 +226,8 @@ class Quadrupole(Element):
                 self.k1,
                 misalignment=self.misalignment,
                 tilt=self.tilt,
+                num_steps=self.num_steps,
+                tracking_method=self.tracking_method,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
@@ -134,5 +253,7 @@ class Quadrupole(Element):
             + f"k1={repr(self.k1)}, "
             + f"misalignment={repr(self.misalignment)}, "
             + f"tilt={repr(self.tilt)}, "
+            + f"num_steps={repr(self.num_steps)}, "
+            + f"tracking_method={repr(self.tracking_method)}, "
             + f"name={repr(self.name)})"
         )
