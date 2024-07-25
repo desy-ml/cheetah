@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from cheetah import Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
@@ -82,7 +83,7 @@ def test_quadrupole_with_misalignments_multiple_batch_dimensions():
 
 def test_tilted_quadrupole_batch():
     """
-    Test that a quadrupole with a multiple tilts behaves as expected.
+    Test that a quadrupole with a tilt behaves as expected in vectorised mode.
     """
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000_000),
@@ -163,3 +164,67 @@ def test_quadrupole_length_multiple_batch_dimensions():
     outgoing = segment(incoming)
 
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
+    assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[0, 1])
+
+
+def test_quadrupole_bmadx_tracking():
+    """
+    Test that the results of tracking through a quadrupole with the `"bmadx"` tracking
+    method match the results from Bmad-X.
+    """
+    incoming = torch.load("tests/resources/bmadx/quadrupole_incoming_beam.pt")
+    quadrupole = Quadrupole(
+        length=torch.tensor(1.0),
+        k1=torch.tensor(10.0),
+        misalignment=torch.tensor([0.01, -0.02]),
+        tilt=torch.tensor(0.5),
+        num_steps=10,
+        tracking_method="bmadx",
+        dtype=torch.double,
+    )
+    segment = Segment(elements=[quadrupole])
+
+    # Run tracking
+    outgoing = segment.track(incoming)
+
+    # Load reference result computed with Bmad-X
+    bmadx_out_with_cheetah_coords = torch.load(
+        "tests/resources/bmadx/quadrupole_bmadx_out_with_cheetah_coords.pt"
+    )
+
+    assert torch.allclose(
+        outgoing.particles, bmadx_out_with_cheetah_coords, atol=1e-7, rtol=1e-7
+    )
+
+
+@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+def test_tracking_method_vectorization(tracking_method):
+    """
+    Test that the quadruople vectorisation works correctly with both tracking methods.
+    Only checks the shapes, not the physical correctness of the results.
+    """
+    quadrupole = Quadrupole(
+        length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
+        k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
+        misalignment=torch.zeros(2),
+        tilt=torch.tensor(0.0),
+        tracking_method=tracking_method,
+    )
+    incoming = ParticleBeam.from_parameters(
+        sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
+    )
+
+    outgoing = quadrupole.track(incoming)
+
+    assert outgoing.mu_x.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
+    assert outgoing.mu_y.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
+    assert outgoing.sigma_x.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
+    assert outgoing.sigma_y.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
+    assert outgoing.sigma_p.shape == (3, 2)
+    assert outgoing.energy.shape == (3, 2)
+    assert outgoing.total_charge.shape == (3, 2)
