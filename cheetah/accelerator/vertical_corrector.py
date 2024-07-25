@@ -71,7 +71,7 @@ class VerticalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return any(self.angle != 0)
+        return torch.any(self.angle != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         split_elements = []
