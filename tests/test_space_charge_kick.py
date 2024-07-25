@@ -87,15 +87,13 @@ def test_vectorized():
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(10_000),
         total_charge=torch.tensor([[1e-9, 2e-9], [3e-9, 4e-9], [5e-9, 6e-9]]),
-        energy=energy.repeat(3, 2),
-        radius_x=R0.repeat(3, 2),
-        radius_y=R0.repeat(3, 2),
-        radius_tau=(R0 / gamma).repeat(
-            3, 2
-        ),  # Radius of the beam in s direction in the lab frame
-        sigma_px=torch.tensor([1e-15]).repeat(3, 2),
-        sigma_py=torch.tensor([1e-15]).repeat(3, 2),
-        sigma_p=torch.tensor([1e-15]).repeat(3, 2),
+        energy=energy,
+        radius_x=R0,
+        radius_y=R0,
+        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        sigma_px=torch.tensor(1e-15),
+        sigma_py=torch.tensor(1e-15),
+        sigma_p=torch.tensor(1e-15),
     )
 
     segment = cheetah.Segment(
@@ -125,8 +123,8 @@ def test_vectorized_cold_uniform_beam_expansion():
     torch.manual_seed(42)
 
     # Simulation parameters
-    R0 = torch.tensor([0.001])
-    energy = torch.tensor([2.5e8])
+    R0 = torch.tensor(0.001)
+    energy = torch.tensor(2.5e8)
     rest_energy = torch.tensor(
         constants.electron_mass
         * constants.speed_of_light**2
@@ -139,14 +137,14 @@ def test_vectorized_cold_uniform_beam_expansion():
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(10_000),
-        total_charge=torch.tensor([1e-9]),
+        total_charge=torch.tensor(1e-9),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
         radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_px=torch.tensor([1e-15]),
-        sigma_py=torch.tensor([1e-15]),
-        sigma_p=torch.tensor([1e-15]),
+        sigma_px=torch.tensor(1e-15),
+        sigma_py=torch.tensor(1e-15),
+        sigma_p=torch.tensor(1e-15),
     )
 
     # Compute section length
@@ -184,13 +182,13 @@ def test_incoming_beam_not_modified():
 
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor([2e-7]),
-        sigma_py=torch.tensor([2e-7]),
+        sigma_px=torch.tensor(2e-7),
+        sigma_py=torch.tensor(2e-7),
     )
     # Initial beam properties
     incoming_beam_before = incoming_beam.particles
 
-    section_length = torch.tensor([1.0])
+    section_length = torch.tensor(1.0)
     segment_space_charge = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
@@ -216,9 +214,9 @@ def test_gradient():
     Tests that the gradient of the track method is computed withouth throwing an error.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor([10_000]),
-        sigma_px=torch.tensor([2e-7]),
-        sigma_py=torch.tensor([2e-7]),
+        num_particles=torch.tensor(10_000),
+        sigma_px=torch.tensor(2e-7),
+        sigma_py=torch.tensor(2e-7),
     )
 
     segment_length = nn.Parameter(torch.tensor([1.0]))
@@ -246,7 +244,7 @@ def test_does_not_break_segment_length():
     Test that the computation of a `Segment`'s length does not break when
     `SpaceChargeKick` is used.
     """
-    section_length = torch.tensor(1.0).repeat((3, 2))
+    section_length = torch.tensor(1.0)
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
@@ -260,4 +258,4 @@ def test_does_not_break_segment_length():
     )
 
     assert segment.length.shape == (3, 2)
-    assert torch.allclose(segment.length, torch.tensor(1.0).repeat(3, 2))
+    assert torch.allclose(segment.length, torch.tensor(1.0))
