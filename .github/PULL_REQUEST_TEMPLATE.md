@@ -40,6 +40,6 @@
 - [ ] I have run `pytest` on a machine with a CUDA GPU and made sure all tests pass (**required**).
 - [ ] I have checked that the documentation builds (**required**).
 
-Note: We are using a maximum length of 88 characters per line
+Note: We are using a maximum length of 88 characters per line.
 
 <!--- This Template is an edited version of the one from https://github.com/DLR-RM/stable-baselines3/ -->
