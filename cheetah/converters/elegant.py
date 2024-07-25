@@ -161,7 +161,9 @@ def convert_element(
             # TODO Properly handle all parameters
             return cheetah.Cavity(
                 length=torch.tensor([parsed["l"]]),
-                phase=torch.tensor([parsed["phase"]]),
+                # Elegant defines 90° as the phase of maximum acceleration,
+                # while Cheetah uses 0°. We therefore add a phase offset to compensate.
+                phase=torch.tensor([parsed["phase"] - 90]),
                 voltage=torch.tensor([parsed["volt"]]),
                 frequency=torch.tensor([parsed["freq"]]),
                 name=name,
