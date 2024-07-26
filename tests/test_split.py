@@ -4,7 +4,6 @@ import torch
 import cheetah
 
 
-@pytest.mark.xfail  # TODO: Fix this
 def test_drift_end():
     """
     Test that at the end of a split drift the result is the same as at the end of the
@@ -25,7 +24,6 @@ def test_drift_end():
     )
 
 
-@pytest.mark.xfail  # TODO: Fix this
 def test_quadrupole_end():
     """
     Test that at the end of a split quadrupole the result is the same as at the end of
