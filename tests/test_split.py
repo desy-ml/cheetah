@@ -79,7 +79,7 @@ def test_solenoid_end():
     the original solenoid.
     """
     original_solenoid = cheetah.Solenoid(
-        length=torch.tensor([0.2]), k=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), k=torch.tensor([4.2, 3.6])
     )
     split_solenoid = cheetah.Segment(
         original_solenoid.split(resolution=torch.tensor(0.01))
@@ -87,7 +87,7 @@ def test_solenoid_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_solenoid.track(incoming_beam)
     outgoing_beam_split = split_solenoid.track(incoming_beam)
@@ -124,14 +124,14 @@ def test_undulator_end():
     Test that at the end of a split undulator the result is the same as at the end of
     the original undulator.
     """
-    original_undulator = cheetah.Undulator(length=torch.tensor([3.142]))
+    original_undulator = cheetah.Undulator(length=torch.tensor([3.142, 2.7]))
     split_undulator = cheetah.Segment(
         original_undulator.split(resolution=torch.tensor(0.1))
     )
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_undulator.track(incoming_beam)
     outgoing_beam_split = split_undulator.track(incoming_beam)
