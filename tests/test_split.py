@@ -9,12 +9,12 @@ def test_drift_end():
     Test that at the end of a split drift the result is the same as at the end of the
     original drift.
     """
-    original_drift = cheetah.Drift(length=torch.tensor([2.0]))
+    original_drift = cheetah.Drift(length=torch.tensor([2.0, 2.5]))
     split_drift = cheetah.Segment(original_drift.split(resolution=torch.tensor(0.1)))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_drift.track(incoming_beam)
     outgoing_beam_split = split_drift.track(incoming_beam)
@@ -30,7 +30,7 @@ def test_quadrupole_end():
     the original quadrupole.
     """
     original_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor([0.2]), k1=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), k1=torch.tensor([4.2, 3.6])
     )
     split_quadrupole = cheetah.Segment(
         original_quadrupole.split(resolution=torch.tensor(0.01))
@@ -38,7 +38,7 @@ def test_quadrupole_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_quadrupole.track(incoming_beam)
     outgoing_beam_split = split_quadrupole.track(incoming_beam)
@@ -54,16 +54,16 @@ def test_cavity_end():
     the original cavity.
     """
     original_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
-        frequency=torch.tensor([1.3e9]),
-        phase=torch.tensor([0.0]),
+        length=torch.tensor([1.0377, 2.0377]),
+        voltage=torch.tensor([0.01815975e9, 9.15975e6]),
+        frequency=torch.tensor([1.3e9, 3.9e9]),
+        phase=torch.tensor([0.0, 4.2]),
     )
     split_cavity = cheetah.Segment(original_cavity.split(resolution=torch.tensor(0.1)))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_cavity.track(incoming_beam)
     outgoing_beam_split = split_cavity.track(incoming_beam)
@@ -103,13 +103,13 @@ def test_dipole_end():
     the original dipole.
     """
     original_dipole = cheetah.Dipole(
-        length=torch.tensor([0.2]), angle=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_dipole = cheetah.Segment(original_dipole.split(resolution=torch.tensor(0.01)))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_dipole.track(incoming_beam)
     outgoing_beam_split = split_dipole.track(incoming_beam)
@@ -148,7 +148,7 @@ def test_horizontal_corrector_end():
     the end of the original horizontal corrector.
     """
     original_horizontal_corrector = cheetah.HorizontalCorrector(
-        length=torch.tensor([0.2]), angle=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_horizontal_corrector = cheetah.Segment(
         original_horizontal_corrector.split(resolution=torch.tensor(0.01))
@@ -156,7 +156,7 @@ def test_horizontal_corrector_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_horizontal_corrector.track(incoming_beam)
     outgoing_beam_split = split_horizontal_corrector.track(incoming_beam)
@@ -173,7 +173,7 @@ def test_vertical_corrector_end():
     the end of the original vertical corrector.
     """
     original_vertical_corrector = cheetah.VerticalCorrector(
-        length=torch.tensor([0.2]), angle=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_vertical_corrector = cheetah.Segment(
         original_vertical_corrector.split(resolution=torch.tensor(0.01))
@@ -181,7 +181,7 @@ def test_vertical_corrector_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
+    ).broadcast((2,))
 
     outgoing_beam_original = original_vertical_corrector.track(incoming_beam)
     outgoing_beam_split = split_vertical_corrector.track(incoming_beam)
