@@ -214,3 +214,43 @@ def calculate_quadrupole_coefficients(
     c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p**2)
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
+
+
+def sqrt_one(x):
+    """Routine to calculate Sqrt[1+x] - 1 to machine precision."""
+    sq = torch.sqrt(1 + x)
+    rad = sq + 1
+
+    return x / rad
+
+
+def track_a_drift(
+    length: torch.Tensor,
+    x_in: torch.Tensor,
+    px_in: torch.Tensor,
+    y_in: torch.Tensor,
+    py_in: torch.Tensor,
+    z_in: torch.Tensor,
+    pz_in: torch.Tensor,
+    p0c: torch.Tensor,
+    mc2: torch.Tensor,
+) -> tuple[torch.Tensor]:
+    """Exact drift tracking used in different elements."""
+
+    P = 1.0 + pz_in  # Particle's total momentum over p0
+    Px = px_in / P  # Particle's 'x' momentum over p0
+    Py = py_in / P  # Particle's 'y' momentum over p0
+    Pxy2 = Px**2 + Py**2  # Particle's transverse mometum^2 over p0^2
+    Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
+
+    # z = z + L * ( beta/beta_ref - 1.0/Pl ) but numerically accurate:
+    dz = length * (
+        sqrt_one((mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c * P) ** 2 + mc2**2))
+        + sqrt_one(-Pxy2) / Pl
+    )
+
+    x_out = x_in + length * Px / Pl
+    y_out = y_in + length * Py / Pl
+    z_out = z_in + dz
+
+    return x_out, y_out, z_out
