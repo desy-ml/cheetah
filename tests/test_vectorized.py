@@ -489,3 +489,25 @@ def test_screen_length_broadcast_shape():
     screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2]]))
     broadcast_screen = screen.broadcast((3, 10))
     assert broadcast_screen.length.shape == broadcast_screen.misalignment.shape[:-1]
+
+
+def test_vectorized_undulator():
+    """Test that a vectorized `Undulator` is able to track a particle beam."""
+    element = cheetah.Undulator(length=torch.tensor([0.4, 0.7]))
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, sigma_x=torch.tensor([1e-5])
+    ).broadcast((2,))
+
+    _ = element.track(beam)
+
+
+def test_vectorized_solenoid():
+    """Test that a vectorized `Solenoid` is able to track a particle beam."""
+    element = cheetah.Solenoid(
+        length=torch.tensor([0.4, 0.7]), k=torch.tensor([4.2, 3.1])
+    )
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, sigma_x=torch.tensor([1e-5])
+    ).broadcast((2,))
+
+    _ = element.track(beam)

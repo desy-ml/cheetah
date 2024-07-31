@@ -140,18 +140,16 @@ class Drift(Element):
         return self.tracking_method == "cheetah"
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            element = Drift(
-                torch.min(resolution, remaining),
+        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        return [
+            Drift(
+                self.length / num_splits,
                 tracking_method=self.tracking_method,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
+            for i in range(num_splits)
+        ]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
         pass
