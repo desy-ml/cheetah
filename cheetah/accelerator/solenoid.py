@@ -74,11 +74,9 @@ class Solenoid(Element):
         s_k[self.k == 0] = self.length[self.k == 0]
         s_k[self.k != 0] = s[self.k != 0] / self.k[self.k != 0]
 
-        r56 = torch.zeros_like(self.length)
-        if gamma != 0:
-            gamma2 = gamma * gamma
-            beta = torch.sqrt(1.0 - 1.0 / gamma2)
-            r56 -= self.length / (beta * beta * gamma2)
+        r56 = torch.where(
+            gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
+        )
 
         R = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
         R[..., 0, 0] = c**2
