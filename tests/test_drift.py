@@ -59,3 +59,28 @@ def test_device_like_torch_module():
     element = element.cpu()
 
     assert element.length.device.type == "cpu"
+
+
+def test_drift_bmadx_tracking():
+    """
+    Test that the results of tracking through a drift with the `"bmadx"` tracking
+    method match the results from Bmad-X.
+    """
+    incoming_beam = torch.load("tests/resources/bmadx/incoming_beam.pt")
+    drift = cheetah.Drift(
+        length=torch.tensor([1.0]),
+        tracking_method="bmadx",
+        dtype=torch.double,
+    )
+
+    # Run tracking
+    outgoing_beam = drift.track(incoming_beam)
+
+    # Load reference result computed with Bmad-X
+    bmadx_out_with_cheetah_coords = torch.load(
+        "tests/resources/bmadx/drift_bmadx_out_with_cheetah_coords.pt"
+    )
+
+    assert torch.allclose(
+        outgoing_beam.particles, bmadx_out_with_cheetah_coords, atol=1e-7, rtol=1e-7
+    )
