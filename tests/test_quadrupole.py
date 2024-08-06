@@ -155,12 +155,12 @@ def test_quadrupole_bmadx_tracking():
     outgoing = segment.track(incoming)
 
     # Load reference result computed with Bmad-X
-    bmadx_out_with_cheetah_coords = torch.load(
-        "tests/resources/bmadx/quadrupole_bmadx_out_with_cheetah_coords.pt"
+    outgoing_beam_bmadx = torch.load(
+        "tests/resources/bmadx/outgoing_beam_bmadx_quadrupole.pt"
     )
 
     assert torch.allclose(
-        outgoing.particles, bmadx_out_with_cheetah_coords, atol=1e-7, rtol=1e-7
+        outgoing.particles, outgoing_beam_bmadx.particles, atol=1e-7, rtol=1e-7
     )
 
 
