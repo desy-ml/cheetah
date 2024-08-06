@@ -9,7 +9,7 @@ def cheetah_to_bmad_z_pz(
     tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
-    Transforms Cheetah longitudinal coordinates to Bmad coordinates 
+    Transforms Cheetah longitudinal coordinates to Bmad coordinates
     and computes p0c.
 
     :param tau: Cheetah longitudinal coordinate (c*delta_t).
@@ -34,7 +34,7 @@ def bmad_to_cheetah_z_pz(
     z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
-    Transforms Bmad longitudinal coordinates to Cheetah coordinates 
+    Transforms Bmad longitudinal coordinates to Cheetah coordinates
     and computes reference energy.
 
     :param z: Bmad longitudinal coordinate (c*delta_t).
@@ -297,9 +297,10 @@ def track_a_drift(
 
     return x_out, y_out, z_out
 
+
 def particle_rf_time(z, pz, p0c, mc2):
     """Returns rf time of Particle p."""
-    beta = (1+pz) * p0c / torch.sqrt(((1+pz)*p0c)**2 + mc2**2)
-    time = - z / (beta * c_light)
-    
+    beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
+    time = -z / (beta * c_light)
+
     return time

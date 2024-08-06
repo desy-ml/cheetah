@@ -102,14 +102,10 @@ class Drift(Element):
         tau = incoming.particles[..., 4]
         delta = incoming.particles[..., 5]
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, mc2
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
-        x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, mc2
-        )
+        x, y, z = bmadx.track_a_drift(self.length, x, px, y, py, z, pz, p0c, mc2)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates

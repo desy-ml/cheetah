@@ -126,7 +126,7 @@ class Quadrupole(Element):
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
-        
+
         x = incoming.particles[..., 0]
         px = incoming.particles[..., 1]
         y = incoming.particles[..., 2]
@@ -134,9 +134,7 @@ class Quadrupole(Element):
         tau = incoming.particles[..., 4]
         delta = incoming.particles[..., 5]
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, mc2
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
