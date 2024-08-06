@@ -134,7 +134,7 @@ class Quadrupole(Element):
         tau = incoming.particles[..., 4]
         delta = incoming.particles[..., 5]
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_coords(
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
             tau, delta, incoming.energy, mc2
         )
 
@@ -182,7 +182,7 @@ class Quadrupole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_coords(z, pz, p0c, mc2)
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         outgoing_beam = ParticleBeam(
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
