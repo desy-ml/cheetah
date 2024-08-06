@@ -205,6 +205,8 @@ class TransverseDeflectingCavity(Element):
             voltage=self.voltage.repeat(shape),
             phase=self.phase.repeat(shape),
             frequency=self.frequency.repeat(shape),
+            misalignment=self.misalignment.repeat((*shape, 1)),
+            tilt=self.tilt.repeat(shape),
             name=self.name,
             device=self.length.device,
             dtype=self.length.dtype,
