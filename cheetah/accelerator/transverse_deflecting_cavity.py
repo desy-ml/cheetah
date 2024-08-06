@@ -230,12 +230,12 @@ class TransverseDeflectingCavity(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + [
-            "length", 
-            "voltage", 
-            "phase", 
-            "frequency", 
-            "misalignment", 
-            "tilt"
+            "length",
+            "voltage",
+            "phase",
+            "frequency",
+            "misalignment",
+            "tilt",
         ]
 
     def __repr__(self) -> str:
