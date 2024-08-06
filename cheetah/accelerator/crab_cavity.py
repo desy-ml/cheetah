@@ -18,6 +18,7 @@ electron_mass_eV = torch.tensor(
     physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
 
+
 class CrabCavity(Element):
     """
     Crab Cavity Element.
@@ -128,7 +129,7 @@ class CrabCavity(Element):
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the crab cavity element 
+        Track particles through the crab cavity element
         using the Bmad-X tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
@@ -139,7 +140,7 @@ class CrabCavity(Element):
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
-        
+
         x = incoming.particles[..., 0]
         px = incoming.particles[..., 1]
         y = incoming.particles[..., 2]
@@ -147,9 +148,7 @@ class CrabCavity(Element):
         tau = incoming.particles[..., 4]
         delta = incoming.particles[..., 5]
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, mc2
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
@@ -159,38 +158,35 @@ class CrabCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(
-            self.length/2, x, px, y, py, z, pz, p0c, mc2
-        )
-        
+        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+
         voltage = self.voltage / p0c
         k_rf = 2 * torch.pi * self.frequency / c_light
-        phase = 2 * torch.pi * (
-            self.phase - 
-            (bmadx.particle_rf_time(z, pz, p0c, mc2) * self.frequency)
+        phase = (
+            2
+            * torch.pi
+            * (self.phase - (bmadx.particle_rf_time(z, pz, p0c, mc2) * self.frequency))
         )
-        
+
         px = px + voltage * torch.sin(phase)
-        
-        beta = (1+pz) * p0c / torch.sqrt(((1+pz)*p0c)**2 + mc2**2)
+
+        beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
         beta_old = beta
-        E_old =  (1+pz) * p0c / beta_old
+        E_old = (1 + pz) * p0c / beta_old
         E_new = E_old + voltage * torch.cos(phase) * k_rf * x * p0c
-        pc = torch.sqrt(E_new**2-mc2**2)
+        pc = torch.sqrt(E_new**2 - mc2**2)
         beta = pc / E_new
-        
-        pz = (pc - p0c)/p0c        
+
+        pz = (pc - p0c) / p0c
         z = z * beta / beta_old
-        
-        x, y, z = bmadx.track_a_drift(
-            self.length/2, x, px, y, py, z, pz, p0c, mc2
-        )
+
+        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
         # End of Bmad-X tracking
-        
+
         # Convert back to Cheetah coordinates
         tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 

@@ -3,6 +3,7 @@ import torch
 
 import cheetah
 
+
 def test_crab_cavity_bmadx_tracking():
     """
     Test that the results of tracking through a crab cavity with the `"bmadx"` tracking
