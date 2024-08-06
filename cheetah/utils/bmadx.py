@@ -297,3 +297,9 @@ def track_a_drift(
 
     return x_out, y_out, z_out
 
+def particle_rf_time(z, pz, p0c, mc2):
+    """Returns rf time of Particle p."""
+    beta = (1+pz) * p0c / torch.sqrt(((1+pz)*p0c)**2 + mc2**2)
+    time = - z / (beta * c_light)
+    
+    return time
