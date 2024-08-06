@@ -1,25 +1,23 @@
 import torch
 
+from scipy.constants import c as c_light
+
 double_precision_epsilon = torch.finfo(torch.float64).eps
 
 
 def cheetah_to_bmad_coords(
-    cheetah_coords: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
+    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
-    Transforms Cheetah coordinates to Bmad coordinates.
+    Transforms Cheetah longitudinal coordinates to Bmad coordinates 
+    and computes p0c.
 
-    :param cheetah_coords: 7-dimensional particle vectors in Cheetah coordinates.
+    :param tau: Cheetah longitudinal coordinate (c*delta_t).
+    :param delta: Cheetah longitudinal momentum (delta_E/p0c).
     :param ref_energy: Reference energy in eV.
+    :param mc2: Particle mass in eV/c^2.
     """
     # TODO This can probably be moved to the `ParticleBeam` class at some point
-
-    # Initialize Bmad coordinates
-    bmad_coords = cheetah_coords[..., :6].clone()
-
-    # Cheetah longitudinal coordinates
-    tau = cheetah_coords[..., 4]
-    delta = cheetah_coords[..., 5]
 
     # Compute p0c and Bmad z, pz
     p0c = torch.sqrt(ref_energy**2 - mc2**2)
@@ -29,33 +27,22 @@ def cheetah_to_bmad_coords(
     z = -beta * tau
     pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
 
-    # Bmad coordinates
-    bmad_coords[..., 4] = z
-    bmad_coords[..., 5] = pz
-
-    return bmad_coords, p0c
+    return z, pz, p0c
 
 
 def bmad_to_cheetah_coords(
-    bmad_coords: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
+    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
-    Transforms Bmad coordinates to Cheetah coordinates.
+    Transforms Bmad longitudinal coordinates to Cheetah coordinates 
+    and computes reference energy.
 
-    :param bmad_coords: 6-dimensional particle vectors in Bmad coordinates.
+    :param z: Bmad longitudinal coordinate (c*delta_t).
+    :param pz: Bmad longitudinal momentum (delta_E/p0c).
     :param p0c: Reference momentum in eV/c.
+    :param mc2: Particle mass in eV/c^2.
     """
     # TODO This can probably be moved to the `ParticleBeam` class at some point
-
-    # Initialize Cheetah coordinates
-    cheetah_coords = torch.ones(
-        (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
-    )
-    cheetah_coords[..., :6] = bmad_coords.clone()
-
-    # Bmad longitudinal coordinates
-    z = bmad_coords[..., 4]
-    pz = bmad_coords[..., 5]
 
     # Compute ref_energy and Cheetah tau, delta
     ref_energy = torch.sqrt(p0c**2 + mc2**2)
@@ -65,11 +52,7 @@ def bmad_to_cheetah_coords(
     tau = -z / beta
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
 
-    # Cheetah coordinates
-    cheetah_coords[..., 4] = tau
-    cheetah_coords[..., 5] = delta
-
-    return cheetah_coords, ref_energy
+    return tau, delta, ref_energy
 
 
 def offset_particle_set(
@@ -254,3 +237,4 @@ def track_a_drift(
     z_out = z_in + dz
 
     return x_out, y_out, z_out
+

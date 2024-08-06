@@ -126,15 +126,17 @@ class Quadrupole(Element):
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
-        bmad_coords, p0c = bmadx.cheetah_to_bmad_coords(
-            incoming.particles, incoming.energy, mc2
+        
+        x = incoming.particles[..., 0]
+        px = incoming.particles[..., 1]
+        y = incoming.particles[..., 2]
+        py = incoming.particles[..., 3]
+        tau = incoming.particles[..., 4]
+        delta = incoming.particles[..., 5]
+
+        z, pz, p0c = bmadx.cheetah_to_bmad_coords(
+            tau, delta, incoming.energy, mc2
         )
-        x = bmad_coords[..., 0]
-        px = bmad_coords[..., 1]
-        y = bmad_coords[..., 2]
-        py = bmad_coords[..., 3]
-        z = bmad_coords[..., 4]
-        pz = bmad_coords[..., 5]
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
@@ -177,20 +179,13 @@ class Quadrupole(Element):
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
-
         # End of Bmad-X tracking
-        bmad_coords[..., 0] = x
-        bmad_coords[..., 1] = px
-        bmad_coords[..., 2] = y
-        bmad_coords[..., 3] = py
-        bmad_coords[..., 4] = z
-        bmad_coords[..., 5] = pz
 
         # Convert back to Cheetah coordinates
-        cheetah_coords, ref_energy = bmadx.bmad_to_cheetah_coords(bmad_coords, p0c, mc2)
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_coords(z, pz, p0c, mc2)
 
         outgoing_beam = ParticleBeam(
-            cheetah_coords,
+            torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
             ref_energy,
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,

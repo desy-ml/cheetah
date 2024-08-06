@@ -95,31 +95,28 @@ class Drift(Element):
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
-        bmad_coords, p0c = bmadx.cheetah_to_bmad_coords(
-            incoming.particles, incoming.energy, mc2
+        x = incoming.particles[..., 0]
+        px = incoming.particles[..., 1]
+        y = incoming.particles[..., 2]
+        py = incoming.particles[..., 3]
+        tau = incoming.particles[..., 4]
+        delta = incoming.particles[..., 5]
+
+        z, pz, p0c = bmadx.cheetah_to_bmad_coords(
+            tau, delta, incoming.energy, mc2
         )
-        x_in = bmad_coords[..., 0]
-        px_in = bmad_coords[..., 1]
-        y_in = bmad_coords[..., 2]
-        py_in = bmad_coords[..., 3]
-        z_in = bmad_coords[..., 4]
-        pz_in = bmad_coords[..., 5]
 
         # Begin Bmad-X tracking
-        x_out, y_out, z_out = bmadx.track_a_drift(
-            self.length, x_in, px_in, y_in, py_in, z_in, pz_in, p0c, mc2
+        x, y, z = bmadx.track_a_drift(
+            self.length, x, px, y, py, z, pz, p0c, mc2
         )
-
         # End of Bmad-X tracking
-        bmad_coords[..., 0] = x_out
-        bmad_coords[..., 2] = y_out
-        bmad_coords[..., 4] = z_out
 
         # Convert back to Cheetah coordinates
-        cheetah_coords, ref_energy = bmadx.bmad_to_cheetah_coords(bmad_coords, p0c, mc2)
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_coords(z, pz, p0c, mc2)
 
         outgoing_beam = ParticleBeam(
-            cheetah_coords,
+            torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
             ref_energy,
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
