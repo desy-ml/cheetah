@@ -139,7 +139,7 @@ def test_quadrupole_bmadx_tracking():
     Test that the results of tracking through a quadrupole with the `"bmadx"` tracking
     method match the results from Bmad-X.
     """
-    incoming = torch.load("tests/resources/bmadx/quadrupole_incoming_beam.pt")
+    incoming = torch.load("tests/resources/bmadx/incoming_beam.pt")
     quadrupole = Quadrupole(
         length=torch.tensor([1.0]),
         k1=torch.tensor([10.0]),
