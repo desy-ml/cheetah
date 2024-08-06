@@ -3,8 +3,8 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 from scipy.constants import c as c_light
+from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.particles import Beam, ParticleBeam

@@ -1,5 +1,4 @@
 import torch
-
 from scipy.constants import c as c_light
 
 double_precision_epsilon = torch.finfo(torch.float64).eps
