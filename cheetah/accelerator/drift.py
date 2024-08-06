@@ -123,6 +123,7 @@ class Drift(Element):
     def broadcast(self, shape: Size) -> Element:
         return self.__class__(
             length=self.length.repeat(shape),
+            tracking_method=self.tracking_method,
             name=self.name,
             device=self.length.device,
             dtype=self.length.dtype,

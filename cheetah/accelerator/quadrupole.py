@@ -197,6 +197,7 @@ class Quadrupole(Element):
             k1=self.k1.repeat(shape),
             misalignment=self.misalignment.repeat((*shape, 1)),
             tilt=self.tilt.repeat(shape),
+            tracking_method=self.tracking_method,
             name=self.name,
             device=self.length.device,
             dtype=self.length.dtype,
