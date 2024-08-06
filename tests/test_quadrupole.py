@@ -31,7 +31,7 @@ def test_quadrupole_with_misalignments_batched():
     quad_with_misalignment = Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
-        misalignment=torch.tensor([0.1, 0.1]),
+        misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0),
     )
 
     assert quad_with_misalignment.batch_shape == torch.Size([1, 2])
@@ -147,7 +147,7 @@ def test_quadrupole_length_multiple_batch_dimensions():
     Test that a quadrupole with lengths that have multiple vectorisation dimensions does
     not raise an error and behaves as expected.
     """
-    lengths = torch.tensor([[0.2, 0.3, 0.4], [0.5, 0.6, 0.7]])
+    lengths = torch.tensor([[0.2, 0.3, 0.4], [0.5, 0.4, 0.7]])
     segment = Segment(
         [
             Quadrupole(length=lengths, k1=torch.tensor(4.2)),
@@ -164,7 +164,7 @@ def test_quadrupole_length_multiple_batch_dimensions():
     outgoing = segment(incoming)
 
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
-    assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[0, 1])
+    assert torch.allclose(outgoing.particles[0, -1], outgoing.particles[1, -2])
 
 
 def test_quadrupole_bmadx_tracking():

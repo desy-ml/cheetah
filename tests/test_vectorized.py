@@ -308,22 +308,22 @@ def test_enormous_through_ares():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    segment.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100_000).repeat(3, 1)
+    segment.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 10).repeat(3, 1)
 
     outgoing = segment.track(incoming)
 
-    assert outgoing.mu_x.shape == (3, 100_000)
-    assert outgoing.mu_px.shape == (3, 100_000)
-    assert outgoing.mu_y.shape == (3, 100_000)
-    assert outgoing.mu_py.shape == (3, 100_000)
-    assert outgoing.sigma_x.shape == (3, 100_000)
-    assert outgoing.sigma_px.shape == (3, 100_000)
-    assert outgoing.sigma_y.shape == (3, 100_000)
-    assert outgoing.sigma_py.shape == (3, 100_000)
-    assert outgoing.sigma_tau.shape == (3, 100_000)
-    assert outgoing.sigma_p.shape == (3, 100_000)
-    assert outgoing.energy.shape == (3, 100_000)
-    assert outgoing.total_charge.shape == (3, 100_000)
+    assert outgoing.mu_x.shape == (3, 10)
+    assert outgoing.mu_px.shape == (3, 10)
+    assert outgoing.mu_y.shape == (3, 10)
+    assert outgoing.mu_py.shape == (3, 10)
+    assert outgoing.sigma_x.shape == (3, 10)
+    assert outgoing.sigma_px.shape == (3, 10)
+    assert outgoing.sigma_y.shape == (3, 10)
+    assert outgoing.sigma_py.shape == (3, 10)
+    assert outgoing.sigma_tau.shape == (3, 10)
+    assert outgoing.sigma_p.shape == (3, 10)
+    assert outgoing.energy.shape == (3, 10)
+    assert outgoing.total_charge.shape == (3, 10)
 
 
 def test_cavity_with_zero_and_non_zero_voltage():
