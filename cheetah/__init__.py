@@ -1,9 +1,8 @@
 import cheetah.converters  # noqa: F401
-from cheetah.accelerator import Cavity  # noqa: F401
 from cheetah.accelerator import (
     BPM,
     Aperture,
-    CrabCavity,
+    Cavity,
     CustomTransferMap,
     Dipole,
     Drift,
@@ -15,6 +14,7 @@ from cheetah.accelerator import (
     Segment,
     Solenoid,
     SpaceChargeKick,
+    TransverseDeflectingCavity,
     Undulator,
     VerticalCorrector,
 )
