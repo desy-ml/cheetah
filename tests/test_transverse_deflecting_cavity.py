@@ -4,13 +4,13 @@ import torch
 import cheetah
 
 
-def test_crab_cavity_bmadx_tracking():
+def test_transverse_deflecting_cavity_bmadx_tracking():
     """
-    Test that the results of tracking through a crab cavity with the `"bmadx"` tracking
+    Test that the results of tracking through a TDC with the `"bmadx"` tracking
     method match the results from Bmad-X.
     """
     incoming_beam = torch.load("tests/resources/bmadx/incoming_beam.pt")
-    tdc = cheetah.CrabCavity(
+    tdc = cheetah.TransverseDeflectingCavity(
         length=torch.tensor([1.0]),
         voltage=torch.tensor([1e7]),
         phase=torch.tensor([0.2]),

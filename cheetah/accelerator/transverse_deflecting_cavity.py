@@ -19,9 +19,9 @@ electron_mass_eV = torch.tensor(
 )
 
 
-class CrabCavity(Element):
+class TransverseDeflectingCavity(Element):
     """
-    Crab Cavity Element.
+    Transverse Deflecting Cavity Element.
 
     :param length: Length in meters.
     :param voltage: Voltage of the cavity in volts.
@@ -129,7 +129,7 @@ class CrabCavity(Element):
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the crab cavity element
+        Track particles through the TDC element
         using the Bmad-X tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
