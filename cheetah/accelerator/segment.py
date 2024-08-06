@@ -8,6 +8,7 @@ import torch
 from torch import Size, nn
 
 from cheetah.converters.bmad import convert_bmad_lattice
+from cheetah.converters.elegant import convert_elegant_lattice
 from cheetah.converters.nxtables import read_nx_tables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParticleBeam
@@ -301,6 +302,27 @@ class Segment(Element):
         return convert_bmad_lattice(
             bmad_lattice_file_path, environment_variables, device, dtype
         )
+
+    @classmethod
+    def from_elegant(
+        cls,
+        elegant_lattice_file_path: str,
+        name: str,
+        device: Optional[Union[str, torch.device]] = None,
+        dtype: torch.dtype = torch.float32,
+    ) -> "Segment":
+        """
+        Read a Cheetah segment from an elegant lattice file.
+
+        :param bmad_lattice_file_path: Path to the Bmad lattice file.
+        :param name: Name of the root element
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
+        :return: Cheetah `Segment` representing the elegant lattice.
+        """
+
+        elegant_lattice_file_path = Path(elegant_lattice_file_path)
+        return convert_elegant_lattice(elegant_lattice_file_path, name, device, dtype)
 
     @classmethod
     def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
