@@ -5,7 +5,7 @@ from scipy.constants import c as c_light
 double_precision_epsilon = torch.finfo(torch.float64).eps
 
 
-def cheetah_to_bmad_coords(
+def cheetah_to_bmad_z_pz(
     tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
@@ -30,7 +30,7 @@ def cheetah_to_bmad_coords(
     return z, pz, p0c
 
 
-def bmad_to_cheetah_coords(
+def bmad_to_cheetah_z_pz(
     z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
@@ -53,6 +53,65 @@ def bmad_to_cheetah_coords(
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
 
     return tau, delta, ref_energy
+
+
+def cheetah_to_bmad_coords(
+    cheetah_coords: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
+) -> torch.Tensor:
+    """
+    Transforms Cheetah coordinates to Bmad coordinates.
+
+    :param cheetah_coords: 7-dimensional particle vectors in Cheetah coordinates.
+    :param ref_energy: Reference energy in eV.
+    """
+    # TODO This can probably be moved to the `ParticleBeam` class at some point
+
+    # Initialize Bmad coordinates
+    bmad_coords = cheetah_coords[..., :6].clone()
+
+    # Cheetah longitudinal coordinates
+    tau = cheetah_coords[..., 4]
+    delta = cheetah_coords[..., 5]
+
+    # Compute p0c and Bmad z, pz
+    z, pz, p0c = cheetah_to_bmad_z_pz(tau, delta, ref_energy, mc2)
+
+    # Bmad coordinates
+    bmad_coords[..., 4] = z
+    bmad_coords[..., 5] = pz
+
+    return bmad_coords, p0c
+
+
+def bmad_to_cheetah_coords(
+    bmad_coords: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
+) -> torch.Tensor:
+    """
+    Transforms Bmad coordinates to Cheetah coordinates.
+
+    :param bmad_coords: 6-dimensional particle vectors in Bmad coordinates.
+    :param p0c: Reference momentum in eV/c.
+    """
+    # TODO This can probably be moved to the `ParticleBeam` class at some point
+
+    # Initialize Cheetah coordinates
+    cheetah_coords = torch.ones(
+        (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
+    )
+    cheetah_coords[..., :6] = bmad_coords.clone()
+
+    # Bmad longitudinal coordinates
+    z = bmad_coords[..., 4]
+    pz = bmad_coords[..., 5]
+
+    # Compute ref_energy and Cheetah tau, delta
+    tau, delta, ref_energy = bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
+
+    # Cheetah coordinates
+    cheetah_coords[..., 4] = tau
+    cheetah_coords[..., 5] = delta
+
+    return cheetah_coords, ref_energy
 
 
 def offset_particle_set(
