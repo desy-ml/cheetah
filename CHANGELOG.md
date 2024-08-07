@@ -17,6 +17,7 @@
 - `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 - `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
+- `Dipole` can now include a focussing strength (see #235) (@hespe)
 
 ### 🐛 Bug fixes
 
