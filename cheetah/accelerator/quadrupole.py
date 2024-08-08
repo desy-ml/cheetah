@@ -7,10 +7,9 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
-
+from ..particles import Beam, ParticleBeam
+from ..track_methods import base_rmatrix, misalignment_matrix
+from ..utils import UniqueNameGenerator, bmadx
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -215,7 +214,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return any(self.k1 != 0)
+        return bool(torch.any(self.k1 != 0))
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()

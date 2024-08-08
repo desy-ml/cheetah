@@ -3,11 +3,10 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam, ParticleBeam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -109,19 +108,6 @@ class Aperture(Element):
             if outgoing_particles.shape[0] > 0
             else ParticleBeam.empty
         )
-
-    def broadcast(self, shape: Size) -> Element:
-        new_aperture = self.__class__(
-            x_max=self.x_max.repeat(shape),
-            y_max=self.y_max.repeat(shape),
-            shape=self.shape,
-            is_active=self.is_active,
-            name=self.name,
-            device=self.x_max.device,
-            dtype=self.x_max.dtype,
-        )
-        new_aperture.length = self.length.repeat(shape)
-        return new_aperture
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self

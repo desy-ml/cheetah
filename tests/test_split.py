@@ -9,6 +9,7 @@ def test_drift_end():
     Test that at the end of a split drift the result is the same as at the end of the
     original drift.
     """
+
     original_drift = cheetah.Drift(length=torch.tensor([2.0, 2.5]))
     split_drift = cheetah.Segment(original_drift.split(resolution=torch.tensor(0.1)))
 
@@ -102,6 +103,7 @@ def test_dipole_end():
     Test that at the end of a split dipole the result is the same as at the end of
     the original dipole.
     """
+
     original_dipole = cheetah.Dipole(
         length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
@@ -209,7 +211,7 @@ def test_split_preserves_dtype(ElementType):
     """
     Test that the dtype of a drift section's splits is the same as the original drift.
     """
-    original = ElementType(length=torch.tensor([2.0]), dtype=torch.float64)
+    original = ElementType(length=torch.tensor(2.0), dtype=torch.float64)
     splits = original.split(resolution=torch.tensor(0.1))
 
     for split in splits:

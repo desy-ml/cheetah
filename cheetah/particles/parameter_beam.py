@@ -206,10 +206,10 @@ class ParameterBeam(Beam):
             total_charge if total_charge is not None else torch.full(shape, 0.0)
         )
 
-        assert all(
+        assert torch.all(
             beta_x > 0
         ), "Beta function in x direction must be larger than 0 everywhere."
-        assert all(
+        assert torch.all(
             beta_y > 0
         ), "Beta function in y direction must be larger than 0 everywhere."
 
@@ -320,7 +320,7 @@ class ParameterBeam(Beam):
 
         # Figure out batch size of the original beam and check that passed arguments
         # have the same batch size
-        shape = self.mu_x.shape
+        shape = mu_x.shape
         not_nones = [
             argument
             for argument in [
@@ -429,16 +429,6 @@ class ParameterBeam(Beam):
     @property
     def sigma_ypy(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
-
-    def broadcast(self, shape: torch.Size) -> "ParameterBeam":
-        return self.__class__(
-            mu=self._mu.repeat((*shape, 1)),
-            cov=self._cov.repeat((*shape, 1, 1)),
-            energy=self.energy.repeat(shape),
-            total_charge=self.total_charge.repeat(shape),
-            device=self._mu.device,
-            dtype=self._mu.dtype,
-        )
 
     def __repr__(self) -> str:
         return (

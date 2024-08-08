@@ -9,20 +9,20 @@ def test_create_from_parameters():
     Test that a `ParameterBeam` created from parameters actually has those parameters.
     """
     beam = ParameterBeam.from_parameters(
-        mu_x=torch.tensor([1e-5]),
-        mu_px=torch.tensor([1e-7]),
-        mu_y=torch.tensor([2e-5]),
-        mu_py=torch.tensor([2e-7]),
-        sigma_x=torch.tensor([1.75e-7]),
-        sigma_px=torch.tensor([2e-7]),
-        sigma_y=torch.tensor([1.75e-7]),
-        sigma_py=torch.tensor([2e-7]),
-        sigma_tau=torch.tensor([0.000001]),
-        sigma_p=torch.tensor([0.000001]),
-        cor_x=torch.tensor([0.0]),
-        cor_y=torch.tensor([0.0]),
-        cor_tau=torch.tensor([0.0]),
-        energy=torch.tensor([1e7]),
+        mu_x=torch.tensor(1e-5),
+        mu_px=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_py=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_px=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_tau=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        cor_x=torch.tensor(0.0),
+        cor_y=torch.tensor(0.0),
+        cor_tau=torch.tensor(0.0),
+        energy=torch.tensor(1e7),
     )
 
     assert np.isclose(beam.mu_x.cpu().numpy(), 1e-5)
@@ -45,18 +45,18 @@ def test_transform_to():
     """
     original_beam = ParameterBeam.from_parameters()
     transformed_beam = original_beam.transformed_to(
-        mu_x=torch.tensor([1e-5]),
-        mu_px=torch.tensor([1e-7]),
-        mu_y=torch.tensor([2e-5]),
-        mu_py=torch.tensor([2e-7]),
-        sigma_x=torch.tensor([1.75e-7]),
-        sigma_px=torch.tensor([2e-7]),
-        sigma_y=torch.tensor([1.75e-7]),
-        sigma_py=torch.tensor([2e-7]),
-        sigma_tau=torch.tensor([0.000001]),
-        sigma_p=torch.tensor([0.000001]),
-        energy=torch.tensor([1e7]),
-        total_charge=torch.tensor([1e-9]),
+        mu_x=torch.tensor(1e-5),
+        mu_px=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_py=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_px=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_tau=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        energy=torch.tensor(1e7),
+        total_charge=torch.tensor(1e-9),
     )
 
     assert isinstance(transformed_beam, ParameterBeam)
@@ -80,13 +80,13 @@ def test_from_twiss_to_twiss():
     parameters.
     """
     beam = ParameterBeam.from_twiss(
-        beta_x=torch.tensor([5.91253676811640894]),
-        alpha_x=torch.tensor([3.55631307633660354]),
-        emittance_x=torch.tensor([3.494768647122823e-09]),
-        beta_y=torch.tensor([5.91253676811640982]),
-        alpha_y=torch.tensor([2e-7]),
-        emittance_y=torch.tensor([3.497810737006068e-09]),
-        energy=torch.tensor([6e6]),
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(2e-7),
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        energy=torch.tensor(6e6),
     )
 
     assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894)
@@ -103,13 +103,13 @@ def test_from_twiss_dtype():
     Test that a `ParameterBeam` created from twiss parameters has the requested `dtype`.
     """
     beam = ParameterBeam.from_twiss(
-        beta_x=torch.tensor([5.91253676811640894]),
-        alpha_x=torch.tensor([3.55631307633660354]),
-        emittance_x=torch.tensor([3.494768647122823e-09]),
-        beta_y=torch.tensor([5.91253676811640982]),
-        alpha_y=torch.tensor([2e-7]),
-        emittance_y=torch.tensor([3.497810737006068e-09]),
-        energy=torch.tensor([6e6]),
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(2e-7),
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        energy=torch.tensor(6e6),
         dtype=torch.float64,
     )
 

@@ -336,11 +336,14 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
+        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([])
         if len(not_nones) > 1:
             assert all(
                 argument.shape == shape for argument in not_nones
             ), "Arguments must have the same shape."
+
+        # Expand to batched version for beam creation
+        batch_shape = shape if len(shape) > 0 else torch.Size([1])
 
         # Set default values without function call in function signature
         # NOTE that this does not need to be done for values that are passed to the
@@ -348,14 +351,26 @@ class ParticleBeam(Beam):
         num_particles = (
             num_particles if num_particles is not None else torch.tensor(1_000_000)
         )
-        radius_x = radius_x if radius_x is not None else torch.full(shape, 1e-3)
-        radius_y = radius_y if radius_y is not None else torch.full(shape, 1e-3)
-        radius_tau = radius_tau if radius_tau is not None else torch.full(shape, 1e-3)
+        radius_x = (
+            radius_x.expand(batch_shape)
+            if radius_x is not None
+            else torch.full(batch_shape, 1e-3)
+        )
+        radius_y = (
+            radius_y.expand(batch_shape)
+            if radius_y is not None
+            else torch.full(batch_shape, 1e-3)
+        )
+        radius_tau = (
+            radius_tau.expand(batch_shape)
+            if radius_tau is not None
+            else torch.full(batch_shape, 1e-3)
+        )
 
         # Generate x, y and ss within the ellipsoid
-        flattened_x = torch.empty(*shape, num_particles).flatten(end_dim=-2)
-        flattened_y = torch.empty(*shape, num_particles).flatten(end_dim=-2)
-        flattened_tau = torch.empty(*shape, num_particles).flatten(end_dim=-2)
+        flattened_x = torch.empty(*batch_shape, num_particles).flatten(end_dim=-2)
+        flattened_y = torch.empty(*batch_shape, num_particles).flatten(end_dim=-2)
+        flattened_tau = torch.empty(*batch_shape, num_particles).flatten(end_dim=-2)
         for i, (r_x, r_y, r_tau) in enumerate(
             zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
         ):
@@ -641,7 +656,7 @@ class ParticleBeam(Beam):
 
         # Figure out batch size of the original beam and check that passed arguments
         # have the same batch size
-        shape = self.mu_x.shape
+        shape = mu_x.shape
         not_nones = [
             argument
             for argument in [
@@ -661,9 +676,12 @@ class ParticleBeam(Beam):
             if argument is not None
         ]
         if len(not_nones) > 0:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+            if not all(
+                argument.shape == torch.Size([]) for argument in not_nones
+            ):
+                raise NotImplementedError(
+                    "Batching not implemented yet. Arguments must have shape []."
+                )
 
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_y = mu_y if mu_y is not None else self.mu_y
@@ -691,23 +709,29 @@ class ParticleBeam(Beam):
             )
 
         new_mu = torch.stack(
-            [mu_x, mu_px, mu_y, mu_py, torch.full(shape, 0.0), torch.full(shape, 0.0)],
-            dim=1,
+            [
+                mu_x.squeeze(),
+                mu_px.squeeze(),
+                mu_y.squeeze(),
+                mu_py.squeeze(),
+                torch.full(shape, 0.0),
+                torch.full(shape, 0.0)],
+            dim=0,
         )
         new_sigma = torch.stack(
-            [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=1
+            [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=0
         )
 
         old_mu = torch.stack(
             [
-                self.mu_x,
-                self.mu_px,
-                self.mu_y,
-                self.mu_py,
+                self.mu_x.squeeze(),
+                self.mu_px.squeeze(),
+                self.mu_y.squeeze(),
+                self.mu_py.squeeze(),
                 torch.full(shape, 0.0),
                 torch.full(shape, 0.0),
             ],
-            dim=1,
+            dim=0,
         )
         old_sigma = torch.stack(
             [
@@ -718,13 +742,19 @@ class ParticleBeam(Beam):
                 self.sigma_tau,
                 self.sigma_p,
             ],
-            dim=1,
-        )
+            dim=0,
+        ).squeeze()
 
         phase_space = self.particles[:, :, :6]
-        phase_space = (phase_space - old_mu.unsqueeze(1)) / old_sigma.unsqueeze(
-            1
-        ) * new_sigma.unsqueeze(1) + new_mu.unsqueeze(1)
+        phase_space = (phase_space - old_mu.expand(
+            *phase_space.shape
+        )) / old_sigma.expand(
+            *phase_space.shape
+        ) * new_sigma.expand(
+            *phase_space.shape
+        ) + new_mu.expand(
+            *phase_space.shape
+        )
 
         particles = torch.ones_like(self.particles)
         particles[:, :, :6] = phase_space
@@ -943,15 +973,6 @@ class ParticleBeam(Beam):
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
-
-    def broadcast(self, shape: torch.Size) -> "ParticleBeam":
-        return self.__class__(
-            particles=self.particles.repeat((*shape, 1, 1)),
-            energy=self.energy.repeat(shape),
-            particle_charges=self.particle_charges.repeat((*shape, 1)),
-            device=self.particles.device,
-            dtype=self.particles.dtype,
-        )
 
     def __repr__(self) -> str:
         return (

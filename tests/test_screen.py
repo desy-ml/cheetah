@@ -14,7 +14,7 @@ def test_reading_shows_beam_particle(screen_method):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
@@ -44,7 +44,7 @@ def test_screen_kde_bandwidth(kde_bandwidth):
 
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
@@ -76,7 +76,7 @@ def test_reading_shows_beam_parameter(screen_method):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),

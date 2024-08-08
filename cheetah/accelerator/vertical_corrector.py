@@ -5,10 +5,9 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
-from cheetah.utils import UniqueNameGenerator
-
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -66,22 +65,13 @@ class VerticalCorrector(Element):
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
         return tm
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            angle=self.angle,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return True
 
     @property
     def is_active(self) -> bool:
-        return any(self.angle != 0)
+        return torch.any(self.angle != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()

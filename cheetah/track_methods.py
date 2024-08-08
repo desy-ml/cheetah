@@ -1,13 +1,10 @@
-"""Utility functions for creating transfer maps for the elements."""
+"""Utility functions for creating transfer maps for elements."""
 
 from typing import Optional
 
 import torch
-from scipy.constants import physical_constants
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+from .utils.physics import calculate_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
@@ -54,13 +51,9 @@ def base_rmatrix(
     dtype = length.dtype
 
     tilt = tilt if tilt is not None else torch.zeros_like(length)
-    energy = energy if energy is not None else torch.zeros_like(length)
+    energy = energy if energy is not None else torch.zeros(1)
 
-    gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-    igamma2 = torch.ones_like(length)
-    igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-
-    beta = torch.sqrt(1 - igamma2)
+    _, igamma2, beta = calculate_relativistic_factors(energy)
 
     # Avoid division by zero
     k1 = k1.clone()
@@ -72,16 +65,15 @@ def base_rmatrix(
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = torch.clone(length)
-    sy[ky != 0] = (torch.sin(ky[ky != 0] * length[ky != 0]) / ky[ky != 0]).real
-
+    sy = (torch.sin(ky * length) / ky).real
     sx = (torch.sin(kx * length) / kx).real
     dx = hx / kx2 * (1.0 - cx)
     r56 = hx**2 * (length - sx) / kx2 / beta**2
 
     r56 = r56 - length / beta**2 * igamma2
 
-    R = torch.eye(7, dtype=dtype, device=device).repeat(*length.shape, 1, 1)
+    batch_shape = torch.broadcast_tensors(length, k1, hx, tilt, energy)[0].shape
+    R = torch.eye(7, dtype=dtype, device=device).repeat(*batch_shape, 1, 1)
     R[..., 0, 0] = cx
     R[..., 0, 1] = sx
     R[..., 0, 5] = dx / beta

@@ -4,20 +4,15 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
-from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.track_methods import base_rmatrix
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..track_methods import base_rmatrix
+from ..utils import UniqueNameGenerator
+from ..utils.physics import calculate_relativistic_factors, electron_mass_eV
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class Cavity(Element):
@@ -108,19 +103,7 @@ class Cavity(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_beam(self, incoming: Beam) -> Beam:
-        device = self.length.device
-        dtype = self.length.dtype
-
-        beta0 = torch.full_like(self.length, 1.0)
-        igamma2 = torch.full_like(self.length, 0.0)
-        g0 = torch.full_like(self.length, 1e10)
-
-        mask = incoming.energy != 0
-        g0[mask] = incoming.energy[mask] / electron_mass_eV.to(
-            device=device, dtype=dtype
-        )
-        igamma2[mask] = 1 / g0[mask] ** 2
-        beta0[mask] = torch.sqrt(1 - igamma2[mask])
+        g0, igamma2, beta0 = calculate_relativistic_factors(incoming.energy)
 
         phi = torch.deg2rad(self.phase)
 
@@ -141,8 +124,7 @@ class Cavity(Element):
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
-            g1 = outgoing_energy / electron_mass_eV
-            beta1 = torch.sqrt(1 - 1 / g1**2)
+            g1, ig1, beta1 = calculate_relativistic_factors(outgoing_energy)
 
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (
@@ -173,7 +155,7 @@ class Cavity(Element):
                     - torch.cos(phi).unsqueeze(-1)
                 )
 
-            dgamma = self.voltage / electron_mass_eV
+            dgamma = self.voltage / electron_mass_eV.to(self.voltage)
             if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
@@ -342,17 +324,6 @@ class Cavity(Element):
         R[..., 5, 5] = r66
 
         return R
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            voltage=self.voltage.repeat(shape),
-            phase=self.phase.repeat(shape),
-            frequency=self.frequency.repeat(shape),
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the

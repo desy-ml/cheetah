@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -69,8 +69,8 @@ class Element(ABC, nn.Module):
             return ParameterBeam(
                 mu,
                 cov,
-                incoming.energy,
-                total_charge=incoming.total_charge,
+                incoming.energy.expand(mu.shape[:-1]),
+                total_charge=incoming.total_charge.expand(mu.shape[:-1]),
                 device=mu.device,
                 dtype=mu.dtype,
             )
@@ -79,8 +79,10 @@ class Element(ABC, nn.Module):
             new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
             return ParticleBeam(
                 new_particles,
-                incoming.energy,
-                particle_charges=incoming.particle_charges,
+                incoming.energy.expand(new_particles.shape[:-2]),
+                particle_charges=incoming.particle_charges.expand(
+                    new_particles.shape[:-1]
+                ),
                 device=new_particles.device,
                 dtype=new_particles.dtype,
             )
@@ -91,9 +93,16 @@ class Element(ABC, nn.Module):
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
 
-    def broadcast(self, shape: torch.Size) -> "Element":
-        """Broadcast the element to higher batch dimensions."""
-        raise NotImplementedError
+    @property
+    def batch_shape(self) -> torch.Size:
+        tensors = []
+        # Get all parameters
+        for param in self.parameters():
+            tensors.append(param)
+        # Get all buffers
+        for buffer in self.buffers():
+            tensors.append(buffer)
+        return torch.broadcast_tensors(*tensors)[0].shape
 
     @property
     @abstractmethod

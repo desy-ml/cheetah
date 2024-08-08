@@ -5,8 +5,7 @@ import torch
 from scipy import constants
 from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-
+from ..particles import Beam, ParticleBeam
 from .element import Element
 
 # Constants
@@ -558,6 +557,15 @@ class SpaceChargeKick(Element):
         elif isinstance(incoming, ParticleBeam):
             # This flattening is a hack to only think about one vector dimension in the
             # following code. It is reversed at the end of the function.
+
+            # Make sure that the incoming beam has at least one batch dimension
+            incoming_batched = True
+            if len(incoming.particles.shape) == 2:
+                incoming_batched = False
+                incoming.particles = incoming.particles.unsqueeze(0)
+                incoming.energy = incoming.energy.unsqueeze(0)
+                incoming.particle_charges = incoming.particle_charges.unsqueeze(0)
+
             flattened_incoming = ParticleBeam(
                 particles=incoming.particles.flatten(end_dim=-3),
                 energy=incoming.energy.flatten(end_dim=-1),
@@ -596,39 +604,29 @@ class SpaceChargeKick(Element):
                 ..., 2
             ] * dt.unsqueeze(-1)
 
-            outgoing = ParticleBeam.from_xyz_pxpypz(
-                xp_coordinates.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
-                incoming.energy,
-                incoming.particle_charges,
-                incoming.particles.device,
-                incoming.particles.dtype,
-            )
-
+            if not incoming_batched:
+                # Reshape to the original shape
+                outgoing = ParticleBeam.from_xyz_pxpypz(
+                    xp_coordinates.squeeze(0),
+                    incoming.energy.squeeze(0),
+                    incoming.particle_charges.squeeze(0),
+                    incoming.particles.device,
+                    incoming.particles.dtype,
+                )
+            else:
+                # Reverse the flattening
+                outgoing = ParticleBeam.from_xyz_pxpypz(
+                    xp_coordinates.unflatten(
+                        dim=0, sizes=incoming.particles.shape[:-2]
+                    ),
+                    incoming.energy,
+                    incoming.particle_charges,
+                    incoming.particles.device,
+                    incoming.particles.dtype,
+                )
             return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-
-    def broadcast(self, shape: torch.Size) -> "SpaceChargeKick":
-        """
-        Broadcast the element to higher batch dimensions.
-
-        :param shape: Shape to broadcast the element to.
-        :returns: Broadcasted element.
-        """
-        new_space_charge_kick = self.__class__(
-            effect_length=self.effect_length,
-            num_grid_points_x=self.grid_shape[0],
-            num_grid_points_y=self.grid_shape[1],
-            num_grid_points_tau=self.grid_shape[2],
-            grid_extend_x=self.grid_extend_x,
-            grid_extend_y=self.grid_extend_y,
-            grid_extend_tau=self.grid_extend_tau,
-            name=self.name,
-            device=self.effect_length.device,
-            dtype=self.effect_length.dtype,
-        )
-        new_space_charge_kick.length = self.length.repeat(shape)
-        return new_space_charge_kick
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for SpaceCharge properly, for now just returns the
