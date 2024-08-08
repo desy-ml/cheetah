@@ -82,7 +82,7 @@ def test_transform_to():
 
     with pytest.raises(NotImplementedError):
         original_beam.transformed_to(
-            mu_x=torch.tensor(1e-5).expand([3,2]),
+            mu_x=torch.tensor(1e-5).expand([3, 2]),
         )
 
 
