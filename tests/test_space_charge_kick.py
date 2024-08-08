@@ -87,13 +87,14 @@ def test_vectorized():
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(10_000),
         total_charge=torch.tensor([[1e-9, 2e-9], [3e-9, 4e-9], [5e-9, 6e-9]]),
-        energy=energy,
-        radius_x=R0,
-        radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_px=torch.tensor(1e-15),
-        sigma_py=torch.tensor(1e-15),
-        sigma_p=torch.tensor(1e-15),
+        energy=energy.expand([3, 2]),
+        radius_x=R0.expand([3, 2]),
+        radius_y=R0.expand([3, 2]),
+        radius_tau=R0.expand([3, 2]) / gamma,
+        # Radius of the beam in s direction in the lab frame
+        sigma_px=torch.tensor(1e-15).expand([3, 2]),
+        sigma_py=torch.tensor(1e-15).expand([3, 2]),
+        sigma_p=torch.tensor(1e-15).expand([3, 2]),
     )
 
     segment = cheetah.Segment(
@@ -257,5 +258,5 @@ def test_does_not_break_segment_length():
         ]
     )
 
-    assert segment.length.shape == (3, 2)
+    assert segment.length.shape == torch.Size([1])
     assert torch.allclose(segment.length, torch.tensor(1.0))
