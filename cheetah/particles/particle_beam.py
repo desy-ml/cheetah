@@ -656,7 +656,7 @@ class ParticleBeam(Beam):
 
         # Figure out batch size of the original beam and check that passed arguments
         # have the same batch size
-        shape = self.mu_x.shape
+        shape = mu_x.shape
         not_nones = [
             argument
             for argument in [
@@ -676,9 +676,12 @@ class ParticleBeam(Beam):
             if argument is not None
         ]
         if len(not_nones) > 0:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+            if not all(
+                argument.shape == torch.Size([]) for argument in not_nones
+            ):
+                raise NotImplementedError(
+                    "Batching not implemented yet. Arguments must have shape []."
+                )
 
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_y = mu_y if mu_y is not None else self.mu_y
@@ -706,23 +709,29 @@ class ParticleBeam(Beam):
             )
 
         new_mu = torch.stack(
-            [mu_x, mu_px, mu_y, mu_py, torch.full(shape, 0.0), torch.full(shape, 0.0)],
-            dim=1,
+            [
+                mu_x.squeeze(),
+                mu_px.squeeze(),
+                mu_y.squeeze(),
+                mu_py.squeeze(),
+                torch.full(shape, 0.0),
+                torch.full(shape, 0.0)],
+            dim=0,
         )
         new_sigma = torch.stack(
-            [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=1
+            [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=0
         )
 
         old_mu = torch.stack(
             [
-                self.mu_x,
-                self.mu_px,
-                self.mu_y,
-                self.mu_py,
+                self.mu_x.squeeze(),
+                self.mu_px.squeeze(),
+                self.mu_y.squeeze(),
+                self.mu_py.squeeze(),
                 torch.full(shape, 0.0),
                 torch.full(shape, 0.0),
             ],
-            dim=1,
+            dim=0,
         )
         old_sigma = torch.stack(
             [
@@ -733,13 +742,19 @@ class ParticleBeam(Beam):
                 self.sigma_tau,
                 self.sigma_p,
             ],
-            dim=1,
-        )
+            dim=0,
+        ).squeeze()
 
         phase_space = self.particles[:, :, :6]
-        phase_space = (phase_space - old_mu.unsqueeze(1)) / old_sigma.unsqueeze(
-            1
-        ) * new_sigma.unsqueeze(1) + new_mu.unsqueeze(1)
+        phase_space = (phase_space - old_mu.expand(
+            *phase_space.shape
+        )) / old_sigma.expand(
+            *phase_space.shape
+        ) * new_sigma.expand(
+            *phase_space.shape
+        ) + new_mu.expand(
+            *phase_space.shape
+        )
 
         particles = torch.ones_like(self.particles)
         particles[:, :, :6] = phase_space

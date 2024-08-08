@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import torch
 
 from cheetah import ParticleBeam
@@ -78,6 +79,11 @@ def test_transform_to():
     assert np.isclose(transformed_beam.sigma_p.cpu().numpy(), 0.000001)
     assert np.isclose(transformed_beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(transformed_beam.total_charge.cpu().numpy(), 1e-9)
+
+    with pytest.raises(NotImplementedError):
+        original_beam.transformed_to(
+            mu_x=torch.tensor(1e-5).expand([3,2]),
+        )
 
 
 def test_from_twiss_to_twiss():
