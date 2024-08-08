@@ -320,7 +320,7 @@ class ParameterBeam(Beam):
 
         # Figure out batch size of the original beam and check that passed arguments
         # have the same batch size
-        shape = self.mu_x.shape
+        shape = mu_x.shape
         not_nones = [
             argument
             for argument in [
