@@ -74,19 +74,16 @@ class VerticalCorrector(Element):
         return torch.any(self.angle != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            length = torch.min(resolution, remaining)
-            element = VerticalCorrector(
-                length,
-                self.angle * length / self.length,
-                device=self.length.device,
+        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        return [
+            VerticalCorrector(
+                self.length / num_splits,
+                self.angle / num_splits,
                 dtype=self.length.dtype,
+                device=self.length.device,
             )
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
+            for i in range(num_splits)
+        ]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2

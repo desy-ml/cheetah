@@ -217,11 +217,10 @@ class Quadrupole(Element):
         return bool(torch.any(self.k1 != 0))
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            element = Quadrupole(
-                torch.min(resolution, remaining),
+        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        return [
+            Quadrupole(
+                self.length / num_splits,
                 self.k1,
                 misalignment=self.misalignment,
                 tilt=self.tilt,
@@ -230,9 +229,8 @@ class Quadrupole(Element):
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
+            for i in range(num_splits)
+        ]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2

@@ -47,11 +47,7 @@ class Undulator(Element):
         dtype = self.length.dtype
 
         gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-        igamma2 = (
-            1 / gamma**2
-            if gamma != 0
-            else torch.tensor(0.0, device=device, dtype=dtype)
-        )
+        igamma2 = torch.where(gamma != 0, 1 / gamma**2, torch.zeros_like(gamma))
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
         tm[..., 0, 1] = self.length
