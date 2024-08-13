@@ -344,6 +344,7 @@ def test_cavity_with_zero_and_non_zero_voltage():
 
     _ = cavity.track(beam)
 
+
 def test_screen_length_shape():
     """
     Test that the shape of a screen's length matches the shape of its misalignment.
@@ -358,8 +359,7 @@ def test_screen_length_broadcast_shape():
     after broadcasting.
     """
     screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2]]))
-    broadcast_screen = screen.broadcast((3, 10))
-    assert broadcast_screen.length.shape == broadcast_screen.misalignment.shape[:-1]
+    assert screen.length.shape == screen.misalignment.shape[:-1]
 
 
 def test_vectorized_undulator():
@@ -367,7 +367,7 @@ def test_vectorized_undulator():
     element = cheetah.Undulator(length=torch.tensor([0.4, 0.7]))
     beam = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5])
-    ).broadcast((2,))
+    )
 
     _ = element.track(beam)
 
@@ -379,6 +379,6 @@ def test_vectorized_solenoid():
     )
     beam = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, sigma_x=torch.tensor([1e-5])
-    ).broadcast((2,))
+    )
 
     _ = element.track(beam)
