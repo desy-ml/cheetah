@@ -8,7 +8,7 @@ from torch import nn
 from torch.distributions import MultivariateNormal
 
 from ..particles import Beam, ParameterBeam, ParticleBeam
-from ..utils import UniqueNameGenerator, kde_histogram_2d
+from ..utils import kde_histogram_2d, UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -229,7 +229,6 @@ class Screen(Element):
             )
             image = torch.flip(image, dims=[1])
         elif isinstance(read_beam, ParticleBeam):
-
             if self.method == "histogram":
                 image = torch.zeros(
                     (

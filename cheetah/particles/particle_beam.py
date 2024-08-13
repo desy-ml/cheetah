@@ -380,7 +380,9 @@ class ParticleBeam(Beam):
                 y = (torch.rand(num_particles) - 0.5) * 2 * r_y
                 tau = (torch.rand(num_particles) - 0.5) * 2 * r_tau
 
-                is_in_ellipsoid = x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
+                is_in_ellipsoid = (
+                    x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
+                )
                 num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
 
                 flattened_x[i, num_successful : num_successful + num_to_add] = x[
@@ -676,9 +678,7 @@ class ParticleBeam(Beam):
             if argument is not None
         ]
         if len(not_nones) > 0:
-            if not all(
-                argument.shape == torch.Size([]) for argument in not_nones
-            ):
+            if not all(argument.shape == torch.Size([]) for argument in not_nones):
                 raise NotImplementedError(
                     "Batching not implemented yet. Arguments must have shape []."
                 )
@@ -715,7 +715,8 @@ class ParticleBeam(Beam):
                 mu_y.squeeze(),
                 mu_py.squeeze(),
                 torch.full(shape, 0.0),
-                torch.full(shape, 0.0)],
+                torch.full(shape, 0.0),
+            ],
             dim=0,
         )
         new_sigma = torch.stack(
@@ -746,11 +747,9 @@ class ParticleBeam(Beam):
         ).squeeze()
 
         phase_space = self.particles[:, :, :6]
-        phase_space = (phase_space - old_mu.expand(
-            *phase_space.shape
-        )) / old_sigma.expand(
-            *phase_space.shape
-        ) * new_sigma.expand(
+        phase_space = (
+            phase_space - old_mu.expand(*phase_space.shape)
+        ) / old_sigma.expand(*phase_space.shape) * new_sigma.expand(
             *phase_space.shape
         ) + new_mu.expand(
             *phase_space.shape

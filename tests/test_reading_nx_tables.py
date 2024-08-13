@@ -1,6 +1,5 @@
-import torch
-
 import cheetah
+import torch
 
 
 def test_no_error():

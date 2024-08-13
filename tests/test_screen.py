@@ -1,8 +1,7 @@
+import cheetah
 import numpy as np
 import pytest
 import torch
-
-import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ocelot_lattice
 

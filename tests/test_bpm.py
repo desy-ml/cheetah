@@ -1,7 +1,6 @@
+import cheetah
 import pytest
 import torch
-
-import cheetah
 
 
 @pytest.mark.parametrize("is_bpm_active", [True, False])

@@ -2,9 +2,8 @@
 Tests that ensure that both beam types produce (roughly) the same results.
 """
 
-import torch
-
 import cheetah
+import torch
 
 
 def test_from_twiss():
