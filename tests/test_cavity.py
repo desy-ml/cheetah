@@ -1,7 +1,6 @@
+import cheetah
 import pytest
 import torch
-
-import cheetah
 
 
 def test_assert_ei_greater_zero():

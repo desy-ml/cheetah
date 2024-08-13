@@ -1,6 +1,5 @@
-import torch
-
 import cheetah
+import torch
 
 beam_in = cheetah.ParticleBeam.from_parameters(num_particles=100)
 

@@ -1,7 +1,6 @@
+import cheetah
 import torch
 from torch import nn
-
-import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
