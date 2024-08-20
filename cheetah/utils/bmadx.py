@@ -303,3 +303,13 @@ def particle_rf_time(z, pz, p0c, mc2):
     time = -z / (beta * c_light)
 
     return time
+
+
+def sinc(x):
+    """sinc(x) = sin(x)/x."""
+    return torch.sinc(x / torch.pi)
+
+
+def cosc(x):
+    """cosc(x) = (cos(x)-1)/x**2 = -1/2 [sinc(x/2)]**2"""
+    return -0.5 * sinc(x / 2) ** 2
