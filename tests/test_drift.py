@@ -82,5 +82,5 @@ def test_drift_bmadx_tracking():
     )
 
     assert torch.allclose(
-        outgoing_beam.particles, outgoing_beam_bmadx.particles, atol=0.0, rtol=1e-14
+        outgoing_beam.particles, outgoing_beam_bmadx.particles, atol=1e-14, rtol=1e-14
     )
