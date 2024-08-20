@@ -1,6 +1,8 @@
 import torch
+from scipy.constants import physical_constants
 
 from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Segment
+from cheetah.utils.bmadx import cheetah_to_bmad_coords
 
 
 def test_dipole_off():
@@ -49,3 +51,53 @@ def test_dipole_batched_execution():
 
     # Check different angles do make a difference
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
+
+
+def test_dipole_bmadx_tracking():
+    """
+    Test that the results of tracking through a dipole with the `"bmadx"` tracking
+    method match the results from Bmad-X.
+    """
+    incoming = torch.load("tests/resources/bmadx/incoming_beam.pt")
+    mc2 = torch.tensor(
+        physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
+        dtype=torch.float64,
+    )
+    bmad_coords, p0c_particle = cheetah_to_bmad_coords(
+        incoming.particles, incoming.energy, mc2
+    )
+    l_dipole = torch.tensor([0.5], dtype=torch.double)
+    p0c = 1 * p0c_particle
+    angle = torch.tensor([20 * torch.pi / 180], dtype=torch.double)
+    e1 = angle / 2
+    e2 = angle - e1
+    tilt = torch.tensor([0.1], dtype=torch.double)
+    fringe_integral = torch.tensor([0.5], dtype=torch.double)
+    fringe_integral_exit = torch.tensor([0.5], dtype=torch.double)
+    gap = torch.tensor([0.05], dtype=torch.double)
+    gap_exit = torch.tensor([0.05], dtype=torch.double)
+    dipole_cheetah_bmadx = Dipole(
+        length=l_dipole,
+        p0c=p0c,
+        angle=angle,
+        e1=e1,
+        e2=e2,
+        tilt=tilt,
+        fringe_integral=fringe_integral,
+        fringe_integral_exit=fringe_integral_exit,
+        gap=gap,
+        gap_exit=gap_exit,
+        fringe_at="both_ends",
+        fringe_type="linear_edge",
+        tracking_method="bmadx",
+        dtype=torch.double,
+    )
+    segment_cheetah_bmadx = Segment(elements=[dipole_cheetah_bmadx])
+    outgoing_cheetah_bmadx = segment_cheetah_bmadx.track(incoming)
+
+    # Load reference result computed with Bmad-X
+    outgoing_bmadx = torch.load("tests/resources/bmadx/outgoing_bmadx_dipole.pt")
+
+    assert torch.allclose(
+        outgoing_cheetah_bmadx.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14
+    )

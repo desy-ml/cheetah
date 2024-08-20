@@ -155,13 +155,9 @@ def test_quadrupole_bmadx_tracking():
     outgoing = segment.track(incoming)
 
     # Load reference result computed with Bmad-X
-    outgoing_bmadx = torch.load(
-        "tests/resources/bmadx/outgoing_bmadx_quadrupole.pt"
-    )
+    outgoing_bmadx = torch.load("tests/resources/bmadx/outgoing_bmadx_quadrupole.pt")
 
-    assert torch.allclose(
-        outgoing.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14
-    )
+    assert torch.allclose(outgoing.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14)
 
 
 @pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
