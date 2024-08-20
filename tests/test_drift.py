@@ -77,10 +77,10 @@ def test_drift_bmadx_tracking():
     outgoing_beam = drift.track(incoming_beam)
 
     # Load reference result computed with Bmad-X
-    outgoing_beam_bmadx = torch.load(
-        "tests/resources/bmadx/outgoing_beam_bmadx_drift.pt"
+    outgoing_bmadx = torch.load(
+        "tests/resources/bmadx/outgoing_bmadx_drift.pt"
     )
 
     assert torch.allclose(
-        outgoing_beam.particles, outgoing_beam_bmadx.particles, atol=1e-14, rtol=1e-14
+        outgoing_beam.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14
     )
