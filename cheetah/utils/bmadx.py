@@ -1,7 +1,5 @@
 import torch
-from scipy.constants import c as c_light
-
-double_precision_epsilon = torch.finfo(torch.float64).eps
+from scipy.constants import speed_of_light
 
 
 def cheetah_to_bmad_z_pz(
@@ -183,7 +181,7 @@ def low_energy_z_correction(
     pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor, ds: torch.Tensor
 ) -> torch.Tensor:
     """
-    Corrects the change in z-coordinate due to speed < c_light.
+    Corrects the change in z-coordinate due to speed < speed_of_light.
 
     :param pz: Particle longitudinal momentum.
     :param p0c: Reference particle momentum in eV.
@@ -219,7 +217,7 @@ def calculate_quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     rel_p: torch.Tensor,
-    eps: float = double_precision_epsilon,
+    eps: float = torch.finfo(torch.float64).eps,
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
     Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
@@ -300,7 +298,7 @@ def track_a_drift(
 def particle_rf_time(z, pz, p0c, mc2):
     """Returns rf time of Particle p."""
     beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
-    time = -z / (beta * c_light)
+    time = -z / (beta * speed_of_light)
 
     return time
 
