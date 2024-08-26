@@ -172,12 +172,13 @@ def convert_element(
             )
         elif parsed["element_type"] == "sben":
             validate_understood_properties(
-                ["element_type", "l", "angle", "e1", "e2", "tilt"],
+                ["element_type", "l", "angle", "k1", "e1", "e2", "tilt"],
                 parsed,
             )
             return cheetah.Dipole(
                 length=torch.tensor([parsed["l"]]),
                 angle=torch.tensor([parsed.get("angle", 0.0)]),
+                k1=torch.tensor([parsed.get("k1", 0.0)]),
                 e1=torch.tensor([parsed["e1"]]),
                 e2=torch.tensor([parsed.get("e2", 0.0)]),
                 tilt=torch.tensor([parsed.get("tilt", 0.0)]),
