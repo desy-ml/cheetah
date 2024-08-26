@@ -63,14 +63,12 @@ def test_device_like_torch_module():
 
 def test_drift_bmadx_tracking():
     """
-    Test that the results of tracking through a drift with the `"bmadx"` tracking
-    method match the results from Bmad-X.
+    Test that the results of tracking through a drift with the `"bmadx"` tracking method
+    match the results from Bmad-X.
     """
     incoming_beam = torch.load("tests/resources/bmadx/incoming_beam.pt")
     drift = cheetah.Drift(
-        length=torch.tensor([1.0]),
-        tracking_method="bmadx",
-        dtype=torch.double,
+        length=torch.tensor([1.0]), tracking_method="bmadx", dtype=torch.float64
     )
 
     # Run tracking

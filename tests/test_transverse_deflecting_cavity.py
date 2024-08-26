@@ -10,12 +10,12 @@ def test_transverse_deflecting_cavity_bmadx_tracking():
     """
     incoming_beam = torch.load("tests/resources/bmadx/incoming_beam.pt")
     tdc = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor([1.0], dtype=torch.double),
-        voltage=torch.tensor([1e7], dtype=torch.double),
-        phase=torch.tensor([0.2], dtype=torch.double),
-        frequency=torch.tensor([1e9], dtype=torch.double),
+        length=torch.tensor([1.0]),
+        voltage=torch.tensor([1e7]),
+        phase=torch.tensor([0.2], dtype=torch.float64),
+        frequency=torch.tensor([1e9]),
         tracking_method="bmadx",
-        dtype=torch.double,
+        dtype=torch.float64,
     )
 
     # Run tracking
