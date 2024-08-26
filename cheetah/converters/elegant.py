@@ -42,11 +42,8 @@ def convert_element(
     elif isinstance(parsed, dict) and "element_type" in parsed:
         if parsed["element_type"] == "sole":
             validate_understood_properties(["element_type", "l"], parsed)
-
-            # TODO The XFEL file does not give a k, maybe different element class?
             return cheetah.Solenoid(
                 length=torch.tensor([parsed["l"]]),
-                k=torch.tensor([parsed.get("k", 0.0)]),
                 name=name,
                 device=device,
                 dtype=dtype,
@@ -130,11 +127,12 @@ def convert_element(
 
             # Initially zero in elegant by convention
             R = torch.zeros((7, 7), device=device, dtype=dtype)
+            # Add linear component
             R[:6, :6] = torch.tensor(
                 [[parsed.get(f"r{i+1}{j+1}", 0.0) for j in range(6)] for i in range(6)]
             )
+            # Add affine component (constant offset)
             R[:6, 6] = torch.tensor([parsed.get(f"c{i+1}", 0.0) for i in range(6)])
-            # TODO Ensure that usage of c{i} is correct
 
             return cheetah.CustomTransferMap(
                 length=torch.tensor([parsed["l"]]),
