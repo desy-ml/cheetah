@@ -1,3 +1,4 @@
+import pytest
 import torch
 from scipy.constants import physical_constants
 
@@ -73,7 +74,8 @@ def test_dipole_batched_execution():
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
 
-def test_dipole_bmadx_tracking():
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_dipole_bmadx_tracking(dtype):
     """
     Test that the results of tracking through a dipole with the `"bmadx"` tracking
     method match the results from Bmad-X.
@@ -81,11 +83,11 @@ def test_dipole_bmadx_tracking():
     incoming = torch.load("tests/resources/bmadx/incoming_beam.pt")
     mc2 = torch.tensor(
         physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
-        dtype=torch.float64,
+        dtype=dtype,
     )
     _, p0c_particle = cheetah_to_bmad_coords(incoming.particles, incoming.energy, mc2)
     p0c = 1 * p0c_particle
-    angle = torch.tensor([20 * torch.pi / 180], dtype=torch.float64)
+    angle = torch.tensor([20 * torch.pi / 180], dtype=dtype)
     e1 = angle / 2
     e2 = angle - e1
     dipole_cheetah_bmadx = Dipole(
@@ -94,15 +96,15 @@ def test_dipole_bmadx_tracking():
         angle=angle,
         e1=e1,
         e2=e2,
-        tilt=torch.tensor([0.1], dtype=torch.float64),
+        tilt=torch.tensor([0.1], dtype=dtype),
         fringe_integral=torch.tensor([0.5]),
         fringe_integral_exit=torch.tensor([0.5]),
-        gap=torch.tensor([0.05], dtype=torch.float64),
-        gap_exit=torch.tensor([0.05], dtype=torch.float64),
+        gap=torch.tensor([0.05], dtype=dtype),
+        gap_exit=torch.tensor([0.05], dtype=dtype),
         fringe_at="both",
         fringe_type="linear_edge",
         tracking_method="bmadx",
-        dtype=torch.float64,
+        dtype=dtype,
     )
     segment_cheetah_bmadx = Segment(elements=[dipole_cheetah_bmadx])
 
@@ -112,5 +114,8 @@ def test_dipole_bmadx_tracking():
     outgoing_bmadx = torch.load("tests/resources/bmadx/outgoing_bmadx_dipole.pt")
 
     assert torch.allclose(
-        outgoing_cheetah_bmadx.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14
+        outgoing_cheetah_bmadx.particles,
+        outgoing_bmadx if dtype == torch.float64 else outgoing_bmadx.float(),
+        rtol=1e-14 if dtype == torch.float64 else 0.00001,
+        atol=1e-14 if dtype == torch.float64 else 1e-8,
     )

@@ -1,9 +1,11 @@
+import pytest
 import torch
 
 import cheetah
 
 
-def test_transverse_deflecting_cavity_bmadx_tracking():
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
     """
     Test that the results of tracking through a TDC with the `"bmadx"` tracking method
     match the results from Bmad-X.
@@ -12,10 +14,10 @@ def test_transverse_deflecting_cavity_bmadx_tracking():
     tdc = cheetah.TransverseDeflectingCavity(
         length=torch.tensor([1.0]),
         voltage=torch.tensor([1e7]),
-        phase=torch.tensor([0.2], dtype=torch.float64),
+        phase=torch.tensor([0.2], dtype=dtype),
         frequency=torch.tensor([1e9]),
         tracking_method="bmadx",
-        dtype=torch.float64,
+        dtype=dtype,
     )
 
     # Run tracking
@@ -25,5 +27,8 @@ def test_transverse_deflecting_cavity_bmadx_tracking():
     outgoing_bmadx = torch.load("tests/resources/bmadx/outgoing_bmadx_crab_cavity.pt")
 
     assert torch.allclose(
-        outgoing_beam.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14
+        outgoing_beam.particles,
+        outgoing_bmadx if dtype == torch.float64 else outgoing_bmadx.float(),
+        atol=1e-14 if dtype == torch.float64 else 0.00001,
+        rtol=1e-14 if dtype == torch.float64 else 1e-8,
     )
