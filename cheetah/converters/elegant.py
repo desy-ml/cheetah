@@ -129,10 +129,13 @@ def convert_element(
             R = torch.zeros((7, 7), device=device, dtype=dtype)
             # Add linear component
             R[:6, :6] = torch.tensor(
-                [[parsed.get(f"r{i+1}{j+1}", 0.0) for j in range(6)] for i in range(6)]
+                [
+                    [parsed.get(f"r{i + 1}{j + 1}", 0.0) for j in range(6)]
+                    for i in range(6)
+                ]
             )
             # Add affine component (constant offset)
-            R[:6, 6] = torch.tensor([parsed.get(f"c{i+1}", 0.0) for i in range(6)])
+            R[:6, 6] = torch.tensor([parsed.get(f"c{i + 1}", 0.0) for i in range(6)])
 
             return cheetah.CustomTransferMap(
                 length=torch.tensor([parsed["l"]]),
@@ -212,7 +215,9 @@ def convert_element(
                 dtype=dtype,
             )
     else:
-        raise ValueError(f"Unknown elegant element type for {name = }")
+        raise ValueError(
+            f"Unknown elegant element type for {name = }"  # noqa: E202, E251
+        )
 
 
 def convert_elegant_lattice(
