@@ -15,10 +15,7 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
-    dtype=torch.float64,
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Quadrupole(Element):
@@ -124,10 +121,6 @@ class Quadrupole(Element):
         :return: Beam exiting the element.
         """
         # Compute Bmad coordinates and p0c
-        mc2 = electron_mass_eV.to(
-            device=incoming.particles.device, dtype=incoming.particles.dtype
-        )
-
         x = incoming.x
         px = incoming.px
         y = incoming.y
@@ -135,7 +128,9 @@ class Quadrupole(Element):
         tau = incoming.tau
         delta = incoming.p
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
+            tau, delta, incoming.energy, electron_mass_eV
+        )
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
@@ -172,7 +167,9 @@ class Quadrupole(Element):
 
             x, px, y, py = x_next, px_next, y_next, py_next
 
-            z = z + bmadx.low_energy_z_correction(pz, p0c, mc2, step_length)
+            z = z + bmadx.low_energy_z_correction(
+                pz, p0c, electron_mass_eV, step_length
+            )
 
         # s = s + l
         x, px, y, py = bmadx.offset_particle_unset(
@@ -181,7 +178,9 @@ class Quadrupole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
+            z, pz, p0c, electron_mass_eV
+        )
 
         outgoing_beam = ParticleBeam(
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),

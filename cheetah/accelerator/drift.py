@@ -12,10 +12,7 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
-    dtype=torch.float64,
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Drift(Element):
@@ -52,7 +49,7 @@ class Drift(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
+        gamma = energy / electron_mass_eV
         igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
         igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
         beta = torch.sqrt(1 - igamma2)
@@ -93,10 +90,6 @@ class Drift(Element):
         :return: Beam exiting the element.
         """
         # Compute Bmad coordinates and p0c
-        mc2 = electron_mass_eV.to(
-            device=incoming.particles.device, dtype=incoming.particles.dtype
-        )
-
         x = incoming.x
         px = incoming.px
         y = incoming.y
@@ -104,14 +97,20 @@ class Drift(Element):
         tau = incoming.tau
         delta = incoming.p
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
+            tau, delta, incoming.energy, electron_mass_eV
+        )
 
         # Begin Bmad-X tracking
-        x, y, z = bmadx.track_a_drift(self.length, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(
+            self.length, x, px, y, py, z, pz, p0c, electron_mass_eV
+        )
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
+            z, pz, p0c, electron_mass_eV
+        )
 
         outgoing_beam = ParticleBeam(
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
