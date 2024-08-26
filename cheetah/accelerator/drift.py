@@ -96,12 +96,13 @@ class Drift(Element):
         mc2 = electron_mass_eV.to(
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
-        x = incoming.particles[..., 0]
-        px = incoming.particles[..., 1]
-        y = incoming.particles[..., 2]
-        py = incoming.particles[..., 3]
-        tau = incoming.particles[..., 4]
-        delta = incoming.particles[..., 5]
+
+        x = incoming.x
+        px = incoming.px
+        y = incoming.y
+        py = incoming.py
+        tau = incoming.tau
+        delta = incoming.p
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
