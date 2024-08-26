@@ -27,7 +27,8 @@ def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
 
     # Load reference result computed with Bmad-X
     outgoing_bmadx = torch.load(
-        "tests/resources/bmadx/outgoing_bmadx_crab_cavity.pt", weights_only=False
+        "tests/resources/bmadx/outgoing_transverse_deflecting_cavity.pt",
+        weights_only=False,
     )
 
     assert torch.allclose(

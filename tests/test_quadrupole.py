@@ -159,7 +159,7 @@ def test_quadrupole_bmadx_tracking(dtype):
 
     # Load reference result computed with Bmad-X
     outgoing_bmadx = torch.load(
-        "tests/resources/bmadx/outgoing_bmadx_quadrupole.pt", weights_only=False
+        "tests/resources/bmadx/outgoing_quadrupole.pt", weights_only=False
     )
 
     assert torch.allclose(
