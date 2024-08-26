@@ -144,7 +144,7 @@ class TransverseDeflectingCavity(Element):
         px = incoming.px
         y = incoming.y
         py = incoming.py
-        tau = incoming.z
+        tau = incoming.tau
         delta = incoming.p
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
