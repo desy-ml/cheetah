@@ -41,6 +41,7 @@
 - Refactor definitions of physical constants (see #189) (@hespe)
 - Fix the quadrupole strength units in the quadrupole docstring (see #202) (@ansantam)
 - Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @hespe)
+- Clean up CI pipelines (see #243, #244) (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
