@@ -18,7 +18,7 @@
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 - `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
 - `Dipole` now takes a focusing moment `k1` (see #235) (@hespe)
-- Implement a converter for lattice files imported from Elegant (see @222) (@hespe)
+- Implement a converter for lattice files imported from Elegant (see #222) (@hespe)
 
 ### 🐛 Bug fixes
 
