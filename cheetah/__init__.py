@@ -1,5 +1,5 @@
 import cheetah.converters  # noqa: F401
-from cheetah.accelerator import (
+from cheetah.accelerator import (  # noqa: F401
     BPM,
     Aperture,
     Cavity,
