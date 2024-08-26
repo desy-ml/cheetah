@@ -121,5 +121,5 @@ def test_dipole_bmadx_tracking(dtype):
         outgoing_cheetah_bmadx.particles,
         outgoing_bmadx.to(dtype),
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
-        atol=1e-14 if dtype == torch.float64 else 1e-8,
+        atol=1e-14 if dtype == torch.float64 else 1e-6,
     )

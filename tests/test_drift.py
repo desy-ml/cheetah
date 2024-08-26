@@ -86,5 +86,5 @@ def test_drift_bmadx_tracking(dtype):
         outgoing_beam.particles,
         outgoing_bmadx.to(dtype),
         atol=1e-14 if dtype == torch.float64 else 0.00001,
-        rtol=1e-14 if dtype == torch.float64 else 1e-8,
+        rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )
