@@ -25,7 +25,7 @@ def test_dipole_off():
 
 def test_dipole_focussing():
     """
-    Test that a dipole with focussing moment behaves like a quadrupole
+    Test that a dipole with focussing moment behaves like a quadrupole.
     """
     dipole = Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
     quad = Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
