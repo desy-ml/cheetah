@@ -141,13 +141,13 @@ def test_quadrupole_bmadx_tracking():
     """
     incoming = torch.load("tests/resources/bmadx/incoming_beam.pt")
     quadrupole = Quadrupole(
-        length=torch.tensor([1.0], dtype=torch.double),
-        k1=torch.tensor([10.0], dtype=torch.double),
-        misalignment=torch.tensor([[0.01, -0.02]], dtype=torch.double),
-        tilt=torch.tensor([0.5], dtype=torch.double),
+        length=torch.tensor([1.0]),
+        k1=torch.tensor([10.0]),
+        misalignment=torch.tensor([[0.01, -0.02]], dtype=torch.float64),
+        tilt=torch.tensor([0.5]),
         num_steps=10,
         tracking_method="bmadx",
-        dtype=torch.double,
+        dtype=torch.float64,
     )
     segment = Segment(elements=[quadrupole])
 

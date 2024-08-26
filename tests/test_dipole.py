@@ -83,36 +83,29 @@ def test_dipole_bmadx_tracking():
         physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
         dtype=torch.float64,
     )
-    bmad_coords, p0c_particle = cheetah_to_bmad_coords(
-        incoming.particles, incoming.energy, mc2
-    )
-    l_dipole = torch.tensor([0.5], dtype=torch.double)
+    _, p0c_particle = cheetah_to_bmad_coords(incoming.particles, incoming.energy, mc2)
     p0c = 1 * p0c_particle
-    angle = torch.tensor([20 * torch.pi / 180], dtype=torch.double)
+    angle = torch.tensor([20 * torch.pi / 180], dtype=torch.float64)
     e1 = angle / 2
     e2 = angle - e1
-    tilt = torch.tensor([0.1], dtype=torch.double)
-    fringe_integral = torch.tensor([0.5], dtype=torch.double)
-    fringe_integral_exit = torch.tensor([0.5], dtype=torch.double)
-    gap = torch.tensor([0.05], dtype=torch.double)
-    gap_exit = torch.tensor([0.05], dtype=torch.double)
     dipole_cheetah_bmadx = Dipole(
-        length=l_dipole,
+        length=torch.tensor([0.5]),
         p0c=p0c,
         angle=angle,
         e1=e1,
         e2=e2,
-        tilt=tilt,
-        fringe_integral=fringe_integral,
-        fringe_integral_exit=fringe_integral_exit,
-        gap=gap,
-        gap_exit=gap_exit,
+        tilt=torch.tensor([0.1], dtype=torch.float64),
+        fringe_integral=torch.tensor([0.5]),
+        fringe_integral_exit=torch.tensor([0.5]),
+        gap=torch.tensor([0.05], dtype=torch.float64),
+        gap_exit=torch.tensor([0.05], dtype=torch.float64),
         fringe_at="both",
         fringe_type="linear_edge",
         tracking_method="bmadx",
-        dtype=torch.double,
+        dtype=torch.float64,
     )
     segment_cheetah_bmadx = Segment(elements=[dipole_cheetah_bmadx])
+
     outgoing_cheetah_bmadx = segment_cheetah_bmadx.track(incoming)
 
     # Load reference result computed with Bmad-X
