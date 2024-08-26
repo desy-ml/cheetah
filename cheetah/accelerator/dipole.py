@@ -457,7 +457,6 @@ class Dipole(Element):
             "fringe_at",
             "fringe_type",
             "tracking_method",
-            "name",
         ]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
