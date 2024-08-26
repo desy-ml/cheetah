@@ -16,8 +16,7 @@ from .element import Element
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
-    dtype=torch.float64,
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )
 
 
@@ -32,12 +31,18 @@ class Dipole(Element):
     :param e1: The angle of inclination of the entrance face [rad].
     :param e2: The angle of inclination of the exit face [rad].
     :param tilt: Tilt of the magnet in x-y plane [rad].
+    :param gap: The magnet gap in meters. Note that in MAD and ELEGANT: HGAP = gap/2.
+    :param gap_exit: The magnet gap at the entrance in meters. Note that in MAD and
+        ELEGANT: HGAP = gap/2. Only set if different from `gap`.
     :param fringe_integral: Fringe field integral (of the enterance face).
-    :param fringe_integral_exit: (only set if different from `fint`)
-        Fringe field integral of the exit face.
-    :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2.
-    :param gap_exit: The magnet gap at the entrance [m],
-        NOTE in MAD and ELEGANT: HGAP = gap/2.
+    :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
+        different from `fringe_integral`.
+    :param fringe_at: Where to apply the fringe fields. The available options are:
+        - "both_ends": Apply fringe fields at both ends.
+        - "entrance_end": Apply fringe fields at the entrance end.
+        - "exit_end": Apply fringe fields at the exit end.
+        - "no_end": Do not apply fringe fields.
+    :param fringe_type: Type of fringe field. Currently only supports `"linear_edge"`.
     :param name: Unique identifier of the element.
     """
 
@@ -49,11 +54,11 @@ class Dipole(Element):
         k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         fringe_at: Literal[
             "both_ends", "entrance_end", "exit_end", "no_end"
         ] = "both_ends",
