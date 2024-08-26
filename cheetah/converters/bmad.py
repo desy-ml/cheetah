@@ -695,7 +695,7 @@ def convert_element(
                 dtype=dtype,
             )
     else:
-        raise ValueError(f"Unknown Bmad element type for {name = }")
+        raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
 
 
 def convert_bmad_lattice(
