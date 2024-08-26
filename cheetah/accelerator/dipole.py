@@ -206,12 +206,12 @@ class Dipole(Element):
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
 
-        x = incoming.particles[..., 0]
-        px = incoming.particles[..., 1]
-        y = incoming.particles[..., 2]
-        py = incoming.particles[..., 3]
-        tau = incoming.particles[..., 4]
-        delta = incoming.particles[..., 5]
+        x = incoming.x
+        px = incoming.px
+        y = incoming.y
+        py = incoming.py
+        tau = incoming.tau
+        delta = incoming.p
 
         z, pz, p0c_particle = bmadx.cheetah_to_bmad_z_pz(
             tau, delta, incoming.energy, mc2
@@ -222,38 +222,13 @@ class Dipole(Element):
             torch.tensor(0.0), torch.tensor(0.0), self.tilt, x, px, y, py
         )
 
-        if self.fringe_type == "none" or self.fringe_at == "no_end":
-            x, px, y, py, z, pz = self._bmadx_body(
-                x, px, y, py, z, pz, p0c_particle, mc2
+        if self.fringe_at == "entrance_end" or self.fringe_at == "both_ends":
+            px, py = self._bmadx_fringe_linear(
+                "entrance", x, px, y, py, pz, p0c_particle
             )
-
-        else:
-            if self.fringe_at == "both_ends":
-                px, py = self._bmadx_fringe_linear(
-                    "entrance", x, px, y, py, pz, p0c_particle
-                )
-                x, px, y, py, z, pz = self._bmadx_body(
-                    x, px, y, py, z, pz, p0c_particle, mc2
-                )
-                px, py = self._bmadx_fringe_linear(
-                    "exit", x, px, y, py, pz, p0c_particle
-                )
-
-            elif self.fringe_at == "entrance_end":
-                px, py = self._bmadx_fringe_linear(
-                    "entrance", x, px, y, py, pz, p0c_particle
-                )
-                x, px, y, py, z, pz = self._bmadx_body(
-                    x, px, y, py, z, pz, p0c_particle, mc2
-                )
-
-            elif self.fringe_at == "exit_end":
-                x, px, y, py, z, pz = self._bmadx_body(
-                    x, px, y, py, z, pz, p0c_particle, mc2
-                )
-                px, py = self._bmadx_fringe_linear(
-                    "exit", x, px, y, py, pz, p0c_particle
-                )
+        x, px, y, py, z, pz = self._bmadx_body(x, px, y, py, z, pz, p0c_particle, mc2)
+        if self.fringe_at == "exit_end" or self.fringe_at == "both_ends":
+            px, py = self._bmadx_fringe_linear("exit", x, px, y, py, pz, p0c_particle)
 
         x, px, y, py = bmadx.offset_particle_unset(
             torch.tensor(0.0), torch.tensor(0.0), self.tilt, x, px, y, py
