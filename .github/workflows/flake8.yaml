@@ -1,0 +1,20 @@
+name: format
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: flake8 lint
+        uses: py-actions/flake8@v2
+        with:
+          max-line-length: "88"
+          plugins: "flake8-bugbear flake8-black"
