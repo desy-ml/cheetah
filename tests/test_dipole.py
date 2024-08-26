@@ -1,6 +1,6 @@
 import torch
 
-from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Segment
+from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
 
 
 def test_dipole_off():
@@ -21,6 +21,26 @@ def test_dipole_off():
     assert dipole.name is not None
     assert torch.allclose(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
     assert not torch.allclose(outbeam_dipole_on.sigma_x, outbeam_drift.sigma_x)
+
+
+def test_dipole_focussing():
+    """
+    Test that a dipole with focussing moment behaves like a quadrupole.
+    """
+    dipole = Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
+    quadrupole = Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
+    incoming_beam = ParameterBeam.from_parameters(
+        sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
+    )
+    outbeam_dipole_on = dipole.track(incoming_beam)
+    outbeam_quadrupole = quadrupole.track(incoming_beam)
+
+    dipole.k1 = torch.tensor([0.0], device=dipole.k1.device)
+    outbeam_dipole_off = dipole.track(incoming_beam)
+
+    assert dipole.name is not None
+    assert torch.allclose(outbeam_dipole_on.sigma_x, outbeam_quadrupole.sigma_x)
+    assert not torch.allclose(outbeam_dipole_off.sigma_x, outbeam_quadrupole.sigma_x)
 
 
 def test_dipole_batched_execution():
