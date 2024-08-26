@@ -107,7 +107,7 @@ def test_dipole_bmadx_tracking():
         fringe_integral_exit=fringe_integral_exit,
         gap=gap,
         gap_exit=gap_exit,
-        fringe_at="both_ends",
+        fringe_at="both",
         fringe_type="linear_edge",
         tracking_method="bmadx",
         dtype=torch.double,

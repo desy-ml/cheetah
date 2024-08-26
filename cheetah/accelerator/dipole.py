@@ -39,10 +39,10 @@ class Dipole(Element):
     :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
         different from `fringe_integral`.
     :param fringe_at: Where to apply the fringe fields. The available options are:
-        - "both_ends": Apply fringe fields at both ends.
-        - "entrance_end": Apply fringe fields at the entrance end.
-        - "exit_end": Apply fringe fields at the exit end.
-        - "no_end": Do not apply fringe fields.
+        - "neither": Do not apply fringe fields.
+        - "entrance": Apply fringe fields at the entrance end.
+        - "exit": Apply fringe fields at the exit end.
+        - "both": Apply fringe fields at both ends.
     :param fringe_type: Type of fringe field. Currently only supports `"linear_edge"`.
     :param name: Unique identifier of the element.
     """
@@ -60,9 +60,7 @@ class Dipole(Element):
         gap_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_at: Literal[
-            "both_ends", "entrance_end", "exit_end", "no_end"
-        ] = "both_ends",
+        fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
@@ -222,12 +220,12 @@ class Dipole(Element):
             torch.tensor(0.0), torch.tensor(0.0), self.tilt, x, px, y, py
         )
 
-        if self.fringe_at == "entrance_end" or self.fringe_at == "both_ends":
+        if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear(
                 "entrance", x, px, y, py, pz, p0c_particle
             )
         x, px, y, py, z, pz = self._bmadx_body(x, px, y, py, z, pz, p0c_particle, mc2)
-        if self.fringe_at == "exit_end" or self.fringe_at == "both_ends":
+        if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py, pz, p0c_particle)
 
         x, px, y, py = bmadx.offset_particle_unset(
@@ -287,9 +285,9 @@ class Dipole(Element):
         Lc = torch.sqrt(Lcu**2 + Lcv**2)
         Lp = Lc / bmadx.sinc(theta_p / 2)
 
-        P = self.p0c * (1 + pz)  # in eV
-        E = torch.sqrt(P**2 + mc2**2)  # in eV
-        E0 = torch.sqrt(self.p0c**2 + mc2**2)  # in eV
+        P = self.p0c * (1 + pz)  # In eV
+        E = torch.sqrt(P**2 + mc2**2)  # In eV
+        E0 = torch.sqrt(self.p0c**2 + mc2**2)  # In eV
         beta = P / E
         beta0 = self.p0c / E0
 
