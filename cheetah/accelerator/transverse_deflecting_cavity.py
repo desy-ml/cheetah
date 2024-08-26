@@ -3,8 +3,7 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import c as c_light
-from scipy.constants import physical_constants
+from scipy.constants import physical_constants, speed_of_light
 from torch import Size, nn
 
 from cheetah.particles import Beam, ParticleBeam
@@ -22,7 +21,7 @@ electron_mass_eV = torch.tensor(
 
 class TransverseDeflectingCavity(Element):
     """
-    Transverse Deflecting Cavity Element.
+    Transverse deflecting cavity element.
 
     :param length: Length in meters.
     :param voltage: Voltage of the cavity in volts.
@@ -108,14 +107,14 @@ class TransverseDeflectingCavity(Element):
 
     def track(self, incoming: Beam) -> Beam:
         """
-        Track particles through the crab cavity.
+        Track particles through the transverse deflecting cavity.
 
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
         if self.tracking_method == "cheetah":
             raise NotImplementedError(
-                "cheetah crab cavity tracking is not yet implemented"
+                "Cheetah transverse deflecting cavity tracking is not yet implemented."
             )
         elif self.tracking_method == "bmadx":
             assert isinstance(
@@ -130,8 +129,7 @@ class TransverseDeflectingCavity(Element):
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the TDC element
-        using the Bmad-X tracking method.
+        Track particles through the TDC element using the Bmad-X tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
@@ -142,12 +140,12 @@ class TransverseDeflectingCavity(Element):
             device=incoming.particles.device, dtype=incoming.particles.dtype
         )
 
-        x = incoming.particles[..., 0]
-        px = incoming.particles[..., 1]
-        y = incoming.particles[..., 2]
-        py = incoming.particles[..., 3]
-        tau = incoming.particles[..., 4]
-        delta = incoming.particles[..., 5]
+        x = incoming.x
+        px = incoming.px
+        y = incoming.y
+        py = incoming.py
+        tau = incoming.z
+        delta = incoming.p
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
@@ -162,7 +160,7 @@ class TransverseDeflectingCavity(Element):
         x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
         voltage = self.voltage / p0c
-        k_rf = 2 * torch.pi * self.frequency / c_light
+        k_rf = 2 * torch.pi * self.frequency / speed_of_light
         phase = (
             2
             * torch.pi
@@ -237,6 +235,8 @@ class TransverseDeflectingCavity(Element):
             "frequency",
             "misalignment",
             "tilt",
+            "num_steps",
+            "tracking_method",
         ]
 
     def __repr__(self) -> str:
@@ -245,6 +245,8 @@ class TransverseDeflectingCavity(Element):
             + f"voltage={repr(self.voltage)}, "
             + f"phase={repr(self.phase)}, "
             + f"frequency={repr(self.frequency)}, "
+            + f"misalignment={repr(self.misalignment)}, "
+            + f"tilt={repr(self.tilt)}, "
             + f"num_steps={repr(self.num_steps)}, "
             + f"tracking_method={repr(self.tracking_method)}, "
             + f"name={repr(self.name)})"
