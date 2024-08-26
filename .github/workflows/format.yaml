@@ -21,3 +21,9 @@ jobs:
 
       - name: Run isort
         run: isort . --check --diff --profile black
+
+      - name: flake8 lint
+        uses: py-actions/flake8@v2
+        with:
+          max-line-length: "88"
+          plugins: "flake8-bugbear flake8-black"
