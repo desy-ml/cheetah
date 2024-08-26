@@ -444,14 +444,20 @@ class Dipole(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + [
             "length",
+            "p0c",
             "angle",
             "k1",
             "e1",
             "e2",
+            "tilt",
+            "gap",
+            "gap_exit",
             "fringe_integral",
             "fringe_integral_exit",
-            "gap",
-            "tilt",
+            "fringe_at",
+            "fringe_type",
+            "tracking_method",
+            "name",
         ]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
