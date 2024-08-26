@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 import cheetah
@@ -6,8 +5,8 @@ import cheetah
 
 def test_transverse_deflecting_cavity_bmadx_tracking():
     """
-    Test that the results of tracking through a TDC with the `"bmadx"` tracking
-    method match the results from Bmad-X.
+    Test that the results of tracking through a TDC with the `"bmadx"` tracking method
+    match the results from Bmad-X.
     """
     incoming_beam = torch.load("tests/resources/bmadx/incoming_beam.pt")
     tdc = cheetah.TransverseDeflectingCavity(
