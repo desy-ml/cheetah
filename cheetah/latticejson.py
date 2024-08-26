@@ -120,7 +120,7 @@ class CompactJSONEncoder(json.JSONEncoder):
         if isinstance(obj, dict) and level < 2:
             items_indent = (level + 1) * self.indent * " "
             items_string = ",\n".join(
-                f"{items_indent}{json.dumps(key)}: {self.encode(value, level=level+1)}"
+                f"{items_indent}{json.dumps(key)}: {self.encode(value, level=level + 1)}"  # noqa: E501
                 for key, value in obj.items()
             )
             dict_indent = level * self.indent * " "
