@@ -11,10 +11,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
-      - name: Install isort and black
-        run: pip install isort black
+      - name: Install black and isort
+        run: pip install black isort
 
       - name: Run black
         run: black . --check --verbose --diff --color --exclude="/*.ipynb/"
@@ -22,9 +22,8 @@ jobs:
       - name: Run isort
         run: isort . --check --diff --profile black
 
-      - name: flake8 Lint
+      - name: flake8 lint
         uses: py-actions/flake8@v2
         with:
-          ignore: "F401"
           max-line-length: "88"
           plugins: "flake8-bugbear flake8-black"

@@ -19,6 +19,7 @@ class Dipole(Element):
 
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
+    :param k1: Focussing strength in 1/m^-2.
     :param e1: The angle of inclination of the entrance face [rad].
     :param e2: The angle of inclination of the exit face [rad].
     :param tilt: Tilt of the magnet in x-y plane [rad].
@@ -33,6 +34,7 @@ class Dipole(Element):
         self,
         length: Union[torch.Tensor, nn.Parameter],
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
@@ -52,6 +54,14 @@ class Dipole(Element):
             (
                 torch.as_tensor(angle, **factory_kwargs)
                 if angle is not None
+                else torch.zeros_like(self.length)
+            ),
+        )
+        self.register_buffer(
+            "k1",
+            (
+                torch.as_tensor(k1, **factory_kwargs)
+                if k1 is not None
                 else torch.zeros_like(self.length)
             ),
         )
@@ -127,7 +137,7 @@ class Dipole(Element):
         if torch.any(self.length != 0.0):  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
-                k1=torch.zeros_like(self.length),
+                k1=self.k1,
                 hx=self.hx,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
@@ -197,6 +207,7 @@ class Dipole(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"angle={repr(self.angle)}, "
+            + f"k1={repr(self.k1)}, "
             + f"e1={repr(self.e1)},"
             + f"e2={repr(self.e2)},"
             + f"tilt={repr(self.tilt)},"
@@ -211,6 +222,7 @@ class Dipole(Element):
         return super().defining_features + [
             "length",
             "angle",
+            "k1",
             "e1",
             "e2",
             "tilt",
