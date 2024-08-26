@@ -5,7 +5,7 @@ double_precision_epsilon = torch.finfo(torch.float64).eps
 
 
 def cheetah_to_bmad_z_pz(
-    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
+    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: float
 ) -> torch.Tensor:
     """
     Transforms Cheetah longitudinal coordinates to Bmad coordinates
@@ -30,7 +30,7 @@ def cheetah_to_bmad_z_pz(
 
 
 def bmad_to_cheetah_z_pz(
-    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
+    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: float
 ) -> torch.Tensor:
     """
     Transforms Bmad longitudinal coordinates to Cheetah coordinates

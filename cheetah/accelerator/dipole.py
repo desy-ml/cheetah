@@ -15,10 +15,7 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
-    dtype=torch.float64,
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Dipole(Element):
@@ -200,10 +197,6 @@ class Dipole(Element):
         :return: Beam exiting the element.
         """
         # Compute Bmad coordinates and p0c
-        mc2 = electron_mass_eV.to(
-            device=incoming.particles.device, dtype=incoming.particles.dtype
-        )
-
         x = incoming.x
         px = incoming.px
         y = incoming.y
@@ -212,7 +205,7 @@ class Dipole(Element):
         delta = incoming.p
 
         z, pz, p0c_particle = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, mc2
+            tau, delta, incoming.energy, electron_mass_eV
         )
 
         # Begin Bmad-X tracking
@@ -224,7 +217,9 @@ class Dipole(Element):
             px, py = self._bmadx_fringe_linear(
                 "entrance", x, px, y, py, pz, p0c_particle
             )
-        x, px, y, py, z, pz = self._bmadx_body(x, px, y, py, z, pz, p0c_particle, mc2)
+        x, px, y, py, z, pz = self._bmadx_body(
+            x, px, y, py, z, pz, p0c_particle, electron_mass_eV
+        )
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py, pz, p0c_particle)
 
@@ -234,7 +229,9 @@ class Dipole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c_particle, mc2)
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
+            z, pz, p0c_particle, electron_mass_eV
+        )
 
         outgoing_beam = ParticleBeam(
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
