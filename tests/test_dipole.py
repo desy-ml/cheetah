@@ -80,7 +80,9 @@ def test_dipole_bmadx_tracking(dtype):
     Test that the results of tracking through a dipole with the `"bmadx"` tracking
     method match the results from Bmad-X.
     """
-    incoming = torch.load("tests/resources/bmadx/incoming_beam.pt")
+    incoming = torch.load(
+        "tests/resources/bmadx/incoming_beam.pt", weights_only=False
+    ).to(dtype)
     mc2 = torch.tensor(
         physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
         dtype=dtype,
@@ -111,11 +113,13 @@ def test_dipole_bmadx_tracking(dtype):
     outgoing_cheetah_bmadx = segment_cheetah_bmadx.track(incoming)
 
     # Load reference result computed with Bmad-X
-    outgoing_bmadx = torch.load("tests/resources/bmadx/outgoing_bmadx_dipole.pt")
+    outgoing_bmadx = torch.load(
+        "tests/resources/bmadx/outgoing_bmadx_dipole.pt", weights_only=False
+    )
 
     assert torch.allclose(
         outgoing_cheetah_bmadx.particles,
-        outgoing_bmadx if dtype == torch.float64 else outgoing_bmadx.float(),
+        outgoing_bmadx.to(dtype),
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
         atol=1e-14 if dtype == torch.float64 else 1e-8,
     )
