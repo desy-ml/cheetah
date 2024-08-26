@@ -134,7 +134,8 @@ def test_tilted_quadrupole_multiple_batch_dimension():
     assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[0, 1])
 
 
-def test_quadrupole_bmadx_tracking():
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_quadrupole_bmadx_tracking(dtype):
     """
     Test that the results of tracking through a quadrupole with the `"bmadx"` tracking
     method match the results from Bmad-X.
@@ -143,11 +144,11 @@ def test_quadrupole_bmadx_tracking():
     quadrupole = Quadrupole(
         length=torch.tensor([1.0]),
         k1=torch.tensor([10.0]),
-        misalignment=torch.tensor([[0.01, -0.02]], dtype=torch.float64),
+        misalignment=torch.tensor([[0.01, -0.02]], dtype=dtype),
         tilt=torch.tensor([0.5]),
         num_steps=10,
         tracking_method="bmadx",
-        dtype=torch.float64,
+        dtype=dtype,
     )
     segment = Segment(elements=[quadrupole])
 
@@ -157,7 +158,12 @@ def test_quadrupole_bmadx_tracking():
     # Load reference result computed with Bmad-X
     outgoing_bmadx = torch.load("tests/resources/bmadx/outgoing_bmadx_quadrupole.pt")
 
-    assert torch.allclose(outgoing.particles, outgoing_bmadx, atol=1e-14, rtol=1e-14)
+    assert torch.allclose(
+        outgoing.particles,
+        outgoing_bmadx if dtype == torch.float64 else outgoing_bmadx.float(),
+        atol=1e-14 if dtype == torch.float64 else 0.00001,
+        rtol=1e-14 if dtype == torch.float64 else 1e-8,
+    )
 
 
 @pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
