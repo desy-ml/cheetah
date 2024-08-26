@@ -17,7 +17,9 @@
 - `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 - `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
+- Port Bmad-X tracking methods to Cheetah for `Quadrupole`, `Drift`, and `Dipole` (see #153, #240) (@jp-ga, @jank324)
 - `Dipole` now takes a focusing moment `k1` (see #235) (@hespe)
+- Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
 
 ### 🐛 Bug fixes
 
