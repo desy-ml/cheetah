@@ -6,22 +6,25 @@ from cheetah.utils import is_mps_available_and_functional
 
 
 def test_fodo():
+    """Test importing a FODO lattice defined in the Elegant file format."""
     file_path = "tests/resources/fodo.lte"
     converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
     correct_lattice = cheetah.Segment(
         [
             cheetah.Quadrupole(
-                name="q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+                name="q1", length=torch.tensor([0.1]), k1=torch.tensor([1.5])
             ),
-            cheetah.Drift(name="d1", length=torch.tensor(1)),
+            cheetah.Drift(name="d1", length=torch.tensor([1])),
             cheetah.Marker(name="m1"),
-            cheetah.Dipole(name="s1", length=torch.tensor(0.3), e1=torch.tensor(0.25)),
-            cheetah.Drift(name="d1", length=torch.tensor(1)),
-            cheetah.Quadrupole(
-                name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3)
+            cheetah.Dipole(
+                name="s1", length=torch.tensor([0.3]), e1=torch.tensor([0.25])
             ),
-            cheetah.Drift(name="d2", length=torch.tensor(2)),
+            cheetah.Drift(name="d1", length=torch.tensor([1])),
+            cheetah.Quadrupole(
+                name="q2", length=torch.tensor([0.2]), k1=torch.tensor([-3])
+            ),
+            cheetah.Drift(name="d2", length=torch.tensor([2])),
         ],
         name="fodo",
     )
