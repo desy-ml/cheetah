@@ -5,7 +5,7 @@ import torch
 
 import cheetah
 
-from .bmad import (
+from .utils.fortran_namelist import (
     merge_delimiter_continued_lines,
     parse_lines,
     read_clean_lines,
