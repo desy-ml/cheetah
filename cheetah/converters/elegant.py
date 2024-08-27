@@ -220,7 +220,7 @@ def convert_element(
         )
 
 
-def convert_elegant_lattice(
+def convert_lattice_to_cheetah(
     elegant_lattice_file_path: Path,
     name: str,
     device: Optional[Union[str, torch.device]] = None,

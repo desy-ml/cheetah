@@ -7,9 +7,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import Size, nn
 
-from cheetah.converters.bmad import convert_bmad_lattice
-from cheetah.converters.elegant import convert_elegant_lattice
-from cheetah.converters.nxtables import read_nx_tables
+from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
@@ -267,10 +265,12 @@ class Segment(Element):
             Cheetah or converted with potentially unexpected behavior.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
-        from cheetah.converters.ocelot import ocelot2cheetah
+        from cheetah.converters import ocelot
 
         converted = [
-            ocelot2cheetah(element, warnings=warnings, device=device, dtype=dtype)
+            ocelot.convert_element_to_cheetah(
+                element, warnings=warnings, device=device, dtype=dtype
+            )
             for element in cell
         ]
         return cls(converted, name=name, **kwargs)
@@ -299,7 +299,7 @@ class Segment(Element):
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return convert_bmad_lattice(
+        return bmad.convert_lattice_to_cheetah(
             bmad_lattice_file_path, environment_variables, device, dtype
         )
 
@@ -322,7 +322,9 @@ class Segment(Element):
         """
 
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
-        return convert_elegant_lattice(elegant_lattice_file_path, name, device, dtype)
+        return elegant.convert_lattice_to_cheetah(
+            elegant_lattice_file_path, name, device, dtype
+        )
 
     @classmethod
     def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
@@ -338,7 +340,7 @@ class Segment(Element):
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        return read_nx_tables(filepath)
+        return nxtables.convert_lattice_to_cheetah(filepath)
 
     @property
     def is_skippable(self) -> bool:
