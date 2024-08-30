@@ -2,7 +2,15 @@ import pytest
 import torch
 from scipy.constants import physical_constants
 
-from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
+from cheetah import (
+    Dipole,
+    Drift,
+    ParameterBeam,
+    ParticleBeam,
+    Quadrupole,
+    RBend,
+    Segment,
+)
 from cheetah.utils.bmadx import cheetah_to_bmad_coords
 
 
@@ -46,22 +54,23 @@ def test_dipole_focussing():
     assert not torch.allclose(outbeam_dipole_off.sigma_x, outbeam_quadrupole.sigma_x)
 
 
-def test_dipole_batched_execution():
+@pytest.mark.parametrize("DipoleType", [Dipole, RBend])
+def test_dipole_batched_execution(DipoleType):
     """
     Test that a dipole with batch dimensions behaves as expected.
     """
-    batch_shape = torch.Size([3])
+    batch_shape = torch.Size([6])
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1000000),
+        num_particles=torch.tensor(1_000_000),
         energy=torch.tensor([1e9]),
         mu_x=torch.tensor([1e-5]),
     ).broadcast(batch_shape)
     segment = Segment(
         [
-            Dipole(
+            DipoleType(
                 length=torch.tensor([0.5, 0.5, 0.5]),
                 angle=torch.tensor([0.1, 0.2, 0.1]),
-            ),
+            ).broadcast((2,)),
             Drift(length=torch.tensor([0.5])).broadcast(batch_shape),
         ]
     )

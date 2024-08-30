@@ -16,6 +16,7 @@ class RBend(Dipole):
 
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
+    :param k1: Focussing strength in 1/m^-2.
     :param e1: The angle of inclination of the entrance face [rad].
     :param e2: The angle of inclination of the exit face [rad].
     :param tilt: Tilt of the magnet in x-y plane [rad].
@@ -30,6 +31,7 @@ class RBend(Dipole):
         self,
         length: Optional[Union[torch.Tensor, nn.Parameter]],
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
@@ -43,20 +45,7 @@ class RBend(Dipole):
         super().__init__(
             length=length,
             angle=angle,
-            e1=e1,
-            e2=e2,
-            tilt=tilt,
-            fringe_integral=fringe_integral,
-            fringe_integral_exit=fringe_integral_exit,
-            gap=gap,
-            name=name,
-            device=device,
-            dtype=dtype,
-        )
-
-        super().__init__(
-            length=length,
-            angle=angle,
+            k1=k1,
             e1=e1,
             e2=e2,
             tilt=tilt,
