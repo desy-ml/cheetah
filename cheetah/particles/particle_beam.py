@@ -118,8 +118,13 @@ class ParticleBeam(Beam):
         cor_tau = cor_tau if cor_tau is not None else torch.tensor(0.0)
         energy = energy if energy is not None else torch.tensor(1e8)
         total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
-        particle_charges = torch.ones(num_particles) * total_charge / num_particles
+        particle_charges = (
+            torch.ones((*total_charge.shape, num_particles))
+            * total_charge.unsqueeze(-1)
+            / num_particles
+        )
 
+        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
         mean = torch.stack(
             [mu_x, mu_px, mu_y, mu_py, torch.zeros_like(mu_x), torch.zeros_like(mu_x)],
             dim=-1,
@@ -667,15 +672,9 @@ class ParticleBeam(Beam):
                 / self.particle_charges.shape[-1]
             )
 
+        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
         new_mu = torch.stack(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                torch.full_like(mu_x, 0.0),
-                torch.full_like(mu_x, 0.0),
-            ],
+            [mu_x, mu_px, mu_y, mu_py, torch.zeros_like(mu_x), torch.zeros_like(mu_x)],
             dim=-1,
         )
         new_sigma = torch.stack(
@@ -688,8 +687,8 @@ class ParticleBeam(Beam):
                 self.mu_px,
                 self.mu_y,
                 self.mu_py,
-                torch.full_like(self.mu_x, 0.0),
-                torch.full_like(self.mu_x, 0.0),
+                torch.zeros_like(self.mu_x),
+                torch.zeros_like(self.mu_x),
             ],
             dim=-1,
         )
@@ -705,17 +704,16 @@ class ParticleBeam(Beam):
             dim=-1,
         )
 
-        phase_space = self.particles[:, :, :6]
+        phase_space = self.particles[..., :6]
         phase_space = (
-            phase_space - old_mu.expand(*phase_space.shape)
-        ) / old_sigma.expand(*phase_space.shape) * new_sigma.expand(
-            *phase_space.shape
-        ) + new_mu.expand(
-            *phase_space.shape
-        )
+            (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
+            / old_sigma.unsqueeze(-1)
+            * new_sigma.unsqueeze(-1)
+            + new_mu.unsqueeze(-1)
+        ).transpose(-2, -1)
 
-        particles = torch.ones_like(self.particles)
-        particles[:, :, :6] = phase_space
+        particles = torch.ones(*phase_space.shape[:-1], 7)
+        particles[..., :6] = phase_space
 
         return self.__class__(
             particles=particles,

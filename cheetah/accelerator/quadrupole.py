@@ -178,6 +178,8 @@ class Quadrupole(Element):
         )
 
         # End of Bmad-X tracking
+        x, px, y, py, z, pz = torch.broadcast_tensors(x, px, y, py, z, pz)
+        bmad_coords = torch.empty((*x.shape, 6), device=x.device, dtype=x.dtype)
         bmad_coords[..., 0] = x
         bmad_coords[..., 1] = px
         bmad_coords[..., 2] = y

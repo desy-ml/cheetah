@@ -81,7 +81,7 @@ class Screen(Element):
             (
                 torch.as_tensor(misalignment, **factory_kwargs)
                 if misalignment is not None
-                else torch.tensor([(0.0, 0.0)], **factory_kwargs)
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer(

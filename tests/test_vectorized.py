@@ -65,10 +65,10 @@ def test_track_quadrupole_shape(BeamClass):
     assert outgoing.sigma_py.shape == (2,)
     assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (2, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
@@ -99,10 +99,10 @@ def test_track_quadrupole_shape_2d(BeamClass):
     assert outgoing.sigma_py.shape == (3, 2)
     assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (3, 2, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
@@ -135,10 +135,10 @@ def test_track_segment_shape(BeamClass):
     assert outgoing.sigma_py.shape == (2,)
     assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (2, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
@@ -175,13 +175,13 @@ def test_track_particle_segment_shape_2d(BeamClass):
     assert outgoing.sigma_py.shape == (3, 2)
     assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (3, 2, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
-def test_enormous_through_ares():
+def test_enormous_through_ares_ea():
     """
     Test ARES EA with a huge number of settings. This is a stress test and only run
     for `ParameterBeam` because `ParticleBeam` would require a lot of memory.
@@ -205,8 +205,8 @@ def test_enormous_through_ares():
     assert outgoing.sigma_py.shape == (3, 200_000)
     assert outgoing.sigma_tau.shape == (3, 200_000)
     assert outgoing.sigma_p.shape == (3, 200_000)
-    assert outgoing.energy.shape == (3, 200_000)
-    assert outgoing.total_charge.shape == (3, 200_000)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
@@ -239,9 +239,9 @@ def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
     assert outgoing.sigma_tau.shape == (3,)
     assert outgoing.sigma_p.shape == (3,)
     assert outgoing.energy.shape == (3,)
-    assert outgoing.total_charge.shape == (3,)
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (3, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
@@ -264,10 +264,10 @@ def test_vectorized_undulator(BeamClass):
     assert outgoing.sigma_py.shape == (2,)
     assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (2, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
@@ -292,7 +292,7 @@ def test_vectorized_solenoid(BeamClass):
     assert outgoing.sigma_py.shape == (2,)
     assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
-        assert outgoing.particle_charges.shape == (2, 100_000)
+        assert outgoing.particle_charges.shape == (100_000,)

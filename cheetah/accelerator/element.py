@@ -69,8 +69,8 @@ class Element(ABC, nn.Module):
             return ParameterBeam(
                 mu,
                 cov,
-                incoming.energy.expand(mu.shape[:-1]),
-                total_charge=incoming.total_charge.expand(mu.shape[:-1]),
+                incoming.energy,
+                total_charge=incoming.total_charge,
                 device=mu.device,
                 dtype=mu.dtype,
             )
@@ -79,10 +79,8 @@ class Element(ABC, nn.Module):
             new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
             return ParticleBeam(
                 new_particles,
-                incoming.energy.expand(new_particles.shape[:-2]),
-                particle_charges=incoming.particle_charges.expand(
-                    new_particles.shape[:-1]
-                ),
+                incoming.energy,
+                particle_charges=incoming.particle_charges,
                 device=new_particles.device,
                 dtype=new_particles.dtype,
             )
