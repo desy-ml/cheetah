@@ -318,32 +318,6 @@ class ParameterBeam(Beam):
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
 
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
-        shape = mu_x.shape
-        not_nones = [
-            argument
-            for argument in [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                energy,
-                total_charge,
-            ]
-            if argument is not None
-        ]
-        if len(not_nones) > 0:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
-
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
