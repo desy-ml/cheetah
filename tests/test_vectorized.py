@@ -296,3 +296,30 @@ def test_vectorized_solenoid(BeamClass):
     assert outgoing.total_charge.shape == torch.Size([])
     if BeamClass == cheetah.ParticleBeam:
         assert outgoing.particle_charges.shape == (100_000,)
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+@pytest.mark.parametrize("method", ["histogram", "kde"])
+def test_vectorized_screen_2d(BeamClass, method):
+    """
+    Test that a vectorized `Screen` is able to track a particle beam and produce a
+    reading with 2D vector dimensions.
+    """
+    element = cheetah.Screen(
+        resolution=torch.tensor([100, 100]),
+        pixel_size=torch.tensor([1e-5, 1e-5]),
+        misalignment=torch.tensor([[1e-4, 2e-4, 3e-4], [4e-4, 5e-4, 6e-4]]),
+        is_active=True,
+        method=method,
+        name="my_screen",
+    )
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+
+    _ = element.track(incoming)
+
+    # Check some properties of the read beam
+    assert element._read_beam.mu_x.shape == (2, 3)
+    assert element._read_beam.sigma_x.shape == (2, 3)
+
+    # Check the reading
+    assert element.reading.shape == (2, 3, 100, 100)
