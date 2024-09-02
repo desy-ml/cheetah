@@ -1,7 +1,6 @@
 from typing import Optional
 
 import torch
-from icecream import ic
 from scipy import constants
 from torch.distributions import MultivariateNormal
 
