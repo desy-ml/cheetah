@@ -1,6 +1,7 @@
-import cheetah
 import pytest
 import torch
+
+import cheetah
 
 
 def test_merged_transfer_maps_tracking():

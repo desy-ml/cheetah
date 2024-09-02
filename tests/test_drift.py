@@ -1,6 +1,7 @@
-import cheetah
 import pytest
 import torch
+
+import cheetah
 
 
 def test_diverging_parameter_beam():

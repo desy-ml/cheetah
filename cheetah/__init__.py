@@ -1,7 +1,7 @@
 from . import converters  # noqa: F401
 from .accelerator import (  # noqa: F401
-    Aperture,
     BPM,
+    Aperture,
     Cavity,
     CustomTransferMap,
     Dipole,

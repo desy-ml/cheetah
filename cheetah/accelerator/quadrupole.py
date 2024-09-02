@@ -5,11 +5,11 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn, Size
+from torch import Size, nn
 
 from ..particles import Beam, ParticleBeam
 from ..track_methods import base_rmatrix, misalignment_matrix
-from ..utils import bmadx, UniqueNameGenerator
+from ..utils import UniqueNameGenerator, bmadx
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

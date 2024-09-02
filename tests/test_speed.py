@@ -1,8 +1,8 @@
 import time
 
-import cheetah
-
 import torch
+
+import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
 

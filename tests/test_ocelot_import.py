@@ -1,7 +1,8 @@
-import cheetah
 import numpy as np
 import ocelot
 import pytest
+
+import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
