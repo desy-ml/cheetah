@@ -1,6 +1,7 @@
-import cheetah
 import pytest
 import torch
+
+import cheetah
 
 
 def test_drift_end():
