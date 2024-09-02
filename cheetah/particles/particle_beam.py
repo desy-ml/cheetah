@@ -1,6 +1,7 @@
 from typing import Optional
 
 import torch
+from icecream import ic
 from scipy import constants
 from torch.distributions import MultivariateNormal
 
@@ -98,67 +99,55 @@ class ParticleBeam(Beam):
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
-        # Figure out if arguments were passed, figure out their shape
-        not_nones = [
-            argument
-            for argument in [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cor_x,
-                cor_y,
-                cor_tau,
-                energy,
-                total_charge,
-            ]
-            if argument is not None
-        ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
 
         # Set default values without function call in function signature
         num_particles = (
             num_particles if num_particles is not None else torch.tensor(100_000)
         )
-        mu_x = mu_x if mu_x is not None else torch.full(shape, 0.0)
-        mu_px = mu_px if mu_px is not None else torch.full(shape, 0.0)
-        mu_y = mu_y if mu_y is not None else torch.full(shape, 0.0)
-        mu_py = mu_py if mu_py is not None else torch.full(shape, 0.0)
-        sigma_x = sigma_x if sigma_x is not None else torch.full(shape, 175e-9)
-        sigma_px = sigma_px if sigma_px is not None else torch.full(shape, 2e-7)
-        sigma_y = sigma_y if sigma_y is not None else torch.full(shape, 175e-9)
-        sigma_py = sigma_py if sigma_py is not None else torch.full(shape, 2e-7)
-        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
-        sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
-        cor_x = cor_x if cor_x is not None else torch.full(shape, 0.0)
-        cor_y = cor_y if cor_y is not None else torch.full(shape, 0.0)
-        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
-        energy = energy if energy is not None else torch.full(shape, 1e8)
-        total_charge = (
-            total_charge if total_charge is not None else torch.full(shape, 0.0)
-        )
-        particle_charges = (
-            torch.ones((*shape, num_particles), device=device, dtype=dtype)
-            * total_charge.unsqueeze(-1)
-            / num_particles
-        )
+        mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
+        mu_px = mu_px if mu_px is not None else torch.tensor(0.0)
+        mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
+        mu_py = mu_py if mu_py is not None else torch.tensor(0.0)
+        sigma_x = sigma_x if sigma_x is not None else torch.tensor(175e-9)
+        sigma_px = sigma_px if sigma_px is not None else torch.tensor(2e-7)
+        sigma_y = sigma_y if sigma_y is not None else torch.tensor(175e-9)
+        sigma_py = sigma_py if sigma_py is not None else torch.tensor(2e-7)
+        sigma_tau = sigma_tau if sigma_tau is not None else torch.tensor(1e-6)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
+        cor_x = cor_x if cor_x is not None else torch.tensor(0.0)
+        cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
+        cor_tau = cor_tau if cor_tau is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
+        particle_charges = torch.ones(num_particles) * total_charge / num_particles
 
         mean = torch.stack(
-            [mu_x, mu_px, mu_y, mu_py, torch.full(shape, 0.0), torch.full(shape, 0.0)],
+            [mu_x, mu_px, mu_y, mu_py, torch.zeros_like(mu_x), torch.zeros_like(mu_x)],
             dim=-1,
         )
 
-        cov = torch.zeros(*shape, 6, 6)
+        (
+            sigma_x,
+            cor_x,
+            sigma_px,
+            sigma_y,
+            cor_y,
+            sigma_py,
+            sigma_tau,
+            cor_tau,
+            sigma_p,
+        ) = torch.broadcast_tensors(
+            sigma_x,
+            cor_x,
+            sigma_px,
+            sigma_y,
+            cor_y,
+            sigma_py,
+            sigma_tau,
+            cor_tau,
+            sigma_p,
+        )
+        cov = torch.zeros(*sigma_x.shape, 6, 6)
         cov[..., 0, 0] = sigma_x**2
         cov[..., 0, 1] = cor_x
         cov[..., 1, 0] = cor_x
@@ -172,7 +161,7 @@ class ParticleBeam(Beam):
         cov[..., 5, 4] = cor_tau
         cov[..., 5, 5] = sigma_p**2
 
-        particles = torch.ones((*shape, num_particles, 7))
+        particles = torch.ones((*mean.shape[:-1], num_particles, 7))
         distributions = [
             MultivariateNormal(sample_mean, covariance_matrix=sample_cov)
             for sample_mean, sample_cov in zip(mean.view(-1, 6), cov.view(-1, 6, 6))
@@ -180,7 +169,7 @@ class ParticleBeam(Beam):
         particles[..., :6] = torch.stack(
             [distribution.sample((num_particles,)) for distribution in distributions],
             dim=0,
-        ).view(*shape, num_particles, 6)
+        ).view(*particles.shape[:-2], num_particles, 6)
 
         return cls(
             particles,
@@ -380,9 +369,7 @@ class ParticleBeam(Beam):
                 y = (torch.rand(num_particles) - 0.5) * 2 * r_y
                 tau = (torch.rand(num_particles) - 0.5) * 2 * r_tau
 
-                is_in_ellipsoid = (
-                    x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
-                )
+                is_in_ellipsoid = x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
                 num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
 
                 flattened_x[i, num_successful : num_successful + num_to_add] = x[
@@ -656,33 +643,6 @@ class ParticleBeam(Beam):
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
 
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
-        shape = mu_x.shape
-        not_nones = [
-            argument
-            for argument in [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                energy,
-                total_charge,
-            ]
-            if argument is not None
-        ]
-        if len(not_nones) > 0:
-            if not all(argument.shape == torch.Size([]) for argument in not_nones):
-                raise NotImplementedError(
-                    "Batching not implemented yet. Arguments must have shape []."
-                )
-
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_y = mu_y if mu_y is not None else self.mu_y
         mu_px = mu_px if mu_px is not None else self.mu_px
@@ -710,29 +670,29 @@ class ParticleBeam(Beam):
 
         new_mu = torch.stack(
             [
-                mu_x.squeeze(),
-                mu_px.squeeze(),
-                mu_y.squeeze(),
-                mu_py.squeeze(),
-                torch.full(shape, 0.0),
-                torch.full(shape, 0.0),
+                mu_x,
+                mu_px,
+                mu_y,
+                mu_py,
+                torch.full_like(mu_x, 0.0),
+                torch.full_like(mu_x, 0.0),
             ],
-            dim=0,
+            dim=-1,
         )
         new_sigma = torch.stack(
-            [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=0
+            [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=-1
         )
 
         old_mu = torch.stack(
             [
-                self.mu_x.squeeze(),
-                self.mu_px.squeeze(),
-                self.mu_y.squeeze(),
-                self.mu_py.squeeze(),
-                torch.full(shape, 0.0),
-                torch.full(shape, 0.0),
+                self.mu_x,
+                self.mu_px,
+                self.mu_y,
+                self.mu_py,
+                torch.full_like(self.mu_x, 0.0),
+                torch.full_like(self.mu_x, 0.0),
             ],
-            dim=0,
+            dim=-1,
         )
         old_sigma = torch.stack(
             [
@@ -743,8 +703,8 @@ class ParticleBeam(Beam):
                 self.sigma_tau,
                 self.sigma_p,
             ],
-            dim=0,
-        ).squeeze()
+            dim=-1,
+        )
 
         phase_space = self.particles[:, :, :6]
         phase_space = (
