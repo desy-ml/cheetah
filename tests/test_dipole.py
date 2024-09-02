@@ -1,7 +1,15 @@
 import pytest
 import torch
 
-from cheetah import Dipole, Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
+from cheetah import (
+    Dipole,
+    Drift,
+    ParameterBeam,
+    ParticleBeam,
+    Quadrupole,
+    RBend,
+    Segment,
+)
 
 
 def test_dipole_off():
@@ -44,7 +52,8 @@ def test_dipole_focussing():
     assert not torch.allclose(outbeam_dipole_off.sigma_x, outbeam_quadrupole.sigma_x)
 
 
-def test_dipole_batched_execution():
+@pytest.mark.parametrize("DipoleType", [Dipole, RBend])
+def test_dipole_batched_execution(DipoleType):
     """
     Test that a dipole with batch dimensions behaves as expected.
     """
@@ -54,10 +63,10 @@ def test_dipole_batched_execution():
         mu_x=torch.tensor(1e-5),
     )
 
-    # test batching to generate 3 beam lines
+    # Test batching to generate 3 beam lines
     segment = Segment(
         [
-            Dipole(
+            DipoleType(
                 length=torch.tensor([0.5, 0.5, 0.5]),
                 angle=torch.tensor([0.1, 0.2, 0.1]),
             ),
@@ -75,7 +84,7 @@ def test_dipole_batched_execution():
     # Check different angles do make a difference
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
-    # test batching to generate 18 beamlines
+    # Test batching to generate 18 beamlines
     segment = Segment(
         [
             Dipole(
@@ -88,7 +97,7 @@ def test_dipole_batched_execution():
     outgoing = segment(incoming)
     assert outgoing.particles.shape == torch.Size([2, 3, 3, 100, 7])
 
-    # test improper batching -- this does not obey torch broadcasting rules
+    # Test improper batching -- this does not obey torch broadcasting rules
     segment = Segment(
         [
             Dipole(

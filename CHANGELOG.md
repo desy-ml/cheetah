@@ -17,7 +17,7 @@
 - `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 - `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
-- `Dipole` now takes a focusing moment `k1` (see #235) (@hespe)
+- `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
 
 ### 🐛 Bug fixes
 
@@ -41,6 +41,7 @@
 - Refactor definitions of physical constants (see #189) (@hespe)
 - Fix the quadrupole strength units in the quadrupole docstring (see #202) (@ansantam)
 - Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @hespe)
+- Clean up CI pipelines (see #243, #244) (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
