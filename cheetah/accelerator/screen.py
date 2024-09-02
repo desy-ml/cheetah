@@ -162,6 +162,9 @@ class Screen(Element):
             copy_of_incoming = deepcopy(incoming)
 
             if isinstance(incoming, ParameterBeam):
+                copy_of_incoming._mu = torch.broadcast_to(
+                    copy_of_incoming._mu, (*self.misalignment.shape[:-1], 7)
+                ).clone()
                 copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
                 copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
@@ -202,6 +205,9 @@ class Screen(Element):
                     ),
                 ],
                 dim=-1,
+            )
+            transverse_mu, transverse_cov = torch.broadcast_tensors(
+                transverse_mu, transverse_cov
             )
             dist = [
                 MultivariateNormal(
@@ -269,13 +275,13 @@ class Screen(Element):
         # Using these get and set methods instead of Python's property decorator to
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
-        return self._read_beam[0] if self._read_beam is not None else None
+        return self._read_beam if self._read_beam is not None else None
 
     def set_read_beam(self, value: Beam) -> None:
         # Using these get and set methods instead of Python's property decorator to
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
-        self._read_beam = [value]
+        self._read_beam = value
         self.cached_reading = None
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
