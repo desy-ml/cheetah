@@ -1,6 +1,7 @@
-import cheetah
 import numpy as np
 import torch
+
+import cheetah
 
 
 def test_astra_to_parameter_beam():

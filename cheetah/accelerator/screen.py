@@ -8,7 +8,7 @@ from torch import nn
 from torch.distributions import MultivariateNormal
 
 from ..particles import Beam, ParameterBeam, ParticleBeam
-from ..utils import kde_histogram_2d, UniqueNameGenerator
+from ..utils import UniqueNameGenerator, kde_histogram_2d
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

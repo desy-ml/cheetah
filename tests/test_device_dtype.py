@@ -1,6 +1,7 @@
-import cheetah
 import pytest
 import torch
+
+import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 
