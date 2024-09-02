@@ -80,11 +80,6 @@ def test_transform_to():
     assert np.isclose(transformed_beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(transformed_beam.total_charge.cpu().numpy(), 1e-9)
 
-    with pytest.raises(NotImplementedError):
-        original_beam.transformed_to(
-            mu_x=torch.tensor(1e-5).expand([3, 2]),
-        )
-
 
 def test_from_twiss_to_twiss():
     """
@@ -111,7 +106,7 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
-def test_generate_uniform_ellipsoid_batched():
+def test_generate_uniform_ellipsoid_vectorized():
     """
     Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
     parameters, i.e. the all particles are within the ellipsoid, and that the other

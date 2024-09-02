@@ -224,8 +224,8 @@ class Cavity(Element):
             outgoing = ParameterBeam(
                 outgoing_mu,
                 outgoing_cov,
-                outgoing_energy.expand(outgoing_mu.shape[:-1]),
-                total_charge=incoming.total_charge.expand(outgoing_mu.shape[:-1]),
+                outgoing_energy,
+                total_charge=incoming.total_charge,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
             )
@@ -234,9 +234,7 @@ class Cavity(Element):
             outgoing = ParticleBeam(
                 outgoing_particles,
                 outgoing_energy,
-                particle_charges=incoming.particle_charges.expand(
-                    outgoing_particles.shape[:-1]
-                ),
+                particle_charges=incoming.particle_charges,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )

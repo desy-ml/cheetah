@@ -226,5 +226,5 @@ def test_tracking_method_vectorization(tracking_method):
     assert outgoing.sigma_py.shape == (3, 2)
     assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
