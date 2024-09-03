@@ -204,9 +204,7 @@ class Dipole(Element):
         )
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
-            px, py = self._bmadx_fringe_linear(
-                "entrance", x, px, y, py, pz, p0c
-            )
+            px, py = self._bmadx_fringe_linear("entrance", x, px, y, py, pz, p0c)
         x, px, y, py, z, pz = self._bmadx_body(
             x, px, y, py, z, pz, p0c, electron_mass_eV
         )
