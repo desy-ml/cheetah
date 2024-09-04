@@ -11,6 +11,10 @@ Converters
     :members:
     :undoc-members:
 
+.. automodule:: converters.elegant
+    :members:
+    :undoc-members:
+
 .. automodule:: converters.nxtables
     :members:
     :undoc-members:

@@ -3,7 +3,7 @@ import torch
 import cheetah
 
 
-def ocelot2cheetah(
+def convert_element_to_cheetah(
     element, warnings: bool = True, device=None, dtype=torch.float32
 ) -> "cheetah.Element":
     """

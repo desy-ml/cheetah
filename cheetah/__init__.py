@@ -14,6 +14,7 @@ from .accelerator import (  # noqa: F401
     Segment,
     Solenoid,
     SpaceChargeKick,
+    TransverseDeflectingCavity,
     Undulator,
     VerticalCorrector,
 )
