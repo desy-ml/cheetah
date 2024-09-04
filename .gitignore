@@ -14,3 +14,4 @@ build
 distributions
 
 docs/_build
+dev*
