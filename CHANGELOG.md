@@ -20,6 +20,7 @@
 - Port Bmad-X tracking methods to Cheetah for `Quadrupole`, `Drift`, and `Dipole` (see #153, #240) (@jp-ga, @jank324)
 - Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
 - `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
+- Implement a converter for lattice files imported from Elegant (see #222) (@hespe)
 
 ### 🐛 Bug fixes
 
