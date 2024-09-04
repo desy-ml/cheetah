@@ -219,7 +219,7 @@ def convert_element(
             return cheetah.Segment(
                 elements=[
                     cheetah.Drift(
-                        length=torch.tensor([bmad_parsed["l"]]),
+                        length=torch.tensor([bmad_parsed.get("l", 0.0)]),
                         name=name + "_drift",
                         device=device,
                         dtype=dtype,
@@ -243,7 +243,7 @@ def convert_element(
             return cheetah.Segment(
                 elements=[
                     cheetah.Drift(
-                        length=torch.tensor([bmad_parsed["l"]]),
+                        length=torch.tensor([bmad_parsed.get("l", 0.0)]),
                         name=name + "_drift",
                         device=device,
                         dtype=dtype,
