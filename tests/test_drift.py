@@ -59,3 +59,32 @@ def test_device_like_torch_module():
     element = element.cpu()
 
     assert element.length.device.type == "cpu"
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_drift_bmadx_tracking(dtype):
+    """
+    Test that the results of tracking through a drift with the `"bmadx"` tracking method
+    match the results from Bmad-X.
+    """
+    incoming_beam = torch.load(
+        "tests/resources/bmadx/incoming.pt", weights_only=False
+    ).to(dtype)
+    drift = cheetah.Drift(
+        length=torch.tensor([1.0]), tracking_method="bmadx", dtype=dtype
+    )
+
+    # Run tracking
+    outgoing_beam = drift.track(incoming_beam)
+
+    # Load reference result computed with Bmad-X
+    outgoing_bmadx = torch.load(
+        "tests/resources/bmadx/outgoing_drift.pt", weights_only=False
+    )
+
+    assert torch.allclose(
+        outgoing_beam.particles,
+        outgoing_bmadx.to(dtype),
+        atol=1e-14 if dtype == torch.float64 else 0.00001,
+        rtol=1e-14 if dtype == torch.float64 else 1e-6,
+    )
