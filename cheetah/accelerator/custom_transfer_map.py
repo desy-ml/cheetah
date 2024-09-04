@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
+from matplotlib.patches import Rectangle
 from torch import nn
 
 from ..particles import Beam
@@ -102,5 +103,7 @@ class CustomTransferMap(Element):
         return [self]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
-        # TODO: At some point think of a nice way to indicate this in a lattice plot
-        pass
+        height = 0.4
+
+        patch = Rectangle((s, 0), self.length[0], height, color="tab:olive", zorder=2)
+        ax.add_patch(patch)

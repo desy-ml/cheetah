@@ -2,16 +2,11 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
-from scipy import constants
+from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 from torch import nn
 
 from ..particles import Beam, ParticleBeam
 from .element import Element
-
-# Constants
-elementary_charge = torch.tensor(constants.elementary_charge)
-epsilon_0 = torch.tensor(constants.epsilon_0)
-speed_of_light = torch.tensor(constants.speed_of_light)
 
 
 class SpaceChargeKick(Element):

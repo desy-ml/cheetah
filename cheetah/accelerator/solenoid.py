@@ -13,9 +13,7 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Solenoid(Element):

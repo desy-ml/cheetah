@@ -5,6 +5,7 @@ cheetah.egg-info
 .vscode
 dist
 .coverage
+.idea
 
 *.egg-info
 
@@ -15,4 +16,4 @@ distributions
 
 docs/_build
 
-.idea
+dev*

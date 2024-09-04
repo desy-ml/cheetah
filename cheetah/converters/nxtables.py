@@ -205,7 +205,7 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
     return {"element": element, "s_position": s_position}
 
 
-def read_nx_tables(filepath: Path) -> "cheetah.Element":
+def convert_lattice_to_cheetah(filepath: Path) -> "cheetah.Element":
     """
     Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
     `Segment`.
