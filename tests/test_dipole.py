@@ -92,12 +92,7 @@ def test_dipole_bmadx_tracking(dtype):
     incoming = torch.load("tests/resources/bmadx/incoming.pt", weights_only=False).to(
         dtype
     )
-    mc2 = torch.tensor(
-        physical_constants["electron mass energy equivalent in MeV"][0] * 1e6,
-        dtype=dtype,
-    )
-    _, p0c = cheetah_to_bmad_coords(incoming.particles, incoming.energy, mc2)
-    p0c = 1 * p0c
+
     angle = torch.tensor([20 * torch.pi / 180], dtype=dtype)
     e1 = angle / 2
     e2 = angle - e1
