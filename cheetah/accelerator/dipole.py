@@ -247,12 +247,12 @@ class Dipole(Element):
         """
         Track particle coordinates through bend body.
 
-        :param x: Initial x coord [m].
-        :param px: Initial Bmad cannonical px coord.
-        :param y: Initial y coord [m].
-        :param py: Initial Bmad cannonical py coord.
-        :param z: Initial Bmad cannonical z coord [m].
-        :param pz: Initial Bmad cannonical pz coord.
+        :param x: Initial x coordinate [m].
+        :param px: Initial Bmad cannonical px coordinate.
+        :param y: Initial y coordinate [m].
+        :param py: Initial Bmad cannonical py coordinate.
+        :param z: Initial Bmad cannonical z coordinate [m].
+        :param pz: Initial Bmad cannonical pz coordinate.
         :param p0c: Reference momentum [eV/c].
         :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
@@ -317,10 +317,10 @@ class Dipole(Element):
         Tracks linear fringe.
 
         :param location: "entrance" or "exit".
-        :param x: Initial x coord [m].
-        :param px: Initial Bmad cannonical px coord.
-        :param y: Initial y coord [m].
-        :param py: Initial Bmad cannonical py coord.
+        :param x: Initial x coordinate [m].
+        :param px: Initial Bmad cannonical px coordinate.
+        :param y: Initial y coordinate [m].
+        :param py: Initial Bmad cannonical py coordinate.
         :return: px, py final Bmad cannonical coordinates.
         """
         g = self.angle / self.length
