@@ -1,6 +1,57 @@
 import torch
+from scipy.constants import speed_of_light
 
 double_precision_epsilon = torch.finfo(torch.float64).eps
+
+
+def cheetah_to_bmad_z_pz(
+    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: float
+) -> torch.Tensor:
+    """
+    Transforms Cheetah longitudinal coordinates to Bmad coordinates
+    and computes p0c.
+
+    :param tau: Cheetah longitudinal coordinate (c*delta_t).
+    :param delta: Cheetah longitudinal momentum (delta_E/p0c).
+    :param ref_energy: Reference energy in eV.
+    :param mc2: Particle mass in eV/c^2.
+    """
+    # TODO This can probably be moved to the `ParticleBeam` class at some point
+
+    # Compute p0c and Bmad z, pz
+    p0c = torch.sqrt(ref_energy**2 - mc2**2)
+    energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
+    p = torch.sqrt(energy**2 - mc2**2)
+    beta = p / energy
+    z = -beta * tau
+    pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
+
+    return z, pz, p0c
+
+
+def bmad_to_cheetah_z_pz(
+    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: float
+) -> torch.Tensor:
+    """
+    Transforms Bmad longitudinal coordinates to Cheetah coordinates
+    and computes reference energy.
+
+    :param z: Bmad longitudinal coordinate (c*delta_t).
+    :param pz: Bmad longitudinal momentum (delta_E/p0c).
+    :param p0c: Reference momentum in eV/c.
+    :param mc2: Particle mass in eV/c^2.
+    """
+    # TODO This can probably be moved to the `ParticleBeam` class at some point
+
+    # Compute ref_energy and Cheetah tau, delta
+    ref_energy = torch.sqrt(p0c**2 + mc2**2)
+    p = (1 + pz) * p0c.unsqueeze(-1)
+    energy = torch.sqrt(p**2 + mc2**2)
+    beta = p / energy
+    tau = -z / beta
+    delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
+
+    return tau, delta, ref_energy
 
 
 def cheetah_to_bmad_coords(
@@ -22,12 +73,7 @@ def cheetah_to_bmad_coords(
     delta = cheetah_coords[..., 5]
 
     # Compute p0c and Bmad z, pz
-    p0c = torch.sqrt(ref_energy**2 - mc2**2)
-    energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = torch.sqrt(energy**2 - mc2**2)
-    beta = p / energy
-    z = -beta * tau
-    pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
+    z, pz, p0c = cheetah_to_bmad_z_pz(tau, delta, ref_energy, mc2)
 
     # Bmad coordinates
     bmad_coords[..., 4] = z
@@ -58,12 +104,7 @@ def bmad_to_cheetah_coords(
     pz = bmad_coords[..., 5]
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = torch.sqrt(p0c**2 + mc2**2)
-    p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = torch.sqrt(p**2 + mc2**2)
-    beta = p / energy
-    tau = -z / beta
-    delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
+    tau, delta, ref_energy = bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
     # Cheetah coordinates
     cheetah_coords[..., 4] = tau
@@ -142,7 +183,7 @@ def low_energy_z_correction(
     pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor, ds: torch.Tensor
 ) -> torch.Tensor:
     """
-    Corrects the change in z-coordinate due to speed < c_light.
+    Corrects the change in z-coordinate due to speed < speed_of_light.
 
     :param pz: Particle longitudinal momentum.
     :param p0c: Reference particle momentum in eV.
@@ -214,3 +255,61 @@ def calculate_quadrupole_coefficients(
     c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p**2)
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
+
+
+def sqrt_one(x):
+    """Routine to calculate Sqrt[1+x] - 1 to machine precision."""
+    sq = torch.sqrt(1 + x)
+    rad = sq + 1
+
+    return x / rad
+
+
+def track_a_drift(
+    length: torch.Tensor,
+    x_in: torch.Tensor,
+    px_in: torch.Tensor,
+    y_in: torch.Tensor,
+    py_in: torch.Tensor,
+    z_in: torch.Tensor,
+    pz_in: torch.Tensor,
+    p0c: torch.Tensor,
+    mc2: torch.Tensor,
+) -> tuple[torch.Tensor]:
+    """Exact drift tracking used in different elements."""
+
+    P = 1.0 + pz_in  # Particle's total momentum over p0
+    Px = px_in / P  # Particle's 'x' momentum over p0
+    Py = py_in / P  # Particle's 'y' momentum over p0
+    Pxy2 = Px**2 + Py**2  # Particle's transverse mometum^2 over p0^2
+    Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
+
+    # z = z + L * ( beta/beta_ref - 1.0/Pl ) but numerically accurate:
+    dz = length * (
+        sqrt_one((mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c * P) ** 2 + mc2**2))
+        + sqrt_one(-Pxy2) / Pl
+    )
+
+    x_out = x_in + length * Px / Pl
+    y_out = y_in + length * Py / Pl
+    z_out = z_in + dz
+
+    return x_out, y_out, z_out
+
+
+def particle_rf_time(z, pz, p0c, mc2):
+    """Returns rf time of Particle p."""
+    beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
+    time = -z / (beta * speed_of_light)
+
+    return time
+
+
+def sinc(x):
+    """sinc(x) = sin(x)/x."""
+    return torch.sinc(x / torch.pi)
+
+
+def cosc(x):
+    """cosc(x) = (cos(x)-1)/x**2 = -1/2 [sinc(x/2)]**2"""
+    return -0.5 * sinc(x / 2) ** 2

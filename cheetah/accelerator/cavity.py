@@ -15,9 +15,7 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Cavity(Element):
@@ -108,17 +106,16 @@ class Cavity(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_beam(self, incoming: Beam) -> Beam:
-        device = self.length.device
-        dtype = self.length.dtype
-
+        """
+        Track particles through the cavity. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
+        """
         beta0 = torch.full_like(self.length, 1.0)
         igamma2 = torch.full_like(self.length, 0.0)
         g0 = torch.full_like(self.length, 1e10)
 
         mask = incoming.energy != 0
-        g0[mask] = incoming.energy[mask] / electron_mass_eV.to(
-            device=device, dtype=dtype
-        )
+        g0[mask] = incoming.energy[mask] / electron_mass_eV
         igamma2[mask] = 1 / g0[mask] ** 2
         beta0[mask] = torch.sqrt(1 - igamma2[mask])
 
