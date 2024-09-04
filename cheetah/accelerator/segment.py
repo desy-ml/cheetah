@@ -486,7 +486,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             ys = [
-                float(reference_beam.ys[0, particle_index].cpu())
+                float(reference_beam.y[0, particle_index].cpu())
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]
