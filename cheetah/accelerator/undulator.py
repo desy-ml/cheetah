@@ -12,9 +12,7 @@ from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Undulator(Element):
@@ -47,7 +45,7 @@ class Undulator(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
+        gamma = energy / electron_mass_eV
         igamma2 = torch.where(gamma != 0, 1 / gamma**2, torch.zeros_like(gamma))
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))

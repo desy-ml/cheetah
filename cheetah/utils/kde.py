@@ -2,15 +2,14 @@ import math
 from typing import Optional, Tuple, Union
 
 import torch
-from torch import Tensor
 
 
 def _kde_marginal_pdf(
     values: torch.Tensor,
     bins: torch.Tensor,
     sigma: torch.Tensor,
-    weights: Optional[Tensor] = None,
-    epsilon: Union[Tensor, float] = 1e-10,
+    weights: Optional[torch.Tensor] = None,
+    epsilon: Union[torch.Tensor, float] = 1e-10,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Calculate the 1D marginal probability distribution function of the input tensor
@@ -76,7 +75,7 @@ def _kde_marginal_pdf(
 def _kde_joint_pdf_2d(
     kernel_values1: torch.Tensor,
     kernel_values2: torch.Tensor,
-    epsilon: Union[Tensor, float] = 1e-10,
+    epsilon: Union[torch.Tensor, float] = 1e-10,
 ) -> torch.Tensor:
     """
     Calculate the joint probability distribution function of the input tensors based on
@@ -115,8 +114,8 @@ def kde_histogram_1d(
     x: torch.Tensor,
     bins: torch.Tensor,
     bandwidth: torch.Tensor,
-    weights: Optional[Tensor] = None,
-    epsilon: Union[Tensor, float] = 1e-10,
+    weights: Optional[torch.Tensor] = None,
+    epsilon: Union[torch.Tensor, float] = 1e-10,
 ) -> torch.Tensor:
     """
     Estimate the histogram using KDE of the input tensor.
@@ -156,7 +155,7 @@ def kde_histogram_2d(
     bins1: torch.Tensor,
     bins2: torch.Tensor,
     bandwidth: torch.Tensor,
-    weights: Optional[Tensor] = None,
+    weights: Optional[torch.Tensor] = None,
     epsilon: Union[float, torch.Tensor] = 1e-10,
 ) -> torch.Tensor:
     """

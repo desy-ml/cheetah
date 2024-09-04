@@ -1,14 +1,12 @@
 from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
+from scipy.constants import physical_constants, speed_of_light
 from torch import Size, nn
 
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx
 
 from .element import Element
@@ -18,12 +16,14 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-class Quadrupole(Element):
+class TransverseDeflectingCavity(Element):
     """
-    Quadrupole magnet in a particle accelerator.
+    Transverse deflecting cavity element.
 
     :param length: Length in meters.
-    :param k1: Strength of the quadrupole in 1/m^-2.
+    :param voltage: Voltage of the cavity in volts.
+    :param phase: Phase of the cavity in radians.
+    :param frequency: Frequency of the cavity in Hz.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
         skew-quadrupole.
@@ -36,11 +36,13 @@ class Quadrupole(Element):
     def __init__(
         self,
         length: Union[torch.Tensor, nn.Parameter],
-        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         num_steps: int = 1,
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal["bmadx"] = "bmadx",
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -50,11 +52,27 @@ class Quadrupole(Element):
 
         self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
         self.register_buffer(
-            "k1",
+            "voltage",
             (
-                torch.as_tensor(k1, **factory_kwargs)
-                if k1 is not None
-                else torch.zeros_like(self.length)
+                torch.as_tensor(voltage, **factory_kwargs)
+                if voltage is not None
+                else torch.tensor(0.0, **factory_kwargs)
+            ),
+        )
+        self.register_buffer(
+            "phase",
+            (
+                torch.as_tensor(phase, **factory_kwargs)
+                if phase is not None
+                else torch.tensor(0.0, **factory_kwargs)
+            ),
+        )
+        self.register_buffer(
+            "frequency",
+            (
+                torch.as_tensor(frequency, **factory_kwargs)
+                if frequency is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -76,31 +94,25 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        R = base_rmatrix(
-            length=self.length,
-            k1=self.k1,
-            hx=torch.zeros_like(self.length),
-            tilt=self.tilt,
-            energy=energy,
-        )
+    @property
+    def is_active(self) -> bool:
+        return torch.any(self.voltage != 0)
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+    @property
+    def is_skippable(self) -> bool:
+        return not self.is_active
 
     def track(self, incoming: Beam) -> Beam:
         """
-        Track particles through the quadrupole element.
+        Track particles through the transverse deflecting cavity.
 
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
         if self.tracking_method == "cheetah":
-            return super().track(incoming)
+            raise NotImplementedError(
+                "Cheetah transverse deflecting cavity tracking is not yet implemented."
+            )
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
@@ -114,7 +126,7 @@ class Quadrupole(Element):
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the quadrupole element using the Bmad-X tracking method.
+        Track particles through the TDC element using the Bmad-X tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
@@ -135,43 +147,45 @@ class Quadrupole(Element):
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
 
-        step_length = self.length / self.num_steps
-        b1 = self.k1 * self.length
-
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        for _ in range(self.num_steps):
-            rel_p = 1 + pz  # Particle's relative momentum (P/P0)
-            k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
+        x, y, z = bmadx.track_a_drift(
+            self.length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
+        )
 
-            tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
-            ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
-
-            z = (
-                z
-                + dzx[0] * x**2
-                + dzx[1] * x * px
-                + dzx[2] * px**2
-                + dzy[0] * y**2
-                + dzy[1] * y * py
-                + dzy[2] * py**2
+        voltage = self.voltage / p0c
+        k_rf = 2 * torch.pi * self.frequency / speed_of_light
+        phase = (
+            2
+            * torch.pi
+            * (
+                self.phase
+                - (
+                    bmadx.particle_rf_time(z, pz, p0c, electron_mass_eV)
+                    * self.frequency
+                )
             )
+        )
 
-            x_next = tx[0][0] * x + tx[0][1] * px
-            px_next = tx[1][0] * x + tx[1][1] * px
-            y_next = ty[0][0] * y + ty[0][1] * py
-            py_next = ty[1][0] * y + ty[1][1] * py
+        px = px + voltage * torch.sin(phase)
 
-            x, px, y, py = x_next, px_next, y_next, py_next
+        beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + electron_mass_eV**2)
+        beta_old = beta
+        E_old = (1 + pz) * p0c / beta_old
+        E_new = E_old + voltage * torch.cos(phase) * k_rf * x * p0c
+        pc = torch.sqrt(E_new**2 - electron_mass_eV**2)
+        beta = pc / E_new
 
-            z = z + bmadx.low_energy_z_correction(
-                pz, p0c, electron_mass_eV, step_length
-            )
+        pz = (pc - p0c) / p0c
+        z = z * beta / beta_old
 
-        # s = s + l
+        x, y, z = bmadx.track_a_drift(
+            self.length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
+        )
+
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
@@ -194,7 +208,9 @@ class Quadrupole(Element):
     def broadcast(self, shape: Size) -> Element:
         return self.__class__(
             length=self.length.repeat(shape),
-            k1=self.k1.repeat(shape),
+            voltage=self.voltage.repeat(shape),
+            phase=self.phase.repeat(shape),
+            frequency=self.frequency.repeat(shape),
             misalignment=self.misalignment.repeat((*shape, 1)),
             tilt=self.tilt.repeat(shape),
             tracking_method=self.tracking_method,
@@ -203,46 +219,39 @@ class Quadrupole(Element):
             dtype=self.length.dtype,
         )
 
-    @property
-    def is_skippable(self) -> bool:
-        return self.tracking_method == "cheetah"
-
-    @property
-    def is_active(self) -> bool:
-        return any(self.k1 != 0)
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
-        return [
-            Quadrupole(
-                self.length / num_splits,
-                self.k1,
-                misalignment=self.misalignment,
-                tilt=self.tilt,
-                num_steps=self.num_steps,
-                tracking_method=self.tracking_method,
-                dtype=self.length.dtype,
-                device=self.length.device,
-            )
-            for i in range(num_splits)
-        ]
+        # TODO: Implement splitting for cavity properly, for now just returns the
+        # element itself
+        return [self]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.k1[0]) if self.is_active else 1)
+        height = 0.4
+
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:red", alpha=alpha, zorder=2
+            (s, 0), self.length[0], height, color="olive", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "k1", "misalignment", "tilt"]
+        return super().defining_features + [
+            "length",
+            "voltage",
+            "phase",
+            "frequency",
+            "misalignment",
+            "tilt",
+            "num_steps",
+            "tracking_method",
+        ]
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"k1={repr(self.k1)}, "
+            + f"voltage={repr(self.voltage)}, "
+            + f"phase={repr(self.phase)}, "
+            + f"frequency={repr(self.frequency)}, "
             + f"misalignment={repr(self.misalignment)}, "
             + f"tilt={repr(self.tilt)}, "
             + f"num_steps={repr(self.num_steps)}, "
