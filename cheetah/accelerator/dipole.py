@@ -24,8 +24,7 @@ class Dipole(Element):
 
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
-    :param k1: Focussing strength in 1/m^-2. Only used with `"cheetah"`
-        tracking method.
+    :param k1: Focussing strength in 1/m^-2. Only used with `"cheetah"` tracking method.
     :param e1: The angle of inclination of the entrance face [rad].
     :param e2: The angle of inclination of the exit face [rad].
     :param tilt: Tilt of the magnet in x-y plane [rad].
@@ -36,14 +35,14 @@ class Dipole(Element):
     :param fringe_integral: Fringe field integral (of the enterance face).
     :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
         different from `fringe_integral`. Only used with `"bmadx"` tracking method.
-    :param fringe_at: Where to apply the fringe fields for `"bmadx"` tracking.
-        The available options are:
+    :param fringe_at: Where to apply the fringe fields for `"bmadx"` tracking. The
+        available options are:
         - "neither": Do not apply fringe fields.
         - "entrance": Apply fringe fields at the entrance end.
         - "exit": Apply fringe fields at the exit end.
         - "both": Apply fringe fields at both ends.
-    :param fringe_type: Type of fringe field for `"bmadx"` tracking.
-        Currently only supports `"linear_edge"`.
+    :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
+        supports `"linear_edge"`.
     :param name: Unique identifier of the element.
     """
 
@@ -246,15 +245,16 @@ class Dipole(Element):
         mc2: float,
     ) -> list[Union[torch.Tensor, nn.Parameter]]:
         """
-        Track particle coordinates through bend body
-        :param x: initial x coord [m].
-        :param px: initial Bmad cannonical px coord.
-        :param y: initial y coord [m].
-        :param py: initial Bmad cannonical py coord.
-        :param z: initial Bmad cannonical z coord [m].
-        :param pz: initial Bmad cannonical pz coord.
-        :param p0c: reference momentum [eV/c].
-        :param mc2: particle mass [eV/c^2].
+        Track particle coordinates through bend body.
+
+        :param x: Initial x coord [m].
+        :param px: Initial Bmad cannonical px coord.
+        :param y: Initial y coord [m].
+        :param py: Initial Bmad cannonical py coord.
+        :param z: Initial Bmad cannonical z coord [m].
+        :param pz: Initial Bmad cannonical pz coord.
+        :param p0c: Reference momentum [eV/c].
+        :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
         px_norm = torch.sqrt((1 + pz) ** 2 - py**2)  # For simplicity
@@ -314,12 +314,13 @@ class Dipole(Element):
         py: Union[torch.Tensor, nn.Parameter],
     ) -> list[Union[torch.Tensor, nn.Parameter]]:
         """
-        Tracks linear fringe
+        Tracks linear fringe.
+
         :param location: "entrance" or "exit".
-        :param x: initial x coord [m].
-        :param px: initial Bmad cannonical px coord.
-        :param y: initial y coord [m].
-        :param py: initial Bmad cannonical py coord.
+        :param x: Initial x coord [m].
+        :param px: Initial Bmad cannonical px coord.
+        :param y: Initial y coord [m].
+        :param py: Initial Bmad cannonical py coord.
         :return: px, py final Bmad cannonical coordinates.
         """
         g = self.angle / self.length
