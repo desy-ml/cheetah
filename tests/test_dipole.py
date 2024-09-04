@@ -1,6 +1,5 @@
 import pytest
 import torch
-from scipy.constants import physical_constants
 
 from cheetah import (
     Dipole,
@@ -11,7 +10,6 @@ from cheetah import (
     RBend,
     Segment,
 )
-from cheetah.utils.bmadx import cheetah_to_bmad_coords
 
 
 def test_dipole_off():
