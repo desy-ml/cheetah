@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import nn
 
-from .. import Beam, ParticleBeam
+from ..particles import Beam, ParticleBeam
 from ..track_methods import base_rmatrix, rotation_matrix
 from ..utils import UniqueNameGenerator, bmadx
 from .element import Element

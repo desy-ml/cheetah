@@ -220,7 +220,7 @@ def test_gradient():
         sigma_py=torch.tensor(2e-7),
     )
 
-    segment_length = nn.Parameter(torch.tensor([1.0]))
+    segment_length = nn.Parameter(torch.tensor(1.0))
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(segment_length / 6),

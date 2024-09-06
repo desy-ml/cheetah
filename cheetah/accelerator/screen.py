@@ -37,17 +37,17 @@ class Screen(Element):
     """
 
     def __init__(
-        self,
-        resolution: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        is_active: bool = False,
-        method: Literal["histogram", "kde"] = "histogram",
-        name: Optional[str] = None,
-        device=None,
-        dtype=torch.float32,
+            self,
+            resolution: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+            pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+            binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+            misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+            kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+            is_active: bool = False,
+            method: Literal["histogram", "kde"] = "histogram",
+            name: Optional[str] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
@@ -74,14 +74,6 @@ class Screen(Element):
                 torch.as_tensor(binning, **factory_kwargs)
                 if binning is not None
                 else torch.tensor(1, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -161,37 +153,25 @@ class Screen(Element):
         if self.is_active:
             copy_of_incoming = deepcopy(incoming)
 
-            if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu = torch.broadcast_to(
-                    copy_of_incoming._mu, (*self.misalignment.shape[:-1], 7)
-                ).clone()
-                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
-                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
-            elif isinstance(incoming, ParticleBeam):
-                copy_of_incoming.particles[..., :, 0] -= self.misalignment[..., 0]
-                copy_of_incoming.particles[..., :, 1] -= self.misalignment[..., 1]
-
             self.set_read_beam(copy_of_incoming)
 
-            return Beam.empty
-        else:
-            return incoming
+        return incoming
 
     @property
     def reading(self) -> torch.Tensor:
+        image = None
         if self.cached_reading is not None:
             return self.cached_reading
 
         read_beam = self.get_read_beam()
         if read_beam is Beam.empty or read_beam is None:
-            image = torch.zeros(
-                (
-                    *self.misalignment.shape[:-1],
-                    int(self.effective_resolution[1]),
-                    int(self.effective_resolution[0]),
-                )
-            )
+            return torch.tensor([])
         elif isinstance(read_beam, ParameterBeam):
+            if torch.numel(read_beam._mu[..., 0]) > 1:
+                raise NotImplementedError(
+                    "cannot perform batch screen predictions with ParameterBeam"
+                )
+
             transverse_mu = torch.stack(
                 [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
             )
@@ -206,17 +186,10 @@ class Screen(Element):
                 ],
                 dim=-1,
             )
-            transverse_mu, transverse_cov = torch.broadcast_tensors(
-                transverse_mu, transverse_cov
+            dist = MultivariateNormal(
+                loc=transverse_mu,
+                covariance_matrix=transverse_cov
             )
-            dist = [
-                MultivariateNormal(
-                    loc=transverse_mu_sample, covariance_matrix=transverse_cov_sample
-                )
-                for transverse_mu_sample, transverse_cov_sample in zip(
-                    transverse_mu.cpu(), transverse_cov.cpu()
-                )
-            ]
 
             left = self.extent[0]
             right = self.extent[1]
@@ -230,29 +203,27 @@ class Screen(Element):
                 indexing="ij",
             )
             pos = torch.dstack((x, y))
-            image = torch.stack(
-                [dist_sample.log_prob(pos).exp() for dist_sample in dist]
-            )
+            image = dist.log_prob(pos).exp()
             image = torch.flip(image, dims=[1])
+
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
-                image = torch.zeros(
-                    (
-                        *self.misalignment.shape[:-1],
-                        int(self.effective_resolution[1]),
-                        int(self.effective_resolution[0]),
+                if len(read_beam.x.shape) > 1 or len(read_beam.y.shape) > 1:
+                    raise NotImplementedError(
+                        "Currently cannot handle x/y particle "
+                        "batching using `histogram`. Use `kde` instead."
                     )
+
+                image, _ = torch.histogramdd(
+                    torch.stack((
+                        read_beam.x,
+                        read_beam.y
+                    )).T,
+                    bins=self.pixel_bin_edges
                 )
 
-                for i, (x_sample, y_sample) in enumerate(zip(read_beam.x, read_beam.y)):
-                    image_sample, _ = torch.histogramdd(
-                        torch.stack((x_sample, y_sample)).T.cpu(),
-                        bins=self.pixel_bin_edges,
-                    )
-                    image_sample = torch.flipud(image_sample.T)
-                    image_sample = image_sample.cpu()
+                image = torch.flipud(image.T)
 
-                    image[i] = image_sample
             elif self.method == "kde":
                 image = kde_histogram_2d(
                     x1=read_beam.x,
@@ -263,7 +234,7 @@ class Screen(Element):
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)
-                # Flip up an down, now row 0 corresponds to the top
+                # Flip up and down, now row 0 corresponds to the top
                 image = torch.flip(image, dims=[-2])
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
@@ -308,12 +279,12 @@ class Screen(Element):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(resolution={repr(self.resolution)}, "
-            + f"pixel_size={repr(self.pixel_size)}, "
-            + f"binning={repr(self.binning)}, "
-            + f"misalignment={repr(self.misalignment)}, "
-            + f"method={repr(self.method)}, "
-            + f"kde_bandwidth={repr(self.kde_bandwidth)}, "
-            + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)})"
+                f"{self.__class__.__name__}(resolution={repr(self.resolution)}, "
+                + f"pixel_size={repr(self.pixel_size)}, "
+                + f"binning={repr(self.binning)}, "
+                + f"misalignment={repr(self.misalignment)}, "
+                + f"method={repr(self.method)}, "
+                + f"kde_bandwidth={repr(self.kde_bandwidth)}, "
+                + f"is_active={repr(self.is_active)}, "
+                + f"name={repr(self.name)})"
         )

@@ -174,7 +174,11 @@ class Quadrupole(Element):
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
+
+        # p_z is unaffected by tracking, need to match batch dimensions
+        pz = pz * torch.ones_like(x)
         # End of Bmad-X tracking
+
 
         # Convert back to Cheetah coordinates
         tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(

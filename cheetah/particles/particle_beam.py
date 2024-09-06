@@ -598,9 +598,9 @@ class ParticleBeam(Beam):
         particles_7d[:, :6] = torch.from_numpy(particles)
         particle_charges = torch.from_numpy(particle_charges)
         return cls(
-            particles=particles_7d.unsqueeze(0),
-            energy=torch.tensor(energy).unsqueeze(0),
-            particle_charges=particle_charges.unsqueeze(0),
+            particles=particles_7d,
+            energy=torch.tensor(energy),
+            particle_charges=particle_charges,
             device=device,
             dtype=dtype,
         )

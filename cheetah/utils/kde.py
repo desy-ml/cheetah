@@ -15,7 +15,7 @@ def _kde_marginal_pdf(
     Calculate the 1D marginal probability distribution function of the input tensor
     based on the number of histogram bins.
 
-    :param values: Input tensor with shape :math:`(B, N, 1)`. `B` is the batch shape.
+    :param values: Input tensor with shape :math:`(B, N)`. `B` is the batch shape.
     :param bins: Positions of the bins where KDE is calculated.
         Shape :math:`(N_{bins})`.
     :param sigma: Gaussian smoothing factor with shape `(1,)`.
@@ -45,6 +45,8 @@ def _kde_marginal_pdf(
 
     if not sigma.dim() == 0:
         raise ValueError(f"Input sigma must be a of the shape (1,). Got {sigma.shape}")
+
+    values = values.unsqueeze(-1)
 
     if weights is None:
         weights = torch.ones_like(values)
@@ -139,7 +141,7 @@ def kde_histogram_1d(
     """
 
     pdf, _ = _kde_marginal_pdf(
-        values=x.unsqueeze(-1),
+        values=x,
         bins=bins,
         sigma=bandwidth,
         weights=weights,
@@ -184,13 +186,13 @@ def kde_histogram_2d(
     """
 
     _, kernel_values1 = _kde_marginal_pdf(
-        values=x1.unsqueeze(-1),
+        values=x1,
         bins=bins1,
         sigma=bandwidth,
         weights=weights,
     )
     _, kernel_values2 = _kde_marginal_pdf(
-        values=x2.unsqueeze(-1),
+        values=x2,
         bins=bins2,
         sigma=bandwidth,
         weights=None,
