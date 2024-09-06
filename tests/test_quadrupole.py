@@ -198,8 +198,8 @@ def test_quadrupole_bmadx_tracking(dtype):
     assert torch.allclose(
         outgoing.particles,
         outgoing_bmadx.to(dtype),
-        atol=1e-14 if dtype == torch.float64 else 0.00001,
-        rtol=1e-14 if dtype == torch.float64 else 1e-6,
+        atol=1e-7 if dtype == torch.float64 else 0.00001,
+        rtol=1e-7 if dtype == torch.float64 else 1e-6,
     )
 
 

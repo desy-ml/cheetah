@@ -31,7 +31,7 @@ def test_dipole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -60,7 +60,7 @@ def test_dipole_with_float64():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -92,7 +92,7 @@ def test_dipole_with_fringe_field():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -138,7 +138,7 @@ def test_dipole_with_fringe_field_and_tilt():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
@@ -378,7 +378,7 @@ def test_astra_import():
     p_array = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert np.allclose(
-        beam.particles[0, :, :6].cpu().numpy(), p_array.rparticles.transpose()
+        beam.particles[:, :6].cpu().numpy(), p_array.rparticles.transpose()
     )
     assert np.isclose(beam.energy.cpu().numpy(), (p_array.E * 1e9))
 
@@ -417,7 +417,7 @@ def test_quadrupole():
 
     # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -458,7 +458,7 @@ def test_tilted_quadrupole():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -499,7 +499,7 @@ def test_sbend():
     )
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -545,7 +545,7 @@ def test_rbend():
     )
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -583,7 +583,7 @@ def test_convert_rbend():
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(
@@ -620,7 +620,7 @@ def test_asymmetric_bend():
     outgoing_beam = cheetah_segment.track(incoming_beam)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
     assert np.allclose(

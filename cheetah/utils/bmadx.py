@@ -1,5 +1,6 @@
 import torch
 from scipy.constants import speed_of_light
+from torch import Tensor
 
 double_precision_epsilon = torch.finfo(torch.float64).eps
 
@@ -30,8 +31,8 @@ def cheetah_to_bmad_z_pz(
 
 
 def bmad_to_cheetah_z_pz(
-    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: float
-) -> torch.Tensor:
+    z: Tensor, pz: Tensor, p0c: Tensor, mc2: float
+) -> (Tensor, Tensor, Tensor):
     """
     Transforms Bmad longitudinal coordinates to Cheetah coordinates
     and computes reference energy.

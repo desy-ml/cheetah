@@ -5,7 +5,7 @@ import torch
 from scipy.constants import physical_constants
 from torch import Size, nn
 
-from .. import Beam, ParticleBeam
+from ..particles import Beam, ParticleBeam
 from ..utils import UniqueNameGenerator, bmadx
 from ..utils.physics import calculate_relativistic_factors
 from .element import Element

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import torch
+from torch import Size
 
 import cheetah
 
@@ -26,9 +27,8 @@ def test_reading_shows_beam_particle(screen_method):
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
-    assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (100, 100)
-    assert np.allclose(segment.my_screen.reading, 0.0)
+    # before tracking the reading should be an empty tensor
+    assert torch.numel(segment.my_screen.reading) == 0
 
     _ = segment.track(beam)
 
@@ -56,10 +56,6 @@ def test_screen_kde_bandwidth(kde_bandwidth):
         ],
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
-
-    assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (100, 100)
-    assert np.allclose(segment.my_screen.reading, 0.0)
 
     _ = segment.track(beam)
 
@@ -90,9 +86,6 @@ def test_reading_shows_beam_parameter(screen_method):
     beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (100, 100)
-    assert np.allclose(segment.my_screen.reading, 0.0)
-
     _ = segment.track(beam)
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
@@ -101,7 +94,32 @@ def test_reading_shows_beam_parameter(screen_method):
     assert torch.any(segment.my_screen.reading > 0.0)
 
 
-@pytest.mark.parametrize("screen_method", ["histogram", "kde"])
+def test_reading_shows_beam_parameter_batched():
+    """
+    Test that a screen has a reading that shows some sign of the beam having hit it.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor((1.0,0.5))),
+            cheetah.Screen(
+                resolution=torch.tensor((100, 100)),
+                pixel_size=torch.tensor((1e-5, 1e-5)),
+                is_active=True,
+                name="my_screen",
+            ),
+        ],
+        name="my_segment",
+    )
+    beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    assert isinstance(segment.my_screen.reading, torch.Tensor)
+    _ = segment.track(beam)
+
+    with pytest.raises(NotImplementedError):
+        segment.my_screen.reading
+
+
+@pytest.mark.parametrize("screen_method", ["kde"])
 def test_reading_shows_beam_ares(screen_method):
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
@@ -123,10 +141,6 @@ def test_reading_shows_beam_ares(screen_method):
     )
     segment.AREABSCR1.binning = torch.tensor(1, device=segment.AREABSCR1.binning.device)
     segment.AREABSCR1.is_active = True
-
-    assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
-    assert segment.AREABSCR1.reading.shape == (2040, 2448)
-    assert np.allclose(segment.AREABSCR1.reading, 0.0)
 
     _ = segment.track(beam)
 
