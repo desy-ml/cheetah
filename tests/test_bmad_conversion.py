@@ -13,18 +13,19 @@ def test_bmad_tutorial():
 
     correct = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.5), name="d"),
+            cheetah.Drift(length=torch.tensor([0.5]), name="d"),
             cheetah.Dipole(
-                length=torch.tensor(0.5), e1=torch.tensor(0.1), name="b"
+                length=torch.tensor([0.5]), e1=torch.tensor([0.1]), name="b"
             ),  # TODO: What are g and dg?
             cheetah.Quadrupole(
-                length=torch.tensor(0.6), k1=torch.tensor(0.23), name="q"
+                length=torch.tensor([0.6]), k1=torch.tensor([0.23]), name="q"
             ),
         ],
         name="bmad_tutorial",
     )
 
     assert converted.name == correct.name
+    assert converted.length == correct.length
     assert [element.name for element in converted.elements] == [
         element.name for element in correct.elements
     ]
