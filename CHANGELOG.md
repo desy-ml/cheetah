@@ -31,6 +31,7 @@
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
+- Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
 - Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
 
 ### 🐆 Other
