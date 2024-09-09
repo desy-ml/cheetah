@@ -234,8 +234,8 @@ class Screen(Element):
             if self.method == "histogram":
                 if len(read_beam.x.shape) > 1 or len(read_beam.y.shape) > 1:
                     raise NotImplementedError(
-                        "Currently cannot handle x/y particle "
-                        "batching using `histogram`. Use `kde` instead."
+                        "Torch histogram does not support "
+                        "batching. Use `kde` option instead."
                     )
 
                 image, _ = torch.histogramdd(
