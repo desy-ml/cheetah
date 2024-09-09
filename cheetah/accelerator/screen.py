@@ -69,6 +69,14 @@ class Screen(Element):
             ),
         )
         self.register_buffer(
+            "misalignment",
+            (
+                torch.as_tensor(misalignment, **factory_kwargs)
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
+            ),
+        )
+        self.register_buffer(
             "binning",
             (
                 torch.as_tensor(binning, **factory_kwargs)
@@ -151,9 +159,23 @@ class Screen(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:
-            copy_of_incoming = deepcopy(incoming)
+            cin = deepcopy(incoming)
 
-            self.set_read_beam(copy_of_incoming)
+            if isinstance(incoming, ParameterBeam):
+                cin._mu = torch.broadcast_to(
+                    cin._mu, (*self.misalignment.shape[:-1], 7)
+                ).clone()
+                cin._mu[..., 0] -= self.misalignment[..., 0]
+                cin._mu[..., 2] -= self.misalignment[..., 1]
+            elif isinstance(incoming, ParticleBeam):
+                cin.particles = cin.particles.broadcast_to(
+                    self.misalignment[..., 0].shape + cin.particles.shape
+                ).clone()
+
+                cin.particles[..., 0] -= self.misalignment[..., 0].unsqueeze(-1)
+                cin.particles[..., 1] -= self.misalignment[..., 1].unsqueeze(-1)
+
+            self.set_read_beam(cin)
 
         return incoming
 
