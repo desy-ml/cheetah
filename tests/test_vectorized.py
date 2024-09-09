@@ -307,10 +307,16 @@ def test_vectorized_screen_2d(BeamClass, method):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor((1.0, 0.5))),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
+                misalignment=torch.tensor(
+                    [
+                        [[1e-4, 2e-4], [3e-4, 4e-4], [5e-4, 6e-4]],
+                        [[-1e-4, -2e-4], [-3e-4, -4e-4], [-5e-4, -6e-4]],
+                    ]
+                ),
                 is_active=True,
                 method=method,
                 name="my_screen",
@@ -323,4 +329,4 @@ def test_vectorized_screen_2d(BeamClass, method):
     _ = segment.track(incoming)
 
     # Check the reading
-    assert segment.my_screen.reading.shape == (2, 100, 100)
+    assert segment.my_screen.reading.shape == (2,3, 100, 100)
