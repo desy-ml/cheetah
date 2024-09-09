@@ -329,4 +329,4 @@ def test_vectorized_screen_2d(BeamClass, method):
     _ = segment.track(incoming)
 
     # Check the reading
-    assert segment.my_screen.reading.shape == (2,3, 100, 100)
+    assert segment.my_screen.reading.shape == (2, 3, 100, 100)

@@ -162,14 +162,16 @@ class Screen(Element):
             cin = deepcopy(incoming)
 
             if isinstance(incoming, ParameterBeam):
-                cin._mu = torch.broadcast_to(
-                    cin._mu, (*self.misalignment.shape[:-1], 7)
+                cin._mu = cin._mu.broadcast_to(
+                    self.misalignment.shape[:-1] + cin._mu.shape
                 ).clone()
-                cin._mu[..., 0] -= self.misalignment[..., 0]
-                cin._mu[..., 2] -= self.misalignment[..., 1]
+
+                cin._mu[..., 0] -= self.misalignment[..., 0].unsqueeze(-1)
+                cin._mu[..., 2] -= self.misalignment[..., 1].unsqueeze(-1)
+
             elif isinstance(incoming, ParticleBeam):
                 cin.particles = cin.particles.broadcast_to(
-                    self.misalignment[..., 0].shape + cin.particles.shape
+                    self.misalignment.shape[:-1] + cin.particles.shape
                 ).clone()
 
                 cin.particles[..., 0] -= self.misalignment[..., 0].unsqueeze(-1)
