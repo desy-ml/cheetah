@@ -48,7 +48,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "hkick":
+        elif parsed["element_type"] in ["hkick", "hkic"]:
             validate_understood_properties(["element_type", "l", "kick"], parsed)
             return cheetah.HorizontalCorrector(
                 length=torch.tensor([parsed.get("l", 0.0)]),
@@ -57,7 +57,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "vkick":
+        elif parsed["element_type"] in ["vkick", "vkic"]:
             validate_understood_properties(["element_type", "l", "kick"], parsed)
             return cheetah.VerticalCorrector(
                 length=torch.tensor([parsed.get("l", 0.0)]),
@@ -79,7 +79,14 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "drift":
+        elif parsed["element_type"] in [
+            "drift",
+            "drif",
+            "csrdrift",
+            "csrdrif",
+            "lscdrift",
+            "lscdrif",
+        ]:
             validate_understood_properties(["element_type", "l"], parsed)
             return cheetah.Drift(
                 length=torch.tensor([parsed.get("l", 0.0)]),
@@ -143,7 +150,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "rfca":
+        elif parsed["element_type"] in ["rfca", "rfcw"]:
             validate_understood_properties(
                 [
                     "element_type",
@@ -202,6 +209,14 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
+        elif parsed["element_type"] == "charge":
+            print(
+                f"WARNING: Charge information provided in element {name} cannot be"
+                " imported automatically. Consider manually providing the correct"
+                " charge while defining the incoming beam."
+            )
+
+            return None
         else:
             print(
                 f"WARNING: Element {name} of type {parsed['element_type']} cannot"
