@@ -12,6 +12,7 @@ def test_fodo():
 
     correct_lattice = cheetah.Segment(
         [
+            cheetah.Marker(name="c"),
             cheetah.Quadrupole(
                 name="q1", length=torch.tensor([0.1]), k1=torch.tensor([1.5])
             ),
