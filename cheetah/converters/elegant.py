@@ -215,8 +215,7 @@ def convert_element(
                 " imported automatically. Consider manually providing the correct"
                 " charge while defining the incoming beam."
             )
-
-            return None
+            return cheetah.Marker(name=name)
         else:
             print(
                 f"WARNING: Element {name} of type {parsed['element_type']} cannot"
