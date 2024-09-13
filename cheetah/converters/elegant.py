@@ -41,7 +41,8 @@ def convert_element(
         )
     elif isinstance(parsed, dict) and "element_type" in parsed:
         if parsed["element_type"] == "sole":
-            validate_understood_properties(["element_type", "l"], parsed)
+            # The group property does not have an analoge in Cheetah, so it is neglected
+            validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Solenoid(
                 length=torch.tensor([parsed["l"]]),
                 name=name,
@@ -49,7 +50,9 @@ def convert_element(
                 dtype=dtype,
             )
         elif parsed["element_type"] in ["hkick", "hkic"]:
-            validate_understood_properties(["element_type", "l", "kick"], parsed)
+            validate_understood_properties(
+                ["element_type", "l", "kick", "group"], parsed
+            )
             return cheetah.HorizontalCorrector(
                 length=torch.tensor([parsed.get("l", 0.0)]),
                 angle=torch.tensor([parsed.get("kick", 0.0)]),
@@ -58,7 +61,9 @@ def convert_element(
                 dtype=dtype,
             )
         elif parsed["element_type"] in ["vkick", "vkic"]:
-            validate_understood_properties(["element_type", "l", "kick"], parsed)
+            validate_understood_properties(
+                ["element_type", "l", "kick", "group"], parsed
+            )
             return cheetah.VerticalCorrector(
                 length=torch.tensor([parsed.get("l", 0.0)]),
                 angle=torch.tensor([parsed.get("kick", 0.0)]),
@@ -67,10 +72,10 @@ def convert_element(
                 dtype=dtype,
             )
         elif parsed["element_type"] == "mark":
-            validate_understood_properties(["element_type"], parsed)
+            validate_understood_properties(["element_type", "group"], parsed)
             return cheetah.Marker(name=name)
         elif parsed["element_type"] == "kick":
-            validate_understood_properties(["element_type", "l"], parsed)
+            validate_understood_properties(["element_type", "l", "group"], parsed)
 
             # TODO Find proper element class
             return cheetah.Drift(
@@ -87,7 +92,7 @@ def convert_element(
             "lscdrift",
             "lscdrif",
         ]:
-            validate_understood_properties(["element_type", "l"], parsed)
+            validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
                 length=torch.tensor([parsed.get("l", 0.0)]),
                 name=name,
@@ -96,7 +101,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "quad":
             validate_understood_properties(
-                ["element_type", "l", "k1", "tilt"],
+                ["element_type", "l", "k1", "tilt", "group"],
                 parsed,
             )
             return cheetah.Quadrupole(
@@ -109,7 +114,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "sext":
             # validate_understood_properties(
-            #     ["element_type", "l"],
+            #     ["element_type", "l", "group"],
             #     parsed,
             # )
 
@@ -121,11 +126,11 @@ def convert_element(
                 dtype=dtype,
             )
         elif parsed["element_type"] == "moni":
-            validate_understood_properties(["element_type"], parsed)
+            validate_understood_properties(["element_type", "group"], parsed)
             return cheetah.Marker(name=name)
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
-                ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]"],
+                ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]", "group"],
                 parsed,
             )
 
@@ -162,6 +167,7 @@ def convert_element(
                     "end1_focus",
                     "end2_focus",
                     "body_focus_model",
+                    "group",
                 ],
                 parsed,
             )
@@ -180,7 +186,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "sben":
             validate_understood_properties(
-                ["element_type", "l", "angle", "k1", "e1", "e2", "tilt"],
+                ["element_type", "l", "angle", "k1", "e1", "e2", "tilt", "group"],
                 parsed,
             )
             return cheetah.Dipole(
@@ -196,7 +202,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "rben":
             validate_understood_properties(
-                ["element_type", "l", "angle", "e1", "e2", "tilt"],
+                ["element_type", "l", "angle", "e1", "e2", "tilt", "group"],
                 parsed,
             )
             return cheetah.RBend(
