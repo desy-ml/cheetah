@@ -84,20 +84,92 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in [
-            "drift",
-            "drif",
-            "csrdrift",
-            "csrdrif",
-            "lscdrift",
-            "lscdrif",
-        ]:
+        elif parsed["element_type"] in ["drift", "drif"]:
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
                 length=torch.tensor([parsed.get("l", 0.0)]),
                 name=name,
                 device=device,
                 dtype=dtype,
+            )
+        elif parsed["element_type"] in ["csrdrift", "csrdrif"]:
+            # Drift that includes effects from coherent synchrotron radiation
+            validate_understood_properties(
+                ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"], parsed
+            )
+            return cheetah.Drift(
+                length=torch.tensor([parsed.get("l", 0.0)]),
+                name=name,
+                device=device,
+                dtype=dtype,
+            )
+        elif parsed["element_type"] in ["lscdrift", "lscdrif"]:
+            # Drift that includes space charge effects
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "l",
+                    "group",
+                    "interpolate",
+                    "smoothing",
+                    "bins",
+                    "high_frequency_cutoff0",
+                    "high_frequency_cutoff1",
+                    "lsc",
+                ],
+                parsed,
+            )
+            return cheetah.Drift(
+                length=torch.tensor([parsed.get("l", 0.0)]),
+                name=name,
+                device=device,
+                dtype=dtype,
+            )
+        elif parsed["element_type"] == "ecol":
+            validate_understood_properties(
+                ["element_type", "l", "x_max", "y_max"],
+                parsed,
+            )
+            return cheetah.Segment(
+                elements=[
+                    cheetah.Drift(
+                        length=torch.tensor([parsed.get("l", 0.0)]),
+                        name=name + "_drift",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                    cheetah.Aperture(
+                        x_max=torch.tensor([parsed.get("x_max", torch.inf)]),
+                        y_max=torch.tensor([parsed.get("y_max", torch.inf)]),
+                        shape="elliptical",
+                        name=name + "_aperture",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                ],
+            )
+        elif parsed["element_type"] == "rcol":
+            validate_understood_properties(
+                ["element_type", "l", "x_max", "y_max"],
+                parsed,
+            )
+            return cheetah.Segment(
+                elements=[
+                    cheetah.Drift(
+                        length=torch.tensor([parsed.get("l", 0.0)]),
+                        name=name + "_drift",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                    cheetah.Aperture(
+                        x_max=torch.tensor([parsed.get("x_max", torch.inf)]),
+                        y_max=torch.tensor([parsed.get("y_max", torch.inf)]),
+                        shape="rectangular",
+                        name=name + "_aperture",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                ],
             )
         elif parsed["element_type"] == "quad":
             validate_understood_properties(
@@ -126,8 +198,18 @@ def convert_element(
                 dtype=dtype,
             )
         elif parsed["element_type"] == "moni":
-            validate_understood_properties(["element_type", "group"], parsed)
-            return cheetah.Marker(name=name)
+            validate_understood_properties(["element_type", "group", "l"], parsed)
+            return cheetah.Segment(
+                elements=[
+                    cheetah.Drift(
+                        length=torch.tensor([parsed.get("l", 0.0)]),
+                        name=name + "_drift",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                    cheetah.Marker(name=name),
+                ]
+            )
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
                 ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]", "group"],
@@ -155,7 +237,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in ["rfca", "rfcw"]:
+        elif parsed["element_type"] == "rfca":
             validate_understood_properties(
                 [
                     "element_type",
@@ -180,6 +262,75 @@ def convert_element(
                 phase=torch.tensor([parsed["phase"] - 90]),
                 voltage=torch.tensor([parsed["volt"]]),
                 frequency=torch.tensor([parsed["freq"]]),
+                name=name,
+                device=device,
+                dtype=dtype,
+            )
+        elif parsed["element_type"] == "rfcw":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "l",
+                    "phase",
+                    "volt",
+                    "freq",
+                    "change_p0",
+                    "end1_focus",
+                    "end2_focus",
+                    "cell_length",
+                    "zwakefile",
+                    "trwakefile",
+                    "tcolumn",
+                    "wxcolumn",
+                    "wycolumn",
+                    "wzcolumn",
+                    "interpolate",
+                    "n_kicks",
+                    "smoothing",
+                    "zwake",
+                    "trwake",
+                    "lsc",
+                    "lsc_bins",
+                    "lsc_high_frequency_cutoff0",
+                    "lsc_high_frequency_cutoff1",
+                    "group",
+                ],
+                parsed,
+            )
+
+            # TODO Properly handle all parameters
+            return cheetah.Cavity(
+                length=torch.tensor([parsed["l"]]),
+                # Elegant defines 90° as the phase of maximum acceleration,
+                # while Cheetah uses 0°. We therefore add a phase offset to compensate.
+                phase=torch.tensor([parsed["phase"] - 90]),
+                voltage=torch.tensor([parsed["volt"]]),
+                frequency=torch.tensor([parsed["freq"]]),
+                name=name,
+                device=device,
+                dtype=dtype,
+            )
+        elif parsed["element_type"] == "rfdf":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "l",
+                    "phase",
+                    "voltage",
+                    "frequency",
+                    "group",
+                ],
+                parsed,
+            )
+
+            # TODO Properly handle all parameters
+            return cheetah.TransverseDeflectingCavity(
+                length=torch.tensor([parsed["l"]]),
+                # Elegant defines 90° as the phase of maximum acceleration,
+                # while Cheetah uses 0°. We therefore add a phase offset to compensate.
+                phase=torch.tensor([parsed["phase"] - 90]),
+                voltage=torch.tensor([parsed["voltage"]]),
+                frequency=torch.tensor([parsed["frequency"]]),
                 name=name,
                 device=device,
                 dtype=dtype,
@@ -215,11 +366,52 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "charge":
+        elif parsed["element_type"] == "csrcsben":
+            validate_understood_properties(
+                [
+                    "element_type",
+                    "l",
+                    "angle",
+                    "e1",
+                    "e2",
+                    "edge1_effects",
+                    "edge2_effects",
+                    "tilt",
+                    "hgap",
+                    "fint",
+                    "sg_halfwidth",
+                    "sg_order",
+                    "steady_state",
+                    "bins",
+                    "n_kicks",
+                    "integration_order",
+                    "isr",
+                    "csr",
+                    "group",
+                ],
+                parsed,
+            )
+            return cheetah.Dipole(
+                length=torch.tensor([parsed["l"]]),
+                angle=torch.tensor([parsed.get("angle", 0.0)]),
+                k1=torch.tensor([parsed.get("k1", 0.0)]),
+                e1=torch.tensor([parsed["e1"]]),
+                e2=torch.tensor([parsed.get("e2", 0.0)]),
+                tilt=torch.tensor([parsed.get("tilt", 0.0)]),
+                name=name,
+                device=device,
+                dtype=dtype,
+            )
+        elif parsed["element_type"] == "watch":
+            validate_understood_properties(
+                ["element_type", "group", "filename"], parsed
+            )
+            return cheetah.Marker(name=name)
+        elif parsed["element_type"] in ["charge", "wake"]:
             print(
-                f"WARNING: Charge information provided in element {name} cannot be"
-                " imported automatically. Consider manually providing the correct"
-                " charge while defining the incoming beam."
+                f"WARNING: Information provided in element {name} of type"
+                f" {parsed["element_type"]} cannot be imported automatically. Consider"
+                " manually providing the correct information."
             )
             return cheetah.Marker(name=name)
         else:
