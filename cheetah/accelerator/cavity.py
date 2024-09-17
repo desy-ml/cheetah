@@ -37,7 +37,7 @@ class Cavity(Element):
         frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
@@ -257,13 +257,12 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: torch.Tensor) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
         delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, device=device, dtype=dtype)
+        eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
@@ -297,11 +296,16 @@ class Cavity(Element):
             )
         )
 
-        r56 = torch.tensor(0.0)
-        beta0 = torch.tensor(1.0)
-        beta1 = torch.tensor(1.0)
+        r56 = torch.tensor(0.0, **factory_kwargs)
+        beta0 = torch.tensor(1.0, **factory_kwargs)
+        beta1 = torch.tensor(1.0, **factory_kwargs)
 
-        k = 2 * torch.pi * self.frequency / torch.tensor(constants.speed_of_light)
+        k = (
+            2
+            * torch.pi
+            * self.frequency
+            / torch.tensor(constants.speed_of_light, **factory_kwargs)
+        )
         r55_cor = 0.0
         if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
             beta0 = torch.sqrt(1 - 1 / Ei**2)
@@ -324,7 +328,7 @@ class Cavity(Element):
         r66 = Ei / Ef * beta0 / beta1
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
-        R = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
         R[..., 0, 0] = r11
         R[..., 0, 1] = r12
         R[..., 1, 0] = r21

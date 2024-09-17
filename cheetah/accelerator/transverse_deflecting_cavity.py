@@ -45,7 +45,7 @@ class TransverseDeflectingCavity(Element):
         tracking_method: Literal["bmadx"] = "bmadx",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
@@ -56,7 +56,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(voltage, **factory_kwargs)
                 if voltage is not None
-                else torch.tensor(0.0, **factory_kwargs)
+                else torch.zeros_like(self.length)
             ),
         )
         self.register_buffer(
@@ -64,7 +64,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(phase, **factory_kwargs)
                 if phase is not None
-                else torch.tensor(0.0, **factory_kwargs)
+                else torch.zeros_like(self.length)
             ),
         )
         self.register_buffer(
@@ -72,7 +72,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(frequency, **factory_kwargs)
                 if frequency is not None
-                else torch.tensor(0.0, **factory_kwargs)
+                else torch.zeros_like(self.length)
             ),
         )
         self.register_buffer(

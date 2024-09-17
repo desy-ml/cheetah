@@ -57,7 +57,7 @@ class SpaceChargeKick(Element):
         grid_extend_tau: Union[torch.Tensor, nn.Parameter] = 3,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
@@ -571,7 +571,11 @@ class SpaceChargeKick(Element):
                 ],
                 dim=-1,
             )
-            cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
+            cell_size = (
+                2
+                * grid_dimensions
+                / torch.tensor(self.grid_shape, **self.factory_kwargs)
+            )
             dt = flattened_length_effect / (
                 speed_of_light * flattened_incoming.relativistic_beta
             )

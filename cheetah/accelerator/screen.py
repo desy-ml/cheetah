@@ -48,7 +48,7 @@ class Screen(Element):
         method: Literal["histogram", "kde"] = "histogram",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
@@ -187,7 +187,9 @@ class Screen(Element):
                     *self.misalignment.shape[:-1],
                     int(self.effective_resolution[1]),
                     int(self.effective_resolution[0]),
-                )
+                ),
+                device=self.misalignment.device,
+                dtype=self.misalignment.dtype,
             )
         elif isinstance(read_beam, ParameterBeam):
             transverse_mu = torch.stack(
@@ -237,7 +239,9 @@ class Screen(Element):
                         *self.misalignment.shape[:-1],
                         int(self.effective_resolution[1]),
                         int(self.effective_resolution[0]),
-                    )
+                    ),
+                    device="cpu",  # All data is copied to CPU below
+                    dtype=self.misalignment.dtype,
                 )
 
                 for i, (x_sample, y_sample) in enumerate(zip(read_beam.x, read_beam.y)):

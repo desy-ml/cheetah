@@ -40,7 +40,7 @@ class RBend(Dipole):
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ):
         super().__init__(
             length=length,
