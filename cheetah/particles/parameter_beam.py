@@ -96,24 +96,55 @@ class ParameterBeam(Beam):
         shape = extract_argument_shape(not_nones)
         device = device if device is not None else extract_argument_device(not_nones)
         dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
-        mu_x = mu_x if mu_x is not None else torch.full(shape, 0.0)
-        mu_px = mu_px if mu_px is not None else torch.full(shape, 0.0)
-        mu_y = mu_y if mu_y is not None else torch.full(shape, 0.0)
-        mu_py = mu_py if mu_py is not None else torch.full(shape, 0.0)
-        sigma_x = sigma_x if sigma_x is not None else torch.full(shape, 175e-9)
-        sigma_px = sigma_px if sigma_px is not None else torch.full(shape, 2e-7)
-        sigma_y = sigma_y if sigma_y is not None else torch.full(shape, 175e-9)
-        sigma_py = sigma_py if sigma_py is not None else torch.full(shape, 2e-7)
-        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
-        sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
-        cor_x = cor_x if cor_x is not None else torch.full(shape, 0.0)
-        cor_y = cor_y if cor_y is not None else torch.full(shape, 0.0)
-        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
-        energy = energy if energy is not None else torch.full(shape, 1e8)
+        mu_x = mu_x if mu_x is not None else torch.full(shape, 0.0, **factory_kwargs)
+        mu_px = mu_px if mu_px is not None else torch.full(shape, 0.0, **factory_kwargs)
+        mu_y = mu_y if mu_y is not None else torch.full(shape, 0.0, **factory_kwargs)
+        mu_py = mu_py if mu_py is not None else torch.full(shape, 0.0, **factory_kwargs)
+        sigma_x = (
+            sigma_x
+            if sigma_x is not None
+            else torch.full(shape, 175e-9, **factory_kwargs)
+        )
+        sigma_px = (
+            sigma_px
+            if sigma_px is not None
+            else torch.full(shape, 2e-7, **factory_kwargs)
+        )
+        sigma_y = (
+            sigma_y
+            if sigma_y is not None
+            else torch.full(shape, 175e-9, **factory_kwargs)
+        )
+        sigma_py = (
+            sigma_py
+            if sigma_py is not None
+            else torch.full(shape, 2e-7, **factory_kwargs)
+        )
+        sigma_tau = (
+            sigma_tau
+            if sigma_tau is not None
+            else torch.full(shape, 1e-6, **factory_kwargs)
+        )
+        sigma_p = (
+            sigma_p
+            if sigma_p is not None
+            else torch.full(shape, 1e-6, **factory_kwargs)
+        )
+        cor_x = cor_x if cor_x is not None else torch.full(shape, 0.0, **factory_kwargs)
+        cor_y = cor_y if cor_y is not None else torch.full(shape, 0.0, **factory_kwargs)
+        cor_tau = (
+            cor_tau if cor_tau is not None else torch.full(shape, 0.0, **factory_kwargs)
+        )
+        energy = (
+            energy if energy is not None else torch.full(shape, 1e8, **factory_kwargs)
+        )
         total_charge = (
-            total_charge if total_charge is not None else torch.full(shape, 0.0)
+            total_charge
+            if total_charge is not None
+            else torch.full(shape, 0.0, **factory_kwargs)
         )
 
         mu = torch.stack(
@@ -122,14 +153,14 @@ class ParameterBeam(Beam):
                 mu_px,
                 mu_y,
                 mu_py,
-                torch.full(shape, 0.0),
-                torch.full(shape, 0.0),
-                torch.full(shape, 1.0),
+                torch.full(shape, 0.0, **factory_kwargs),
+                torch.full(shape, 0.0, **factory_kwargs),
+                torch.full(shape, 1.0, **factory_kwargs),
             ],
             dim=-1,
         )
 
-        cov = torch.zeros(*shape, 7, 7)
+        cov = torch.zeros(*shape, 7, 7, **factory_kwargs)
         cov[..., 0, 0] = sigma_x**2
         cov[..., 0, 1] = cor_x
         cov[..., 1, 0] = cor_x
@@ -192,24 +223,51 @@ class ParameterBeam(Beam):
         shape = extract_argument_shape(not_nones)
         device = device if device is not None else extract_argument_device(not_nones)
         dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
-        beta_x = beta_x if beta_x is not None else torch.full(shape, 1.0)
-        alpha_x = alpha_x if alpha_x is not None else torch.full(shape, 0.0)
+        beta_x = (
+            beta_x if beta_x is not None else torch.full(shape, 1.0, **factory_kwargs)
+        )
+        alpha_x = (
+            alpha_x if alpha_x is not None else torch.full(shape, 0.0, **factory_kwargs)
+        )
         emittance_x = (
-            emittance_x if emittance_x is not None else torch.full(shape, 7.1971891e-13)
+            emittance_x
+            if emittance_x is not None
+            else torch.full(shape, 7.1971891e-13, **factory_kwargs)
         )
-        beta_y = beta_y if beta_y is not None else torch.full(shape, 1.0)
-        alpha_y = alpha_y if alpha_y is not None else torch.full(shape, 0.0)
+        beta_y = (
+            beta_y if beta_y is not None else torch.full(shape, 1.0, **factory_kwargs)
+        )
+        alpha_y = (
+            alpha_y if alpha_y is not None else torch.full(shape, 0.0, **factory_kwargs)
+        )
         emittance_y = (
-            emittance_y if emittance_y is not None else torch.full(shape, 7.1971891e-13)
+            emittance_y
+            if emittance_y is not None
+            else torch.full(shape, 7.1971891e-13, **factory_kwargs)
         )
-        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
-        sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
-        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
-        energy = energy if energy is not None else torch.full(shape, 1e8)
+        sigma_tau = (
+            sigma_tau
+            if sigma_tau is not None
+            else torch.full(shape, 1e-6, **factory_kwargs)
+        )
+        sigma_p = (
+            sigma_p
+            if sigma_p is not None
+            else torch.full(shape, 1e-6, **factory_kwargs)
+        )
+        cor_tau = (
+            cor_tau if cor_tau is not None else torch.full(shape, 0.0, **factory_kwargs)
+        )
+        energy = (
+            energy if energy is not None else torch.full(shape, 1e8, **factory_kwargs)
+        )
         total_charge = (
-            total_charge if total_charge is not None else torch.full(shape, 0.0)
+            total_charge
+            if total_charge is not None
+            else torch.full(shape, 0.0, **factory_kwargs)
         )
 
         assert all(
