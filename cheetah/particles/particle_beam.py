@@ -4,6 +4,12 @@ import torch
 from scipy import constants
 from torch.distributions import MultivariateNormal
 
+from cheetah.utils import (
+    extract_argument_device,
+    extract_argument_dtype,
+    extract_argument_shape,
+)
+
 from .beam import Beam
 
 speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
@@ -22,6 +28,7 @@ class ParticleBeam(Beam):
     :param total_charge: Total charge of the beam in C.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
+    :param dtype: Data type of the generated particles.
     """
 
     def __init__(
@@ -30,7 +37,7 @@ class ParticleBeam(Beam):
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -94,11 +101,11 @@ class ParticleBeam(Beam):
         :param cor_y: Correlation between y and py.
         :param cor_tau: Correlation between s and p.
         :param energy: Energy of the beam in eV.
-        :total_charge: Total charge of the beam in C.
+        :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
-        # Figure out if arguments were passed, figure out their shape
+        # Figure out if arguments were passed
         not_nones = [
             argument
             for argument in [
@@ -120,11 +127,11 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+
+        # Extract shape, device and dtype from given arguments
+        shape = extract_argument_shape(not_nones)
+        device = device if device is not None else extract_argument_device(not_nones)
+        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
 
         # Set default values without function call in function signature
         num_particles = (
@@ -206,9 +213,9 @@ class ParticleBeam(Beam):
         cor_tau: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParticleBeam":
-        # Figure out if arguments were passed, figure out their shape
+        # Figure out if arguments were passed
         not_nones = [
             argument
             for argument in [
@@ -226,11 +233,11 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+
+        # Extract shape, device and dtype from given arguments
+        shape = extract_argument_shape(not_nones)
+        device = device if device is not None else extract_argument_device(not_nones)
+        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
 
         # Set default values without function call in function signature
         num_particles = (
@@ -291,7 +298,7 @@ class ParticleBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ):
         """
         Generate a particle beam with spatially uniformly distributed particles inside
@@ -321,7 +328,7 @@ class ParticleBeam(Beam):
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
         """
 
-        # Figure out if arguments were passed, figure out their shape
+        # Figure out if arguments were passed
         not_nones = [
             argument
             for argument in [
@@ -336,11 +343,11 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+
+        # Extract shape, device and dtype from given arguments
+        shape = extract_argument_shape(not_nones)
+        device = device if device is not None else extract_argument_device(not_nones)
+        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
 
         # Set default values without function call in function signature
         # NOTE that this does not need to be done for values that are passed to the
@@ -418,7 +425,7 @@ class ParticleBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of *n* linspaced particles.
@@ -441,7 +448,7 @@ class ParticleBeam(Beam):
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         """
-        # Figure out if arguments were passed, figure out their shape
+        # Figure out if arguments were passed
         not_nones = [
             argument
             for argument in [
@@ -460,11 +467,11 @@ class ParticleBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+
+        # Extract shape, device and dtype from given arguments
+        shape = extract_argument_shape(not_nones)
+        device = device if device is not None else extract_argument_device(not_nones)
+        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
 
         # Set default values without function call in function signature
         num_particles = num_particles if num_particles is not None else torch.tensor(10)
@@ -612,7 +619,7 @@ class ParticleBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
