@@ -3,6 +3,12 @@ from typing import Optional
 import numpy as np
 import torch
 
+from cheetah.utils import (
+    extract_argument_device,
+    extract_argument_dtype,
+    extract_argument_shape,
+)
+
 from .beam import Beam
 
 
@@ -25,7 +31,7 @@ class ParameterBeam(Beam):
         energy: torch.Tensor,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -61,9 +67,9 @@ class ParameterBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParameterBeam":
-        # Figure out if arguments were passed, figure out their shape
+        # Figure out if arguments were passed
         not_nones = [
             argument
             for argument in [
@@ -85,11 +91,11 @@ class ParameterBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+
+        # Extract shape, device and dtype from given arguments
+        shape = extract_argument_shape(not_nones)
+        device = device if device is not None else extract_argument_device(not_nones)
+        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
 
         # Set default values without function call in function signature
         mu_x = mu_x if mu_x is not None else torch.full(shape, 0.0)
@@ -161,9 +167,9 @@ class ParameterBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParameterBeam":
-        # Figure out if arguments were passed, figure out their shape
+        # Figure out if arguments were passed
         not_nones = [
             argument
             for argument in [
@@ -181,11 +187,11 @@ class ParameterBeam(Beam):
             ]
             if argument is not None
         ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+
+        # Extract shape, device and dtype from given arguments
+        shape = extract_argument_shape(not_nones)
+        device = device if device is not None else extract_argument_device(not_nones)
+        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
 
         # Set default values without function call in function signature
         beta_x = beta_x if beta_x is not None else torch.full(shape, 1.0)
@@ -294,7 +300,7 @@ class ParameterBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParameterBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
