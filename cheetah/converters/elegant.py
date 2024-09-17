@@ -410,7 +410,7 @@ def convert_element(
         elif parsed["element_type"] in ["charge", "wake"]:
             print(
                 f"WARNING: Information provided in element {name} of type"
-                f" {parsed["element_type"]} cannot be imported automatically. Consider"
+                f" {parsed['element_type']} cannot be imported automatically. Consider"
                 " manually providing the correct information."
             )
             return cheetah.Marker(name=name)
