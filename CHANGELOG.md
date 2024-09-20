@@ -31,7 +31,8 @@
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
-- Pin to NumPy 1.X due to compatibility issues on Windows (see #220) (@hespe)
+- Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
+- Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
 
 ### 🐆 Other
 
@@ -45,6 +46,7 @@
 - Fix the quadrupole strength units in the quadrupole docstring (see #202) (@ansantam)
 - Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @hespe)
 - Clean up CI pipelines (see #243, #244) (@jank324)
+- Fix logo display in README (see #252) (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 

@@ -216,26 +216,47 @@ def convert_element(
                 ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
                 bmad_parsed,
             )
-            return cheetah.Aperture(
-                x_max=torch.tensor(bmad_parsed.get("x_limit", np.inf)),
-                y_max=torch.tensor(bmad_parsed.get("y_limit", np.inf)),
-                shape="rectangular",
+            return cheetah.Segment(
+                elements=[
+                    cheetah.Drift(
+                        length=torch.tensor(bmad_parsed.get("l", 0.0)),
+                        name=name + "_drift",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                    cheetah.Aperture(
+                        x_max=torch.tensor(bmad_parsed.get("x_limit", np.inf)),
+                        y_max=torch.tensor(bmad_parsed.get("y_limit", np.inf)),
+                        shape="rectangular",
+                        name=name + "_aperture",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                ],
                 name=name,
-                device=device,
-                dtype=dtype,
             )
         elif bmad_parsed["element_type"] == "ecollimator":
             validate_understood_properties(
                 ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
                 bmad_parsed,
             )
-            return cheetah.Aperture(
-                x_max=torch.tensor(bmad_parsed.get("x_limit", np.inf)),
-                y_max=torch.tensor(bmad_parsed.get("y_limit", np.inf)),
-                shape="elliptical",
-                name=name,
-                device=device,
-                dtype=dtype,
+            return cheetah.Segment(
+                elements=[
+                    cheetah.Drift(
+                        length=torch.tensor(bmad_parsed.get("l", 0.0)),
+                        name=name + "_drift",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                    cheetah.Aperture(
+                        x_max=torch.tensor(bmad_parsed.get("x_limit", np.inf)),
+                        y_max=torch.tensor(bmad_parsed.get("y_limit", np.inf)),
+                        shape="elliptical",
+                        name=name + "_aperture",
+                        device=device,
+                        dtype=dtype,
+                    ),
+                ],
             )
         elif bmad_parsed["element_type"] == "wiggler":
             validate_understood_properties(
