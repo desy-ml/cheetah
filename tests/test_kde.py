@@ -72,13 +72,7 @@ def test_kde_2d_batched():
 
     sigma = torch.tensor(0.1)  # a single bandwidth
 
-    pdf = kde_histogram_2d(
-        data[..., 0],
-        data[..., 1],
-        bins_x,
-        bins_x,
-        sigma
-    )
+    pdf = kde_histogram_2d(data[..., 0], data[..., 1], bins_x, bins_x, sigma)
 
     assert pdf.shape == Size([3, 2, n, n])
 
