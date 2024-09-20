@@ -303,7 +303,7 @@ def test_vectorized_solenoid(BeamClass):
 def test_vectorized_screen_2d(BeamClass, method):
     """
     Test that a vectorized `Screen` is able to track a particle beam and produce a
-    reading with 2D vector dimensions.
+    reading with 2 vector dimensions.
     """
     segment = cheetah.Segment(
         elements=[

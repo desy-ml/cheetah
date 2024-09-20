@@ -30,9 +30,7 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        self.register_buffer(
-            "_mu", torch.atleast_2d(torch.as_tensor(mu, **factory_kwargs))
-        )
+        self.register_buffer("_mu", torch.as_tensor(mu, **factory_kwargs))
         self.register_buffer("_cov", torch.as_tensor(cov, **factory_kwargs))
         total_charge = (
             total_charge

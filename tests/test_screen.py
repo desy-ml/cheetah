@@ -1,7 +1,5 @@
-import numpy as np
 import pytest
 import torch
-from torch import Size
 
 import cheetah
 
@@ -63,34 +61,6 @@ def test_screen_kde_bandwidth(kde_bandwidth):
     assert segment.my_screen.reading.shape == (100, 100)
     assert torch.all(segment.my_screen.reading >= 0.0)
     assert torch.any(segment.my_screen.reading > 0.0)
-
-
-@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam])
-@pytest.mark.parametrize("method", ["kde"])
-def test__screen_2d(BeamClass, method):
-    """
-    Test that a vectorized `Screen` is able to track a particle beam and produce a
-    reading with 2D vector dimensions.
-    """
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.Screen(
-                resolution=torch.tensor((100, 100)),
-                pixel_size=torch.tensor((1e-5, 1e-5)),
-                is_active=True,
-                method=method,
-                name="my_screen",
-            ),
-        ],
-        name="my_segment",
-    )
-    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
-
-    _ = segment.track(incoming)
-
-    # Check the reading
-    assert segment.my_screen.reading.shape == (100, 100)
 
 
 @pytest.mark.parametrize("screen_method", ["histogram", "kde"])
@@ -173,6 +143,6 @@ def test_reading_shows_beam_ares(screen_method):
     _ = segment.track(beam)
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
-    assert segment.AREABSCR1.reading.shape == (1, 2040, 2448)
+    assert segment.AREABSCR1.reading.shape == (2040, 2448)
     assert torch.all(segment.AREABSCR1.reading >= 0.0)
     assert torch.any(segment.AREABSCR1.reading > 0.0)
