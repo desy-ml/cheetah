@@ -179,7 +179,6 @@ class Quadrupole(Element):
         pz = pz * torch.ones_like(x)
         # End of Bmad-X tracking
 
-
         # Convert back to Cheetah coordinates
         tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
             z, pz, p0c, electron_mass_eV
