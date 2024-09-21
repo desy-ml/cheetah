@@ -34,6 +34,9 @@ class Screen(Element):
         "histogram" or "kde", defaults to "histogram". KDE will be slower but allows
         backward differentiation.
     :param name: Unique identifier of the element.
+
+    NOTE: `method='histogram'` currently does not support vectorisation. Please use
+        `method=`kde` instead.
     """
 
     def __init__(
@@ -237,10 +240,15 @@ class Screen(Element):
 
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
-                if len(read_beam.x.shape) > 1 or len(read_beam.y.shape) > 1:
+                # Catch vectorisation, which is currently not supported by "histogram"
+                if (
+                    len(read_beam.particles.shape) > 2
+                    or len(read_beam.particle_charges.shape) > 1
+                    or len(read_beam.energy.shape) > 0
+                ):
                     raise NotImplementedError(
-                        'The `"histogram"` method of `Screen` does not support '
-                        'vectorization. Use `"kde"` instead.'
+                        "The `'histogram'` method of `Screen` does not support "
+                        "vectorization. Use `'kde'` instead."
                     )
 
                 image, _ = torch.histogramdd(
