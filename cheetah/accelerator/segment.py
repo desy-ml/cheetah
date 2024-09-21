@@ -356,9 +356,7 @@ class Segment(Element):
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
-            tm = torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
-                (*self.length.shape, 1, 1)
-            )
+            tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
                 tm = torch.matmul(element.transfer_map(energy), tm)
             return tm

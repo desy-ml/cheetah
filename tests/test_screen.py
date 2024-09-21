@@ -117,7 +117,7 @@ def test_reading_shows_beam_parameter_batched():
         segment.my_screen.reading
 
 
-@pytest.mark.parametrize("screen_method", ["kde"])
+@pytest.mark.parametrize("screen_method", ["histogram", "kde"])
 def test_reading_shows_beam_ares(screen_method):
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
