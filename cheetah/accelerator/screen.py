@@ -162,17 +162,19 @@ class Screen(Element):
             copy_of_incoming = deepcopy(incoming)
 
             if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu = copy_of_incoming._mu.broadcast_to(
-                    self.misalignment.shape[:-1] + copy_of_incoming._mu.shape
-                ).clone()
+                copy_of_incoming._mu, _ = torch.broadcast_tensors(
+                    copy_of_incoming._mu, self.misalignment[..., 0]
+                )
+                copy_of_incoming._mu = copy_of_incoming._mu.clone()
 
-                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0].unsqueeze(-1)
-                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1].unsqueeze(-1)
-
+                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
+                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
-                copy_of_incoming.particles = copy_of_incoming.particles.broadcast_to(
-                    self.misalignment.shape[:-1] + copy_of_incoming.particles.shape
-                ).clone()
+                copy_of_incoming.particles, _ = torch.broadcast_tensors(
+                    copy_of_incoming.particles,
+                    self.misalignment[..., 0].unsqueeze(-1).unsqueeze(-1),
+                )
+                copy_of_incoming.particles = copy_of_incoming.particles.clone()
 
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
