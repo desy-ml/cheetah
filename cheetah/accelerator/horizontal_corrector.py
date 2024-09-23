@@ -6,8 +6,7 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from ..utils import UniqueNameGenerator
-from ..utils.physics import compute_relativistic_factors
+from ..utils import UniqueNameGenerator, compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -51,7 +50,8 @@ class HorizontalCorrector(Element):
 
         _, igamma2, beta = compute_relativistic_factors(energy)
 
-        vector_shape = torch.broadcast_tensors(self.length, self.angle, beta)[0].shape
+        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 1, 6] = self.angle

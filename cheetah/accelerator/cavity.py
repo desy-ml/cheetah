@@ -4,15 +4,17 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
+from scipy.constants import physical_constants
 from torch import nn
 
 from ..particles import Beam, ParameterBeam, ParticleBeam
 from ..track_methods import base_rmatrix
-from ..utils import UniqueNameGenerator
-from ..utils.physics import compute_relativistic_factors, electron_mass_eV
+from ..utils import UniqueNameGenerator, compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
+
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Cavity(Element):

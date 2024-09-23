@@ -3,11 +3,10 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
 from ..particles import Beam, ParticleBeam
-from ..utils import UniqueNameGenerator, bmadx
-from ..utils.physics import compute_relativistic_factors
+from ..utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -115,15 +114,6 @@ class Drift(Element):
             dtype=incoming.particles.dtype,
         )
         return outgoing_beam
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
 
     @property
     def is_skippable(self) -> bool:

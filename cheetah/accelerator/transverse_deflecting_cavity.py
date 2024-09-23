@@ -205,20 +205,6 @@ class TransverseDeflectingCavity(Element):
         )
         return outgoing_beam
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            voltage=self.voltage.repeat(shape),
-            phase=self.phase.repeat(shape),
-            frequency=self.frequency.repeat(shape),
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            tilt=self.tilt.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the
         # element itself

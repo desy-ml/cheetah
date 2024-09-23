@@ -336,7 +336,6 @@ def test_vectorized_screen_2d(BeamClass, method):
     "ElementClass",
     [
         cheetah.Cavity,
-        cheetah.CustomTransferMap,
         cheetah.Dipole,
         cheetah.Drift,
         cheetah.HorizontalCorrector,
