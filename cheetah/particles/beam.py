@@ -4,9 +4,7 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Beam(nn.Module):
