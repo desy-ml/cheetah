@@ -193,18 +193,6 @@ class Quadrupole(Element):
         )
         return outgoing_beam
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            k1=self.k1.repeat(shape),
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            tilt=self.tilt.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return self.tracking_method == "cheetah"

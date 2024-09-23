@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..utils import UniqueNameGenerator
+from ..utils import UniqueNameGenerator, compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -51,16 +51,16 @@ class VerticalCorrector(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-        beta = torch.sqrt(1 - igamma2)
+        _, igamma2, beta = compute_relativistic_factors(energy)
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 3, 6] = self.angle
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
+
         return tm
 
     @property

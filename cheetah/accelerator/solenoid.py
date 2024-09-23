@@ -7,8 +7,7 @@ from scipy.constants import physical_constants
 from torch import nn
 
 from ..track_methods import misalignment_matrix
-from ..utils import UniqueNameGenerator
-from ..utils.physics import compute_relativistic_factors
+from ..utils import UniqueNameGenerator, compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
