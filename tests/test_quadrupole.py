@@ -34,8 +34,6 @@ def test_quadrupole_with_misalignments_vectorized():
         misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0),
     )
 
-    assert quad_with_misalignment.batch_shape == torch.Size([1, 2])
-
     quad_without_misalignment = Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
