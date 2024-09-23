@@ -72,7 +72,10 @@ def base_rmatrix(
 
     r56 = r56 - length / beta**2 * igamma2
 
-    vector_shape = torch.broadcast_tensors(length, k1, hx, tilt, energy)[0].shape
+    vector_shape = torch.broadcast_shapes(
+        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
+    )
+
     R = torch.eye(7, dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
     R[..., 0, 0] = cx
     R[..., 0, 1] = sx
@@ -102,6 +105,7 @@ def misalignment_matrix(
     """Shift the beam for tracking beam through misaligned elements"""
     device = misalignment.device
     dtype = misalignment.dtype
+
     vector_shape = misalignment.shape[:-1]
 
     R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
