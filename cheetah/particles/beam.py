@@ -161,8 +161,8 @@ class Beam(nn.Module):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
+        # Figure out vector dimensions of the original beam and check that passed
+        # arguments have the same vector dimensions.
         shape = self.mu_x.shape
         not_nones = [
             argument

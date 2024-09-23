@@ -23,7 +23,7 @@ def test_segment_length_shape():
 
 def test_segment_length_shape_2d():
     """
-    Test that the shape of a segment's length matches the input for a batch with
+    Test that the shape of a segment's length matches the input for a vectorisation with
     multiple dimensions.
     """
     segment = cheetah.Segment(

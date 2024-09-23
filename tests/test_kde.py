@@ -45,7 +45,7 @@ def test_kde_1d():
         _kde_marginal_pdf(data, bins, torch.rand(3) + 0.1)
 
 
-def test_kde_1d_batched():
+def test_kde_1d_vectorized():
     # test basic usage
     data = torch.randn((5, 100))  # 5 beamline states, 100 particles in 1D
     bins = torch.linspace(0, 1, 10)  # a single histogram
@@ -60,7 +60,7 @@ def test_kde_1d_batched():
         _kde_marginal_pdf(data, bins, torch.rand(3) + 0.1)
 
 
-def test_kde_2d_batched():
+def test_kde_2d_vectorized():
     data = torch.randn((3, 2, 100, 6))
     # 2 diagnostic paths,
     # 3 states per diagnostic paths,

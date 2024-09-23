@@ -92,7 +92,7 @@ def test_reading_shows_beam_parameter(screen_method):
     assert torch.any(segment.my_screen.reading > 0.0)
 
 
-def test_reading_shows_beam_parameter_batched():
+def test_reading_shows_beam_parameter_vectorized():
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """

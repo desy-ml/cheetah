@@ -39,7 +39,7 @@ def test_assert_ei_greater_zero():
 def test_vectorized_cavity_zero_voltage(voltage):
     """
     Tests that a vectorised cavity with zero voltage does not produce NaNs and that
-    zero voltage can be batched with non-zero voltage.
+    zero voltage can be vectorised with non-zero voltage.
 
     This was a bug introduced during the vectorisation of Cheetah, when the special
     case of zero was removed and the `_cavity_rmatrix` method was also used in the case
