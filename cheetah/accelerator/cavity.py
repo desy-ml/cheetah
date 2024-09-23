@@ -315,7 +315,7 @@ class Cavity(Element):
         r66 = Ei / Ef * beta0 / beta1
         r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
 
-        # Check that all matrix elements have the same shape
+        # Make sure that all matrix elements have the same shape
         r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(
             r11, r12, r21, r22, r55_cor, r56, r65, r66
         )

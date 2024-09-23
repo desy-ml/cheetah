@@ -69,9 +69,9 @@ class Solenoid(Element):
 
         s_k = torch.where(self.k == 0.0, self.length, s / self.k)
 
-        vector_shape = torch.broadcast_tensors(
-            *self.parameters(), *self.buffers(), energy
-        )[0].shape
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape, self.k.shape, energy.shape
+        )
 
         r56 = torch.where(
             gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
