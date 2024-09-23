@@ -11,8 +11,8 @@ def compute_relativistic_factors(
     Computes the relativistic factors gamma, inverse gamma squared and beta for
     electrons.
 
-    :param energy: Energy in eV
-    :return: gamma, igamma2, beta
+    :param energy: Energy in eV.
+    :return: gamma, igamma2, beta.
     """
     gamma = energy / electron_mass_eV
     igamma2 = torch.where(gamma == 0.0, 0.0, 1 / gamma**2)
