@@ -72,19 +72,19 @@ class Screen(Element):
             ),
         )
         self.register_buffer(
-            "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.tensor((0.0, 0.0), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
             "binning",
             (
                 torch.as_tensor(binning, **factory_kwargs)
                 if binning is not None
                 else torch.tensor(1, **factory_kwargs)
+            ),
+        )
+        self.register_buffer(
+            "misalignment",
+            (
+                torch.as_tensor(misalignment, **factory_kwargs)
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer(
