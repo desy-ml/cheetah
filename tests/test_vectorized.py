@@ -335,23 +335,26 @@ def test_vectorized_screen_2d(BeamClass, method):
 @pytest.mark.parametrize(
     "ElementClass",
     [
-        cheetah.Drift,
-        cheetah.Quadrupole,
         cheetah.Cavity,
-        cheetah.Undulator,
-        cheetah.Solenoid,
+        cheetah.CustomTransferMap,
+        cheetah.Dipole,
+        cheetah.Drift,
         cheetah.HorizontalCorrector,
-        cheetah.VerticalCorrector,
+        cheetah.Quadrupole,
+        cheetah.RBend,
+        cheetah.Solenoid,
         cheetah.TransverseDeflectingCavity,
+        cheetah.Undulator,
+        cheetah.VerticalCorrector,
     ],
 )
 def test_drift_broadcasting_two_different_inputs(ElementClass):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
-    input shapes.
+    input shapes for elements that have a `length` attribute.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5, 2e-5])
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
     element = ElementClass(length=torch.tensor([[0.6], [0.5], [0.4]]))
 
