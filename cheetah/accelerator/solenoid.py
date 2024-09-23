@@ -70,7 +70,7 @@ class Solenoid(Element):
 
         s_k = torch.where(self.k == 0.0, self.length, s / self.k)
 
-        batch_shape = torch.broadcast_tensors(
+        vector_shape = torch.broadcast_tensors(
             *self.parameters(), *self.buffers(), energy
         )[0].shape
 
@@ -78,7 +78,7 @@ class Solenoid(Element):
             gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
         )
 
-        R = torch.eye(7, device=device, dtype=dtype).repeat((*batch_shape, 1, 1))
+        R = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         R[..., 0, 0] = c**2
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c

@@ -440,8 +440,8 @@ class SpaceChargeKick(Element):
     ) -> torch.Tensor:
         """
         Interpolates the space charge force from the grid onto the macroparticles.
-        Reciprocal function of _deposit_charge_on_grid.
-        Beam needs to have a flattened batch shape.
+        Reciprocal function of _deposit_charge_on_grid. `beam` needs to have a flattened
+        vector shape.
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(
             beam, xp_coordinates, cell_size, grid_dimensions
@@ -553,10 +553,10 @@ class SpaceChargeKick(Element):
             # This flattening is a hack to only think about one vector dimension in the
             # following code. It is reversed at the end of the function.
 
-            # Make sure that the incoming beam has at least one batch dimension
-            incoming_batched = True
+            # Make sure that the incoming beam has at least one vector dimension
+            is_incoming_vectorized = True
             if len(incoming.particles.shape) == 2:
-                incoming_batched = False
+                is_incoming_vectorized = False
                 incoming.particles = incoming.particles.unsqueeze(0)
                 incoming.energy = incoming.energy.unsqueeze(0)
                 incoming.particle_charges = incoming.particle_charges.unsqueeze(0)
@@ -599,7 +599,7 @@ class SpaceChargeKick(Element):
                 ..., 2
             ] * dt.unsqueeze(-1)
 
-            if not incoming_batched:
+            if not is_incoming_vectorized:
                 # Reshape to the original shape
                 outgoing = ParticleBeam.from_xyz_pxpypz(
                     xp_coordinates.squeeze(0),

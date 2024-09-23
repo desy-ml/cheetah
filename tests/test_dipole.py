@@ -53,9 +53,9 @@ def test_dipole_focussing():
 
 
 @pytest.mark.parametrize("DipoleType", [Dipole, RBend])
-def test_dipole_batched_execution(DipoleType):
+def test_dipole_vectorized_execution(DipoleType):
     """
-    Test that a dipole with batch dimensions behaves as expected.
+    Test that a dipole with vector dimensions behaves as expected.
     """
     incoming = ParticleBeam.from_parameters(
         num_particles=torch.tensor(100),
@@ -63,7 +63,7 @@ def test_dipole_batched_execution(DipoleType):
         mu_x=torch.tensor(1e-5),
     )
 
-    # Test batching to generate 3 beam lines
+    # Test vectorisation to generate 3 beam lines
     segment = Segment(
         [
             DipoleType(
@@ -84,7 +84,7 @@ def test_dipole_batched_execution(DipoleType):
     # Check different angles do make a difference
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
-    # Test batching to generate 18 beamlines
+    # Test vectorisation to generate 18 beamlines
     segment = Segment(
         [
             Dipole(
@@ -97,7 +97,7 @@ def test_dipole_batched_execution(DipoleType):
     outgoing = segment(incoming)
     assert outgoing.particles.shape == torch.Size([2, 3, 3, 100, 7])
 
-    # Test improper batching -- this does not obey torch broadcasting rules
+    # Test improper vectorisation -- this does not obey torch broadcasting rules
     segment = Segment(
         [
             Dipole(

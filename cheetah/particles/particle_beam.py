@@ -294,7 +294,7 @@ class ParticleBeam(Beam):
         Note that:
          - The generated particles do not have correlation in the momentum directions,
            and by default a cold beam with no divergence is generated.
-         - For batched generation, parameters that are not `None` must have the same
+         - For vectorised generation, parameters that are not `None` must have the same
            shape.
 
         :param num_particles: Number of particles to generate.
@@ -336,8 +336,8 @@ class ParticleBeam(Beam):
                 argument.shape == shape for argument in not_nones
             ), "Arguments must have the same shape."
 
-        # Expand to batched version for beam creation
-        batch_shape = shape if len(shape) > 0 else torch.Size([1])
+        # Expand to vectorised version for beam creation
+        vector_shape = shape if len(shape) > 0 else torch.Size([1])
 
         # Set default values without function call in function signature
         # NOTE that this does not need to be done for values that are passed to the
@@ -346,25 +346,25 @@ class ParticleBeam(Beam):
             num_particles if num_particles is not None else torch.tensor(1_000_000)
         )
         radius_x = (
-            radius_x.expand(batch_shape)
+            radius_x.expand(vector_shape)
             if radius_x is not None
-            else torch.full(batch_shape, 1e-3)
+            else torch.full(vector_shape, 1e-3)
         )
         radius_y = (
-            radius_y.expand(batch_shape)
+            radius_y.expand(vector_shape)
             if radius_y is not None
-            else torch.full(batch_shape, 1e-3)
+            else torch.full(vector_shape, 1e-3)
         )
         radius_tau = (
-            radius_tau.expand(batch_shape)
+            radius_tau.expand(vector_shape)
             if radius_tau is not None
-            else torch.full(batch_shape, 1e-3)
+            else torch.full(vector_shape, 1e-3)
         )
 
         # Generate x, y and ss within the ellipsoid
-        flattened_x = torch.empty(*batch_shape, num_particles).flatten(end_dim=-2)
-        flattened_y = torch.empty(*batch_shape, num_particles).flatten(end_dim=-2)
-        flattened_tau = torch.empty(*batch_shape, num_particles).flatten(end_dim=-2)
+        flattened_x = torch.empty(*vector_shape, num_particles).flatten(end_dim=-2)
+        flattened_y = torch.empty(*vector_shape, num_particles).flatten(end_dim=-2)
+        flattened_tau = torch.empty(*vector_shape, num_particles).flatten(end_dim=-2)
         for i, (r_x, r_y, r_tau) in enumerate(
             zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
         ):

@@ -175,7 +175,7 @@ class Quadrupole(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        # pz is unaffected by tracking, therefore needs to match batch dimensions
+        # pz is unaffected by tracking, therefore needs to match vector dimensions
         pz = pz * torch.ones_like(x)
         # End of Bmad-X tracking
 

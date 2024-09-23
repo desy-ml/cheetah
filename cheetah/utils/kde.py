@@ -15,7 +15,7 @@ def _kde_marginal_pdf(
     Calculate the 1D marginal probability distribution function of the input tensor
     based on the number of histogram bins.
 
-    :param values: Input tensor with shape :math:`(B, N)`. `B` is the batch shape.
+    :param values: Input tensor with shape :math:`(B, N)`. `B` is the vector shape.
     :param bins: Positions of the bins where KDE is calculated.
         Shape :math:`(N_{bins})`.
     :param sigma: Gaussian smoothing factor with shape `(1,)`.
