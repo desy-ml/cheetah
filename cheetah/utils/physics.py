@@ -4,10 +4,12 @@ from scipy.constants import physical_constants
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-def compute_relativistic_factors(energy):
+def compute_relativistic_factors(
+    energy: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    calculates relativistic factors gamma, inverse gamma squared, beta
-    for electrons
+    Computes the relativistic factors gamma, inverse gamma squared and beta for
+    electrons.
 
     :param energy: Energy in eV
     :return: gamma, igamma2, beta
