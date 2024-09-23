@@ -107,7 +107,7 @@ class Cavity(Element):
         Track particles through the cavity. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
         """
-        g0, igamma2, beta0 = compute_relativistic_factors(incoming.energy)
+        gamma0, igamma2, beta0 = compute_relativistic_factors(incoming.energy)
 
         phi = torch.deg2rad(self.phase)
 
@@ -128,7 +128,7 @@ class Cavity(Element):
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
-            g1, ig1, beta1 = compute_relativistic_factors(outgoing_energy)
+            gamma1, _, beta1 = compute_relativistic_factors(outgoing_energy)
 
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (
@@ -159,22 +159,22 @@ class Cavity(Element):
                     - torch.cos(phi).unsqueeze(-1)
                 )
 
-            dgamma = self.voltage / electron_mass_eV.to(self.voltage)
+            dgamma = self.voltage / electron_mass_eV
             if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
-                    * (beta0**3 * g0**3 - beta1**3 * g1**3)
-                    / (2 * beta0 * beta1**3 * g0 * (g0 - g1) * g1**3)
+                    * (beta0**3 * gamma0**3 - beta1**3 * gamma1**3)
+                    / (2 * beta0 * beta1**3 * gamma0 * (gamma0 - gamma1) * gamma1**3)
                 )
                 T556 = (
                     beta0
                     * k
                     * self.length
                     * dgamma
-                    * g0
-                    * (beta1**3 * g1**3 + beta0 * (g0 - g1**3))
+                    * gamma0
+                    * (beta1**3 * gamma1**3 + beta0 * (gamma0 - gamma1**3))
                     * torch.sin(phi)
-                    / (beta1**3 * g1**3 * (g0 - g1) ** 2)
+                    / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 2)
                 )
                 T555 = (
                     beta0**2
@@ -185,15 +185,15 @@ class Cavity(Element):
                     * (
                         dgamma
                         * (
-                            2 * g0 * g1**3 * (beta0 * beta1**3 - 1)
-                            + g0**2
-                            + 3 * g1**2
+                            2 * gamma0 * gamma1**3 * (beta0 * beta1**3 - 1)
+                            + gamma0**2
+                            + 3 * gamma1**2
                             - 2
                         )
-                        / (beta1**3 * g1**3 * (g0 - g1) ** 3)
+                        / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
                         * torch.sin(phi) ** 2
-                        - (g1 * g0 * (beta1 * beta0 - 1) + 1)
-                        / (beta1 * g1 * (g0 - g1) ** 2)
+                        - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
+                        / (beta1 * gamma1 * (gamma0 - gamma1) ** 2)
                         * torch.cos(phi)
                     )
                 )

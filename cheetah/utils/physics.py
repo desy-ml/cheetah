@@ -1,9 +1,7 @@
 import torch
 from scipy.constants import physical_constants
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 def compute_relativistic_factors(energy):
@@ -14,7 +12,8 @@ def compute_relativistic_factors(energy):
     :param energy: Energy in eV
     :return: gamma, igamma2, beta
     """
-    gamma = energy / electron_mass_eV.to(energy)
+    gamma = energy / electron_mass_eV
     igamma2 = torch.where(gamma == 0.0, 0.0, 1 / gamma**2)
     beta = torch.sqrt(1 - igamma2)
+
     return gamma, igamma2, beta

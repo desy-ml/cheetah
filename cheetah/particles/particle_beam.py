@@ -2,14 +2,15 @@ from typing import Optional
 
 import torch
 from scipy import constants
+from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
 from .beam import Beam
 
 speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
 electron_mass = torch.tensor(constants.electron_mass)  # In kg
-electron_mass_eV = torch.tensor(
-    constants.physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+electron_mass_eV = (
+    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )  # In eV
 
 
