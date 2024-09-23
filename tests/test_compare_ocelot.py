@@ -240,7 +240,7 @@ def test_solenoid():
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
-        outgoing_beam.particles[0, :, :6].cpu().numpy(),
+        outgoing_beam.particles[..., :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
     )
 
