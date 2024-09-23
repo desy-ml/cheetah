@@ -330,3 +330,31 @@ def test_vectorized_screen_2d(BeamClass, method):
 
     # Check the reading
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
+
+
+@pytest.mark.parametrize(
+    "ElementClass",
+    [
+        cheetah.Drift,
+        cheetah.Quadrupole,
+        cheetah.Cavity,
+        cheetah.Undulator,
+        cheetah.Solenoid,
+        cheetah.HorizontalCorrector,
+        cheetah.VerticalCorrector,
+        cheetah.TransverseDeflectingCavity,
+    ],
+)
+def test_drift_broadcasting_two_different_inputs(ElementClass):
+    """
+    Test that broadcasting rules are correctly applied to a elements with two different
+    input shapes.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, sigma_x=torch.tensor([1e-5, 2e-5])
+    )
+    element = ElementClass(length=torch.tensor([[0.6], [0.5], [0.4]]))
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
