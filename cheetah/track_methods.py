@@ -4,7 +4,7 @@ from typing import Optional
 
 import torch
 
-from .utils.physics import calculate_relativistic_factors
+from .utils.physics import compute_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
@@ -53,7 +53,7 @@ def base_rmatrix(
     tilt = tilt if tilt is not None else torch.zeros_like(length)
     energy = energy if energy is not None else torch.zeros(1)
 
-    _, igamma2, beta = calculate_relativistic_factors(energy)
+    _, igamma2, beta = compute_relativistic_factors(energy)
 
     # Avoid division by zero
     k1 = k1.clone()
