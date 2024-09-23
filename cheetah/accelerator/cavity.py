@@ -9,7 +9,7 @@ from torch import nn
 from ..particles import Beam, ParameterBeam, ParticleBeam
 from ..track_methods import base_rmatrix
 from ..utils import UniqueNameGenerator
-from ..utils.physics import calculate_relativistic_factors, electron_mass_eV
+from ..utils.physics import compute_relativistic_factors, electron_mass_eV
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -103,7 +103,11 @@ class Cavity(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_beam(self, incoming: Beam) -> Beam:
-        g0, igamma2, beta0 = calculate_relativistic_factors(incoming.energy)
+        """
+        Track particles through the cavity. The input can be a `ParameterBeam` or a
+        `ParticleBeam`.
+        """
+        g0, igamma2, beta0 = compute_relativistic_factors(incoming.energy)
 
         phi = torch.deg2rad(self.phase)
 
@@ -124,7 +128,7 @@ class Cavity(Element):
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
-            g1, ig1, beta1 = calculate_relativistic_factors(outgoing_energy)
+            g1, ig1, beta1 = compute_relativistic_factors(outgoing_energy)
 
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (

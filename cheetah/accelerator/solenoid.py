@@ -8,7 +8,7 @@ from torch import nn
 
 from ..track_methods import misalignment_matrix
 from ..utils import UniqueNameGenerator
-from ..utils.physics import calculate_relativistic_factors
+from ..utils.physics import compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -64,7 +64,7 @@ class Solenoid(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma, _, _ = calculate_relativistic_factors(energy)
+        gamma, _, _ = compute_relativistic_factors(energy)
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
 

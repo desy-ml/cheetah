@@ -6,7 +6,7 @@ electron_mass_eV = torch.tensor(
 )
 
 
-def calculate_relativistic_factors(energy):
+def compute_relativistic_factors(energy):
     """
     calculates relativistic factors gamma, inverse gamma squared, beta
     for electrons
