@@ -360,3 +360,5 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
     outgoing = element.track(incoming)
 
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (3, 2)
