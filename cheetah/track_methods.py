@@ -8,7 +8,7 @@ from .utils import compute_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
-    """Rotate the transfer map in x-y plane
+    """Rotate the transfer map in x-y plane.
 
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
         dipole.
@@ -102,7 +102,7 @@ def base_rmatrix(
 def misalignment_matrix(
     misalignment: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Shift the beam for tracking beam through misaligned elements"""
+    """Shift the beam for tracking beam through misaligned elements."""
     device = misalignment.device
     dtype = misalignment.dtype
 
