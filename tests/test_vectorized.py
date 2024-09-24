@@ -351,6 +351,9 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
+
+    NOTE: Cavity is effectively off and therefore does not affect the outgoing beam
+    energy and the shape of the latter.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
@@ -362,3 +365,29 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
     assert outgoing.energy.shape == (2,)
+
+
+def test_drift_broadcasting_two_different_inputs_cavity_with_energy():
+    """
+    Test that broadcasting rules are correctly applied to a `Cavity` element with two
+    different input shapes, when it has an effect on the outgoing beam energy.
+
+    NOTE: This is basically the same test as the `Cavity` case of
+    `test_drift_broadcasting_two_different_inputs` but with an energy change.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
+    )
+    element = cheetah.Cavity(
+        length=torch.tensor([[0.6], [0.5], [0.4]]),
+        voltage=torch.tensor(48198468.0),
+        phase=torch.tensor(48198468.0),
+        frequency=torch.tensor(2.8560e09),
+        name="my_test_cavity",
+    )
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (3, 2)
