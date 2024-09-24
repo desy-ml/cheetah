@@ -228,9 +228,9 @@ class Cavity(Element):
 
         if isinstance(incoming, ParameterBeam):
             outgoing = ParameterBeam(
-                outgoing_mu,
-                outgoing_cov,
-                outgoing_energy,
+                mu=outgoing_mu,
+                cov=outgoing_cov,
+                energy=outgoing_energy,
                 total_charge=incoming.total_charge,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
