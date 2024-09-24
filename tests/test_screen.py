@@ -51,7 +51,7 @@ def test_screen_kde_bandwidth(kde_bandwidth):
                 is_active=True,
                 method="kde",
                 name="my_screen",
-                kde_bandwidth=kde_bandwidth,
+                kde_bandwidth=torch.tensor(kde_bandwidth),
             ),
         ],
     )
