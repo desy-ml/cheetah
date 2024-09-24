@@ -362,3 +362,31 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
     assert outgoing.energy.shape == (2,)
+
+
+@pytest.mark.parametrize(
+    "ElementClass",
+    [
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.Quadrupole,
+        cheetah.TransverseDeflectingCavity,
+    ],
+)
+def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
+    """
+    Test that broadcasting rules are correctly applied to a elements with two different
+    input shapes for elements that have a `"bmadx"` tracking method.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
+    )
+    element = ElementClass(
+        tracking_method="bmadx", length=torch.tensor([[0.6], [0.5], [0.4]])
+    )
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (2,)
