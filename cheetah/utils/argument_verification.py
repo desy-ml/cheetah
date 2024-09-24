@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 
 
@@ -35,3 +37,20 @@ def extract_argument_shape(arguments: list[torch.Tensor]) -> torch.Size:
         ), "Arguments must have the same shape."
 
     return arguments[0].shape if len(arguments) > 0 else torch.Size([1])
+
+
+def verify_device_and_dtype(
+    required: list[torch.Tensor],
+    optionals: list[Optional[torch.Tensor]],
+    device: torch.device,
+    dtype: torch.dtype,
+) -> tuple[torch.device, torch.dtype]:
+    """
+    Verifies that all required & given optional arguments have the same device and
+    dtype if no defaults are provided.
+    """
+    not_nones = required + [argument for argument in optionals if argument is not None]
+
+    device = device if device is not None else extract_argument_device(not_nones)
+    dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+    return (device, dtype)

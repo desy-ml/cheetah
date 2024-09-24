@@ -9,7 +9,7 @@ from torch import Size, nn
 
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 from .element import Element
 
@@ -45,6 +45,9 @@ class Quadrupole(Element):
         device=None,
         dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length], [k1, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

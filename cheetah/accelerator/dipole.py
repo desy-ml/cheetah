@@ -9,7 +9,7 @@ from torch import Size, nn
 
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 from .element import Element
 
@@ -65,6 +65,22 @@ class Dipole(Element):
         device=None,
         dtype=None,
     ):
+        device, dtype = verify_device_and_dtype(
+            [length],
+            [
+                angle,
+                k1,
+                e1,
+                e2,
+                tilt,
+                gap,
+                gap_exit,
+                fringe_integral,
+                fringe_integral_exit,
+            ],
+            device,
+            dtype,
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
