@@ -9,7 +9,6 @@ def test_drift_end():
     Test that at the end of a split drift the result is the same as at the end of the
     original drift.
     """
-
     original_drift = cheetah.Drift(length=torch.tensor([2.0, 2.5]))
     split_drift = cheetah.Segment(original_drift.split(resolution=torch.tensor(0.1)))
 
