@@ -8,6 +8,7 @@ from cheetah.utils import (
     extract_argument_device,
     extract_argument_dtype,
     extract_argument_shape,
+    verify_device_and_dtype,
 )
 
 from .beam import Beam
@@ -39,8 +40,11 @@ class ParticleBeam(Beam):
         device=None,
         dtype=None,
     ) -> None:
-        super().__init__()
+        device, dtype = verify_device_and_dtype(
+            [particles, energy], [particle_charges], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__()
 
         assert (
             particles.shape[-2] > 0 and particles.shape[-1] == 7

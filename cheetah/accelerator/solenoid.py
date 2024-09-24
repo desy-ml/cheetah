@@ -7,7 +7,7 @@ from scipy.constants import physical_constants
 from torch import Size, nn
 
 from cheetah.track_methods import misalignment_matrix
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 from .element import Element
 
@@ -39,6 +39,9 @@ class Solenoid(Element):
         device=None,
         dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length], [k, misalignment], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

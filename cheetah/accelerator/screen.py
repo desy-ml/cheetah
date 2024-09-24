@@ -8,7 +8,7 @@ from torch import Size, nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
 
 from .element import Element
 
@@ -50,6 +50,13 @@ class Screen(Element):
         device=None,
         dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [],  # No required tensor arguments
+            # Excludes resolution and binning, since those are integer valued, not float
+            [pixel_size, misalignment, kde_bandwidth],
+            device,
+            dtype,
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

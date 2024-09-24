@@ -7,6 +7,7 @@ from cheetah.utils import (
     extract_argument_device,
     extract_argument_dtype,
     extract_argument_shape,
+    verify_device_and_dtype,
 )
 
 from .beam import Beam
@@ -33,6 +34,9 @@ class ParameterBeam(Beam):
         device=None,
         dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [mu, cov, energy], [total_charge], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 

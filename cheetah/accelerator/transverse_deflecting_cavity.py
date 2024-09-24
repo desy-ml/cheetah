@@ -7,7 +7,7 @@ from scipy.constants import physical_constants, speed_of_light
 from torch import Size, nn
 
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 from .element import Element
 
@@ -47,6 +47,9 @@ class TransverseDeflectingCavity(Element):
         device=None,
         dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length], [voltage, phase, frequency, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

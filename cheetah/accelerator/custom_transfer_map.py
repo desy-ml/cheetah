@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 from torch import Size, nn
 
 from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 from .element import Element
 
@@ -24,8 +24,9 @@ class CustomTransferMap(Element):
         length: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([transfer_map], [length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
