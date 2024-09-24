@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
 from ..particles import Beam, ParticleBeam
 from ..track_methods import base_rmatrix, misalignment_matrix
