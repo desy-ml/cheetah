@@ -260,3 +260,20 @@ def test_does_not_break_segment_length():
 
     assert segment.length.shape == torch.Size([])
     assert torch.allclose(segment.length, torch.tensor(1.0))
+
+
+def test_space_charge_with_ares_astra_beam():
+    """
+    Tests running space charge through a 1m drift with an Astra beam from the ARES
+    linac. This test is added because running this code would throw an error:
+    `IndexError: index -38 is out of bounds for dimension 3 with size 32`.
+    """
+    segment = cheetah.Segment(
+        [
+            cheetah.Drift(length=1.0),
+            cheetah.SpaceChargeKick(effect_length=1.0),
+        ]
+    )
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    _ = segment.track(beam)
