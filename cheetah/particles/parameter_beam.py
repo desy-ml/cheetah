@@ -80,15 +80,16 @@ class ParameterBeam(Beam):
         energy = energy if energy is not None else torch.tensor(1e8)
         total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
 
+        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
         mu = torch.stack(
             [
                 mu_x,
                 mu_px,
                 mu_y,
                 mu_py,
-                torch.tensor(0.0),
-                torch.tensor(0.0),
-                torch.tensor(1.0),
+                torch.zeros_like(mu_x),
+                torch.zeros_like(mu_x),
+                torch.ones_like(mu_x),
             ],
             dim=-1,
         )
