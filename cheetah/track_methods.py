@@ -50,8 +50,10 @@ def base_rmatrix(
     device = length.device
     dtype = length.dtype
 
-    tilt = tilt if tilt is not None else torch.zeros_like(length)
-    energy = energy if energy is not None else torch.zeros(1)
+    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    energy = (
+        energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    )
 
     _, igamma2, beta = compute_relativistic_factors(energy)
 
