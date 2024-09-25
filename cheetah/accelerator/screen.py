@@ -25,14 +25,15 @@ class Screen(Element):
     :param binning: Binning used by the camera.
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
-    :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
-        Controls the smoothness of the distribution.
-    :param is_active: If `True` the screen is active and will record the beam's
-        distribution. If `False` the screen is inactive and will not record the beam's
-        distribution.
     :param method: Method used to generate the screen's reading. Can be either
         "histogram" or "kde", defaults to "histogram". KDE will be slower but allows
         backward differentiation.
+    :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
+        Controls the smoothness of the distribution.
+    :param is_blocking: If `True` the screen is blocking and will stop the beam.
+    :param is_active: If `True` the screen is active and will record the beam's
+        distribution. If `False` the screen is inactive and will not record the beam's
+        distribution.
     :param name: Unique identifier of the element.
 
     NOTE: `method='histogram'` currently does not support vectorisation. Please use
@@ -45,9 +46,10 @@ class Screen(Element):
         pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        is_active: bool = False,
         method: Literal["histogram", "kde"] = "histogram",
+        kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        is_blocking: bool = False,
+        is_active: bool = False,
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -104,6 +106,7 @@ class Screen(Element):
                 else torch.clone(self.pixel_size[0])
             ),
         )
+        self.is_blocking = is_blocking
         self.is_active = is_active
 
         self.set_read_beam(None)
@@ -188,7 +191,7 @@ class Screen(Element):
 
             self.set_read_beam(copy_of_incoming)
 
-        return incoming
+        return Beam.empty if self.is_blocking else incoming
 
     @property
     def reading(self) -> torch.Tensor:
@@ -198,13 +201,10 @@ class Screen(Element):
 
         read_beam = self.get_read_beam()
         if read_beam is Beam.empty or read_beam is None:
-            return torch.tensor([])
+            image = torch.zeros(
+                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
+            )
         elif isinstance(read_beam, ParameterBeam):
-            if torch.numel(read_beam._mu[..., 0]) > 1:
-                raise NotImplementedError(
-                    "Cannot perform batch screen predictions with ParameterBeam"
-                )
-
             transverse_mu = torch.stack(
                 [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
             )
@@ -219,9 +219,14 @@ class Screen(Element):
                 ],
                 dim=-1,
             )
-            dist = MultivariateNormal(
-                loc=transverse_mu, covariance_matrix=transverse_cov
-            )
+            dist = [
+                MultivariateNormal(
+                    loc=transverse_mu_sample, covariance_matrix=transverse_cov_sample
+                )
+                for transverse_mu_sample, transverse_cov_sample in zip(
+                    transverse_mu.cpu(), transverse_cov.cpu()
+                )
+            ]
 
             left = self.extent[0]
             right = self.extent[1]
@@ -235,9 +240,10 @@ class Screen(Element):
                 indexing="ij",
             )
             pos = torch.dstack((x, y))
-            image = dist.log_prob(pos).exp()
+            image = torch.stack(
+                [dist_sample.log_prob(pos).exp() for dist_sample in dist]
+            )
             image = torch.flip(image, dims=[1])
-
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
                 # Catch vectorisation, which is currently not supported by "histogram"
@@ -248,15 +254,14 @@ class Screen(Element):
                 ):
                     raise NotImplementedError(
                         "The `'histogram'` method of `Screen` does not support "
-                        "vectorization. Use `'kde'` instead."
+                        "vectorization. Use `'kde'` instead. If this is a feature you "
+                        "would like to see, please open an issue on GitHub."
                     )
 
                 image, _ = torch.histogramdd(
                     torch.stack((read_beam.x, read_beam.y)).T, bins=self.pixel_bin_edges
                 )
-
                 image = torch.flipud(image.T)
-
             elif self.method == "kde":
                 image = kde_histogram_2d(
                     x1=read_beam.x,
@@ -279,7 +284,7 @@ class Screen(Element):
         # Using these get and set methods instead of Python's property decorator to
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
-        return self._read_beam if self._read_beam is not None else None
+        return self._read_beam
 
     def set_read_beam(self, value: Beam) -> None:
         # Using these get and set methods instead of Python's property decorator to
