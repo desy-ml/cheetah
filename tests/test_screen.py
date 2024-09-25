@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import torch
 
@@ -25,8 +26,9 @@ def test_reading_shows_beam_particle(screen_method):
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
-    # before tracking the reading should be an empty tensor
-    assert torch.numel(segment.my_screen.reading) == 0
+    assert isinstance(segment.my_screen.reading, torch.Tensor)
+    assert segment.my_screen.reading.shape == (100, 100)
+    assert np.allclose(segment.my_screen.reading, 0.0)
 
     _ = segment.track(beam)
 
@@ -54,6 +56,10 @@ def test_screen_kde_bandwidth(kde_bandwidth):
         ],
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    assert isinstance(segment.my_screen.reading, torch.Tensor)
+    assert segment.my_screen.reading.shape == (100, 100)
+    assert np.allclose(segment.my_screen.reading, 0.0)
 
     _ = segment.track(beam)
 
@@ -84,6 +90,9 @@ def test_reading_shows_beam_parameter(screen_method):
     beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
+    assert segment.my_screen.reading.shape == (100, 100)
+    assert np.allclose(segment.my_screen.reading, 0.0)
+
     _ = segment.track(beam)
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
@@ -139,6 +148,10 @@ def test_reading_shows_beam_ares(screen_method):
     )
     segment.AREABSCR1.binning = torch.tensor(1, device=segment.AREABSCR1.binning.device)
     segment.AREABSCR1.is_active = True
+
+    assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
+    assert segment.AREABSCR1.reading.shape == (2040, 2448)
+    assert np.allclose(segment.AREABSCR1.reading, 0.0)
 
     _ = segment.track(beam)
 
