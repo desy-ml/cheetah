@@ -390,3 +390,18 @@ def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
     assert outgoing.energy.shape == (2,)
+
+
+def test_vectorized_parameter_beam_creation():
+    """
+    Tests that creating a parameter beam with a few vectorised parameters works as
+    expected.
+    """
+    beam = cheetah.ParameterBeam.from_parameters(
+        mu_x=torch.tensor([2e-4, 3e-4]), sigma_x=torch.tensor([1e-5, 2e-5])
+    )
+
+    assert beam.mu_x.shape == (2,)
+    assert torch.allclose(beam.mu_x, torch.tensor([2e-4, 3e-4]))
+    assert beam.sigma_x.shape == (2,)
+    assert torch.allclose(beam.sigma_x, torch.tensor([1e-5, 2e-5]))
