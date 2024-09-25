@@ -198,7 +198,7 @@ def test_inactive_magnet_drift_except_for():
         elements=[
             cheetah.Drift(length=torch.tensor([0.6])),
             cheetah.Quadrupole(
-                length=torch.tensor([0.2]), k1=torch.tensor([4.2]), name="quad"
+                length=torch.tensor([0.2]), k1=torch.tensor([0.0]), name="quad"
             ),
             cheetah.Drift(length=torch.tensor([0.4])),
         ]
