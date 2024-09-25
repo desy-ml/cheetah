@@ -37,7 +37,8 @@ class Screen(Element):
     :param name: Unique identifier of the element.
 
     NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method=`kde` instead.
+        `method=`kde` instead. Similarly, `ParameterBeam` can also not be vectorised.
+        Please use `ParticleBeam` instead.
     """
 
     def __init__(
@@ -205,6 +206,13 @@ class Screen(Element):
                 (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
             )
         elif isinstance(read_beam, ParameterBeam):
+            if torch.numel(read_beam._mu[..., 0]) > 1:
+                raise NotImplementedError(
+                    "`Screen` does not support vectorization of `ParameterBeam`. "
+                    "Please use `ParticleBeam` instead. If this is a feature you would "
+                    "like to see, please open an issue on GitHub."
+                )
+
             transverse_mu = torch.stack(
                 [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
             )
@@ -219,14 +227,9 @@ class Screen(Element):
                 ],
                 dim=-1,
             )
-            dist = [
-                MultivariateNormal(
-                    loc=transverse_mu_sample, covariance_matrix=transverse_cov_sample
-                )
-                for transverse_mu_sample, transverse_cov_sample in zip(
-                    transverse_mu.cpu(), transverse_cov.cpu()
-                )
-            ]
+            dist = MultivariateNormal(
+                loc=transverse_mu, covariance_matrix=transverse_cov
+            )
 
             left = self.extent[0]
             right = self.extent[1]
@@ -240,9 +243,7 @@ class Screen(Element):
                 indexing="ij",
             )
             pos = torch.dstack((x, y))
-            image = torch.stack(
-                [dist_sample.log_prob(pos).exp() for dist_sample in dist]
-            )
+            image = dist.log_prob(pos).exp()
             image = torch.flip(image, dims=[1])
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
