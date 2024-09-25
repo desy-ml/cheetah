@@ -203,6 +203,7 @@ class Segment(Element):
                     or element.name in except_for
                     else Drift(
                         element.length,
+                        name=element.name,
                         device=element.length.device,
                         dtype=element.length.dtype,
                     )

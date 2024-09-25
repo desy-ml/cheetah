@@ -30,7 +30,9 @@ def test_inactive_elements_as_drifts():
                 name="Dipole4",
             ),
             cheetah.Drift(length=torch.tensor([0.0, 2.0])),
-            cheetah.BPM(is_active=torch.tensor([False, False]), name="Bpm"),
+            cheetah.BPM(is_active=torch.tensor([False, False]), name="Bpm").broadcast(
+                (2,)
+            ),
         ]
     )
 
