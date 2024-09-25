@@ -678,6 +678,11 @@ class ParticleBeam(Beam):
             [mu_x, mu_px, mu_y, mu_py, torch.zeros_like(mu_x), torch.zeros_like(mu_x)],
             dim=-1,
         )
+        sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p = (
+            torch.broadcast_tensors(
+                sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p
+            )
+        )
         new_sigma = torch.stack(
             [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=-1
         )
