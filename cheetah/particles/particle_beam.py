@@ -727,7 +727,7 @@ class ParticleBeam(Beam):
     @classmethod
     def from_xyz_pxpypz(
         cls,
-        xp_coords: torch.Tensor,
+        xp_coordinates: torch.Tensor,
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
         device=None,
@@ -739,7 +739,7 @@ class ParticleBeam(Beam):
         is the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         beam = cls(
-            particles=xp_coords.clone(),
+            particles=xp_coordinates.clone(),
             energy=energy,
             particle_charges=particle_charges,
             device=device,
@@ -753,15 +753,17 @@ class ParticleBeam(Beam):
             * speed_of_light
         )
         p = torch.sqrt(
-            xp_coords[..., 1] ** 2 + xp_coords[..., 3] ** 2 + xp_coords[..., 5] ** 2
+            xp_coordinates[..., 1] ** 2
+            + xp_coordinates[..., 3] ** 2
+            + xp_coordinates[..., 5] ** 2
         )
         gamma = torch.sqrt(1 + (p / (electron_mass * speed_of_light)) ** 2)
 
-        beam.particles[..., 1] = xp_coords[..., 1] / p0.unsqueeze(-1)
-        beam.particles[..., 3] = xp_coords[..., 3] / p0.unsqueeze(-1)
-        beam.particles[..., 4] = -xp_coords[..., 4] / beam.relativistic_beta.unsqueeze(
-            -1
-        )
+        beam.particles[..., 1] = xp_coordinates[..., 1] / p0.unsqueeze(-1)
+        beam.particles[..., 3] = xp_coordinates[..., 3] / p0.unsqueeze(-1)
+        beam.particles[..., 4] = -xp_coordinates[
+            ..., 4
+        ] / beam.relativistic_beta.unsqueeze(-1)
         beam.particles[..., 5] = (gamma - beam.relativistic_gamma.unsqueeze(-1)) / (
             (beam.relativistic_beta * beam.relativistic_gamma).unsqueeze(-1)
         )
