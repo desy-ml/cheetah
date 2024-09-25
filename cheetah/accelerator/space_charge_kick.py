@@ -505,9 +505,9 @@ class SpaceChargeKick(Element):
         # Keep dimensions, and set F to zero if non-valid
         force_indices = (
             idx_vector,
-            torch.clamp(idx_x, max=grid_shape[0] - 1),
-            torch.clamp(idx_y, max=grid_shape[1] - 1),
-            torch.clamp(idx_tau, max=grid_shape[2] - 1),
+            torch.clamp(idx_x, min=0, max=grid_shape[0] - 1),
+            torch.clamp(idx_y, min=0, max=grid_shape[1] - 1),
+            torch.clamp(idx_tau, min=0, max=grid_shape[2] - 1),
         )
 
         Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
@@ -554,19 +554,29 @@ class SpaceChargeKick(Element):
             # following code. It is reversed at the end of the function.
 
             # Make sure that the incoming beam has at least one vector dimension
-            is_incoming_vectorized = True
             if len(incoming.particles.shape) == 2:
                 is_incoming_vectorized = False
-                incoming.particles = incoming.particles.unsqueeze(0)
-                incoming.energy = incoming.energy.unsqueeze(0)
-                incoming.particle_charges = incoming.particle_charges.unsqueeze(0)
+
+                vectorized_incoming = ParticleBeam(
+                    particles=incoming.particles.unsqueeze(0),
+                    energy=incoming.energy.unsqueeze(0),
+                    particle_charges=incoming.particle_charges.unsqueeze(0),
+                    device=incoming.particles.device,
+                    dtype=incoming.particles.dtype,
+                )
+            else:
+                is_incoming_vectorized = True
+
+                vectorized_incoming = incoming
 
             flattened_incoming = ParticleBeam(
-                particles=incoming.particles.flatten(end_dim=-3),
-                energy=incoming.energy.flatten(end_dim=-1),
-                particle_charges=incoming.particle_charges.flatten(end_dim=-2),
-                device=incoming.particles.device,
-                dtype=incoming.particles.dtype,
+                particles=vectorized_incoming.particles.flatten(end_dim=-3),
+                energy=vectorized_incoming.energy.flatten(end_dim=-1),
+                particle_charges=vectorized_incoming.particle_charges.flatten(
+                    end_dim=-2
+                ),
+                device=vectorized_incoming.particles.device,
+                dtype=vectorized_incoming.particles.dtype,
             )
             flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
@@ -600,24 +610,24 @@ class SpaceChargeKick(Element):
             ] * dt.unsqueeze(-1)
 
             if not is_incoming_vectorized:
-                # Reshape to the original shape
+                # Reshape to the original non-vectorised shape
                 outgoing = ParticleBeam.from_xyz_pxpypz(
                     xp_coordinates.squeeze(0),
-                    incoming.energy.squeeze(0),
-                    incoming.particle_charges.squeeze(0),
-                    incoming.particles.device,
-                    incoming.particles.dtype,
+                    vectorized_incoming.energy.squeeze(0),
+                    vectorized_incoming.particle_charges.squeeze(0),
+                    vectorized_incoming.particles.device,
+                    vectorized_incoming.particles.dtype,
                 )
             else:
-                # Reverse the flattening
+                # Reverse the flattening of the vector dimensions
                 outgoing = ParticleBeam.from_xyz_pxpypz(
                     xp_coordinates.unflatten(
-                        dim=0, sizes=incoming.particles.shape[:-2]
+                        dim=0, sizes=vectorized_incoming.particles.shape[:-2]
                     ),
-                    incoming.energy,
-                    incoming.particle_charges,
-                    incoming.particles.device,
-                    incoming.particles.dtype,
+                    vectorized_incoming.energy,
+                    vectorized_incoming.particle_charges,
+                    vectorized_incoming.particles.device,
+                    vectorized_incoming.particles.dtype,
                 )
             return outgoing
         else:

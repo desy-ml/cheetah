@@ -269,10 +269,7 @@ def test_space_charge_with_ares_astra_beam():
     `IndexError: index -38 is out of bounds for dimension 3 with size 32`.
     """
     segment = cheetah.Segment(
-        [
-            cheetah.Drift(length=1.0),
-            cheetah.SpaceChargeKick(effect_length=1.0),
-        ]
+        [cheetah.Drift(length=1.0), cheetah.SpaceChargeKick(effect_length=1.0)]
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
