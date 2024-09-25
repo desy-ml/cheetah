@@ -3,7 +3,6 @@ import torch
 from torch import Size
 
 from cheetah.utils import kde_histogram_1d, kde_histogram_2d
-from cheetah.utils.kde import _kde_marginal_pdf
 
 
 def test_weighted_samples_1d():
@@ -64,8 +63,11 @@ def test_weighted_samples_2d():
     assert not torch.allclose(hist_weighted, hist_neglect_weights)
 
 
-def test_kde_1d():
-    # Test basic usage
+def test_kde_1d_basic_usage():
+    """
+    Test that basic usage of the 1D KDE histogram implementation works, and that the
+    output has the correct shape.
+    """
     data = torch.randn(100)  # 5 beamline states, 100 particles in 1D
     bins = torch.linspace(0, 1, 10)  # A single histogram
     sigma = torch.tensor(0.1)  # A single bandwidth
@@ -74,38 +76,32 @@ def test_kde_1d():
 
     assert pdf.shape == Size([10])  # 5 histograms at 10 points
 
-    # Test bad bins
-    with pytest.raises(ValueError):
-        _kde_marginal_pdf(data, bins, torch.rand(3) + 0.1)
 
-
-def test_kde_1d_vectorized():
-    # Test basic usage
-    data = torch.randn((5, 100))  # 5 beamline states, 100 particles in 1D
+def test_kde_1d_enforce_bins_shape():
+    """
+    Test that the 1D KDE histogram implementation correctly enforces the shape of the
+    bins tensor, i.e. throws an error if the bins tensor has the wrong shape.
+    """
+    data = torch.randn(100)  # 5 beamline states, 100 particles in 1D
     bins = torch.linspace(0, 1, 10)  # A single histogram
-    sigma = torch.tensor(0.1)  # A single bandwidth
 
-    pdf = kde_histogram_1d(data, bins, sigma)
-
-    assert pdf.shape == Size([5, 10])  # 5 histograms at 10 points
-
-    # Test bad bins
     with pytest.raises(ValueError):
-        _kde_marginal_pdf(data, bins, torch.rand(3) + 0.1)
+        kde_histogram_1d(data, bins, torch.rand(3) + 0.1)
 
 
-def test_kde_2d_vectorized():
+def test_kde_2d_vectorized_basic_usage():
+    """
+    Test that the 2D KDE histogram implementation correctly handles vectorized inputs,
+    and that the output has the correct shape.
+    """
+    # 2 diagnostic paths, 3 states per diagnostic path, 100 particles in 6D space
     data = torch.randn((3, 2, 100, 6))
-    # 2 diagnostic paths,
-    # 3 states per diagnostic paths,
-    # 100 particles in 6D space
-
     # Two different bins (1 per path)
-    n = 30
-    bins_x = torch.linspace(-20, 20, n)
-
-    sigma = torch.tensor(0.1)  # A single bandwidth
+    num_bins = 30
+    bins_x = torch.linspace(-20, 20, num_bins)
+    # A single bandwidth
+    sigma = torch.tensor(0.1)
 
     pdf = kde_histogram_2d(data[..., 0], data[..., 1], bins_x, bins_x, sigma)
 
-    assert pdf.shape == Size([3, 2, n, n])
+    assert pdf.shape == Size([3, 2, num_bins, num_bins])

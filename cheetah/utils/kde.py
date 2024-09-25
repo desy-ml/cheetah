@@ -12,11 +12,11 @@ def _kde_marginal_pdf(
     epsilon: Union[torch.Tensor, float] = 1e-10,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Calculate the 1D marginal probability distribution function of the input tensor
-    based on the number of histogram bins.
+    Compute the 1D marginal probability distribution function of the input tensor based
+    on the number of histogram bins.
 
     :param values: Input tensor with shape :math:`(B, N)`. `B` is the vector shape.
-    :param bins: Positions of the bins where KDE is calculated.
+    :param bins: Positions of the bins where KDE is computed.
         Shape :math:`(N_{bins})`.
     :param sigma: Gaussian smoothing factor with shape `(1,)`.
     :param weights: Input data weights of shape :math:`(B, N)`. Default to None.
@@ -80,7 +80,7 @@ def _kde_joint_pdf_2d(
     epsilon: Union[torch.Tensor, float] = 1e-10,
 ) -> torch.Tensor:
     """
-    Calculate the joint probability distribution function of the input tensors based on
+    Compute the joint probability distribution function of the input tensors based on
     the number of histogram bins.
 
     :param kernel_values1: shape :math:`(B, N, N_{bins})`.
@@ -122,7 +122,7 @@ def kde_histogram_1d(
     """
     Estimate the histogram using KDE of the input tensor.
 
-    The calculation uses kernel density estimation which requires a bandwidth
+    The computation uses kernel density estimation which requires a bandwidth
     (smoothing) parameter.
 
     :param x: Input tensor to compute the histogram with shape :math:`(B, D)`.
@@ -163,7 +163,7 @@ def kde_histogram_2d(
     """
     Estimate the 2D histogram of the input tensor.
 
-    The calculation uses kernel density estimation which requires a bandwidth
+    The computation uses kernel density estimation which requires a bandwidth
     (smoothing) parameter.
 
     This is a modified version of the `kornia.enhance.histogram` implementation.
