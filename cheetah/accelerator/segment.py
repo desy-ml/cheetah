@@ -348,9 +348,6 @@ class Segment(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        if len(self.elements) == 1:
-            return self.elements[0].length
-
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
