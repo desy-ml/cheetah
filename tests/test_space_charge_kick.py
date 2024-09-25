@@ -258,5 +258,5 @@ def test_does_not_break_segment_length():
         ]
     )
 
-    assert segment.length.shape == torch.Size([1])
+    assert segment.length.shape == torch.Size([])
     assert torch.allclose(segment.length, torch.tensor(1.0))
