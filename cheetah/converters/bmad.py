@@ -145,7 +145,7 @@ def convert_element(
             )
             return cheetah.Dipole(
                 length=torch.tensor([bmad_parsed["l"]]),
-                gap=torch.tensor([bmad_parsed.get("hgap", 0.0)]),
+                gap=torch.tensor([2 * bmad_parsed.get("hgap", 0.0)]),
                 angle=torch.tensor([bmad_parsed.get("angle", 0.0)]),
                 e1=torch.tensor([bmad_parsed["e1"]]),
                 e2=torch.tensor([bmad_parsed.get("e2", 0.0)]),

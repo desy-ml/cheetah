@@ -21,6 +21,7 @@
 - Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
 - `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
 - Implement a converter for lattice files imported from Elegant (see #222) (@hespe)
+- Implement a converter to read bmad lattices (see #196, #261)
 
 ### 🐛 Bug fixes
 
