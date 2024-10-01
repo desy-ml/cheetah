@@ -247,22 +247,22 @@ def test_without_zerolength_elements():
         elements=[
             cheetah.Drift(length=torch.tensor([1.0, 2.0])),
             cheetah.Dipole(
-                length=torch.tensor([0.0, 0.0]),
-                angle=torch.tensor([0.0, 0.0]),
+                length=torch.tensor(0.0),
+                angle=torch.tensor(0.0)
             ),
             cheetah.Dipole(
-                length=torch.tensor([0.0, 0.0]),
-                angle=torch.tensor([0.0, 0.0]),
-                name="dipole",
+                length=torch.tensor(0.0),
+                angle=torch.tensor(0.0),
+                name="dipole"
             ),
             cheetah.Dipole(
                 length=torch.tensor([0.0, 0.1]),
-                angle=torch.tensor([0.0, 0.0]),
+                angle=torch.tensor(0.0)
             ),
-            cheetah.Drift(length=torch.tensor([0.0, 0.0])),
+            cheetah.Drift(length=torch.tensor(0.0)),
             cheetah.Dipole(
-                length=torch.tensor([0.0, 0.0]),
-                angle=torch.tensor([0.5, 0.0]),
+                length=torch.tensor(0.0),
+                angle=torch.tensor([0.5, 0.0])
             ),
         ]
     )
