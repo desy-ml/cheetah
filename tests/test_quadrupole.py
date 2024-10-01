@@ -135,8 +135,13 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
 
     outgoing = segment(incoming)
 
-    assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[0, 1])
+    # Test that shape is correct
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
+
+    # Check that same tilts give same results
+    assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[1, 2])
+    assert torch.allclose(outgoing.particles[0, 1], outgoing.particles[1, 1])
+    assert torch.allclose(outgoing.particles[0, 2], outgoing.particles[1, 0])
 
 
 def test_quadrupole_length_multiple_vector_dimensions():
