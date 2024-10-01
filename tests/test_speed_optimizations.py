@@ -241,8 +241,8 @@ def test_skippable_elements_reset():
     assert torch.allclose(original_tm, merged_tm)
 
 
-def test_without_zerolength_elements():
-    """Test that zerolength elements are properly recognized and removed."""
+def test_without_zero_length_elements():
+    """Test that zero-length elements are properly recognized and removed."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor([1.0, 2.0])),
