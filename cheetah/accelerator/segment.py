@@ -1,17 +1,17 @@
 from copy import deepcopy
+from functools import reduce
 from pathlib import Path
 from typing import Any, Optional, Union
 
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
-from torch import Size, nn
+from torch import nn
 
-from cheetah.converters import bmad, elegant, nxtables
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
-
+from ..converters import bmad, elegant, nxtables
+from ..latticejson import load_cheetah_model, save_cheetah_model
+from ..particles import Beam, ParticleBeam
+from ..utils import UniqueNameGenerator
 from .custom_transfer_map import CustomTransferMap
 from .drift import Drift
 from .element import Element
@@ -349,17 +349,12 @@ class Segment(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        lengths = torch.stack(
-            [element.length for element in self.elements],
-            dim=1,
-        )
-        return torch.sum(lengths, dim=1)
+        lengths = [element.length for element in self.elements]
+        return reduce(torch.add, lengths)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
-            tm = torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
-                (*self.length.shape, 1, 1)
-            )
+            tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
                 tm = torch.matmul(element.transfer_map(energy), tm)
             return tm
@@ -383,12 +378,6 @@ class Segment(Element):
                 incoming = todo.track(incoming)
 
             return incoming
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            elements=[element.broadcast(shape) for element in self.elements],
-            name=self.name,
-        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [
