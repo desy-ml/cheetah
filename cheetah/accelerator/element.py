@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -22,7 +22,7 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        self.register_buffer("length", torch.zeros((1,)))
+        self.register_buffer("length", torch.tensor(0.0))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         r"""
@@ -90,10 +90,6 @@ class Element(ABC, nn.Module):
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
-
-    def broadcast(self, shape: torch.Size) -> "Element":
-        """Broadcast the element to higher batch dimensions."""
-        raise NotImplementedError
 
     @property
     @abstractmethod
