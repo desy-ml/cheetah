@@ -192,15 +192,15 @@ def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
 
 def test_inactive_magnet_drift_except_for():
     """
-    Test that an inactive magnet is not replaced by a drift if except is used
+    Test that an inactive magnet is not replaced by a drift when it is included in the list of exceptions.
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([0.6])),
+            cheetah.Drift(length=torch.tensor(0.6)),
             cheetah.Quadrupole(
-                length=torch.tensor([0.2]), k1=torch.tensor([0.0]), name="quad"
+                length=torch.tensor(0.2), k1=torch.tensor(0.0), name="quad"
             ),
-            cheetah.Drift(length=torch.tensor([0.4])),
+            cheetah.Drift(length=torch.tensor(0.4)),
         ]
     )
 
