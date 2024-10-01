@@ -9,22 +9,22 @@ def test_create_from_parameters():
     Test that a `ParticleBeam` created from parameters actually has those parameters.
     """
     beam = ParticleBeam.from_parameters(
-        num_particles=torch.tensor([1_000_000]),
-        mu_x=torch.tensor([1e-5]),
-        mu_px=torch.tensor([1e-7]),
-        mu_y=torch.tensor([2e-5]),
-        mu_py=torch.tensor([2e-7]),
-        sigma_x=torch.tensor([1.75e-7]),
-        sigma_px=torch.tensor([2e-7]),
-        sigma_y=torch.tensor([1.75e-7]),
-        sigma_py=torch.tensor([2e-7]),
-        sigma_tau=torch.tensor([0.000001]),
-        sigma_p=torch.tensor([0.000001]),
-        cor_x=torch.tensor([0.0]),
-        cor_y=torch.tensor([0.0]),
-        cor_tau=torch.tensor([0.0]),
-        energy=torch.tensor([1e7]),
-        total_charge=torch.tensor([1e-9]),
+        num_particles=torch.tensor(1_000_000),
+        mu_x=torch.tensor(1e-5),
+        mu_px=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_py=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_px=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_tau=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        cor_x=torch.tensor(0.0),
+        cor_y=torch.tensor(0.0),
+        cor_tau=torch.tensor(0.0),
+        energy=torch.tensor(1e7),
+        total_charge=torch.tensor(1e-9),
     )
 
     assert beam.num_particles == 1_000_000
@@ -49,18 +49,18 @@ def test_transform_to():
     """
     original_beam = ParticleBeam.from_parameters()
     transformed_beam = original_beam.transformed_to(
-        mu_x=torch.tensor([1e-5]),
-        mu_px=torch.tensor([1e-7]),
-        mu_y=torch.tensor([2e-5]),
-        mu_py=torch.tensor([2e-7]),
-        sigma_x=torch.tensor([1.75e-7]),
-        sigma_px=torch.tensor([2e-7]),
-        sigma_y=torch.tensor([1.75e-7]),
-        sigma_py=torch.tensor([2e-7]),
-        sigma_tau=torch.tensor([0.000001]),
-        sigma_p=torch.tensor([0.000001]),
-        energy=torch.tensor([1e7]),
-        total_charge=torch.tensor([1e-9]),
+        mu_x=torch.tensor(1e-5),
+        mu_px=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_py=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_px=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_tau=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        energy=torch.tensor(1e7),
+        total_charge=torch.tensor(1e-9),
     )
 
     assert isinstance(transformed_beam, ParticleBeam)
@@ -86,14 +86,14 @@ def test_from_twiss_to_twiss():
     parameters.
     """
     beam = ParticleBeam.from_twiss(
-        num_particles=torch.tensor([10_000_000]),
-        beta_x=torch.tensor([5.91253676811640894]),
-        alpha_x=torch.tensor([3.55631307633660354]),
-        emittance_x=torch.tensor([3.494768647122823e-09]),
-        beta_y=torch.tensor([5.91253676811640982]),
-        alpha_y=torch.tensor([1.0]),  # TODO: set realistic value
-        emittance_y=torch.tensor([3.497810737006068e-09]),
-        energy=torch.tensor([6e6]),
+        num_particles=torch.tensor(10_000_000),
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(1.0),  # TODO: set realistic value
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        energy=torch.tensor(6e6),
     )
     # rather loose rtol is needed here due to the random sampling of the beam
     assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894, rtol=1e-2)
@@ -105,7 +105,7 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
-def test_generate_uniform_ellipsoid_batched():
+def test_generate_uniform_ellipsoid_vectorized():
     """
     Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
     parameters, i.e. the all particles are within the ellipsoid, and that the other
