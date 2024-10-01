@@ -55,7 +55,7 @@ def test_merged_transfer_maps_tracking_vectorized():
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),
             cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(4.2)),
-            cheetah.Drift(length=torch.tensor(0.4)),
+            cheetah.Drift(length=torch.linspace(0.3, 0.5, 10)),
             cheetah.HorizontalCorrector(
                 length=torch.tensor(0.1), angle=torch.tensor(1e-4)
             ),
