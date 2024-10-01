@@ -198,13 +198,13 @@ def test_inactive_magnet_drift_except_for():
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),
             cheetah.Quadrupole(
-                length=torch.tensor(0.2), k1=torch.tensor(0.0), name="quad"
+                length=torch.tensor(0.2), k1=torch.tensor(0.0), name="my_quad"
             ),
             cheetah.Drift(length=torch.tensor(0.4)),
         ]
     )
 
-    optimized_segment = segment.inactive_elements_as_drifts(except_for=["quad"])
+    optimized_segment = segment.inactive_elements_as_drifts(except_for=["my_quad"])
 
     assert isinstance(optimized_segment.elements[1], cheetah.Quadrupole)
 
@@ -253,7 +253,7 @@ def test_without_zero_length_elements():
             cheetah.Dipole(
                 length=torch.tensor(0.0),
                 angle=torch.tensor(0.0),
-                name="dipole"
+                name="my_dipole"
             ),
             cheetah.Dipole(
                 length=torch.tensor([0.0, 0.1]),
@@ -268,7 +268,7 @@ def test_without_zero_length_elements():
     )
 
     pruned = segment.without_inactive_zero_length_elements()
-    pruned_except = segment.without_inactive_zero_length_elements(except_for=["dipole"])
+    pruned_except = segment.without_inactive_zero_length_elements(except_for=["my_dipole"])
 
     assert len(segment.elements) == 6
     assert len(pruned.elements) == 3
