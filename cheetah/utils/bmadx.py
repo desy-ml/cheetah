@@ -31,7 +31,7 @@ def cheetah_to_bmad_z_pz(
 
 def bmad_to_cheetah_z_pz(
     z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: float
-) -> torch.Tensor:
+) -> tuple[torch.Tensor]:
     """
     Transforms Bmad longitudinal coordinates to Cheetah coordinates
     and computes reference energy.
@@ -284,14 +284,16 @@ def track_a_drift(
     Pxy2 = Px**2 + Py**2  # Particle's transverse mometum^2 over p0^2
     Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
 
-    # z = z + L * ( beta/beta_ref - 1.0/Pl ) but numerically accurate:
-    dz = length * (
-        sqrt_one((mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c * P) ** 2 + mc2**2))
+    # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
+    dz = length.unsqueeze(-1) * (
+        sqrt_one(
+            (mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c.unsqueeze(-1) * P) ** 2 + mc2**2)
+        )
         + sqrt_one(-Pxy2) / Pl
     )
 
-    x_out = x_in + length * Px / Pl
-    y_out = y_in + length * Py / Pl
+    x_out = x_in + length.unsqueeze(-1) * Px / Pl
+    y_out = y_in + length.unsqueeze(-1) * Py / Pl
     z_out = z_in + dz
 
     return x_out, y_out, z_out
@@ -299,7 +301,11 @@ def track_a_drift(
 
 def particle_rf_time(z, pz, p0c, mc2):
     """Returns rf time of Particle p."""
-    beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + mc2**2)
+    beta = (
+        (1 + pz)
+        * p0c.unsqueeze(-1)
+        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+    )
     time = -z / (beta * speed_of_light)
 
     return time

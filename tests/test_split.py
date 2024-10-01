@@ -14,7 +14,7 @@ def test_drift_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_drift.track(incoming_beam)
     outgoing_beam_split = split_drift.track(incoming_beam)
@@ -38,7 +38,7 @@ def test_quadrupole_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_quadrupole.track(incoming_beam)
     outgoing_beam_split = split_quadrupole.track(incoming_beam)
@@ -63,7 +63,7 @@ def test_cavity_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_cavity.track(incoming_beam)
     outgoing_beam_split = split_cavity.track(incoming_beam)
@@ -87,7 +87,7 @@ def test_solenoid_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_solenoid.track(incoming_beam)
     outgoing_beam_split = split_solenoid.track(incoming_beam)
@@ -102,6 +102,7 @@ def test_dipole_end():
     Test that at the end of a split dipole the result is the same as at the end of
     the original dipole.
     """
+
     original_dipole = cheetah.Dipole(
         length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
@@ -109,7 +110,7 @@ def test_dipole_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_dipole.track(incoming_beam)
     outgoing_beam_split = split_dipole.track(incoming_beam)
@@ -131,7 +132,7 @@ def test_undulator_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_undulator.track(incoming_beam)
     outgoing_beam_split = split_undulator.track(incoming_beam)
@@ -156,7 +157,7 @@ def test_horizontal_corrector_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_horizontal_corrector.track(incoming_beam)
     outgoing_beam_split = split_horizontal_corrector.track(incoming_beam)
@@ -181,7 +182,7 @@ def test_vertical_corrector_end():
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
-    ).broadcast((2,))
+    )
 
     outgoing_beam_original = original_vertical_corrector.track(incoming_beam)
     outgoing_beam_split = split_vertical_corrector.track(incoming_beam)
@@ -209,7 +210,7 @@ def test_split_preserves_dtype(ElementType):
     """
     Test that the dtype of a drift section's splits is the same as the original drift.
     """
-    original = ElementType(length=torch.tensor([2.0]), dtype=torch.float64)
+    original = ElementType(length=torch.tensor(2.0), dtype=torch.float64)
     splits = original.split(resolution=torch.tensor(0.1))
 
     for split in splits:
