@@ -27,7 +27,6 @@ def test_quadrupole_with_misalignments_vectorized():
     """
     Test that a quadrupole with misalignments behaves as expected.
     """
-
     quad_with_misalignment = Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
@@ -54,29 +53,29 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
     Test that a quadrupole with misalignments that have multiple vector dimensions does
     not raise an error and behaves as expected.
     """
-
-    misalignments = torch.randn((4, 3, 2))
     quad_with_misalignment = Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0), misalignment=misalignments
+        length=torch.tensor(1.0),
+        k1=torch.tensor(1.0),
+        misalignment=torch.randn((4, 3, 2)) * 5e-4,
     )
-
     quad_without_misalignment = Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
-    incoming_beam = ParameterBeam.from_parameters(
+
+    incoming = ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
-    outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
-    outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
+
+    outgoing_with_misalignment = quad_with_misalignment(incoming)
+    outgoing_without_misalignment = quad_without_misalignment(incoming)
 
     # Check that the misalignment has an effect
     assert not torch.allclose(
-        outbeam_quad_with_misalignment.mu_x,
-        outbeam_quad_without_misalignment.mu_x,
+        outgoing_with_misalignment.mu_x, outgoing_without_misalignment.mu_x
     )
 
     # Check that the output shape is correct
-    assert outbeam_quad_with_misalignment.mu_x.shape == misalignments.shape[:-1]
+    assert outgoing_with_misalignment.mu_x.shape == (4, 3)
 
 
 def test_tilted_quadrupole_vectorized():
@@ -91,8 +90,8 @@ def test_tilted_quadrupole_vectorized():
     segment = Segment(
         [
             Quadrupole(
-                length=torch.tensor([0.5, 0.5, 0.5]),
-                k1=torch.tensor([1.0, 1.0, 1.0]),
+                length=torch.tensor(0.5),
+                k1=torch.tensor(1.0),
                 tilt=torch.tensor([torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4]),
             ),
             Drift(length=torch.tensor(0.5)),
@@ -100,10 +99,10 @@ def test_tilted_quadrupole_vectorized():
     )
     outgoing = segment(incoming)
 
-    # Check pi/4 and 5/4*pi rotations is the same for quadrupole
+    # Check that pi/4 and 5/4*pi rotations is the same for quadrupole
     assert torch.allclose(outgoing.particles[0], outgoing.particles[2])
 
-    # Check pi/2 rotation is different
+    # Check that pi/2 rotation is different
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
 
@@ -112,15 +111,18 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
     Test that a quadrupole with tilts that have multiple vectorisation dimensions does
     not raise an error and behaves as expected.
     """
-    tilts = torch.tensor(
-        [
-            [torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4],
-            [torch.pi * 5 / 4, torch.pi / 2, torch.pi / 4],
-        ]
-    )
     segment = Segment(
         [
-            Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0), tilt=tilts),
+            Quadrupole(
+                length=torch.tensor(0.5),
+                k1=torch.tensor(1.0),
+                tilt=torch.tensor(
+                    [
+                        [torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4],
+                        [torch.pi * 5 / 4, torch.pi / 2, torch.pi / 4],
+                    ]
+                ),
+            ),
             Drift(length=torch.tensor(0.5)),
         ]
     )
