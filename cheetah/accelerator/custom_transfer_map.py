@@ -2,11 +2,11 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
-from torch import Size, nn
+from matplotlib.patches import Rectangle
+from torch import nn
 
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -31,11 +31,16 @@ class CustomTransferMap(Element):
         assert isinstance(transfer_map, torch.Tensor)
         assert transfer_map.shape[-2:] == (7, 7)
 
-        self._transfer_map = torch.as_tensor(transfer_map, **factory_kwargs)
-        self.length = (
-            torch.as_tensor(length, **factory_kwargs)
-            if length is not None
-            else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
+        self.register_buffer(
+            "_transfer_map", torch.as_tensor(transfer_map, **factory_kwargs)
+        )
+        self.register_buffer(
+            "length",
+            (
+                torch.as_tensor(length, **factory_kwargs)
+                if length is not None
+                else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
+            ),
         )
 
     @classmethod
@@ -80,13 +85,6 @@ class CustomTransferMap(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return self._transfer_map
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            self._transfer_map.repeat((*shape, 1, 1)),
-            length=self.length.repeat(shape),
-            name=self.name,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return True
@@ -105,5 +103,7 @@ class CustomTransferMap(Element):
         return [self]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
-        # TODO: At some point think of a nice way to indicate this in a lattice plot
-        pass
+        height = 0.4
+
+        patch = Rectangle((s, 0), self.length[0], height, color="tab:olive", zorder=2)
+        ax.add_patch(patch)

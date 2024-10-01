@@ -4,13 +4,12 @@ import torch
 import cheetah
 
 
-@pytest.mark.xfail  # TODO: Fix this
 def test_drift_end():
     """
     Test that at the end of a split drift the result is the same as at the end of the
     original drift.
     """
-    original_drift = cheetah.Drift(length=torch.tensor([2.0]))
+    original_drift = cheetah.Drift(length=torch.tensor([2.0, 2.5]))
     split_drift = cheetah.Segment(original_drift.split(resolution=torch.tensor(0.1)))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -25,14 +24,13 @@ def test_drift_end():
     )
 
 
-@pytest.mark.xfail  # TODO: Fix this
 def test_quadrupole_end():
     """
     Test that at the end of a split quadrupole the result is the same as at the end of
     the original quadrupole.
     """
     original_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor([0.2]), k1=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), k1=torch.tensor([4.2, 3.6])
     )
     split_quadrupole = cheetah.Segment(
         original_quadrupole.split(resolution=torch.tensor(0.01))
@@ -56,10 +54,10 @@ def test_cavity_end():
     the original cavity.
     """
     original_cavity = cheetah.Cavity(
-        length=torch.tensor([1.0377]),
-        voltage=torch.tensor([0.01815975e9]),
-        frequency=torch.tensor([1.3e9]),
-        phase=torch.tensor([0.0]),
+        length=torch.tensor([1.0377, 2.0377]),
+        voltage=torch.tensor([0.01815975e9, 9.15975e6]),
+        frequency=torch.tensor([1.3e9, 3.9e9]),
+        phase=torch.tensor([0.0, 4.2]),
     )
     split_cavity = cheetah.Segment(original_cavity.split(resolution=torch.tensor(0.1)))
 
@@ -81,7 +79,7 @@ def test_solenoid_end():
     the original solenoid.
     """
     original_solenoid = cheetah.Solenoid(
-        length=torch.tensor([0.2]), k=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), k=torch.tensor([4.2, 3.6])
     )
     split_solenoid = cheetah.Segment(
         original_solenoid.split(resolution=torch.tensor(0.01))
@@ -104,8 +102,9 @@ def test_dipole_end():
     Test that at the end of a split dipole the result is the same as at the end of
     the original dipole.
     """
+
     original_dipole = cheetah.Dipole(
-        length=torch.tensor([0.2]), angle=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_dipole = cheetah.Segment(original_dipole.split(resolution=torch.tensor(0.01)))
 
@@ -126,7 +125,7 @@ def test_undulator_end():
     Test that at the end of a split undulator the result is the same as at the end of
     the original undulator.
     """
-    original_undulator = cheetah.Undulator(length=torch.tensor([3.142]))
+    original_undulator = cheetah.Undulator(length=torch.tensor([3.142, 2.7]))
     split_undulator = cheetah.Segment(
         original_undulator.split(resolution=torch.tensor(0.1))
     )
@@ -150,7 +149,7 @@ def test_horizontal_corrector_end():
     the end of the original horizontal corrector.
     """
     original_horizontal_corrector = cheetah.HorizontalCorrector(
-        length=torch.tensor([0.2]), angle=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_horizontal_corrector = cheetah.Segment(
         original_horizontal_corrector.split(resolution=torch.tensor(0.01))
@@ -175,7 +174,7 @@ def test_vertical_corrector_end():
     the end of the original vertical corrector.
     """
     original_vertical_corrector = cheetah.VerticalCorrector(
-        length=torch.tensor([0.2]), angle=torch.tensor([4.2])
+        length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_vertical_corrector = cheetah.Segment(
         original_vertical_corrector.split(resolution=torch.tensor(0.01))
@@ -191,3 +190,28 @@ def test_vertical_corrector_end():
     assert torch.allclose(
         outgoing_beam_original.particles, outgoing_beam_split.particles
     )
+
+
+@pytest.mark.parametrize(
+    "ElementType",
+    [
+        cheetah.Cavity,
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.HorizontalCorrector,
+        cheetah.Quadrupole,
+        cheetah.RBend,
+        cheetah.Solenoid,
+        cheetah.Undulator,
+        cheetah.VerticalCorrector,
+    ],
+)
+def test_split_preserves_dtype(ElementType):
+    """
+    Test that the dtype of a drift section's splits is the same as the original drift.
+    """
+    original = ElementType(length=torch.tensor(2.0), dtype=torch.float64)
+    splits = original.split(resolution=torch.tensor(0.1))
+
+    for split in splits:
+        assert original.length.dtype == split.length.dtype

@@ -1,18 +1,17 @@
 from copy import deepcopy
+from functools import reduce
 from pathlib import Path
 from typing import Any, Optional, Union
 
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
-from torch import Size, nn
+from torch import nn
 
-from cheetah.converters.bmad import convert_bmad_lattice
-from cheetah.converters.nxtables import read_nx_tables
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
-
+from ..converters import bmad, elegant, nxtables
+from ..latticejson import load_cheetah_model, save_cheetah_model
+from ..particles import Beam, ParticleBeam
+from ..utils import UniqueNameGenerator
 from .custom_transfer_map import CustomTransferMap
 from .drift import Drift
 from .element import Element
@@ -202,7 +201,11 @@ class Segment(Element):
                     if (hasattr(element, "is_active") and element.is_active)
                     or element.length == 0.0
                     or element.name in except_for
-                    else Drift(element.length)
+                    else Drift(
+                        element.length,
+                        device=element.length.device,
+                        dtype=element.length.dtype,
+                    )
                 )
                 for element in self.elements
             ],
@@ -262,10 +265,12 @@ class Segment(Element):
             Cheetah or converted with potentially unexpected behavior.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
-        from cheetah.converters.ocelot import ocelot2cheetah
+        from cheetah.converters import ocelot
 
         converted = [
-            ocelot2cheetah(element, warnings=warnings, device=device, dtype=dtype)
+            ocelot.convert_element_to_cheetah(
+                element, warnings=warnings, device=device, dtype=dtype
+            )
             for element in cell
         ]
         return cls(converted, name=name, **kwargs)
@@ -276,6 +281,7 @@ class Segment(Element):
         bmad_lattice_file_path: str,
         environment_variables: Optional[dict] = None,
         device: Optional[Union[str, torch.device]] = None,
+        dtype: torch.dtype = torch.float32,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -289,11 +295,35 @@ class Segment(Element):
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
         :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return convert_bmad_lattice(
-            bmad_lattice_file_path, environment_variables, device
+        return bmad.convert_lattice_to_cheetah(
+            bmad_lattice_file_path, environment_variables, device, dtype
+        )
+
+    @classmethod
+    def from_elegant(
+        cls,
+        elegant_lattice_file_path: str,
+        name: str,
+        device: Optional[Union[str, torch.device]] = None,
+        dtype: torch.dtype = torch.float32,
+    ) -> "Segment":
+        """
+        Read a Cheetah segment from an elegant lattice file.
+
+        :param bmad_lattice_file_path: Path to the Bmad lattice file.
+        :param name: Name of the root element
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
+        :return: Cheetah `Segment` representing the elegant lattice.
+        """
+
+        elegant_lattice_file_path = Path(elegant_lattice_file_path)
+        return elegant.convert_lattice_to_cheetah(
+            elegant_lattice_file_path, name, device, dtype
         )
 
     @classmethod
@@ -310,7 +340,7 @@ class Segment(Element):
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        return read_nx_tables(filepath)
+        return nxtables.convert_lattice_to_cheetah(filepath)
 
     @property
     def is_skippable(self) -> bool:
@@ -318,17 +348,12 @@ class Segment(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        lengths = torch.stack(
-            [element.length for element in self.elements],
-            dim=1,
-        )
-        return torch.sum(lengths, dim=1)
+        lengths = [element.length for element in self.elements]
+        return reduce(torch.add, lengths)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         if self.is_skippable:
-            tm = torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
-                (*self.length.shape, 1, 1)
-            )
+            tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
                 tm = torch.matmul(element.transfer_map(energy), tm)
             return tm
@@ -352,12 +377,6 @@ class Segment(Element):
                 incoming = todo.track(incoming)
 
             return incoming
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            elements=[element.broadcast(shape) for element in self.elements],
-            name=self.name,
-        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [
@@ -417,17 +436,26 @@ class Segment(Element):
             initial = ParticleBeam.make_linspaced(
                 num_particles=num_particles,
                 mu_x=beam.mu_x,
-                mu_xp=beam.mu_xp,
+                mu_px=beam.mu_px,
                 mu_y=beam.mu_y,
-                mu_yp=beam.mu_yp,
+                mu_py=beam.mu_py,
                 sigma_x=beam.sigma_x,
-                sigma_xp=beam.sigma_xp,
+                sigma_px=beam.sigma_px,
                 sigma_y=beam.sigma_y,
-                sigma_yp=beam.sigma_yp,
-                sigma_s=beam.sigma_s,
+                sigma_py=beam.sigma_py,
+                sigma_tau=beam.sigma_tau,
                 sigma_p=beam.sigma_p,
                 energy=beam.energy,
-                device="cpu",
+                dtype=(
+                    beam.particles.dtype
+                    if isinstance(beam, ParticleBeam)
+                    else beam._mu.dtype
+                ),
+                device=(
+                    beam.particles.device
+                    if isinstance(beam, ParticleBeam)
+                    else beam._mu.device
+                ),
             )
             references.append(initial)
         for split in splits:
@@ -436,7 +464,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             xs = [
-                float(reference_beam.xs[0, particle_index].cpu())
+                float(reference_beam.x[0, particle_index].cpu())
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]

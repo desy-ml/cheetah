@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -22,7 +23,7 @@ def test_segment_length_shape():
 
 def test_segment_length_shape_2d():
     """
-    Test that the shape of a segment's length matches the input for a batch with
+    Test that the shape of a segment's length matches the input for a vectorisation with
     multiple dimensions.
     """
     segment = cheetah.Segment(
@@ -39,72 +40,73 @@ def test_segment_length_shape_2d():
     assert segment.length.shape == (3, 2)
 
 
-def test_track_particle_single_element_shape():
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_track_quadrupole_shape(BeamClass):
     """
-    Test that the shape of a beam tracked through a single element matches the input.
+    Test that the shape of a beam tracked through a single quadrupole element matches
+    the input.
     """
     quadrupole = cheetah.Quadrupole(
         length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5, 2e-5])
-    )
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
 
     outgoing = quadrupole.track(incoming)
 
-    assert outgoing.particles.shape == incoming.particles.shape
-    assert outgoing.particles.shape == (2, 100_000, 7)
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (2, 100_000, 7)
     assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
     assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
     assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
     assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
-    assert outgoing.particle_charges.shape == (2, 100_000)
-    assert isinstance(outgoing.num_particles, int)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
-def test_track_particle_single_element_shape_2d():
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_track_quadrupole_shape_2d(BeamClass):
     """
-    Test that the shape of a beam tracked through a single element matches the input for
-    an n-dimensional batch.
+    Test that the shape of a beam tracked through a single quadrupole element matches
+    the input for an n-dimensional batch.
     """
     quadrupole = cheetah.Quadrupole(
         length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
         k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000,
-        sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]]),
+    incoming = BeamClass.from_parameters(
+        sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
     )
 
     outgoing = quadrupole.track(incoming)
 
-    assert outgoing.particles.shape == incoming.particles.shape
-    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
     assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
     assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
     assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
-    assert outgoing.particle_charges.shape == (3, 2, 100_000)
-    assert isinstance(outgoing.num_particles, int)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
-def test_track_particle_segment_shape():
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_track_segment_shape(BeamClass):
     """
     Test that the shape of a beam tracked through a segment matches the input.
     """
@@ -117,34 +119,33 @@ def test_track_particle_segment_shape():
             cheetah.Drift(length=torch.tensor([0.4, 0.3])),
         ]
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5, 2e-5])
-    )
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
 
     outgoing = segment.track(incoming)
 
-    assert outgoing.particles.shape == incoming.particles.shape
-    assert outgoing.particles.shape == (2, 100_000, 7)
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (2, 100_000, 7)
     assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
     assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
     assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
     assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
     assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
-    assert outgoing.particle_charges.shape == (2, 100_000)
-    assert isinstance(outgoing.num_particles, int)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
-def test_track_particle_segment_shape_2d():
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_track_particle_segment_shape_2d(BeamClass):
     """
-    Test that the shape of a beam tracked through a segment matches the input for the
-    case of a multi-dimensional batch.
+    Test that the shape of a particle beam tracked through a segment matches the input
+    for the case of a multi-dimensional batch.
     """
     segment = cheetah.Segment(
         elements=[
@@ -156,314 +157,251 @@ def test_track_particle_segment_shape_2d():
             cheetah.Drift(length=torch.tensor([[0.4, 0.3], [0.6, 0.5], [0.8, 0.7]])),
         ]
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000,
-        sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]]),
-    )
-
-    outgoing = segment.track(incoming)
-
-    assert outgoing.particles.shape == incoming.particles.shape
-    assert outgoing.particles.shape == (3, 2, 100_000, 7)
-    assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
-    assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
-    assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
-    assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
-    assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
-    assert outgoing.particle_charges.shape == (3, 2, 100_000)
-    assert isinstance(outgoing.num_particles, int)
-
-
-def test_track_parameter_single_element_shape():
-    """
-    Test that the shape of a beam tracked through a single element matches the input.
-    """
-    quadrupole = cheetah.Quadrupole(
-        length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
-    )
-    incoming = cheetah.ParameterBeam.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
-
-    outgoing = quadrupole.track(incoming)
-
-    assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
-    assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
-    assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
-    assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
-    assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
-
-
-def test_track_parameter_single_element_shape_2d():
-    """
-    Test that the shape of a beam tracked through a single element matches the input for
-    an n-dimensional batch.
-    """
-    quadrupole = cheetah.Quadrupole(
-        length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
-        k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
-    )
-    incoming = cheetah.ParameterBeam.from_parameters(
-        sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
-    )
-
-    outgoing = quadrupole.track(incoming)
-
-    assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
-    assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
-    assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
-    assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
-    assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
-
-
-def test_track_parameter_segment_shape():
-    """
-    Test that the shape of a beam tracked through a segment matches the input.
-    """
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor([0.6, 0.5])),
-            cheetah.Quadrupole(
-                length=torch.tensor([0.2, 0.25]), k1=torch.tensor([4.2, 4.2])
-            ),
-            cheetah.Drift(length=torch.tensor([0.4, 0.3])),
-        ]
-    )
-    incoming = cheetah.ParameterBeam.from_parameters(sigma_x=torch.tensor([1e-5, 2e-5]))
-
-    outgoing = segment.track(incoming)
-
-    assert outgoing.mu_x.shape == (2,)
-    assert outgoing.mu_xp.shape == (2,)
-    assert outgoing.mu_y.shape == (2,)
-    assert outgoing.mu_yp.shape == (2,)
-    assert outgoing.sigma_x.shape == (2,)
-    assert outgoing.sigma_xp.shape == (2,)
-    assert outgoing.sigma_y.shape == (2,)
-    assert outgoing.sigma_yp.shape == (2,)
-    assert outgoing.sigma_s.shape == (2,)
-    assert outgoing.sigma_p.shape == (2,)
-    assert outgoing.energy.shape == (2,)
-    assert outgoing.total_charge.shape == (2,)
-
-
-def test_track_parameter_segment_shape_2d():
-    """
-    Test that the shape of a beam tracked through a segment matches the input for the
-    case of a multi-dimensional batch.
-    """
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor([[0.6, 0.5], [0.4, 0.3], [0.2, 0.1]])),
-            cheetah.Quadrupole(
-                length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
-                k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
-            ),
-            cheetah.Drift(length=torch.tensor([[0.4, 0.3], [0.6, 0.5], [0.8, 0.7]])),
-        ]
-    )
-    incoming = cheetah.ParameterBeam.from_parameters(
+    incoming = BeamClass.from_parameters(
         sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
     )
 
     outgoing = segment.track(incoming)
 
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.mu_x.shape == (3, 2)
-    assert outgoing.mu_xp.shape == (3, 2)
+    assert outgoing.mu_px.shape == (3, 2)
     assert outgoing.mu_y.shape == (3, 2)
-    assert outgoing.mu_yp.shape == (3, 2)
+    assert outgoing.mu_py.shape == (3, 2)
     assert outgoing.sigma_x.shape == (3, 2)
-    assert outgoing.sigma_xp.shape == (3, 2)
+    assert outgoing.sigma_px.shape == (3, 2)
     assert outgoing.sigma_y.shape == (3, 2)
-    assert outgoing.sigma_yp.shape == (3, 2)
-    assert outgoing.sigma_s.shape == (3, 2)
+    assert outgoing.sigma_py.shape == (3, 2)
+    assert outgoing.sigma_tau.shape == (3, 2)
     assert outgoing.sigma_p.shape == (3, 2)
-    assert outgoing.energy.shape == (3, 2)
-    assert outgoing.total_charge.shape == (3, 2)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
-def test_enormous_through_ares():
-    """Test ARES EA with a huge number of settings."""
-    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-
-    segment_broadcast = segment.broadcast((3, 100_000))
-    incoming_broadcast = incoming.broadcast((3, 100_000))
-
-    segment_broadcast.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 100_000).repeat(3, 1)
-
-    outgoing = segment_broadcast.track(incoming_broadcast)
-
-    assert outgoing.mu_x.shape == (3, 100_000)
-    assert outgoing.mu_xp.shape == (3, 100_000)
-    assert outgoing.mu_y.shape == (3, 100_000)
-    assert outgoing.mu_yp.shape == (3, 100_000)
-    assert outgoing.sigma_x.shape == (3, 100_000)
-    assert outgoing.sigma_xp.shape == (3, 100_000)
-    assert outgoing.sigma_y.shape == (3, 100_000)
-    assert outgoing.sigma_yp.shape == (3, 100_000)
-    assert outgoing.sigma_s.shape == (3, 100_000)
-    assert outgoing.sigma_p.shape == (3, 100_000)
-    assert outgoing.energy.shape == (3, 100_000)
-    assert outgoing.total_charge.shape == (3, 100_000)
-
-
-def test_before_after_broadcast_tracking_equal_cavity():
+def test_enormous_through_ares_ea():
     """
-    Test that when tracking through a segment after broadcasting, the resulting beam is
-    the same as in the segment before broadcasting. A cavity is used as a reference.
-    """
-    cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441]),
-        voltage=torch.tensor([48198468.0]),
-        phase=torch.tensor([-0.0]),
-        frequency=torch.tensor([2.8560e09]),
-        name="k26_2d",
-    )
-    incoming = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-    outgoing = cavity.track(incoming)
-
-    broadcast_cavity = cavity.broadcast((3, 10))
-    broadcast_incoming = incoming.broadcast((3, 10))
-    broadcast_outgoing = broadcast_cavity.track(broadcast_incoming)
-
-    for i in range(3):
-        for j in range(10):
-            assert torch.all(broadcast_outgoing._mu[i, j] == outgoing._mu[0])
-            assert torch.all(broadcast_outgoing._cov[i, j] == outgoing._cov[0])
-
-
-def test_before_after_broadcast_tracking_equal_ares_ea():
-    """
-    Test that when tracking through a segment after broadcasting, the resulting beam is
-    the same as in the segment before broadcasting. The ARES EA is used as a reference.
+    Test ARES EA with a huge number of settings. This is a stress test and only run
+    for `ParameterBeam` because `ParticleBeam` would require a lot of memory.
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     incoming = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    segment.AREAMQZM1.k1 = torch.tensor([4.2])
+
+    segment.AREAMQZM1.k1 = torch.linspace(-30.0, 30.0, 200_000).repeat(3, 1)
+
     outgoing = segment.track(incoming)
 
-    broadcast_segment = segment.broadcast((3, 10))
-    broadcast_incoming = incoming.broadcast((3, 10))
-    broadcast_outgoing = broadcast_segment.track(broadcast_incoming)
-
-    for i in range(3):
-        for j in range(10):
-            assert torch.allclose(broadcast_outgoing._mu[i, j], outgoing._mu[0])
-            assert torch.allclose(broadcast_outgoing._cov[i, j], outgoing._cov[0])
-
-
-def test_broadcast_customtransfermap():
-    """Test that broadcasting a `CustomTransferMap` element gives the correct result."""
-    tm = torch.tensor(
-        [
-            [
-                [1.0, 4.0e-02, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0e-05],
-                [0.0, 0.0, 1.0, 4.0e-02, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 1.0, -4.6422e-07, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-            ]
-        ]
-    )
-
-    element = cheetah.CustomTransferMap(length=torch.tensor([0.4]), transfer_map=tm)
-    broadcast_element = element.broadcast((3, 10))
-
-    assert broadcast_element.length.shape == (3, 10)
-    assert broadcast_element._transfer_map.shape == (3, 10, 7, 7)
-    for i in range(3):
-        for j in range(10):
-            assert torch.all(broadcast_element._transfer_map[i, j] == tm[0])
+    assert outgoing.mu_x.shape == (3, 200_000)
+    assert outgoing.mu_px.shape == (3, 200_000)
+    assert outgoing.mu_y.shape == (3, 200_000)
+    assert outgoing.mu_py.shape == (3, 200_000)
+    assert outgoing.sigma_x.shape == (3, 200_000)
+    assert outgoing.sigma_px.shape == (3, 200_000)
+    assert outgoing.sigma_y.shape == (3, 200_000)
+    assert outgoing.sigma_py.shape == (3, 200_000)
+    assert outgoing.sigma_tau.shape == (3, 200_000)
+    assert outgoing.sigma_p.shape == (3, 200_000)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
 
 
-def test_broadcast_drift():
-    """Test that broadcasting a `Drift` element gives the correct result."""
-    element = cheetah.Drift(length=torch.tensor([0.4]))
-    broadcast_element = element.broadcast((3, 10))
-
-    assert broadcast_element.length.shape == (3, 10)
-    for i in range(3):
-        for j in range(10):
-            assert broadcast_element.length[i, j] == 0.4
-
-
-def test_broadcast_quadrupole():
-    """Test that broadcasting a `Quadrupole` element gives the correct result."""
-
-    # TODO Add misalignment to the test
-    # TODO Add tilt to the test
-
-    element = cheetah.Quadrupole(length=torch.tensor([0.4]), k1=torch.tensor([4.2]))
-    broadcast_element = element.broadcast((3, 10))
-
-    assert broadcast_element.length.shape == (3, 10)
-    assert broadcast_element.k1.shape == (3, 10)
-    for i in range(3):
-        for j in range(10):
-            assert broadcast_element.length[i, j] == 0.4
-            assert broadcast_element.k1[i, j] == 4.2
-
-
-def test_cavity_with_zero_and_non_zero_voltage():
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
     """
     Tests that if zero and non-zero voltages are passed to a cavity in a single batch,
     there are no errors. This test does NOT check physical correctness.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441, 3.0441, 3.0441]),
-        voltage=torch.tensor([0.0, 48198468.0, 0.0]),
-        phase=torch.tensor([48198468.0, 48198468.0, 48198468.0]),
-        frequency=torch.tensor([2.8560e09, 2.8560e09, 2.8560e09]),
+        length=torch.tensor(3.0441),
+        voltage=torch.tensor([0.0, 48_198_468.0, 0.0]),
+        phase=torch.tensor(48198468.0),
+        frequency=torch.tensor(2.8560e09),
         name="my_test_cavity",
     )
-    beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5])
-    ).broadcast((3,))
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
 
-    _ = cavity.track(beam)
+    outgoing = cavity.track(incoming)
+
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (3, 100_000, 7)
+    assert outgoing.mu_x.shape == (3,)
+    assert outgoing.mu_px.shape == (3,)
+    assert outgoing.mu_y.shape == (3,)
+    assert outgoing.mu_py.shape == (3,)
+    assert outgoing.sigma_x.shape == (3,)
+    assert outgoing.sigma_px.shape == (3,)
+    assert outgoing.sigma_y.shape == (3,)
+    assert outgoing.sigma_py.shape == (3,)
+    assert outgoing.sigma_tau.shape == (3,)
+    assert outgoing.sigma_p.shape == (3,)
+    assert outgoing.energy.shape == (3,)
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
 
 
-def test_screen_length_shape():
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_vectorized_undulator(BeamClass):
+    """Test that a vectorized `Undulator` is able to track a particle beam."""
+    element = cheetah.Undulator(length=torch.tensor([0.4, 0.7]))
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+
+    outgoing = element.track(incoming)
+
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (2, 100_000, 7)
+    assert outgoing.mu_x.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
+    assert outgoing.mu_y.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
+    assert outgoing.sigma_x.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
+    assert outgoing.sigma_y.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
+    assert outgoing.sigma_p.shape == (2,)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+def test_vectorized_solenoid(BeamClass):
+    """Test that a vectorized `Solenoid` is able to track a particle beam."""
+    element = cheetah.Solenoid(
+        length=torch.tensor([0.4, 0.7]), k=torch.tensor([4.2, 3.1])
+    )
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+
+    outgoing = element.track(incoming)
+
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particles.shape == (2, 100_000, 7)
+    assert outgoing.mu_x.shape == (2,)
+    assert outgoing.mu_px.shape == (2,)
+    assert outgoing.mu_y.shape == (2,)
+    assert outgoing.mu_py.shape == (2,)
+    assert outgoing.sigma_x.shape == (2,)
+    assert outgoing.sigma_px.shape == (2,)
+    assert outgoing.sigma_y.shape == (2,)
+    assert outgoing.sigma_py.shape == (2,)
+    assert outgoing.sigma_tau.shape == (2,)
+    assert outgoing.sigma_p.shape == (2,)
+    assert outgoing.energy.shape == torch.Size([])
+    assert outgoing.total_charge.shape == torch.Size([])
+    if BeamClass == cheetah.ParticleBeam:
+        assert outgoing.particle_charges.shape == (100_000,)
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam])
+@pytest.mark.parametrize("method", ["kde"])  # Currently only KDE supports vectorisation
+def test_vectorized_screen_2d(BeamClass, method):
     """
-    Test that the shape of a screen's length matches the shape of its misalignment.
+    Test that a vectorized `Screen` is able to track a particle beam and produce a
+    reading with 2 vector dimensions.
     """
-    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2], [0.3, 0.4]]))
-    assert screen.length.shape == screen.misalignment.shape[:-1]
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Screen(
+                resolution=torch.tensor((100, 100)),
+                pixel_size=torch.tensor((1e-5, 1e-5)),
+                misalignment=torch.tensor(
+                    [
+                        [[1e-4, 2e-4], [3e-4, 4e-4], [5e-4, 6e-4]],
+                        [[-1e-4, -2e-4], [-3e-4, -4e-4], [-5e-4, -6e-4]],
+                    ]
+                ),
+                is_active=True,
+                method=method,
+                name="my_screen",
+            ),
+        ],
+        name="my_segment",
+    )
+    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+
+    _ = segment.track(incoming)
+
+    # Check the reading
+    assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-def test_screen_length_broadcast_shape():
+@pytest.mark.parametrize(
+    "ElementClass",
+    [
+        cheetah.Cavity,
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.HorizontalCorrector,
+        cheetah.Quadrupole,
+        cheetah.RBend,
+        cheetah.Solenoid,
+        cheetah.TransverseDeflectingCavity,
+        cheetah.Undulator,
+        cheetah.VerticalCorrector,
+    ],
+)
+def test_drift_broadcasting_two_different_inputs(ElementClass):
     """
-    Test that the shape of a screen's length matches the shape of its misalignment
-    after broadcasting.
+    Test that broadcasting rules are correctly applied to a elements with two different
+    input shapes for elements that have a `length` attribute.
     """
-    screen = cheetah.Screen(misalignment=torch.tensor([[0.1, 0.2]]))
-    broadcast_screen = screen.broadcast((3, 10))
-    assert broadcast_screen.length.shape == broadcast_screen.misalignment.shape[:-1]
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
+    )
+    element = ElementClass(length=torch.tensor([[0.6], [0.5], [0.4]]))
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (2,)
+
+
+@pytest.mark.parametrize(
+    "ElementClass",
+    [
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.Quadrupole,
+        cheetah.TransverseDeflectingCavity,
+    ],
+)
+def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
+    """
+    Test that broadcasting rules are correctly applied to a elements with two different
+    input shapes for elements that have a `"bmadx"` tracking method.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
+    )
+    element = ElementClass(
+        tracking_method="bmadx", length=torch.tensor([[0.6], [0.5], [0.4]])
+    )
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (2,)
+
+
+def test_vectorized_parameter_beam_creation():
+    """
+    Tests that creating a parameter beam with a few vectorised parameters works as
+    expected.
+    """
+    beam = cheetah.ParameterBeam.from_parameters(
+        mu_x=torch.tensor([2e-4, 3e-4]), sigma_x=torch.tensor([1e-5, 2e-5])
+    )
+
+    assert beam.mu_x.shape == (2,)
+    assert torch.allclose(beam.mu_x, torch.tensor([2e-4, 3e-4]))
+    assert beam.sigma_x.shape == (2,)
+    assert torch.allclose(beam.sigma_x, torch.tensor([1e-5, 2e-5]))

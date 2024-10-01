@@ -18,8 +18,8 @@ def test_tracking_speed():
 
     particles = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(int(1e5)),
-        sigma_x=torch.tensor([175e-6]),
-        sigma_y=torch.tensor([175e-6]),
+        sigma_x=torch.tensor(175e-6),
+        sigma_y=torch.tensor(175e-6),
     )
 
     t1 = time.time()
