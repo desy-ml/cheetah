@@ -6,12 +6,12 @@ import cheetah
 
 def test_diverging_parameter_beam():
     """
-    Test that that a parameter beam with sigma_xp > 0 and sigma_yp > 0 increases in
+    Test that that a parameter beam with sigma_px > 0 and sigma_py > 0 increases in
     size in both dimensions when travelling through a drift section.
     """
-    drift = cheetah.Drift(length=torch.tensor([1.0]))
+    drift = cheetah.Drift(length=torch.tensor(1.0))
     incoming_beam = cheetah.ParameterBeam.from_parameters(
-        sigma_xp=torch.tensor([2e-7]), sigma_yp=torch.tensor([2e-7])
+        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
     outgoing_beam = drift.track(incoming_beam)
 
@@ -22,14 +22,14 @@ def test_diverging_parameter_beam():
 
 def test_diverging_particle_beam():
     """
-    Test that that a particle beam with sigma_xp > 0 and sigma_yp > 0 increases in
+    Test that that a particle beam with sigma_px > 0 and sigma_py > 0 increases in
     size in both dimensions when travelling through a drift section.
     """
-    drift = cheetah.Drift(length=torch.tensor([1.0]))
+    drift = cheetah.Drift(length=torch.tensor(1.0))
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1000),
-        sigma_xp=torch.tensor([2e-7]),
-        sigma_yp=torch.tensor([2e-7]),
+        num_particles=torch.tensor(1_000),
+        sigma_px=torch.tensor(2e-7),
+        sigma_py=torch.tensor(2e-7),
     )
     outgoing_beam = drift.track(incoming_beam)
 
@@ -52,10 +52,39 @@ def test_device_like_torch_module():
     if not torch.cuda.is_available():
         return
 
-    element = cheetah.Drift(length=torch.tensor([0.2]), device="cuda")
+    element = cheetah.Drift(length=torch.tensor(0.2), device="cuda")
 
     assert element.length.device.type == "cuda"
 
     element = element.cpu()
 
     assert element.length.device.type == "cpu"
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_drift_bmadx_tracking(dtype):
+    """
+    Test that the results of tracking through a drift with the `"bmadx"` tracking method
+    match the results from Bmad-X.
+    """
+    incoming_beam = torch.load(
+        "tests/resources/bmadx/incoming.pt", weights_only=False
+    ).to(dtype)
+    drift = cheetah.Drift(
+        length=torch.tensor([1.0]), tracking_method="bmadx", dtype=dtype
+    )
+
+    # Run tracking
+    outgoing_beam = drift.track(incoming_beam)
+
+    # Load reference result computed with Bmad-X
+    outgoing_bmadx = torch.load(
+        "tests/resources/bmadx/outgoing_drift.pt", weights_only=False
+    )
+
+    assert torch.allclose(
+        outgoing_beam.particles,
+        outgoing_bmadx.to(dtype),
+        atol=1e-14 if dtype == torch.float64 else 0.00001,
+        rtol=1e-14 if dtype == torch.float64 else 1e-6,
+    )

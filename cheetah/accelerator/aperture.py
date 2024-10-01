@@ -3,11 +3,10 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam, ParticleBeam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -81,12 +80,12 @@ class Aperture(Element):
 
         if self.shape == "rectangular":
             survived_mask = torch.logical_and(
-                torch.logical_and(incoming.xs > -self.x_max, incoming.xs < self.x_max),
-                torch.logical_and(incoming.ys > -self.y_max, incoming.ys < self.y_max),
+                torch.logical_and(incoming.x > -self.x_max, incoming.x < self.x_max),
+                torch.logical_and(incoming.y > -self.y_max, incoming.y < self.y_max),
             )
         elif self.shape == "elliptical":
             survived_mask = (
-                incoming.xs**2 / self.x_max**2 + incoming.ys**2 / self.y_max**2
+                incoming.x**2 / self.x_max**2 + incoming.y**2 / self.y_max**2
             ) <= 1.0
         outgoing_particles = incoming.particles[survived_mask]
 
@@ -109,19 +108,6 @@ class Aperture(Element):
             if outgoing_particles.shape[0] > 0
             else ParticleBeam.empty
         )
-
-    def broadcast(self, shape: Size) -> Element:
-        new_aperture = self.__class__(
-            x_max=self.x_max.repeat(shape),
-            y_max=self.y_max.repeat(shape),
-            shape=self.shape,
-            is_active=self.is_active,
-            name=self.name,
-            device=self.x_max.device,
-            dtype=self.x_max.dtype,
-        )
-        new_aperture.length = self.length.repeat(shape)
-        return new_aperture
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self

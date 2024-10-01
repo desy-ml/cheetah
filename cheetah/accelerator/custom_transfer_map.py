@@ -2,11 +2,11 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
-from torch import Size, nn
+from matplotlib.patches import Rectangle
+from torch import nn
 
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -85,15 +85,6 @@ class CustomTransferMap(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return self._transfer_map
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            self._transfer_map.repeat((*shape, 1, 1)),
-            length=self.length.repeat(shape),
-            name=self.name,
-            device=self._transfer_map.device,
-            dtype=self._transfer_map.dtype,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return True
@@ -112,5 +103,7 @@ class CustomTransferMap(Element):
         return [self]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
-        # TODO: At some point think of a nice way to indicate this in a lattice plot
-        pass
+        height = 0.4
+
+        patch = Rectangle((s, 0), self.length[0], height, color="tab:olive", zorder=2)
+        ax.add_patch(patch)

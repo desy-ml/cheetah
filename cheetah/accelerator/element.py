@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -22,26 +22,30 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        self.register_buffer("length", torch.zeros((1,)))
+        self.register_buffer("length", torch.tensor(0.0))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         r"""
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element.
-        The state vector consists of 6 values with a physical meaning:
-        (in the trace space notation)
+        The state vector consists of 6 values with a physical meaning.
+        They represent a particle in the phase space with
 
-        - x: Position in x direction
-        - xp: Angle in x direction
-        - y: Position in y direction
-        - yp: Angle in y direction
-        - s: Position in longitudinal direction, the zero value is set to the
+        - x: Position in x direction (m) relative to the reference particle
+        - px: Horinzontal momentum normalized over the reference momentum
+            (dimensionless) :math:`px = P_x / P_0`
+        - y: Position in y direction (m) relative to the reference particle
+        - py: Vertical momentum normalized over the reference momentum
+            (dimensionless) :math:`py = P_y / P_0`
+        - tau: Position in longitudinal direction (m) with the zero value set to the
         reference position (usually the center of the pulse)
-        - p: Relative energy deviation from the reference particle
-           :math:`p = \frac{\Delta E}{p_0 C}`
-        As well as a seventh value used to add constants to some of the prior values if
-        necessary. Through this seventh state, the addition of constants can be
-        represented using a matrix multiplication.
+        - p: Relative energy deviation from the reference particle (dimensionless)
+        :math:`p = \frac{\Delta E}{p_0 C}`
+
+        As well as a seventh value used to add constants to some of the previous values
+        if necessary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication, i.e. the augmented matrix as in an
+        affine transformation.
 
         :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
         :return: A 7x7 Matrix for further calculations.
@@ -86,10 +90,6 @@ class Element(ABC, nn.Module):
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
-
-    def broadcast(self, shape: torch.Size) -> "Element":
-        """Broadcast the element to higher batch dimensions."""
-        raise NotImplementedError
 
     @property
     @abstractmethod

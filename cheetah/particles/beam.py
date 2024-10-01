@@ -4,49 +4,76 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Beam(nn.Module):
+    r"""
+    Parent class to represent a beam of particles. You should not instantiate this
+    class directly, but use one of the subclasses.
+
+    Cheetah uses a 7D vector to describe the state of a particle.
+    It contains the 6D phase space vector (x, px, y, yp, tau, p) and an additional
+    dimension (always 1) for convenient calculations.
+
+    The phase space vectors contain the canonical variables:
+    - x: Position in x direction in meters.
+    - px: Horizontal momentum normalized over the reference momentum (dimensionless).
+        $px = P_x / P_0$
+    - y: Position in y direction in meters.
+    - py: Vertical momentum normalized over the reference momentum (dimensionless).
+        $py = P_y / P_0$
+    - tau: Position in longitudinal direction in meters, relative to the reference
+        particle. $\tau = ct - s/\beta_0$, where s is the position along the beamline.
+        In this notation, particle ahead of the reference particle will have negative
+        $\tau$.
+    - p: Relative energy deviation from the reference particle (dimensionless).
+        $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
+        $\Delta E = E - E_0$
+    """
+
     empty = "I'm an empty beam!"
 
     @classmethod
     def from_parameters(
         cls,
         mu_x: Optional[torch.Tensor] = None,
-        mu_xp: Optional[torch.Tensor] = None,
+        mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
-        mu_yp: Optional[torch.Tensor] = None,
+        mu_py: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
-        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
-        sigma_yp: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_py: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         cor_x: Optional[torch.Tensor] = None,
         cor_y: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
 
-        :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on x'=px/px'
-            (trace space) in rad.
+        :param mu_px: Center of the particle distribution on px, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_py: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_px: Sigma of the particle distribution in px direction,
+            dimensionless.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
-        :param energy: Energy of the beam in eV.
+        :param sigma_py: Sigma of the particle distribution in yp direction,
+            dimensionless.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction,
+            dimensionless.
+        :param cor_x: Correlation between x and px.
+        :param cor_y: Correlation between y and yp.
+        :param cor_tau: Correlation between tau and p.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
         raise NotImplementedError
@@ -102,14 +129,14 @@ class Beam(nn.Module):
     def transformed_to(
         self,
         mu_x: Optional[torch.Tensor] = None,
-        mu_xp: Optional[torch.Tensor] = None,
+        mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
-        mu_yp: Optional[torch.Tensor] = None,
+        mu_py: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
-        sigma_xp: Optional[torch.Tensor] = None,
+        sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
-        sigma_yp: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_py: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
@@ -118,34 +145,37 @@ class Beam(nn.Module):
         Create version of this beam that is transformed to new beam parameters.
 
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_xp: Center of the particle distribution on x' in rad.
+        :param mu_px: Center of the particle distribution on px, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
-        :param mu_yp: Center of the particle distribution on y' in rad.
+        :param mu_py: Center of the particle distribution on yp, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_xp: Sigma of the particle distribution in x' direction in rad.
+        :param sigma_px: Sigma of the particle distribution in px direction,
+            dimensionless.
         :param sigma_y: Sigma of the particle distribution in y direction in meters.
-        :param sigma_yp: Sigma of the particle distribution in y' direction in rad.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
+        :param sigma_py: Sigma of the particle distribution in yp direction,
+            dimensionless.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
-        dimensionless.
-        :param energy: Energy of the beam in eV.
+            dimensionless.
+        :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
+        # Figure out vector dimensions of the original beam and check that passed
+        # arguments have the same vector dimensions.
         shape = self.mu_x.shape
         not_nones = [
             argument
             for argument in [
                 mu_x,
-                mu_xp,
+                mu_px,
                 mu_y,
-                mu_yp,
+                mu_py,
                 sigma_x,
-                sigma_xp,
+                sigma_px,
                 sigma_y,
-                sigma_yp,
-                sigma_s,
+                sigma_py,
+                sigma_tau,
                 sigma_p,
                 energy,
                 total_charge,
@@ -158,28 +188,28 @@ class Beam(nn.Module):
             ), "Arguments must have the same shape."
 
         mu_x = mu_x if mu_x is not None else self.mu_x
-        mu_xp = mu_xp if mu_xp is not None else self.mu_xp
+        mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
-        mu_yp = mu_yp if mu_yp is not None else self.mu_yp
+        mu_py = mu_py if mu_py is not None else self.mu_py
         sigma_x = sigma_x if sigma_x is not None else self.sigma_x
-        sigma_xp = sigma_xp if sigma_xp is not None else self.sigma_xp
+        sigma_px = sigma_px if sigma_px is not None else self.sigma_px
         sigma_y = sigma_y if sigma_y is not None else self.sigma_y
-        sigma_yp = sigma_yp if sigma_yp is not None else self.sigma_yp
-        sigma_s = sigma_s if sigma_s is not None else self.sigma_s
+        sigma_py = sigma_py if sigma_py is not None else self.sigma_py
+        sigma_tau = sigma_tau if sigma_tau is not None else self.sigma_tau
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
-            mu_xp=mu_xp,
+            mu_px=mu_px,
             mu_y=mu_y,
-            mu_yp=mu_yp,
+            mu_py=mu_py,
             sigma_x=sigma_x,
-            sigma_xp=sigma_xp,
+            sigma_px=sigma_px,
             sigma_y=sigma_y,
-            sigma_yp=sigma_yp,
-            sigma_s=sigma_s,
+            sigma_py=sigma_py,
+            sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
@@ -189,14 +219,14 @@ class Beam(nn.Module):
     def parameters(self) -> dict:
         return {
             "mu_x": self.mu_x,
-            "mu_xp": self.mu_xp,
+            "mu_px": self.mu_px,
             "mu_y": self.mu_y,
-            "mu_yp": self.mu_yp,
+            "mu_py": self.mu_py,
             "sigma_x": self.sigma_x,
-            "sigma_xp": self.sigma_xp,
+            "sigma_px": self.sigma_px,
             "sigma_y": self.sigma_y,
-            "sigma_yp": self.sigma_yp,
-            "sigma_s": self.sigma_s,
+            "sigma_py": self.sigma_py,
+            "sigma_tau": self.sigma_tau,
             "sigma_p": self.sigma_p,
             "energy": self.energy,
         }
@@ -210,11 +240,11 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @property
-    def mu_xp(self) -> torch.Tensor:
+    def mu_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_xp(self) -> torch.Tensor:
+    def sigma_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -226,11 +256,11 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @property
-    def mu_yp(self) -> torch.Tensor:
+    def mu_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def sigma_yp(self) -> torch.Tensor:
+    def sigma_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -238,7 +268,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @property
-    def sigma_s(self) -> torch.Tensor:
+    def sigma_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -251,10 +281,12 @@ class Beam(nn.Module):
 
     @property
     def relativistic_gamma(self) -> torch.Tensor:
+        """Reference relativistic gamma of the beam."""
         return self.energy / electron_mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
+        """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
         relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = torch.sqrt(
             1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0] ** 2)
@@ -262,27 +294,32 @@ class Beam(nn.Module):
         return relativistic_beta
 
     @property
-    def sigma_xxp(self) -> torch.Tensor:
-        # the covariance of (x,x') ~ $\sigma_{xx'}$
+    def p0c(self) -> torch.Tensor:
+        """Get the reference momentum * speed of light in eV."""
+        return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
+
+    @property
+    def sigma_xpx(self) -> torch.Tensor:
+        # the covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
-    def sigma_yyp(self) -> torch.Tensor:
+    def sigma_ypy(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
     def emittance_x(self) -> torch.Tensor:
-        """Emittance of the beam in x direction in m*rad."""
+        """Emittance of the beam in x direction in m."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_x**2 * self.sigma_xp**2 - self.sigma_xxp**2,
+                self.sigma_x**2 * self.sigma_px**2 - self.sigma_xpx**2,
                 torch.finfo(self.sigma_x.dtype).tiny,
             )
         )
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
-        """Normalized emittance of the beam in x direction in m*rad."""
+        """Normalized emittance of the beam in x direction in m."""
         return self.emittance_x * self.relativistic_beta * self.relativistic_gamma
 
     @property
@@ -292,22 +329,22 @@ class Beam(nn.Module):
 
     @property
     def alpha_x(self) -> torch.Tensor:
-        """Alpha function in x direction in rad."""
-        return -self.sigma_xxp / self.emittance_x
+        """Alpha function in x direction, dimensionless."""
+        return -self.sigma_xpx / self.emittance_x
 
     @property
     def emittance_y(self) -> torch.Tensor:
-        """Emittance of the beam in y direction in m*rad."""
+        """Emittance of the beam in y direction in m."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_y**2 * self.sigma_yp**2 - self.sigma_yyp**2,
+                self.sigma_y**2 * self.sigma_py**2 - self.sigma_ypy**2,
                 torch.finfo(self.sigma_y.dtype).tiny,
             )
         )
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
-        """Normalized emittance of the beam in y direction in m*rad."""
+        """Normalized emittance of the beam in y direction in m."""
         return self.emittance_y * self.relativistic_beta * self.relativistic_gamma
 
     @property
@@ -317,19 +354,15 @@ class Beam(nn.Module):
 
     @property
     def alpha_y(self) -> torch.Tensor:
-        """Alpha function in y direction in rad."""
-        return -self.sigma_yyp / self.emittance_y
-
-    def broadcast(self, shape: torch.Size) -> "Beam":
-        """Broadcast beam to new shape."""
-        raise NotImplementedError
+        """Alpha function in y direction, dimensionless."""
+        return -self.sigma_ypy / self.emittance_y
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_xp={self.mu_xp},"
-            f" mu_y={self.mu_y}, mu_yp={self.mu_yp}, sigma_x={self.sigma_x},"
-            f" sigma_xp={self.sigma_xp}, sigma_y={self.sigma_y},"
-            f" sigma_yp={self.sigma_yp}, sigma_s={self.sigma_s},"
+            f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_px={self.mu_px},"
+            f" mu_y={self.mu_y}, mu_py={self.mu_py}, sigma_x={self.sigma_x},"
+            f" sigma_px={self.sigma_px}, sigma_y={self.sigma_y},"
+            f" sigma_py={self.sigma_py}, sigma_tau={self.sigma_tau},"
             f" sigma_p={self.sigma_p}, energy={self.energy}),"
             f" total_charge={self.total_charge})"
         )

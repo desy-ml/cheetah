@@ -2,9 +2,13 @@
 
 ## v0.7.0 [🚧 Work in Progress]
 
+This is a major release with significant upgrades under the hood of Cheetah. Despite extensive testing, you might still encounter a few bugs. Please report them by opening an issue, so we can fix them as soon as possible and improve the experience for everyone.
+
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #213, #215, #218) (@jank324, @cr-xu)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #208, #213, #215, #218, #229, #233) (@jank324, @cr-xu, @hespe, @roussel-ryan)
+- The fifth particle coordinate `s` is renamed to `tau`. Now Cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. In addition, the trailing "s" was removed from some beam property names (e.g. `beam.xs` becomes `beam.x`). (see #163) (@cr-xu)
+- `Screen` no longer blocks the beam (by default). To return to old behaviour, set `Screen.is_blocking = True`. (see #208) (@jank324, @roussel-ryan)
 
 ### 🚀 Features
 
@@ -15,6 +19,11 @@
 - `Segment`s can now be imported from Bmad to devices other than `torch.device("cpu")` and dtypes other than `torch.float32` (see #196, #206) (@jank324)
 - `Screen` now offers the option to use KDE for differentiable images (see #200) (@cr-xu, @roussel-ryan)
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
+- `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
+- Port Bmad-X tracking methods to Cheetah for `Quadrupole`, `Drift`, and `Dipole` (see #153, #240) (@jp-ga, @jank324)
+- Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
+- `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
+- Implement a converter for lattice files imported from Elegant (see #222) (@hespe)
 
 ### 🐛 Bug fixes
 
@@ -25,6 +34,8 @@
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
+- Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
+- Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
 
 ### 🐆 Other
 
@@ -36,6 +47,9 @@
 - Added imports to the code example in the README (see #188) (@jank324)
 - Refactor definitions of physical constants (see #189) (@hespe)
 - Fix the quadrupole strength units in the quadrupole docstring (see #202) (@ansantam)
+- Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @hespe)
+- Clean up CI pipelines (see #243, #244) (@jank324)
+- Fix logo display in README (see #252) (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 

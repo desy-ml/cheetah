@@ -1,2 +1,1 @@
-# flake8: noqa
-from cheetah.converters import astra, bmad, nxtables, ocelot
+from . import astra, bmad, elegant, nxtables, ocelot  # noqa: F401

@@ -1,17 +1,14 @@
-"""Utility functions for creating transfer maps for the elements."""
+"""Utility functions for creating transfer maps for elements."""
 
 from typing import Optional
 
 import torch
-from scipy.constants import physical_constants
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+from .utils import compute_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
-    """Rotate the transfer map in x-y plane
+    """Rotate the transfer map in x-y plane.
 
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
         dipole.
@@ -53,14 +50,12 @@ def base_rmatrix(
     device = length.device
     dtype = length.dtype
 
-    tilt = tilt if tilt is not None else torch.zeros_like(length)
-    energy = energy if energy is not None else torch.zeros_like(length)
+    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    energy = (
+        energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    )
 
-    gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-    igamma2 = torch.ones_like(length)
-    igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-
-    beta = torch.sqrt(1 - igamma2)
+    _, igamma2, beta = compute_relativistic_factors(energy)
 
     # Avoid division by zero
     k1 = k1.clone()
@@ -72,16 +67,18 @@ def base_rmatrix(
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = torch.clone(length)
-    sy[ky != 0] = (torch.sin(ky[ky != 0] * length[ky != 0]) / ky[ky != 0]).real
-
+    sy = (torch.sin(ky * length) / ky).real
     sx = (torch.sin(kx * length) / kx).real
     dx = hx / kx2 * (1.0 - cx)
     r56 = hx**2 * (length - sx) / kx2 / beta**2
 
     r56 = r56 - length / beta**2 * igamma2
 
-    R = torch.eye(7, dtype=dtype, device=device).repeat(*length.shape, 1, 1)
+    vector_shape = torch.broadcast_shapes(
+        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
+    )
+
+    R = torch.eye(7, dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
     R[..., 0, 0] = cx
     R[..., 0, 1] = sx
     R[..., 0, 5] = dx / beta
@@ -107,16 +104,17 @@ def base_rmatrix(
 def misalignment_matrix(
     misalignment: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Shift the beam for tracking beam through misaligned elements"""
+    """Shift the beam for tracking beam through misaligned elements."""
     device = misalignment.device
     dtype = misalignment.dtype
-    batch_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*batch_shape, 1, 1)
+    vector_shape = misalignment.shape[:-1]
+
+    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
     R_exit[..., 0, 6] = misalignment[..., 0]
     R_exit[..., 2, 6] = misalignment[..., 1]
 
-    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*batch_shape, 1, 1)
+    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
