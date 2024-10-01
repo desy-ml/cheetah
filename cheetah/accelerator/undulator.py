@@ -4,10 +4,9 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
-from cheetah.utils import UniqueNameGenerator
-
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -48,20 +47,14 @@ class Undulator(Element):
         gamma = energy / electron_mass_eV
         igamma2 = torch.where(gamma != 0, 1 / gamma**2, torch.zeros_like(gamma))
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = self.length * igamma2
 
         return tm
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            is_active=self.is_active,
-            name=self.name,
-            device=self.length.device,
-        )
 
     @property
     def is_skippable(self) -> bool:

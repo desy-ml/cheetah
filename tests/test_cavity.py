@@ -26,8 +26,8 @@ def test_assert_ei_greater_zero():
         name="k26_2a",
     )
     beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, sigma_x=torch.tensor([1e-5])
-    ).broadcast((3,))
+        num_particles=100_000, sigma_x=torch.tensor(1e-5)
+    )
 
     _ = cavity.track(beam)
 
@@ -39,7 +39,7 @@ def test_assert_ei_greater_zero():
 def test_vectorized_cavity_zero_voltage(voltage):
     """
     Tests that a vectorised cavity with zero voltage does not produce NaNs and that
-    zero voltage can be batched with non-zero voltage.
+    zero voltage can be vectorised with non-zero voltage.
 
     This was a bug introduced during the vectorisation of Cheetah, when the special
     case of zero was removed and the `_cavity_rmatrix` method was also used in the case
@@ -55,20 +55,20 @@ def test_vectorized_cavity_zero_voltage(voltage):
         dtype=torch.float64,
     )
     incoming = cheetah.ParameterBeam.from_parameters(
-        mu_x=torch.tensor([0.0]),
-        mu_px=torch.tensor([0.0]),
-        mu_y=torch.tensor([0.0]),
-        mu_py=torch.tensor([0.0]),
-        sigma_x=torch.tensor([4.8492e-06]),
-        sigma_px=torch.tensor([1.5603e-07]),
-        sigma_y=torch.tensor([4.1209e-07]),
-        sigma_py=torch.tensor([1.1035e-08]),
-        sigma_tau=torch.tensor([1.0000e-10]),
-        sigma_p=torch.tensor([1.0000e-06]),
-        energy=torch.tensor([8.0000e09]),
-        total_charge=torch.tensor([0.0]),
+        mu_x=torch.tensor(0.0),
+        mu_px=torch.tensor(0.0),
+        mu_y=torch.tensor(0.0),
+        mu_py=torch.tensor(0.0),
+        sigma_x=torch.tensor(4.8492e-06),
+        sigma_px=torch.tensor(1.5603e-07),
+        sigma_y=torch.tensor(4.1209e-07),
+        sigma_py=torch.tensor(1.1035e-08),
+        sigma_tau=torch.tensor(1.0000e-10),
+        sigma_p=torch.tensor(1.0000e-06),
+        energy=torch.tensor(8.0000e09),
+        total_charge=torch.tensor(0.0),
         dtype=torch.float64,
-    ).broadcast((2,))
+    )
 
     outgoing = cavity.track(incoming)
 
