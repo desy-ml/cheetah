@@ -5,12 +5,11 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
-
+from ..particles import Beam, ParticleBeam
+from ..track_methods import base_rmatrix, misalignment_matrix
+from ..utils import UniqueNameGenerator, bmadx
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -175,6 +174,9 @@ class Quadrupole(Element):
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
+
+        # pz is unaffected by tracking, therefore needs to match vector dimensions
+        pz = pz * torch.ones_like(x)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -191,25 +193,13 @@ class Quadrupole(Element):
         )
         return outgoing_beam
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            k1=self.k1.repeat(shape),
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            tilt=self.tilt.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return self.tracking_method == "cheetah"
 
     @property
     def is_active(self) -> bool:
-        return any(self.k1 != 0)
+        return torch.any(self.k1 != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()
