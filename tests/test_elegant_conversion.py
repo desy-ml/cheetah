@@ -12,19 +12,18 @@ def test_fodo():
 
     correct_lattice = cheetah.Segment(
         [
+            cheetah.Marker(name="c"),
             cheetah.Quadrupole(
-                name="q1", length=torch.tensor([0.1]), k1=torch.tensor([1.5])
+                name="q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
             ),
-            cheetah.Drift(name="d1", length=torch.tensor([1])),
+            cheetah.Drift(name="d1", length=torch.tensor(1)),
             cheetah.Marker(name="m1"),
-            cheetah.Dipole(
-                name="s1", length=torch.tensor([0.3]), e1=torch.tensor([0.25])
-            ),
-            cheetah.Drift(name="d1", length=torch.tensor([1])),
+            cheetah.Dipole(name="s1", length=torch.tensor(0.3), e1=torch.tensor(0.25)),
+            cheetah.Drift(name="d1", length=torch.tensor(1)),
             cheetah.Quadrupole(
-                name="q2", length=torch.tensor([0.2]), k1=torch.tensor([-3])
+                name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3)
             ),
-            cheetah.Drift(name="d2", length=torch.tensor([2])),
+            cheetah.Drift(name="d2", length=torch.tensor(2)),
         ],
         name="fodo",
     )
