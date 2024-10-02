@@ -524,10 +524,10 @@ class Segment(Element):
             outgoing = element.track(longitudinal_beams[-1])
 
             longitudinal_beams.append(outgoing)
-            s_positions.append(s_positions[-1] + element.length[0])
+            s_positions.append(s_positions[-1] + element.length)
 
-        beta_x = [beam.beta_x[0] for beam in longitudinal_beams]
-        beta_y = [beam.beta_y[0] for beam in longitudinal_beams]
+        beta_x = [beam.beta_x for beam in longitudinal_beams]
+        beta_y = [beam.beta_y for beam in longitudinal_beams]
 
         if ax is None:
             fig = plt.figure()
