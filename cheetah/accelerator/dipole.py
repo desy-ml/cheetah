@@ -482,9 +482,9 @@ class Dipole(Element):
 
     def plot(self, ax: plt.Axes, s: float) -> None:
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
+        height = 0.8 * (np.sign(self.angle) if self.is_active else 1)
 
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:green", alpha=alpha, zorder=2
+            (s, 0), self.length, height, color="tab:green", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)

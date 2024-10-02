@@ -386,7 +386,7 @@ class Segment(Element):
         ]
 
     def plot(self, ax: plt.Axes, s: float) -> None:
-        element_lengths = [element.length[0] for element in self.elements]
+        element_lengths = [element.length for element in self.elements]
         element_ss = [0] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
         ]
@@ -423,7 +423,7 @@ class Segment(Element):
         reference_segment = deepcopy(self)
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
-        split_lengths = [split.length[0] for split in splits]
+        split_lengths = [split.length for split in splits]
         ss = [0] + [sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)]
 
         references = []
@@ -464,7 +464,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             xs = [
-                float(reference_beam.x[0, particle_index].cpu())
+                reference_beam.x[particle_index]
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]
@@ -475,7 +475,7 @@ class Segment(Element):
 
         for particle_index in range(num_particles):
             ys = [
-                float(reference_beam.ys[0, particle_index].cpu())
+                reference_beam.y[particle_index]
                 for reference_beam in references
                 if reference_beam is not Beam.empty
             ]

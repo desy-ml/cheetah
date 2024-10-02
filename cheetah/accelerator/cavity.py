@@ -346,7 +346,7 @@ class Cavity(Element):
         height = 0.4
 
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="gold", alpha=alpha, zorder=2
+            (s, 0), self.length, height, color="gold", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

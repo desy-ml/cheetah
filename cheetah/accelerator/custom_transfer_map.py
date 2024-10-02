@@ -105,5 +105,5 @@ class CustomTransferMap(Element):
     def plot(self, ax: plt.Axes, s: float) -> None:
         height = 0.4
 
-        patch = Rectangle((s, 0), self.length[0], height, color="tab:olive", zorder=2)
+        patch = Rectangle((s, 0), self.length, height, color="tab:olive", zorder=2)
         ax.add_patch(patch)
