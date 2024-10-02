@@ -23,7 +23,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Port Bmad-X tracking methods to Cheetah for `Quadrupole`, `Drift`, and `Dipole` (see #153, #240) (@jp-ga, @jank324)
 - Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
 - `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
-- Implement a converter for lattice files imported from Elegant (see #222) (@hespe)
+- Implement a converter for lattice files imported from Elegant (see #222, #251) (@hespe)
 
 ### 🐛 Bug fixes
 
@@ -36,6 +36,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
 - Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
 - Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
+- Fix issue with Dipole hgap conversion in Bmad import (see #261) (@cr-xu)
 
 ### 🐆 Other
 

@@ -1,1 +1,1 @@
-from . import fortran_namelist  # noqa: F401
+from . import fortran_namelist, rpn  # noqa: F401
