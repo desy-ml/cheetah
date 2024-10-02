@@ -57,3 +57,53 @@ def test_reference_particle_plot():
 
     # Run the plotting to see if it raises an exception
     segment.plot_overview(beam=incoming)
+
+
+def test_twiss_plot_vectorized_2d():
+    """
+    Test that the Twiss plot does not raise an exception using the ARES EA as an
+    example and when the model has two vector dimensions.
+    """
+    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
+    segment.AREAMQZM1.k1 = torch.tensor(5.0)
+    segment.AREAMQZM2.k1 = torch.tensor(
+        [
+            [[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]],
+            [[-50.0, -20.0, -10.0], [10.0, 20.0, 50.0]],
+        ]
+    )
+    segment.AREAMCVM1.k1 = torch.tensor(1e-3)
+    segment.AREAMQZM3.k1 = torch.tensor(5.0)
+    segment.AREAMCHM1.k1 = torch.tensor(-2e-3)
+
+    incoming = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Run the plotting to see if it raises an exception
+    segment.plot_twiss(incoming, vector_idx=(0, 2))
+
+
+def test_reference_particle_plot_vectorized_2d():
+    """
+    Test that the Twiss plot does not raise an exception using the ARES EA as an
+    example and when the model has two vector dimensions.
+    """
+    segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
+    segment.AREAMQZM1.k1 = torch.tensor(5.0)
+    segment.AREAMQZM2.k1 = torch.tensor(
+        [
+            [[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]],
+            [[-50.0, -20.0, -10.0], [10.0, 20.0, 50.0]],
+        ]
+    )
+    segment.AREAMCVM1.k1 = torch.tensor(1e-3)
+    segment.AREAMQZM3.k1 = torch.tensor(5.0)
+    segment.AREAMCHM1.k1 = torch.tensor(-2e-3)
+
+    incoming = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Run the plotting to see if it raises an exception
+    segment.plot_overview(incoming, vector_idx=(0, 2))
