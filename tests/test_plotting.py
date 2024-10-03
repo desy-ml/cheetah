@@ -56,7 +56,7 @@ def test_reference_particle_plot():
     )
 
     # Run the plotting to see if it raises an exception
-    segment.plot_overview(beam=incoming)
+    segment.plot_overview(incoming=incoming)
 
 
 def test_twiss_plot_vectorized_2d():
@@ -79,7 +79,7 @@ def test_twiss_plot_vectorized_2d():
     )
 
     # Run the plotting to see if it raises an exception
-    segment.plot_twiss(beam=incoming, vector_idx=(0, 2))
+    segment.plot_twiss(incoming=incoming, vector_idx=(0, 2))
 
 
 def test_reference_particle_plot_vectorized_2d():
@@ -102,4 +102,4 @@ def test_reference_particle_plot_vectorized_2d():
     )
 
     # Run the plotting to see if it raises an exception
-    segment.plot_overview(beam=incoming, resolution=0.1, vector_idx=(0, 2))
+    segment.plot_overview(incoming=incoming, resolution=0.1, vector_idx=(0, 2))

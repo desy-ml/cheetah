@@ -491,7 +491,7 @@ class Segment(Element):
     def plot_overview(
         self,
         fig: Optional[matplotlib.figure.Figure] = None,
-        beam: Optional[Beam] = None,
+        incoming: Optional[Beam] = None,
         num_particles: int = 10,
         resolution: float = 0.01,
         vector_idx: Optional[tuple] = None,
@@ -500,7 +500,7 @@ class Segment(Element):
         Plot an overview of the segment with the lattice and traced reference particles.
 
         :param fig: Figure to plot the overview into.
-        :param beam: Entering beam from which the reference particles are sampled.
+        :param incoming: Entering beam from which the reference particles are sampled.
         :param num_particles: Number of reference particles to plot. Must not be larger
             than number of particles passed in `beam`.
         :param resolution: Minimum resolution of the tracking of the reference particles
@@ -519,7 +519,7 @@ class Segment(Element):
         self.plot_reference_particle_traces(
             axx=axs[0],
             axy=axs[1],
-            incoming=beam,
+            incoming=incoming,
             num_particles=num_particles,
             resolution=resolution,
             vector_idx=vector_idx,
@@ -530,10 +530,13 @@ class Segment(Element):
         plt.tight_layout()
 
     def plot_twiss(
-        self, beam: Beam, ax: Optional[Any] = None, vector_idx: Optional[tuple] = None
+        self,
+        incoming: Beam,
+        ax: Optional[Any] = None,
+        vector_idx: Optional[tuple] = None,
     ) -> None:
         """Plot twiss parameters along the segment."""
-        longitudinal_beams = [beam]
+        longitudinal_beams = [incoming]
         s_positions = [torch.tensor(0.0)]
         for element in self.elements:
             if torch.all(element.length == 0):
@@ -593,13 +596,13 @@ class Segment(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
 
-    def plot_twiss_over_lattice(self, beam: Beam, figsize=(8, 4)) -> None:
+    def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
         """Plot twiss parameters in a plot over a plot of the lattice."""
         fig = plt.figure(figsize=figsize)
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
-        self.plot_twiss(beam, ax=axs[0])
+        self.plot_twiss(incoming, ax=axs[0])
         self.plot(axs[1], 0)
 
         plt.tight_layout()
