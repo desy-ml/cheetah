@@ -1,4 +1,5 @@
 import torch
+from icecream import ic
 
 import cheetah
 
@@ -75,13 +76,16 @@ def test_twiss_plot_vectorized_2d():
     segment.AREAMCVM1.k1 = torch.tensor(1e-3)
     segment.AREAMQZM3.k1 = torch.tensor(5.0)
     segment.AREAMCHM1.k1 = torch.tensor(-2e-3)
+    segment.Drift_AREAMCHM1.length = (
+        torch.FloatTensor(2, 3).uniform_(0.9, 1.1) * segment.Drift_AREAMCHM1.length
+    )
 
     incoming = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     # Run the plotting to see if it raises an exception
-    segment.plot_twiss(incoming, vector_idx=(0, 2))
+    segment.plot_twiss(beam=incoming, vector_idx=(0, 2))
 
 
 def test_reference_particle_plot_vectorized_2d():
@@ -91,19 +95,19 @@ def test_reference_particle_plot_vectorized_2d():
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     segment.AREAMQZM1.k1 = torch.tensor(5.0)
-    segment.AREAMQZM2.k1 = torch.tensor(
-        [
-            [[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]],
-            [[-50.0, -20.0, -10.0], [10.0, 20.0, 50.0]],
-        ]
-    )
+    segment.AREAMQZM2.k1 = torch.tensor([[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]])
     segment.AREAMCVM1.k1 = torch.tensor(1e-3)
     segment.AREAMQZM3.k1 = torch.tensor(5.0)
     segment.AREAMCHM1.k1 = torch.tensor(-2e-3)
+    segment.Drift_AREAMCHM1.length = (
+        torch.FloatTensor(2, 3).uniform_(0.9, 1.1) * segment.Drift_AREAMCHM1.length
+    )
+
+    ic(segment.AREAMQZM2.k1.shape, segment.Drift_AREAMCHM1.length.shape)
 
     incoming = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
     # Run the plotting to see if it raises an exception
-    segment.plot_overview(incoming, vector_idx=(0, 2))
+    segment.plot_overview(beam=incoming, resolution=0.1, vector_idx=(0, 2))

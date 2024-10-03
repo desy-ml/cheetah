@@ -218,12 +218,15 @@ class TransverseDeflectingCavity(Element):
         # element itself
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
         patch = Rectangle(
-            (s, 0), self.length, height, color="olive", alpha=alpha, zorder=2
+            (plot_s, 0), plot_length, height, color="olive", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

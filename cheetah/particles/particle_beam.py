@@ -667,6 +667,32 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
+    def linspaced(self, num_particles: int) -> "ParticleBeam":
+        """
+        Create a new beam with the same parameters as this beam, but with
+        `num_particles` particles evenly distributed in the beam.
+
+        :param num_particles: Number of particles to create.
+        :return: New beam with `num_particles` particles.
+        """
+        return self.make_linspaced(
+            num_particles=num_particles,
+            mu_x=self.mu_x,
+            mu_y=self.mu_y,
+            mu_px=self.mu_px,
+            mu_py=self.mu_py,
+            sigma_x=self.sigma_x,
+            sigma_y=self.sigma_y,
+            sigma_px=self.sigma_px,
+            sigma_py=self.sigma_py,
+            sigma_tau=self.sigma_tau,
+            sigma_p=self.sigma_p,
+            energy=self.energy,
+            total_charge=self.total_charge,
+            device=self.particles.device,
+            dtype=self.particles.dtype,
+        )
+
     @classmethod
     def from_xyz_pxpypz(
         cls,
