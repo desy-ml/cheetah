@@ -19,7 +19,7 @@ class Beam(nn.Module):
     The phase space vectors contain the canonical variables:
     - x: Position in x direction in meters.
     - px: Horizontal momentum normalized over the reference momentum (dimensionless).
-        :math:`px = \frace{P_x}{P_0}`
+        :math:`px = \frac{P_x}{P_0}`
     - y: Position in y direction in meters.
     - py: Vertical momentum normalized over the reference momentum (dimensionless).
         :math:`py = \frac{P_y}{P_0}`
