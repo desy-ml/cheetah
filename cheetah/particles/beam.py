@@ -19,10 +19,10 @@ class Beam(nn.Module):
     The phase space vectors contain the canonical variables:
     - x: Position in x direction in meters.
     - px: Horizontal momentum normalized over the reference momentum (dimensionless).
-        :math:`px = P_x / P_0`
+        :math:`px = \frace{P_x}{P_0}`
     - y: Position in y direction in meters.
     - py: Vertical momentum normalized over the reference momentum (dimensionless).
-        :math:`py = P_y / P_0`
+        :math:`py = \frac{P_y}{P_0}`
     - tau: Position in longitudinal direction in meters, relative to the reference
         particle. :math:`\tau = ct - \frac{s}{\beta_0}`, where s is the position along
         the beamline. In this notation, particle ahead of the reference particle will
