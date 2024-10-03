@@ -1,5 +1,4 @@
 import torch
-from icecream import ic
 
 import cheetah
 
