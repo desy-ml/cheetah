@@ -97,8 +97,6 @@ def test_reference_particle_plot_vectorized_2d():
         torch.FloatTensor(2, 3).uniform_(0.9, 1.1) * segment.Drift_AREAMCHM1.length
     )
 
-    ic(segment.AREAMQZM2.k1.shape, segment.Drift_AREAMCHM1.length.shape)
-
     incoming = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
