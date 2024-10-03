@@ -170,7 +170,7 @@ class Segment(Element):
             elements=[
                 element
                 for element in self.elements
-                if element.length > 0.0
+                if torch.any(element.length > 0.0)
                 or (hasattr(element, "is_active") and element.is_active)
                 or element.name in except_for
             ],
@@ -199,10 +199,11 @@ class Segment(Element):
                 (
                     element
                     if (hasattr(element, "is_active") and element.is_active)
-                    or element.length == 0.0
+                    or torch.all(element.length == 0.0)
                     or element.name in except_for
                     else Drift(
                         element.length,
+                        name=element.name,
                         device=element.length.device,
                         dtype=element.length.dtype,
                     )

@@ -144,6 +144,7 @@ def test_inactive_magnet_is_replaced_by_drift():
     assert all(
         isinstance(element, cheetah.Drift) for element in optimized_segment.elements
     )
+    assert torch.allclose(segment.length, optimized_segment.length)
 
 
 def test_active_elements_not_replaced_by_drift():
@@ -153,7 +154,7 @@ def test_active_elements_not_replaced_by_drift():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(4.2)),
+            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor([4.2, 0.0])),
             cheetah.Drift(length=torch.tensor(0.4)),
         ]
     )
@@ -182,6 +183,26 @@ def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
     optimized_segment = segment.inactive_elements_as_drifts()
 
     assert all(element.length.dtype == dtype for element in optimized_segment.elements)
+
+
+def test_inactive_magnet_drift_except_for():
+    """
+    Test that an inactive magnet is not replaced by a drift when it is included in the
+    list of exceptions.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.6)),
+            cheetah.Quadrupole(
+                length=torch.tensor(0.2), k1=torch.tensor(0.0), name="my_quad"
+            ),
+            cheetah.Drift(length=torch.tensor(0.4)),
+        ]
+    )
+
+    optimized_segment = segment.inactive_elements_as_drifts(except_for=["my_quad"])
+
+    assert isinstance(optimized_segment.elements[1], cheetah.Quadrupole)
 
 
 def test_skippable_elements_reset():
@@ -214,3 +235,30 @@ def test_skippable_elements_reset():
     merged_tm = merged_segment.elements[2].transfer_map(energy=incoming_beam.energy)
 
     assert torch.allclose(original_tm, merged_tm)
+
+
+def test_without_zero_length_elements():
+    """Test that zero-length elements are properly recognized and removed."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Dipole(length=torch.tensor(0.0), angle=torch.tensor(0.0)),
+            cheetah.Dipole(
+                length=torch.tensor(0.0), angle=torch.tensor(0.0), name="my_dipole"
+            ),
+            cheetah.Dipole(length=torch.tensor([0.0, 0.1]), angle=torch.tensor(0.0)),
+            cheetah.Drift(length=torch.tensor(0.0)),
+            cheetah.Dipole(length=torch.tensor(0.0), angle=torch.tensor([0.5, 0.0])),
+        ]
+    )
+
+    pruned = segment.without_inactive_zero_length_elements()
+    pruned_except = segment.without_inactive_zero_length_elements(
+        except_for=["my_dipole"]
+    )
+
+    assert len(segment.elements) == 6
+    assert len(pruned.elements) == 3
+    assert len(pruned_except.elements) == 4
+    assert torch.allclose(segment.length, pruned.length)
+    assert torch.allclose(segment.length, pruned_except.length)
