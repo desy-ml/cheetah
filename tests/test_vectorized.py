@@ -1,6 +1,5 @@
 import pytest
 import torch
-from icecream import ic
 
 import cheetah
 
@@ -408,7 +407,8 @@ def test_vectorized_parameter_beam_creation():
     assert torch.allclose(beam.sigma_x, torch.tensor([1e-5, 2e-5]))
 
 
-def test_vectorized_aperture_broadcasting():
+@pytest.mark.parametrize("shape", ["rectangular", "elliptical"])
+def test_vectorized_aperture_broadcasting(shape):
     """
     Test that apertures work in a vectorised setting and that broadcasting rules are
     applied correctly.
@@ -420,13 +420,13 @@ def test_vectorized_aperture_broadcasting():
         elements=[
             cheetah.Drift(length=torch.tensor(0.5)),
             cheetah.Aperture(
-                x_max=torch.tensor([[1e-3], [2e-3], [3e-3]]), y_max=torch.tensor(1e-3)
+                x_max=torch.tensor([[1e-3], [2e-3], [3e-3]]),
+                y_max=torch.tensor(1e-3),
+                shape=shape,
             ),
             cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
-
-    ic(incoming.energy.shape, segment.elements[1].x_max.shape)
 
     outgoing = segment.track(incoming)
 
