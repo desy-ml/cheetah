@@ -10,7 +10,7 @@ from torch import nn
 
 from ..converters import bmad, elegant, nxtables
 from ..latticejson import load_cheetah_model, save_cheetah_model
-from ..particles import Beam, ParticleBeam
+from ..particles import Beam
 from ..utils import UniqueNameGenerator
 from .custom_transfer_map import CustomTransferMap
 from .drift import Drift
@@ -386,17 +386,26 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
-        element_lengths = [element.length[0] for element in self.elements]
-        element_ss = [0] + [
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        element_lengths = [element.length for element in self.elements]
+        element_ss = [torch.tensor(0.0)] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
         ]
         element_ss = [s + element_s for element_s in element_ss]
+        broadcast_ss = torch.broadcast_tensors(*element_ss)
+        stacked_ss = torch.stack(broadcast_ss)
+        dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
 
-        ax.plot([0, element_ss[-1]], [0, 0], "--", color="black")
+        plot_ss = (
+            dimension_reordered_ss[vector_idx]
+            if stacked_ss.dim() > 1
+            else dimension_reordered_ss
+        )
 
-        for element, s in zip(self.elements, element_ss[:-1]):
-            element.plot(ax, s)
+        ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
+
+        for element, s in zip(self.elements, plot_ss[:-1]):
+            element.plot(ax, s, vector_idx)
 
         ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
@@ -406,81 +415,75 @@ class Segment(Element):
         self,
         axx: plt.Axes,
         axy: plt.Axes,
-        beam: Optional[Beam] = None,
+        incoming: Beam,
         num_particles: int = 10,
         resolution: float = 0.01,
+        vector_idx: Optional[tuple] = None,
     ) -> None:
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
 
         :param axx: Axes to plot the particle traces into viewed in x-direction.
         :param axy: Axes to plot the particle traces into viewed in y-direction.
-        :param beam: Entering beam from which the reference particles are sampled.
+        :param incoming: Entering beam from which the reference particles are sampled.
         :param num_particles: Number of reference particles to plot. Must not be larger
             than number of particles passed in `beam`.
         :param resolution: Minimum resolution of the tracking of the reference particles
             in the plot.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
         """
         reference_segment = deepcopy(self)
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
-        split_lengths = [split.length[0] for split in splits]
-        ss = [0] + [sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)]
+        split_lengths = [split.length for split in splits]
+        ss = [torch.tensor(0.0)] + [
+            sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)
+        ]
+        broadcast_ss = torch.broadcast_tensors(*ss)
+        stacked_ss = torch.stack(broadcast_ss)
+        dimensions_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
 
-        references = []
-        if beam is None:
-            initial = ParticleBeam.make_linspaced(
-                num_particles=num_particles, device="cpu"
-            )
-            references.append(initial)
-        else:
-            initial = ParticleBeam.make_linspaced(
-                num_particles=num_particles,
-                mu_x=beam.mu_x,
-                mu_px=beam.mu_px,
-                mu_y=beam.mu_y,
-                mu_py=beam.mu_py,
-                sigma_x=beam.sigma_x,
-                sigma_px=beam.sigma_px,
-                sigma_y=beam.sigma_y,
-                sigma_py=beam.sigma_py,
-                sigma_tau=beam.sigma_tau,
-                sigma_p=beam.sigma_p,
-                energy=beam.energy,
-                dtype=(
-                    beam.particles.dtype
-                    if isinstance(beam, ParticleBeam)
-                    else beam._mu.dtype
-                ),
-                device=(
-                    beam.particles.device
-                    if isinstance(beam, ParticleBeam)
-                    else beam._mu.device
-                ),
-            )
-            references.append(initial)
+        references = [incoming.linspaced(num_particles)]
         for split in splits:
             sample = split(references[-1])
             references.append(sample)
 
-        for particle_index in range(num_particles):
-            xs = [
-                float(reference_beam.x[0, particle_index].cpu())
-                for reference_beam in references
-                if reference_beam is not Beam.empty
-            ]
-            axx.plot(ss[: len(xs)], xs)
+        xs = [reference_beam.x for reference_beam in references]
+        broadcast_xs = torch.broadcast_tensors(*xs)
+        stacked_xs = torch.stack(broadcast_xs)
+        dimension_reordered_xs = stacked_xs.movedim(0, -1)  # Place vector dims first
+
+        ys = [reference_beam.y for reference_beam in references]
+        broadcast_ys = torch.broadcast_tensors(*ys)
+        stacked_ys = torch.stack(broadcast_ys)
+        dimension_reordered_ys = stacked_ys.movedim(0, -1)  # Place vector dims first
+
+        plot_ss = (
+            dimensions_reordered_ss[vector_idx]
+            if stacked_ss.dim() > 1
+            else dimensions_reordered_ss
+        )
+        plot_xs = (
+            dimension_reordered_xs[vector_idx]
+            if stacked_xs.dim() > 2
+            else dimension_reordered_xs
+        )
+        plot_ys = (
+            dimension_reordered_ys[vector_idx]
+            if stacked_ys.dim() > 2
+            else dimension_reordered_ys
+        )
+
+        for particle_idx in range(num_particles):
+            axx.plot(plot_ss, plot_xs[particle_idx])
+            axy.plot(plot_ss, plot_ys[particle_idx])
+
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
         axx.grid()
-
-        for particle_index in range(num_particles):
-            ys = [
-                float(reference_beam.ys[0, particle_index].cpu())
-                for reference_beam in references
-                if reference_beam is not Beam.empty
-            ]
-            axy.plot(ss[: len(ys)], ys)
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
         axy.grid()
@@ -488,19 +491,24 @@ class Segment(Element):
     def plot_overview(
         self,
         fig: Optional[matplotlib.figure.Figure] = None,
-        beam: Optional[Beam] = None,
-        n: int = 10,
+        incoming: Optional[Beam] = None,
+        num_particles: int = 10,
         resolution: float = 0.01,
+        vector_idx: Optional[tuple] = None,
     ) -> None:
         """
         Plot an overview of the segment with the lattice and traced reference particles.
 
         :param fig: Figure to plot the overview into.
-        :param beam: Entering beam from which the reference particles are sampled.
-        :param n: Number of reference particles to plot. Must not be larger than number
-            of particles passed in `beam`.
+        :param incoming: Entering beam from which the reference particles are sampled.
+        :param num_particles: Number of reference particles to plot. Must not be larger
+            than number of particles passed in `beam`.
         :param resolution: Minimum resolution of the tracking of the reference particles
             in the plot.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
         """
         if fig is None:
             fig = plt.figure()
@@ -508,18 +516,30 @@ class Segment(Element):
         axs = gs.subplots(sharex=True)
 
         axs[0].set_title("Reference Particle Traces")
-        self.plot_reference_particle_traces(axs[0], axs[1], beam, n, resolution)
+        self.plot_reference_particle_traces(
+            axx=axs[0],
+            axy=axs[1],
+            incoming=incoming,
+            num_particles=num_particles,
+            resolution=resolution,
+            vector_idx=vector_idx,
+        )
 
-        self.plot(axs[2], 0)
+        self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
 
         plt.tight_layout()
 
-    def plot_twiss(self, beam: Beam, ax: Optional[Any] = None) -> None:
+    def plot_twiss(
+        self,
+        incoming: Beam,
+        ax: Optional[Any] = None,
+        vector_idx: Optional[tuple] = None,
+    ) -> None:
         """Plot twiss parameters along the segment."""
-        longitudinal_beams = [beam]
-        s_positions = [0.0]
+        longitudinal_beams = [incoming]
+        s_positions = [torch.tensor(0.0)]
         for element in self.elements:
-            if element.length == 0:
+            if torch.all(element.length == 0):
                 continue
 
             outgoing = element.track(longitudinal_beams[-1])
@@ -530,6 +550,34 @@ class Segment(Element):
         beta_x = [beam.beta_x for beam in longitudinal_beams]
         beta_y = [beam.beta_y for beam in longitudinal_beams]
 
+        # Extraction of the correct vector element for plotting
+        broadcast_s_positions = torch.broadcast_tensors(*s_positions)
+        stacked_s_positions = torch.stack(broadcast_s_positions)
+        dimension_reordered_s_positions = stacked_s_positions.movedim(0, -1)
+        plot_s_positions = (
+            dimension_reordered_s_positions[vector_idx]
+            if stacked_s_positions.dim() > 1
+            else dimension_reordered_s_positions
+        )
+
+        broadcast_beta_x = torch.broadcast_tensors(*beta_x)
+        stacked_beta_x = torch.stack(broadcast_beta_x)
+        dimension_reordered_beta_x = stacked_beta_x.movedim(0, -1)
+        plot_beta_x = (
+            dimension_reordered_beta_x[vector_idx]
+            if stacked_beta_x.dim() > 2
+            else dimension_reordered_beta_x
+        )
+
+        broadcast_beta_y = torch.broadcast_tensors(*beta_y)
+        stacked_beta_y = torch.stack(broadcast_beta_y)
+        dimension_reordered_beta_y = stacked_beta_y.movedim(0, -1)
+        plot_beta_y = (
+            dimension_reordered_beta_y[vector_idx]
+            if stacked_beta_y.dim() > 2
+            else dimension_reordered_beta_y
+        )
+
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -538,8 +586,8 @@ class Segment(Element):
         ax.set_xlabel("s (m)")
         ax.set_ylabel(r"$\beta$ (m)")
 
-        ax.plot(s_positions, beta_x, label=r"$\beta_x$", c="tab:red")
-        ax.plot(s_positions, beta_y, label=r"$\beta_y$", c="tab:green")
+        ax.plot(plot_s_positions, plot_beta_x, label=r"$\beta_x$", c="tab:red")
+        ax.plot(plot_s_positions, plot_beta_y, label=r"$\beta_y$", c="tab:green")
 
         ax.legend()
         plt.tight_layout()
@@ -548,13 +596,13 @@ class Segment(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
 
-    def plot_twiss_over_lattice(self, beam: Beam, figsize=(8, 4)) -> None:
+    def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
         """Plot twiss parameters in a plot over a plot of the lattice."""
         fig = plt.figure(figsize=figsize)
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
-        self.plot_twiss(beam, ax=axs[0])
+        self.plot_twiss(incoming, ax=axs[0])
         self.plot(axs[1], 0)
 
         plt.tight_layout()
