@@ -405,3 +405,28 @@ def test_vectorized_parameter_beam_creation():
     assert torch.allclose(beam.mu_x, torch.tensor([2e-4, 3e-4]))
     assert beam.sigma_x.shape == (2,)
     assert torch.allclose(beam.sigma_x, torch.tensor([1e-5, 2e-5]))
+
+
+def test_vectorized_aperture_broadcasting():
+    """
+    Test that apertures work in a vectorised setting and that broadcasting rules are
+    applied correctly.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9, 5e9])
+    )
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Aperture(
+                x_max=torch.tensor([[1e-3], [2e-3], [3e-3]]), y_max=torch.tensor(1e-3)
+            ),
+            cheetah.Drift(length=torch.tensor(0.5)),
+        ]
+    )
+
+    outgoing = segment.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (2,)
