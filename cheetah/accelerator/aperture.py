@@ -72,7 +72,7 @@ class Aperture(Element):
         if not (isinstance(incoming, ParticleBeam) and self.is_active):
             return incoming
 
-        assert self.x_max >= 0 and self.y_max >= 0
+        assert torch.all(self.x_max >= 0) and torch.all(self.y_max >= 0)
         assert self.shape in [
             "rectangular",
             "elliptical",
