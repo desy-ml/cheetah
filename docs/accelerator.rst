@@ -55,11 +55,15 @@ Accelerator
     :members:
     :undoc-members:
 
+.. automodule:: accelerator.solenoid
+    :members:
+    :undoc-members:
+
 .. automodule:: accelerator.space_charge_kick
     :members:
     :undoc-members:
 
-.. automodule:: accelerator.solenoid
+.. automodule:: accelerator.transverse_deflecting_cavity
     :members:
     :undoc-members:
 
