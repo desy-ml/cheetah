@@ -5,8 +5,8 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
 
-from ..utils import elementwise_linspace
-from .beam import Beam
+from cheetah.particles.beam import Beam
+from cheetah.utils import elementwise_linspace
 
 speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
 electron_mass = torch.tensor(constants.electron_mass)  # In kg

@@ -7,10 +7,10 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..particles import Beam, ParticleBeam
-from ..track_methods import base_rmatrix, rotation_matrix
-from ..utils import UniqueNameGenerator, bmadx
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParticleBeam
+from cheetah.track_methods import base_rmatrix, rotation_matrix
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

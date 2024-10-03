@@ -6,8 +6,8 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from ..utils import UniqueNameGenerator, compute_relativistic_factors
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
