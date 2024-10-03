@@ -24,9 +24,9 @@ class Beam(nn.Module):
     - py: Vertical momentum normalized over the reference momentum (dimensionless).
         :math:`py = P_y / P_0`
     - tau: Position in longitudinal direction in meters, relative to the reference
-        particle. :math:`\tau = ct - s/\beta_0`, where s is the position along the
-        beamline. In this notation, particle ahead of the reference particle will have
-        negative :math:`\tau`.
+        particle. :math:`\tau = ct - \frac{s}{\beta_0}`, where s is the position along
+        the beamline. In this notation, particle ahead of the reference particle will
+        have negative :math:`\tau`.
     - p: Relative energy deviation from the reference particle (dimensionless).
         :math:`p = \frac{\Delta E}{p_0 C}`, where :math:`p_0` is the reference momentum.
         :math:`\Delta E = E - E_0`
