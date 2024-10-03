@@ -529,12 +529,14 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def plot_twiss(self, beam: Beam, ax: Optional[Any] = None) -> None:
+    def plot_twiss(
+        self, beam: Beam, ax: Optional[Any] = None, vector_idx: Optional[tuple] = None
+    ) -> None:
         """Plot twiss parameters along the segment."""
         longitudinal_beams = [beam]
-        s_positions = [0.0]
+        s_positions = [torch.tensor(0.0)]
         for element in self.elements:
-            if element.length == 0:
+            if torch.all(element.length == 0):
                 continue
 
             outgoing = element.track(longitudinal_beams[-1])
@@ -545,6 +547,34 @@ class Segment(Element):
         beta_x = [beam.beta_x for beam in longitudinal_beams]
         beta_y = [beam.beta_y for beam in longitudinal_beams]
 
+        # Extraction of the correct vector element for plotting
+        broadcast_s_positions = torch.broadcast_tensors(*s_positions)
+        stacked_s_positions = torch.stack(broadcast_s_positions)
+        dimension_reordered_s_positions = stacked_s_positions.movedim(0, -1)
+        plot_s_positions = (
+            dimension_reordered_s_positions[vector_idx]
+            if stacked_s_positions.dim() > 1
+            else dimension_reordered_s_positions
+        )
+
+        broadcast_beta_x = torch.broadcast_tensors(*beta_x)
+        stacked_beta_x = torch.stack(broadcast_beta_x)
+        dimension_reordered_beta_x = stacked_beta_x.movedim(0, -1)
+        plot_beta_x = (
+            dimension_reordered_beta_x[vector_idx]
+            if stacked_beta_x.dim() > 2
+            else dimension_reordered_beta_x
+        )
+
+        broadcast_beta_y = torch.broadcast_tensors(*beta_y)
+        stacked_beta_y = torch.stack(broadcast_beta_y)
+        dimension_reordered_beta_y = stacked_beta_y.movedim(0, -1)
+        plot_beta_y = (
+            dimension_reordered_beta_y[vector_idx]
+            if stacked_beta_y.dim() > 2
+            else dimension_reordered_beta_y
+        )
+
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -553,8 +583,8 @@ class Segment(Element):
         ax.set_xlabel("s (m)")
         ax.set_ylabel(r"$\beta$ (m)")
 
-        ax.plot(s_positions, beta_x, label=r"$\beta_x$", c="tab:red")
-        ax.plot(s_positions, beta_y, label=r"$\beta_y$", c="tab:green")
+        ax.plot(plot_s_positions, plot_beta_x, label=r"$\beta_x$", c="tab:red")
+        ax.plot(plot_s_positions, plot_beta_y, label=r"$\beta_y$", c="tab:green")
 
         ax.legend()
         plt.tight_layout()

@@ -67,12 +67,7 @@ def test_twiss_plot_vectorized_2d():
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     segment.AREAMQZM1.k1 = torch.tensor(5.0)
-    segment.AREAMQZM2.k1 = torch.tensor(
-        [
-            [[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]],
-            [[-50.0, -20.0, -10.0], [10.0, 20.0, 50.0]],
-        ]
-    )
+    segment.AREAMQZM2.k1 = torch.tensor([[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]])
     segment.AREAMCVM1.k1 = torch.tensor(1e-3)
     segment.AREAMQZM3.k1 = torch.tensor(5.0)
     segment.AREAMCHM1.k1 = torch.tensor(-2e-3)

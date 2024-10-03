@@ -607,7 +607,7 @@ class ParticleBeam(Beam):
         else:
             particle_charges = (
                 torch.ones_like(self.particle_charges, device=device, dtype=dtype)
-                * total_charge.view(-1, 1)
+                * total_charge.unsqueeze(-1)
                 / self.particle_charges.shape[-1]
             )
 
@@ -881,15 +881,15 @@ class ParticleBeam(Beam):
     @property
     def sigma_xpx(self) -> torch.Tensor:
         return torch.mean(
-            (self.x - self.mu_x.view(-1, 1)) * (self.px - self.mu_px.view(-1, 1)),
-            dim=1,
+            (self.x - self.mu_x.unsqueeze(-1)) * (self.px - self.mu_px.unsqueeze(-1)),
+            dim=-1,
         )
 
     @property
     def sigma_ypy(self) -> torch.Tensor:
         return torch.mean(
-            (self.y - self.mu_y.view(-1, 1)) * (self.py - self.mu_py.view(-1, 1)),
-            dim=1,
+            (self.y - self.mu_y.unsqueeze(-1)) * (self.py - self.mu_py.unsqueeze(-1)),
+            dim=-1,
         )
 
     @property
