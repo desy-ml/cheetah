@@ -395,11 +395,15 @@ class Segment(Element):
         stacked_ss = torch.stack(broadcast_ss)
         dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
 
-        ax.plot(
-            [0, dimension_reordered_ss[vector_idx][-1]], [0, 0], "--", color="black"
+        plot_ss = (
+            dimension_reordered_ss[vector_idx]
+            if stacked_ss.dim() > 1
+            else dimension_reordered_ss
         )
 
-        for element, s in zip(self.elements, dimension_reordered_ss[vector_idx][:-1]):
+        ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
+
+        for element, s in zip(self.elements, plot_ss[:-1]):
             element.plot(ax, s, vector_idx)
 
         ax.set_ylim(-1, 1)
@@ -456,15 +460,25 @@ class Segment(Element):
         stacked_ys = torch.stack(broadcast_ys)
         dimension_reordered_ys = stacked_ys.movedim(0, -1)  # Place vector dims first
 
+        plot_ss = (
+            dimensions_reordered_ss[vector_idx]
+            if stacked_ss.dim() > 1
+            else dimensions_reordered_ss
+        )
+        plot_xs = (
+            dimension_reordered_xs[vector_idx]
+            if stacked_xs.dim() > 2
+            else dimension_reordered_xs
+        )
+        plot_ys = (
+            dimension_reordered_ys[vector_idx]
+            if stacked_ys.dim() > 2
+            else dimension_reordered_ys
+        )
+
         for particle_idx in range(num_particles):
-            axx.plot(
-                dimensions_reordered_ss[vector_idx],
-                dimension_reordered_xs[vector_idx][particle_idx],
-            )
-            axy.plot(
-                dimensions_reordered_ss[vector_idx],
-                dimension_reordered_ys[vector_idx][particle_idx],
-            )
+            axx.plot(plot_ss, plot_xs[particle_idx])
+            axy.plot(plot_ss, plot_ys[particle_idx])
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
