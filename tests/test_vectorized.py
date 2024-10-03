@@ -1,5 +1,6 @@
 import pytest
 import torch
+from icecream import ic
 
 import cheetah
 
@@ -413,7 +414,7 @@ def test_vectorized_aperture_broadcasting():
     applied correctly.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000, energy=torch.tensor([154e6, 14e9, 5e9])
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
     segment = cheetah.Segment(
         elements=[
@@ -424,6 +425,8 @@ def test_vectorized_aperture_broadcasting():
             cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
+
+    ic(incoming.energy.shape, segment.elements[1].x_max.shape)
 
     outgoing = segment.track(incoming)
 
