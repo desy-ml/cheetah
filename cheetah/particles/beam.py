@@ -300,7 +300,7 @@ class Beam(nn.Module):
 
     @property
     def sigma_xpx(self) -> torch.Tensor:
-        # the covariance of (x,px) ~ $\sigma_{xpx}$
+        # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
