@@ -642,8 +642,10 @@ class SpaceChargeKick(Element):
     def is_skippable(self) -> bool:
         return False
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
-        ax.axvline(s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+
+        ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
 
     @property
     def defining_features(self) -> list[str]:

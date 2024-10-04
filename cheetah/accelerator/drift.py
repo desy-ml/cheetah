@@ -136,7 +136,7 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         pass
 
     @property
