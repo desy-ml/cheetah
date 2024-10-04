@@ -50,7 +50,9 @@ class HorizontalCorrector(Element):
 
         _, igamma2, beta = compute_relativistic_factors(energy)
 
-        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape, igamma2.shape, self.angle.shape
+        )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
