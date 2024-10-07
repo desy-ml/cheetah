@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from ..converters import bmad, elegant, nxtables
-from ..latticejson import load_cheetah_model, save_cheetah_model
-from ..particles import Beam
-from ..utils import UniqueNameGenerator
-from .custom_transfer_map import CustomTransferMap
-from .drift import Drift
-from .element import Element
-from .marker import Marker
+from cheetah.accelerator.custom_transfer_map import CustomTransferMap
+from cheetah.accelerator.drift import Drift
+from cheetah.accelerator.element import Element
+from cheetah.accelerator.marker import Marker
+from cheetah.converters import bmad, elegant, nxtables
+from cheetah.latticejson import load_cheetah_model, save_cheetah_model
+from cheetah.particles import Beam
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

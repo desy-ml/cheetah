@@ -6,10 +6,9 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants, speed_of_light
 from torch import nn
 
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
-
-from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

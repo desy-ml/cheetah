@@ -7,14 +7,14 @@ from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..particles import Beam, ParameterBeam, ParticleBeam
-from ..track_methods import base_rmatrix
-from ..utils import (
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.track_methods import base_rmatrix
+from cheetah.utils import (
     UniqueNameGenerator,
     compute_relativistic_factors,
     verify_device_and_dtype,
 )
-from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

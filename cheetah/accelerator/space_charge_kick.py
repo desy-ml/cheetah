@@ -5,9 +5,9 @@ import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 from torch import nn
 
-from ..particles import Beam, ParticleBeam
-from ..utils import verify_device_and_dtype
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParticleBeam
+from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
