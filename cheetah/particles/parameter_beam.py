@@ -5,6 +5,9 @@ import torch
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
+from cheetah.utils import Species
+
+electron = Species("electron")
 
 
 class ParameterBeam(Beam):
@@ -27,6 +30,7 @@ class ParameterBeam(Beam):
         total_charge: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
+        species: Species = electron,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -42,6 +46,7 @@ class ParameterBeam(Beam):
             "total_charge", torch.as_tensor(total_charge, **factory_kwargs)
         )
         self.register_buffer("energy", torch.as_tensor(energy, **factory_kwargs))
+        self.species = species
 
     @classmethod
     def from_parameters(
@@ -63,6 +68,7 @@ class ParameterBeam(Beam):
         total_charge: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
+        species: Species = electron,
     ) -> "ParameterBeam":
         # Set default values without function call in function signature
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
@@ -137,6 +143,7 @@ class ParameterBeam(Beam):
             total_charge=total_charge,
             device=device,
             dtype=dtype,
+            species=species,
         )
 
     @classmethod
@@ -155,6 +162,7 @@ class ParameterBeam(Beam):
         total_charge: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
+        species: Species = electron,
     ) -> "ParameterBeam":
         # Figure out if arguments were passed, figure out their shape
         not_nones = [
@@ -226,6 +234,7 @@ class ParameterBeam(Beam):
             total_charge=total_charge,
             device=device,
             dtype=dtype,
+            species=species,
         )
 
     @classmethod
@@ -247,6 +256,7 @@ class ParameterBeam(Beam):
             total_charge=total_charge.unsqueeze(0),
             device=device,
             dtype=dtype,
+            species=electron,
         )
 
     @classmethod
@@ -270,6 +280,7 @@ class ParameterBeam(Beam):
             total_charge=total_charge,
             device=device,
             dtype=dtype,
+            species=electron,
         )
 
     def transformed_to(
@@ -288,6 +299,7 @@ class ParameterBeam(Beam):
         total_charge: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
+        species: Species = electron,
     ) -> "ParameterBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -339,6 +351,7 @@ class ParameterBeam(Beam):
             total_charge=total_charge,
             device=device,
             dtype=dtype,
+            species=species,
         )
 
     def linspaced(self, num_particles: int) -> ParticleBeam:
@@ -365,6 +378,7 @@ class ParameterBeam(Beam):
             total_charge=self.total_charge,
             device=self._mu.device,
             dtype=self._mu.dtype,
+            species=self.species,
         )
 
     @property
@@ -432,4 +446,5 @@ class ParameterBeam(Beam):
             f" sigma_py={repr(self.sigma_py)}, sigma_tau={repr(self.sigma_tau)},"
             f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
             f" total_charge={repr(self.total_charge)})"
+            f" species={repr(self.species)})"
         )
