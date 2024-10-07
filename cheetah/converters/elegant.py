@@ -146,6 +146,7 @@ def convert_element(
                         dtype=dtype,
                     ),
                 ],
+                name=name + "_segment",
             )
         elif parsed["element_type"] == "rcol":
             validate_understood_properties(
@@ -169,6 +170,7 @@ def convert_element(
                         dtype=dtype,
                     ),
                 ],
+                name=name + "_segment",
             )
         elif parsed["element_type"] == "quad":
             validate_understood_properties(
@@ -198,17 +200,27 @@ def convert_element(
             )
         elif parsed["element_type"] == "moni":
             validate_understood_properties(["element_type", "group", "l"], parsed)
-            return cheetah.Segment(
-                elements=[
-                    cheetah.Drift(
-                        length=torch.tensor(parsed.get("l", 0.0)),
-                        name=name + "_drift",
-                        device=device,
-                        dtype=dtype,
-                    ),
-                    cheetah.Marker(name=name),
-                ]
-            )
+            if "l" in parsed:
+                return cheetah.Segment(
+                    elements=[
+                        cheetah.Drift(
+                            length=torch.tensor(parsed["l"] / 2),
+                            name=name + "_predrift",
+                            device=device,
+                            dtype=dtype,
+                        ),
+                        cheetah.BPM(name=name),
+                        cheetah.Drift(
+                            length=torch.tensor(parsed["l"] / 2),
+                            name=name + "_postdrift",
+                            device=device,
+                            dtype=dtype,
+                        ),
+                    ],
+                    name=name + "_segment",
+                )
+            else:
+                return cheetah.BPM(name=name)
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
                 ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]", "group"],
