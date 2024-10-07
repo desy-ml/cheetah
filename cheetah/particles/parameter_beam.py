@@ -3,15 +3,14 @@ from typing import Optional
 import numpy as np
 import torch
 
+from cheetah.particles.beam import Beam
+from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.utils import (
     extract_argument_device,
     extract_argument_dtype,
     extract_argument_shape,
     verify_device_and_dtype,
 )
-
-from .beam import Beam
-from .particle_beam import ParticleBeam
 
 
 class ParameterBeam(Beam):

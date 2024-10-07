@@ -5,9 +5,9 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..particles import Beam, ParticleBeam
-from ..utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParticleBeam
+from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

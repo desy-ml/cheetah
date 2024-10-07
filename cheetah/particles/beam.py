@@ -19,17 +19,17 @@ class Beam(nn.Module):
     The phase space vectors contain the canonical variables:
     - x: Position in x direction in meters.
     - px: Horizontal momentum normalized over the reference momentum (dimensionless).
-        $px = P_x / P_0$
+        :math:`px = \frac{P_x}{P_0}`
     - y: Position in y direction in meters.
     - py: Vertical momentum normalized over the reference momentum (dimensionless).
-        $py = P_y / P_0$
+        :math:`py = \frac{P_y}{P_0}`
     - tau: Position in longitudinal direction in meters, relative to the reference
-        particle. $\tau = ct - s/\beta_0$, where s is the position along the beamline.
-        In this notation, particle ahead of the reference particle will have negative
-        $\tau$.
+        particle. :math:`\tau = ct - \frac{s}{\beta_0}`, where s is the position along
+        the beamline. In this notation, particle ahead of the reference particle will
+        have negative :math:`\tau`.
     - p: Relative energy deviation from the reference particle (dimensionless).
-        $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
-        $\Delta E = E - E_0$
+        :math:`p = \frac{\Delta E}{p_0 C}`, where :math:`p_0` is the reference momentum.
+        :math:`\Delta E = E - E_0`
     """
 
     empty = "I'm an empty beam!"
