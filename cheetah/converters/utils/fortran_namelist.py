@@ -8,6 +8,8 @@ from typing import Any
 import scipy
 from scipy.constants import physical_constants
 
+from . import rpn
+
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
     """
@@ -125,7 +127,7 @@ def evaluate_expression(expression: str, context: dict) -> Any:
 
     # Evaluate as a mathematical expression
     try:
-        # Surround expressions in bracks with quotes
+        # Surround expressions in brackets with quotes
         expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
         # Replace power operator with python equivalent
         expression = re.sub(r"\^", r"**", expression)
@@ -135,7 +137,11 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         # behaviour.
         expression = re.sub(r"abs\(", r"abs_func(", expression)
 
-        return eval(expression, context)
+        return (
+            eval(expression, context)
+            if not rpn.is_valid_expression(expression)
+            else rpn.eval_expression(expression, context)
+        )
     except SyntaxError:
         if not (
             len(expression.split(":")) == 3 or len(expression.split(":")) == 4

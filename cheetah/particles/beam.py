@@ -4,9 +4,7 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Beam(nn.Module):
@@ -174,8 +172,8 @@ class Beam(nn.Module):
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
 
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
+        # Figure out vector dimensions of the original beam and check that passed
+        # arguments have the same vector dimensions.
         shape = self.mu_x.shape
         not_nones = [
             argument
@@ -315,7 +313,7 @@ class Beam(nn.Module):
 
     @property
     def sigma_xpx(self) -> torch.Tensor:
-        # the covariance of (x,px) ~ $\sigma_{xpx}$
+        # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
@@ -371,10 +369,6 @@ class Beam(nn.Module):
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
-
-    def broadcast(self, shape: torch.Size) -> "Beam":
-        """Broadcast beam to new shape."""
-        raise NotImplementedError
 
     def __repr__(self) -> str:
         return (

@@ -3,11 +3,10 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx
-
+from ..particles import Beam, ParticleBeam
+from ..utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -42,19 +41,14 @@ class Drift(Element):
         self.tracking_method = tracking_method
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        assert (
-            energy.shape == self.length.shape
-        ), f"Beam shape {energy.shape} does not match element shape {self.length.shape}"
-
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-        beta = torch.sqrt(1 - igamma2)
+        _, igamma2, beta = compute_relativistic_factors(energy)
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+
+        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = -self.length / beta**2 * igamma2
@@ -112,23 +106,19 @@ class Drift(Element):
             z, pz, p0c, electron_mass_eV
         )
 
+        # Broadcast to align their shapes so that they can be stacked
+        x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)
+
         outgoing_beam = ParticleBeam(
-            torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
-            ref_energy,
+            particles=torch.stack(
+                [x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1
+            ),
+            energy=ref_energy,
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
         return outgoing_beam
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
 
     @property
     def is_skippable(self) -> bool:
@@ -146,7 +136,7 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         pass
 
     @property

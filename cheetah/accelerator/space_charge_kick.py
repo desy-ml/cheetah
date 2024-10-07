@@ -5,9 +5,8 @@ import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 from torch import nn
 
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import verify_device_and_dtype
-
+from ..particles import Beam, ParticleBeam
+from ..utils import verify_device_and_dtype
 from .element import Element
 
 
@@ -448,8 +447,8 @@ class SpaceChargeKick(Element):
     ) -> torch.Tensor:
         """
         Interpolates the space charge force from the grid onto the macroparticles.
-        Reciprocal function of _deposit_charge_on_grid.
-        Beam needs to have a flattened batch shape.
+        Reciprocal function of _deposit_charge_on_grid. `beam` needs to have a flattened
+        vector shape.
         """
         grad_x, grad_y, grad_z = self._E_plus_vB_field(
             beam, xp_coordinates, cell_size, grid_dimensions
@@ -513,9 +512,9 @@ class SpaceChargeKick(Element):
         # Keep dimensions, and set F to zero if non-valid
         force_indices = (
             idx_vector,
-            torch.clamp(idx_x, max=grid_shape[0] - 1),
-            torch.clamp(idx_y, max=grid_shape[1] - 1),
-            torch.clamp(idx_tau, max=grid_shape[2] - 1),
+            torch.clamp(idx_x, min=0, max=grid_shape[0] - 1),
+            torch.clamp(idx_y, min=0, max=grid_shape[1] - 1),
+            torch.clamp(idx_tau, min=0, max=grid_shape[2] - 1),
         )
 
         Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
@@ -560,12 +559,31 @@ class SpaceChargeKick(Element):
         elif isinstance(incoming, ParticleBeam):
             # This flattening is a hack to only think about one vector dimension in the
             # following code. It is reversed at the end of the function.
+
+            # Make sure that the incoming beam has at least one vector dimension
+            if len(incoming.particles.shape) == 2:
+                is_incoming_vectorized = False
+
+                vectorized_incoming = ParticleBeam(
+                    particles=incoming.particles.unsqueeze(0),
+                    energy=incoming.energy.unsqueeze(0),
+                    particle_charges=incoming.particle_charges.unsqueeze(0),
+                    device=incoming.particles.device,
+                    dtype=incoming.particles.dtype,
+                )
+            else:
+                is_incoming_vectorized = True
+
+                vectorized_incoming = incoming
+
             flattened_incoming = ParticleBeam(
-                particles=incoming.particles.flatten(end_dim=-3),
-                energy=incoming.energy.flatten(end_dim=-1),
-                particle_charges=incoming.particle_charges.flatten(end_dim=-2),
-                device=incoming.particles.device,
-                dtype=incoming.particles.dtype,
+                particles=vectorized_incoming.particles.flatten(end_dim=-3),
+                energy=vectorized_incoming.energy.flatten(end_dim=-1),
+                particle_charges=vectorized_incoming.particle_charges.flatten(
+                    end_dim=-2
+                ),
+                device=vectorized_incoming.particles.device,
+                dtype=vectorized_incoming.particles.dtype,
             )
             flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
@@ -602,39 +620,29 @@ class SpaceChargeKick(Element):
                 ..., 2
             ] * dt.unsqueeze(-1)
 
-            outgoing = ParticleBeam.from_xyz_pxpypz(
-                xp_coordinates.unflatten(dim=0, sizes=incoming.particles.shape[:-2]),
-                incoming.energy,
-                incoming.particle_charges,
-                incoming.particles.device,
-                incoming.particles.dtype,
-            )
-
+            if not is_incoming_vectorized:
+                # Reshape to the original non-vectorised shape
+                outgoing = ParticleBeam.from_xyz_pxpypz(
+                    xp_coordinates.squeeze(0),
+                    vectorized_incoming.energy.squeeze(0),
+                    vectorized_incoming.particle_charges.squeeze(0),
+                    vectorized_incoming.particles.device,
+                    vectorized_incoming.particles.dtype,
+                )
+            else:
+                # Reverse the flattening of the vector dimensions
+                outgoing = ParticleBeam.from_xyz_pxpypz(
+                    xp_coordinates.unflatten(
+                        dim=0, sizes=vectorized_incoming.particles.shape[:-2]
+                    ),
+                    vectorized_incoming.energy,
+                    vectorized_incoming.particle_charges,
+                    vectorized_incoming.particles.device,
+                    vectorized_incoming.particles.dtype,
+                )
             return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-
-    def broadcast(self, shape: torch.Size) -> "SpaceChargeKick":
-        """
-        Broadcast the element to higher batch dimensions.
-
-        :param shape: Shape to broadcast the element to.
-        :returns: Broadcasted element.
-        """
-        new_space_charge_kick = self.__class__(
-            effect_length=self.effect_length,
-            num_grid_points_x=self.grid_shape[0],
-            num_grid_points_y=self.grid_shape[1],
-            num_grid_points_tau=self.grid_shape[2],
-            grid_extend_x=self.grid_extend_x,
-            grid_extend_y=self.grid_extend_y,
-            grid_extend_tau=self.grid_extend_tau,
-            name=self.name,
-            device=self.effect_length.device,
-            dtype=self.effect_length.dtype,
-        )
-        new_space_charge_kick.length = self.length.repeat(shape)
-        return new_space_charge_kick
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for SpaceCharge properly, for now just returns the
@@ -645,8 +653,10 @@ class SpaceChargeKick(Element):
     def is_skippable(self) -> bool:
         return False
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
-        ax.axvline(s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+
+        ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
 
     @property
     def defining_features(self) -> list[str]:

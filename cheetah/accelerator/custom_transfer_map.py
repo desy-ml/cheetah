@@ -3,11 +3,10 @@ from typing import Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
-
+from ..particles import Beam
+from ..utils import UniqueNameGenerator, verify_device_and_dtype
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -87,15 +86,6 @@ class CustomTransferMap(Element):
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         return self._transfer_map
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            self._transfer_map.repeat((*shape, 1, 1)),
-            length=self.length.repeat(shape),
-            name=self.name,
-            device=self._transfer_map.device,
-            dtype=self._transfer_map.dtype,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return True
@@ -113,8 +103,11 @@ class CustomTransferMap(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         height = 0.4
 
-        patch = Rectangle((s, 0), self.length[0], height, color="tab:olive", zorder=2)
+        patch = Rectangle((plot_s, 0), plot_length, height, color="tab:olive", zorder=2)
         ax.add_patch(patch)

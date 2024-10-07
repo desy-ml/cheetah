@@ -14,7 +14,7 @@ def test_reading_shows_beam_particle(screen_method):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
@@ -27,13 +27,13 @@ def test_reading_shows_beam_particle(screen_method):
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (1, 100, 100)
+    assert segment.my_screen.reading.shape == (100, 100)
     assert np.allclose(segment.my_screen.reading, 0.0)
 
     _ = segment.track(beam)
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (1, 100, 100)
+    assert segment.my_screen.reading.shape == (100, 100)
     assert torch.all(segment.my_screen.reading >= 0.0)
     assert torch.any(segment.my_screen.reading > 0.0)
 
@@ -44,7 +44,7 @@ def test_screen_kde_bandwidth(kde_bandwidth):
 
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
@@ -58,13 +58,13 @@ def test_screen_kde_bandwidth(kde_bandwidth):
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (1, 100, 100)
+    assert segment.my_screen.reading.shape == (100, 100)
     assert np.allclose(segment.my_screen.reading, 0.0)
 
     _ = segment.track(beam)
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (1, 100, 100)
+    assert segment.my_screen.reading.shape == (100, 100)
     assert torch.all(segment.my_screen.reading >= 0.0)
     assert torch.any(segment.my_screen.reading > 0.0)
 
@@ -76,7 +76,7 @@ def test_reading_shows_beam_parameter(screen_method):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
                 resolution=torch.tensor((100, 100)),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
@@ -90,13 +90,13 @@ def test_reading_shows_beam_parameter(screen_method):
     beam = cheetah.ParameterBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (1, 100, 100)
+    assert segment.my_screen.reading.shape == (100, 100)
     assert np.allclose(segment.my_screen.reading, 0.0)
 
     _ = segment.track(beam)
 
     assert isinstance(segment.my_screen.reading, torch.Tensor)
-    assert segment.my_screen.reading.shape == (1, 100, 100)
+    assert segment.my_screen.reading.shape == (100, 100)
     assert torch.all(segment.my_screen.reading >= 0.0)
     assert torch.any(segment.my_screen.reading > 0.0)
 
@@ -125,12 +125,12 @@ def test_reading_shows_beam_ares(screen_method):
     segment.AREABSCR1.is_active = True
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
-    assert segment.AREABSCR1.reading.shape == (1, 2040, 2448)
+    assert segment.AREABSCR1.reading.shape == (2040, 2448)
     assert np.allclose(segment.AREABSCR1.reading, 0.0)
 
     _ = segment.track(beam)
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
-    assert segment.AREABSCR1.reading.shape == (1, 2040, 2448)
+    assert segment.AREABSCR1.reading.shape == (2040, 2448)
     assert torch.all(segment.AREABSCR1.reading >= 0.0)
     assert torch.any(segment.AREABSCR1.reading > 0.0)
