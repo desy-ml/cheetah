@@ -58,7 +58,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(voltage, **factory_kwargs)
                 if voltage is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -66,7 +66,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(phase, **factory_kwargs)
                 if phase is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -74,7 +74,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(frequency, **factory_kwargs)
                 if frequency is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -90,7 +90,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(tilt, **factory_kwargs)
                 if tilt is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.num_steps = num_steps
