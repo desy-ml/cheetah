@@ -6,8 +6,8 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..utils import UniqueNameGenerator
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
