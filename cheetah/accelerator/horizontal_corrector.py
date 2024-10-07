@@ -7,7 +7,11 @@ from matplotlib.patches import Rectangle
 from torch import nn
 
 from cheetah.accelerator.element import Element
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -29,8 +33,9 @@ class HorizontalCorrector(Element):
         angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([length], [angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

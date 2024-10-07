@@ -10,7 +10,7 @@ from torch import nn
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -62,8 +62,24 @@ class Dipole(Element):
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ):
+        device, dtype = verify_device_and_dtype(
+            [length],
+            [
+                angle,
+                k1,
+                e1,
+                e2,
+                tilt,
+                gap,
+                gap_exit,
+                fringe_integral,
+                fringe_integral_exit,
+            ],
+            device,
+            dtype,
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
@@ -203,7 +219,13 @@ class Dipole(Element):
 
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
-            torch.tensor(0.0), torch.tensor(0.0), self.tilt, x, px, y, py
+            torch.zeros_like(self.tilt),
+            torch.zeros_like(self.tilt),
+            self.tilt,
+            x,
+            px,
+            y,
+            py,
         )
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
@@ -215,7 +237,13 @@ class Dipole(Element):
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
         x, px, y, py = bmadx.offset_particle_unset(
-            torch.tensor(0.0), torch.tensor(0.0), self.tilt, x, px, y, py
+            torch.zeros_like(self.tilt),
+            torch.zeros_like(self.tilt),
+            self.tilt,
+            x,
+            px,
+            y,
+            py,
         )
         # End of Bmad-X tracking
 
