@@ -6,8 +6,7 @@ import numpy as np
 import torch
 
 import cheetah
-
-from .utils.fortran_namelist import (
+from cheetah.converters.utils.fortran_namelist import (
     merge_delimiter_continued_lines,
     parse_lines,
     read_clean_lines,

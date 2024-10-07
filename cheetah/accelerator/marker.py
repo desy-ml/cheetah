@@ -3,9 +3,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import torch
 
-from ..particles import Beam
-from ..utils import UniqueNameGenerator
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

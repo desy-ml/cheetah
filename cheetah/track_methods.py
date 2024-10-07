@@ -4,7 +4,7 @@ from typing import Optional
 
 import torch
 
-from .utils import compute_relativistic_factors
+from cheetah.utils import compute_relativistic_factors
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:

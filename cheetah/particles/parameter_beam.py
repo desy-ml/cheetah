@@ -3,8 +3,8 @@ from typing import Optional
 import numpy as np
 import torch
 
-from .beam import Beam
-from .particle_beam import ParticleBeam
+from cheetah.particles.beam import Beam
+from cheetah.particles.particle_beam import ParticleBeam
 
 
 class ParameterBeam(Beam):
