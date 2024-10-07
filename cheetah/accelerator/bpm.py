@@ -4,11 +4,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
-
+from ..particles import Beam, ParameterBeam, ParticleBeam
+from ..utils import UniqueNameGenerator
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -50,18 +48,15 @@ class BPM(Element):
 
         return deepcopy(incoming)
 
-    def broadcast(self, shape: Size) -> Element:
-        new_bpm = self.__class__(is_active=self.is_active, name=self.name)
-        new_bpm.length = self.length.repeat(shape)
-        return new_bpm
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+
         alpha = 1 if self.is_active else 0.2
         patch = Rectangle(
-            (s, -0.3), 0, 0.3 * 2, color="darkkhaki", alpha=alpha, zorder=2
+            (plot_s, -0.3), 0, 0.3 * 2, color="darkkhaki", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

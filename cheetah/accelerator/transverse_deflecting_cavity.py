@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants, speed_of_light
-from torch import Size, nn
+from torch import nn
 
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
@@ -173,16 +173,24 @@ class TransverseDeflectingCavity(Element):
             )
         )
 
-        px = px + voltage * torch.sin(phase)
+        # TODO: Assigning px to px is really bad practice and should be separated into
+        # two separate variables
+        px = px + voltage.unsqueeze(-1) * torch.sin(phase)
 
-        beta = (1 + pz) * p0c / torch.sqrt(((1 + pz) * p0c) ** 2 + electron_mass_eV**2)
+        beta = (
+            (1 + pz)
+            * p0c.unsqueeze(-1)
+            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + electron_mass_eV**2)
+        )
         beta_old = beta
-        E_old = (1 + pz) * p0c / beta_old
-        E_new = E_old + voltage * torch.cos(phase) * k_rf * x * p0c
+        E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
+        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(
+            phase
+        ) * k_rf * x * p0c.unsqueeze(-1)
         pc = torch.sqrt(E_new**2 - electron_mass_eV**2)
         beta = pc / E_new
 
-        pz = (pc - p0c) / p0c
+        pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
         z = z * beta / beta_old
 
         x, y, z = bmadx.track_a_drift(
@@ -208,31 +216,20 @@ class TransverseDeflectingCavity(Element):
         )
         return outgoing_beam
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            voltage=self.voltage.repeat(shape),
-            phase=self.phase.repeat(shape),
-            frequency=self.frequency.repeat(shape),
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            tilt=self.tilt.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the
         # element itself
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="olive", alpha=alpha, zorder=2
+            (plot_s, 0), plot_length, height, color="olive", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

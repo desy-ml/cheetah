@@ -13,13 +13,13 @@ def test_simple_quadrupole():
     """
     segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Quadrupole(
-                length=torch.tensor([0.2]),
-                k1=nn.Parameter(torch.tensor([3.142])),
+                length=torch.tensor(0.2),
+                k1=nn.Parameter(torch.tensor(3.142)),
                 name="my_quad",
             ),
-            cheetah.Drift(length=torch.tensor([1.0])),
+            cheetah.Drift(length=torch.tensor(1.0)),
         ]
     )
     incoming_beam = cheetah.ParticleBeam.from_astra(
