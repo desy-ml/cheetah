@@ -24,6 +24,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
 - `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
 - Implement a converter for lattice files imported from Elegant (see #222, #251) (@hespe)
+- Add Python 3.13 support (see #275) (@jank324)
 
 ### 🐛 Bug fixes
 
