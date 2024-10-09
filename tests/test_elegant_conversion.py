@@ -49,7 +49,7 @@ def test_cavity_import():
     file_path = "tests/resources/cavity.lte"
     converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
-    correct_map = torch.tensor(
+    correct_transfer_map = torch.tensor(
         [
             [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [0.04, 1.0, 0.003, 0.0, 0.0, 0.0, -0.0027],
@@ -65,7 +65,7 @@ def test_cavity_import():
     assert np.isclose(converted.c1.frequency, 1.2e9)
     assert np.isclose(converted.c1.voltage, 16.175e6)
     for i in range(2):
-        assert torch.allclose(converted.c1e[i]._transfer_map, correct_map)
+        assert torch.allclose(converted.c1e[i]._transfer_map, correct_transfer_map)
 
     # Cheetah and Elegant use different phase conventions shifted by 90 deg
     assert np.isclose(converted.c1.phase, 0.0)
