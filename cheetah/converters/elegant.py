@@ -251,6 +251,7 @@ def convert_element(
             return cheetah.CustomTransferMap(
                 length=torch.tensor(parsed["l"]),
                 transfer_map=R,
+                name=name,
                 device=device,
                 dtype=dtype,
             )
