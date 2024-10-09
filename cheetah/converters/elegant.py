@@ -237,10 +237,16 @@ def convert_element(
                 [
                     [parsed.get(f"r{i + 1}{j + 1}", 0.0) for j in range(6)]
                     for i in range(6)
-                ]
+                ],
+                device=device,
+                dtype=dtype,
             )
             # Add affine component (constant offset)
-            R[:6, 6] = torch.tensor(parsed.get(f"c{i + 1}", 0.0) for i in range(6))
+            R[:6, 6] = torch.tensor(
+                [parsed.get(f"c{i + 1}", 0.0) for i in range(6)],
+                device=device,
+                dtype=dtype,
+            )
 
             return cheetah.CustomTransferMap(
                 length=torch.tensor(parsed["l"]),
