@@ -49,6 +49,19 @@ def test_cavity_import():
     file_path = "tests/resources/cavity.lte"
     converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
+    assert np.isclose(converted.c1.length, 0.7)
+    assert np.isclose(converted.c1.frequency, 1.2e9)
+    assert np.isclose(converted.c1.voltage, 16.175e6)
+
+    # Cheetah and Elegant use different phase conventions shifted by 90 deg
+    assert np.isclose(converted.c1.phase, 0.0)
+
+
+def test_custom_transfer_map_import():
+    """Test importing an Elegant EMATRIX into a Cheetah CustomTransferMap."""
+    file_path = "tests/resources/cavity.lte"
+    converted = cheetah.Segment.from_elegant(file_path, "cavity")
+
     correct_transfer_map = torch.tensor(
         [
             [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -61,14 +74,7 @@ def test_cavity_import():
         ]
     )
 
-    assert np.isclose(converted.c1.length, 0.7)
-    assert np.isclose(converted.c1.frequency, 1.2e9)
-    assert np.isclose(converted.c1.voltage, 16.175e6)
-    for i in range(2):
-        assert torch.allclose(converted.c1e[i]._transfer_map, correct_transfer_map)
-
-    # Cheetah and Elegant use different phase conventions shifted by 90 deg
-    assert np.isclose(converted.c1.phase, 0.0)
+    assert torch.allclose(converted.c1e._transfer_map, correct_transfer_map)
 
 
 @pytest.mark.parametrize(
