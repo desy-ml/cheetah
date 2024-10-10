@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import torch
 
@@ -32,14 +33,48 @@ def test_fodo():
     assert [element.name for element in converted.elements] == [
         element.name for element in correct_lattice.elements
     ]
-    assert converted.q1.length == correct_lattice.q1.length
-    assert converted.q1.k1 == correct_lattice.q1.k1
-    assert converted.q2.length == correct_lattice.q2.length
-    assert converted.q2.k1 == correct_lattice.q2.k1
-    assert [d.length for d in converted.d1] == [d.length for d in correct_lattice.d1]
-    assert converted.d2.length == correct_lattice.d2.length
-    assert converted.s1.length == correct_lattice.s1.length
-    assert converted.s1.e1 == correct_lattice.s1.e1
+    assert torch.isclose(converted.q1.length, correct_lattice.q1.length)
+    assert torch.isclose(converted.q1.k1, correct_lattice.q1.k1)
+    assert torch.isclose(converted.q2.length, correct_lattice.q2.length)
+    assert torch.isclose(converted.q2.k1, correct_lattice.q2.k1)
+    for i in range(2):
+        assert torch.isclose(converted.d1[i].length, correct_lattice.d1[i].length)
+    assert torch.isclose(converted.d2.length, correct_lattice.d2.length)
+    assert torch.isclose(converted.s1.length, correct_lattice.s1.length)
+    assert torch.isclose(converted.s1.e1, correct_lattice.s1.e1)
+
+
+def test_cavity_import():
+    """Test importing an accelerating cavity defined in the Elegant file format."""
+    file_path = "tests/resources/cavity.lte"
+    converted = cheetah.Segment.from_elegant(file_path, "cavity")
+
+    assert np.isclose(converted.c1.length, 0.7)
+    assert np.isclose(converted.c1.frequency, 1.2e9)
+    assert np.isclose(converted.c1.voltage, 16.175e6)
+
+    # Cheetah and Elegant use different phase conventions shifted by 90 deg
+    assert np.isclose(converted.c1.phase, 0.0)
+
+
+def test_custom_transfer_map_import():
+    """Test importing an Elegant EMATRIX into a Cheetah CustomTransferMap."""
+    file_path = "tests/resources/cavity.lte"
+    converted = cheetah.Segment.from_elegant(file_path, "cavity")
+
+    correct_transfer_map = torch.tensor(
+        [
+            [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.04, 1.0, 0.003, 0.0, 0.0, 0.0, -0.0027],
+            [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            [0.003, 0.0, -0.04, 1.0, 0.0, 0.0, -0.15],
+            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert torch.allclose(converted.c1e._transfer_map, correct_transfer_map)
 
 
 @pytest.mark.parametrize(
