@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
-from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.accelerator.element import Element
@@ -13,8 +12,6 @@ from cheetah.track_methods import base_rmatrix
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Cavity(Element):
@@ -75,14 +72,17 @@ class Cavity(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
-            self._cavity_rmatrix(energy),
+            self._cavity_rmatrix(energy, particle_mass_eV),
             base_rmatrix(
                 length=self.length,
                 k1=torch.zeros_like(self.length),
                 hx=torch.zeros_like(self.length),
+                particle_mass_eV=particle_mass_eV,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
             ),
@@ -113,7 +113,7 @@ class Cavity(Element):
 
         phi = torch.deg2rad(self.phase)
 
-        tm = self.transfer_map(incoming.energy)
+        tm = self.transfer_map(incoming.energy, incoming.mass_eV)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = torch.matmul(
@@ -161,7 +161,7 @@ class Cavity(Element):
                     - torch.cos(phi).unsqueeze(-1)
                 )
 
-            dgamma = self.voltage / electron_mass_eV
+            dgamma = self.voltage / incoming.mass_eV
             if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
@@ -246,7 +246,9 @@ class Cavity(Element):
             )
             return outgoing
 
-    def _cavity_rmatrix(self, energy: torch.Tensor) -> torch.Tensor:
+    def _cavity_rmatrix(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         device = self.length.device
         dtype = self.length.dtype
@@ -255,8 +257,8 @@ class Cavity(Element):
         delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, device=device, dtype=dtype)
-        Ei = energy / electron_mass_eV
-        Ef = (energy + delta_energy) / electron_mass_eV
+        Ei = energy / particle_mass_eV
+        Ef = (energy + delta_energy) / particle_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
@@ -306,14 +308,14 @@ class Cavity(Element):
                 * self.length
                 * beta0
                 * self.voltage
-                / electron_mass_eV
+                / particle_mass_eV
                 * torch.sin(phi)
                 * (g0 * g1 * (beta0 * beta1 - 1) + 1)
                 / (beta1 * g1 * (g0 - g1) ** 2)
             )
 
         r66 = Ei / Ef * beta0 / beta1
-        r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * electron_mass_eV)
+        r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * particle_mass_eV)
 
         # Make sure that all matrix elements have the same shape
         r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(

@@ -3,7 +3,7 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants, speed_of_light
+from scipy.constants import speed_of_light
 from torch import nn
 
 from cheetah.accelerator.element import Element
@@ -11,8 +11,6 @@ from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class TransverseDeflectingCavity(Element):
@@ -138,10 +136,9 @@ class TransverseDeflectingCavity(Element):
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
+        mc2 = incoming.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
@@ -151,22 +148,14 @@ class TransverseDeflectingCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(
-            self.length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
-        )
+        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
         voltage = self.voltage / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
         phase = (
             2
             * torch.pi
-            * (
-                self.phase
-                - (
-                    bmadx.particle_rf_time(z, pz, p0c, electron_mass_eV)
-                    * self.frequency
-                )
-            )
+            * (self.phase - (bmadx.particle_rf_time(z, pz, p0c, mc2) * self.frequency))
         )
 
         # TODO: Assigning px to px is really bad practice and should be separated into
@@ -176,22 +165,20 @@ class TransverseDeflectingCavity(Element):
         beta = (
             (1 + pz)
             * p0c.unsqueeze(-1)
-            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + electron_mass_eV**2)
+            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
         )
         beta_old = beta
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
         E_new = E_old + voltage.unsqueeze(-1) * torch.cos(
             phase
         ) * k_rf * x * p0c.unsqueeze(-1)
-        pc = torch.sqrt(E_new**2 - electron_mass_eV**2)
+        pc = torch.sqrt(E_new**2 - mc2**2)
         beta = pc / E_new
 
         pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
         z = z * beta / beta_old
 
-        x, y, z = bmadx.track_a_drift(
-            self.length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
-        )
+        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
@@ -199,9 +186,7 @@ class TransverseDeflectingCavity(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
-        )
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         outgoing_beam = ParticleBeam(
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
@@ -209,6 +194,7 @@ class TransverseDeflectingCavity(Element):
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
+            species=incoming.species,
         )
         return outgoing_beam
 

@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.accelerator.element import Element
@@ -13,8 +12,6 @@ from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Quadrupole(Element):
@@ -75,11 +72,14 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
             hx=torch.zeros_like(self.length),
+            particle_mass_eV=particle_mass_eV,
             tilt=self.tilt,
             energy=energy,
         )
@@ -126,10 +126,9 @@ class Quadrupole(Element):
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
+        mc2 = incoming.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
@@ -166,9 +165,7 @@ class Quadrupole(Element):
 
             x, px, y, py = x_next, px_next, y_next, py_next
 
-            z = z + bmadx.low_energy_z_correction(
-                pz, p0c, electron_mass_eV, step_length
-            )
+            z = z + bmadx.low_energy_z_correction(pz, p0c, mc2, step_length)
 
         # s = s + l
         x, px, y, py = bmadx.offset_particle_unset(
@@ -180,9 +177,7 @@ class Quadrupole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
-        )
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         outgoing_beam = ParticleBeam(
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
@@ -190,6 +185,7 @@ class Quadrupole(Element):
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
+            species=incoming.species,
         )
         return outgoing_beam
 
