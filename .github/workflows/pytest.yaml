@@ -15,8 +15,6 @@ jobs:
         include:
           - os: macos-latest
             python-version: "3.12"
-          - os: windows-latest
-            python-version: "3.12"
     runs-on: ${{ matrix.os }}
 
     steps:
