@@ -26,9 +26,10 @@ jobs:
           miniconda-version: 'latest'
           conda-solver: 'classic'
           python-version: ${{ matrix.python-version }}
-          activate-environment: test
       - name: Install Bmad and Pytao
         run: |
+          conda create -n test-environment python=${{ matrix.python-version }}
+          conda activate test-environment
           conda install -c conda-forge bmad
           conda install -c conda-forge pytao
       - name: Install dependencies
