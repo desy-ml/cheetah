@@ -24,6 +24,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: 'latest'
+          conda-solver: 'classic'
           python-version: ${{ matrix.python-version }}
           activate-environment: test
       - name: Install Bmad and Pytao
