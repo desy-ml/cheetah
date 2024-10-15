@@ -127,7 +127,7 @@ def test_track_a_dipole_with_different_speices(species_name):
     use, lat
     """
 
-    lattice_fname = f"tests/bmad_benchmarks/test_drift_{species_name}.bmad"
+    lattice_fname = f"tests/bmad_benchmarks/test_dipole_{species_name}.bmad"
 
     open(lattice_fname, "w").write(test_drift_lat)
     tao = Tao(f"-lat {lattice_fname} -noplot")
