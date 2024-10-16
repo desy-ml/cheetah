@@ -7,6 +7,7 @@ from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
+from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
@@ -56,8 +57,14 @@ class SpaceChargeKick(Element):
         grid_extend_tau: Union[torch.Tensor, nn.Parameter] = 3,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [effect_length],
+            [],  # TODO: Add grid_extend_{x,y,tau}, needs torch.Tensor default
+            device,
+            dtype,
+        )
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name)
@@ -589,7 +596,11 @@ class SpaceChargeKick(Element):
                 ],
                 dim=-1,
             )
-            cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
+            cell_size = (
+                2
+                * grid_dimensions
+                / torch.tensor(self.grid_shape, **self.factory_kwargs)
+            )
             dt = flattened_length_effect / (
                 speed_of_light * flattened_incoming.relativistic_beta
             )

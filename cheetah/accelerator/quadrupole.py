@@ -10,7 +10,7 @@ from torch import nn
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -42,8 +42,11 @@ class Quadrupole(Element):
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length], [k1, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

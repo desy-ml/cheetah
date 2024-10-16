@@ -8,7 +8,7 @@ from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -44,8 +44,11 @@ class TransverseDeflectingCavity(Element):
         tracking_method: Literal["bmadx"] = "bmadx",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length], [voltage, phase, frequency, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
@@ -87,7 +90,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(tilt, **factory_kwargs)
                 if tilt is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.num_steps = num_steps

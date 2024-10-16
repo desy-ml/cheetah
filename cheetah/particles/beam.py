@@ -52,6 +52,8 @@ class Beam(nn.Module):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -75,6 +77,8 @@ class Beam(nn.Module):
         :param cor_tau: Correlation between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param device: Device to create the beam on.
+        :param dtype: Data type of the beam.
         """
         raise NotImplementedError
 
@@ -93,7 +97,7 @@ class Beam(nn.Module):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -115,14 +119,14 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @classmethod
-    def from_ocelot(cls, parray) -> "Beam":
+    def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
         raise NotImplementedError
 
     @classmethod
-    def from_astra(cls, path: str, **kwargs) -> "Beam":
+    def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 
@@ -140,6 +144,8 @@ class Beam(nn.Module):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -160,7 +166,12 @@ class Beam(nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param device: Device to create the beam on.
+        :param dtype: Data type of the beam.
         """
+        device = device if device is not None else self.mu_x.device
+        dtype = dtype if dtype is not None else self.mu_x.dtype
+
         # Figure out vector dimensions of the original beam and check that passed
         # arguments have the same vector dimensions.
         shape = self.mu_x.shape
@@ -213,6 +224,8 @@ class Beam(nn.Module):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            device=device,
+            dtype=dtype,
         )
 
     @property
