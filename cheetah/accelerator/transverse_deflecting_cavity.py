@@ -151,39 +151,28 @@ class TransverseDeflectingCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        # Broadcast the TDC parameters together
-        broadcast_shape = torch.broadcast_shapes(
-            self.length.shape,
-            self.voltage.shape,
-            self.phase.shape,
-            self.frequency.shape,
-            self.tilt.shape,
-        )
-
-        length = self.length.expand(broadcast_shape)
-        voltage = self.voltage.expand(broadcast_shape)
-        # Add dimension for macro-particles
-        frequency = self.frequency.expand(broadcast_shape).unsqueeze(-1)
-        tdc_phase = self.phase.expand(broadcast_shape).unsqueeze(-1)
-
         x, y, z = bmadx.track_a_drift(
-            length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
+            self.length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
         )
 
-        voltage = (voltage / p0c).unsqueeze(-1)
-        k_rf = 2 * torch.pi * frequency / speed_of_light
+        voltage = self.voltage / p0c
+        k_rf = 2 * torch.pi * self.frequency / speed_of_light
+        # Phase that the particle sees
         phase = (
             2
             * torch.pi
             * (
-                tdc_phase
-                - (bmadx.particle_rf_time(z, pz, p0c, electron_mass_eV) * frequency)
+                self.phase.unsqueeze(-1)
+                - (
+                    bmadx.particle_rf_time(z, pz, p0c, electron_mass_eV)
+                    * self.frequency.unsqueeze(-1)
+                )
             )
-        )  # Phase that the particle sees
+        )
 
         # TODO: Assigning px to px is really bad practice and should be separated into
         # two separate variables
-        px = px + voltage * torch.sin(phase)
+        px = px + voltage.unsqueeze(-1) * torch.sin(phase)
 
         beta_old = (
             (1 + pz)
@@ -191,7 +180,9 @@ class TransverseDeflectingCavity(Element):
             / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + electron_mass_eV**2)
         )
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage * torch.cos(phase) * k_rf * x * p0c.unsqueeze(-1)
+        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
+            -1
+        ) * x * p0c.unsqueeze(-1)
         pc = torch.sqrt(E_new**2 - electron_mass_eV**2)
         beta = pc / E_new
 
@@ -199,7 +190,7 @@ class TransverseDeflectingCavity(Element):
         z = z * beta / beta_old
 
         x, y, z = bmadx.track_a_drift(
-            length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
+            self.length / 2, x, px, y, py, z, pz, p0c, electron_mass_eV
         )
 
         x, px, y, py = bmadx.offset_particle_unset(
