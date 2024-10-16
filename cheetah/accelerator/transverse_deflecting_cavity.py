@@ -157,14 +157,15 @@ class TransverseDeflectingCavity(Element):
 
         voltage = self.voltage / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
+        # Phase that the particle sees
         phase = (
             2
             * torch.pi
             * (
-                self.phase
+                self.phase.unsqueeze(-1)
                 - (
                     bmadx.particle_rf_time(z, pz, p0c, electron_mass_eV)
-                    * self.frequency
+                    * self.frequency.unsqueeze(-1)
                 )
             )
         )
@@ -173,16 +174,15 @@ class TransverseDeflectingCavity(Element):
         # two separate variables
         px = px + voltage.unsqueeze(-1) * torch.sin(phase)
 
-        beta = (
+        beta_old = (
             (1 + pz)
             * p0c.unsqueeze(-1)
             / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + electron_mass_eV**2)
         )
-        beta_old = beta
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(
-            phase
-        ) * k_rf * x * p0c.unsqueeze(-1)
+        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
+            -1
+        ) * x * p0c.unsqueeze(-1)
         pc = torch.sqrt(E_new**2 - electron_mass_eV**2)
         beta = pc / E_new
 
