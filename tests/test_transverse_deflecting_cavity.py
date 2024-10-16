@@ -37,3 +37,58 @@ def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
         atol=1e-14 if dtype == torch.float64 else 0.00001,
         rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )
+
+
+def test_transverse_deflecting_cavity_vectorisation():
+    """
+    Test that the TDC supports vectroized tracking
+    """
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=torch.tensor(10_000),
+        sigma_px=torch.tensor(2e-7),
+        sigma_py=torch.tensor(2e-7),
+        energy=torch.tensor([50e6, 60e6]),
+    )
+    # Vectorise voltage
+    tdc = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(1.0),
+        voltage=torch.tensor([[1e7], [2e7], [3e7]]),
+        phase=torch.tensor(0.4),
+        frequency=torch.tensor(1e9),
+        tracking_method="bmadx",
+    )
+
+    # Run tracking
+    _ = tdc.track(incoming_beam)
+
+    # Vectorise phase
+    tdc2 = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(1.0),
+        voltage=torch.tensor(1e7),
+        phase=torch.tensor([[0.6], [0.5], [0.4]]),
+        frequency=torch.tensor(1e9),
+        tracking_method="bmadx",
+    )
+    _ = tdc2.track(incoming_beam)
+
+    # Vectorise frequency
+    tdc3 = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(1.0),
+        voltage=torch.tensor(1e7),
+        phase=torch.tensor(0.4),
+        frequency=torch.tensor([[1e9], [2e9], [3e9]]),
+        tracking_method="bmadx",
+    )
+    _ = tdc3.track(incoming_beam)
+
+    # Try vectorising all parameters
+    tdc4 = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(1.0),
+        voltage=torch.ones([4, 1, 1, 1]) * 1e7,
+        phase=torch.ones([1, 3, 1, 1]) * 0.4,
+        frequency=torch.ones([1, 1, 2, 1]) * 1e9,
+        tracking_method="bmadx",
+    )
+    outgoing_beam = tdc4.track(incoming_beam)
+
+    assert outgoing_beam.particles.shape[:-2] == torch.Size([4, 3, 2, 2])
