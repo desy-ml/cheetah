@@ -10,9 +10,10 @@ def compute_relativistic_factors(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Computes the relativistic factors gamma, inverse gamma squared and beta for
-    electrons.
+    particles.
 
     :param energy: Energy in eV.
+    :param particle_mass_eV: Mass of the particle in eV. (Default is electron mass)
     :return: gamma, igamma2, beta.
     """
     gamma = energy / particle_mass_eV
