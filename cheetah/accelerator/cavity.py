@@ -23,6 +23,9 @@ class Cavity(Element):
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
+
+    Note: here we use the "effective" voltage, if the particle does not have unit
+    charge, the voltage needs to be scaled properly.
     """
 
     def __init__(

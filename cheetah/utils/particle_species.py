@@ -66,5 +66,5 @@ class Species:
     def __repr__(self) -> str:
         return (
             f"Species(name= {self.name}, charge= {self.charge_e} e,"
-            " mass= {self.mass_eV} eV)"
+            f" mass= {self.mass_eV} eV)"
         )
