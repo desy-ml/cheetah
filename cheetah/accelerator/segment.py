@@ -352,11 +352,13 @@ class Segment(Element):
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
-                tm = torch.matmul(element.transfer_map(energy), tm)
+                tm = torch.matmul(element.transfer_map(energy, particle_mass_eV), tm)
             return tm
         else:
             return None

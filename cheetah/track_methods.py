@@ -34,6 +34,7 @@ def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
     hx: torch.Tensor,
+    particle_mass_eV: float,
     tilt: Optional[torch.Tensor] = None,
     energy: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
@@ -55,7 +56,7 @@ def base_rmatrix(
         energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
     )
 
-    _, igamma2, beta = compute_relativistic_factors(energy)
+    _, igamma2, beta = compute_relativistic_factors(energy, particle_mass_eV)
 
     # Avoid division by zero
     k1 = k1.clone()

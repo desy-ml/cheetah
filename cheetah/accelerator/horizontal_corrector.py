@@ -44,11 +44,13 @@ class HorizontalCorrector(Element):
             ),
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy)
+        _, igamma2, beta = compute_relativistic_factors(energy, particle_mass_eV)
 
         vector_shape = torch.broadcast_shapes(
             self.length.shape, igamma2.shape, self.angle.shape
