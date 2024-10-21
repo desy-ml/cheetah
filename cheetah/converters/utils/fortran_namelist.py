@@ -136,6 +136,8 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         # lattice file. I'm not sure this replacement will lead to the intended
         # behaviour.
         expression = re.sub(r"abs\(", r"abs_func(", expression)
+        # Remove surrounding quotes
+        expression = re.sub(r"\"([^\"]+)\"", r"\1", expression)
 
         return (
             eval(expression, context)
