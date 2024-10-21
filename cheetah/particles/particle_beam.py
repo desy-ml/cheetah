@@ -82,7 +82,7 @@ class ParticleBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles.
@@ -294,7 +294,7 @@ class ParticleBeam(Beam):
         emittance_x = (
             emittance_x
             if emittance_x is not None
-            else torch.full(shape, 0.0, **factory_kwargs)
+            else torch.full(shape, 7.1971891e-13, **factory_kwargs)
         )
         beta_y = (
             beta_y if beta_y is not None else torch.full(shape, 0.0, **factory_kwargs)
@@ -305,7 +305,7 @@ class ParticleBeam(Beam):
         emittance_y = (
             emittance_y
             if emittance_y is not None
-            else torch.full(shape, 0.0, **factory_kwargs)
+            else torch.full(shape, 7.1971891e-13, **factory_kwargs)
         )
         energy = (
             energy if energy is not None else torch.full(shape, 1e8, **factory_kwargs)
