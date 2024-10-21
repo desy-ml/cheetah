@@ -144,6 +144,9 @@ def evaluate_expression(expression: str, context: dict) -> Any:
             if not rpn.is_valid_expression(expression)
             else rpn.eval_expression(expression, context)
         )
+    except NameError:
+        # The evaluation could not be evaluated, so it is probably a string
+        return expression
     except SyntaxError:
         if not (
             len(expression.split(":")) == 3 or len(expression.split(":")) == 4
