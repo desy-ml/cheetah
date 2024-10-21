@@ -44,12 +44,77 @@ def test_move_quadrupole_to_device(target_device: torch.device):
     assert quad.tilt.device.type == target_device.type
 
 
+@pytest.mark.parametrize(
+    "ElementClass",
+    [
+        cheetah.Cavity,
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.HorizontalCorrector,
+        cheetah.Quadrupole,
+        cheetah.RBend,
+        cheetah.Solenoid,
+        cheetah.TransverseDeflectingCavity,
+        cheetah.Undulator,
+        cheetah.VerticalCorrector,
+    ],
+)
+def test_forced_element_dtype(ElementClass):
+    """
+    Test that the dtype is properly overridden for all element classes.
+    """
+    element = ElementClass(
+        length=torch.tensor(1.0, dtype=torch.float64), dtype=torch.float16
+    )
+
+    for param in element.parameters():
+        assert param.dtype == torch.float16
+
+
+@pytest.mark.parametrize(
+    "ElementClass",
+    [
+        cheetah.Cavity,
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.HorizontalCorrector,
+        cheetah.Quadrupole,
+        cheetah.RBend,
+        cheetah.Solenoid,
+        cheetah.TransverseDeflectingCavity,
+        cheetah.Undulator,
+        cheetah.VerticalCorrector,
+    ],
+)
+def test_infer_element_dtype(ElementClass):
+    """
+    Test that the dtype is properly inferred for all element classes.
+    """
+    element = ElementClass(length=torch.tensor(1.0, dtype=torch.float64))
+
+    for param in element.parameters():
+        assert param.dtype == torch.float64
+
+
+def test_conflicting_quadrupole_dtype():
+    """
+    Test that creating a quadrupole with conflicting argument dtypes fails.
+    """
+    with pytest.raises(AssertionError):
+        cheetah.Quadrupole(
+            length=torch.tensor(1.0, dtype=torch.float32),
+            k1=torch.tensor(10.0, dtype=torch.float64),
+        )
+
+
 def test_change_quadrupole_dtype():
     """
     Test that a quadrupole magnet can be successfully changed to a different dtype.
     """
     quad = cheetah.Quadrupole(
-        length=torch.tensor(0.2), k1=torch.tensor(4.2), name="my_quad"
+        length=torch.tensor(0.2),
+        k1=torch.tensor(4.2),
+        name="my_quad",
     )
 
     # Test that by default the quadrupole is of dtype float32
@@ -100,6 +165,66 @@ def test_move_particlebeam_to_device(target_device: torch.device):
     assert beam.particles.device.type == target_device.type
     assert beam.energy.device.type == target_device.type
     assert beam.total_charge.device.type == target_device.type
+
+
+@pytest.mark.parametrize(
+    "BeamClass",
+    [
+        cheetah.ParameterBeam,
+        cheetah.ParticleBeam,
+    ],
+)
+def test_forced_beam_dtype(BeamClass):
+    """
+    Test that the dtype is properly overriden on beam creation.
+    """
+    beam = BeamClass.from_parameters(
+        mu_x=torch.tensor(1e-5, dtype=torch.float32), dtype=torch.float64
+    )
+    for _, param in beam.parameters.items():
+        assert param.dtype == torch.float64
+
+    beam = BeamClass.from_twiss(
+        beta_x=torch.tensor(1.0, dtype=torch.float16),
+        beta_y=torch.tensor(2.0, dtype=torch.float64),
+        dtype=torch.float32,
+    )
+    for _, param in beam.parameters.items():
+        assert param.dtype == torch.float32
+
+
+@pytest.mark.parametrize(
+    "BeamClass",
+    [
+        cheetah.ParameterBeam,
+        cheetah.ParticleBeam,
+    ],
+)
+def test_infer_beam_dtype(BeamClass):
+    """
+    Test that the dtype is properly inferred on beam creation.
+    """
+    beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5, dtype=torch.float64))
+    for _, param in beam.parameters.items():
+        assert param.dtype == torch.float64
+
+    beam = BeamClass.from_twiss(
+        beta_x=torch.tensor(1.0, dtype=torch.float64),
+        beta_y=torch.tensor(2.0, dtype=torch.float64),
+    )
+    for _, param in beam.parameters.items():
+        assert param.dtype == torch.float64
+
+
+def test_conflicting_particlebeam_dtype():
+    """
+    Test if creating a ParticleBeam with conflicting argument dtypes fails.
+    """
+    with pytest.raises(AssertionError):
+        cheetah.ParticleBeam.from_twiss(
+            beta_x=torch.tensor(1.0, dtype=torch.float32),
+            beta_y=torch.tensor(2.0, dtype=torch.float64),
+        )
 
 
 def test_change_particlebeam_dtype():
