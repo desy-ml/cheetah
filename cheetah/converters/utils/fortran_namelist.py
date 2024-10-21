@@ -136,17 +136,12 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         # lattice file. I'm not sure this replacement will lead to the intended
         # behaviour.
         expression = re.sub(r"abs\(", r"abs_func(", expression)
-        # Remove surrounding quotes
-        expression = re.sub(r"\"([^\"]+)\"", r"\1", expression)
 
         return (
             eval(expression, context)
             if not rpn.is_valid_expression(expression)
             else rpn.eval_expression(expression, context)
         )
-    except NameError:
-        # The evaluation could not be evaluated, so it is probably a string
-        return expression
     except SyntaxError:
         if not (
             len(expression.split(":")) == 3 or len(expression.split(":")) == 4
