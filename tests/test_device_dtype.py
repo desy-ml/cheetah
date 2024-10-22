@@ -244,3 +244,27 @@ def test_change_particlebeam_dtype():
     assert beam.particles.dtype == torch.float64
     assert beam.energy.dtype == torch.float64
     assert beam.total_charge.dtype == torch.float64
+
+
+@pytest.mark.parametrize(
+    "BeamClass",
+    [
+        cheetah.ParameterBeam,
+        cheetah.ParticleBeam,
+    ],
+)
+def test_transformed_beam_dtype(BeamClass):
+    """
+    Test that Beam.transformed_to keeps the dtype by default.
+    """
+    beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5), dtype=torch.float64)
+
+    # Verify the dtype is kept by default
+    transformed_beam = beam.transformed_to(mu_x=torch.tensor(-2e-5))
+    assert transformed_beam.mu_x.dtype == torch.float64
+
+    # Check that the manual dtype selection works
+    transformed_beam = beam.transformed_to(
+        mu_x=torch.tensor(-2e-5), dtype=torch.float32
+    )
+    assert transformed_beam.mu_x.dtype == torch.float32
