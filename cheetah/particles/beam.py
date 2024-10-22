@@ -1,10 +1,11 @@
 from typing import Optional
 
 import torch
-from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+from cheetah.utils import Species
+
+electron = Species("electron")
 
 
 class Beam(nn.Module):
@@ -52,6 +53,7 @@ class Beam(nn.Module):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Species = electron,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -75,6 +77,8 @@ class Beam(nn.Module):
         :param cor_tau: Correlation between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
+            "electron" is used by default.
         """
         raise NotImplementedError
 
@@ -94,6 +98,7 @@ class Beam(nn.Module):
         total_charge: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
+        species: Species = electron,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -111,6 +116,8 @@ class Beam(nn.Module):
         :param total_charge: Total charge of the beam in C.
         :param device: Device to create the beam on.
         :param dtype: Data type of the beam.
+        :param species: Particle species of the beam.
+            "electron" is used by default.
         """
         raise NotImplementedError
 
@@ -140,6 +147,7 @@ class Beam(nn.Module):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -160,6 +168,8 @@ class Beam(nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
+            Can be a `Species` object or a string in the provided list.
         """
         # Figure out vector dimensions of the original beam and check that passed
         # arguments have the same vector dimensions.
@@ -199,6 +209,7 @@ class Beam(nn.Module):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
+        species = species if species is not None else self.species
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -213,6 +224,7 @@ class Beam(nn.Module):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
         )
 
     @property
@@ -280,9 +292,13 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @property
+    def mass_eV(self) -> float:
+        return self.species.mass_eV
+
+    @property
     def relativistic_gamma(self) -> torch.Tensor:
         """Reference relativistic gamma of the beam."""
-        return self.energy / electron_mass_eV
+        return self.energy / self.mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
@@ -296,7 +312,7 @@ class Beam(nn.Module):
     @property
     def p0c(self) -> torch.Tensor:
         """Get the reference momentum * speed of light in eV."""
-        return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
+        return self.relativistic_beta * self.relativistic_gamma * self.mass_eV
 
     @property
     def sigma_xpx(self) -> torch.Tensor:
@@ -364,5 +380,6 @@ class Beam(nn.Module):
             f" sigma_px={self.sigma_px}, sigma_y={self.sigma_y},"
             f" sigma_py={self.sigma_py}, sigma_tau={self.sigma_tau},"
             f" sigma_p={self.sigma_p}, energy={self.energy}),"
+            f" species={self.species},"
             f" total_charge={self.total_charge})"
         )

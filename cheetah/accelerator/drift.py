@@ -2,7 +2,6 @@ from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
-from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.accelerator.element import Element
@@ -10,8 +9,6 @@ from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Drift(Element):
@@ -40,11 +37,13 @@ class Drift(Element):
         self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
         self.tracking_method = tracking_method
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy)
+        _, igamma2, beta = compute_relativistic_factors(energy, particle_mass_eV)
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 
@@ -92,18 +91,18 @@ class Drift(Element):
         delta = incoming.p
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
+            tau, delta, incoming.energy, incoming.mass_eV
         )
 
         # Begin Bmad-X tracking
         x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, electron_mass_eV
+            self.length, x, px, y, py, z, pz, p0c, incoming.mass_eV
         )
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
         tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
+            z, pz, p0c, incoming.mass_eV
         )
 
         # Broadcast to align their shapes so that they can be stacked
@@ -117,6 +116,7 @@ class Drift(Element):
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
+            species=incoming.species,
         )
         return outgoing_beam
 

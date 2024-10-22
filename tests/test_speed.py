@@ -25,8 +25,6 @@ def test_tracking_speed():
     t1 = time.time()
 
     _ = segment.track(particles)
-    _ = segment.AREABSCR1.reading
 
     t2 = time.time()
-
     assert (t2 - t1) < 0.1

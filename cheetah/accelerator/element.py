@@ -24,7 +24,9 @@ class Element(ABC, nn.Module):
         self.name = name if name is not None else generate_unique_name()
         self.register_buffer("length", torch.tensor(0.0))
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: float
+    ) -> torch.Tensor:
         r"""
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element.
@@ -63,7 +65,7 @@ class Element(ABC, nn.Module):
         if incoming is Beam.empty:
             return incoming
         elif isinstance(incoming, ParameterBeam):
-            tm = self.transfer_map(incoming.energy)
+            tm = self.transfer_map(incoming.energy, incoming.mass_eV)
             mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
             return ParameterBeam(
@@ -75,7 +77,7 @@ class Element(ABC, nn.Module):
                 dtype=mu.dtype,
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy)
+            tm = self.transfer_map(incoming.energy, incoming.mass_eV)
             new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
             return ParticleBeam(
                 new_particles,
