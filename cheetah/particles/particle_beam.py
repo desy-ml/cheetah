@@ -24,6 +24,7 @@ class ParticleBeam(Beam):
     :param total_charge: Total charge of the beam in C.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
+    :param dtype: Data type of the generated particles.
     """
 
     def __init__(
@@ -99,6 +100,7 @@ class ParticleBeam(Beam):
         :total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
         """
 
         # Set default values without function call in function signature
@@ -310,7 +312,8 @@ class ParticleBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to move the beam's particle array to.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
 
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
@@ -450,6 +453,7 @@ class ParticleBeam(Beam):
         :param energy: Energy of the beam in eV.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
         """
 
         # Set default values without function call in function signature
@@ -582,6 +586,7 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed particles.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
