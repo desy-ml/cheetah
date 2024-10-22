@@ -52,6 +52,8 @@ class Beam(nn.Module):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=torch.float32,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -75,6 +77,9 @@ class Beam(nn.Module):
         :param cor_tau: Correlation between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
+            selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the beam.
         """
         raise NotImplementedError
 
@@ -87,9 +92,9 @@ class Beam(nn.Module):
         beta_y: Optional[torch.Tensor] = None,
         alpha_y: Optional[torch.Tensor] = None,
         emittance_y: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -104,12 +109,15 @@ class Beam(nn.Module):
         :param beta_y: Beta function in y direction in meters.
         :param alpha_y: Alpha function in y direction in rad.
         :param emittance_y: Emittance in y direction in m*rad.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
-        :param cor_s: Correlation of the particle distribution in s direction.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction,
+            dimensionless.
+        :param cor_tau: Correlation between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to create the beam on.
+        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
+            selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
         """
         raise NotImplementedError
@@ -140,6 +148,8 @@ class Beam(nn.Module):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        device=None,
+        dtype=torch.float32,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -160,6 +170,9 @@ class Beam(nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param device: Device to create the transformed beam on. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed beam.
         """
         # Figure out vector dimensions of the original beam and check that passed
         # arguments have the same vector dimensions.
@@ -213,6 +226,8 @@ class Beam(nn.Module):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            device=device,
+            dtype=dtype,
         )
 
     @property
@@ -264,7 +279,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @property
-    def mu_s(self) -> torch.Tensor:
+    def mu_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
