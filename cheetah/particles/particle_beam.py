@@ -56,7 +56,7 @@ class ParticleBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        num_particles: int = 1_000_000,
+        num_particles: int = 100_000,
         mu_x: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
