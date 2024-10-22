@@ -23,7 +23,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Port Bmad-X tracking methods to Cheetah for `Quadrupole`, `Drift`, and `Dipole` (see #153, #240) (@jp-ga, @jank324)
 - Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240, #278) (@jp-ga, @cr-xu, @jank324)
 - `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
-- Implement a converter for lattice files imported from Elegant (see #222, #251, #273) (@hespe)
+- Implement a converter for lattice files imported from Elegant (see #222, #251, #273, #281) (@hespe, @jank324)
 - Add the option to choose the particle species `Species` for `Beam` classes (see #276) (@cr-xu)
 
 ### 🐛 Bug fixes
