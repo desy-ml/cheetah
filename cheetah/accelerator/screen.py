@@ -7,9 +7,9 @@ from matplotlib.patches import Rectangle
 from torch import nn
 from torch.distributions import MultivariateNormal
 
-from ..particles import Beam, ParameterBeam, ParticleBeam
-from ..utils import UniqueNameGenerator, kde_histogram_2d
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -297,10 +297,13 @@ class Screen(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+
         alpha = 1 if self.is_active else 0.2
+
         patch = Rectangle(
-            (s, -0.6), 0, 0.6 * 2, color="tab:green", alpha=alpha, zorder=2
+            (plot_s, -0.6), 0, 0.6 * 2, color="tab:green", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

@@ -8,7 +8,7 @@ from typing import Any
 import scipy
 from scipy.constants import physical_constants
 
-from . import rpn
+from cheetah.converters.utils import rpn
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:

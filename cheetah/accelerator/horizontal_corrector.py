@@ -6,8 +6,8 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from ..utils import UniqueNameGenerator, compute_relativistic_factors
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -50,7 +50,9 @@ class HorizontalCorrector(Element):
 
         _, igamma2, beta = compute_relativistic_factors(energy)
 
-        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape, igamma2.shape, self.angle.shape
+        )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
@@ -80,12 +82,16 @@ class HorizontalCorrector(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+        plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
+
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.angle[0]) if self.is_active else 1)
+        height = 0.8 * (np.sign(plot_angle) if self.is_active else 1)
 
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:blue", alpha=alpha, zorder=2
+            (plot_s, 0), plot_length, height, color="tab:blue", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
