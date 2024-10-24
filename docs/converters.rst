@@ -22,3 +22,11 @@ Converters
 .. automodule:: converters.ocelot
     :members:
     :undoc-members:
+
+.. automodule:: converters.utils.fortran_namelist
+    :members:
+    :undoc-members:
+
+.. automodule:: converters.utils.rpn
+    :members:
+    :undoc-members:

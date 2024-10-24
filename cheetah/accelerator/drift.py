@@ -5,9 +5,9 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..particles import Beam, ParticleBeam
-from ..utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParticleBeam
+from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -136,7 +136,7 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         pass
 
     @property

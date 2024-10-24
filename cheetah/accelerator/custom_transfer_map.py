@@ -5,9 +5,9 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from ..particles import Beam
-from ..utils import UniqueNameGenerator
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -102,8 +102,11 @@ class CustomTransferMap(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         height = 0.4
 
-        patch = Rectangle((s, 0), self.length[0], height, color="tab:olive", zorder=2)
+        patch = Rectangle((plot_s, 0), plot_length, height, color="tab:olive", zorder=2)
         ax.add_patch(patch)

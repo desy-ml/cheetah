@@ -407,6 +407,49 @@ def test_vectorized_parameter_beam_creation():
     assert torch.allclose(beam.sigma_x, torch.tensor([1e-5, 2e-5]))
 
 
+@pytest.mark.parametrize(
+    "ElementClass", [cheetah.HorizontalCorrector, cheetah.VerticalCorrector]
+)
+def test_broadcasting_corrector_angles(ElementClass):
+    """Test that broadcasting rules are correctly applied to with corrector angles."""
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
+    )
+    element = ElementClass(
+        length=torch.tensor(0.15), angle=torch.tensor([[1e-5], [2e-5], [3e-5]])
+    )
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (2,)
+
+
+def test_broadcasting_solenoid_misalignment():
+    """
+    Test that broadcasting rules are correctly applied to the misalignment in solenoids.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000, energy=torch.tensor([154e6, 14e9])
+    )
+    element = cheetah.Solenoid(
+        length=torch.tensor(0.15),
+        misalignment=torch.tensor(
+            [
+                [[1e-5, 2e-5], [2e-5, 3e-5]],
+                [[3e-5, 4e-5], [4e-5, 5e-5]],
+                [[5e-5, 6e-5], [6e-5, 7e-5]],
+            ]
+        ),
+    )
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 100_000, 7)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.energy.shape == (2,)
+
 @pytest.mark.parametrize("shape", ["rectangular", "elliptical"])
 def test_vectorized_aperture_broadcasting(shape):
     """
