@@ -9,7 +9,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -53,8 +53,15 @@ class Screen(Element):
         is_active: bool = False,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [],  # No required tensor arguments
+            # Excludes resolution and binning, since those are integer valued, not float
+            [pixel_size, misalignment, kde_bandwidth],
+            device,
+            dtype,
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
@@ -203,7 +210,9 @@ class Screen(Element):
         read_beam = self.get_read_beam()
         if read_beam is Beam.empty or read_beam is None:
             image = torch.zeros(
-                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
+                (int(self.effective_resolution[1]), int(self.effective_resolution[0])),
+                device=self.misalignment.device,
+                dtype=self.misalignment.dtype,
             )
         elif isinstance(read_beam, ParameterBeam):
             if torch.numel(read_beam._mu[..., 0]) > 1:
