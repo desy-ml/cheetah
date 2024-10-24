@@ -15,6 +15,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class Aperture(Element):
     """
     Physical aperture.
+    The aperture is only considered if tracking a `ParticleBeam` and the aperture is
+    active.
 
     :param x_max: half size horizontal offset in [m]
     :param y_max: half size vertical offset in [m]
@@ -78,35 +80,44 @@ class Aperture(Element):
             "elliptical",
         ], f"Unknown aperture shape {self.shape}"
 
+        # broadcast x_max and y_max and the ParticleBeam to the same shape
+        vector_shape = torch.broadcast_shapes(
+            self.x_max.shape,
+            self.y_max.shape,
+            incoming.x.shape[:-1],
+            incoming.energy.shape,
+        )
+        x_max = self.x_max.expand(vector_shape).unsqueeze(-1)
+        y_max = self.y_max.expand(vector_shape).unsqueeze(-1)
+        outgoing_particles = incoming.particles.expand(vector_shape + (-1, 7))
+
         if self.shape == "rectangular":
             survived_mask = torch.logical_and(
-                torch.logical_and(incoming.x > -self.x_max, incoming.x < self.x_max),
-                torch.logical_and(incoming.y > -self.y_max, incoming.y < self.y_max),
+                torch.logical_and(incoming.x > -x_max, incoming.x < x_max),
+                torch.logical_and(incoming.y > -y_max, incoming.y < y_max),
             )
         elif self.shape == "elliptical":
-            survived_mask = (
-                incoming.x**2 / self.x_max**2 + incoming.y**2 / self.y_max**2
-            ) <= 1.0
-        outgoing_particles = incoming.particles[survived_mask]
+            survived_mask = (incoming.x**2 / x_max**2 + incoming.y**2 / y_max**2) <= 1.0
 
-        outgoing_particle_charges = incoming.particle_charges[survived_mask]
+        outgoing_survival = incoming.particle_survival * survived_mask
 
-        self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
+        # outgoing_particles = incoming.particles[survived_mask]
 
-        self.lost_particle_charges = incoming.particle_charges[
-            torch.logical_not(survived_mask)
-        ]
+        # outgoing_particle_charges = incoming.particle_charges[survived_mask]
 
-        return (
-            ParticleBeam(
-                outgoing_particles,
-                incoming.energy,
-                particle_charges=outgoing_particle_charges,
-                device=outgoing_particles.device,
-                dtype=outgoing_particles.dtype,
-            )
-            if outgoing_particles.shape[0] > 0
-            else ParticleBeam.empty
+        # self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
+
+        # self.lost_particle_charges = incoming.particle_charges[
+        #     torch.logical_not(survived_mask)
+        # ]
+
+        return ParticleBeam(
+            outgoing_particles,
+            incoming.energy,
+            particle_charges=incoming.particle_charges,
+            device=incoming.particles.device,
+            dtype=incoming.particles.dtype,
+            particle_survival=outgoing_survival,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
