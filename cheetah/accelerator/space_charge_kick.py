@@ -563,6 +563,7 @@ class SpaceChargeKick(Element):
                     particle_charges=incoming.particle_charges.unsqueeze(0),
                     device=incoming.particles.device,
                     dtype=incoming.particles.dtype,
+                    particle_survival=incoming.particle_survival.unsqueeze(0),
                 )
             else:
                 is_incoming_vectorized = True
@@ -577,6 +578,9 @@ class SpaceChargeKick(Element):
                 ),
                 device=vectorized_incoming.particles.device,
                 dtype=vectorized_incoming.particles.dtype,
+                particle_survival=vectorized_incoming.particle_survival.flatten(
+                    end_dim=-2
+                ),
             )
             flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
@@ -614,9 +618,10 @@ class SpaceChargeKick(Element):
                 outgoing = ParticleBeam.from_xyz_pxpypz(
                     xp_coordinates.squeeze(0),
                     vectorized_incoming.energy.squeeze(0),
-                    vectorized_incoming.particle_charges.squeeze(0),
-                    vectorized_incoming.particles.device,
-                    vectorized_incoming.particles.dtype,
+                    particle_charges=vectorized_incoming.particle_charges.squeeze(0),
+                    device=vectorized_incoming.particles.device,
+                    dtype=vectorized_incoming.particles.dtype,
+                    particle_survival=vectorized_incoming.particle_survival.squeeze(0),
                 )
             else:
                 # Reverse the flattening of the vector dimensions
@@ -625,9 +630,10 @@ class SpaceChargeKick(Element):
                         dim=0, sizes=vectorized_incoming.particles.shape[:-2]
                     ),
                     vectorized_incoming.energy,
-                    vectorized_incoming.particle_charges,
-                    vectorized_incoming.particles.device,
-                    vectorized_incoming.particles.dtype,
+                    particle_charges=vectorized_incoming.particle_charges,
+                    particle_survival=vectorized_incoming.particle_survival,
+                    device=vectorized_incoming.particles.device,
+                    dtype=vectorized_incoming.particles.dtype,
                 )
             return outgoing
         else:

@@ -10,9 +10,12 @@ def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
     Test that the results of tracking through a TDC with the `"bmadx"` tracking method
     match the results from Bmad-X.
     """
-    incoming_beam = torch.load(
+    bmad_loaded = torch.load(
         "tests/resources/bmadx/incoming.pt", weights_only=False
     ).to(dtype)
+    incoming_beam = cheetah.ParticleBeam(
+        particles=bmad_loaded.particles, energy=bmad_loaded.energy, dtype=dtype
+    )
     tdc = cheetah.TransverseDeflectingCavity(
         length=torch.tensor([1.0]),
         voltage=torch.tensor([1e7]),

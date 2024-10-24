@@ -243,6 +243,7 @@ class Cavity(Element):
                 particle_charges=incoming.particle_charges,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
+                particle_survival=incoming.particle_survival,
             )
             return outgoing
 

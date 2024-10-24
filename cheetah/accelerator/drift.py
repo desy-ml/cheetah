@@ -117,6 +117,7 @@ class Drift(Element):
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
+            particle_survival=incoming.particle_survival,
         )
         return outgoing_beam
 
