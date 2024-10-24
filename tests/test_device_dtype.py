@@ -106,6 +106,14 @@ def test_conflicting_quadrupole_dtype():
             k1=torch.tensor(10.0, dtype=torch.float64),
         )
 
+    # Ensure that the conflict can be solved by explicit dtype selection
+    quad = cheetah.Quadrupole(
+        length=torch.tensor(1.0, dtype=torch.float32),
+        k1=torch.tensor(10.0, dtype=torch.float64),
+        dtype=torch.float16,
+    )
+    assert quad.length.dtype == torch.float16
+
 
 def test_change_quadrupole_dtype():
     """
