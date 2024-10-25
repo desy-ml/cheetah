@@ -68,7 +68,8 @@ class Cavity(Element):
                 else torch.tensor(0.0, **factory_kwargs)
             ),
         )
-        self.cavity_type = cavity_type  
+        self.cavity_type = cavity_type
+
     @property
     def is_active(self) -> bool:
         return torch.any(self.voltage != 0)
@@ -266,13 +267,14 @@ class Cavity(Element):
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
         if self.cavity_type == 'standing_wave':
-            r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
-    
+            r11 = torch.cos(alpha)
+            - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
-            # otherwise. This is implemented differently here in order to achieve results
+            # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
             r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
-    
+
             r21 = (
                 -Ep
                 / Ef
@@ -282,7 +284,7 @@ class Cavity(Element):
                 )
                 * torch.sin(alpha)
             )
-    
+
             r22 = (
                 Ei
                 / Ef
@@ -292,35 +294,31 @@ class Cavity(Element):
                 )
             )
         if self.cavity_type == 'traveling_wave':
-            # reference paper: J. Rosenzweig and L. Serafini, PhysRevE, Vol. 49, p. 1599, (1994).
-            f = (Ei / dE) * torch.log(1 + (dE / Ei))    
+            # reference paper:Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
+            f = (Ei / dE) * torch.log(1 + (dE / Ei))
             Mbody = torch.tensor([
                 [1, self.length * f],
                 [0, Ei / Ef]
             ], device=device, dtype=dtype)
-    
+
             Mfent = torch.tensor([
                 [1, 0],
                 [-dE / (2 * self.length * Ei), 1]
             ], device=device, dtype=dtype)
-    
+
             Mfexit = torch.tensor([
                 [1, 0],
                 [dE / (2 * self.length * Ef), 1]
             ], device=device, dtype=dtype)
-    
-    
             result = Mfexit @ Mbody @ Mfent
-            
-            # Extract matrix elements
+
             r11 = result[0, 0]
             r12 = result[0, 1]
             r21 = result[1, 0]
             r22 = result[1, 1]
-        else:
-        # Raise an error for unrecognized cavity types
-            raise ValueError(f"Unrecognized cavity type: '{self.cavity_type}'. Valid types are 'standing_wave' and 'Traveling_wave'.")
 
+        else:
+            raise ValueError(f"Unrecognized cavity type: '{self.cavity_type}'. Valid types are 'standing_wave' and 'Traveling_wave'.")
 
         r56 = torch.tensor(0.0)
         beta0 = torch.tensor(1.0)
