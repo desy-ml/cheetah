@@ -35,7 +35,7 @@ class Cavity(Element):
         voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        cavity_type: Optional[str] = None,  # New parameter
+        cavity_type: Optional[str] = "standing_wave",
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -68,7 +68,7 @@ class Cavity(Element):
                 else torch.tensor(0.0, **factory_kwargs)
             ),
         )
-        self.cavity_type = cavity_type  # Set cavity_type
+        self.cavity_type = cavity_type  
     @property
     def is_active(self) -> bool:
         return torch.any(self.voltage != 0)
@@ -292,7 +292,7 @@ class Cavity(Element):
                 )
             )
         if self.cavity_type == 'traveling_wave':
-            #
+            # reference paper: J. Rosenzweig and L. Serafini, PhysRevE, Vol. 49, p. 1599, (1994).
             f = (Ei / dE) * torch.log(1 + (dE / Ei))    
             Mbody = torch.tensor([
                 [1, self.length * f],
