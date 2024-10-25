@@ -293,6 +293,7 @@ class Cavity(Element):
                     + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
                 )
             )
+
         if self.cavity_type == 'traveling_wave':
             # reference paper:Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             f = (Ei / dE) * torch.log(1 + (dE / Ei))
@@ -310,7 +311,6 @@ class Cavity(Element):
                 [1, 0],
                 [dE / (2 * self.length * Ef), 1]
             ], device=device, dtype=dtype)
-
             result = Mfexit @ Mbody @ Mfent
 
             r11 = result[0, 0]
