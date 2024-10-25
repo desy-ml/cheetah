@@ -151,7 +151,8 @@ class SpaceChargeKick(Element):
         )
 
         # Accumulate the charge contributions
-        repeated_charges = beam.particle_charges.repeat_interleave(
+        survived_particle_charges = beam.particle_charges * beam.particle_survival
+        repeated_charges = survived_particle_charges.repeat_interleave(
             repeats=8, dim=-1
         )  # Shape:(..., 8 * num_particles)
         values = (cell_weights.flatten(start_dim=-2) * repeated_charges)[valid_mask]
