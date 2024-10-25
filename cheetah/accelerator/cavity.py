@@ -310,6 +310,7 @@ class Cavity(Element):
                 [1, 0],
                 [dE / (2 * self.length * Ef), 1]
             ], device=device, dtype=dtype)
+
             result = Mfexit @ Mbody @ Mfent
 
             r11 = result[0, 0]
