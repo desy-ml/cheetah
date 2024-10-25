@@ -206,6 +206,7 @@ def convert_element(
                     -np.degrees(bmad_parsed.get("phi0", 0.0) * 2 * np.pi)
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"]),
+                cavity_type=bmad_parsed["cavity_type"],
                 name=name,
                 device=device,
                 dtype=dtype,
