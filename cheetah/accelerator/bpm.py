@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -46,7 +45,7 @@ class BPM(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-        return deepcopy(incoming)
+        return incoming.clone()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
