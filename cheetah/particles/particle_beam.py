@@ -902,6 +902,14 @@ class ParticleBeam(Beam):
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
 
+    def clone(self) -> "ParticleBeam":
+        """Return a cloned beam that does not share the underlying storage."""
+        return ParticleBeam(
+            particles=self.particles.clone(),
+            particle_charges=self.particle_charges.clone(),
+            energy=self.energy.clone(),
+        )
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(n={repr(self.num_particles)},"

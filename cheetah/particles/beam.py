@@ -357,6 +357,10 @@ class Beam(nn.Module):
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
 
+    def clone(self) -> "Beam":
+        """Return a cloned beam that does not share the underlying storage."""
+        raise NotImplementedError
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_px={self.mu_px},"
