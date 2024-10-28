@@ -103,3 +103,17 @@ def test_reference_particle_plot_vectorized_2d():
 
     # Run the plotting to see if it raises an exception
     segment.plot_overview(incoming=incoming, resolution=0.1, vector_idx=(0, 2))
+
+
+def test_plotting_with_gradients():
+    """
+    Test that plotting doesn't raise an exception for segments that contain tensors
+    that require gradients.
+    """
+    segment = cheetah.Segment(
+        elements=[cheetah.Drift(length=torch.tensor(1.0, requires_grad=True))]
+    )
+    beam = cheetah.ParameterBeam.from_parameters()
+
+    segment.plot_overview(incoming=beam)
+    segment.plot_twiss(incoming=beam)
