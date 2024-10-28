@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
@@ -166,7 +165,7 @@ class Screen(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:
-            copy_of_incoming = deepcopy(incoming)
+            copy_of_incoming = incoming.clone()
 
             if isinstance(incoming, ParameterBeam):
                 copy_of_incoming._mu, _ = torch.broadcast_tensors(
