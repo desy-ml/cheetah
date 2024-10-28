@@ -67,8 +67,8 @@ def test_forced_element_dtype(ElementClass):
         length=torch.tensor(1.0, dtype=torch.float64), dtype=torch.float16
     )
 
-    for param in element.parameters():
-        assert param.dtype == torch.float16
+    for buffer in element.buffers():
+        assert buffer.dtype == torch.float16
 
 
 @pytest.mark.parametrize(
@@ -92,8 +92,8 @@ def test_infer_element_dtype(ElementClass):
     """
     element = ElementClass(length=torch.tensor(1.0, dtype=torch.float64))
 
-    for param in element.parameters():
-        assert param.dtype == torch.float64
+    for buffer in element.buffers():
+        assert buffer.dtype == torch.float64
 
 
 def test_conflicting_quadrupole_dtype():
@@ -189,16 +189,16 @@ def test_forced_beam_dtype(BeamClass):
     beam = BeamClass.from_parameters(
         mu_x=torch.tensor(1e-5, dtype=torch.float32), dtype=torch.float64
     )
-    for _, param in beam.parameters.items():
-        assert param.dtype == torch.float64
+    for buffer in beam.buffers():
+        assert buffer.dtype == torch.float64
 
     beam = BeamClass.from_twiss(
         beta_x=torch.tensor(1.0, dtype=torch.float16),
         beta_y=torch.tensor(2.0, dtype=torch.float64),
         dtype=torch.float32,
     )
-    for _, param in beam.parameters.items():
-        assert param.dtype == torch.float32
+    for buffer in beam.buffers():
+        assert buffer.dtype == torch.float32
 
 
 @pytest.mark.parametrize(
@@ -213,15 +213,15 @@ def test_infer_beam_dtype(BeamClass):
     Test that the dtype is properly inferred on beam creation.
     """
     beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5, dtype=torch.float64))
-    for _, param in beam.parameters.items():
-        assert param.dtype == torch.float64
+    for buffer in beam.buffers():
+        assert buffer.dtype == torch.float64
 
     beam = BeamClass.from_twiss(
         beta_x=torch.tensor(1.0, dtype=torch.float64),
         beta_y=torch.tensor(2.0, dtype=torch.float64),
     )
-    for _, param in beam.parameters.items():
-        assert param.dtype == torch.float64
+    for buffer in beam.buffers():
+        assert buffer.dtype == torch.float64
 
 
 def test_conflicting_particlebeam_dtype():
