@@ -112,6 +112,14 @@ class Solenoid(Element):
     def is_skippable(self) -> bool:
         return True
 
+    def clone(self) -> "Solenoid":
+        return Solenoid(
+            length=self.length.clone(),
+            k=self.k.clone(),
+            misalignment=self.misalignment.clone(),
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for solenoid properly, for now just return self
         return [self]

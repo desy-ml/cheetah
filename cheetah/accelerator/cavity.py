@@ -336,6 +336,15 @@ class Cavity(Element):
 
         return R
 
+    def clone(self) -> "Cavity":
+        return Cavity(
+            length=self.length.clone(),
+            voltage=self.voltage.clone(),
+            phase=self.phase.clone(),
+            frequency=self.frequency.clone(),
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the
         # element itself

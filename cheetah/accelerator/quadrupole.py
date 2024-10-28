@@ -201,6 +201,17 @@ class Quadrupole(Element):
     def is_active(self) -> bool:
         return torch.any(self.k1 != 0)
 
+    def clone(self) -> "Quadrupole":
+        return Quadrupole(
+            length=self.length.clone(),
+            k1=self.k1.clone(),
+            misalignment=self.misalignment.clone(),
+            tilt=self.tilt.clone(),
+            num_steps=self.num_steps,
+            tracking_method=self.tracking_method,
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()
         return [

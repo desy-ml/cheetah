@@ -379,6 +379,11 @@ class Segment(Element):
 
             return incoming
 
+    def clone(self) -> "Segment":
+        return Segment(
+            elements=[element.clone() for element in self.elements], name=self.name
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [
             split_element
