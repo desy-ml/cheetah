@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import torch
@@ -7,7 +8,7 @@ from torch import nn
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-class Beam(nn.Module):
+class Beam(ABC, nn.Module):
     r"""
     Parent class to represent a beam of particles. You should not instantiate this
     class directly, but use one of the subclasses.
@@ -35,6 +36,7 @@ class Beam(nn.Module):
     empty = "I'm an empty beam!"
 
     @classmethod
+    @abstractmethod
     def from_parameters(
         cls,
         mu_x: Optional[torch.Tensor] = None,
@@ -84,6 +86,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_twiss(
         cls,
         beta_x: Optional[torch.Tensor] = None,
@@ -123,6 +126,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_ocelot(cls, parray) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
@@ -130,6 +134,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_astra(cls, path: str, **kwargs) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
@@ -247,50 +252,62 @@ class Beam(nn.Module):
         }
 
     @property
+    @abstractmethod
     def mu_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_p(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_p(self) -> torch.Tensor:
         raise NotImplementedError
 
@@ -314,11 +331,13 @@ class Beam(nn.Module):
         return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
 
     @property
+    @abstractmethod
     def sigma_xpx(self) -> torch.Tensor:
         # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_ypy(self) -> torch.Tensor:
         raise NotImplementedError
 
