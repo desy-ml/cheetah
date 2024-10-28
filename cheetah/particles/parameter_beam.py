@@ -424,7 +424,6 @@ class ParameterBeam(Beam):
         return self._cov[..., 2, 3]
 
     def clone(self) -> "ParameterBeam":
-        """Return a cloned beam that does not share the underlying storage."""
         return ParameterBeam(
             mu=self._mu.clone(),
             cov=self._cov.clone(),
