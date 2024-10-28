@@ -114,6 +114,11 @@ class Element(ABC, nn.Module):
         return []
 
     @abstractmethod
+    def clone(self) -> "Element":
+        """Create a copy of the element which does not share the underlying memory."""
+        raise NotImplementedError
+
+    @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`. Some elements may not

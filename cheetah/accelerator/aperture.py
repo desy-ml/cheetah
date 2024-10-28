@@ -109,6 +109,15 @@ class Aperture(Element):
             else ParticleBeam.empty
         )
 
+    def clone(self) -> "Aperture":
+        return Aperture(
+            x_max=self.x_max.clone(),
+            y_max=self.y_max.clone(),
+            shape=self.shape,
+            is_active=self.is_active,
+            name=self.name,
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self
         return [self]
