@@ -944,13 +944,11 @@ class ParticleBeam(Beam):
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
 
-    def broadcast(self, shape: torch.Size) -> "ParticleBeam":
-        return self.__class__(
-            particles=self.particles.repeat((*shape, 1, 1)),
-            energy=self.energy.repeat(shape),
-            particle_charges=self.particle_charges.repeat((*shape, 1)),
-            device=self.particles.device,
-            dtype=self.particles.dtype,
+    def __getitem__(self, item):
+        return ParticleBeam(
+            self.particles[item],
+            self.energy,
+            self.particle_charges[item],
         )
 
     def __repr__(self) -> str:
