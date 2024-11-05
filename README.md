@@ -35,15 +35,15 @@ from cheetah import BPM, Drift, HorizontalCorrector, Segment, VerticalCorrector
 segment = Segment(
     elements=[
         BPM(name="BPM1SMATCH"),
-        Drift(length=torch.tensor([1.0])),
+        Drift(length=torch.tensor(1.0)),
         BPM(name="BPM6SMATCH"),
-        Drift(length=torch.tensor([1.0])),
-        VerticalCorrector(length=torch.tensor([0.3]), name="V7SMATCH"),
-        Drift(length=torch.tensor([0.2])),
-        HorizontalCorrector(length=torch.tensor([0.3]), name="H10SMATCH"),
-        Drift(length=torch.tensor([7.0])),
-        HorizontalCorrector(length=torch.tensor([0.3]), name="H12SMATCH"),
-        Drift(length=torch.tensor([0.05])),
+        Drift(length=torch.tensor(1.0)),
+        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
+        Drift(length=torch.tensor(0.2)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
+        Drift(length=torch.tensor(7.0)),
+        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
+        Drift(length=torch.tensor(0.05)),
         BPM(name="BPM13SMATCH"),
     ]
 )
@@ -58,7 +58,7 @@ segment = Segment.from_ocelot(cell)
 All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
 
 ```python
-segment.AREAMQZM2.k1 = torch.tensor([4.2])
+segment.AREAMQZM2.k1 = torch.tensor(4.2)
 ```
 
 In order to track a beam through the segment, simply call the segment like so

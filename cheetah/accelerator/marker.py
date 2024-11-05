@@ -2,12 +2,10 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
-from torch import Size
 
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam
 from cheetah.utils import UniqueNameGenerator
-
-from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -32,11 +30,6 @@ class Marker(Element):
         # Markers would be able to record the beam tracked through them.
         return incoming
 
-    def broadcast(self, shape: Size) -> Element:
-        new_marker = self.__class__(name=self.name)
-        new_marker.length = self.length.repeat(shape)
-        return new_marker
-
     @property
     def is_skippable(self) -> bool:
         return True
@@ -44,7 +37,7 @@ class Marker(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         # Do nothing on purpose. Maybe later we decide markers should be shown, but for
         # now they are invisible.
         pass

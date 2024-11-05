@@ -1,5 +1,5 @@
-import cheetah.converters  # noqa: F401
-from cheetah.accelerator import (  # noqa: F401
+from . import converters  # noqa: F401
+from .accelerator import (  # noqa: F401
     BPM,
     Aperture,
     Cavity,
@@ -18,4 +18,4 @@ from cheetah.accelerator import (  # noqa: F401
     Undulator,
     VerticalCorrector,
 )
-from cheetah.particles import ParameterBeam, ParticleBeam  # noqa: F401
+from .particles import Beam, ParameterBeam, ParticleBeam  # noqa: F401

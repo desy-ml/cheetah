@@ -59,7 +59,6 @@ For more advanced usage, please refer to the in-depth documentation.
 
     accelerator
     converters
-    error
     latticejson
     particles
     track_methods

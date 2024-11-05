@@ -22,7 +22,7 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        self.register_buffer("length", torch.zeros((1,)))
+        self.register_buffer("length", torch.tensor(0.0))
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         r"""
@@ -91,10 +91,6 @@ class Element(ABC, nn.Module):
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
 
-    def broadcast(self, shape: torch.Size) -> "Element":
-        """Broadcast the element to higher batch dimensions."""
-        raise NotImplementedError
-
     @property
     @abstractmethod
     def is_skippable(self) -> bool:
@@ -130,12 +126,16 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 
         :param ax: Axes to plot the representation into.
         :param s: Position of the object along s in meters.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
         """
         raise NotImplementedError
 

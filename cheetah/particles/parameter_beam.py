@@ -3,7 +3,8 @@ from typing import Optional
 import numpy as np
 import torch
 
-from .beam import Beam
+from cheetah.particles.beam import Beam
+from cheetah.particles.particle_beam import ParticleBeam
 
 
 class ParameterBeam(Beam):
@@ -63,67 +64,59 @@ class ParameterBeam(Beam):
         device=None,
         dtype=torch.float32,
     ) -> "ParameterBeam":
-        # Figure out if arguments were passed, figure out their shape
-        not_nones = [
-            argument
-            for argument in [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cor_x,
-                cor_y,
-                cor_tau,
-                energy,
-                total_charge,
-            ]
-            if argument is not None
-        ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
-
         # Set default values without function call in function signature
-        mu_x = mu_x if mu_x is not None else torch.full(shape, 0.0)
-        mu_px = mu_px if mu_px is not None else torch.full(shape, 0.0)
-        mu_y = mu_y if mu_y is not None else torch.full(shape, 0.0)
-        mu_py = mu_py if mu_py is not None else torch.full(shape, 0.0)
-        sigma_x = sigma_x if sigma_x is not None else torch.full(shape, 175e-9)
-        sigma_px = sigma_px if sigma_px is not None else torch.full(shape, 2e-7)
-        sigma_y = sigma_y if sigma_y is not None else torch.full(shape, 175e-9)
-        sigma_py = sigma_py if sigma_py is not None else torch.full(shape, 2e-7)
-        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
-        sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
-        cor_x = cor_x if cor_x is not None else torch.full(shape, 0.0)
-        cor_y = cor_y if cor_y is not None else torch.full(shape, 0.0)
-        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
-        energy = energy if energy is not None else torch.full(shape, 1e8)
-        total_charge = (
-            total_charge if total_charge is not None else torch.full(shape, 0.0)
-        )
+        mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
+        mu_px = mu_px if mu_px is not None else torch.tensor(0.0)
+        mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
+        mu_py = mu_py if mu_py is not None else torch.tensor(0.0)
+        sigma_x = sigma_x if sigma_x is not None else torch.tensor(175e-9)
+        sigma_px = sigma_px if sigma_px is not None else torch.tensor(2e-7)
+        sigma_y = sigma_y if sigma_y is not None else torch.tensor(175e-9)
+        sigma_py = sigma_py if sigma_py is not None else torch.tensor(2e-7)
+        sigma_tau = sigma_tau if sigma_tau is not None else torch.tensor(1e-6)
+        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
+        cor_x = cor_x if cor_x is not None else torch.tensor(0.0)
+        cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
+        cor_tau = cor_tau if cor_tau is not None else torch.tensor(0.0)
+        energy = energy if energy is not None else torch.tensor(1e8)
+        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
 
+        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
         mu = torch.stack(
             [
                 mu_x,
                 mu_px,
                 mu_y,
                 mu_py,
-                torch.full(shape, 0.0),
-                torch.full(shape, 0.0),
-                torch.full(shape, 1.0),
+                torch.zeros_like(mu_x),
+                torch.zeros_like(mu_x),
+                torch.ones_like(mu_x),
             ],
             dim=-1,
         )
 
-        cov = torch.zeros(*shape, 7, 7)
+        (
+            sigma_x,
+            cor_x,
+            sigma_px,
+            sigma_y,
+            cor_y,
+            sigma_py,
+            sigma_tau,
+            cor_tau,
+            sigma_p,
+        ) = torch.broadcast_tensors(
+            sigma_x,
+            cor_x,
+            sigma_px,
+            sigma_y,
+            cor_y,
+            sigma_py,
+            sigma_tau,
+            cor_tau,
+            sigma_p,
+        )
+        cov = torch.zeros(*sigma_x.shape, 7, 7)
         cov[..., 0, 0] = sigma_x**2
         cov[..., 0, 1] = cor_x
         cov[..., 1, 0] = cor_x
@@ -206,10 +199,10 @@ class ParameterBeam(Beam):
             total_charge if total_charge is not None else torch.full(shape, 0.0)
         )
 
-        assert all(
+        assert torch.all(
             beta_x > 0
         ), "Beta function in x direction must be larger than 0 everywhere."
-        assert all(
+        assert torch.all(
             beta_y > 0
         ), "Beta function in y direction must be larger than 0 everywhere."
 
@@ -271,10 +264,10 @@ class ParameterBeam(Beam):
         total_charge = torch.tensor(np.sum(particle_charges), dtype=torch.float32)
 
         return cls(
-            mu=mu.unsqueeze(0),
-            cov=cov.unsqueeze(0),
-            energy=torch.tensor(energy, dtype=torch.float32).unsqueeze(0),
-            total_charge=total_charge.unsqueeze(0),
+            mu=mu,
+            cov=cov,
+            energy=torch.tensor(energy, dtype=torch.float32),
+            total_charge=total_charge,
             device=device,
             dtype=dtype,
         )
@@ -318,32 +311,6 @@ class ParameterBeam(Beam):
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
 
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
-        shape = self.mu_x.shape
-        not_nones = [
-            argument
-            for argument in [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                energy,
-                total_charge,
-            ]
-            if argument is not None
-        ]
-        if len(not_nones) > 0:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
-
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
@@ -372,6 +339,32 @@ class ParameterBeam(Beam):
             total_charge=total_charge,
             device=device,
             dtype=dtype,
+        )
+
+    def linspaced(self, num_particles: int) -> ParticleBeam:
+        """
+        Create a `ParticleBeam` beam with the same parameters as this beam and
+        `num_particles` particles evenly distributed in the beam.
+
+        :param num_particles: Number of particles to create.
+        :return: `ParticleBeam` with `num_particles` particles.
+        """
+        return ParticleBeam.make_linspaced(
+            num_particles=num_particles,
+            mu_x=self.mu_x,
+            mu_y=self.mu_y,
+            mu_px=self.mu_px,
+            mu_py=self.mu_py,
+            sigma_x=self.sigma_x,
+            sigma_y=self.sigma_y,
+            sigma_px=self.sigma_px,
+            sigma_py=self.sigma_py,
+            sigma_tau=self.sigma_tau,
+            sigma_p=self.sigma_p,
+            energy=self.energy,
+            total_charge=self.total_charge,
+            device=self._mu.device,
+            dtype=self._mu.dtype,
         )
 
     @property
@@ -429,16 +422,6 @@ class ParameterBeam(Beam):
     @property
     def sigma_ypy(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
-
-    def broadcast(self, shape: torch.Size) -> "ParameterBeam":
-        return self.__class__(
-            mu=self._mu.repeat((*shape, 1)),
-            cov=self._cov.repeat((*shape, 1, 1)),
-            energy=self.energy.repeat(shape),
-            total_charge=self.total_charge.repeat(shape),
-            device=self._mu.device,
-            dtype=self._mu.dtype,
-        )
 
     def __repr__(self) -> str:
         return (

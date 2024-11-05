@@ -3,9 +3,8 @@ from typing import Optional, Union
 import torch
 from torch import nn
 
+from cheetah.accelerator.dipole import Dipole
 from cheetah.utils import UniqueNameGenerator
-
-from .dipole import Dipole
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
