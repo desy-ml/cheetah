@@ -5,13 +5,12 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx
-
-from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -175,6 +174,9 @@ class Quadrupole(Element):
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
+
+        # pz is unaffected by tracking, therefore needs to match vector dimensions
+        pz = pz * torch.ones_like(x)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -191,25 +193,13 @@ class Quadrupole(Element):
         )
         return outgoing_beam
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            k1=self.k1.repeat(shape),
-            misalignment=self.misalignment.repeat((*shape, 1)),
-            tilt=self.tilt.repeat(shape),
-            tracking_method=self.tracking_method,
-            name=self.name,
-            device=self.length.device,
-            dtype=self.length.dtype,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return self.tracking_method == "cheetah"
 
     @property
     def is_active(self) -> bool:
-        return any(self.k1 != 0)
+        return torch.any(self.k1 != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()
@@ -227,11 +217,15 @@ class Quadrupole(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_k1 = self.k1[vector_idx] if self.k1.dim() > 0 else self.k1
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(self.k1[0]) if self.is_active else 1)
+        height = 0.8 * (np.sign(plot_k1) if self.is_active else 1)
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:red", alpha=alpha, zorder=2
+            (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

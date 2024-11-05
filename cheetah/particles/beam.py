@@ -4,9 +4,7 @@ import torch
 from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Beam(nn.Module):
@@ -21,17 +19,17 @@ class Beam(nn.Module):
     The phase space vectors contain the canonical variables:
     - x: Position in x direction in meters.
     - px: Horizontal momentum normalized over the reference momentum (dimensionless).
-        $px = P_x / P_0$
+        :math:`px = \frac{P_x}{P_0}`
     - y: Position in y direction in meters.
     - py: Vertical momentum normalized over the reference momentum (dimensionless).
-        $py = P_y / P_0$
+        :math:`py = \frac{P_y}{P_0}`
     - tau: Position in longitudinal direction in meters, relative to the reference
-        particle. $\tau = ct - s/\beta_0$, where s is the position along the beamline.
-        In this notation, particle ahead of the reference particle will have negative
-        $\tau$.
+        particle. :math:`\tau = ct - \frac{s}{\beta_0}`, where s is the position along
+        the beamline. In this notation, particle ahead of the reference particle will
+        have negative :math:`\tau`.
     - p: Relative energy deviation from the reference particle (dimensionless).
-        $p = \frac{\Delta E}{p_0 C}$, where $p_0$ is the reference momentum.
-        $\Delta E = E - E_0$
+        :math:`p = \frac{\Delta E}{p_0 C}`, where :math:`p_0` is the reference momentum.
+        :math:`\Delta E = E - E_0`
     """
 
     empty = "I'm an empty beam!"
@@ -163,8 +161,8 @@ class Beam(nn.Module):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         """
-        # Figure out batch size of the original beam and check that passed arguments
-        # have the same batch size
+        # Figure out vector dimensions of the original beam and check that passed
+        # arguments have the same vector dimensions.
         shape = self.mu_x.shape
         not_nones = [
             argument
@@ -302,7 +300,7 @@ class Beam(nn.Module):
 
     @property
     def sigma_xpx(self) -> torch.Tensor:
-        # the covariance of (x,px) ~ $\sigma_{xpx}$
+        # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
@@ -358,10 +356,6 @@ class Beam(nn.Module):
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
-
-    def broadcast(self, shape: torch.Size) -> "Beam":
-        """Broadcast beam to new shape."""
-        raise NotImplementedError
 
     def __repr__(self) -> str:
         return (

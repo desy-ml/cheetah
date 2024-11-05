@@ -3,12 +3,11 @@ from typing import Literal, Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import Size, nn
+from torch import nn
 
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils import UniqueNameGenerator
-
-from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -110,31 +109,20 @@ class Aperture(Element):
             else ParticleBeam.empty
         )
 
-    def broadcast(self, shape: Size) -> Element:
-        new_aperture = self.__class__(
-            x_max=self.x_max.repeat(shape),
-            y_max=self.y_max.repeat(shape),
-            shape=self.shape,
-            is_active=self.is_active,
-            name=self.name,
-            device=self.x_max.device,
-            dtype=self.x_max.dtype,
-        )
-        new_aperture.length = self.length.repeat(shape)
-        return new_aperture
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for aperture properly, for now just return self
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
         dummy_length = 0.0
 
         patch = Rectangle(
-            (s, 0), dummy_length, height, color="tab:pink", alpha=alpha, zorder=2
+            (plot_s, 0), dummy_length, height, color="tab:pink", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
