@@ -1,6 +1,8 @@
 from typing import Optional
 
+import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from scipy import constants
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
@@ -11,7 +13,7 @@ from cheetah.utils import elementwise_linspace
 speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
 electron_mass = torch.tensor(constants.electron_mass)  # In kg
 electron_mass_eV = (
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+        physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 )  # In eV
 
 
@@ -27,18 +29,18 @@ class ParticleBeam(Beam):
     """
 
     def __init__(
-        self,
-        particles: torch.Tensor,
-        energy: torch.Tensor,
-        particle_charges: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            self,
+            particles: torch.Tensor,
+            energy: torch.Tensor,
+            particle_charges: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
 
         assert (
-            particles.shape[-2] > 0 and particles.shape[-1] == 7
+                particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
         self.register_buffer("particles", particles.to(**factory_kwargs))
@@ -54,25 +56,25 @@ class ParticleBeam(Beam):
 
     @classmethod
     def from_parameters(
-        cls,
-        num_particles: Optional[torch.Tensor] = None,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        cor_x: Optional[torch.Tensor] = None,
-        cor_y: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            cls,
+            num_particles: Optional[torch.Tensor] = None,
+            mu_x: Optional[torch.Tensor] = None,
+            mu_y: Optional[torch.Tensor] = None,
+            mu_px: Optional[torch.Tensor] = None,
+            mu_py: Optional[torch.Tensor] = None,
+            sigma_x: Optional[torch.Tensor] = None,
+            sigma_y: Optional[torch.Tensor] = None,
+            sigma_px: Optional[torch.Tensor] = None,
+            sigma_py: Optional[torch.Tensor] = None,
+            sigma_tau: Optional[torch.Tensor] = None,
+            sigma_p: Optional[torch.Tensor] = None,
+            cor_x: Optional[torch.Tensor] = None,
+            cor_y: Optional[torch.Tensor] = None,
+            cor_tau: Optional[torch.Tensor] = None,
+            energy: Optional[torch.Tensor] = None,
+            total_charge: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles.
@@ -121,9 +123,9 @@ class ParticleBeam(Beam):
         energy = energy if energy is not None else torch.tensor(1e8)
         total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
         particle_charges = (
-            torch.ones((*total_charge.shape, num_particles))
-            * total_charge.unsqueeze(-1)
-            / num_particles
+                torch.ones((*total_charge.shape, num_particles))
+                * total_charge.unsqueeze(-1)
+                / num_particles
         )
 
         mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
@@ -154,18 +156,18 @@ class ParticleBeam(Beam):
             sigma_p,
         )
         cov = torch.zeros(*sigma_x.shape, 6, 6)
-        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 0] = sigma_x ** 2
         cov[..., 0, 1] = cor_x
         cov[..., 1, 0] = cor_x
-        cov[..., 1, 1] = sigma_px**2
-        cov[..., 2, 2] = sigma_y**2
+        cov[..., 1, 1] = sigma_px ** 2
+        cov[..., 2, 2] = sigma_y ** 2
         cov[..., 2, 3] = cor_y
         cov[..., 3, 2] = cor_y
-        cov[..., 3, 3] = sigma_py**2
-        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 3, 3] = sigma_py ** 2
+        cov[..., 4, 4] = sigma_tau ** 2
         cov[..., 4, 5] = cor_tau
         cov[..., 5, 4] = cor_tau
-        cov[..., 5, 5] = sigma_p**2
+        cov[..., 5, 5] = sigma_p ** 2
 
         particles = torch.ones((*mean.shape[:-1], num_particles, 7))
         distributions = [
@@ -187,21 +189,21 @@ class ParticleBeam(Beam):
 
     @classmethod
     def from_twiss(
-        cls,
-        num_particles: Optional[torch.Tensor] = None,
-        beta_x: Optional[torch.Tensor] = None,
-        alpha_x: Optional[torch.Tensor] = None,
-        emittance_x: Optional[torch.Tensor] = None,
-        beta_y: Optional[torch.Tensor] = None,
-        alpha_y: Optional[torch.Tensor] = None,
-        emittance_y: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            cls,
+            num_particles: Optional[torch.Tensor] = None,
+            beta_x: Optional[torch.Tensor] = None,
+            alpha_x: Optional[torch.Tensor] = None,
+            emittance_x: Optional[torch.Tensor] = None,
+            beta_y: Optional[torch.Tensor] = None,
+            alpha_y: Optional[torch.Tensor] = None,
+            emittance_y: Optional[torch.Tensor] = None,
+            energy: Optional[torch.Tensor] = None,
+            sigma_tau: Optional[torch.Tensor] = None,
+            sigma_p: Optional[torch.Tensor] = None,
+            cor_tau: Optional[torch.Tensor] = None,
+            total_charge: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> "ParticleBeam":
         # Figure out if arguments were passed, figure out their shape
         not_nones = [
@@ -246,9 +248,9 @@ class ParticleBeam(Beam):
         )
 
         sigma_x = torch.sqrt(beta_x * emittance_x)
-        sigma_px = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
+        sigma_px = torch.sqrt(emittance_x * (1 + alpha_x ** 2) / beta_x)
         sigma_y = torch.sqrt(beta_y * emittance_y)
-        sigma_py = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
+        sigma_py = torch.sqrt(emittance_y * (1 + alpha_y ** 2) / beta_y)
         cor_x = -emittance_x * alpha_x
         cor_y = -emittance_y * alpha_y
 
@@ -275,18 +277,18 @@ class ParticleBeam(Beam):
 
     @classmethod
     def uniform_3d_ellipsoid(
-        cls,
-        num_particles: Optional[torch.Tensor] = None,
-        radius_x: Optional[torch.Tensor] = None,
-        radius_y: Optional[torch.Tensor] = None,
-        radius_tau: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            cls,
+            num_particles: Optional[torch.Tensor] = None,
+            radius_x: Optional[torch.Tensor] = None,
+            radius_y: Optional[torch.Tensor] = None,
+            radius_tau: Optional[torch.Tensor] = None,
+            sigma_px: Optional[torch.Tensor] = None,
+            sigma_py: Optional[torch.Tensor] = None,
+            sigma_p: Optional[torch.Tensor] = None,
+            energy: Optional[torch.Tensor] = None,
+            total_charge: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ):
         """
         Generate a particle beam with spatially uniformly distributed particles inside
@@ -367,7 +369,7 @@ class ParticleBeam(Beam):
         flattened_y = torch.empty(*vector_shape, num_particles).flatten(end_dim=-2)
         flattened_tau = torch.empty(*vector_shape, num_particles).flatten(end_dim=-2)
         for i, (r_x, r_y, r_tau) in enumerate(
-            zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
+                zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
         ):
             num_successful = 0
             while num_successful < num_particles:
@@ -375,18 +377,21 @@ class ParticleBeam(Beam):
                 y = (torch.rand(num_particles) - 0.5) * 2 * r_y
                 tau = (torch.rand(num_particles) - 0.5) * 2 * r_tau
 
-                is_in_ellipsoid = x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
+                is_in_ellipsoid = x ** 2 / r_x ** 2 + y ** 2 / r_y ** 2 + tau ** 2 / r_tau ** 2 < 1
                 num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
 
-                flattened_x[i, num_successful : num_successful + num_to_add] = x[
-                    is_in_ellipsoid
-                ][:num_to_add]
-                flattened_y[i, num_successful : num_successful + num_to_add] = y[
-                    is_in_ellipsoid
-                ][:num_to_add]
-                flattened_tau[i, num_successful : num_successful + num_to_add] = tau[
-                    is_in_ellipsoid
-                ][:num_to_add]
+                flattened_x[i, num_successful: num_successful + num_to_add] = x[
+                                                                                  is_in_ellipsoid
+                                                                              ][
+                                                                              :num_to_add]
+                flattened_y[i, num_successful: num_successful + num_to_add] = y[
+                                                                                  is_in_ellipsoid
+                                                                              ][
+                                                                              :num_to_add]
+                flattened_tau[i, num_successful: num_successful + num_to_add] = tau[
+                                                                                    is_in_ellipsoid
+                                                                                ][
+                                                                                :num_to_add]
 
                 num_successful += num_to_add
 
@@ -413,22 +418,22 @@ class ParticleBeam(Beam):
 
     @classmethod
     def make_linspaced(
-        cls,
-        num_particles: Optional[torch.Tensor] = None,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            cls,
+            num_particles: Optional[torch.Tensor] = None,
+            mu_x: Optional[torch.Tensor] = None,
+            mu_y: Optional[torch.Tensor] = None,
+            mu_px: Optional[torch.Tensor] = None,
+            mu_py: Optional[torch.Tensor] = None,
+            sigma_x: Optional[torch.Tensor] = None,
+            sigma_y: Optional[torch.Tensor] = None,
+            sigma_px: Optional[torch.Tensor] = None,
+            sigma_py: Optional[torch.Tensor] = None,
+            sigma_tau: Optional[torch.Tensor] = None,
+            sigma_p: Optional[torch.Tensor] = None,
+            energy: Optional[torch.Tensor] = None,
+            total_charge: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of *n* linspaced particles.
@@ -467,9 +472,9 @@ class ParticleBeam(Beam):
         energy = energy if energy is not None else torch.tensor(1e8)
         total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
         particle_charges = (
-            torch.ones((*total_charge.shape, num_particles))
-            * total_charge.unsqueeze(-1)
-            / num_particles
+                torch.ones((*total_charge.shape, num_particles))
+                * total_charge.unsqueeze(-1)
+                / num_particles
         )
 
         vector_shape = torch.broadcast_shapes(
@@ -545,21 +550,21 @@ class ParticleBeam(Beam):
         )
 
     def transformed_to(
-        self,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            self,
+            mu_x: Optional[torch.Tensor] = None,
+            mu_y: Optional[torch.Tensor] = None,
+            mu_px: Optional[torch.Tensor] = None,
+            mu_py: Optional[torch.Tensor] = None,
+            sigma_x: Optional[torch.Tensor] = None,
+            sigma_y: Optional[torch.Tensor] = None,
+            sigma_px: Optional[torch.Tensor] = None,
+            sigma_py: Optional[torch.Tensor] = None,
+            sigma_tau: Optional[torch.Tensor] = None,
+            sigma_p: Optional[torch.Tensor] = None,
+            energy: Optional[torch.Tensor] = None,
+            total_charge: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -606,9 +611,9 @@ class ParticleBeam(Beam):
             particle_charges = self.particle_charges * total_charge / self.total_charge
         else:
             particle_charges = (
-                torch.ones_like(self.particle_charges, device=device, dtype=dtype)
-                * total_charge.unsqueeze(-1)
-                / self.particle_charges.shape[-1]
+                    torch.ones_like(self.particle_charges, device=device, dtype=dtype)
+                    * total_charge.unsqueeze(-1)
+                    / self.particle_charges.shape[-1]
             )
 
         mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
@@ -650,10 +655,10 @@ class ParticleBeam(Beam):
 
         phase_space = self.particles[..., :6]
         phase_space = (
-            (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
-            / old_sigma.unsqueeze(-1)
-            * new_sigma.unsqueeze(-1)
-            + new_mu.unsqueeze(-1)
+                (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
+                / old_sigma.unsqueeze(-1)
+                * new_sigma.unsqueeze(-1)
+                + new_mu.unsqueeze(-1)
         ).transpose(-2, -1)
 
         particles = torch.ones(*phase_space.shape[:-1], 7)
@@ -695,12 +700,12 @@ class ParticleBeam(Beam):
 
     @classmethod
     def from_xyz_pxpypz(
-        cls,
-        xp_coordinates: torch.Tensor,
-        energy: torch.Tensor,
-        particle_charges: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=torch.float32,
+            cls,
+            xp_coordinates: torch.Tensor,
+            energy: torch.Tensor,
+            particle_charges: Optional[torch.Tensor] = None,
+            device=None,
+            dtype=torch.float32,
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
@@ -716,10 +721,10 @@ class ParticleBeam(Beam):
         )
 
         p0 = (
-            beam.relativistic_gamma
-            * beam.relativistic_beta
-            * electron_mass
-            * speed_of_light
+                beam.relativistic_gamma
+                * beam.relativistic_beta
+                * electron_mass
+                * speed_of_light
         )
         p = torch.sqrt(
             xp_coordinates[..., 1] ** 2
@@ -746,22 +751,22 @@ class ParticleBeam(Beam):
         For each particle, the obtained vector is $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         p0 = (
-            self.relativistic_gamma
-            * self.relativistic_beta
-            * electron_mass
-            * speed_of_light
+                self.relativistic_gamma
+                * self.relativistic_beta
+                * electron_mass
+                * speed_of_light
         )  # Reference momentum in (kg m/s)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
-            torch.ones(self.particles.shape[:-1])
-            + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+                torch.ones(self.particles.shape[:-1])
+                + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
-        beta = torch.sqrt(1 - 1 / gamma**2)
+        beta = torch.sqrt(1 - 1 / gamma ** 2)
         momentum = gamma * electron_mass * beta * speed_of_light
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
         zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        p = torch.sqrt(momentum**2 - px**2 - py**2)
+        p = torch.sqrt(momentum ** 2 - px ** 2 - py ** 2)
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px
@@ -770,6 +775,191 @@ class ParticleBeam(Beam):
         xp_coords[..., 5] = p
 
         return xp_coords
+
+    def plot_distribution(
+            self,
+            coords=('x', 'px', 'y', 'py', 'tau', 'p'),
+            bins=50,
+            scale=1e3,
+            background=0,
+            same_lims=False,
+            custom_lims=None,
+            rasterized=True
+    ):
+        """
+        Plot of coordinates projected into 2D planes.
+
+        Parameters
+        ----------
+        coords: array-like
+            coordinates that will be plotted. Should be a
+            subset of ('x', 'px', 'y', 'py', 'z', 'pz').
+            Default: ('x', 'px', 'y', 'py', 'z', 'pz')
+
+        bins: int
+            number of bins in histograms.
+            Default: 50
+
+        scale: float
+            scale factor for coordinates (except pz, which is always in %).
+            1e3 for milimeters and miliradians, and 1 for meters and radians.
+            Default: 1e3
+
+        background: bool
+            if False, 0 frequency pixel of 2d histograms is converted to white.
+            Default: False
+
+        same_lims: bool
+            if True, all coords will have the same limits given by the
+            largest and lowest values in all coords.
+            Default: False
+
+        custom_lims: array
+            if provided, sets the lims of histograms for each coords.
+            if same_lims is Frue, custom lims should have shape 2
+            providing min and max for every coord.
+            if same_lims is False, custom lims should have shape
+            (n_coords x 2).
+            Default: None
+
+        rasterized: bool, True
+            Rasterize pcolor meshes for more efficient vectorization.
+
+
+        Returns
+        -------
+        fig and ax pyplot objects with the projections
+
+        """
+
+        SPACE_COORDS = ('x', 'y', 'tau')
+        MOMENTUM_COORDS = ('px', 'py', 'p')
+        LABELS = {
+            'x': 'x',
+            'px': 'p_x',
+            'y': 'y',
+            'py': 'p_y',
+            'tau': 'tau',
+            'p': 'p'
+        }
+
+        n_coords = len(coords)
+
+        fig_size = (n_coords * 2,) * 2
+
+        fig, ax = plt.subplots(n_coords, n_coords, figsize=fig_size)
+        mycmap = plt.get_cmap('viridis')
+        mycmap.set_under(color='white')  # map 0 to this color
+
+        all_coords = []
+
+        for coord in coords:
+            all_coords.append(getattr(self.particles, coord).cpu().detach())
+
+        all_coords = np.array(all_coords)
+
+        if same_lims:
+            if custom_lims is None:
+                coord_min = np.ones(n_coords) * all_coords.min()
+                coord_max = np.ones(n_coords) * all_coords.max()
+            elif len(custom_lims) == 2:
+                coord_min = np.ones(n_coords) * custom_lims[0]
+                coord_max = np.ones(n_coords) * custom_lims[1]
+            else:
+                raise ValueError("custom lims should have shape 2 when same_lims=True")
+        else:
+            if custom_lims is None:
+                coord_min = all_coords.min(axis=1)
+                coord_max = all_coords.max(axis=1)
+            elif custom_lims.shape == (n_coords, 2):
+                coord_min = custom_lims[:, 0]
+                coord_max = custom_lims[:, 1]
+            else:
+                raise ValueError(
+                    "custom lims should have shape (n_coords x 2) when same_lims=False")
+
+        for i in range(n_coords):
+
+            x_coord = coords[i]
+
+            if x_coord in SPACE_COORDS and scale == 1e3:
+                x_coord_unit = 'mm'
+            elif x_coord in SPACE_COORDS and scale == 1:
+                x_coord_unit = 'm'
+            elif x_coord in MOMENTUM_COORDS and scale == 1e3:
+                x_coord_unit = 'mrad'
+            elif x_coord in MOMENTUM_COORDS and scale == 1:
+                x_coord_unit = 'rad'
+            else:
+                raise ValueError("""scales should be 1 or 1e3,
+                            coords should be a subset of ('x', 'px', 'y', 'py', 'z', 'pz')
+                            """)
+
+            if x_coord == 'pz':
+                x_array = getattr(self.particles, x_coord).cpu().detach() * 100
+                ax[n_coords - 1, i].set_xlabel(f'${LABELS[x_coord]}$ (%)')
+                min_x = coord_min[i] * 100
+                max_x = coord_max[i] * 100
+                if i > 0:
+                    ax[i, 0].set_ylabel(f'${LABELS[x_coord]}$ (%)')
+
+            else:
+                x_array = getattr(self.particles, x_coord).cpu().detach() * scale
+                ax[n_coords - 1, i].set_xlabel(f'${LABELS[x_coord]}$ ({x_coord_unit})')
+                min_x = coord_min[i] * scale
+                max_x = coord_max[i] * scale
+                if i > 0:
+                    ax[i, 0].set_ylabel(f'${LABELS[x_coord]}$ ({x_coord_unit})')
+
+            ax[i, i].hist(
+                x_array,
+                bins=bins,
+                range=([min_x, max_x]),
+                rasterized=rasterized
+            )
+
+            ax[i, i].yaxis.set_tick_params(left=False, labelleft=False)
+
+            if i != n_coords - 1:
+                ax[i, i].xaxis.set_tick_params(labelbottom=False)
+
+            for j in range(i + 1, n_coords):
+
+                y_coord = coords[j]
+
+                if y_coord == 'pz':
+                    y_array = getattr(self.particles, y_coord).cpu().detach() * 100
+                    min_y = coord_min[j] * 100
+                    max_y = coord_max[j] * 100
+
+                else:
+                    y_array = getattr(self.particles, y_coord).cpu().detach() * scale
+                    min_y = coord_min[j] * scale
+                    max_y = coord_max[j] * scale
+
+                ax[j, i].hist2d(
+                    x_array,
+                    y_array,
+                    bins=bins,
+                    range=[[min_x, max_x], [min_y, max_y]],
+                    cmap=mycmap,
+                    vmin=background,
+                    rasterized=rasterized
+                )
+
+                ax[j, i].sharex(ax[i, i])
+
+                ax[i, j].set_visible(False)
+
+                if i != 0:
+                    ax[j, i].yaxis.set_tick_params(labelleft=False)
+
+                if j != n_coords - 1:
+                    ax[j, i].xaxis.set_tick_params(labelbottom=False)
+
+        fig.tight_layout()
+
+        return fig, ax
 
     def __len__(self) -> int:
         return int(self.num_particles)
@@ -900,7 +1090,7 @@ class ParticleBeam(Beam):
     @property
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
-        return torch.sqrt(self.energies**2 - electron_mass_eV**2)
+        return torch.sqrt(self.energies ** 2 - electron_mass_eV ** 2)
 
     def __repr__(self) -> str:
         return (
