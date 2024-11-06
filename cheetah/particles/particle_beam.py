@@ -882,9 +882,8 @@ class ParticleBeam(Beam):
                 x_coord_unit = "rad"
             else:
                 raise ValueError(
-                    """scales should be 1 or 1e3,
-                            coords should be a subset of ('x', 'px', 'y', 'py', 'z', 'pz')
-                            """
+                    "scales should be 1 or 1e3, coords should be a subset of ('x', "
+                    "'px', 'y', 'py', 'z', 'pz')"
                 )
 
             if x_coord == "pz":
