@@ -1092,6 +1092,25 @@ class ParticleBeam(Beam):
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies ** 2 - electron_mass_eV ** 2)
 
+    def __getitem__(self, item):
+        # check if energy is batched
+        if len(self.energy.shape) == 0:
+            energy = self.energy
+        else:
+            energy = self.energy[item]
+
+        # check if particle charges is batched
+        if len(self.particle_charges.shape) > 1:
+            particle_charges = self.particle_charges[item]
+        else:
+            particle_charges = self.particle_charges
+
+        return ParticleBeam(
+            self.particles[item],
+            energy,
+            particle_charges,
+        )
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(n={repr(self.num_particles)},"
