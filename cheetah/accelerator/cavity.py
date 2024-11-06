@@ -144,11 +144,7 @@ class Cavity(Element):
                     ..., 5
                 ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
                     outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) + self.voltage.unsqueeze(
-                    -1
-                ) * beta0.unsqueeze(
-                    -1
-                ) / (
+                ) + self.voltage.unsqueeze(-1) * beta0.unsqueeze(-1) / (
                     outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
                 ) * (
                     torch.cos(

@@ -351,9 +351,7 @@ class SpaceChargeKick(Element):
             num_grid_points_x + 1 :,
             num_grid_points_y + 1 :,
             num_grid_points_tau + 1 :,
-        ] = G_values[..., 1:, 1:, 1:].flip(
-            dims=[-3, -2, -1]
-        )  # Reverse all dimensions
+        ] = G_values[..., 1:, 1:, 1:].flip(dims=[-3, -2, -1])  # Reverse all dimensions
 
         return green_func_values
 
