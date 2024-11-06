@@ -181,12 +181,19 @@ def test_visualization():
     _, ax = incoming.plot_distribution(coords=("x", "px"))
     assert ax.shape == (2, 2)
 
-    lims = np.array([[-15e-3, 15e-3],
-                     [-15e-3, 15e-3],
-                     [-15e-3, 15e-3],
-                     [-15e-3, 15e-3],
-                     [-5e-3, 5e-3],
-                     [-5e-2, 5e-2]]) * 0.2
+    lims = (
+        np.array(
+            [
+                [-15e-3, 15e-3],
+                [-15e-3, 15e-3],
+                [-15e-3, 15e-3],
+                [-15e-3, 15e-3],
+                [-5e-3, 5e-3],
+                [-5e-2, 5e-2],
+            ]
+        )
+        * 0.2
+    )
 
     incoming.plot_distribution(custom_lims=lims)
     incoming.plot_distribution(same_lims=True)
