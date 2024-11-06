@@ -881,9 +881,11 @@ class ParticleBeam(Beam):
             elif x_coord in MOMENTUM_COORDS and scale == 1:
                 x_coord_unit = "rad"
             else:
-                raise ValueError("""scales should be 1 or 1e3,
+                raise ValueError(
+                    """scales should be 1 or 1e3,
                             coords should be a subset of ('x', 'px', 'y', 'py', 'z', 'pz')
-                            """)
+                            """
+                )
 
             if x_coord == "pz":
                 x_array = getattr(self, x_coord).cpu().detach() * 100

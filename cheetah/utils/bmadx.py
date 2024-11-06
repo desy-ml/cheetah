@@ -208,7 +208,9 @@ def low_energy_z_correction(
         * (2 * beta0.unsqueeze(-1) ** 2 - (mc2 / e_tot.unsqueeze(-1)) ** 2 / 2)
     ) * (mc2 / e_tot.unsqueeze(-1)) ** 2 * (evaluation < 3e-7 * e_tot.unsqueeze(-1)) + (
         ds.unsqueeze(-1) * (beta - beta0.unsqueeze(-1)) / beta0.unsqueeze(-1)
-    ) * (evaluation >= 3e-7 * e_tot.unsqueeze(-1))
+    ) * (
+        evaluation >= 3e-7 * e_tot.unsqueeze(-1)
+    )
 
     return dz
 
