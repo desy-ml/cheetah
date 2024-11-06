@@ -171,3 +171,23 @@ def test_indexing():
     assert sub_beam.beta_x.shape == torch.Size([2, 2])
     assert torch.equal(sub_beam.particle_charges, incoming.particle_charges)
     assert torch.equal(sub_beam.energy, incoming.energy[:2])
+
+
+def test_visualization():
+    incoming = cheetah.ParticleBeam.from_parameters(sigma_x=torch.tensor(1e-5))
+    _, ax = incoming.plot_distribution()
+    assert ax.shape == (6, 6)
+
+    _, ax = incoming.plot_distribution(coords=("x", "px"))
+    assert ax.shape == (2, 2)
+
+    lims = np.array([[-15e-3, 15e-3],
+                     [-15e-3, 15e-3],
+                     [-15e-3, 15e-3],
+                     [-15e-3, 15e-3],
+                     [-5e-3, 5e-3],
+                     [-5e-2, 5e-2]]) * 0.2
+
+    incoming.plot_distribution(custom_lims=lims)
+    incoming.plot_distribution(same_lims=True)
+    incoming.plot_distribution(background=True)

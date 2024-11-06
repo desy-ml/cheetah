@@ -781,7 +781,7 @@ class ParticleBeam(Beam):
             coords=('x', 'px', 'y', 'py', 'tau', 'p'),
             bins=50,
             scale=1e3,
-            background=0,
+            background=False,
             same_lims=False,
             custom_lims=None,
             rasterized=True
@@ -854,7 +854,7 @@ class ParticleBeam(Beam):
         all_coords = []
 
         for coord in coords:
-            all_coords.append(getattr(self.particles, coord).cpu().detach())
+            all_coords.append(getattr(self, coord).cpu().detach())
 
         all_coords = np.array(all_coords)
 
@@ -896,7 +896,7 @@ class ParticleBeam(Beam):
                             """)
 
             if x_coord == 'pz':
-                x_array = getattr(self.particles, x_coord).cpu().detach() * 100
+                x_array = getattr(self, x_coord).cpu().detach() * 100
                 ax[n_coords - 1, i].set_xlabel(f'${LABELS[x_coord]}$ (%)')
                 min_x = coord_min[i] * 100
                 max_x = coord_max[i] * 100
@@ -904,7 +904,7 @@ class ParticleBeam(Beam):
                     ax[i, 0].set_ylabel(f'${LABELS[x_coord]}$ (%)')
 
             else:
-                x_array = getattr(self.particles, x_coord).cpu().detach() * scale
+                x_array = getattr(self, x_coord).cpu().detach() * scale
                 ax[n_coords - 1, i].set_xlabel(f'${LABELS[x_coord]}$ ({x_coord_unit})')
                 min_x = coord_min[i] * scale
                 max_x = coord_max[i] * scale
@@ -928,12 +928,12 @@ class ParticleBeam(Beam):
                 y_coord = coords[j]
 
                 if y_coord == 'pz':
-                    y_array = getattr(self.particles, y_coord).cpu().detach() * 100
+                    y_array = getattr(self, y_coord).cpu().detach() * 100
                     min_y = coord_min[j] * 100
                     max_y = coord_max[j] * 100
 
                 else:
-                    y_array = getattr(self.particles, y_coord).cpu().detach() * scale
+                    y_array = getattr(self, y_coord).cpu().detach() * scale
                     min_y = coord_min[j] * scale
                     max_y = coord_max[j] * scale
 
@@ -948,7 +948,6 @@ class ParticleBeam(Beam):
                 )
 
                 ax[j, i].sharex(ax[i, i])
-
                 ax[i, j].set_visible(False)
 
                 if i != 0:
