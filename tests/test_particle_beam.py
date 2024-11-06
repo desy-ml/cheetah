@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+import cheetah
 from cheetah import ParticleBeam
 
 
@@ -144,3 +145,29 @@ def test_generate_uniform_ellipsoid_vectorized():
     assert torch.allclose(beam.sigma_p, sigma_p)
     assert torch.allclose(beam.energy, energy)
     assert torch.allclose(beam.total_charge, total_charge)
+
+
+def test_indexing():
+    # test batching with beamline parameters
+    quadrupole = cheetah.Quadrupole(
+        length=torch.tensor(0.2).unsqueeze(0), k1=torch.rand((5, 2))
+    )
+    incoming = cheetah.ParticleBeam.from_parameters(sigma_x=torch.tensor(1e-5))
+
+    outgoing = quadrupole.track(incoming)
+
+    sub_beam = outgoing[:2]
+    assert sub_beam.beta_x.shape == torch.Size([2, 2])
+    assert torch.equal(sub_beam.particle_charges, incoming.particle_charges)
+    assert torch.equal(sub_beam.energy, incoming.energy)
+
+    # test batching with energy
+    incoming = cheetah.ParticleBeam.from_parameters(sigma_x=torch.tensor(1e-5))
+    incoming.energy.data = torch.rand((5, 2))
+
+    outgoing = quadrupole.track(incoming)
+    sub_beam = outgoing[:2]
+
+    assert sub_beam.beta_x.shape == torch.Size([2, 2])
+    assert torch.equal(sub_beam.particle_charges, incoming.particle_charges)
+    assert torch.equal(sub_beam.energy, incoming.energy[:2])
