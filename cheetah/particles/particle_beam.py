@@ -3,8 +3,10 @@ from typing import Optional
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from numpy import ndarray
 from scipy import constants
 from scipy.constants import physical_constants
+from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
@@ -775,16 +777,21 @@ class ParticleBeam(Beam):
 
     def plot_distribution(
         self,
-        coords=("x", "px", "y", "py", "tau", "p"),
-        bins=50,
-        scale=1e3,
-        background=False,
-        same_lims=False,
-        custom_lims=None,
-        rasterized=True,
+        coords: tuple[str] = ("x", "px", "y", "py", "tau", "p"),
+        bins: int = 50,
+        scale: float = 1e3,
+        same_lims: bool = False,
+        custom_lims: ndarray = None,
+        rasterized: bool = True,
+        axes: ndarray = None,
+        contour: bool = False,
+        smoothing_factor: float = None,
+        **kwargs,
     ):
         """
         Plot of coordinates projected into 2D planes.
+
+        Note: kwarg arguments are passed to pcolor or contour plotting functions.
 
         Parameters
         ----------
@@ -802,10 +809,6 @@ class ParticleBeam(Beam):
             1e3 for milimeters and miliradians, and 1 for meters and radians.
             Default: 1e3
 
-        background: bool
-            if False, 0 frequency pixel of 2d histograms is converted to white.
-            Default: False
-
         same_lims: bool
             if True, all coords will have the same limits given by the
             largest and lowest values in all coords.
@@ -822,6 +825,16 @@ class ParticleBeam(Beam):
         rasterized: bool, True
             Rasterize pcolor meshes for more efficient vectorization.
 
+        axes: array, optional
+            Array of matplotlib axes objects that should be used for plotting instead of
+             creating a new set of axes.
+
+        contour: bool, False
+            Flag to specify if contour plotting should be used instead of color map.
+
+        smoothing_factor: float, optional
+            If specified, uses a gaussian smoothing filter to smooth the 2d histogram of
+             particle coordinates.
 
         Returns
         -------
@@ -837,9 +850,17 @@ class ParticleBeam(Beam):
 
         fig_size = (n_coords * 2,) * 2
 
-        fig, ax = plt.subplots(n_coords, n_coords, figsize=fig_size)
-        mycmap = plt.get_cmap("viridis")
-        mycmap.set_under(color="white")  # map 0 to this color
+        if axes is None:
+            fig, ax = plt.subplots(n_coords, n_coords, figsize=fig_size)
+        else:
+            if not axes.shape == (len(coords), len(coords)):
+                raise ValueError(
+                    "Specified axes object does not have the correct "
+                    f"number of axes, should have shape "
+                    f"{(len(coords), len(coords))}"
+                )
+            ax = axes
+            fig = axes[0, 0].get_figure()
 
         all_coords = []
 
@@ -902,9 +923,10 @@ class ParticleBeam(Beam):
                 if i > 0:
                     ax[i, 0].set_ylabel(f"${LABELS[x_coord]}$ ({x_coord_unit})")
 
-            ax[i, i].hist(
-                x_array, bins=bins, range=([min_x, max_x]), rasterized=rasterized
-            )
+            h, edges = np.histogram(x_array, bins, range=([min_x, max_x]))
+            centers = (edges[:-1] + edges[1:]) / 2
+
+            ax[i, i].plot(centers, h)
 
             ax[i, i].yaxis.set_tick_params(left=False, labelleft=False)
 
@@ -924,15 +946,23 @@ class ParticleBeam(Beam):
                     min_y = coord_min[j] * scale
                     max_y = coord_max[j] * scale
 
-                ax[j, i].hist2d(
-                    x_array,
-                    y_array,
-                    bins=bins,
-                    range=[[min_x, max_x], [min_y, max_y]],
-                    cmap=mycmap,
-                    vmin=background,
-                    rasterized=rasterized,
+                xedges_1d = np.linspace(min_x, max_x, bins)
+                yedges_1d = np.linspace(min_y, max_y, bins)
+                H, xedges, yedges = np.histogram2d(
+                    x_array, y_array, bins=(xedges_1d, yedges_1d)
                 )
+
+                if smoothing_factor:
+                    H = gaussian_filter(H, smoothing_factor)
+
+                if contour:
+                    xcenters = (xedges_1d[:-1] + xedges_1d[1:]) / 2
+                    ycenters = (yedges_1d[:-1] + yedges_1d[1:]) / 2
+                    ax[j, i].contour(xcenters, ycenters, H.T / np.max(H), **kwargs)
+                else:
+                    ax[j, i].pcolor(
+                        xedges, yedges, H.T / np.max(H), rasterized=rasterized, **kwargs
+                    )
 
                 ax[j, i].sharex(ax[i, i])
                 ax[i, j].set_visible(False)
