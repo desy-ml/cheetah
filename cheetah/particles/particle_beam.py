@@ -777,7 +777,7 @@ class ParticleBeam(Beam):
 
     def plot_distribution(
         self,
-        coords: tuple[str] = ("x", "px", "y", "py", "tau", "p"),
+        coords: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 50,
         scale: float = 1e3,
         same_lims: bool = False,
@@ -926,7 +926,7 @@ class ParticleBeam(Beam):
             h, edges = np.histogram(x_array, bins, range=([min_x, max_x]))
             centers = (edges[:-1] + edges[1:]) / 2
 
-            ax[i, i].plot(centers, h)
+            ax[i, i].plot(centers, h / np.max(h))
 
             ax[i, i].yaxis.set_tick_params(left=False, labelleft=False)
 

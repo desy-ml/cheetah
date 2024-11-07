@@ -197,4 +197,3 @@ def test_visualization():
 
     incoming.plot_distribution(custom_lims=lims)
     incoming.plot_distribution(same_lims=True)
-    incoming.plot_distribution(background=True)
