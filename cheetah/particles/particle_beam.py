@@ -907,6 +907,12 @@ class ParticleBeam(Beam):
         if len(self.energy.shape) == 0:
             energy = self.energy
         else:
+            # if energy is batched then make sure the batch dimension matches the
+            # batch dimension of the particle distribution
+            if not self.energy.shape == self.particles.shape[:-2]:
+                raise RuntimeError("particle energy batch shape does not match "
+                                   "particle batch shape")
+
             energy = self.energy[item]
 
         # check if particle charges is batched
