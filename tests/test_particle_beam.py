@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import torch
 
 import cheetah
@@ -171,3 +172,7 @@ def test_indexing():
     assert sub_beam.beta_x.shape == torch.Size([2, 2])
     assert torch.equal(sub_beam.particle_charges, incoming.particle_charges)
     assert torch.equal(sub_beam.energy, incoming.energy[:2])
+
+    with pytest.raises(RuntimeError):
+        outgoing.energy.data = torch.rand((4, 2))
+        outgoing[:2]
