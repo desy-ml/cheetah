@@ -38,6 +38,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
 - Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
 - Fix issue with Dipole hgap conversion in Bmad import (see #261) (@cr-xu)
+- Fix plotting for segments that contain tensors with `require_grad=True` (see #288) (@hespe)
 
 ### 🐆 Other
 
