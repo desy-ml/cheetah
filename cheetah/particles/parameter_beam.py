@@ -365,6 +365,9 @@ class ParameterBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param device: Device to create the transformed beam on. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed beam.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype

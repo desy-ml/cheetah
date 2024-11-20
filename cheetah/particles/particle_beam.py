@@ -103,6 +103,7 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
         """
         # Extract device and dtype from given arguments
         device, dtype = verify_device_and_dtype(
@@ -368,7 +369,8 @@ class ParticleBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to move the beam's particle array to.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
 
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
@@ -508,6 +510,7 @@ class ParticleBeam(Beam):
         :param energy: Energy of the beam in eV.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
         """
         # Extract device and dtype from given arguments
         device, dtype = verify_device_and_dtype(
@@ -657,7 +660,6 @@ class ParticleBeam(Beam):
         """
         Create version of this beam that is transformed to new beam parameters.
 
-        :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_px: Center of the particle distribution on px, dimensionless.
@@ -675,6 +677,7 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed particles.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
