@@ -301,7 +301,7 @@ class Cavity(Element):
             2
             * torch.pi
             * self.frequency
-            / torch.tensor(constants.speed_of_light, **factory_kwargs)
+            / constants.speed_of_light
         )
         r55_cor = torch.tensor(0.0, **factory_kwargs)
         if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
