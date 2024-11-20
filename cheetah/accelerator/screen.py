@@ -110,8 +110,8 @@ class Screen(Element):
     @property
     def effective_resolution(self) -> tuple[int, int]:
         return (
-            self.resolution[0] / self.binning,
-            self.resolution[1] / self.binning,
+            int(self.resolution[0] / self.binning),
+            int(self.resolution[1] / self.binning),
         )
 
     @property
