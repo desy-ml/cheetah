@@ -1,11 +1,10 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
@@ -47,16 +46,16 @@ class Dipole(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        gap_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        angle: Optional[torch.Tensor] = None,
+        k1: Optional[torch.Tensor] = None,
+        e1: Optional[torch.Tensor] = None,
+        e2: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
+        gap: Optional[torch.Tensor] = None,
+        gap_exit: Optional[torch.Tensor] = None,
+        fringe_integral: Optional[torch.Tensor] = None,
+        fringe_integral_exit: Optional[torch.Tensor] = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
@@ -268,15 +267,15 @@ class Dipole(Element):
 
     def _bmadx_body(
         self,
-        x: Union[torch.Tensor, nn.Parameter],
-        px: Union[torch.Tensor, nn.Parameter],
-        y: Union[torch.Tensor, nn.Parameter],
-        py: Union[torch.Tensor, nn.Parameter],
-        z: Union[torch.Tensor, nn.Parameter],
-        pz: Union[torch.Tensor, nn.Parameter],
-        p0c: Union[torch.Tensor, nn.Parameter],
+        x: torch.Tensor,
+        px: torch.Tensor,
+        y: torch.Tensor,
+        py: torch.Tensor,
+        z: torch.Tensor,
+        pz: torch.Tensor,
+        p0c: torch.Tensor,
         mc2: float,
-    ) -> list[Union[torch.Tensor, nn.Parameter]]:
+    ) -> list[torch.Tensor]:
         """
         Track particle coordinates through bend body.
 
@@ -363,11 +362,11 @@ class Dipole(Element):
     def _bmadx_fringe_linear(
         self,
         location: Literal["entrance", "exit"],
-        x: Union[torch.Tensor, nn.Parameter],
-        px: Union[torch.Tensor, nn.Parameter],
-        y: Union[torch.Tensor, nn.Parameter],
-        py: Union[torch.Tensor, nn.Parameter],
-    ) -> list[Union[torch.Tensor, nn.Parameter]]:
+        x: torch.Tensor,
+        px: torch.Tensor,
+        y: torch.Tensor,
+        py: torch.Tensor,
+    ) -> list[torch.Tensor]:
         """
         Tracks linear fringe.
 

@@ -1,10 +1,9 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.utils import (
@@ -29,8 +28,8 @@ class HorizontalCorrector(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        angle: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
         dtype=None,
