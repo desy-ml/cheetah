@@ -3,54 +3,65 @@ from typing import Optional
 import torch
 
 
-def extract_argument_device(arguments: list[torch.Tensor]) -> torch.device:
+def are_all_the_same_device(tensors: list[torch.Tensor]) -> torch.device:
     """
-    Determines whether all arguments are on the same device and returns the default
-    pytorch device if no argumente are passed.
+    Determines whether all arguments are on the same device and, if so, returns that
+    device. If no arguments are passed, global default PyTorch device is returned.
     """
-    if len(arguments) > 1:
+    if len(tensors) > 1:
         assert all(
-            argument.device == arguments[0].device for argument in arguments
-        ), "Arguments must be on the same device."
+            argument.device == tensors[0].device for argument in tensors
+        ), "All tensors must be on the same device."
 
-    return arguments[0].device if len(arguments) > 0 else torch.get_default_device()
+    return tensors[0].device if len(tensors) > 0 else torch.get_default_device()
 
 
-def extract_argument_dtype(arguments: list[torch.Tensor]) -> torch.dtype:
+def are_all_the_same_dtype(tensors: list[torch.Tensor]) -> torch.dtype:
     """
-    Determines whether all arguments have the same dtype and returns the default
-    pytorch dtype if no argumente are passed.
+    Determines whether all arguments have the same dtype and, if so, returns that dtype.
+    If no arguments are passed, global default PyTorch dtype is returned.
     """
-    if len(arguments) > 1:
+    if len(tensors) > 1:
         assert all(
-            argument.dtype == arguments[0].dtype for argument in arguments
-        ), "Arguments must have the same dtype."
+            argument.dtype == tensors[0].dtype for argument in tensors
+        ), "All arguments must have the same dtype."
 
-    return arguments[0].dtype if len(arguments) > 0 else torch.get_default_dtype()
+    return tensors[0].dtype if len(tensors) > 0 else torch.get_default_dtype()
 
 
-def extract_argument_shape(arguments: list[torch.Tensor]) -> torch.Size:
+def extract_argument_shape(tensors: list[torch.Tensor]) -> torch.Size:
     """Determines whether all arguments have the same shape."""
-    if len(arguments) > 1:
+    if len(tensors) > 1:
         assert all(
-            argument.shape == arguments[0].shape for argument in arguments
+            argument.shape == tensors[0].shape for argument in tensors
         ), "Arguments must have the same shape."
 
-    return arguments[0].shape if len(arguments) > 0 else torch.Size([1])
+    return tensors[0].shape if len(tensors) > 0 else torch.Size([1])
 
 
 def verify_device_and_dtype(
-    required: list[torch.Tensor],
-    optionals: list[Optional[torch.Tensor]],
-    device: torch.device,
-    dtype: torch.dtype,
+    tensors: list[Optional[torch.Tensor]],
+    desired_device: Optional[torch.device],
+    desired_dtype: Optional[torch.dtype],
 ) -> tuple[torch.device, torch.dtype]:
     """
-    Verifies that all required & given optional arguments have the same device and
-    dtype if no defaults are provided.
-    """
-    not_nones = required + [argument for argument in optionals if argument is not None]
+    Verifies that passed tensors (if they are tensors and not `None`) have the same
+    device and dtype and that that device and dtype are the same as the desired device
+    and dtype if they are requested.
 
-    device = device if device is not None else extract_argument_device(not_nones)
-    dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
-    return (device, dtype)
+    If all verifications pass, this function returns the device and dtype shared by all
+    tensors.
+    """
+    not_nones = [tensor for tensor in tensors if tensor is not None]
+
+    chosen_device = (
+        desired_device
+        if desired_device is not None
+        else are_all_the_same_device(not_nones)
+    )
+    chosen_dtype = (
+        desired_dtype
+        if desired_dtype is not None
+        else are_all_the_same_dtype(not_nones)
+    )
+    return (chosen_device, chosen_dtype)

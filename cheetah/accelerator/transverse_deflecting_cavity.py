@@ -47,7 +47,7 @@ class TransverseDeflectingCavity(Element):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [length], [voltage, phase, frequency, misalignment, tilt], device, dtype
+            [length, voltage, phase, frequency, misalignment, tilt], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)

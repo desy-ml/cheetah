@@ -35,7 +35,7 @@ class HorizontalCorrector(Element):
         device=None,
         dtype=None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([length], [angle], device, dtype)
+        device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

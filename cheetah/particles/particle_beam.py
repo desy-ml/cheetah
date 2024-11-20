@@ -7,9 +7,9 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
 from cheetah.utils import (
+    are_all_the_same_device,
+    are_all_the_same_dtype,
     elementwise_linspace,
-    extract_argument_device,
-    extract_argument_dtype,
     extract_argument_shape,
     verify_device_and_dtype,
 )
@@ -42,7 +42,7 @@ class ParticleBeam(Beam):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [particles, energy], [particle_charges], device, dtype
+            [particles, energy, particle_charges], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -134,8 +134,8 @@ class ParticleBeam(Beam):
         ]
 
         # Extract device and dtype from given arguments
-        device = device if device is not None else extract_argument_device(not_nones)
-        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        device = device if device is not None else are_all_the_same_device(not_nones)
+        dtype = dtype if dtype is not None else are_all_the_same_dtype(not_nones)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -279,8 +279,8 @@ class ParticleBeam(Beam):
 
         # Extract shape, device and dtype from given arguments
         shape = extract_argument_shape(not_nones)
-        device = device if device is not None else extract_argument_device(not_nones)
-        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        device = device if device is not None else are_all_the_same_device(not_nones)
+        dtype = dtype if dtype is not None else are_all_the_same_dtype(not_nones)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -418,8 +418,8 @@ class ParticleBeam(Beam):
 
         # Extract shape, device and dtype from given arguments
         shape = extract_argument_shape(not_nones)
-        device = device if device is not None else extract_argument_device(not_nones)
-        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        device = device if device is not None else are_all_the_same_device(not_nones)
+        dtype = dtype if dtype is not None else are_all_the_same_dtype(not_nones)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Expand to vectorised version for beam creation
@@ -563,8 +563,8 @@ class ParticleBeam(Beam):
         ]
 
         # Extract device and dtype from given arguments
-        device = device if device is not None else extract_argument_device(not_nones)
-        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        device = device if device is not None else are_all_the_same_device(not_nones)
+        dtype = dtype if dtype is not None else are_all_the_same_dtype(not_nones)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature

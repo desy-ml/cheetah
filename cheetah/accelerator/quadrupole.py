@@ -45,7 +45,7 @@ class Quadrupole(Element):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [length], [k1, misalignment, tilt], device, dtype
+            [length, k1, misalignment, tilt], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)

@@ -6,8 +6,8 @@ import torch
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.utils import (
-    extract_argument_device,
-    extract_argument_dtype,
+    are_all_the_same_device,
+    are_all_the_same_dtype,
     extract_argument_shape,
     verify_device_and_dtype,
 )
@@ -35,7 +35,7 @@ class ParameterBeam(Beam):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [mu, cov, energy], [total_charge], device, dtype
+            [mu, cov, energy, total_charge], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -97,8 +97,8 @@ class ParameterBeam(Beam):
         ]
 
         # Extract device and dtype from given arguments
-        device = device if device is not None else extract_argument_device(not_nones)
-        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        device = device if device is not None else are_all_the_same_device(not_nones)
+        dtype = dtype if dtype is not None else are_all_the_same_dtype(not_nones)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -232,8 +232,8 @@ class ParameterBeam(Beam):
 
         # Extract shape, device and dtype from given arguments
         shape = extract_argument_shape(not_nones)
-        device = device if device is not None else extract_argument_device(not_nones)
-        dtype = dtype if dtype is not None else extract_argument_dtype(not_nones)
+        device = device if device is not None else are_all_the_same_device(not_nones)
+        dtype = dtype if dtype is not None else are_all_the_same_dtype(not_nones)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
