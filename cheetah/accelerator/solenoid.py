@@ -1,10 +1,9 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.track_methods import misalignment_matrix
@@ -35,9 +34,9 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter] = None,
-        k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor = None,
+        k: Optional[torch.Tensor] = None,
+        misalignment: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
         dtype=None,

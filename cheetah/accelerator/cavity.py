@@ -1,11 +1,10 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
@@ -34,10 +33,10 @@ class Cavity(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        voltage: Optional[torch.Tensor] = None,
+        phase: Optional[torch.Tensor] = None,
+        frequency: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
         dtype=None,

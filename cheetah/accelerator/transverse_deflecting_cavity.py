@@ -1,10 +1,9 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants, speed_of_light
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
@@ -34,12 +33,12 @@ class TransverseDeflectingCavity(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        voltage: Optional[torch.Tensor] = None,
+        phase: Optional[torch.Tensor] = None,
+        frequency: Optional[torch.Tensor] = None,
+        misalignment: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
         num_steps: int = 1,
         tracking_method: Literal["bmadx"] = "bmadx",
         name: Optional[str] = None,

@@ -1,9 +1,8 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam
@@ -19,7 +18,7 @@ class CustomTransferMap(Element):
 
     def __init__(
         self,
-        transfer_map: Union[torch.Tensor, nn.Parameter],
+        transfer_map: torch.Tensor,
         length: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,

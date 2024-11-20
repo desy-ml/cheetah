@@ -1,9 +1,8 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
@@ -48,15 +47,13 @@ class SpaceChargeKick(Element):
 
     def __init__(
         self,
-        effect_length: Union[torch.Tensor, nn.Parameter],
+        effect_length: torch.Tensor,
         num_grid_points_x: int = 32,  # TODO: Simplify these to a single tuple?
         num_grid_points_y: int = 32,
         num_grid_points_tau: int = 32,
-        grid_extend_x: Union[
-            torch.Tensor, nn.Parameter
-        ] = 3,  # TODO: Simplify these to a single tensor?
-        grid_extend_y: Union[torch.Tensor, nn.Parameter] = 3,
-        grid_extend_tau: Union[torch.Tensor, nn.Parameter] = 3,
+        grid_extend_x: torch.Tensor = 3,  # TODO: Simplify these to a single tensor?
+        grid_extend_y: torch.Tensor = 3,
+        grid_extend_tau: torch.Tensor = 3,
         name: Optional[str] = None,
         device=None,
         dtype=None,
