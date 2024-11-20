@@ -1,7 +1,6 @@
-from typing import Optional, Union
+from typing import Optional
 
 import torch
-from torch import nn
 
 from cheetah.accelerator.dipole import Dipole
 from cheetah.utils import UniqueNameGenerator
@@ -28,15 +27,15 @@ class RBend(Dipole):
 
     def __init__(
         self,
-        length: Optional[Union[torch.Tensor, nn.Parameter]],
-        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        e1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        e2: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: Optional[torch.Tensor],
+        angle: Optional[torch.Tensor] = None,
+        k1: Optional[torch.Tensor] = None,
+        e1: Optional[torch.Tensor] = None,
+        e2: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
+        fringe_integral: Optional[torch.Tensor] = None,
+        fringe_integral_exit: Optional[torch.Tensor] = None,
+        gap: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
         dtype=None,

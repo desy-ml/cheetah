@@ -1,11 +1,10 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
@@ -34,10 +33,10 @@ class Quadrupole(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        k1: Optional[torch.Tensor] = None,
+        misalignment: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
         num_steps: int = 1,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,

@@ -1,10 +1,9 @@
 from copy import deepcopy
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
@@ -44,11 +43,11 @@ class Screen(Element):
     def __init__(
         self,
         resolution: Optional[tuple[int, int]] = None,
-        pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        pixel_size: Optional[torch.Tensor] = None,
         binning: Optional[int] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        misalignment: Optional[torch.Tensor] = None,
         method: Literal["histogram", "kde"] = "histogram",
-        kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        kde_bandwidth: Optional[torch.Tensor] = None,
         is_blocking: bool = False,
         is_active: bool = False,
         name: Optional[str] = None,
