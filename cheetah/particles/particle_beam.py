@@ -472,7 +472,7 @@ class ParticleBeam(Beam):
     @classmethod
     def make_linspaced(
         cls,
-        num_particles: Optional[int] = None,
+        num_particles: int = 10,
         mu_x: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
@@ -531,7 +531,6 @@ class ParticleBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
-        num_particles = num_particles if num_particles is not None else torch.tensor(10)
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
