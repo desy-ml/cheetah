@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import torch
@@ -7,7 +8,7 @@ from torch import nn
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-class Beam(nn.Module):
+class Beam(ABC, nn.Module):
     r"""
     Parent class to represent a beam of particles. You should not instantiate this
     class directly, but use one of the subclasses.
@@ -35,6 +36,7 @@ class Beam(nn.Module):
     empty = "I'm an empty beam!"
 
     @classmethod
+    @abstractmethod
     def from_parameters(
         cls,
         mu_x: Optional[torch.Tensor] = None,
@@ -77,12 +79,14 @@ class Beam(nn.Module):
         :param cor_tau: Correlation between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to create the beam on.
+        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
+            selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
         """
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_twiss(
         cls,
         beta_x: Optional[torch.Tensor] = None,
@@ -91,9 +95,9 @@ class Beam(nn.Module):
         beta_y: Optional[torch.Tensor] = None,
         alpha_y: Optional[torch.Tensor] = None,
         emittance_y: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -108,17 +112,21 @@ class Beam(nn.Module):
         :param beta_y: Beta function in y direction in meters.
         :param alpha_y: Alpha function in y direction in rad.
         :param emittance_y: Emittance in y direction in m*rad.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
-        :param cor_s: Correlation of the particle distribution in s direction.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction,
+            dimensionless.
+        :param cor_tau: Correlation between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to create the beam on.
+        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
+            selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
         """
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
@@ -126,6 +134,7 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
@@ -166,8 +175,9 @@ class Beam(nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to create the beam on.
-        :param dtype: Data type of the beam.
+        :param device: Device to create the transformed beam on. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed beam.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
@@ -245,50 +255,62 @@ class Beam(nn.Module):
         }
 
     @property
+    @abstractmethod
     def mu_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_s(self) -> torch.Tensor:
+    @abstractmethod
+    def mu_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_p(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_p(self) -> torch.Tensor:
         raise NotImplementedError
 
@@ -312,11 +334,13 @@ class Beam(nn.Module):
         return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
 
     @property
+    @abstractmethod
     def sigma_xpx(self) -> torch.Tensor:
         # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_ypy(self) -> torch.Tensor:
         raise NotImplementedError
 
