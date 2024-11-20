@@ -297,12 +297,7 @@ class Cavity(Element):
         beta0 = torch.tensor(1.0, **factory_kwargs)
         beta1 = torch.tensor(1.0, **factory_kwargs)
 
-        k = (
-            2
-            * torch.pi
-            * self.frequency
-            / constants.speed_of_light
-        )
+        k = 2 * torch.pi * self.frequency / constants.speed_of_light
         r55_cor = torch.tensor(0.0, **factory_kwargs)
         if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
             beta0 = torch.sqrt(1 - 1 / Ei**2)
