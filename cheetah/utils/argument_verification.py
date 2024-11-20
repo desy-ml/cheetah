@@ -45,12 +45,11 @@ def verify_device_and_dtype(
     desired_dtype: Optional[torch.dtype],
 ) -> tuple[torch.device, torch.dtype]:
     """
-    Verifies that passed tensors (if they are tensors and not `None`) have the same
-    device and dtype and that that device and dtype are the same as the desired device
-    and dtype if they are requested.
+    Verifies that a unique device and dtype can be determined from the passed tensors
+    and the optional desired device and dtype. If no desired values are requested,
+    then all tensors (if they are not `None`) must have the same device and dtype.
 
-    If all verifications pass, this function returns the device and dtype shared by all
-    tensors.
+    If all verifications pass, this function returns the determined device and dtype.
     """
     not_nones = [tensor for tensor in tensors if tensor is not None]
 
