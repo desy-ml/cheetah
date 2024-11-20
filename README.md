@@ -84,7 +84,7 @@ astra_beam = ParticleBeam.from_astra(filepath)
 You may plot a segment with reference particle traces bay calling
 
 ```python
-segment.plot_overview(beam=beam)
+segment.plot_overview(incoming=beam)
 ```
 
 ![Overview Plot](images/misalignment.png)
