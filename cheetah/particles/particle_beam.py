@@ -30,6 +30,7 @@ class ParticleBeam(Beam):
         Default to array with ones. (1: survive, 0: lost)
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
+    :param dtype: Data type of the generated particles.
     """
 
     def __init__(
@@ -71,7 +72,7 @@ class ParticleBeam(Beam):
     @classmethod
     def from_parameters(
         cls,
-        num_particles: Optional[torch.Tensor] = None,
+        num_particles: int = 100_000,
         mu_x: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
@@ -115,12 +116,10 @@ class ParticleBeam(Beam):
         :total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
         """
 
         # Set default values without function call in function signature
-        num_particles = (
-            num_particles if num_particles is not None else torch.tensor(100_000)
-        )
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
@@ -204,7 +203,7 @@ class ParticleBeam(Beam):
     @classmethod
     def from_twiss(
         cls,
-        num_particles: Optional[torch.Tensor] = None,
+        num_particles: int = 1_000_000,
         beta_x: Optional[torch.Tensor] = None,
         alpha_x: Optional[torch.Tensor] = None,
         emittance_x: Optional[torch.Tensor] = None,
@@ -244,9 +243,6 @@ class ParticleBeam(Beam):
             ), "Arguments must have the same shape."
 
         # Set default values without function call in function signature
-        num_particles = (
-            num_particles if num_particles is not None else torch.tensor(1_000_000)
-        )
         beta_x = beta_x if beta_x is not None else torch.full(shape, 0.0)
         alpha_x = alpha_x if alpha_x is not None else torch.full(shape, 0.0)
         emittance_x = emittance_x if emittance_x is not None else torch.full(shape, 0.0)
@@ -292,7 +288,7 @@ class ParticleBeam(Beam):
     @classmethod
     def uniform_3d_ellipsoid(
         cls,
-        num_particles: Optional[torch.Tensor] = None,
+        num_particles: int = 1_000_000,
         radius_x: Optional[torch.Tensor] = None,
         radius_y: Optional[torch.Tensor] = None,
         radius_tau: Optional[torch.Tensor] = None,
@@ -326,7 +322,8 @@ class ParticleBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to move the beam's particle array to.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
 
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
@@ -359,9 +356,6 @@ class ParticleBeam(Beam):
         # Set default values without function call in function signature
         # NOTE that this does not need to be done for values that are passed to the
         # Gaussian beam generation.
-        num_particles = (
-            num_particles if num_particles is not None else torch.tensor(1_000_000)
-        )
         radius_x = (
             radius_x.expand(vector_shape)
             if radius_x is not None
@@ -430,7 +424,7 @@ class ParticleBeam(Beam):
     @classmethod
     def make_linspaced(
         cls,
-        num_particles: Optional[torch.Tensor] = None,
+        num_particles: int = 10,
         mu_x: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
@@ -466,10 +460,10 @@ class ParticleBeam(Beam):
         :param energy: Energy of the beam in eV.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
         """
 
         # Set default values without function call in function signature
-        num_particles = num_particles if num_particles is not None else torch.tensor(10)
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
@@ -580,7 +574,6 @@ class ParticleBeam(Beam):
         """
         Create version of this beam that is transformed to new beam parameters.
 
-        :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_px: Center of the particle distribution on px, dimensionless.
@@ -598,6 +591,7 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed particles.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype
