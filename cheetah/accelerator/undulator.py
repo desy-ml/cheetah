@@ -6,8 +6,8 @@ from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
 from torch import nn
 
-from ..utils import UniqueNameGenerator
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -64,12 +64,15 @@ class Undulator(Element):
         # TODO: Implement splitting for undulator properly, for now just return self
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:purple", alpha=alpha, zorder=2
+            (plot_s, 0), plot_length, height, color="tab:purple", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 

@@ -5,9 +5,9 @@ import torch
 from matplotlib.patches import Rectangle
 from torch import nn
 
-from ..particles import Beam, ParticleBeam
-from ..utils import UniqueNameGenerator
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, ParticleBeam
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -113,14 +113,16 @@ class Aperture(Element):
         # TODO: Implement splitting for aperture properly, for now just return self
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
         dummy_length = 0.0
 
         patch = Rectangle(
-            (s, 0), dummy_length, height, color="tab:pink", alpha=alpha, zorder=2
+            (plot_s, 0), dummy_length, height, color="tab:pink", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
