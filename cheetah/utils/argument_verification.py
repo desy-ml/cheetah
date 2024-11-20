@@ -29,16 +29,6 @@ def are_all_the_same_dtype(tensors: list[torch.Tensor]) -> torch.dtype:
     return tensors[0].dtype if len(tensors) > 0 else torch.get_default_dtype()
 
 
-def extract_argument_shape(tensors: list[torch.Tensor]) -> torch.Size:
-    """Determines whether all arguments have the same shape."""
-    if len(tensors) > 1:
-        assert all(
-            argument.shape == tensors[0].shape for argument in tensors
-        ), "Arguments must have the same shape."
-
-    return tensors[0].shape if len(tensors) > 0 else torch.Size([1])
-
-
 def verify_device_and_dtype(
     tensors: list[Optional[torch.Tensor]],
     desired_device: Optional[torch.device],
