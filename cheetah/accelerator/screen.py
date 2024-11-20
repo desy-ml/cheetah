@@ -43,9 +43,9 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        resolution: Optional[tuple[int, int]] = None,
         pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        binning: Optional[int] = None,
         misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         method: Literal["histogram", "kde"] = "histogram",
         kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
@@ -61,28 +61,23 @@ class Screen(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.register_buffer(
-            "resolution",
-            (
-                torch.as_tensor(resolution, **factory_kwargs)
-                if resolution is not None
-                else torch.tensor((1024, 1024), **factory_kwargs)
-            ),
-        )
+        assert method in [
+            "histogram",
+            "kde",
+        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
+
+        self.resolution = resolution if resolution is not None else (1024, 1024)
+        self.binning = binning if binning is not None else 1
+        self.method = method
+        self.is_blocking = is_blocking
+        self.is_active = is_active
+
         self.register_buffer(
             "pixel_size",
             (
                 torch.as_tensor(pixel_size, **factory_kwargs)
                 if pixel_size is not None
                 else torch.tensor((1e-3, 1e-3), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "binning",
-            (
-                torch.as_tensor(binning, **factory_kwargs)
-                if binning is not None
-                else torch.tensor(1, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -97,11 +92,6 @@ class Screen(Element):
             "length",
             torch.zeros(self.misalignment.shape[:-1], **factory_kwargs),
         )
-        assert method in [
-            "histogram",
-            "kde",
-        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
-        self.method = method
         self.register_buffer(
             "kde_bandwidth",
             (
@@ -110,8 +100,6 @@ class Screen(Element):
                 else torch.clone(self.pixel_size[0])
             ),
         )
-        self.is_blocking = is_blocking
-        self.is_active = is_active
 
         self.set_read_beam(None)
         self.cached_reading = None
@@ -121,8 +109,11 @@ class Screen(Element):
         return not self.is_active
 
     @property
-    def effective_resolution(self) -> torch.Tensor:
-        return self.resolution / self.binning
+    def effective_resolution(self) -> tuple[int, int]:
+        return (
+            self.resolution[0] / self.binning,
+            self.resolution[1] / self.binning,
+        )
 
     @property
     def effective_pixel_size(self) -> torch.Tensor:

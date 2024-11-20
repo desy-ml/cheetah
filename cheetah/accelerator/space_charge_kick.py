@@ -49,10 +49,12 @@ class SpaceChargeKick(Element):
     def __init__(
         self,
         effect_length: Union[torch.Tensor, nn.Parameter],
-        num_grid_points_x: Union[torch.Tensor, nn.Parameter, int] = 32,
-        num_grid_points_y: Union[torch.Tensor, nn.Parameter, int] = 32,
-        num_grid_points_tau: Union[torch.Tensor, nn.Parameter, int] = 32,
-        grid_extend_x: Union[torch.Tensor, nn.Parameter] = 3,
+        num_grid_points_x: int = 32,  # TODO: Simplify these to a single tuple?
+        num_grid_points_y: int = 32,
+        num_grid_points_tau: int = 32,
+        grid_extend_x: Union[
+            torch.Tensor, nn.Parameter
+        ] = 3,  # TODO: Simplify these to a single tensor?
         grid_extend_y: Union[torch.Tensor, nn.Parameter] = 3,
         grid_extend_tau: Union[torch.Tensor, nn.Parameter] = 3,
         name: Optional[str] = None,
@@ -64,13 +66,10 @@ class SpaceChargeKick(Element):
 
         super().__init__(name=name)
 
+        self.grid_shape = (num_grid_points_x, num_grid_points_y, num_grid_points_tau)
+
         self.register_buffer(
             "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
-        )
-        self.grid_shape = (
-            int(num_grid_points_x),
-            int(num_grid_points_y),
-            int(num_grid_points_tau),
         )
         # In multiples of sigma
         self.register_buffer(
