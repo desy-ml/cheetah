@@ -1,7 +1,7 @@
 from . import bmadx  # noqa: F401
 from .argument_verification import (  # noqa: F401
-    extract_argument_device,
-    extract_argument_dtype,
+    are_all_the_same_device,
+    are_all_the_same_dtype,
     extract_argument_shape,
     verify_device_and_dtype,
 )

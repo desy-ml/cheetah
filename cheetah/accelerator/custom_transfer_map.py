@@ -25,7 +25,7 @@ class CustomTransferMap(Element):
         device=None,
         dtype=None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([transfer_map], [length], device, dtype)
+        device, dtype = verify_device_and_dtype([transfer_map, length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 

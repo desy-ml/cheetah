@@ -43,7 +43,7 @@ class Cavity(Element):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [length], [voltage, phase, frequency], device, dtype
+            [length, voltage, phase, frequency], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)

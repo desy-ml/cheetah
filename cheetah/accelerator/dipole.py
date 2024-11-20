@@ -65,8 +65,8 @@ class Dipole(Element):
         dtype=None,
     ):
         device, dtype = verify_device_and_dtype(
-            [length],
             [
+                length,
                 angle,
                 k1,
                 e1,

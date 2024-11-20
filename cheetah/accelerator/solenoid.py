@@ -43,7 +43,7 @@ class Solenoid(Element):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [length], [k, misalignment], device, dtype
+            [length, k, misalignment], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)

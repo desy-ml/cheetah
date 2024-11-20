@@ -59,12 +59,7 @@ class SpaceChargeKick(Element):
         device=None,
         dtype=None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [effect_length],
-            [],  # TODO: Add grid_extend_{x,y,tau}, needs torch.Tensor default
-            device,
-            dtype,
-        )
+        device, dtype = verify_device_and_dtype([effect_length], device, dtype)
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name)

@@ -56,11 +56,7 @@ class Screen(Element):
         dtype=None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [],  # No required tensor arguments
-            # Excludes resolution and binning, since those are integer valued, not float
-            [pixel_size, misalignment, kde_bandwidth],
-            device,
-            dtype,
+            [pixel_size, misalignment, kde_bandwidth], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
