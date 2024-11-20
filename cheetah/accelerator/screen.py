@@ -42,7 +42,7 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: Optional[tuple[int, int]] = None,
+        resolution: tuple[int, int] = (1024, 1024),
         pixel_size: Optional[torch.Tensor] = None,
         binning: int = 1,
         misalignment: Optional[torch.Tensor] = None,
@@ -65,7 +65,7 @@ class Screen(Element):
             "kde",
         ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
 
-        self.resolution = resolution if resolution is not None else (1024, 1024)
+        self.resolution = resolution
         self.binning = binning
         self.method = method
         self.is_blocking = is_blocking
