@@ -1,9 +1,8 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
@@ -28,7 +27,7 @@ class Drift(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
+        length: torch.Tensor,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
         device=None,
