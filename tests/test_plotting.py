@@ -126,3 +126,17 @@ def test_plotting_with_nonleave_tensors():
     # Test that plotting does not raise an exception
     segment.plot_overview(incoming=incoming)
     segment.plot_twiss(incoming=incoming)
+
+    
+def test_plotting_with_gradients():
+    """
+    Test that plotting doesn't raise an exception for segments that contain tensors
+    that require gradients.
+    """
+    segment = cheetah.Segment(
+        elements=[cheetah.Drift(length=torch.tensor(1.0, requires_grad=True))]
+    )
+    beam = cheetah.ParameterBeam.from_parameters()
+
+    segment.plot_overview(incoming=beam)
+    segment.plot_twiss(incoming=beam)
