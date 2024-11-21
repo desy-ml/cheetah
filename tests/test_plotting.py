@@ -127,7 +127,7 @@ def test_plotting_with_nonleave_tensors():
     segment.plot_overview(incoming=incoming)
     segment.plot_twiss(incoming=incoming)
 
-    
+
 def test_plotting_with_gradients():
     """
     Test that plotting doesn't raise an exception for segments that contain tensors
