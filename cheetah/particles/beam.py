@@ -391,6 +391,7 @@ class Beam(ABC, nn.Module):
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
 
+    @abstractmethod
     def clone(self) -> "Beam":
         """Return a cloned beam that does not share the underlying storage."""
         raise NotImplementedError
