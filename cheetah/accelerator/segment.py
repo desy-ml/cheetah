@@ -404,7 +404,7 @@ class Segment(Element):
             dimension_reordered_ss[vector_idx]
             if stacked_ss.dim() > 1
             else dimension_reordered_ss
-        )
+        ).detach()
 
         ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
 
@@ -469,17 +469,17 @@ class Segment(Element):
             dimensions_reordered_ss[vector_idx]
             if stacked_ss.dim() > 1
             else dimensions_reordered_ss
-        )
+        ).detach()
         plot_xs = (
             dimension_reordered_xs[vector_idx]
             if stacked_xs.dim() > 2
             else dimension_reordered_xs
-        )
+        ).detach()
         plot_ys = (
             dimension_reordered_ys[vector_idx]
             if stacked_ys.dim() > 2
             else dimension_reordered_ys
-        )
+        ).detach()
 
         for particle_idx in range(num_particles):
             axx.plot(plot_ss, plot_xs[particle_idx])
@@ -562,7 +562,7 @@ class Segment(Element):
             dimension_reordered_s_positions[vector_idx]
             if stacked_s_positions.dim() > 1
             else dimension_reordered_s_positions
-        )
+        ).detach()
 
         broadcast_beta_x = torch.broadcast_tensors(*beta_x)
         stacked_beta_x = torch.stack(broadcast_beta_x)
@@ -571,7 +571,7 @@ class Segment(Element):
             dimension_reordered_beta_x[vector_idx]
             if stacked_beta_x.dim() > 2
             else dimension_reordered_beta_x
-        )
+        ).detach()
 
         broadcast_beta_y = torch.broadcast_tensors(*beta_y)
         stacked_beta_y = torch.stack(broadcast_beta_y)
@@ -580,7 +580,7 @@ class Segment(Element):
             dimension_reordered_beta_y[vector_idx]
             if stacked_beta_y.dim() > 2
             else dimension_reordered_beta_y
-        )
+        ).detach()
 
         if ax is None:
             fig = plt.figure()

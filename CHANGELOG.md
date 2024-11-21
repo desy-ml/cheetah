@@ -6,8 +6,8 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #208, #213, #215, #218, #229, #233, #258, #265) (@jank324, @cr-xu, @hespe, @roussel-ryan)
-- The fifth particle coordinate `s` is renamed to `tau`. Now Cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. In addition, the trailing "s" was removed from some beam property names (e.g. `beam.xs` becomes `beam.x`). (see #163) (@cr-xu)
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #208, #213, #215, #218, #229, #233, #258, #265, #284) (@jank324, @cr-xu, @hespe, @roussel-ryan)
+- The fifth particle coordinate `s` is renamed to `tau`. Now Cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. In addition, the trailing "s" was removed from some beam property names (e.g. `beam.xs` becomes `beam.x`). (see #163, #284) (@cr-xu, @hespe)
 - `Screen` no longer blocks the beam (by default). To return to old behaviour, set `Screen.is_blocking = True`. (see #208) (@jank324, @roussel-ryan)
 
 ### 🚀 Features
@@ -37,6 +37,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
 - Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
 - Fix issue with Dipole hgap conversion in Bmad import (see #261) (@cr-xu)
+- Fix plotting for segments that contain tensors with `require_grad=True` (see #288) (@hespe)
 
 ### 🐆 Other
 
@@ -51,6 +52,8 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @hespe)
 - Clean up CI pipelines (see #243, #244) (@jank324)
 - Fix logo display in README (see #252) (@jank324)
+- Made `Beam` an abstract class (see #284) (@hespe)
+- Releases are now automatically archived on Zenodo and given a DOI (@jank324)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
