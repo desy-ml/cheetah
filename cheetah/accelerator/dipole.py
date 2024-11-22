@@ -439,24 +439,6 @@ class Dipole(Element):
 
         return tm
 
-    def clone(self) -> "Dipole":
-        return Dipole(
-            length=self.length.clone(),
-            angle=self.angle.clone(),
-            k1=self.k1.clone(),
-            e1=self.e1.clone(),
-            e2=self.e2.clone(),
-            tilt=self.tilt.clone(),
-            gap=self.gap.clone(),
-            gap_exit=self.gap_exit.clone(),
-            fringe_integral=self.fringe_integral.clone(),
-            fringe_integral_exit=self.fringe_integral_exit.clone(),
-            fringe_at=self.fringe_at,
-            fringe_type=self.fringe_type,
-            tracking_method=self.tracking_method,
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for dipole properly, for now just returns the
         # element itself

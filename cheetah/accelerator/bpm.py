@@ -47,9 +47,6 @@ class BPM(Element):
 
         return incoming.clone()
 
-    def clone(self) -> "BPM":
-        return BPM(is_active=self.is_active, name=self.name)
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 

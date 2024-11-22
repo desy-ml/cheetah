@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -113,10 +114,18 @@ class Element(ABC, nn.Module):
         """
         return []
 
-    @abstractmethod
     def clone(self) -> "Element":
         """Create a copy of the element which does not share the underlying memory."""
-        raise NotImplementedError
+        return self.__class__(
+            **{
+                feature: (
+                    getattr(self, feature).clone()
+                    if isinstance(getattr(self, feature), torch.Tensor)
+                    else deepcopy(getattr(self, feature))
+                )
+                for feature in self.defining_features
+            }
+        )
 
     @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:

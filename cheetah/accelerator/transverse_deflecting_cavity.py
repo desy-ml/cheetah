@@ -213,19 +213,6 @@ class TransverseDeflectingCavity(Element):
         )
         return outgoing_beam
 
-    def clone(self) -> "TransverseDeflectingCavity":
-        return TransverseDeflectingCavity(
-            length=self.length.clone(),
-            voltage=self.voltage.clone(),
-            phase=self.phase.clone(),
-            frequency=self.frequency.clone(),
-            misalignment=self.misalignment.clone(),
-            tilt=self.tilt.clone(),
-            num_steps=self.num_steps,
-            tracking_method=self.tracking_method,
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for cavity properly, for now just returns the
         # element itself
