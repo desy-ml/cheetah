@@ -99,7 +99,8 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return not self.is_active
+        # TODO: Implement drrift-like `transfer_map` and set to `self.is_active`
+        return False
 
     def track(self, incoming: Beam) -> Beam:
         """
