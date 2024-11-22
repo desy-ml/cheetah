@@ -99,13 +99,6 @@ class CustomTransferMap(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["transfer_map"]
 
-    def clone(self) -> "CustomTransferMap":
-        return CustomTransferMap(
-            transfer_map=self._transfer_map.clone(),
-            length=self.length.clone(),
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 

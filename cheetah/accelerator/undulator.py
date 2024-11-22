@@ -60,13 +60,6 @@ class Undulator(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def clone(self) -> "Undulator":
-        return Undulator(
-            length=self.length.clone(),
-            is_active=self.is_active,
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for undulator properly, for now just return self
         return [self]

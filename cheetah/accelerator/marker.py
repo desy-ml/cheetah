@@ -34,9 +34,6 @@ class Marker(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def clone(self) -> "Marker":
-        return Marker(name=self.name)
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 

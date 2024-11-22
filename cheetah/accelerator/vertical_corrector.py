@@ -73,11 +73,6 @@ class VerticalCorrector(Element):
     def is_active(self) -> bool:
         return torch.any(self.angle != 0)
 
-    def clone(self) -> "VerticalCorrector":
-        return VerticalCorrector(
-            length=self.length.clone(), angle=self.angle.clone(), name=self.name
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()
         return [

@@ -124,13 +124,6 @@ class Drift(Element):
     def is_skippable(self) -> bool:
         return self.tracking_method == "cheetah"
 
-    def clone(self) -> "Drift":
-        return Drift(
-            length=self.length.clone(),
-            tracking_method=self.tracking_method,
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = torch.ceil(torch.max(self.length) / resolution).int()
         return [

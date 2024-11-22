@@ -293,19 +293,6 @@ class Screen(Element):
         self._read_beam = value
         self.cached_reading = None
 
-    def clone(self) -> "Screen":
-        return Screen(
-            resolution=self.resolution.clone(),
-            pixel_size=self.pixel_size.clone(),
-            binning=self.binning.clone(),
-            misalignment=self.misalignment.clone(),
-            method=self.method,
-            kde_bandwidth=self.kde_bandwidth.clone(),
-            is_blocking=self.is_blocking,
-            is_active=self.is_active,
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 

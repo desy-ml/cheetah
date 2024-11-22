@@ -633,18 +633,6 @@ class SpaceChargeKick(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def clone(self) -> "SpaceChargeKick":
-        return SpaceChargeKick(
-            effect_length=self.effect_length.clone(),
-            num_grid_points_x=self.grid_shape[0],
-            num_grid_points_y=self.grid_shape[1],
-            num_grid_points_tau=self.grid_shape[2],
-            grid_extend_x=self.grid_extend_x.clone(),
-            grid_extend_y=self.grid_extend_y.clone(),
-            grid_extend_tau=self.grid_extend_tau.clone(),
-            name=self.name,
-        )
-
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # TODO: Implement splitting for SpaceCharge properly, for now just returns the
         # element itself
