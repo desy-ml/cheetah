@@ -23,6 +23,9 @@ class RBend(Dipole):
     :param fringe_integral_exit: (only set if different from `fint`) Fringe field
         integral of the exit face.
     :param gap: The magnet gap [m], NOTE in MAD and ELEGANT: HGAP = gap/2
+    :param gap_exit: The magnet gap at the exit in meters. Note that in MAD and
+        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Only used with
+        `"bmadx"` tracking method.
     :param name: Unique identifier of the element.
     """
 
@@ -37,6 +40,7 @@ class RBend(Dipole):
         fringe_integral: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         fringe_integral_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         gap: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        gap_exit: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
         device=None,
         dtype=torch.float32,
@@ -51,6 +55,7 @@ class RBend(Dipole):
             fringe_integral=fringe_integral,
             fringe_integral_exit=fringe_integral_exit,
             gap=gap,
+            gap_exit=gap_exit,
             name=name,
             device=device,
             dtype=dtype,
