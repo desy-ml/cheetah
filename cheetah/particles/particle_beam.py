@@ -899,8 +899,8 @@ class ParticleBeam(Beam):
     def clone(self) -> "ParticleBeam":
         return ParticleBeam(
             particles=self.particles.clone(),
-            particle_charges=self.particle_charges.clone(),
             energy=self.energy.clone(),
+            particle_charges=self.particle_charges.clone(),
         )
 
     def __repr__(self) -> str:
