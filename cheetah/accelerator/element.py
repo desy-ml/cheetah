@@ -112,7 +112,7 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return []
+        return ["name"]
 
     def clone(self) -> "Element":
         """Create a copy of the element which does not share the underlying memory."""
