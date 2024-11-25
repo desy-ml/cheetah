@@ -1,12 +1,12 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
+from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
@@ -47,28 +47,26 @@ class SpaceChargeKick(Element):
 
     def __init__(
         self,
-        effect_length: Union[torch.Tensor, nn.Parameter],
-        num_grid_points_x: Union[torch.Tensor, nn.Parameter, int] = 32,
-        num_grid_points_y: Union[torch.Tensor, nn.Parameter, int] = 32,
-        num_grid_points_tau: Union[torch.Tensor, nn.Parameter, int] = 32,
-        grid_extend_x: Union[torch.Tensor, nn.Parameter] = 3,
-        grid_extend_y: Union[torch.Tensor, nn.Parameter] = 3,
-        grid_extend_tau: Union[torch.Tensor, nn.Parameter] = 3,
+        effect_length: torch.Tensor,
+        num_grid_points_x: int = 32,  # TODO: Simplify these to a single tuple?
+        num_grid_points_y: int = 32,
+        num_grid_points_tau: int = 32,
+        grid_extend_x: torch.Tensor = 3,  # TODO: Simplify these to a single tensor?
+        grid_extend_y: torch.Tensor = 3,
+        grid_extend_tau: torch.Tensor = 3,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([effect_length], device, dtype)
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name)
 
+        self.grid_shape = (num_grid_points_x, num_grid_points_y, num_grid_points_tau)
+
         self.register_buffer(
             "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
-        )
-        self.grid_shape = (
-            int(num_grid_points_x),
-            int(num_grid_points_y),
-            int(num_grid_points_tau),
         )
         # In multiples of sigma
         self.register_buffer(
@@ -589,7 +587,11 @@ class SpaceChargeKick(Element):
                 ],
                 dim=-1,
             )
-            cell_size = 2 * grid_dimensions / torch.tensor(self.grid_shape)
+            cell_size = (
+                2
+                * grid_dimensions
+                / torch.tensor(self.grid_shape, **self.factory_kwargs)
+            )
             dt = flattened_length_effect / (
                 speed_of_light * flattened_incoming.relativistic_beta
             )
