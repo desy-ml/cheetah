@@ -1,10 +1,9 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.utils import UniqueNameGenerator
@@ -28,11 +27,11 @@ class Undulator(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
+        length: torch.Tensor,
         is_active: bool = False,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)

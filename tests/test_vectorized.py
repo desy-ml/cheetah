@@ -309,7 +309,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         elements=[
             cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
-                resolution=torch.tensor((100, 100)),
+                resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 misalignment=torch.tensor(
                     [
