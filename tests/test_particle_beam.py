@@ -144,3 +144,16 @@ def test_generate_uniform_ellipsoid_vectorized():
     assert torch.allclose(beam.sigma_p, sigma_p)
     assert torch.allclose(beam.energy, energy)
     assert torch.allclose(beam.total_charge, total_charge)
+
+
+def test_only_sigma_vectorized():
+    """
+    Test that particle beam works correctly when only a vectorised sigma is given and
+    all else is scalar.
+    """
+    beam = ParticleBeam.from_parameters(
+        num_particles=10_000,
+        mu_x=torch.tensor(1e-5),
+        sigma_x=torch.tensor([1.75e-7, 2.75e-7]),
+    )
+    assert beam.particles.shape == (2, 10_000, 7)
