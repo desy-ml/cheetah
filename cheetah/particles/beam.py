@@ -393,7 +393,7 @@ class Beam(ABC, nn.Module):
 
     @abstractmethod
     def clone(self) -> "Beam":
-        """Return a cloned beam that does not share the underlying storage."""
+        """Return a cloned beam that does not share the underlying memory."""
         raise NotImplementedError
 
     def __repr__(self) -> str:

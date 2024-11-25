@@ -430,8 +430,8 @@ class ParameterBeam(Beam):
         return ParameterBeam(
             mu=self._mu.clone(),
             cov=self._cov.clone(),
-            total_charge=self.total_charge.clone(),
             energy=self.energy.clone(),
+            total_charge=self.total_charge.clone(),
         )
 
     def __repr__(self) -> str:
