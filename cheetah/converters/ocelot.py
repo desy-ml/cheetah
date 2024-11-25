@@ -140,7 +140,7 @@ def convert_element_to_cheetah(
                 " properties."
             )
         return cheetah.Screen(
-            resolution=torch.tensor([2448, 2040]),
+            resolution=(2448, 2040),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6]),
             name=element.id,
             device=device,

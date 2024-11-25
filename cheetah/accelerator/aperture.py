@@ -1,13 +1,12 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -27,14 +26,15 @@ class Aperture(Element):
 
     def __init__(
         self,
-        x_max: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        y_max: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        x_max: Optional[torch.Tensor] = None,
+        y_max: Optional[torch.Tensor] = None,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
