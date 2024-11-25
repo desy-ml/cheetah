@@ -96,11 +96,19 @@ class CustomTransferMap(Element):
             + f"name={repr(self.name)})"
         )
 
+    @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["transfer_map"]
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
+
+    def clone(self) -> "CustomTransferMap":
+        return CustomTransferMap(
+            transfer_map=self._transfer_map.clone(),
+            length=self.length.clone(),
+            name=self.name,
+        )
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
