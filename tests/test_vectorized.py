@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import torch
 
@@ -451,16 +452,16 @@ def test_broadcasting_solenoid_misalignment():
     assert outgoing.energy.shape == (2,)
 
 
-@pytest.mark.parametrize("shape", ["rectangular", "elliptical"])
-def test_vectorized_aperture_broadcasting(shape):
+@pytest.mark.parametrize("aperture_shape", ["rectangular", "elliptical"])
+def test_vectorized_aperture_broadcasting(aperture_shape):
     """
     Test that apertures work in a vectorised setting and that broadcasting rules are
     applied correctly.
     """
     torch.manual_seed(0)
+
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000,
-        # mu_x=torch.tensor(1e-4),
         sigma_py=torch.tensor(1e-4),
         sigma_px=torch.tensor(2e-4),
         energy=torch.tensor([154e6, 14e9]),
@@ -471,7 +472,7 @@ def test_vectorized_aperture_broadcasting(shape):
             cheetah.Aperture(
                 x_max=torch.tensor([[1e-5], [2e-4], [3e-4]]),
                 y_max=torch.tensor(2e-4),
-                shape=shape,
+                shape=aperture_shape,
             ),
             cheetah.Drift(length=torch.tensor(0.5)),
         ]
@@ -483,17 +484,11 @@ def test_vectorized_aperture_broadcasting(shape):
     assert outgoing.particle_charges.shape == (100_000,)
     assert outgoing.energy.shape == (2,)
 
-    if shape == "elliptical":
-        assert torch.allclose(
-            outgoing.survived_probabilities.sum(dim=-1)[:, 0],
-            torch.tensor(
-                [7672, 94523, 99547], dtype=outgoing.survived_probabilities.dtype
-            ),
+    if aperture_shape == "elliptical":
+        assert np.allclose(
+            outgoing.survived_probabilities.sum(dim=-1)[:, 0], [7672, 94523, 99547]
         )
-    elif shape == "rectangular":
-        assert torch.allclose(
-            outgoing.survived_probabilities.sum(dim=-1)[:, 0],
-            torch.tensor(
-                [7935, 95400, 99719], dtype=outgoing.survived_probabilities.dtype
-            ),
+    elif aperture_shape == "rectangular":
+        assert np.allclose(
+            outgoing.survived_probabilities.sum(dim=-1)[:, 0], [7935, 95400, 99719]
         )
