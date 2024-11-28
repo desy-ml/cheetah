@@ -99,7 +99,7 @@ class Aperture(Element):
         elif self.shape == "elliptical":
             survived_mask = (incoming.x**2 / x_max**2 + incoming.y**2 / y_max**2) <= 1.0
 
-        outgoing_survival = incoming.particle_survival * survived_mask
+        outgoing_survival = incoming.survived_probabilities * survived_mask
 
         # outgoing_particles = incoming.particles[survived_mask]
 
@@ -117,7 +117,7 @@ class Aperture(Element):
             particle_charges=incoming.particle_charges,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
-            particle_survival=outgoing_survival,
+            survived_probabilities=outgoing_survival,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:

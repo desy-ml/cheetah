@@ -149,7 +149,7 @@ class SpaceChargeKick(Element):
         )
 
         # Accumulate the charge contributions
-        survived_particle_charges = beam.particle_charges * beam.particle_survival
+        survived_particle_charges = beam.particle_charges * beam.survived_probabilities
         repeated_charges = survived_particle_charges.repeat_interleave(
             repeats=8, dim=-1
         )  # Shape:(..., 8 * num_particles)
@@ -562,7 +562,7 @@ class SpaceChargeKick(Element):
                     particle_charges=incoming.particle_charges.unsqueeze(0),
                     device=incoming.particles.device,
                     dtype=incoming.particles.dtype,
-                    particle_survival=incoming.particle_survival.unsqueeze(0),
+                    survived_probabilities=incoming.survived_probabilities.unsqueeze(0),
                 )
             else:
                 is_incoming_vectorized = True
@@ -577,7 +577,7 @@ class SpaceChargeKick(Element):
                 ),
                 device=vectorized_incoming.particles.device,
                 dtype=vectorized_incoming.particles.dtype,
-                particle_survival=vectorized_incoming.particle_survival.flatten(
+                survived_probabilities=vectorized_incoming.survived_probabilities.flatten(
                     end_dim=-2
                 ),
             )
@@ -624,7 +624,9 @@ class SpaceChargeKick(Element):
                     particle_charges=vectorized_incoming.particle_charges.squeeze(0),
                     device=vectorized_incoming.particles.device,
                     dtype=vectorized_incoming.particles.dtype,
-                    particle_survival=vectorized_incoming.particle_survival.squeeze(0),
+                    survived_probabilities=vectorized_incoming.survived_probabilities.squeeze(
+                        0
+                    ),
                 )
             else:
                 # Reverse the flattening of the vector dimensions
@@ -634,7 +636,7 @@ class SpaceChargeKick(Element):
                     ),
                     vectorized_incoming.energy,
                     particle_charges=vectorized_incoming.particle_charges,
-                    particle_survival=vectorized_incoming.particle_survival,
+                    survived_probabilities=vectorized_incoming.survived_probabilities,
                     device=vectorized_incoming.particles.device,
                     dtype=vectorized_incoming.particles.dtype,
                 )

@@ -485,11 +485,15 @@ def test_vectorized_aperture_broadcasting(shape):
 
     if shape == "elliptical":
         assert torch.allclose(
-            outgoing.particle_survival.sum(dim=-1)[:, 0],
-            torch.tensor([7672, 94523, 99547], dtype=outgoing.particle_survival.dtype),
+            outgoing.survived_probabilities.sum(dim=-1)[:, 0],
+            torch.tensor(
+                [7672, 94523, 99547], dtype=outgoing.survived_probabilities.dtype
+            ),
         )
     elif shape == "rectangular":
         assert torch.allclose(
-            outgoing.particle_survival.sum(dim=-1)[:, 0],
-            torch.tensor([7935, 95400, 99719], dtype=outgoing.particle_survival.dtype),
+            outgoing.survived_probabilities.sum(dim=-1)[:, 0],
+            torch.tensor(
+                [7935, 95400, 99719], dtype=outgoing.survived_probabilities.dtype
+            ),
         )
