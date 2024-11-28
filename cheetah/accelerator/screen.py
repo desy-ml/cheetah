@@ -1,15 +1,14 @@
 from copy import deepcopy
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from torch import nn
 from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -43,43 +42,41 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        pixel_size: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        binning: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        resolution: tuple[int, int] = (1024, 1024),
+        pixel_size: Optional[torch.Tensor] = None,
+        binning: int = 1,
+        misalignment: Optional[torch.Tensor] = None,
         method: Literal["histogram", "kde"] = "histogram",
-        kde_bandwidth: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        kde_bandwidth: Optional[torch.Tensor] = None,
         is_blocking: bool = False,
         is_active: bool = False,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [pixel_size, misalignment, kde_bandwidth], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.register_buffer(
-            "resolution",
-            (
-                torch.as_tensor(resolution, **factory_kwargs)
-                if resolution is not None
-                else torch.tensor((1024, 1024), **factory_kwargs)
-            ),
-        )
+        assert method in [
+            "histogram",
+            "kde",
+        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
+
+        self.resolution = resolution
+        self.binning = binning
+        self.method = method
+        self.is_blocking = is_blocking
+        self.is_active = is_active
+
         self.register_buffer(
             "pixel_size",
             (
                 torch.as_tensor(pixel_size, **factory_kwargs)
                 if pixel_size is not None
                 else torch.tensor((1e-3, 1e-3), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "binning",
-            (
-                torch.as_tensor(binning, **factory_kwargs)
-                if binning is not None
-                else torch.tensor(1, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -94,11 +91,6 @@ class Screen(Element):
             "length",
             torch.zeros(self.misalignment.shape[:-1], **factory_kwargs),
         )
-        assert method in [
-            "histogram",
-            "kde",
-        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
-        self.method = method
         self.register_buffer(
             "kde_bandwidth",
             (
@@ -107,8 +99,6 @@ class Screen(Element):
                 else torch.clone(self.pixel_size[0])
             ),
         )
-        self.is_blocking = is_blocking
-        self.is_active = is_active
 
         self.set_read_beam(None)
         self.cached_reading = None
@@ -118,8 +108,11 @@ class Screen(Element):
         return not self.is_active
 
     @property
-    def effective_resolution(self) -> torch.Tensor:
-        return self.resolution / self.binning
+    def effective_resolution(self) -> tuple[int, int]:
+        return (
+            self.resolution[0] // self.binning,
+            self.resolution[1] // self.binning,
+        )
 
     @property
     def effective_pixel_size(self) -> torch.Tensor:
@@ -165,6 +158,7 @@ class Screen(Element):
         return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
+        # Record the beam only when the screen is active
         if self.is_active:
             copy_of_incoming = deepcopy(incoming)
 
@@ -192,7 +186,26 @@ class Screen(Element):
 
             self.set_read_beam(copy_of_incoming)
 
-        return Beam.empty if self.is_blocking else incoming
+        # Block the beam only when the screen is active and blocking
+        if self.is_active and self.is_blocking:
+            if isinstance(incoming, ParameterBeam):
+                return ParameterBeam(
+                    mu=incoming._mu,
+                    cov=incoming._cov,
+                    energy=incoming.energy,
+                    total_charge=torch.zeros_like(incoming.total_charge),
+                )
+            elif isinstance(incoming, ParticleBeam):
+                return ParticleBeam(
+                    particles=incoming.particles,
+                    energy=incoming.energy,
+                    particle_charges=incoming.particle_charges,
+                    survival_probabilities=torch.zeros_like(
+                        incoming.survival_probabilities
+                    ),
+                )
+        else:
+            return deepcopy(incoming)
 
     @property
     def reading(self) -> torch.Tensor:
@@ -201,9 +214,11 @@ class Screen(Element):
             return self.cached_reading
 
         read_beam = self.get_read_beam()
-        if read_beam is Beam.empty or read_beam is None:
+        if read_beam is None:
             image = torch.zeros(
-                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
+                (int(self.effective_resolution[1]), int(self.effective_resolution[0])),
+                device=self.misalignment.device,
+                dtype=self.misalignment.dtype,
             )
         elif isinstance(read_beam, ParameterBeam):
             if torch.numel(read_beam._mu[..., 0]) > 1:
@@ -260,16 +275,24 @@ class Screen(Element):
                     )
 
                 image, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).T, bins=self.pixel_bin_edges
+                    torch.stack((read_beam.x, read_beam.y)).T,
+                    bins=self.pixel_bin_edges,
+                    weight=read_beam.particle_charges
+                    * read_beam.survival_probabilities,
                 )
                 image = torch.flipud(image.T)
             elif self.method == "kde":
+                weights = read_beam.particle_charges * read_beam.survival_probabilities
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
                 image = kde_histogram_2d(
-                    x1=read_beam.x,
-                    x2=read_beam.y,
+                    x1=broadcasted_x,
+                    x2=broadcasted_y,
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
+                    weights=broadcasted_weights,
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)
