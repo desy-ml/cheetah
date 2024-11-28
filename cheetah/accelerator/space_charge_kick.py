@@ -583,8 +583,8 @@ class SpaceChargeKick(Element):
                 particle_charges=vectorized_incoming.particle_charges.flatten(
                     end_dim=-2
                 ),
-                survived_probabilities=vectorized_incoming.survived_probabilities.flatten(
-                    end_dim=-2
+                survived_probabilities=(
+                    vectorized_incoming.survived_probabilities.flatten(end_dim=-2)
                 ),
                 device=vectorized_incoming.particles.device,
                 dtype=vectorized_incoming.particles.dtype,
