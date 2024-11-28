@@ -14,11 +14,12 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class Aperture(Element):
     """
     Physical aperture.
-    The aperture is only considered if tracking a `ParticleBeam` and the aperture is
-    active.
 
-    :param x_max: half size horizontal offset in [m]
-    :param y_max: half size vertical offset in [m]
+    NOTE: The aperture currently only affects beams of type `ParticleBeam` and only has
+    an effect when the aperture is active.
+
+    :param x_max: half size horizontal offset in [m].
+    :param y_max: half size vertical offset in [m].
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param is_active: If the aperture actually blocks particles.
     :param name: Unique identifier of the element.
@@ -80,42 +81,28 @@ class Aperture(Element):
             "elliptical",
         ], f"Unknown aperture shape {self.shape}"
 
-        # broadcast x_max and y_max and the ParticleBeam to the same shape
-        vector_shape = torch.broadcast_shapes(
-            self.x_max.shape,
-            self.y_max.shape,
-            incoming.x.shape[:-1],
-            incoming.energy.shape,
-        )
-        x_max = self.x_max.expand(vector_shape).unsqueeze(-1)
-        y_max = self.y_max.expand(vector_shape).unsqueeze(-1)
-        outgoing_particles = incoming.particles.expand(vector_shape + (-1, 7))
-
         if self.shape == "rectangular":
             survived_mask = torch.logical_and(
-                torch.logical_and(incoming.x > -x_max, incoming.x < x_max),
-                torch.logical_and(incoming.y > -y_max, incoming.y < y_max),
+                torch.logical_and(
+                    incoming.x > -self.x_max.unsqueeze(-1),
+                    incoming.x < self.x_max.unsqueeze(-1),
+                ),
+                torch.logical_and(
+                    incoming.y > -self.y_max.unsqueeze(-1),
+                    incoming.y < self.y_max.unsqueeze(-1),
+                ),
             )
         elif self.shape == "elliptical":
-            survived_mask = (incoming.x**2 / x_max**2 + incoming.y**2 / y_max**2) <= 1.0
-
-        outgoing_survival = incoming.survived_probabilities * survived_mask
-
-        # outgoing_particles = incoming.particles[survived_mask]
-
-        # outgoing_particle_charges = incoming.particle_charges[survived_mask]
-
-        # self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
-
-        # self.lost_particle_charges = incoming.particle_charges[
-        #     torch.logical_not(survived_mask)
-        # ]
+            survived_mask = (
+                incoming.x**2 / self.x_max.unsqueeze(-1) ** 2
+                + incoming.y**2 / self.y_max.unsqueeze(-1) ** 2
+            ) <= 1.0
 
         return ParticleBeam(
-            particles=outgoing_particles,
+            particles=incoming.particles,
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
-            survived_probabilities=outgoing_survival,
+            survived_probabilities=incoming.survived_probabilities * survived_mask,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
