@@ -149,7 +149,7 @@ class SpaceChargeKick(Element):
         )
 
         # Accumulate the charge contributions
-        survived_particle_charges = beam.particle_charges * beam.survived_probabilities
+        survived_particle_charges = beam.particle_charges * beam.survival_probabilities
         repeated_charges = survived_particle_charges.repeat_interleave(
             repeats=8, dim=-1
         )  # Shape:(..., 8 * num_particles)
@@ -556,7 +556,7 @@ class SpaceChargeKick(Element):
                 incoming.particles.shape[:-2],
                 incoming.energy.shape,
                 incoming.particle_charges.shape[:-1],
-                incoming.survived_probabilities.shape[:-1],
+                incoming.survival_probabilities.shape[:-1],
                 (1,),
             )
             vectorized_incoming = ParticleBeam(
@@ -567,8 +567,8 @@ class SpaceChargeKick(Element):
                 particle_charges=torch.broadcast_to(
                     incoming.particle_charges, (*vector_shape, incoming.num_particles)
                 ),
-                survived_probabilities=torch.broadcast_to(
-                    incoming.survived_probabilities,
+                survival_probabilities=torch.broadcast_to(
+                    incoming.survival_probabilities,
                     (*vector_shape, incoming.num_particles),
                 ),
                 device=incoming.particles.device,
@@ -581,8 +581,8 @@ class SpaceChargeKick(Element):
                 particle_charges=vectorized_incoming.particle_charges.flatten(
                     end_dim=-2
                 ),
-                survived_probabilities=(
-                    vectorized_incoming.survived_probabilities.flatten(end_dim=-2)
+                survival_probabilities=(
+                    vectorized_incoming.survival_probabilities.flatten(end_dim=-2)
                 ),
                 device=vectorized_incoming.particles.device,
                 dtype=vectorized_incoming.particles.dtype,
@@ -627,7 +627,7 @@ class SpaceChargeKick(Element):
                 incoming.particles.shape[:-2],
                 incoming.energy.shape,
                 incoming.particle_charges.shape[:-1],
-                incoming.survived_probabilities.shape[:-1],
+                incoming.survival_probabilities.shape[:-1],
                 self.effect_length.shape,
             )
             outgoing = ParticleBeam.from_xyz_pxpypz(
@@ -636,7 +636,7 @@ class SpaceChargeKick(Element):
                 ),
                 energy=incoming.energy,
                 particle_charges=incoming.particle_charges,
-                survived_probabilities=incoming.survived_probabilities,
+                survival_probabilities=incoming.survival_probabilities,
                 device=incoming.particles.device,
                 dtype=incoming.particles.dtype,
             )
