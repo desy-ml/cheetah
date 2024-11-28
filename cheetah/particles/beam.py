@@ -33,8 +33,6 @@ class Beam(ABC, nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
-    empty = "I'm an empty beam!"
-
     @classmethod
     @abstractmethod
     def from_parameters(
@@ -55,7 +53,7 @@ class Beam(ABC, nn.Module):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -101,7 +99,7 @@ class Beam(ABC, nn.Module):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -127,7 +125,7 @@ class Beam(ABC, nn.Module):
 
     @classmethod
     @abstractmethod
-    def from_ocelot(cls, parray) -> "Beam":
+    def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
@@ -135,7 +133,7 @@ class Beam(ABC, nn.Module):
 
     @classmethod
     @abstractmethod
-    def from_astra(cls, path: str, **kwargs) -> "Beam":
+    def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 
@@ -154,7 +152,7 @@ class Beam(ABC, nn.Module):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -179,6 +177,9 @@ class Beam(ABC, nn.Module):
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
         """
+        device = device if device is not None else self.mu_x.device
+        dtype = dtype if dtype is not None else self.mu_x.dtype
+
         # Figure out vector dimensions of the original beam and check that passed
         # arguments have the same vector dimensions.
         shape = self.mu_x.shape
