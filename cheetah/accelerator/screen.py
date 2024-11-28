@@ -158,6 +158,7 @@ class Screen(Element):
         return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
+        # Record the beam only when the screen is active
         if self.is_active:
             copy_of_incoming = deepcopy(incoming)
 
@@ -185,7 +186,26 @@ class Screen(Element):
 
             self.set_read_beam(copy_of_incoming)
 
-        return Beam.empty if self.is_blocking else incoming
+        # Block the beam only when the screen is active and blocking
+        if self.is_active and self.is_blocking:
+            if isinstance(incoming, ParameterBeam):
+                return ParameterBeam(
+                    mu=incoming._mu,
+                    cov=incoming._cov,
+                    energy=incoming.energy,
+                    total_charge=torch.zeros_like(incoming.total_charge),
+                )
+            elif isinstance(incoming, ParticleBeam):
+                return ParticleBeam(
+                    particles=incoming.particles,
+                    energy=incoming.energy,
+                    particle_charges=incoming.particle_charges,
+                    survival_probabilities=torch.zeros_like(
+                        incoming.survival_probabilities
+                    ),
+                )
+        else:
+            return deepcopy(incoming)
 
     @property
     def reading(self) -> torch.Tensor:
@@ -194,7 +214,7 @@ class Screen(Element):
             return self.cached_reading
 
         read_beam = self.get_read_beam()
-        if read_beam is Beam.empty or read_beam is None:
+        if read_beam is None:
             image = torch.zeros(
                 (int(self.effective_resolution[1]), int(self.effective_resolution[0])),
                 device=self.misalignment.device,
@@ -255,16 +275,24 @@ class Screen(Element):
                     )
 
                 image, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).T, bins=self.pixel_bin_edges
+                    torch.stack((read_beam.x, read_beam.y)).T,
+                    bins=self.pixel_bin_edges,
+                    weight=read_beam.particle_charges
+                    * read_beam.survival_probabilities,
                 )
                 image = torch.flipud(image.T)
             elif self.method == "kde":
+                weights = read_beam.particle_charges * read_beam.survival_probabilities
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
                 image = kde_histogram_2d(
-                    x1=read_beam.x,
-                    x2=read_beam.y,
+                    x1=broadcasted_x,
+                    x2=broadcasted_y,
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
+                    weights=broadcasted_weights,
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)

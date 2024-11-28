@@ -260,6 +260,7 @@ class Dipole(Element):
             ),
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
