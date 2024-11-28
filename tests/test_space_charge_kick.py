@@ -315,4 +315,4 @@ def test_space_charge_with_aperture_cutoff():
     )
 
     # Check that the number of surviving particles is less than the initial number
-    assert outgoing_beam_with_aperture.particle_survival.sum(dim=-1).max() < 10_000
+    assert outgoing_beam_with_aperture.survived_probabilities.sum(dim=-1).max() < 10_000

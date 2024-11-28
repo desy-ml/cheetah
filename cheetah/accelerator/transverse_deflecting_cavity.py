@@ -210,7 +210,7 @@ class TransverseDeflectingCavity(Element):
             torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
             ref_energy,
             particle_charges=incoming.particle_charges,
-            particle_survival=incoming.particle_survival,
+            survived_probabilities=incoming.survived_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
