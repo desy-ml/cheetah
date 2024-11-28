@@ -112,12 +112,12 @@ class Aperture(Element):
         # ]
 
         return ParticleBeam(
-            outgoing_particles,
-            incoming.energy,
+            particles=outgoing_particles,
+            energy=incoming.energy,
             particle_charges=incoming.particle_charges,
+            survived_probabilities=outgoing_survival,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
-            survived_probabilities=outgoing_survival,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
