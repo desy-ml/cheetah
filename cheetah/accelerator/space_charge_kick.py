@@ -5,7 +5,7 @@ import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import ParticleBeam
 from cheetah.utils import verify_device_and_dtype
 
 
