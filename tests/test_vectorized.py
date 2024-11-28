@@ -480,9 +480,11 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
 
     outgoing = segment.track(incoming)
 
-    assert outgoing.particles.shape == (3, 2, 100_000, 7)
-    assert outgoing.particle_charges.shape == (100_000,)
+    # Particle positions are unaffected by the aperture ... only their survival is
+    assert outgoing.particles.shape == (2, 100_000, 7)
     assert outgoing.energy.shape == (2,)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.survived_probabilities.shape == (3, 2, 100_000)
 
     if aperture_shape == "elliptical":
         assert np.allclose(
