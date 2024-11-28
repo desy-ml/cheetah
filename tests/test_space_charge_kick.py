@@ -277,3 +277,46 @@ def test_space_charge_with_ares_astra_beam():
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     _ = segment.track(beam)
+
+
+def test_space_charge_with_aperture_cutoff():
+    """
+    Tests that the space charge kick is correctly applied only to surviving particles,
+    by comparing the results with and without an aperture that results in beam losses.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.2)),
+            cheetah.Aperture(
+                x_max=torch.tensor(1e-4),
+                y_max=torch.tensor(1e-4),
+                shape="rectangular",
+                is_active="False",
+                name="aperture",
+            ),
+            cheetah.Drift(length=torch.tensor(0.25)),
+            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.25)),
+        ]
+    )
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=torch.tensor(10_000),
+        total_charge=torch.tensor(1e-9),
+        mu_x=torch.tensor(5e-5),
+        sigma_px=torch.tensor(1e-4),
+        sigma_py=torch.tensor(1e-4),
+    )
+
+    # Track with inactive aperture
+    outgoing_beam_without_aperture = segment.track(incoming_beam)
+
+    # Activate the aperture and track the beam
+    segment.aperture.is_active = True
+    outgoing_beam_with_aperture = segment.track(incoming_beam)
+
+    # Check that with particle loss the space charge kick is different
+    assert not torch.allclose(
+        outgoing_beam_with_aperture.particles, outgoing_beam_without_aperture.particles
+    )
+    # Check that the number of surviving particles is less than the initial number
+    assert outgoing_beam_with_aperture.survival_probabilities.sum(dim=-1).max() < 10_000
