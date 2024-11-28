@@ -158,6 +158,7 @@ class Screen(Element):
         return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
+        # Record the beam only when the screen is active
         if self.is_active:
             copy_of_incoming = deepcopy(incoming)
 
@@ -185,7 +186,26 @@ class Screen(Element):
 
             self.set_read_beam(copy_of_incoming)
 
-        return Beam.empty if self.is_blocking else incoming
+        # Block the beam only when the screen is active and blocking
+        if self.is_active and self.is_blocking:
+            if isinstance(incoming, ParameterBeam):
+                return ParameterBeam(
+                    mu=incoming._mu,
+                    cov=incoming._cov,
+                    energy=incoming.energy,
+                    total_charge=torch.zeros_like(incoming.total_charge),
+                )
+            elif isinstance(incoming, ParticleBeam):
+                return ParticleBeam(
+                    particles=incoming.particles,
+                    energy=incoming.energy,
+                    particle_charges=incoming.particle_charges,
+                    survived_probabilities=torch.zeros_like(
+                        incoming.survived_probabilities
+                    ),
+                )
+        else:
+            return deepcopy(incoming)
 
     @property
     def reading(self) -> torch.Tensor:
@@ -194,7 +214,7 @@ class Screen(Element):
             return self.cached_reading
 
         read_beam = self.get_read_beam()
-        if read_beam is Beam.empty or read_beam is None:
+        if read_beam is None:
             image = torch.zeros(
                 (int(self.effective_resolution[1]), int(self.effective_resolution[0])),
                 device=self.misalignment.device,

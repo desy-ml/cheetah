@@ -26,7 +26,7 @@ class ParticleBeam(Beam):
 
     :param particles: List of 7-dimensional particle vectors.
     :param energy: Reference energy of the beam in eV.
-    :param particle_charges: Charges of macroparticles in the beam in C.
+    :param particle_charges: Charges of the macroparticles in the beam in C.
     :param survived_probabilities: Vector of probabilities that each particle has
         survived (i.e. not been lost), where 1.0 means the particle has survived and
         0.0 means the particle has been lost. Defaults to ones.
@@ -910,7 +910,7 @@ class ParticleBeam(Beam):
 
     @property
     def x(self) -> Optional[torch.Tensor]:
-        return self.particles[..., 0] if self is not Beam.empty else None
+        return self.particles[..., 0]
 
     @x.setter
     def x(self, value: torch.Tensor) -> None:
@@ -918,28 +918,26 @@ class ParticleBeam(Beam):
 
     @property
     def mu_x(self) -> Optional[torch.Tensor]:
-        """Mean of the :math:`x` coordinates of the particles, weighted by their
-        survival probability."""
+        """
+        Mean of the :math:`x` coordinates of the particles, weighted by their
+        survival probability.
+        """
         return (
             torch.sum((self.x * self.survived_probabilities), dim=-1)
             / self.num_particles_survived
-            if self is not Beam.empty
-            else None
         )
 
     @property
     def sigma_x(self) -> Optional[torch.Tensor]:
-        """Standard deviation of the :math:`x` coordinates of the particles, weighted
-        by their survival probability."""
-        return (
-            unbiased_weighted_std(self.x, self.survived_probabilities, dim=-1)
-            if self is not Beam.empty
-            else None
-        )
+        """
+        Standard deviation of the :math:`x` coordinates of the particles, weighted
+        by their survival probability.
+        """
+        return unbiased_weighted_std(self.x, self.survived_probabilities, dim=-1)
 
     @property
     def px(self) -> Optional[torch.Tensor]:
-        return self.particles[..., 1] if self is not Beam.empty else None
+        return self.particles[..., 1]
 
     @px.setter
     def px(self, value: torch.Tensor) -> None:
@@ -947,28 +945,26 @@ class ParticleBeam(Beam):
 
     @property
     def mu_px(self) -> Optional[torch.Tensor]:
-        """Mean of the :math:`px` coordinates of the particles, weighted by their
-        survival probability."""
+        """
+        Mean of the :math:`px` coordinates of the particles, weighted by their
+        survival probability.
+        """
         return (
             torch.sum((self.px * self.survived_probabilities), dim=-1)
             / self.num_particles_survived
-            if self is not Beam.empty
-            else None
         )
 
     @property
     def sigma_px(self) -> Optional[torch.Tensor]:
-        """Standard deviation of the :math:`px` coordinates of the particles, weighted
-        by their survival probability."""
-        return (
-            unbiased_weighted_std(self.px, self.survived_probabilities, dim=-1)
-            if self is not Beam.empty
-            else None
-        )
+        """
+        Standard deviation of the :math:`px` coordinates of the particles, weighted
+        by their survival probability.
+        """
+        return unbiased_weighted_std(self.px, self.survived_probabilities, dim=-1)
 
     @property
     def y(self) -> Optional[torch.Tensor]:
-        return self.particles[..., 2] if self is not Beam.empty else None
+        return self.particles[..., 2]
 
     @y.setter
     def y(self, value: torch.Tensor) -> None:
@@ -979,21 +975,15 @@ class ParticleBeam(Beam):
         return (
             torch.sum((self.y * self.survived_probabilities), dim=-1)
             / self.num_particles_survived
-            if self is not Beam.empty
-            else None
         )
 
     @property
     def sigma_y(self) -> Optional[torch.Tensor]:
-        return (
-            unbiased_weighted_std(self.y, self.survived_probabilities, dim=-1)
-            if self is not Beam.empty
-            else None
-        )
+        return unbiased_weighted_std(self.y, self.survived_probabilities, dim=-1)
 
     @property
     def py(self) -> Optional[torch.Tensor]:
-        return self.particles[..., 3] if self is not Beam.empty else None
+        return self.particles[..., 3]
 
     @py.setter
     def py(self, value: torch.Tensor) -> None:
@@ -1004,21 +994,15 @@ class ParticleBeam(Beam):
         return (
             torch.sum((self.py * self.survived_probabilities), dim=-1)
             / self.num_particles_survived
-            if self is not Beam.empty
-            else None
         )
 
     @property
     def sigma_py(self) -> Optional[torch.Tensor]:
-        return (
-            unbiased_weighted_std(self.py, self.survived_probabilities, dim=-1)
-            if self is not Beam.empty
-            else None
-        )
+        return unbiased_weighted_std(self.py, self.survived_probabilities, dim=-1)
 
     @property
     def tau(self) -> Optional[torch.Tensor]:
-        return self.particles[..., 4] if self is not Beam.empty else None
+        return self.particles[..., 4]
 
     @tau.setter
     def tau(self, value: torch.Tensor) -> None:
@@ -1029,21 +1013,15 @@ class ParticleBeam(Beam):
         return (
             torch.sum((self.tau * self.survived_probabilities), dim=-1)
             / self.num_particles_survived
-            if self is not Beam.empty
-            else None
         )
 
     @property
     def sigma_tau(self) -> Optional[torch.Tensor]:
-        return (
-            unbiased_weighted_std(self.tau, self.survived_probabilities, dim=-1)
-            if self is not Beam.empty
-            else None
-        )
+        return unbiased_weighted_std(self.tau, self.survived_probabilities, dim=-1)
 
     @property
     def p(self) -> Optional[torch.Tensor]:
-        return self.particles[..., 5] if self is not Beam.empty else None
+        return self.particles[..., 5]
 
     @p.setter
     def p(self, value: torch.Tensor) -> None:
@@ -1054,21 +1032,16 @@ class ParticleBeam(Beam):
         return (
             torch.sum((self.p * self.survived_probabilities), dim=-1)
             / self.num_particles_survived
-            if self is not Beam.empty
-            else None
         )
 
     @property
     def sigma_p(self) -> Optional[torch.Tensor]:
-        return (
-            unbiased_weighted_std(self.p, self.survived_probabilities, dim=-1)
-            if self is not Beam.empty
-            else None
-        )
+        return unbiased_weighted_std(self.p, self.survived_probabilities, dim=-1)
 
     @property
     def sigma_xpx(self) -> torch.Tensor:
-        r"""Returns the covariance between x and px. :math:`\sigma_{x, px}^2`.
+        r"""
+        Returns the covariance between x and px. :math:`\sigma_{x, px}^2`.
         It is weighted by the survival probability of the particles.
         """
         return unbiased_weighted_covariance(
@@ -1077,7 +1050,8 @@ class ParticleBeam(Beam):
 
     @property
     def sigma_ypy(self) -> torch.Tensor:
-        r"""Returns the covariance between y and py. :math:`\sigma_{y, py}^2`.
+        r"""
+        Returns the covariance between y and py. :math:`\sigma_{y, py}^2`.
         It is weighted by the survival probability of the particles.
         """
         return unbiased_weighted_covariance(

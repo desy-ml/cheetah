@@ -546,9 +546,7 @@ class SpaceChargeKick(Element):
         :param incoming: Beam of particles entering the element.
         :returns: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty or incoming.particles.shape[0] == 0:
-            return incoming
-        elif isinstance(incoming, ParticleBeam):
+        if isinstance(incoming, ParticleBeam):
             # This flattening is a hack to only think about one vector dimension in the
             # following code. It is reversed at the end of the function.
 
