@@ -27,8 +27,9 @@ class ParticleBeam(Beam):
     :param particles: List of 7-dimensional particle vectors.
     :param energy: Reference energy of the beam in eV.
     :param particle_charges: Charges of macroparticles in the beam in C.
-    :param survived_probabilities: Survival probability of each particle in the beam.
-        Default to array with ones. (1: survive, 0: lost)
+    :param survived_probabilities: Vector of probabilities that each particle has
+        survived (i.e. not been lost), where 1.0 means the particle has survived and
+        0.0 means the particle has been lost. Defaults to ones.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     :param dtype: Data type of the generated particles.
@@ -890,24 +891,21 @@ class ParticleBeam(Beam):
 
     @property
     def total_charge(self) -> torch.Tensor:
-        """Returns the total charge of the beam in C.
-        Note: it does not take into account the survival of the particles.
-        """
-        return torch.sum(self.particle_charges, dim=-1)
-
-    @property
-    def total_charge_survived(self) -> torch.Tensor:
-        """Returns the total charge of the survived macroparticles, in C."""
+        """Total charge of the beam in C, taking into account particle losses."""
         return torch.sum(self.particle_charges * self.survived_probabilities, dim=-1)
 
     @property
     def num_particles(self) -> int:
-        """Length of the macroparticle array, does not account for lost."""
+        """
+        Length of the macroparticle array.
+
+        NOTE: This does not account for lost particles.
+        """
         return self.particles.shape[-2]
 
     @property
     def num_particles_survived(self) -> torch.Tensor:
-        """Returns the number of macroparticles that survived the simulation."""
+        """Number of macroparticles that have survived."""
         return self.survived_probabilities.sum(dim=-1)
 
     @property
