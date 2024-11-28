@@ -102,7 +102,7 @@ class Aperture(Element):
             particles=incoming.particles,
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
-            survived_probabilities=incoming.survived_probabilities * survived_mask,
+            survival_probabilities=incoming.survival_probabilities * survived_mask,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )

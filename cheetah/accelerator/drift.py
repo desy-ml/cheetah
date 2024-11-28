@@ -114,7 +114,7 @@ class Drift(Element):
             ),
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
-            survived_probabilities=incoming.survived_probabilities,
+            survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )

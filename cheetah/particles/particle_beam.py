@@ -27,7 +27,7 @@ class ParticleBeam(Beam):
     :param particles: List of 7-dimensional particle vectors.
     :param energy: Reference energy of the beam in eV.
     :param particle_charges: Charges of the macroparticles in the beam in C.
-    :param survived_probabilities: Vector of probabilities that each particle has
+    :param survival_probabilities: Vector of probabilities that each particle has
         survived (i.e. not been lost), where 1.0 means the particle has survived and
         0.0 means the particle has been lost. Defaults to ones.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
@@ -40,7 +40,7 @@ class ParticleBeam(Beam):
         particles: torch.Tensor,
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
-        survived_probabilities: Optional[torch.Tensor] = None,
+        survival_probabilities: Optional[torch.Tensor] = None,
         device=None,
         dtype=None,
     ) -> None:
@@ -65,10 +65,10 @@ class ParticleBeam(Beam):
         )
         self.register_buffer("energy", energy.to(**factory_kwargs))
         self.register_buffer(
-            "survived_probabilities",
+            "survival_probabilities",
             (
-                survived_probabilities.to(**factory_kwargs)
-                if survived_probabilities is not None
+                survival_probabilities.to(**factory_kwargs)
+                if survival_probabilities is not None
                 else torch.ones(particles.shape[-2], **factory_kwargs)
             ),
         )
@@ -812,7 +812,7 @@ class ParticleBeam(Beam):
         xp_coordinates: torch.Tensor,
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
-        survived_probabilities: Optional[torch.Tensor] = None,
+        survival_probabilities: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
     ) -> torch.Tensor:
@@ -825,7 +825,7 @@ class ParticleBeam(Beam):
             particles=xp_coordinates.clone(),
             energy=energy,
             particle_charges=particle_charges,
-            survived_probabilities=survived_probabilities,
+            survival_probabilities=survival_probabilities,
             device=device,
             dtype=dtype,
         )
@@ -892,7 +892,7 @@ class ParticleBeam(Beam):
     @property
     def total_charge(self) -> torch.Tensor:
         """Total charge of the beam in C, taking into account particle losses."""
-        return torch.sum(self.particle_charges * self.survived_probabilities, dim=-1)
+        return torch.sum(self.particle_charges * self.survival_probabilities, dim=-1)
 
     @property
     def num_particles(self) -> int:
@@ -906,7 +906,7 @@ class ParticleBeam(Beam):
     @property
     def num_particles_survived(self) -> torch.Tensor:
         """Number of macroparticles that have survived."""
-        return self.survived_probabilities.sum(dim=-1)
+        return self.survival_probabilities.sum(dim=-1)
 
     @property
     def x(self) -> Optional[torch.Tensor]:
@@ -923,8 +923,8 @@ class ParticleBeam(Beam):
         survival probability.
         """
         return torch.sum(
-            (self.x * self.survived_probabilities), dim=-1
-        ) / self.survived_probabilities.sum(dim=-1)
+            (self.x * self.survival_probabilities), dim=-1
+        ) / self.survival_probabilities.sum(dim=-1)
 
     @property
     def sigma_x(self) -> Optional[torch.Tensor]:
@@ -933,7 +933,7 @@ class ParticleBeam(Beam):
         by their survival probability.
         """
         return unbiased_weighted_std(
-            self.x, weights=self.survived_probabilities, dim=-1
+            self.x, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -951,8 +951,8 @@ class ParticleBeam(Beam):
         survival probability.
         """
         return torch.sum(
-            (self.px * self.survived_probabilities), dim=-1
-        ) / self.survived_probabilities.sum(dim=-1)
+            (self.px * self.survival_probabilities), dim=-1
+        ) / self.survival_probabilities.sum(dim=-1)
 
     @property
     def sigma_px(self) -> Optional[torch.Tensor]:
@@ -961,7 +961,7 @@ class ParticleBeam(Beam):
         by their survival probability.
         """
         return unbiased_weighted_std(
-            self.px, weights=self.survived_probabilities, dim=-1
+            self.px, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -975,13 +975,13 @@ class ParticleBeam(Beam):
     @property
     def mu_y(self) -> Optional[float]:
         return torch.sum(
-            (self.y * self.survived_probabilities), dim=-1
-        ) / self.survived_probabilities.sum(dim=-1)
+            (self.y * self.survival_probabilities), dim=-1
+        ) / self.survival_probabilities.sum(dim=-1)
 
     @property
     def sigma_y(self) -> Optional[torch.Tensor]:
         return unbiased_weighted_std(
-            self.y, weights=self.survived_probabilities, dim=-1
+            self.y, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -995,13 +995,13 @@ class ParticleBeam(Beam):
     @property
     def mu_py(self) -> Optional[torch.Tensor]:
         return torch.sum(
-            (self.py * self.survived_probabilities), dim=-1
-        ) / self.survived_probabilities.sum(dim=-1)
+            (self.py * self.survival_probabilities), dim=-1
+        ) / self.survival_probabilities.sum(dim=-1)
 
     @property
     def sigma_py(self) -> Optional[torch.Tensor]:
         return unbiased_weighted_std(
-            self.py, weights=self.survived_probabilities, dim=-1
+            self.py, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -1015,13 +1015,13 @@ class ParticleBeam(Beam):
     @property
     def mu_tau(self) -> Optional[torch.Tensor]:
         return torch.sum(
-            (self.tau * self.survived_probabilities), dim=-1
-        ) / self.survived_probabilities.sum(dim=-1)
+            (self.tau * self.survival_probabilities), dim=-1
+        ) / self.survival_probabilities.sum(dim=-1)
 
     @property
     def sigma_tau(self) -> Optional[torch.Tensor]:
         return unbiased_weighted_std(
-            self.tau, weights=self.survived_probabilities, dim=-1
+            self.tau, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -1035,13 +1035,13 @@ class ParticleBeam(Beam):
     @property
     def mu_p(self) -> Optional[torch.Tensor]:
         return torch.sum(
-            (self.p * self.survived_probabilities), dim=-1
-        ) / self.survived_probabilities.sum(dim=-1)
+            (self.p * self.survival_probabilities), dim=-1
+        ) / self.survival_probabilities.sum(dim=-1)
 
     @property
     def sigma_p(self) -> Optional[torch.Tensor]:
         return unbiased_weighted_std(
-            self.p, weights=self.survived_probabilities, dim=-1
+            self.p, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -1051,7 +1051,7 @@ class ParticleBeam(Beam):
         It is weighted by the survival probability of the particles.
         """
         return unbiased_weighted_covariance(
-            self.x, self.px, weights=self.survived_probabilities, dim=-1
+            self.x, self.px, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -1061,7 +1061,7 @@ class ParticleBeam(Beam):
         It is weighted by the survival probability of the particles.
         """
         return unbiased_weighted_covariance(
-            self.y, self.py, weights=self.survived_probabilities, dim=-1
+            self.y, self.py, weights=self.survival_probabilities, dim=-1
         )
 
     @property

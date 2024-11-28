@@ -245,7 +245,7 @@ class Cavity(Element):
                 particles=outgoing_particles,
                 energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
-                survived_probabilities=incoming.survived_probabilities,
+                survival_probabilities=incoming.survival_probabilities,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )

@@ -200,8 +200,8 @@ class Screen(Element):
                     particles=incoming.particles,
                     energy=incoming.energy,
                     particle_charges=incoming.particle_charges,
-                    survived_probabilities=torch.zeros_like(
-                        incoming.survived_probabilities
+                    survival_probabilities=torch.zeros_like(
+                        incoming.survival_probabilities
                     ),
                 )
         else:
