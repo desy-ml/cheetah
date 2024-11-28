@@ -275,16 +275,24 @@ class Screen(Element):
                     )
 
                 image, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).T, bins=self.pixel_bin_edges
+                    torch.stack((read_beam.x, read_beam.y)).T,
+                    bins=self.pixel_bin_edges,
+                    weight=read_beam.particle_charges
+                    * read_beam.survival_probabilities,
                 )
                 image = torch.flipud(image.T)
             elif self.method == "kde":
+                weights = read_beam.particle_charges * read_beam.survival_probabilities
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
                 image = kde_histogram_2d(
-                    x1=read_beam.x,
-                    x2=read_beam.y,
+                    x1=broadcasted_x,
+                    x2=broadcasted_y,
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
+                    weights=broadcasted_weights,
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)
