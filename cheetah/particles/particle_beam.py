@@ -922,10 +922,9 @@ class ParticleBeam(Beam):
         Mean of the :math:`x` coordinates of the particles, weighted by their
         survival probability.
         """
-        return (
-            torch.sum((self.x * self.survived_probabilities), dim=-1)
-            / self.num_particles_survived
-        )
+        return torch.sum(
+            (self.x * self.survived_probabilities), dim=-1
+        ) / self.survived_probabilities.sum(dim=-1)
 
     @property
     def sigma_x(self) -> Optional[torch.Tensor]:
@@ -949,10 +948,9 @@ class ParticleBeam(Beam):
         Mean of the :math:`px` coordinates of the particles, weighted by their
         survival probability.
         """
-        return (
-            torch.sum((self.px * self.survived_probabilities), dim=-1)
-            / self.num_particles_survived
-        )
+        return torch.sum(
+            (self.px * self.survived_probabilities), dim=-1
+        ) / self.survived_probabilities.sum(dim=-1)
 
     @property
     def sigma_px(self) -> Optional[torch.Tensor]:
@@ -972,10 +970,9 @@ class ParticleBeam(Beam):
 
     @property
     def mu_y(self) -> Optional[float]:
-        return (
-            torch.sum((self.y * self.survived_probabilities), dim=-1)
-            / self.num_particles_survived
-        )
+        return torch.sum(
+            (self.y * self.survived_probabilities), dim=-1
+        ) / self.survived_probabilities.sum(dim=-1)
 
     @property
     def sigma_y(self) -> Optional[torch.Tensor]:
@@ -991,10 +988,9 @@ class ParticleBeam(Beam):
 
     @property
     def mu_py(self) -> Optional[torch.Tensor]:
-        return (
-            torch.sum((self.py * self.survived_probabilities), dim=-1)
-            / self.num_particles_survived
-        )
+        return torch.sum(
+            (self.py * self.survived_probabilities), dim=-1
+        ) / self.survived_probabilities.sum(dim=-1)
 
     @property
     def sigma_py(self) -> Optional[torch.Tensor]:
@@ -1010,10 +1006,9 @@ class ParticleBeam(Beam):
 
     @property
     def mu_tau(self) -> Optional[torch.Tensor]:
-        return (
-            torch.sum((self.tau * self.survived_probabilities), dim=-1)
-            / self.num_particles_survived
-        )
+        return torch.sum(
+            (self.tau * self.survived_probabilities), dim=-1
+        ) / self.survived_probabilities.sum(dim=-1)
 
     @property
     def sigma_tau(self) -> Optional[torch.Tensor]:
@@ -1029,10 +1024,9 @@ class ParticleBeam(Beam):
 
     @property
     def mu_p(self) -> Optional[torch.Tensor]:
-        return (
-            torch.sum((self.p * self.survived_probabilities), dim=-1)
-            / self.num_particles_survived
-        )
+        return torch.sum(
+            (self.p * self.survived_probabilities), dim=-1
+        ) / self.survived_probabilities.sum(dim=-1)
 
     @property
     def sigma_p(self) -> Optional[torch.Tensor]:
