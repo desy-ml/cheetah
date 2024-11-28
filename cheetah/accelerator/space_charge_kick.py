@@ -552,22 +552,30 @@ class SpaceChargeKick(Element):
             # This flattening is a hack to only think about one vector dimension in the
             # following code. It is reversed at the end of the function.
 
-            # Make sure that the incoming beam has at least one vector dimension
-            if len(incoming.particles.shape) == 2:
-                is_incoming_vectorized = False
-
-                vectorized_incoming = ParticleBeam(
-                    particles=incoming.particles.unsqueeze(0),
-                    energy=incoming.energy.unsqueeze(0),
-                    particle_charges=incoming.particle_charges.unsqueeze(0),
-                    device=incoming.particles.device,
-                    dtype=incoming.particles.dtype,
-                    survived_probabilities=incoming.survived_probabilities.unsqueeze(0),
-                )
-            else:
-                is_incoming_vectorized = True
-
-                vectorized_incoming = incoming
+            # Make sure that the incoming beam has at least one vector dimension by
+            # broadcasting with a dummy dimension (1,).
+            vector_shape = torch.broadcast_shapes(
+                incoming.particles.shape[:-2],
+                incoming.energy.shape,
+                incoming.particle_charges.shape[:-1],
+                incoming.survived_probabilities.shape[:-1],
+                (1,),
+            )
+            vectorized_incoming = ParticleBeam(
+                particles=torch.broadcast_to(
+                    incoming.particles, (*vector_shape, incoming.num_particles, 7)
+                ),
+                energy=torch.broadcast_to(incoming.energy, vector_shape),
+                particle_charges=torch.broadcast_to(
+                    incoming.particle_charges, (*vector_shape, incoming.num_particles)
+                ),
+                survived_probabilities=torch.broadcast_to(
+                    incoming.survived_probabilities,
+                    (*vector_shape, incoming.num_particles),
+                ),
+                device=incoming.particles.device,
+                dtype=incoming.particles.dtype,
+            )
 
             flattened_incoming = ParticleBeam(
                 particles=vectorized_incoming.particles.flatten(end_dim=-3),
@@ -575,11 +583,11 @@ class SpaceChargeKick(Element):
                 particle_charges=vectorized_incoming.particle_charges.flatten(
                     end_dim=-2
                 ),
-                device=vectorized_incoming.particles.device,
-                dtype=vectorized_incoming.particles.dtype,
                 survived_probabilities=vectorized_incoming.survived_probabilities.flatten(
                     end_dim=-2
                 ),
+                device=vectorized_incoming.particles.device,
+                dtype=vectorized_incoming.particles.dtype,
             )
             flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
@@ -616,30 +624,25 @@ class SpaceChargeKick(Element):
                 ..., 2
             ] * dt.unsqueeze(-1)
 
-            if not is_incoming_vectorized:
-                # Reshape to the original non-vectorised shape
-                outgoing = ParticleBeam.from_xyz_pxpypz(
-                    xp_coordinates.squeeze(0),
-                    vectorized_incoming.energy.squeeze(0),
-                    particle_charges=vectorized_incoming.particle_charges.squeeze(0),
-                    device=vectorized_incoming.particles.device,
-                    dtype=vectorized_incoming.particles.dtype,
-                    survived_probabilities=vectorized_incoming.survived_probabilities.squeeze(
-                        0
-                    ),
-                )
-            else:
-                # Reverse the flattening of the vector dimensions
-                outgoing = ParticleBeam.from_xyz_pxpypz(
-                    xp_coordinates.unflatten(
-                        dim=0, sizes=vectorized_incoming.particles.shape[:-2]
-                    ),
-                    vectorized_incoming.energy,
-                    particle_charges=vectorized_incoming.particle_charges,
-                    survived_probabilities=vectorized_incoming.survived_probabilities,
-                    device=vectorized_incoming.particles.device,
-                    dtype=vectorized_incoming.particles.dtype,
-                )
+            # Reverse the flattening of the vector dimensions
+            outgoing_vector_shape = torch.broadcast_shapes(
+                incoming.particles.shape[:-2],
+                incoming.energy.shape,
+                incoming.particle_charges.shape[:-1],
+                incoming.survived_probabilities.shape[:-1],
+                self.effect_length.shape,
+            )
+            outgoing = ParticleBeam.from_xyz_pxpypz(
+                xp_coordinates=xp_coordinates.reshape(
+                    (*outgoing_vector_shape, incoming.num_particles, 7)
+                ),
+                energy=incoming.energy,
+                particle_charges=incoming.particle_charges,
+                survived_probabilities=incoming.survived_probabilities,
+                device=incoming.particles.device,
+                dtype=incoming.particles.dtype,
+            )
+
             return outgoing
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")

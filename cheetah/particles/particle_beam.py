@@ -59,18 +59,17 @@ class ParticleBeam(Beam):
             (
                 particle_charges.to(**factory_kwargs)
                 if particle_charges is not None
-                else torch.zeros(particles.shape[:2], **factory_kwargs)
+                else torch.zeros(particles.shape[-2], **factory_kwargs)
             ),
         )
         self.register_buffer("energy", energy.to(**factory_kwargs))
-        if survived_probabilities is not None:
-            # Try to broadcast the survival probability to the particles shape
-            survived_probabilities = survived_probabilities.expand(particles.shape[:-1])
-        else:
-            # If no survival probability provided, default to all particles surviving
-            survived_probabilities = torch.ones(particles.shape[:-1], **factory_kwargs)
         self.register_buffer(
-            "survived_probabilities", survived_probabilities.to(**factory_kwargs)
+            "survived_probabilities",
+            (
+                survived_probabilities.to(**factory_kwargs)
+                if survived_probabilities is not None
+                else torch.ones(particles.shape[-2], **factory_kwargs)
+            ),
         )
 
     @classmethod
