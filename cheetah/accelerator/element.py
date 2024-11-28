@@ -81,9 +81,9 @@ class Element(ABC, nn.Module):
                 new_particles,
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
+                survived_probabilities=incoming.survived_probabilities,
                 device=new_particles.device,
                 dtype=new_particles.dtype,
-                survived_probabilities=incoming.survived_probabilities,
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")

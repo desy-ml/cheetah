@@ -244,12 +244,12 @@ class Cavity(Element):
             return outgoing
         else:  # ParticleBeam
             outgoing = ParticleBeam(
-                outgoing_particles,
-                outgoing_energy,
+                particles=outgoing_particles,
+                energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
+                survived_probabilities=incoming.survived_probabilities,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
-                survived_probabilities=incoming.survived_probabilities,
             )
             return outgoing
 

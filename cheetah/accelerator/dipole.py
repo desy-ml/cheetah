@@ -260,9 +260,9 @@ class Dipole(Element):
             ),
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
+            survived_probabilities=incoming.survived_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
-            survived_probabilities=incoming.survived_probabilities,
         )
         return outgoing_beam
 
