@@ -37,9 +37,7 @@ class BPM(Element):
         )
 
     def track(self, incoming: Beam) -> Beam:
-        if incoming is Beam.empty:
-            self.reading = None
-        elif isinstance(incoming, ParameterBeam):
+        if isinstance(incoming, ParameterBeam):
             self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
         elif isinstance(incoming, ParticleBeam):
             self.reading = torch.stack([incoming.mu_x, incoming.mu_y])

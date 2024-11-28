@@ -103,9 +103,7 @@ class Cavity(Element):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty:
-            return incoming
-        elif isinstance(incoming, (ParameterBeam, ParticleBeam)):
+        if isinstance(incoming, (ParameterBeam, ParticleBeam)):
             return self._track_beam(incoming)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")

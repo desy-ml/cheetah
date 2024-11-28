@@ -60,9 +60,7 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty:
-            return incoming
-        elif isinstance(incoming, ParameterBeam):
+        if isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy)
             mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
