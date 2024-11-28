@@ -4,14 +4,14 @@ import torch
 def unbiased_weighted_covariance(
     input1: torch.Tensor, input2: torch.Tensor, weights: torch.Tensor, dim: int = None
 ) -> torch.Tensor:
-    """Compute the unbiased weighted covariance of two tensors.
-    inputs and weights should be broadcastable.
+    """
+    Compute the unbiased weighted covariance of two tensors.
 
-    :param input1: Input tensor 1. (batch_size, sample_size)
-    :param input2: Input tensor 2. (batch_size, sample_size)
-    :param weights: Weights tensor. (batch_size, sample_size)
+    :param input1: Input tensor 1. (..., sample_size)
+    :param input2: Input tensor 2. (..., sample_size)
+    :param weights: Weights tensor. (..., sample_size)
     :param dim: Dimension along which to compute the covariance.
-    :return: Unbiased weighted covariance. (batch_size, 2, 2)
+    :return: Unbiased weighted covariance. (..., 2, 2)
     """
     weighted_mean1 = torch.sum(input1 * weights, dim=dim) / torch.sum(weights, dim=dim)
     weighted_mean2 = torch.sum(input2 * weights, dim=dim) / torch.sum(weights, dim=dim)
@@ -32,7 +32,6 @@ def unbiased_weighted_variance(
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted variance of a tensor.
-    inputs and weights should be broadcastable.
 
     :param input: Input tensor.
     :param weights: Weights tensor.
@@ -54,7 +53,6 @@ def unbiased_weighted_std(
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted standard deviation of a tensor.
-    inputs and weights should be broadcastable.
 
     :param input: Input tensor.
     :param weights: Weights tensor.
