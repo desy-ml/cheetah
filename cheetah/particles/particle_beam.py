@@ -1,6 +1,8 @@
 from typing import Optional
 
+import numpy as np
 import torch
+from pmd_beamphysics import ParticleGroup
 from scipy import constants
 from scipy.constants import physical_constants
 from torch.distributions import MultivariateNormal
@@ -1073,6 +1075,49 @@ class ParticleBeam(Beam):
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
+
+    def save_as_openpmd_h5(self, filename: str) -> None:
+        """Save the ParticleBeam as an OpenPMD beamphysics HDF5 file.
+
+        :param filename: Path to the file where the beam should be saved.
+        """
+        particle_group = self.to_openpmd_particles()
+        particle_group.writ(filename)
+
+    def to_openpmd_particles(self) -> None:
+        """
+        Convert the beam to an OpenPMD-beamphysics ParticleGroup object.
+
+        :return: OpenPMD-beamphysics ParticleGroup object with the beam's particles.
+        """
+        # For now only support none-batched particles
+        if len(self.particles.shape[0]) != 3:
+            raise ValueError("Only non-batched particles are supported.")
+
+        n_particles = self.num_particles
+        weights = np.ones(n_particles)
+        beta = self.relativistic_beta
+        px = self.px * self.p0c
+        py = self.py * self.p0c
+        pz = self.p0c * (1 + self.p)
+        t = self.tau / (beta * speed_of_light)
+        weights = self.particle_charges
+
+        data = {
+            "x": self.x.numpy(),
+            "y": self.y.numpy(),
+            "z": self.tau.numpy(),
+            "px": px.numpy(),
+            "py": py.numpy(),
+            "pz": pz.numpy(),
+            "t": t.numpy(),
+            "weight": weights,
+            # To be modified after adding support for other species
+            "species": "electron",
+        }
+        particle_group = ParticleGroup(data=data)
+
+        return particle_group
 
     def __repr__(self) -> str:
         return (
