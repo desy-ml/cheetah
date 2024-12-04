@@ -1075,29 +1075,30 @@ class ParticleBeam(Beam):
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
 
     def __getitem__(self, item):
-        # check if energy is batched
-        if len(self.energy.shape) == 0:
-            energy = self.energy
-        else:
-            # if energy is batched then make sure the batch dimension matches the
-            # batch dimension of the particle distribution
-            if not self.energy.shape == self.particles.shape[:-2]:
-                raise RuntimeError(
-                    "particle energy batch shape does not match " "particle batch shape"
-                )
+        vector_shape = torch.broadcast_shapes(
+            self.particles.shape[:-2],
+            self.energy.shape,
+            self.particle_charges.shape[:-1],
+            self.survival_probabilities.shape[:-1],
+        )
+        broadcasted_particles = torch.broadcast_to(
+            self.particles, (*vector_shape, self.num_particles, 7)
+        )
+        broadcasted_energy = torch.broadcast_to(self.energy, vector_shape)
+        broadcasted_particle_charges = torch.broadcast_to(
+            self.particle_charges, (*vector_shape, self.num_particles)
+        )
+        broadcasted_survival_probabilities = torch.broadcast_to(
+            self.survival_probabilities, (*vector_shape, self.num_particles)
+        )
 
-            energy = self.energy[item]
-
-        # check if particle charges is batched
-        if len(self.particle_charges.shape) > 1:
-            particle_charges = self.particle_charges[item]
-        else:
-            particle_charges = self.particle_charges
-
-        return ParticleBeam(
-            self.particles[item],
-            energy,
-            particle_charges,
+        return self.__class__(
+            particles=broadcasted_particles[item],
+            energy=broadcasted_energy[item],
+            particle_charges=broadcasted_particle_charges[item],
+            survival_probabilities=broadcasted_survival_probabilities[item],
+            device=self.particles.device,
+            dtype=self.particles.dtype,
         )
 
     def __repr__(self) -> str:

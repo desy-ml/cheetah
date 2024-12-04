@@ -179,14 +179,12 @@ def test_indexing_with_vectorized_beamline():
     assert sub_beam.particles.shape == torch.Size([3, 2, 1_000, 7])
     assert sub_beam.energy.shape == torch.Size([3, 2])
     assert sub_beam.particle_charges.shape == torch.Size([3, 2, 1_000])
-    assert sub_beam.surival_probabilities.shape == torch.Size([3, 2, 1_000])
+    assert sub_beam.survival_probabilities.shape == torch.Size([3, 2, 1_000])
 
     assert torch.all(sub_beam.particles == outgoing.particles[:3])
-    assert torch.all(sub_beam.energy == outgoing.energy[:3])
-    assert torch.all(sub_beam.particle_charges == outgoing.particle_charges[:3])
-    assert torch.all(
-        sub_beam.surival_probabilities == outgoing.surival_probabilities[:3]
-    )
+    assert torch.all(sub_beam.energy == outgoing.energy)
+    assert torch.all(sub_beam.particle_charges == outgoing.particle_charges)
+    assert torch.all(sub_beam.survival_probabilities == outgoing.survival_probabilities)
 
 
 def test_indexing_with_vectorized_incoming_beam():
@@ -196,7 +194,9 @@ def test_indexing_with_vectorized_incoming_beam():
     """
     quadrupole = cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(0.1))
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=1_000, sigma_x=torch.tensor(1e-5), energy=torch.rand((5, 2))
+        num_particles=1_000,
+        sigma_x=torch.tensor(1e-5),
+        energy=torch.rand((5, 2)) * 154e6,
     )
 
     outgoing = quadrupole.track(incoming)
@@ -205,13 +205,13 @@ def test_indexing_with_vectorized_incoming_beam():
     assert sub_beam.particles.shape == torch.Size([3, 2, 1_000, 7])
     assert sub_beam.energy.shape == torch.Size([3, 2])
     assert sub_beam.particle_charges.shape == torch.Size([3, 2, 1_000])
-    assert sub_beam.surival_probabilities.shape == torch.Size([3, 2, 1_000])
+    assert sub_beam.survival_probabilities.shape == torch.Size([3, 2, 1_000])
 
-    assert torch.all(sub_beam.particles == outgoing.particles[:3])
-    assert torch.all(sub_beam.energy == outgoing.energy[:3])
-    assert torch.all(sub_beam.particle_charges == outgoing.particle_charges[:3])
-    assert torch.all(
-        sub_beam.surival_probabilities == outgoing.surival_probabilities[:3]
+    assert torch.allclose(sub_beam.particles, outgoing.particles[:3])
+    assert torch.allclose(sub_beam.energy, outgoing.energy[:3])
+    assert torch.allclose(sub_beam.particle_charges, outgoing.particle_charges)
+    assert torch.allclose(
+        sub_beam.survival_probabilities, outgoing.survival_probabilities
     )
 
 
@@ -221,7 +221,7 @@ def test_indexing_fails_for_inconsitent_vectorization():
     inconsistent, i.e. not broadcastable.
     """
     beam = cheetah.ParticleBeam.from_parameters(
-        sigma_x=torch.rand((5, 2)), energy=torch.rand((4, 2))
+        sigma_x=torch.rand((5, 2)), energy=torch.rand((4, 2)) * 154e6
     )
 
     with pytest.raises(RuntimeError):
@@ -230,7 +230,7 @@ def test_indexing_fails_for_inconsitent_vectorization():
 
 def test_indexing_fails_for_invalid_index():
     """Test that indexing into a vectorised beam fails when the index is invalid."""
-    beam = cheetah.ParticleBeam.from_parameters(energy=torch.rand((5, 2)))
+    beam = cheetah.ParticleBeam.from_parameters(energy=torch.rand((5, 2)) * 154e6)
 
     with pytest.raises(IndexError):
         _ = beam[6]
