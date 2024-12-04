@@ -33,6 +33,7 @@ def convert_element(element: "cheetah.Element"):
     params = {
         feauture: feature2nontorch(getattr(element, feauture))
         for feauture in element.defining_features
+        if feauture != "name"
     }
 
     return element.name, element.__class__.__name__, params
