@@ -33,8 +33,6 @@ class Beam(ABC, nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
-    empty = "I'm an empty beam!"
-
     @classmethod
     @abstractmethod
     def from_parameters(

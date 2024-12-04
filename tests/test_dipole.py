@@ -121,19 +121,20 @@ def test_dipole_bmadx_tracking(dtype):
         dtype
     )
 
-    angle = torch.tensor([20 * torch.pi / 180], dtype=dtype)
+    # TODO: See if Bmad-X test dtypes can be cleaned up now that dtype PR was merged
+    angle = torch.tensor(20 * torch.pi / 180, dtype=dtype)
     e1 = angle / 2
     e2 = angle - e1
     dipole_cheetah_bmadx = Dipole(
-        length=torch.tensor([0.5]),
+        length=torch.tensor(0.5),
         angle=angle,
         dipole_e1=e1,
         dipole_e2=e2,
-        tilt=torch.tensor([0.1], dtype=dtype),
-        fringe_integral=torch.tensor([0.5]),
-        fringe_integral_exit=torch.tensor([0.5]),
-        gap=torch.tensor([0.05], dtype=dtype),
-        gap_exit=torch.tensor([0.05], dtype=dtype),
+        tilt=torch.tensor(0.1, dtype=dtype),
+        fringe_integral=torch.tensor(0.5),
+        fringe_integral_exit=torch.tensor(0.5),
+        gap=torch.tensor(0.05, dtype=dtype),
+        gap_exit=torch.tensor(0.05, dtype=dtype),
         fringe_at="both",
         fringe_type="linear_edge",
         tracking_method="bmadx",
