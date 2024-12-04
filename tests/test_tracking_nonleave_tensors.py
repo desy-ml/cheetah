@@ -19,10 +19,10 @@ import cheetah
         cheetah.VerticalCorrector,
     ],
 )
-def test_nonleave_tracking(ElementClass):
+def test_nonleaf_tracking(ElementClass):
     """
-    Test that a beam with non-leave tensors as elements can be tracked through
-    elements with length parameter.
+    Test that a beam with non-leaf tensors as elements can be tracked through elements
+    with length parameter.
     """
     beam = cheetah.ParticleBeam.from_parameters()
 
@@ -36,21 +36,16 @@ def test_nonleave_tracking(ElementClass):
 
 
 @pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Aperture,
-        cheetah.BPM,
-        cheetah.Screen,
-    ],
+    "ElementClass", [cheetah.Aperture, cheetah.BPM, cheetah.Screen]
 )
-def test_nonleave_lenghtless_elements(ElementClass):
+def test_nonleaf_lenghtless_elements(ElementClass):
     """
-    Test that a beam with non-leave tensors as elements can be tracked through
-    elements without length parameter.
+    Test that a beam with non-leaf tensors as elements can be tracked through elements
+    without length parameter.
 
-    The split into lengthless elements is necessary since there is no common
-    constructor for all element classes. Some require a length, some cannot
-    handle a length argument.
+    The split into lengthless elements is necessary since there is no common constructor
+    for all element classes. Some require a length, some cannot handle a length
+    argument.
     """
     beam = cheetah.ParticleBeam.from_parameters()
 

@@ -105,10 +105,8 @@ def test_reference_particle_plot_vectorized_2d():
     segment.plot_overview(incoming=incoming, resolution=0.1, vector_idx=(0, 2))
 
 
-def test_plotting_with_nonleave_tensors():
-    """
-    Test that the plotting routines can handle elements with non-leave tensors.
-    """
+def test_plotting_with_nonleaf_tensors():
+    """Test that the plotting routines can handle elements with non-leaf tensors."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
