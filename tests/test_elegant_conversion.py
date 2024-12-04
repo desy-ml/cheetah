@@ -76,7 +76,7 @@ def test_custom_transfer_map_import():
         ]
     )
 
-    assert torch.allclose(converted.c1e._transfer_map, correct_transfer_map)
+    assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
 
 
 @pytest.mark.parametrize(
