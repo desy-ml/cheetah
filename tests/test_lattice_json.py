@@ -1,14 +1,16 @@
-from cheetah import Segment
+import torch
+
+import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
-def test_save_and_reload(tmp_path):
+def test_save_and_reload_ares_example(tmp_path):
     """
     Test that saving Cheetah `Segment` to LatticeJSON works and that it can be reloaded
-    correctly.
+    correctly at the example of the full ARES lattice.
     """
-    original_segment = Segment.from_ocelot(ares.cell, name="ARES_Segment")
+    original_segment = cheetah.Segment.from_ocelot(ares.cell, name="ARES_Segment")
 
     original_segment.to_lattice_json(
         str(tmp_path / "ares_lattice.json"),
@@ -16,7 +18,9 @@ def test_save_and_reload(tmp_path):
         info="Save and reload test for Cheetah using the ARES lattice",
     )
 
-    reloaded_segment = Segment.from_lattice_json(str(tmp_path / "ares_lattice.json"))
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "ares_lattice.json")
+    )
 
     assert original_segment.name == reloaded_segment.name
     assert len(original_segment.elements) == len(reloaded_segment.elements)
@@ -28,3 +32,39 @@ def test_save_and_reload(tmp_path):
     ):
         assert original_element.name == reloaded_element.name
         assert original_element.__class__ == reloaded_element.__class__
+
+
+def test_save_and_reload_custom_transfer_map(tmp_path):
+    """
+    Test that saving and reloading a `CustomTransferMap` works. `CustomTransferMap`
+    never appears in the ARES lattice and must therefore be tested separately.
+    """
+    custom_transfer_map_element = cheetah.CustomTransferMap(
+        transfer_map=torch.eye(7, 7),
+        length=torch.tensor(1.0),
+        name="my_custom_transfer_map_element",
+    )
+    segment = cheetah.Segment([custom_transfer_map_element], name="test_segment")
+
+    segment.to_lattice_json(
+        str(tmp_path / "custom_transfer_map_lattice.json"),
+        title="Custom Transfer Map LatticeJSON",
+        info="Save and reload test for Cheetah using a custom transfer map",
+    )
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "custom_transfer_map_lattice.json")
+    )
+
+    # I really only care that the transfer map element is recovered correctly, the
+    # segment was tested in a different test.
+    reloaded_custom_transfer_map_element = reloaded_segment.elements[0]
+
+    assert torch.allclose(
+        custom_transfer_map_element._transfer_map,
+        reloaded_custom_transfer_map_element._transfer_map,
+    )
+    assert torch.allclose(
+        custom_transfer_map_element.length, reloaded_custom_transfer_map_element.length
+    )
+    assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
