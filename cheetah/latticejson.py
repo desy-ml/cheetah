@@ -31,9 +31,9 @@ def convert_element(element: "cheetah.Element"):
     :return: Tuple of element name, element class, and element parameters
     """
     params = {
-        feauture: feature2nontorch(getattr(element, feauture))
-        for feauture in element.defining_features
-        if feauture != "name"
+        feature: feature2nontorch(getattr(element, feature))
+        for feature in element.defining_features
+        if feature != "name"
     }
 
     return element.name, element.__class__.__name__, params
