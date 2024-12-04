@@ -71,7 +71,7 @@ def test_drift_bmadx_tracking(dtype):
         "tests/resources/bmadx/incoming.pt", weights_only=False
     ).to(dtype)
     drift = cheetah.Drift(
-        length=torch.tensor([1.0]), tracking_method="bmadx", dtype=dtype
+        length=torch.tensor(1.0), tracking_method="bmadx", dtype=dtype
     )
 
     # Run tracking

@@ -176,7 +176,10 @@ def test_aperture():
     navigator.activate_apertures()
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
-    assert outgoing_beam.num_particles == outgoing_p_array.rparticles.shape[1]
+    assert (
+        int(outgoing_beam.num_particles_survived)
+        == outgoing_p_array.rparticles.shape[1]
+    )
 
 
 def test_aperture_elliptical():
@@ -215,7 +218,13 @@ def test_aperture_elliptical():
     navigator.activate_apertures()
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
-    assert outgoing_beam.num_particles == outgoing_p_array.rparticles.shape[1]
+    assert (
+        int(outgoing_beam.num_particles_survived)
+        == outgoing_p_array.rparticles.shape[1]
+    )
+
+    assert np.allclose(outgoing_beam.mu_x.cpu().numpy(), outgoing_p_array.x().mean())
+    assert np.allclose(outgoing_beam.mu_px.cpu().numpy(), outgoing_p_array.px().mean())
 
 
 def test_solenoid():

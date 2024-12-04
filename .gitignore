@@ -15,5 +15,5 @@ build
 distributions
 
 docs/_build
-*.idea
+
 dev*
