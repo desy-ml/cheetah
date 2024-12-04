@@ -1,14 +1,13 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants, speed_of_light
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -34,18 +33,21 @@ class TransverseDeflectingCavity(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        voltage: Optional[torch.Tensor] = None,
+        phase: Optional[torch.Tensor] = None,
+        frequency: Optional[torch.Tensor] = None,
+        misalignment: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
         num_steps: int = 1,
         tracking_method: Literal["bmadx"] = "bmadx",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length, voltage, phase, frequency, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
@@ -87,7 +89,7 @@ class TransverseDeflectingCavity(Element):
             (
                 torch.as_tensor(tilt, **factory_kwargs)
                 if tilt is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.num_steps = num_steps
@@ -99,7 +101,8 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return not self.is_active
+        # TODO: Implement drrift-like `transfer_map` and set to `self.is_active`
+        return False
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -204,9 +207,12 @@ class TransverseDeflectingCavity(Element):
         )
 
         outgoing_beam = ParticleBeam(
-            torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
-            ref_energy,
+            particles=torch.stack(
+                (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
+            ),
+            energy=ref_energy,
             particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
