@@ -47,7 +47,7 @@ class VerticalCorrector(Element):
             (
                 torch.as_tensor(angle, **factory_kwargs)
                 if angle is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
 
@@ -86,7 +86,7 @@ class VerticalCorrector(Element):
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
-            for i in range(num_splits)
+            for _ in range(num_splits)
         ]
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:

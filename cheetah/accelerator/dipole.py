@@ -49,8 +49,8 @@ class Dipole(Element):
         length: torch.Tensor,
         angle: Optional[torch.Tensor] = None,
         k1: Optional[torch.Tensor] = None,
-        e1: Optional[torch.Tensor] = None,
-        e2: Optional[torch.Tensor] = None,
+        dipole_e1: Optional[torch.Tensor] = None,
+        dipole_e2: Optional[torch.Tensor] = None,
         tilt: Optional[torch.Tensor] = None,
         gap: Optional[torch.Tensor] = None,
         gap_exit: Optional[torch.Tensor] = None,
@@ -68,8 +68,8 @@ class Dipole(Element):
                 length,
                 angle,
                 k1,
-                e1,
-                e2,
+                dipole_e1,
+                dipole_e2,
                 tilt,
                 gap,
                 gap_exit,
@@ -88,7 +88,7 @@ class Dipole(Element):
             (
                 torch.as_tensor(angle, **factory_kwargs)
                 if angle is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -96,23 +96,23 @@ class Dipole(Element):
             (
                 torch.as_tensor(k1, **factory_kwargs)
                 if k1 is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
-            "e1",
+            "_e1",
             (
-                torch.as_tensor(e1, **factory_kwargs)
-                if e1 is not None
-                else torch.zeros_like(self.length)
+                torch.as_tensor(dipole_e1, **factory_kwargs)
+                if dipole_e1 is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
-            "e2",
+            "_e2",
             (
-                torch.as_tensor(e2, **factory_kwargs)
-                if e2 is not None
-                else torch.zeros_like(self.length)
+                torch.as_tensor(dipole_e2, **factory_kwargs)
+                if dipole_e2 is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -120,7 +120,7 @@ class Dipole(Element):
             (
                 torch.as_tensor(fringe_integral, **factory_kwargs)
                 if fringe_integral is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -128,7 +128,7 @@ class Dipole(Element):
             (
                 self.fringe_integral
                 if fringe_integral_exit is None
-                else torch.as_tensor(fringe_integral_exit, **factory_kwargs)
+                else torch.tensor(fringe_integral_exit, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -136,7 +136,7 @@ class Dipole(Element):
             (
                 torch.as_tensor(gap, **factory_kwargs)
                 if gap is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -152,7 +152,7 @@ class Dipole(Element):
             (
                 torch.as_tensor(tilt, **factory_kwargs)
                 if tilt is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.fringe_at = fringe_at
@@ -162,6 +162,22 @@ class Dipole(Element):
     @property
     def hx(self) -> torch.Tensor:
         return torch.where(self.length == 0.0, 0.0, self.angle / self.length)
+
+    @property
+    def dipole_e1(self) -> torch.Tensor:
+        return self._e1
+
+    @dipole_e1.setter
+    def dipole_e1(self, value: torch.Tensor):
+        self._e1 = value
+
+    @property
+    def dipole_e2(self) -> torch.Tensor:
+        return self._e2
+
+    @dipole_e2.setter
+    def dipole_e2(self, value: torch.Tensor):
+        self._e2 = value
 
     @property
     def is_skippable(self) -> bool:
@@ -378,7 +394,7 @@ class Dipole(Element):
         :return: px, py final Bmad cannonical coordinates.
         """
         g = self.angle / self.length
-        e = self.e1 * (location == "entrance") + self.e2 * (location == "exit")
+        e = self._e1 * (location == "entrance") + self._e2 * (location == "exit")
         f_int = self.fringe_integral * (
             location == "entrance"
         ) + self.fringe_integral_exit * (location == "exit")
@@ -431,18 +447,18 @@ class Dipole(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        sec_e = 1.0 / torch.cos(self.e1)
+        sec_e = 1.0 / torch.cos(self._e1)
         phi = (
             self.fringe_integral
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self.e1) ** 2)
+            * (1 + torch.sin(self._e1) ** 2)
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
-        tm[..., 1, 0] = self.hx * torch.tan(self.e1)
-        tm[..., 3, 2] = -self.hx * torch.tan(self.e1 - phi)
+        tm[..., 1, 0] = self.hx * torch.tan(self._e1)
+        tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
 
         return tm
 
@@ -451,18 +467,18 @@ class Dipole(Element):
         device = self.length.device
         dtype = self.length.dtype
 
-        sec_e = 1.0 / torch.cos(self.e2)
+        sec_e = 1.0 / torch.cos(self._e2)
         phi = (
             self.fringe_integral_exit
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self.e2) ** 2)
+            * (1 + torch.sin(self._e2) ** 2)
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
-        tm[..., 1, 0] = self.hx * torch.tan(self.e2)
-        tm[..., 3, 2] = -self.hx * torch.tan(self.e2 - phi)
+        tm[..., 1, 0] = self.hx * torch.tan(self._e2)
+        tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
 
         return tm
 
@@ -476,8 +492,8 @@ class Dipole(Element):
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             + f"angle={repr(self.angle)}, "
             + f"k1={repr(self.k1)}, "
-            + f"e1={repr(self.e1)},"
-            + f"e2={repr(self.e2)},"
+            + f"dipole_e1={repr(self.dipole_e1)},"
+            + f"dipole_e2={repr(self.dipole_e2)},"
             + f"tilt={repr(self.tilt)},"
             + f"gap={repr(self.gap)},"
             + f"gap_exit={repr(self.gap_exit)},"
@@ -495,8 +511,8 @@ class Dipole(Element):
             "length",
             "angle",
             "k1",
-            "e1",
-            "e2",
+            "dipole_e1",
+            "dipole_e2",
             "tilt",
             "gap",
             "gap_exit",
