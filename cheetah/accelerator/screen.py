@@ -204,7 +204,7 @@ class Screen(Element):
                     ),
                 )
         else:
-            return deepcopy(incoming)
+            return incoming.clone()
 
     @property
     def reading(self) -> torch.Tensor:
