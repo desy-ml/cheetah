@@ -127,8 +127,8 @@ def test_dipole_bmadx_tracking(dtype):
     dipole_cheetah_bmadx = Dipole(
         length=torch.tensor([0.5]),
         angle=angle,
-        e1=e1,
-        e2=e2,
+        dipole_e1=e1,
+        dipole_e2=e2,
         tilt=torch.tensor([0.1], dtype=dtype),
         fringe_integral=torch.tensor([0.5]),
         fringe_integral_exit=torch.tensor([0.5]),

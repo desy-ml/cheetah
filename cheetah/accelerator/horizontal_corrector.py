@@ -44,7 +44,7 @@ class HorizontalCorrector(Element):
             (
                 torch.as_tensor(angle, **factory_kwargs)
                 if angle is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
 

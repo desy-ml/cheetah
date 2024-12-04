@@ -55,7 +55,7 @@ class Quadrupole(Element):
             (
                 torch.as_tensor(k1, **factory_kwargs)
                 if k1 is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
@@ -71,7 +71,7 @@ class Quadrupole(Element):
             (
                 torch.as_tensor(tilt, **factory_kwargs)
                 if tilt is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.num_steps = num_steps
