@@ -40,7 +40,7 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     never appears in the ARES lattice and must therefore be tested separately.
     """
     custom_transfer_map_element = cheetah.CustomTransferMap(
-        transfer_map=torch.eye(7, 7),
+        predefined_transfer_map=torch.eye(7, 7),
         length=torch.tensor(1.0),
         name="my_custom_transfer_map_element",
     )
@@ -61,8 +61,8 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     reloaded_custom_transfer_map_element = reloaded_segment.elements[0]
 
     assert torch.allclose(
-        custom_transfer_map_element._transfer_map,
-        reloaded_custom_transfer_map_element._transfer_map,
+        custom_transfer_map_element.predefined_transfer_map,
+        reloaded_custom_transfer_map_element.predefined_transfer_map,
     )
     assert torch.allclose(
         custom_transfer_map_element.length, reloaded_custom_transfer_map_element.length
