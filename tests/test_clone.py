@@ -20,9 +20,7 @@ import cheetah
     ],
 )
 def test_element_buffer_location(ElementClass):
-    """
-    Test that the buffers of cloned elements do not share memory.
-    """
+    """Test that the buffers of cloned elements do not share memory."""
     element = ElementClass(length=torch.tensor(1.0))
     clone = element.clone()
 
@@ -31,17 +29,9 @@ def test_element_buffer_location(ElementClass):
         assert not buffer.data_ptr() == buffer_clone.data_ptr()
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_beam_buffer_location(BeamClass):
-    """
-    Test that the buffers of clones beams do not share memory.
-    """
+    """Test that the buffers of clones beams do not share memory."""
     beam = BeamClass.from_parameters()
     clone = beam.clone()
 
