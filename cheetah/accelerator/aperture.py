@@ -15,8 +15,11 @@ class Aperture(Element):
     """
     Physical aperture.
 
-    :param x_max: half size horizontal offset in [m]
-    :param y_max: half size vertical offset in [m]
+    NOTE: The aperture currently only affects beams of type `ParticleBeam` and only has
+    an effect when the aperture is active.
+
+    :param x_max: half size horizontal offset in [m].
+    :param y_max: half size vertical offset in [m].
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param is_active: If the aperture actually blocks particles.
     :param name: Unique identifier of the element.
@@ -72,7 +75,7 @@ class Aperture(Element):
         if not (isinstance(incoming, ParticleBeam) and self.is_active):
             return incoming
 
-        assert self.x_max >= 0 and self.y_max >= 0
+        assert torch.all(self.x_max >= 0) and torch.all(self.y_max >= 0)
         assert self.shape in [
             "rectangular",
             "elliptical",
@@ -80,33 +83,28 @@ class Aperture(Element):
 
         if self.shape == "rectangular":
             survived_mask = torch.logical_and(
-                torch.logical_and(incoming.x > -self.x_max, incoming.x < self.x_max),
-                torch.logical_and(incoming.y > -self.y_max, incoming.y < self.y_max),
+                torch.logical_and(
+                    incoming.x > -self.x_max.unsqueeze(-1),
+                    incoming.x < self.x_max.unsqueeze(-1),
+                ),
+                torch.logical_and(
+                    incoming.y > -self.y_max.unsqueeze(-1),
+                    incoming.y < self.y_max.unsqueeze(-1),
+                ),
             )
         elif self.shape == "elliptical":
             survived_mask = (
-                incoming.x**2 / self.x_max**2 + incoming.y**2 / self.y_max**2
+                incoming.x**2 / self.x_max.unsqueeze(-1) ** 2
+                + incoming.y**2 / self.y_max.unsqueeze(-1) ** 2
             ) <= 1.0
-        outgoing_particles = incoming.particles[survived_mask]
 
-        outgoing_particle_charges = incoming.particle_charges[survived_mask]
-
-        self.lost_particles = incoming.particles[torch.logical_not(survived_mask)]
-
-        self.lost_particle_charges = incoming.particle_charges[
-            torch.logical_not(survived_mask)
-        ]
-
-        return (
-            ParticleBeam(
-                outgoing_particles,
-                incoming.energy,
-                particle_charges=outgoing_particle_charges,
-                device=outgoing_particles.device,
-                dtype=outgoing_particles.dtype,
-            )
-            if outgoing_particles.shape[0] > 0
-            else ParticleBeam.empty
+        return ParticleBeam(
+            particles=incoming.particles,
+            energy=incoming.energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities * survived_mask,
+            device=incoming.particles.device,
+            dtype=incoming.particles.dtype,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
