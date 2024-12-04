@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 from scipy import constants
@@ -1074,7 +1074,7 @@ class ParticleBeam(Beam):
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Union[int, slice, torch.Tensor]) -> "ParticleBeam":
         vector_shape = torch.broadcast_shapes(
             self.particles.shape[:-2],
             self.energy.shape,
