@@ -1079,6 +1079,7 @@ class ParticleBeam(Beam):
             particles=self.particles.clone(),
             energy=self.energy.clone(),
             particle_charges=self.particle_charges.clone(),
+            survival_probabilities=self.survival_probabilities.clone(),
         )
 
     def __repr__(self) -> str:
