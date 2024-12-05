@@ -19,8 +19,11 @@ import cheetah
         cheetah.VerticalCorrector,
     ],
 )
-def test_element_buffer_location(ElementClass):
-    """Test that the buffers of cloned elements do not share memory."""
+def test_element_buffer_contents_and_location(ElementClass):
+    """
+    Test that the buffers of cloned elements have the same content while not sharing the
+    same memory location.
+    """
     element = ElementClass(length=torch.tensor(1.0))
     clone = element.clone()
 
@@ -30,8 +33,11 @@ def test_element_buffer_location(ElementClass):
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
-def test_beam_buffer_location(BeamClass):
-    """Test that the buffers of clones beams do not share memory."""
+def test_beam_buffer_contents_and_location(BeamClass):
+    """
+    Test that the buffers of cloned beams have the same content while not sharing the
+    same memory location.
+    """
     beam = BeamClass.from_parameters()
     clone = beam.clone()
 
