@@ -1,8 +1,11 @@
-from typing import Optional, Union
+from typing import Any, Optional, Tuple, Union
 
+import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from scipy import constants
 from scipy.constants import physical_constants
+from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
@@ -885,6 +888,180 @@ class ParticleBeam(Beam):
         xp_coords[..., 5] = p
 
         return xp_coords
+
+    def plot_distribution(
+        self,
+        coordinates: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
+        bins: int = 50,
+        scale: float = 1e3,
+        same_lims: bool = False,
+        custom_lims: Optional[np.ndarray] = None,
+        rasterized: bool = True,
+        contour: bool = False,
+        smoothing_factor: Optional[float] = None,
+        axes: Optional[np.ndarray] = None,
+        **kwargs: Any,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """
+        Plot of coordinates projected into 2D planes.
+
+        :param coordinates: Coordinates that will be plotted. Should be a subset of
+            `('x', 'px', 'y', 'py', 'tau', 'p')`, default is
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param bins: Number of bins in histograms, default is 50.
+        :param scale: Scale factor for coordinates (except pz, which is always in %).
+            For example, set to 1e3 for millimeters and milliradians, and 1 for meters
+            and radians.
+        :param same_lims: If set to True, all coordinates will have the same limits
+            given by the largest and lowest values in all coordinates.
+        :param custom_lims: Custom limits for the histograms. If `same_lims` is True,
+            should have shape (2,), providing min and max for every coordinate. If
+            `same_lims` is False, should have shape (n_coords, 2).
+        :param rasterized: Rasterize pcolor meshes for more efficient vectorisation.
+        :param contour: If set to True, plots contours instead of color maps.
+        :param smoothing_factor: If specified, uses a gaussian smoothing filter to
+            smooth the 2D histogram of particle coordinates.
+        :param axes: Array of matplotlib axes objects that should be used for plotting
+            instead of creating a new set of axes.
+        :param kwargs: Additional keyword arguments to be passed to the plotting
+            functions.
+        :return: Tuple with the figure and axes objects.
+        """
+        SPACE_COORDINATES = ("x", "y", "tau")
+        MOMENTUM_COORDINATES = ("px", "py", "p")
+        LABELS = {"x": "x", "px": "p_x", "y": "y", "py": "p_y", "tau": "tau", "p": "p"}
+
+        if axes is None:
+            fig, ax = plt.subplots(
+                len(coordinates), len(coordinates), figsize=(len(coordinates) * 2,) * 2
+            )
+        else:
+            if not axes.shape == (len(coordinates), len(coordinates)):
+                raise ValueError(
+                    "Specified axes object does not have the correct number of axes, "
+                    f"should have shape {(len(coordinates), len(coordinates))}"
+                )
+            ax = axes
+            fig = axes[0, 0].get_figure()
+
+        all_coordinates = []
+
+        for coordinate in coordinates:
+            all_coordinates.append(getattr(self, coordinate).cpu().detach())
+
+        all_coordinates = np.array(all_coordinates)
+
+        if same_lims:
+            if custom_lims is None:
+                coord_min = np.ones(len(coordinates)) * all_coordinates.min()
+                coord_max = np.ones(len(coordinates)) * all_coordinates.max()
+            elif len(custom_lims) == 2:
+                coord_min = np.ones(len(coordinates)) * custom_lims[0]
+                coord_max = np.ones(len(coordinates)) * custom_lims[1]
+            else:
+                raise ValueError("custom lims should have shape 2 when same_lims=True")
+        else:
+            if custom_lims is None:
+                coord_min = all_coordinates.min(axis=1)
+                coord_max = all_coordinates.max(axis=1)
+            elif custom_lims.shape == (len(coordinates), 2):
+                coord_min = custom_lims[:, 0]
+                coord_max = custom_lims[:, 1]
+            else:
+                raise ValueError(
+                    "custom lims should have shape (len(coordinates) x 2) when same_lims=False"
+                )
+
+        for i in range(len(coordinates)):
+            x_coordinate = coordinates[i]
+
+            if x_coordinate in SPACE_COORDINATES and scale == 1e3:
+                x_coordinate_unit = "mm"
+            elif x_coordinate in SPACE_COORDINATES and scale == 1:
+                x_coordinate_unit = "m"
+            elif x_coordinate in MOMENTUM_COORDINATES and scale == 1e3:
+                x_coordinate_unit = "mrad"
+            elif x_coordinate in MOMENTUM_COORDINATES and scale == 1:
+                x_coordinate_unit = "rad"
+            else:
+                raise ValueError(
+                    "scales should be 1 or 1e3, coords should be a subset of ('x', "
+                    "'px', 'y', 'py', 'z', 'pz')"
+                )
+
+            if x_coordinate == "pz":
+                x_array = getattr(self, x_coordinate).cpu().detach() * 100
+                ax[len(coordinates) - 1, i].set_xlabel(f"${LABELS[x_coordinate]}$ (%)")
+                min_x = coord_min[i] * 100
+                max_x = coord_max[i] * 100
+                if i > 0:
+                    ax[i, 0].set_ylabel(f"${LABELS[x_coordinate]}$ (%)")
+
+            else:
+                x_array = getattr(self, x_coordinate).cpu().detach() * scale
+                ax[len(coordinates) - 1, i].set_xlabel(
+                    f"${LABELS[x_coordinate]}$ ({x_coordinate_unit})"
+                )
+                min_x = coord_min[i] * scale
+                max_x = coord_max[i] * scale
+                if i > 0:
+                    ax[i, 0].set_ylabel(
+                        f"${LABELS[x_coordinate]}$ ({x_coordinate_unit})"
+                    )
+
+            h, edges = np.histogram(x_array, bins, range=([min_x, max_x]))
+            centers = (edges[:-1] + edges[1:]) / 2
+
+            ax[i, i].plot(centers, h / np.max(h))
+
+            ax[i, i].yaxis.set_tick_params(left=False, labelleft=False)
+
+            if i != len(coordinates) - 1:
+                ax[i, i].xaxis.set_tick_params(labelbottom=False)
+
+            for j in range(i + 1, len(coordinates)):
+                y_coord = coordinates[j]
+
+                if y_coord == "pz":
+                    y_array = getattr(self, y_coord).cpu().detach() * 100
+                    min_y = coord_min[j] * 100
+                    max_y = coord_max[j] * 100
+
+                else:
+                    y_array = getattr(self, y_coord).cpu().detach() * scale
+                    min_y = coord_min[j] * scale
+                    max_y = coord_max[j] * scale
+
+                xedges_1d = np.linspace(min_x, max_x, bins)
+                yedges_1d = np.linspace(min_y, max_y, bins)
+                H, xedges, yedges = np.histogram2d(
+                    x_array, y_array, bins=(xedges_1d, yedges_1d)
+                )
+
+                if smoothing_factor:
+                    H = gaussian_filter(H, smoothing_factor)
+
+                if contour:
+                    xcenters = (xedges_1d[:-1] + xedges_1d[1:]) / 2
+                    ycenters = (yedges_1d[:-1] + yedges_1d[1:]) / 2
+                    ax[j, i].contour(xcenters, ycenters, H.T / np.max(H), **kwargs)
+                else:
+                    ax[j, i].pcolor(
+                        xedges, yedges, H.T / np.max(H), rasterized=rasterized, **kwargs
+                    )
+
+                ax[j, i].sharex(ax[i, i])
+                ax[i, j].set_visible(False)
+
+                if i != 0:
+                    ax[j, i].yaxis.set_tick_params(labelleft=False)
+
+                if j != len(coordinates) - 1:
+                    ax[j, i].xaxis.set_tick_params(labelbottom=False)
+
+        fig.tight_layout()
+
+        return fig, ax
 
     def __len__(self) -> int:
         return int(self.num_particles)
