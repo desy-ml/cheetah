@@ -45,7 +45,7 @@ class Cavity(Element):
             [length, voltage, phase, frequency], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
         self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))

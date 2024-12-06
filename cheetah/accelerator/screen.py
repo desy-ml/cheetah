@@ -57,7 +57,7 @@ class Screen(Element):
             [pixel_size, misalignment, kde_bandwidth], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         assert method in [
             "histogram",

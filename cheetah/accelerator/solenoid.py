@@ -45,7 +45,7 @@ class Solenoid(Element):
             [length, k, misalignment], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         self.register_buffer("k", torch.tensor(0.0, **factory_kwargs))
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))

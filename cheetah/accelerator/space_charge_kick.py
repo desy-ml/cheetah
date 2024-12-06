@@ -61,7 +61,7 @@ class SpaceChargeKick(Element):
         device, dtype = verify_device_and_dtype([effect_length], device, dtype)
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name)
+        super().__init__(name=name, **self.factory_kwargs)
 
         self.grid_shape = (num_grid_points_x, num_grid_points_y, num_grid_points_tau)
 
