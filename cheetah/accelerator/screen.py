@@ -70,7 +70,6 @@ class Screen(Element):
         self.is_blocking = is_blocking
         self.is_active = is_active
 
-        self.register_buffer("length", torch.tensor(0.0, **factory_kwargs))
         self.register_buffer("pixel_size", torch.tensor((1e-3, 1e-3), **factory_kwargs))
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
         self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
