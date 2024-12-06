@@ -1,9 +1,8 @@
-from typing import Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
-from numpy import ndarray
 from scipy import constants
 from scipy.constants import physical_constants
 from scipy.ndimage import gaussian_filter
@@ -892,151 +891,123 @@ class ParticleBeam(Beam):
 
     def plot_distribution(
         self,
-        coords: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
+        coordinates: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 50,
         scale: float = 1e3,
         same_lims: bool = False,
-        custom_lims: ndarray = None,
+        custom_lims: Optional[np.ndarray] = None,
         rasterized: bool = True,
-        axes: ndarray = None,
         contour: bool = False,
-        smoothing_factor: float = None,
-        **kwargs,
-    ):
+        smoothing_factor: Optional[float] = None,
+        axes: Optional[np.ndarray] = None,
+        **kwargs: Any,
+    ) -> Tuple[plt.Figure, plt.Axes]:
         """
         Plot of coordinates projected into 2D planes.
 
-        Note: kwarg arguments are passed to pcolor or contour plotting functions.
-
-        Parameters
-        ----------
-        coords: array-like
-            coordinates that will be plotted. Should be a
-            subset of ('x', 'px', 'y', 'py', 'z', 'pz').
-            Default: ('x', 'px', 'y', 'py', 'z', 'pz')
-
-        bins: int
-            number of bins in histograms.
-            Default: 50
-
-        scale: float
-            scale factor for coordinates (except pz, which is always in %).
-            1e3 for milimeters and miliradians, and 1 for meters and radians.
-            Default: 1e3
-
-        same_lims: bool
-            if True, all coords will have the same limits given by the
-            largest and lowest values in all coords.
-            Default: False
-
-        custom_lims: array
-            if provided, sets the lims of histograms for each coords.
-            if same_lims is Frue, custom lims should have shape 2
-            providing min and max for every coord.
-            if same_lims is False, custom lims should have shape
-            (n_coords x 2).
-            Default: None
-
-        rasterized: bool, True
-            Rasterize pcolor meshes for more efficient vectorization.
-
-        axes: array, optional
-            Array of matplotlib axes objects that should be used for plotting instead of
-             creating a new set of axes.
-
-        contour: bool, False
-            Flag to specify if contour plotting should be used instead of color map.
-
-        smoothing_factor: float, optional
-            If specified, uses a gaussian smoothing filter to smooth the 2d histogram of
-             particle coordinates.
-
-        Returns
-        -------
-        fig and ax pyplot objects with the projections
-
+        :param coordinates: Coordinates that will be plotted. Should be a subset of
+            `('x', 'px', 'y', 'py', 'tau', 'p')`, default is
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param bins: Number of bins in histograms, default is 50.
+        :param scale: Scale factor for coordinates (except pz, which is always in %).
+            For example, set to 1e3 for millimeters and milliradians, and 1 for meters
+            and radians.
+        :param same_lims: If set to True, all coordinates will have the same limits
+            given by the largest and lowest values in all coordinates.
+        :param custom_lims: Custom limits for the histograms. If `same_lims` is True,
+            should have shape (2,), providing min and max for every coordinate. If
+            `same_lims` is False, should have shape (n_coords, 2).
+        :param rasterized: Rasterize pcolor meshes for more efficient vectorisation.
+        :param contour: If set to True, plots contours instead of color maps.
+        :param smoothing_factor: If specified, uses a gaussian smoothing filter to
+            smooth the 2D histogram of particle coordinates.
+        :param axes: Array of matplotlib axes objects that should be used for plotting
+            instead of creating a new set of axes.
+        :param kwargs: Additional keyword arguments to be passed to the plotting
+            functions.
+        :return: Tuple with the figure and axes objects.
         """
-
-        SPACE_COORDS = ("x", "y", "tau")
-        MOMENTUM_COORDS = ("px", "py", "p")
+        SPACE_COORDINATES = ("x", "y", "tau")
+        MOMENTUM_COORDINATES = ("px", "py", "p")
         LABELS = {"x": "x", "px": "p_x", "y": "y", "py": "p_y", "tau": "tau", "p": "p"}
 
-        n_coords = len(coords)
-
-        fig_size = (n_coords * 2,) * 2
-
         if axes is None:
-            fig, ax = plt.subplots(n_coords, n_coords, figsize=fig_size)
+            fig, ax = plt.subplots(
+                len(coordinates), len(coordinates), figsize=(len(coordinates) * 2,) * 2
+            )
         else:
-            if not axes.shape == (len(coords), len(coords)):
+            if not axes.shape == (len(coordinates), len(coordinates)):
                 raise ValueError(
-                    "Specified axes object does not have the correct "
-                    f"number of axes, should have shape "
-                    f"{(len(coords), len(coords))}"
+                    "Specified axes object does not have the correct number of axes, "
+                    f"should have shape {(len(coordinates), len(coordinates))}"
                 )
             ax = axes
             fig = axes[0, 0].get_figure()
 
-        all_coords = []
+        all_coordinates = []
 
-        for coord in coords:
-            all_coords.append(getattr(self, coord).cpu().detach())
+        for coordinate in coordinates:
+            all_coordinates.append(getattr(self, coordinate).cpu().detach())
 
-        all_coords = np.array(all_coords)
+        all_coordinates = np.array(all_coordinates)
 
         if same_lims:
             if custom_lims is None:
-                coord_min = np.ones(n_coords) * all_coords.min()
-                coord_max = np.ones(n_coords) * all_coords.max()
+                coord_min = np.ones(len(coordinates)) * all_coordinates.min()
+                coord_max = np.ones(len(coordinates)) * all_coordinates.max()
             elif len(custom_lims) == 2:
-                coord_min = np.ones(n_coords) * custom_lims[0]
-                coord_max = np.ones(n_coords) * custom_lims[1]
+                coord_min = np.ones(len(coordinates)) * custom_lims[0]
+                coord_max = np.ones(len(coordinates)) * custom_lims[1]
             else:
                 raise ValueError("custom lims should have shape 2 when same_lims=True")
         else:
             if custom_lims is None:
-                coord_min = all_coords.min(axis=1)
-                coord_max = all_coords.max(axis=1)
-            elif custom_lims.shape == (n_coords, 2):
+                coord_min = all_coordinates.min(axis=1)
+                coord_max = all_coordinates.max(axis=1)
+            elif custom_lims.shape == (len(coordinates), 2):
                 coord_min = custom_lims[:, 0]
                 coord_max = custom_lims[:, 1]
             else:
                 raise ValueError(
-                    "custom lims should have shape (n_coords x 2) when same_lims=False"
+                    "custom lims should have shape (len(coordinates) x 2) when same_lims=False"
                 )
 
-        for i in range(n_coords):
-            x_coord = coords[i]
+        for i in range(len(coordinates)):
+            x_coordinate = coordinates[i]
 
-            if x_coord in SPACE_COORDS and scale == 1e3:
-                x_coord_unit = "mm"
-            elif x_coord in SPACE_COORDS and scale == 1:
-                x_coord_unit = "m"
-            elif x_coord in MOMENTUM_COORDS and scale == 1e3:
-                x_coord_unit = "mrad"
-            elif x_coord in MOMENTUM_COORDS and scale == 1:
-                x_coord_unit = "rad"
+            if x_coordinate in SPACE_COORDINATES and scale == 1e3:
+                x_coordinate_unit = "mm"
+            elif x_coordinate in SPACE_COORDINATES and scale == 1:
+                x_coordinate_unit = "m"
+            elif x_coordinate in MOMENTUM_COORDINATES and scale == 1e3:
+                x_coordinate_unit = "mrad"
+            elif x_coordinate in MOMENTUM_COORDINATES and scale == 1:
+                x_coordinate_unit = "rad"
             else:
                 raise ValueError(
                     "scales should be 1 or 1e3, coords should be a subset of ('x', "
                     "'px', 'y', 'py', 'z', 'pz')"
                 )
 
-            if x_coord == "pz":
-                x_array = getattr(self, x_coord).cpu().detach() * 100
-                ax[n_coords - 1, i].set_xlabel(f"${LABELS[x_coord]}$ (%)")
+            if x_coordinate == "pz":
+                x_array = getattr(self, x_coordinate).cpu().detach() * 100
+                ax[len(coordinates) - 1, i].set_xlabel(f"${LABELS[x_coordinate]}$ (%)")
                 min_x = coord_min[i] * 100
                 max_x = coord_max[i] * 100
                 if i > 0:
-                    ax[i, 0].set_ylabel(f"${LABELS[x_coord]}$ (%)")
+                    ax[i, 0].set_ylabel(f"${LABELS[x_coordinate]}$ (%)")
 
             else:
-                x_array = getattr(self, x_coord).cpu().detach() * scale
-                ax[n_coords - 1, i].set_xlabel(f"${LABELS[x_coord]}$ ({x_coord_unit})")
+                x_array = getattr(self, x_coordinate).cpu().detach() * scale
+                ax[len(coordinates) - 1, i].set_xlabel(
+                    f"${LABELS[x_coordinate]}$ ({x_coordinate_unit})"
+                )
                 min_x = coord_min[i] * scale
                 max_x = coord_max[i] * scale
                 if i > 0:
-                    ax[i, 0].set_ylabel(f"${LABELS[x_coord]}$ ({x_coord_unit})")
+                    ax[i, 0].set_ylabel(
+                        f"${LABELS[x_coordinate]}$ ({x_coordinate_unit})"
+                    )
 
             h, edges = np.histogram(x_array, bins, range=([min_x, max_x]))
             centers = (edges[:-1] + edges[1:]) / 2
@@ -1045,11 +1016,11 @@ class ParticleBeam(Beam):
 
             ax[i, i].yaxis.set_tick_params(left=False, labelleft=False)
 
-            if i != n_coords - 1:
+            if i != len(coordinates) - 1:
                 ax[i, i].xaxis.set_tick_params(labelbottom=False)
 
-            for j in range(i + 1, n_coords):
-                y_coord = coords[j]
+            for j in range(i + 1, len(coordinates)):
+                y_coord = coordinates[j]
 
                 if y_coord == "pz":
                     y_array = getattr(self, y_coord).cpu().detach() * 100
@@ -1085,7 +1056,7 @@ class ParticleBeam(Beam):
                 if i != 0:
                     ax[j, i].yaxis.set_tick_params(labelleft=False)
 
-                if j != n_coords - 1:
+                if j != len(coordinates) - 1:
                     ax[j, i].xaxis.set_tick_params(labelbottom=False)
 
         fig.tight_layout()
