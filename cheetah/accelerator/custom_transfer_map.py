@@ -28,7 +28,7 @@ class CustomTransferMap(Element):
             [predefined_transfer_map, length], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         assert isinstance(predefined_transfer_map, torch.Tensor)
         assert predefined_transfer_map.shape[-2:] == (7, 7)

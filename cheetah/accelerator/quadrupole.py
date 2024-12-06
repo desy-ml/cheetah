@@ -47,7 +47,7 @@ class Quadrupole(Element):
             [length, k1, misalignment, tilt], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         self.register_buffer("k1", torch.tensor(0.0, **factory_kwargs))
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))

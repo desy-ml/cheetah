@@ -37,7 +37,7 @@ class Aperture(Element):
     ) -> None:
         device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         self.register_buffer("x_max", torch.tensor(float("inf"), **factory_kwargs))
         self.register_buffer("y_max", torch.tensor(float("inf"), **factory_kwargs))
