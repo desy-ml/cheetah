@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
@@ -160,7 +159,7 @@ class Screen(Element):
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active
         if self.is_active:
-            copy_of_incoming = deepcopy(incoming)
+            copy_of_incoming = incoming.clone()
 
             if isinstance(incoming, ParameterBeam):
                 copy_of_incoming._mu, _ = torch.broadcast_tensors(
@@ -205,7 +204,7 @@ class Screen(Element):
                     ),
                 )
         else:
-            return deepcopy(incoming)
+            return incoming.clone()
 
     @property
     def reading(self) -> torch.Tensor:

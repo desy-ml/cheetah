@@ -15,7 +15,7 @@ def test_bmad_tutorial():
         [
             cheetah.Drift(length=torch.tensor([0.5]), name="d"),
             cheetah.Dipole(
-                length=torch.tensor([0.5]), e1=torch.tensor([0.1]), name="b"
+                length=torch.tensor([0.5]), dipole_e1=torch.tensor([0.1]), name="b"
             ),  # TODO: What are g and dg?
             cheetah.Quadrupole(
                 length=torch.tensor([0.6]), k1=torch.tensor([0.23]), name="q"
@@ -31,7 +31,7 @@ def test_bmad_tutorial():
     ]
     assert converted.d.length == correct.d.length
     assert converted.b.length == correct.b.length
-    assert converted.b.e1 == correct.b.e1
+    assert converted.b.dipole_e1 == correct.b.dipole_e1
     assert converted.q.length == correct.q.length
     assert converted.q.k1 == correct.q.k1
 
@@ -64,7 +64,7 @@ def test_device_passing(device: torch.device):
     # Check that the properties of the loaded elements are on the correct device
     assert converted.d.length.device.type == device.type
     assert converted.b.length.device.type == device.type
-    assert converted.b.e1.device.type == device.type
+    assert converted.b.dipole_e1.device.type == device.type
     assert converted.q.length.device.type == device.type
     assert converted.q.k1.device.type == device.type
 
@@ -80,6 +80,6 @@ def test_dtype_passing(dtype: torch.dtype):
     # Check that the properties of the loaded elements are of the correct dtype
     assert converted.d.length.dtype == dtype
     assert converted.b.length.dtype == dtype
-    assert converted.b.e1.dtype == dtype
+    assert converted.b.dipole_e1.dtype == dtype
     assert converted.q.length.dtype == dtype
     assert converted.q.k1.dtype == dtype
