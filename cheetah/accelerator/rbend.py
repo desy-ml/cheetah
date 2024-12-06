@@ -15,8 +15,8 @@ class RBend(Dipole):
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
     :param k1: Focussing strength in 1/m^-2.
-    :param e1: The angle of inclination of the entrance face [rad].
-    :param e2: The angle of inclination of the exit face [rad].
+    :param rbend_e1: The angle of inclination of the entrance face in rad.
+    :param rbend_e2: The angle of inclination of the exit face in rad.
     :param gap: The magnet gap in meters. Note that in MAD and ELEGANT: HGAP = gap/2.
     :param gap_exit: The magnet gap at the exit in meters. Note that in MAD and
         ELEGANT: HGAP = gap/2. Only set if different from `gap`. Only used with
