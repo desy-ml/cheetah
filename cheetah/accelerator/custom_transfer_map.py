@@ -33,18 +33,14 @@ class CustomTransferMap(Element):
         assert isinstance(predefined_transfer_map, torch.Tensor)
         assert predefined_transfer_map.shape[-2:] == (7, 7)
 
-        self.register_buffer(
-            "predefined_transfer_map",
-            torch.as_tensor(predefined_transfer_map, **factory_kwargs),
+        self.register_buffer("predefined_transfer_map", None)
+        self.register_buffer("length", torch.tensor(0.0, **factory_kwargs))
+
+        self.predefined_transfer_map = torch.as_tensor(
+            predefined_transfer_map, **factory_kwargs
         )
-        self.register_buffer(
-            "length",
-            (
-                torch.as_tensor(length, **factory_kwargs)
-                if length is not None
-                else torch.zeros(predefined_transfer_map.shape[:-2], **factory_kwargs)
-            ),
-        )
+        if length is not None:
+            self.length = torch.as_tensor(length, **factory_kwargs)
 
     @classmethod
     def from_merging_elements(
