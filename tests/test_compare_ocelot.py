@@ -115,8 +115,8 @@ def test_dipole_with_fringe_field_and_tilt():
         fringe_integral=torch.tensor(0.1),
         gap=torch.tensor(0.2),
         tilt=torch.tensor(tilt_angle),
-        e1=torch.tensor(bend_angle / 2),
-        e2=torch.tensor(bend_angle / 2),
+        dipole_e1=torch.tensor(bend_angle / 2),
+        dipole_e2=torch.tensor(bend_angle / 2),
     )
     outgoing_beam = cheetah_dipole(incoming_beam)
 

@@ -53,7 +53,7 @@ class Solenoid(Element):
             (
                 torch.as_tensor(k, **factory_kwargs)
                 if k is not None
-                else torch.zeros_like(self.length)
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer(
