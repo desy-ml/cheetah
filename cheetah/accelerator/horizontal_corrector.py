@@ -38,7 +38,6 @@ class HorizontalCorrector(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.register_buffer("length", None)
         self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
 
         self.length = torch.as_tensor(length, **factory_kwargs)

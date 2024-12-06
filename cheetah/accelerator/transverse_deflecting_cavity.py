@@ -51,7 +51,6 @@ class TransverseDeflectingCavity(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.register_buffer("length", None)
         self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
         self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
         self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
