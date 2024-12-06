@@ -18,28 +18,31 @@ class CustomTransferMap(Element):
 
     def __init__(
         self,
-        transfer_map: torch.Tensor,
+        predefined_transfer_map: torch.Tensor,
         length: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
         dtype=None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([transfer_map, length], device, dtype)
+        device, dtype = verify_device_and_dtype(
+            [predefined_transfer_map, length], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        assert isinstance(transfer_map, torch.Tensor)
-        assert transfer_map.shape[-2:] == (7, 7)
+        assert isinstance(predefined_transfer_map, torch.Tensor)
+        assert predefined_transfer_map.shape[-2:] == (7, 7)
 
         self.register_buffer(
-            "_transfer_map", torch.as_tensor(transfer_map, **factory_kwargs)
+            "predefined_transfer_map",
+            torch.as_tensor(predefined_transfer_map, **factory_kwargs),
         )
         self.register_buffer(
             "length",
             (
                 torch.as_tensor(length, **factory_kwargs)
                 if length is not None
-                else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
+                else torch.zeros(predefined_transfer_map.shape[:-2], **factory_kwargs)
             ),
         )
 
@@ -83,7 +86,7 @@ class CustomTransferMap(Element):
         )
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return self._transfer_map
+        return self.predefined_transfer_map
 
     @property
     def is_skippable(self) -> bool:
@@ -91,13 +94,15 @@ class CustomTransferMap(Element):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(transfer_map={repr(self._transfer_map)}, "
+            f"{self.__class__.__name__}("
+            + f"predefined_transfer_map={repr(self.predefined_transfer_map)}, "
             + f"length={repr(self.length)}, "
             + f"name={repr(self.name)})"
         )
 
+    @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["transfer_map"]
+        return super().defining_features + ["length", "predefined_transfer_map"]
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]

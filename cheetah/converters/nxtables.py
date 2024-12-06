@@ -146,7 +146,7 @@ def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
             name=name,
             length=torch.tensor(0.43852543421396856),
             angle=torch.tensor(0.8203047484373349),
-            e2=torch.tensor(-0.7504915783575616),
+            dipole_e2=torch.tensor(-0.7504915783575616),
         )
     elif class_name == "MQZM":
         element = cheetah.Quadrupole(name=name, length=torch.tensor(0.122))
