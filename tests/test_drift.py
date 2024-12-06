@@ -91,10 +91,8 @@ def test_drift_bmadx_tracking(dtype):
 
 
 def test_length_as_parameter():
-    """
-    Test that the drift length can be set as a torch.nn.Parameter.
-    """
-    length = torch.Tensor([1.0])
+    """Test that the drift length can be set as a `torch.nn.Parameter`."""
+    length = torch.Tensor(1.0)
     parameter = torch.nn.Parameter(length)
 
     # Create to equal drifts, one with Tensor, one with Parameter
