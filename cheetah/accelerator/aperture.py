@@ -126,12 +126,7 @@ class Aperture(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + [
-            "x_max",
-            "y_max",
-            "shape",
-            "is_active",
-        ]
+        return super().defining_features + ["x_max", "y_max", "shape", "is_active"]
 
     def __repr__(self) -> str:
         return (

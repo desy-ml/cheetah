@@ -1074,6 +1074,14 @@ class ParticleBeam(Beam):
         """Momenta of the individual particles."""
         return torch.sqrt(self.energies**2 - electron_mass_eV**2)
 
+    def clone(self) -> "ParticleBeam":
+        return ParticleBeam(
+            particles=self.particles.clone(),
+            energy=self.energy.clone(),
+            particle_charges=self.particle_charges.clone(),
+            survival_probabilities=self.survival_probabilities.clone(),
+        )
+
     def __getitem__(self, item: Union[int, slice, torch.Tensor]) -> "ParticleBeam":
         vector_shape = torch.broadcast_shapes(
             self.particles.shape[:-2],
