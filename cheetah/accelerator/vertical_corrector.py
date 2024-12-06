@@ -41,15 +41,12 @@ class VerticalCorrector(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "angle",
-            (
-                torch.as_tensor(angle, **factory_kwargs)
-                if angle is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
+        self.register_buffer("length", None)
+        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if angle is not None:
+            self.angle = torch.as_tensor(angle, **factory_kwargs)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device

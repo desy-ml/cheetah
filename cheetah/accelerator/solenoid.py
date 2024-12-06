@@ -47,23 +47,15 @@ class Solenoid(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "k",
-            (
-                torch.as_tensor(k, **factory_kwargs)
-                if k is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.zeros((*self.length.shape[:-1], 2), **factory_kwargs)
-            ),
-        )
+        self.register_buffer("length", None)
+        self.register_buffer("k", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if k is not None:
+            self.k = torch.as_tensor(k, **factory_kwargs)
+        if misalignment is not None:
+            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
