@@ -137,7 +137,7 @@ pre-commit install
 
 ## Acknowledgements
 
-We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser, Chenran Xu, Oliver Stein, Annika Eichler, Andrea Santamaria Garcia and others.
+We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser, Chenran Xu, Annika Eichler, Andrea Santamaria Garcia, Oliver Stein, Christian Hespe, Grégoire Charleux, Remi Lehe, Axel Huebl, Juan Pablo Gonzalez-Aguilera, Ryan Roussel and Auralee Edelen.
 
 The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
 In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
