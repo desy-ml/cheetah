@@ -138,3 +138,19 @@ def test_plotting_with_gradients():
 
     segment.plot_overview(incoming=beam)
     segment.plot_twiss(incoming=beam)
+
+
+def test_plot_6d_particle_beam_distribution():
+    """Test that the 6D `ParticleBeam` distribution plot does not raise an exception."""
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    # Run the plotting to see if it raises an exception
+    _ = beam.plot_distribution(bin_ranges="unit_same", plot_2d_kws={"contour": True})
+
+
+def test_plot_particle_beam_point_cloud():
+    """Test that the `ParticleBeam`'s point cloud plot does not raise an exception."""
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    # Run the plotting to see if it raises an exception
+    _ = beam.plot_point_cloud()
