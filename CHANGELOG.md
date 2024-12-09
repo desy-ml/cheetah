@@ -30,6 +30,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
 - Implement a converter for lattice files imported from Elegant (see #222, #251, #273, #281) (@hespe, @jank324)
 - `Beam` and `Element` objects now have a `.clone()` method to create a deep copy (see #289) (@hespe, @jank324)
+- `ParticleBeam` now ships with methods for plotting the beam distribution in a variety of ways (see #292) (@roussel-ryan, @jank324)
 
 ### 🐛 Bug fixes
 
