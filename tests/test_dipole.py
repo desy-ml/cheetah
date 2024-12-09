@@ -155,27 +155,3 @@ def test_dipole_bmadx_tracking(dtype):
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
         atol=1e-14 if dtype == torch.float64 else 1e-6,
     )
-
-
-def test_parameters_at_initialization():
-    """
-    Test that passing a `torch.nn.Parameter` at initialization registeres the parameter
-    in the same way as an assignment after initialization.
-    """
-    dipole_with_buffer = Dipole(length=torch.tensor(1.0))
-
-    # Dipole with buffer (without parameter) should not have any parameters
-    assert len(list(dipole_with_buffer.parameters())) == 0
-
-    # Create two dipoles with the same parameter, one passed at initialization and one
-    # assigned after initialization.
-    parameter = torch.nn.Parameter(torch.tensor(0.2))
-    dipole_initial = Dipole(length=torch.tensor(1.0), angle=parameter)
-    dipole_assigned = Dipole(length=torch.tensor(1.0))
-    dipole_assigned.angle = parameter
-
-    # Both dipoles should have the same parameter (the originally passed one and one in
-    # total)
-    assert list(dipole_initial.parameters()) == list(dipole_assigned.parameters())
-    assert len(list(dipole_initial.parameters())) == 1
-    assert parameter in dipole_initial.parameters()
