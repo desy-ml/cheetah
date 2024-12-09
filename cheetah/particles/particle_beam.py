@@ -1274,7 +1274,7 @@ class ParticleBeam(Beam):
             axs[i, j].set_visible(False)
 
         # Clean up labels
-        for i, ax_column in enumerate(axs.T):
+        for ax_column in axs.T:
             for ax in ax_column[0:-1]:
                 ax.sharex(ax_column[0])
                 ax.xaxis.set_tick_params(labelbottom=False)
