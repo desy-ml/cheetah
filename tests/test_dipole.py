@@ -155,3 +155,22 @@ def test_dipole_bmadx_tracking(dtype):
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
         atol=1e-14 if dtype == torch.float64 else 1e-6,
     )
+
+
+def test_parameters_at_initialization():
+    """
+    Test that passing a `torch.nn.Parameter` at initialization registeres the
+    parameter in the same way as an assignment after initialization.
+    """
+    param = torch.nn.Parameter(torch.tensor(0.2))
+
+    dipole = Dipole(length=torch.tensor(1.0))
+    dipole_parameter = Dipole(length=torch.tensor(1.0), angle=param)
+
+    assert len(list(dipole.parameters())) == 0
+    dipole.angle = param
+    assert len(list(dipole.parameters())) == 1
+    assert param in dipole.parameters()
+
+    assert len(list(dipole_parameter.parameters())) == 1
+    assert param in dipole_parameter.parameters()
