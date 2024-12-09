@@ -1,5 +1,7 @@
-from typing import Any, Optional, Tuple, Union
+import itertools
+from typing import List, Literal, Optional, Tuple, Union
 
+import matplotlib
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -37,6 +39,23 @@ class ParticleBeam(Beam):
         CUDA GPU is selected if available. The CPU is used otherwise.
     :param dtype: Data type of the generated particles.
     """
+
+    PRETTY_DIMENSION_LABELS = {
+        "x": r"$x$",
+        "px": r"$p_x$",
+        "y": r"$y$",
+        "py": r"$p_y$",
+        "tau": r"$\tau$",
+        "p": r"$\delta$",
+    }
+    DIMENSION_UNITS = {
+        "x": "m",
+        "px": "rad",
+        "y": "m",
+        "py": "rad",
+        "tau": "m",
+        "p": "%",
+    }
 
     def __init__(
         self,
@@ -889,179 +908,448 @@ class ParticleBeam(Beam):
 
         return xp_coords
 
+    def plot_1d_distribution(
+        self,
+        dimension: Literal["x", "px", "y", "py", "tau", "p"],
+        bins: int = 100,
+        bin_range: Optional[Tuple[float]] = None,
+        smoothing: float = 0.0,
+        plot_kws: Optional[dict] = None,
+        ax: Optional[plt.Axes] = None,
+    ) -> plt.Axes:
+        """
+        Plot a 1D histogram of the given dimension of the particle distribution.
+
+        :param dimension: Name of the dimension to plot. Should be one of
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param bins: Number of bins to use for the histogram.
+        :param bin_range: Range of the bins to use for the histogram.
+        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
+            histogram.
+        :param plot_kws: Additional keyword arguments to be passed to `plot` function of
+            matplotlib used to plot the histogram data.
+        :param ax: Matplotlib axes object to use for plotting.
+        :return: Matplotlib axes object with the plot.
+        """
+        if ax is None:
+            _, ax = plt.subplots()
+
+        x_array = getattr(self, dimension).cpu().detach().numpy()
+        histogram, edges = np.histogram(x_array, bins=bins, range=bin_range)
+        centers = (edges[:-1] + edges[1:]) / 2
+
+        if smoothing:
+            histogram = gaussian_filter(histogram, smoothing)
+
+        ax.plot(
+            centers,
+            histogram / histogram.max(),
+            **{"color": "black"} | (plot_kws or {}),
+        )
+        ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
+
+        # Handle units
+        if dimension in ("x", "y", "tau"):
+            unit = "m"
+        elif dimension in ("px", "py"):
+            unit = "rad"
+        elif dimension == "p":
+            unit = "%"
+
+        if dimension in ("x", "px", "y", "py", "tau"):
+            if np.max(np.abs(centers)) > 1.0:
+                ax.set_xlabel(f"{ax.get_xlabel()} ({unit})")
+            elif 1e-3 < np.max(np.abs(centers)) < 1.0:
+                ax.set_xlabel(f"{ax.get_xlabel()} (m{unit})")
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
+                )
+                ax.xaxis.set_minor_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
+                )
+            elif np.max(np.abs(centers)) < 1e-3:
+                ax.set_xlabel(f"{ax.get_xlabel()} (µ{unit})")
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
+                )
+                ax.xaxis.set_minor_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
+                )
+        elif dimension == "p":
+            ax.set_xlabel(f"{ax.get_xlabel()} ({unit})")
+            ax.xaxis.set_major_formatter(
+                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
+            )
+            ax.xaxis.set_minor_formatter(
+                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
+            )
+
+        return ax
+
+    def plot_2d_distribution(
+        self,
+        x_dimension: Literal["x", "px", "y", "py", "tau", "p"],
+        y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
+        contour: bool = False,
+        bins: int = 100,
+        bin_ranges: Optional[Tuple[Tuple[float]]] = None,
+        histogram_smoothing: float = 0.0,
+        contour_smoothing: float = 3.0,
+        pcolormesh_kws: Optional[dict] = None,
+        contour_kws: Optional[dict] = None,
+        ax: Optional[plt.Axes] = None,
+    ) -> plt.Axes:
+        """
+        Plot a 2D histogram of the given dimensions of the particle distribution.
+
+        :param x_dimension: Name of the x dimension to plot. Should be one of
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param y_dimension: Name of the y dimension to plot. Should be one of
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param contour: If `True`, overlay contour lines on the 2D histogram plot.
+        :param bins: Number of bins to use for the histogram in both dimensions.
+        :param bin_ranges: Ranges of the bins to use for the histogram in each
+            dimension.
+        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
+            histogram.
+        :param pcolormesh_kws: Additional keyword arguments to be passed to `pcolormesh`
+            function of matplotlib used to plot the histogram data.
+        :param contour_kws: Additional keyword arguments to be passed to `contour`
+            function of matplotlib used to plot the histogram data.
+        :param ax: Matplotlib axes object to use for plotting.
+        :return: Matplotlib axes object with the plot.
+        """
+        if ax is None:
+            _, ax = plt.subplots()
+
+        histogram, x_edges, y_edges = np.histogram2d(
+            getattr(self, x_dimension).cpu().detach().numpy(),
+            getattr(self, y_dimension).cpu().detach().numpy(),
+            bins=bins,
+            range=bin_ranges,
+        )
+        x_centers = (x_edges[:-1] + x_edges[1:]) / 2
+        y_centers = (y_edges[:-1] + y_edges[1:]) / 2
+
+        # Post-process and plot
+        smoothed_histogram = gaussian_filter(histogram, histogram_smoothing)
+        clipped_histogram = np.where(smoothed_histogram > 1, smoothed_histogram, np.nan)
+        ax.pcolormesh(
+            x_edges,
+            y_edges,
+            clipped_histogram.T / smoothed_histogram.max(),
+            **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
+        )
+
+        if contour:
+            contour_histogram = gaussian_filter(histogram, contour_smoothing)
+
+            ax.contour(
+                x_centers,
+                y_centers,
+                contour_histogram.T / contour_histogram.max(),
+                **{"levels": 3} | (contour_kws or {}),
+            )
+
+        ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[x_dimension]}")
+        ax.set_ylabel(f"{self.PRETTY_DIMENSION_LABELS[y_dimension]}")
+
+        # Handle units
+        if x_dimension in ("x", "y", "tau"):
+            x_unit = "m"
+        elif x_dimension in ("px", "py"):
+            x_unit = "rad"
+        elif x_dimension == "p":
+            x_unit = "%"
+
+        if y_dimension in ("x", "y", "tau"):
+            y_unit = "m"
+        elif y_dimension in ("px", "py"):
+            y_unit = "rad"
+        elif y_dimension == "p":
+            y_unit = "%"
+
+        if x_dimension in ("x", "px", "y", "py", "tau"):
+            if np.max(np.abs(x_centers)) > 1.0:
+                ax.set_xlabel(f"{ax.get_xlabel()} ({x_unit})")
+            elif 1e-3 < np.max(np.abs(x_centers)) < 1.0:
+                ax.set_xlabel(f"{ax.get_xlabel()} (m{x_unit})")
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
+                )
+                ax.xaxis.set_minor_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
+                )
+            elif np.max(np.abs(x_centers)) < 1e-3:
+                ax.set_xlabel(f"{ax.get_xlabel()} (µ{x_unit})")
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
+                )
+                ax.xaxis.set_minor_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
+                )
+        elif x_dimension == "p":
+            ax.set_xlabel(f"{ax.get_xlabel()} ({x_unit})")
+            ax.xaxis.set_major_formatter(
+                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
+            )
+            ax.xaxis.set_minor_formatter(
+                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
+            )
+
+        if y_dimension in ("x", "px", "y", "py", "tau"):
+            if np.max(np.abs(y_centers)) > 1.0:
+                ax.set_ylabel(f"{ax.get_ylabel()} ({y_unit})")
+            elif 1e-3 < np.max(np.abs(y_centers)) < 1.0:
+                ax.set_ylabel(f"{ax.get_ylabel()} (m{y_unit})")
+                ax.yaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e3:.0f}")
+                )
+                ax.yaxis.set_minor_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e3:.0f}")
+                )
+            elif np.max(np.abs(y_centers)) < 1e-3:
+                ax.set_ylabel(f"{ax.get_ylabel()} (µ{y_unit})")
+                ax.yaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e6:.0f}")
+                )
+                ax.yaxis.set_minor_formatter(
+                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e6:.0f}")
+                )
+        elif y_dimension == "p":
+            ax.set_ylabel(f"{ax.get_ylabel()} ({y_unit})")
+            ax.yaxis.set_major_formatter(
+                matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 100:.1f}")
+            )
+            ax.yaxis.set_minor_formatter(
+                matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 100:.1f}")
+            )
+
+        return ax
+
     def plot_distribution(
         self,
-        coordinates: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
-        bins: int = 50,
-        scale: float = 1e3,
-        same_lims: bool = False,
-        custom_lims: Optional[np.ndarray] = None,
-        rasterized: bool = True,
-        contour: bool = False,
-        smoothing_factor: Optional[float] = None,
-        axes: Optional[np.ndarray] = None,
-        **kwargs: Any,
-    ) -> Tuple[plt.Figure, plt.Axes]:
+        dimensions: Tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
+        bins: int = 100,
+        bin_ranges: Optional[
+            Union[Literal["same"], Tuple[float], List[Tuple[float]]]
+        ] = None,
+        plot_1d_kws: Optional[dict] = None,
+        plot_2d_kws: Optional[dict] = None,
+    ) -> plt.Figure:
         """
         Plot of coordinates projected into 2D planes.
 
-        :param coordinates: Coordinates that will be plotted. Should be a subset of
-            `('x', 'px', 'y', 'py', 'tau', 'p')`, default is
+        :param dimensions: Tuple of dimensions to plot. Should be a subset of
             `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param bins: Number of bins in histograms, default is 50.
-        :param scale: Scale factor for coordinates (except pz, which is always in %).
-            For example, set to 1e3 for millimeters and milliradians, and 1 for meters
-            and radians.
-        :param same_lims: If set to True, all coordinates will have the same limits
-            given by the largest and lowest values in all coordinates.
-        :param custom_lims: Custom limits for the histograms. If `same_lims` is True,
-            should have shape (2,), providing min and max for every coordinate. If
-            `same_lims` is False, should have shape (n_coords, 2).
-        :param rasterized: Rasterize pcolor meshes for more efficient vectorisation.
-        :param contour: If set to True, plots contours instead of color maps.
-        :param smoothing_factor: If specified, uses a gaussian smoothing filter to
-            smooth the 2D histogram of particle coordinates.
-        :param axes: Array of matplotlib axes objects that should be used for plotting
-            instead of creating a new set of axes.
-        :param kwargs: Additional keyword arguments to be passed to the plotting
-            functions.
-        :return: Tuple with the figure and axes objects.
+        :param contour: If `True`, overlay contour lines on the 2D histogram plots.
+        :param bins: Number of bins to use for the histograms.
+        :param bin_ranges: Ranges of the bins to use for the histograms. If set to
+            `"unit_same"`, the same range is used for all dimensions that share the same
+            unit. If set to `None`, ranges are determined automatically.
+        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
+            histograms.
+        :param plot_1d_kws: Additional keyword arguments to be passed to
+            `ParticleBeam.plot_1d_distribution` for plotting 1D histograms.
+        :param plot_2d_kws: Additional keyword arguments to be passed to
+            `ParticleBeam.plot_2d_distribution` for plotting 2D histograms.
+        :return: Matplotlib figure object.
         """
-        SPACE_COORDINATES = ("x", "y", "tau")
-        MOMENTUM_COORDINATES = ("px", "py", "p")
-        LABELS = {"x": "x", "px": "p_x", "y": "y", "py": "p_y", "tau": "tau", "p": "p"}
+        fig, axs = plt.subplots(
+            len(dimensions),
+            len(dimensions),
+            figsize=(2 * len(dimensions), 2 * len(dimensions)),
+        )
 
-        if axes is None:
-            fig, ax = plt.subplots(
-                len(coordinates), len(coordinates), figsize=(len(coordinates) * 2,) * 2
+        # Determine bin ranges for all plots in the grid at once
+        full_tensor = (
+            torch.stack([getattr(self, dimension) for dimension in dimensions], dim=-2)
+            .cpu()
+            .detach()
+            .numpy()
+        )
+        if bin_ranges is None:
+            bin_ranges = [
+                (
+                    full_tensor[i, :].min()
+                    - (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
+                    full_tensor[i, :].max()
+                    + (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
+                )
+                for i in range(full_tensor.shape[-2])
+            ]
+        if bin_ranges == "unit_same":
+            spacial_idxs = [
+                i
+                for i, dimension in enumerate(dimensions)
+                if dimension in ["x", "y", "tau"]
+            ]
+            spacial_bin_range = (
+                full_tensor[spacial_idxs, :].min()
+                - (
+                    full_tensor[spacial_idxs, :].max()
+                    - full_tensor[spacial_idxs, :].min()
+                )
+                / 10,
+                full_tensor[spacial_idxs, :].max()
+                + (
+                    full_tensor[spacial_idxs, :].max()
+                    - full_tensor[spacial_idxs, :].min()
+                )
+                / 10,
             )
-        else:
-            if not axes.shape == (len(coordinates), len(coordinates)):
-                raise ValueError(
-                    "Specified axes object does not have the correct number of axes, "
-                    f"should have shape {(len(coordinates), len(coordinates))}"
+            momentum_idxs = [
+                i for i, dimension in enumerate(dimensions) if dimension in ["px", "py"]
+            ]
+            momentum_bin_range = (
+                full_tensor[momentum_idxs, :].min()
+                - (
+                    full_tensor[momentum_idxs, :].max()
+                    - full_tensor[momentum_idxs, :].min()
                 )
-            ax = axes
-            fig = axes[0, 0].get_figure()
-
-        all_coordinates = []
-
-        for coordinate in coordinates:
-            all_coordinates.append(getattr(self, coordinate).cpu().detach())
-
-        all_coordinates = np.array(all_coordinates)
-
-        if same_lims:
-            if custom_lims is None:
-                coord_min = np.ones(len(coordinates)) * all_coordinates.min()
-                coord_max = np.ones(len(coordinates)) * all_coordinates.max()
-            elif len(custom_lims) == 2:
-                coord_min = np.ones(len(coordinates)) * custom_lims[0]
-                coord_max = np.ones(len(coordinates)) * custom_lims[1]
-            else:
-                raise ValueError("custom lims should have shape 2 when same_lims=True")
-        else:
-            if custom_lims is None:
-                coord_min = all_coordinates.min(axis=1)
-                coord_max = all_coordinates.max(axis=1)
-            elif custom_lims.shape == (len(coordinates), 2):
-                coord_min = custom_lims[:, 0]
-                coord_max = custom_lims[:, 1]
-            else:
-                raise ValueError(
-                    "custom lims should have shape (len(coordinates) x 2) when same_lims=False"
+                / 10,
+                full_tensor[momentum_idxs, :].max()
+                + (
+                    full_tensor[momentum_idxs, :].max()
+                    - full_tensor[momentum_idxs, :].min()
                 )
-
-        for i in range(len(coordinates)):
-            x_coordinate = coordinates[i]
-
-            if x_coordinate in SPACE_COORDINATES and scale == 1e3:
-                x_coordinate_unit = "mm"
-            elif x_coordinate in SPACE_COORDINATES and scale == 1:
-                x_coordinate_unit = "m"
-            elif x_coordinate in MOMENTUM_COORDINATES and scale == 1e3:
-                x_coordinate_unit = "mrad"
-            elif x_coordinate in MOMENTUM_COORDINATES and scale == 1:
-                x_coordinate_unit = "rad"
-            else:
-                raise ValueError(
-                    "scales should be 1 or 1e3, coords should be a subset of ('x', "
-                    "'px', 'y', 'py', 'z', 'pz')"
+                / 10,
+            )
+            unitless_idxs = [
+                i for i, dimension in enumerate(dimensions) if dimension in ["p"]
+            ]
+            unitless_bin_range = (
+                full_tensor[unitless_idxs, :].min()
+                - (
+                    full_tensor[unitless_idxs, :].max()
+                    - full_tensor[unitless_idxs, :].min()
                 )
-
-            if x_coordinate == "pz":
-                x_array = getattr(self, x_coordinate).cpu().detach() * 100
-                ax[len(coordinates) - 1, i].set_xlabel(f"${LABELS[x_coordinate]}$ (%)")
-                min_x = coord_min[i] * 100
-                max_x = coord_max[i] * 100
-                if i > 0:
-                    ax[i, 0].set_ylabel(f"${LABELS[x_coordinate]}$ (%)")
-
-            else:
-                x_array = getattr(self, x_coordinate).cpu().detach() * scale
-                ax[len(coordinates) - 1, i].set_xlabel(
-                    f"${LABELS[x_coordinate]}$ ({x_coordinate_unit})"
+                / 10,
+                full_tensor[unitless_idxs, :].max()
+                + (
+                    full_tensor[unitless_idxs, :].max()
+                    - full_tensor[unitless_idxs, :].min()
                 )
-                min_x = coord_min[i] * scale
-                max_x = coord_max[i] * scale
-                if i > 0:
-                    ax[i, 0].set_ylabel(
-                        f"${LABELS[x_coordinate]}$ ({x_coordinate_unit})"
+                / 10,
+            )
+            bin_range_dict = {
+                "x": spacial_bin_range,
+                "px": momentum_bin_range,
+                "y": spacial_bin_range,
+                "py": momentum_bin_range,
+                "tau": spacial_bin_range,
+                "p": unitless_bin_range,
+            }
+            bin_ranges = [bin_range_dict[dimension] for dimension in dimensions]
+        if np.asarray(bin_ranges).shape == (2,):
+            bin_ranges = [bin_ranges] * len(dimensions)
+        assert len(bin_ranges) == len(dimensions) and all(
+            len(e) == 2 for e in bin_ranges
+        )
+
+        # Plot diagonal 1D histograms on the diagonal
+        diagonal_axs = [axs[i, i] for i, _ in enumerate(dimensions)]
+        for dimension, bin_range, ax in zip(dimensions, bin_ranges, diagonal_axs):
+            self.plot_1d_distribution(
+                dimension=dimension,
+                bins=bins,
+                bin_range=bin_range,
+                ax=ax,
+                **(plot_1d_kws or {}),
+            )
+
+        # Plot 2D histograms on the off-diagonal
+        for i, j in itertools.combinations(range(len(dimensions)), 2):
+            self.plot_2d_distribution(
+                x_dimension=dimensions[i],
+                y_dimension=dimensions[j],
+                bins=bins,
+                bin_ranges=(bin_ranges[i], bin_ranges[j]),
+                ax=axs[j, i],
+                **(plot_2d_kws or {}),
+            )
+
+        # Hide unused axes
+        for i, j in itertools.combinations(range(len(dimensions)), 2):
+            axs[i, j].set_visible(False)
+
+        # Clean up labels
+        for i, ax_column in enumerate(axs.T):
+            for ax in ax_column[0:-1]:
+                ax.sharex(ax_column[0])
+                ax.xaxis.set_tick_params(labelbottom=False)
+                ax.set_xlabel(None)
+        for i, ax_row in enumerate(axs):
+            for ax in ax_row[1:i]:
+                ax.sharey(ax_row[0])
+                ax.yaxis.set_tick_params(labelleft=False)
+                ax.set_ylabel(None)
+        for i, _ in enumerate(dimensions):
+            axs[i, i].sharey(axs[0, 0])
+            axs[i, i].set_yticks([])
+            axs[i, i].set_ylabel(None)
+
+        return fig
+
+    def plot_point_cloud(
+        self, scatter_kws: Optional[dict] = None, ax: Optional[plt.Axes] = None
+    ) -> plt.Axes:
+        """
+        Plot a 2D scatter plot of the particle distribution.
+
+        :param scatter_kws: Additional keyword arguments to be passed to the `scatter`
+            plotting function of matplotlib.
+        :param ax: Matplotlib axes object to use for plotting.
+        :return: Matplotlib axes object with the plot.
+        """
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(projection="3d")
+
+        ax.scatter(
+            self.x.cpu().detach().numpy(),
+            self.tau.cpu().detach().numpy(),
+            self.y.cpu().detach().numpy(),
+            c=self.p.cpu().detach().numpy(),
+            **(scatter_kws or {}),
+        )
+        ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS['x']}")
+        ax.set_ylabel(f"{self.PRETTY_DIMENSION_LABELS['tau']}")
+        ax.set_zlabel(f"{self.PRETTY_DIMENSION_LABELS['y']}")
+
+        # Handle units
+        for dimension, axis in zip(["x", "y", "tau"], [ax.xaxis, ax.yaxis, ax.zaxis]):
+            if dimension in ("x", "y", "tau"):
+                if (
+                    np.max(np.abs(getattr(self, dimension).cpu().detach().numpy()))
+                    > 1.0
+                ):
+                    axis.set_label_text(f"{axis.get_label_text()} (m)")
+                elif (
+                    1e-3
+                    < np.max(np.abs(getattr(self, dimension).cpu().detach().numpy()))
+                    < 1.0
+                ):
+                    axis.set_label_text(f"{axis.get_label_text()} (m)")
+                    axis.set_major_formatter(
+                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
+                    )
+                    axis.set_minor_formatter(
+                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
+                    )
+                elif (
+                    np.max(np.abs(getattr(self, dimension).cpu().detach().numpy()))
+                    < 1e-3
+                ):
+                    axis.set_label_text(f"{axis.get_label_text()} (µm)")
+                    axis.set_major_formatter(
+                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
+                    )
+                    axis.set_minor_formatter(
+                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
                     )
 
-            h, edges = np.histogram(x_array, bins, range=([min_x, max_x]))
-            centers = (edges[:-1] + edges[1:]) / 2
-
-            ax[i, i].plot(centers, h / np.max(h))
-
-            ax[i, i].yaxis.set_tick_params(left=False, labelleft=False)
-
-            if i != len(coordinates) - 1:
-                ax[i, i].xaxis.set_tick_params(labelbottom=False)
-
-            for j in range(i + 1, len(coordinates)):
-                y_coord = coordinates[j]
-
-                if y_coord == "pz":
-                    y_array = getattr(self, y_coord).cpu().detach() * 100
-                    min_y = coord_min[j] * 100
-                    max_y = coord_max[j] * 100
-
-                else:
-                    y_array = getattr(self, y_coord).cpu().detach() * scale
-                    min_y = coord_min[j] * scale
-                    max_y = coord_max[j] * scale
-
-                xedges_1d = np.linspace(min_x, max_x, bins)
-                yedges_1d = np.linspace(min_y, max_y, bins)
-                H, xedges, yedges = np.histogram2d(
-                    x_array, y_array, bins=(xedges_1d, yedges_1d)
-                )
-
-                if smoothing_factor:
-                    H = gaussian_filter(H, smoothing_factor)
-
-                if contour:
-                    xcenters = (xedges_1d[:-1] + xedges_1d[1:]) / 2
-                    ycenters = (yedges_1d[:-1] + yedges_1d[1:]) / 2
-                    ax[j, i].contour(xcenters, ycenters, H.T / np.max(H), **kwargs)
-                else:
-                    ax[j, i].pcolor(
-                        xedges, yedges, H.T / np.max(H), rasterized=rasterized, **kwargs
-                    )
-
-                ax[j, i].sharex(ax[i, i])
-                ax[i, j].set_visible(False)
-
-                if i != 0:
-                    ax[j, i].yaxis.set_tick_params(labelleft=False)
-
-                if j != len(coordinates) - 1:
-                    ax[j, i].xaxis.set_tick_params(labelbottom=False)
-
-        fig.tight_layout()
-
-        return fig, ax
+        return ax
 
     def __len__(self) -> int:
         return int(self.num_particles)
