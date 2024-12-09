@@ -1,7 +1,6 @@
 import itertools
 from typing import List, Literal, Optional, Tuple, Union
 
-import matplotlib
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -13,6 +12,8 @@ from torch.distributions import MultivariateNormal
 from cheetah.particles.beam import Beam
 from cheetah.utils import (
     elementwise_linspace,
+    format_axis_as_percentage,
+    format_axis_with_prefixed_unit,
     unbiased_weighted_covariance,
     unbiased_weighted_std,
     verify_device_and_dtype,
@@ -950,39 +951,16 @@ class ParticleBeam(Beam):
 
         # Handle units
         if dimension in ("x", "y", "tau"):
-            unit = "m"
+            base_unit = "m"
         elif dimension in ("px", "py"):
-            unit = "rad"
+            base_unit = "rad"
         elif dimension == "p":
-            unit = "%"
+            base_unit = "%"
 
         if dimension in ("x", "px", "y", "py", "tau"):
-            if np.max(np.abs(centers)) > 1.0:
-                ax.set_xlabel(f"{ax.get_xlabel()} ({unit})")
-            elif 1e-3 < np.max(np.abs(centers)) < 1.0:
-                ax.set_xlabel(f"{ax.get_xlabel()} (m{unit})")
-                ax.xaxis.set_major_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
-                )
-                ax.xaxis.set_minor_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
-                )
-            elif np.max(np.abs(centers)) < 1e-3:
-                ax.set_xlabel(f"{ax.get_xlabel()} (µ{unit})")
-                ax.xaxis.set_major_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
-                )
-                ax.xaxis.set_minor_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
-                )
+            format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
         elif dimension == "p":
-            ax.set_xlabel(f"{ax.get_xlabel()} ({unit})")
-            ax.xaxis.set_major_formatter(
-                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
-            )
-            ax.xaxis.set_minor_formatter(
-                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
-            )
+            format_axis_as_percentage(ax.xaxis)
 
         return ax
 
@@ -1056,74 +1034,28 @@ class ParticleBeam(Beam):
 
         # Handle units
         if x_dimension in ("x", "y", "tau"):
-            x_unit = "m"
+            x_base_unit = "m"
         elif x_dimension in ("px", "py"):
-            x_unit = "rad"
+            x_base_unit = "rad"
         elif x_dimension == "p":
-            x_unit = "%"
+            x_base_unit = "%"
 
         if y_dimension in ("x", "y", "tau"):
-            y_unit = "m"
+            y_base_unit = "m"
         elif y_dimension in ("px", "py"):
-            y_unit = "rad"
+            y_base_unit = "rad"
         elif y_dimension == "p":
-            y_unit = "%"
+            y_base_unit = "%"
 
         if x_dimension in ("x", "px", "y", "py", "tau"):
-            if np.max(np.abs(x_centers)) > 1.0:
-                ax.set_xlabel(f"{ax.get_xlabel()} ({x_unit})")
-            elif 1e-3 < np.max(np.abs(x_centers)) < 1.0:
-                ax.set_xlabel(f"{ax.get_xlabel()} (m{x_unit})")
-                ax.xaxis.set_major_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
-                )
-                ax.xaxis.set_minor_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
-                )
-            elif np.max(np.abs(x_centers)) < 1e-3:
-                ax.set_xlabel(f"{ax.get_xlabel()} (µ{x_unit})")
-                ax.xaxis.set_major_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
-                )
-                ax.xaxis.set_minor_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
-                )
+            format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
         elif x_dimension == "p":
-            ax.set_xlabel(f"{ax.get_xlabel()} ({x_unit})")
-            ax.xaxis.set_major_formatter(
-                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
-            )
-            ax.xaxis.set_minor_formatter(
-                matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 100:.1f}")
-            )
+            format_axis_as_percentage(ax.xaxis)
 
         if y_dimension in ("x", "px", "y", "py", "tau"):
-            if np.max(np.abs(y_centers)) > 1.0:
-                ax.set_ylabel(f"{ax.get_ylabel()} ({y_unit})")
-            elif 1e-3 < np.max(np.abs(y_centers)) < 1.0:
-                ax.set_ylabel(f"{ax.get_ylabel()} (m{y_unit})")
-                ax.yaxis.set_major_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e3:.0f}")
-                )
-                ax.yaxis.set_minor_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e3:.0f}")
-                )
-            elif np.max(np.abs(y_centers)) < 1e-3:
-                ax.set_ylabel(f"{ax.get_ylabel()} (µ{y_unit})")
-                ax.yaxis.set_major_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e6:.0f}")
-                )
-                ax.yaxis.set_minor_formatter(
-                    matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 1e6:.0f}")
-                )
+            format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
         elif y_dimension == "p":
-            ax.set_ylabel(f"{ax.get_ylabel()} ({y_unit})")
-            ax.yaxis.set_major_formatter(
-                matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 100:.1f}")
-            )
-            ax.yaxis.set_minor_formatter(
-                matplotlib.ticker.FuncFormatter(lambda y, _: f"{y * 100:.1f}")
-            )
+            format_axis_as_percentage(ax.yaxis)
 
         return ax
 
@@ -1306,48 +1238,19 @@ class ParticleBeam(Beam):
             fig = plt.figure()
             ax = fig.add_subplot(projection="3d")
 
-        ax.scatter(
-            self.x.cpu().detach().numpy(),
-            self.tau.cpu().detach().numpy(),
-            self.y.cpu().detach().numpy(),
-            c=self.p.cpu().detach().numpy(),
-            **(scatter_kws or {}),
-        )
+        x = self.x.cpu().detach().numpy()
+        tau = self.tau.cpu().detach().numpy()
+        y = self.y.cpu().detach().numpy()
+
+        ax.scatter(x, tau, y, c=self.p.cpu().detach().numpy(), **(scatter_kws or {}))
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS['x']}")
         ax.set_ylabel(f"{self.PRETTY_DIMENSION_LABELS['tau']}")
         ax.set_zlabel(f"{self.PRETTY_DIMENSION_LABELS['y']}")
 
         # Handle units
-        for dimension, axis in zip(["x", "y", "tau"], [ax.xaxis, ax.yaxis, ax.zaxis]):
-            if dimension in ("x", "y", "tau"):
-                if (
-                    np.max(np.abs(getattr(self, dimension).cpu().detach().numpy()))
-                    > 1.0
-                ):
-                    axis.set_label_text(f"{axis.get_label_text()} (m)")
-                elif (
-                    1e-3
-                    < np.max(np.abs(getattr(self, dimension).cpu().detach().numpy()))
-                    < 1.0
-                ):
-                    axis.set_label_text(f"{axis.get_label_text()} (m)")
-                    axis.set_major_formatter(
-                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
-                    )
-                    axis.set_minor_formatter(
-                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e3:.0f}")
-                    )
-                elif (
-                    np.max(np.abs(getattr(self, dimension).cpu().detach().numpy()))
-                    < 1e-3
-                ):
-                    axis.set_label_text(f"{axis.get_label_text()} (µm)")
-                    axis.set_major_formatter(
-                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
-                    )
-                    axis.set_minor_formatter(
-                        matplotlib.ticker.FuncFormatter(lambda x, _: f"{x * 1e6:.0f}")
-                    )
+        format_axis_with_prefixed_unit(ax.xaxis, "m", x)
+        format_axis_with_prefixed_unit(ax.yaxis, "m", tau)
+        format_axis_with_prefixed_unit(ax.zaxis, "m", y)
 
         return ax
 
