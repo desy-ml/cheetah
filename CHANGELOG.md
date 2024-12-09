@@ -45,6 +45,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
 - Fix issue with Dipole hgap conversion in Bmad import (see #261) (@cr-xu)
 - Fix plotting for segments that contain tensors with `require_grad=True` (see #288) (@hespe)
+- Fix bug where `Element.length` could not be set as a `torch.nn.Parameter` (see #301) (@jank324, @hespe)
 
 ### 🐆 Other
 
