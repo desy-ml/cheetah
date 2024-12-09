@@ -49,14 +49,6 @@ class ParticleBeam(Beam):
         "tau": r"$\tau$",
         "p": r"$\delta$",
     }
-    DIMENSION_UNITS = {
-        "x": "m",
-        "px": "rad",
-        "y": "m",
-        "py": "rad",
-        "tau": "m",
-        "p": "%",
-    }
 
     def __init__(
         self,
