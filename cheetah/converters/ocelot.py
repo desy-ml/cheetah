@@ -72,8 +72,8 @@ def convert_element_to_cheetah(
         return cheetah.Dipole(
             length=torch.tensor(element.l, dtype=torch.float32),
             angle=torch.tensor(element.angle, dtype=torch.float32),
-            e1=torch.tensor(element.e1, dtype=torch.float32),
-            e2=torch.tensor(element.e2, dtype=torch.float32),
+            dipole_e1=torch.tensor(element.e1, dtype=torch.float32),
+            dipole_e2=torch.tensor(element.e2, dtype=torch.float32),
             tilt=torch.tensor(element.tilt, dtype=torch.float32),
             fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
             fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
@@ -86,8 +86,8 @@ def convert_element_to_cheetah(
         return cheetah.Dipole(
             length=torch.tensor(element.l, dtype=torch.float32),
             angle=torch.tensor(element.angle, dtype=torch.float32),
-            e1=torch.tensor(element.e1, dtype=torch.float32),
-            e2=torch.tensor(element.e2, dtype=torch.float32),
+            dipole_e1=torch.tensor(element.e1, dtype=torch.float32),
+            dipole_e2=torch.tensor(element.e2, dtype=torch.float32),
             tilt=torch.tensor(element.tilt, dtype=torch.float32),
             fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
             fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),
@@ -100,8 +100,8 @@ def convert_element_to_cheetah(
         return cheetah.RBend(
             length=torch.tensor(element.l, dtype=torch.float32),
             angle=torch.tensor(element.angle, dtype=torch.float32),
-            e1=torch.tensor(element.e1, dtype=torch.float32) - element.angle / 2,
-            e2=torch.tensor(element.e2, dtype=torch.float32) - element.angle / 2,
+            rbend_e1=torch.tensor(element.e1, dtype=torch.float32) - element.angle / 2,
+            rbend_e2=torch.tensor(element.e2, dtype=torch.float32) - element.angle / 2,
             tilt=torch.tensor(element.tilt, dtype=torch.float32),
             fringe_integral=torch.tensor(element.fint, dtype=torch.float32),
             fringe_integral_exit=torch.tensor(element.fintx, dtype=torch.float32),

@@ -88,3 +88,23 @@ def test_drift_bmadx_tracking(dtype):
         atol=1e-14 if dtype == torch.float64 else 0.00001,
         rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )
+
+
+def test_length_as_parameter():
+    """Test that the drift length can be set as a `torch.nn.Parameter`."""
+    length = torch.tensor(1.0)
+    parameter = torch.nn.Parameter(length)
+
+    # Create to equal drifts, one with Tensor, one with Parameter
+    drift = cheetah.Drift(length=length)
+    drift_parameter = cheetah.Drift(length=parameter)
+
+    incoming = cheetah.ParameterBeam.from_parameters()
+    outgoing = drift.track(incoming)
+    outgoing_parameter = drift_parameter.track(incoming)
+
+    # Check that all properties of the two outgoing beams are same
+    for buffer, buffer_parameter in zip(
+        outgoing.buffers(), outgoing_parameter.buffers()
+    ):
+        assert torch.allclose(buffer, buffer_parameter)

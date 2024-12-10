@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -1118,6 +1118,41 @@ class ParticleBeam(Beam):
         particle_group = ParticleGroup(data=data)
 
         return particle_group
+
+    def clone(self) -> "ParticleBeam":
+        return ParticleBeam(
+            particles=self.particles.clone(),
+            energy=self.energy.clone(),
+            particle_charges=self.particle_charges.clone(),
+            survival_probabilities=self.survival_probabilities.clone(),
+        )
+
+    def __getitem__(self, item: Union[int, slice, torch.Tensor]) -> "ParticleBeam":
+        vector_shape = torch.broadcast_shapes(
+            self.particles.shape[:-2],
+            self.energy.shape,
+            self.particle_charges.shape[:-1],
+            self.survival_probabilities.shape[:-1],
+        )
+        broadcasted_particles = torch.broadcast_to(
+            self.particles, (*vector_shape, self.num_particles, 7)
+        )
+        broadcasted_energy = torch.broadcast_to(self.energy, vector_shape)
+        broadcasted_particle_charges = torch.broadcast_to(
+            self.particle_charges, (*vector_shape, self.num_particles)
+        )
+        broadcasted_survival_probabilities = torch.broadcast_to(
+            self.survival_probabilities, (*vector_shape, self.num_particles)
+        )
+
+        return self.__class__(
+            particles=broadcasted_particles[item],
+            energy=broadcasted_energy[item],
+            particle_charges=broadcasted_particle_charges[item],
+            survival_probabilities=broadcasted_survival_probabilities[item],
+            device=self.particles.device,
+            dtype=self.particles.dtype,
+        )
 
     def __repr__(self) -> str:
         return (

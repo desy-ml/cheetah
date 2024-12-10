@@ -237,22 +237,6 @@ class Beam(ABC, nn.Module):
         )
 
     @property
-    def parameters(self) -> dict:
-        return {
-            "mu_x": self.mu_x,
-            "mu_px": self.mu_px,
-            "mu_y": self.mu_y,
-            "mu_py": self.mu_py,
-            "sigma_x": self.sigma_x,
-            "sigma_px": self.sigma_px,
-            "sigma_y": self.sigma_y,
-            "sigma_py": self.sigma_py,
-            "sigma_tau": self.sigma_tau,
-            "sigma_p": self.sigma_p,
-            "energy": self.energy,
-        }
-
-    @property
     @abstractmethod
     def mu_x(self) -> torch.Tensor:
         raise NotImplementedError
@@ -391,6 +375,11 @@ class Beam(ABC, nn.Module):
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
+
+    @abstractmethod
+    def clone(self) -> "Beam":
+        """Return a cloned beam that does not share the underlying memory."""
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return (

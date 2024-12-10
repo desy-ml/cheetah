@@ -484,6 +484,14 @@ class ParameterBeam(Beam):
     def sigma_ypy(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
 
+    def clone(self) -> "ParameterBeam":
+        return ParameterBeam(
+            mu=self._mu.clone(),
+            cov=self._cov.clone(),
+            energy=self.energy.clone(),
+            total_charge=self.total_charge.clone(),
+        )
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(mu_x={repr(self.mu_x)},"
