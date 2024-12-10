@@ -56,24 +56,21 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.register_buffer("particles", particles.to(**factory_kwargs))
+        self.register_buffer("particles", None)
+        self.register_buffer("energy", None)
         self.register_buffer(
-            "particle_charges",
-            (
-                particle_charges.to(**factory_kwargs)
-                if particle_charges is not None
-                else torch.zeros(particles.shape[-2], **factory_kwargs)
-            ),
+            "particle_charges", torch.zeros(particles.shape[-2], **factory_kwargs)
         )
-        self.register_buffer("energy", energy.to(**factory_kwargs))
         self.register_buffer(
-            "survival_probabilities",
-            (
-                survival_probabilities.to(**factory_kwargs)
-                if survival_probabilities is not None
-                else torch.ones(particles.shape[-2], **factory_kwargs)
-            ),
+            "survival_probabilities", torch.ones(particles.shape[-2], **factory_kwargs)
         )
+
+        self.particles = particles.to(**factory_kwargs)
+        self.energy = energy.to(**factory_kwargs)
+        if particle_charges is not None:
+            self.particle_charges = particle_charges.to(**factory_kwargs)
+        if survival_probabilities is not None:
+            self.survival_probabilities = survival_probabilities.to(**factory_kwargs)
 
     @classmethod
     def from_parameters(
