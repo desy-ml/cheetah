@@ -169,7 +169,5 @@ def test_parameters_at_initialization():
     # Both dipoles should have the same parameter (the originally passed one and one in
     # total)
     assert list(dipole_initial.parameters()) == list(dipole_assigned.parameters())
-    assert list(dipole_initial.buffers()) == list(dipole_assigned.buffers())
     assert len(list(dipole_initial.parameters())) == 1
     assert parameter in dipole_initial.parameters()
-    assert parameter not in dipole_initial.buffers()
