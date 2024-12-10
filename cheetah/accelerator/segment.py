@@ -1,4 +1,3 @@
-from copy import deepcopy
 from functools import reduce
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -379,6 +378,11 @@ class Segment(Element):
 
             return incoming
 
+    def clone(self) -> "Segment":
+        return Segment(
+            elements=[element.clone() for element in self.elements], name=self.name
+        )
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [
             split_element
@@ -435,7 +439,7 @@ class Segment(Element):
             case of present vector dimension but no index provided, the first one is
             used by default.
         """
-        reference_segment = deepcopy(self)
+        reference_segment = self.clone()
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
         split_lengths = [split.length for split in splits]
