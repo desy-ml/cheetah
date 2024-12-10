@@ -34,9 +34,9 @@ class Drift(Element):
         dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.length = torch.as_tensor(length, **factory_kwargs)
         self.tracking_method = tracking_method
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:

@@ -61,23 +61,20 @@ class SpaceChargeKick(Element):
         device, dtype = verify_device_and_dtype([effect_length], device, dtype)
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name)
+        super().__init__(name=name, **self.factory_kwargs)
 
         self.grid_shape = (num_grid_points_x, num_grid_points_y, num_grid_points_tau)
 
-        self.register_buffer(
-            "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
-        )
+        self.register_buffer("effect_length", None)
         # In multiples of sigma
-        self.register_buffer(
-            "grid_extend_x", torch.as_tensor(grid_extend_x, **self.factory_kwargs)
-        )
-        self.register_buffer(
-            "grid_extend_y", torch.as_tensor(grid_extend_y, **self.factory_kwargs)
-        )
-        self.register_buffer(
-            "grid_extend_tau", torch.as_tensor(grid_extend_tau, **self.factory_kwargs)
-        )
+        self.register_buffer("grid_extend_x", None)
+        self.register_buffer("grid_extend_y", None)
+        self.register_buffer("grid_extend_tau", None)
+
+        self.effect_length = torch.as_tensor(effect_length, **self.factory_kwargs)
+        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs)
+        self.grid_extend_y = torch.as_tensor(grid_extend_y, **self.factory_kwargs)
+        self.grid_extend_tau = torch.as_tensor(grid_extend_tau, **self.factory_kwargs)
 
     def _deposit_charge_on_grid(
         self,
