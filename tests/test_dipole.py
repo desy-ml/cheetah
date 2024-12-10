@@ -155,3 +155,17 @@ def test_dipole_bmadx_tracking(dtype):
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
         atol=1e-14 if dtype == torch.float64 else 1e-6,
     )
+
+
+def test_buffer_registration():
+    """
+    Test that buffers are properly registered in the dipole element.
+    """
+    length = torch.tensor(0.5)
+    gap_exit = torch.tensor(0.1)
+    dipole = Dipole(length=length, gap_exit=gap_exit)
+
+    # length and gap_exit are tested because they behave slightly different than other
+    # properties. length is inherited and gap_exit is derived from gap by default.
+    assert length in dipole.buffers()
+    assert gap_exit in dipole.buffers()
