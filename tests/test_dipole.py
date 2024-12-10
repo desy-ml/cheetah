@@ -191,6 +191,9 @@ def test_buffer_registration():
         name=name,
     )
 
+    # Check for expected number of buffers
+    assert len(list(dipole.buffers())) == 10
+
     # Should be buffers
     assert length in dipole.buffers()
     assert angle in dipole.buffers()
