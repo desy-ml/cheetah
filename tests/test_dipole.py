@@ -158,14 +158,53 @@ def test_dipole_bmadx_tracking(dtype):
 
 
 def test_buffer_registration():
-    """
-    Test that buffers are properly registered in the dipole element.
-    """
+    """Test that buffers are properly registered in the dipole element."""
     length = torch.tensor(0.5)
+    angle = torch.tensor(2e-3)
+    k1 = torch.tensor(1.2)
+    dipole_e1 = torch.tensor(1e-3)
+    dipole_e2 = torch.tensor(-1e-3)
+    tilt = torch.tensor(0.1)
+    gap = torch.tensor(0.1)
     gap_exit = torch.tensor(0.1)
-    dipole = Dipole(length=length, gap_exit=gap_exit)
+    fringe_integral = torch.tensor(0.5)
+    fringe_integral_exit = torch.tensor(0.5)
+    fringe_at = "both"
+    fringe_type = "linear_edge"
+    tracking_method = "cheetah"
+    name = "some_dipole"
 
-    # length and gap_exit are tested because they behave slightly different than other
-    # properties. length is inherited and gap_exit is derived from gap by default.
+    dipole = Dipole(
+        length=length,
+        angle=angle,
+        k1=k1,
+        dipole_e1=dipole_e1,
+        dipole_e2=dipole_e2,
+        tilt=tilt,
+        gap=gap,
+        gap_exit=gap_exit,
+        fringe_integral=fringe_integral,
+        fringe_integral_exit=fringe_integral_exit,
+        fringe_at=fringe_at,
+        fringe_type=fringe_type,
+        tracking_method=tracking_method,
+        name=name,
+    )
+
+    # Should be buffers
     assert length in dipole.buffers()
+    assert angle in dipole.buffers()
+    assert k1 in dipole.buffers()
+    assert dipole_e1 in dipole.buffers()
+    assert dipole_e2 in dipole.buffers()
+    assert tilt in dipole.buffers()
+    assert gap in dipole.buffers()
     assert gap_exit in dipole.buffers()
+    assert fringe_integral in dipole.buffers()
+    assert fringe_integral_exit in dipole.buffers()
+
+    # Should not be buffers
+    assert fringe_at not in dipole.buffers()
+    assert fringe_type not in dipole.buffers()
+    assert tracking_method not in dipole.buffers()
+    assert name not in dipole.buffers()
