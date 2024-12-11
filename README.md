@@ -160,63 +160,47 @@ The development of Cheetah is a joint effort by members of the following institu
 
 <div
   style="
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 20px;
-        width: 100%;
-        margin: 0px 50px 0px 50px;
-      "
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    margin: 0px 50px 0px 50px;
+  "
 >
-  <a href="https://www.desy.de" style="flex: 1.0;">
-    <img
-      src="images/desy.png"
-      alt="DESY"
-      style="width: 10em;"
-    />
-</a>
-<a href="https://www.kit.edu" style="flex: 1.4;">
-    <img
-      src="images/kit.png"
-      alt="KIT"
-      style="width: 10em;"
-    />
-</a>
-<a href="https://www.lbl.gov" style="flex: 2.1;">
-    <img
-      src="images/lbnl.png"
-      alt="LBNL"
-      style="width: 10em;"
-    />
-</a>
-<a href="https://www.uchicago.edu" style="flex: 2.1;">
+  <a href="https://www.desy.de" style="flex: 1">
+    <img src="images/desy.png" alt="DESY" style="width: 10em" />
+  </a>
+  <a href="https://www.kit.edu" style="flex: 1.4">
+    <img src="images/kit.png" alt="KIT" style="width: 10em" />
+  </a>
+  <a href="https://www.lbl.gov" style="flex: 2.1">
+    <img src="images/lbnl.png" alt="LBNL" style="width: 10em" />
+  </a>
+  <a href="https://www.uchicago.edu" style="flex: 2.1">
     <img
       src="images/university_of_chicago.png"
       alt="University of Chicago"
-      style="width: 10em;"
+      style="width: 10em"
     />
-</a>
-<a href="https://www.slac.stanford.edu" style="flex: 1.8;">
-    <img
-      src="images/slac.png"
-      alt="SLAC"
-      style="width: 10em;"
-    />
-</a>
-<a href="https://www.liverpool.ac.uk" style="flex: 2.0;">
+  </a>
+  <a href="https://www.slac.stanford.edu" style="flex: 1.8">
+    <img src="images/slac.png" alt="SLAC" style="width: 10em" />
+  </a>
+  <a href="https://www.liverpool.ac.uk" style="flex: 2">
     <img
       src="images/university_of_liverpool.png"
       alt="University of Liverpool"
-      style="width: 10em;"
+      style="width: 10em"
     />
-</a>
-<a href="https://www.cockcroft.ac.uk" style="flex: 1.3;">
+  </a>
+  <a href="https://www.cockcroft.ac.uk" style="flex: 1.3">
     <img
       src="images/cockcroft.png"
       alt="Cockcroft Institute"
-      style="width: 10em;"
+      style="width: 10em"
     />
-</a>
+  </a>
 </div>
 
 ### Funding
