@@ -10,7 +10,7 @@ Welcome to Cheetah's documentation!
 
 GitHub repository: https://github.com/desy-ml/cheetah
 
-Paper: https://arxiv.org/abs/2401.05815
+Paper: https://doi.org/10.1103/PhysRevAccelBeams.27.054601
 
 
 Installation
