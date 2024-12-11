@@ -159,40 +159,14 @@ The following people have contributed to the development of Cheetah:
 The development of Cheetah is a joint effort by members of the following institutions:
 
 <table>
-  <tr style="border: none">
-    <td style="border: none">
-      <img src="images/desy.png" alt="DESY" style="width: 5em" />
-    </td>
-    <td style="border: none">
-      <img src="images/kit.png" alt="KIT" style="width: 7em" />
-    </td>
-    <td style="border: none">
-      <img src="images/lbnl.png" alt="LBNL" style="width: 11em" />
-    </td>
-    <td style="border: none">
-      <img
-        src="images/university_of_chicago.png"
-        alt="University of Chicago"
-        style="width: 11em"
-      />
-    </td>
-    <td style="border: none">
-      <img src="images/slac.png" alt="SLAC" style="width: 9em" />
-    </td>
-    <td style="border: none">
-      <img
-        src="images/university_of_liverpool.png"
-        alt="University of Liverpool"
-        style="width: 10em"
-      />
-    </td>
-    <td style="border: none">
-      <img
-        src="images/cockcroft.png"
-        alt="Cockcroft Institute"
-        style="width: 7em"
-      />
-    </td>
+  <tr>
+    <td><img src="images/desy.png" alt="DESY" style="width: 5em;"/></td>
+    <td><img src="images/kit.png" alt="KIT" style="width: 7em;"/></td>
+    <td><img src="images/lbnl.png" alt="LBNL" style="width: 11em;"/></td>
+    <td><img src="images/university_of_chicago.png" alt="University of Chicago" style="width: 11em;"/></td>
+    <td><img src="images/slac.png" alt="SLAC" style="width: 9em;"/></td>
+    <td><img src="images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;"/></td>
+    <td><img src="images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;"/></td>
   </tr>
 </table>
 
