@@ -137,7 +137,78 @@ pre-commit install
 
 ## Acknowledgements
 
-We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser, Chenran Xu, Annika Eichler, Andrea Santamaria Garcia, Oliver Stein, Christian Hespe, Grégoire Charleux, Remi Lehe, Axel Huebl, Juan Pablo Gonzalez-Aguilera, Ryan Roussel and Auralee Edelen.
+### Author Contributions
+
+We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser (@jank324), Chenran Xu (@cr-xu), Annika Eichler (@AnEichler), Andrea Santamaria Garcia (@ansantam), Christian Hespe (@Hespe), Oliver Stein(@OliStein523), Grégoire Charleux (@greglenerd), Remi Lehe (@RemiLehe), Axel Huebl (@ax3l), Juan Pablo Gonzalez-Aguilera (@jp-ga), Ryan Roussel (@roussel-ryan) and Auralee Edelen (@lee-edelen).
+
+### Institutions
+
+The development of Cheetah is a joint effort by members of the following institutions:
+
+<div
+  style="
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+        margin: 0px 50px 0px 50px;
+      "
+>
+  <a href="https://www.desy.de" style="flex: 1.0;">
+    <img
+      src="images/desy.png"
+      alt="DESY"
+      style="width: 10em;"
+    />
+</a>
+<a href="https://www.kit.edu" style="flex: 1.4;">
+    <img
+      src="images/kit.png"
+      alt="KIT"
+      style="width: 10em;"
+    />
+</a>
+<a href="https://www.lbl.gov" style="flex: 2.1;">
+    <img
+      src="images/lbnl.png"
+      alt="LBNL"
+      style="width: 10em;"
+    />
+</a>
+<a href="https://www.uchicago.edu" style="flex: 2.1;">
+    <img
+      src="images/university_of_chicago.png"
+      alt="University of Chicago"
+      style="width: 10em;"
+    />
+</a>
+<a href="https://www.slac.stanford.edu" style="flex: 1.8;">
+    <img
+      src="images/slac.png"
+      alt="SLAC"
+      style="width: 10em;"
+    />
+</a>
+<a href="https://www.liverpool.ac.uk" style="flex: 2.0;">
+    <img
+      src="images/university_of_liverpool.png"
+      alt="University of Liverpool"
+      style="width: 10em;"
+    />
+</a>
+<a href="https://www.cockcroft.ac.uk" style="flex: 1.3;">
+    <img
+      src="images/cockcroft.png"
+      alt="Cockcroft Institute"
+      style="width: 10em;"
+    />
+</a>
+</div>
+
+### Funding
 
 The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
+Further, we gratefully acknowledge funding by the EuXFEL R&D project "RP-513: Learning Based Methods"
+This work was also supported by the U.S. National Science Foundation under Award PHY-1549132, the Center for Bright Beams.
 In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
