@@ -159,37 +159,37 @@ The following people have contributed to the development of Cheetah:
 The development of Cheetah is a joint effort by members of the following institutions:
 
 <a href="https://www.desy.de">
-  <img src="images/desy.png" alt="DESY" style="width: 5em" />
+  <img src="images/desy.png" alt="DESY" style="width: 5em" /><!-- 1.0 -->
 </a>
 <a href="https://www.kit.edu">
-  <img src="images/kit.png" alt="KIT" style="width: 7em" />
+  <img src="images/kit.png" alt="KIT" style="width: 7em" /><!-- 1.4 -->
 </a>
 <a href="https://www.lbl.gov">
-  <img src="images/lbnl.png" alt="LBNL" style="width: 10.5em" />
+  <img src="images/lbnl.png" alt="LBNL" style="width: 11em" /><!-- 2.1 -->
 </a>
 <a href="https://www.uchicago.edu">
   <img
     src="images/university_of_chicago.png"
     alt="University of Chicago"
-    style="width: 10.5em"
-  />
+    style="width: 11em"
+  /><!-- 2.1 -->
 </a>
 <a href="https://www.slac.stanford.edu">
-  <img src="images/slac.png" alt="SLAC" style="width: 9em" />
+  <img src="images/slac.png" alt="SLAC" style="width: 9em" /><!-- 1.8 -->
 </a>
 <a href="https://www.liverpool.ac.uk">
   <img
     src="images/university_of_liverpool.png"
     alt="University of Liverpool"
     style="width: 10em"
-  />
+  /><!-- 2.0 -->
 </a>
 <a href="https://www.cockcroft.ac.uk">
   <img
     src="images/cockcroft.png"
     alt="Cockcroft Institute"
-    style="width: 6.5em"
-  />
+    style="width: 7em"
+  /><!-- 1.3 -->
 </a>
 
 ### Funding
