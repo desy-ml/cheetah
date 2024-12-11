@@ -139,8 +139,6 @@ Institutions
 
 The development of Cheetah is a joint effort by members of the following institutions:
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/logo.png
-
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/desy.png
     :alt: DESY
     :width: 5em
