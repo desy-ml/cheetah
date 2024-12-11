@@ -158,41 +158,28 @@ The following people have contributed to the development of Cheetah:
 
 The development of Cheetah is a joint effort by members of the following institutions:
 
-<img
-  src="images/desy.png"
-  alt="DESY"
-  style="width: 5em; vertical-align: middle"
-/>&nbsp;&nbsp;
-<img
-  src="images/kit.png"
-  alt="KIT"
-  style="width: 7em; vertical-align: middle"
-/>&nbsp;&nbsp;
-<img
-  src="images/lbnl.png"
-  alt="LBNL"
-  style="width: 11em; vertical-align: middle"
-/>&nbsp;&nbsp;
-<img
-  src="images/university_of_chicago.png"
-  alt="University of Chicago"
-  style="width: 11em; vertical-align: middle"
-/>&nbsp;&nbsp;
-<img
-  src="images/slac.png"
-  alt="SLAC"
-  style="width: 9em; vertical-align: middle"
-/>&nbsp;&nbsp;
-<img
-  src="images/university_of_liverpool.png"
-  alt="University of Liverpool"
-  style="width: 10em; vertical-align: middle"
-/>&nbsp;&nbsp;
-<img
-  src="images/cockcroft.png"
-  alt="Cockcroft Institute"
-  style="width: 7em; vertical-align: middle"
-/>
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/desy.png" alt="DESY" style="width: 5em;"/>
+</div>&nbsp;&nbsp;
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/kit.png" alt="KIT" style="width: 7em;"/>
+</div>&nbsp;&nbsp;
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/lbnl.png" alt="LBNL" style="width: 11em;"/>
+</div>&nbsp;&nbsp;
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/university_of_chicago.png" alt="University of Chicago" style="width: 11em;"/>
+</div>&nbsp;&nbsp;
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/slac.png" alt="SLAC" style="width: 9em;"/>
+</div>&nbsp;&nbsp;
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;"/>
+</div>&nbsp;&nbsp;
+<div style="display: inline-block; vertical-align: middle;">
+  <img src="images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;"/>
+</div>
+</div>
 
 ### Funding
 
