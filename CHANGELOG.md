@@ -63,6 +63,16 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Releases are now automatically archived on Zenodo and given a DOI (@jank324)
 - The Acknowledgements section in the README has been updated to reflect new contributors (see #304) (@jank324)
 
+### 🌟 First Time Contributors
+
+- Grégoire Charleux (@greglenerd)
+- Remi Lehe (@RemiLehe)
+- Axel Huebl (@ax3l)
+- Juan Pablo Gonzalez-Aguilera (@jp-ga)
+- Andrea Santamaria Garcia (@ansantam)
+- Ryan Roussel (@roussel-ryan)
+- Christian Hespe (@hespe)
+
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
 ### 🐛 Bug fixes
