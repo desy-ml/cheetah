@@ -158,8 +158,6 @@ The following people have contributed to the development of Cheetah:
 
 The development of Cheetah is a joint effort by members of the following institutions:
 
-https://github.com/desy-ml/cheetah/raw/master/images/logo.png
-
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/desy.png" alt="DESY" style="width: 5em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/kit.png" alt="KIT" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/lbnl.png" alt="LBNL" style="width: 11em;" vspace="2em"/>&nbsp;&nbsp;
