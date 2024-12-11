@@ -158,13 +158,13 @@ The following people have contributed to the development of Cheetah:
 
 The development of Cheetah is a joint effort by members of the following institutions:
 
-<img src="images/desy.png" alt="DESY" style="width: 5em;" vspace="1em"/>&nbsp;&nbsp;
-<img src="images/kit.png" alt="KIT" style="width: 7em;" vspace="1em"/>&nbsp;&nbsp;
-<img src="images/lbnl.png" alt="LBNL" style="width: 11em;" vspace="1em"/>&nbsp;&nbsp;
-<img src="images/university_of_chicago.png" alt="University of Chicago" style="width: 11em;" vspace="1em"/>&nbsp;&nbsp;
-<img src="images/slac.png" alt="SLAC" style="width: 9em;" vspace="1em"/>&nbsp;&nbsp;
-<img src="images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="1em"/>&nbsp;&nbsp;
-<img src="images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="1em"/>
+<img src="images/desy.png" alt="DESY" style="width: 5em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="images/kit.png" alt="KIT" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="images/lbnl.png" alt="LBNL" style="width: 11em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="images/university_of_chicago.png" alt="University of Chicago" style="width: 11em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="images/slac.png" alt="SLAC" style="width: 9em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>
 
 ### Funding
 
