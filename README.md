@@ -139,7 +139,20 @@ pre-commit install
 
 ### Author Contributions
 
-We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser (@jank324), Chenran Xu (@cr-xu), Annika Eichler (@AnEichler), Andrea Santamaria Garcia (@ansantam), Christian Hespe (@Hespe), Oliver Stein(@OliStein523), Grégoire Charleux (@greglenerd), Remi Lehe (@RemiLehe), Axel Huebl (@ax3l), Juan Pablo Gonzalez-Aguilera (@jp-ga), Ryan Roussel (@roussel-ryan) and Auralee Edelen (@lee-edelen).
+The following people have contributed to the development of Cheetah:
+
+- Jan Kaiser (@jank324)
+- Chenran Xu (@cr-xu)
+- Annika Eichler (@AnEichler)
+- Andrea Santamaria Garcia (@ansantam)
+- Christian Hespe (@Hespe)
+- Oliver Stein (@OliStein523)
+- Grégoire Charleux (@greglenerd)
+- Remi Lehe (@RemiLehe)
+- Axel Huebl (@ax3l)
+- Juan Pablo Gonzalez-Aguilera (@jp-ga)
+- Ryan Roussel (@roussel-ryan)
+- Auralee Edelen (@lee-edelen)
 
 ### Institutions
 
