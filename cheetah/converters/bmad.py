@@ -146,8 +146,8 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"]),
                 gap=torch.tensor(2 * bmad_parsed.get("hgap", 0.0)),
                 angle=torch.tensor(bmad_parsed.get("angle", 0.0)),
-                e1=torch.tensor(bmad_parsed["e1"]),
-                e2=torch.tensor(bmad_parsed.get("e2", 0.0)),
+                dipole_e1=torch.tensor(bmad_parsed["e1"]),
+                dipole_e2=torch.tensor(bmad_parsed.get("e2", 0.0)),
                 tilt=torch.tensor(bmad_parsed.get("ref_tilt", 0.0)),
                 fringe_integral=torch.tensor(bmad_parsed.get("fint", 0.0)),
                 fringe_integral_exit=(

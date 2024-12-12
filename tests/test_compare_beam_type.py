@@ -241,6 +241,7 @@ def test_cavity_from_twiss():
 
     # Particle beam
     incoming_particle_beam = cheetah.ParticleBeam.from_twiss(
+        num_particles=1_000_000,
         beta_x=torch.tensor(5.91253677),
         alpha_x=torch.tensor(3.55631308),
         beta_y=torch.tensor(5.91253677),

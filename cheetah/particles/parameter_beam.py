@@ -5,6 +5,7 @@ import torch
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
+from cheetah.utils import verify_device_and_dtype
 
 
 class ParameterBeam(Beam):
@@ -26,22 +27,24 @@ class ParameterBeam(Beam):
         energy: torch.Tensor,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [mu, cov, energy, total_charge], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        self.register_buffer("_mu", torch.as_tensor(mu, **factory_kwargs))
-        self.register_buffer("_cov", torch.as_tensor(cov, **factory_kwargs))
-        total_charge = (
-            total_charge
-            if total_charge is not None
-            else torch.tensor([0.0], **factory_kwargs)
-        )
-        self.register_buffer(
-            "total_charge", torch.as_tensor(total_charge, **factory_kwargs)
-        )
-        self.register_buffer("energy", torch.as_tensor(energy, **factory_kwargs))
+        self.register_buffer("_mu", None)
+        self.register_buffer("_cov", None)
+        self.register_buffer("energy", None)
+        self.register_buffer("total_charge", torch.tensor(0.0, **factory_kwargs))
+
+        self._mu = torch.as_tensor(mu, **factory_kwargs)
+        self._cov = torch.as_tensor(cov, **factory_kwargs)
+        self.energy = torch.as_tensor(energy, **factory_kwargs)
+        if total_charge is not None:
+            self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
 
     @classmethod
     def from_parameters(
@@ -62,24 +65,66 @@ class ParameterBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParameterBeam":
+        # Extract device and dtype from given arguments
+        device, dtype = verify_device_and_dtype(
+            [
+                mu_x,
+                mu_px,
+                mu_y,
+                mu_py,
+                sigma_x,
+                sigma_px,
+                sigma_y,
+                sigma_py,
+                sigma_tau,
+                sigma_p,
+                cor_x,
+                cor_y,
+                cor_tau,
+                energy,
+                total_charge,
+            ],
+            device,
+            dtype,
+        )
+        factory_kwargs = {"device": device, "dtype": dtype}
+
         # Set default values without function call in function signature
-        mu_x = mu_x if mu_x is not None else torch.tensor(0.0)
-        mu_px = mu_px if mu_px is not None else torch.tensor(0.0)
-        mu_y = mu_y if mu_y is not None else torch.tensor(0.0)
-        mu_py = mu_py if mu_py is not None else torch.tensor(0.0)
-        sigma_x = sigma_x if sigma_x is not None else torch.tensor(175e-9)
-        sigma_px = sigma_px if sigma_px is not None else torch.tensor(2e-7)
-        sigma_y = sigma_y if sigma_y is not None else torch.tensor(175e-9)
-        sigma_py = sigma_py if sigma_py is not None else torch.tensor(2e-7)
-        sigma_tau = sigma_tau if sigma_tau is not None else torch.tensor(1e-6)
-        sigma_p = sigma_p if sigma_p is not None else torch.tensor(1e-6)
-        cor_x = cor_x if cor_x is not None else torch.tensor(0.0)
-        cor_y = cor_y if cor_y is not None else torch.tensor(0.0)
-        cor_tau = cor_tau if cor_tau is not None else torch.tensor(0.0)
-        energy = energy if energy is not None else torch.tensor(1e8)
-        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
+        mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_py = mu_py if mu_py is not None else torch.tensor(0.0, **factory_kwargs)
+        sigma_x = (
+            sigma_x if sigma_x is not None else torch.tensor(175e-9, **factory_kwargs)
+        )
+        sigma_px = (
+            sigma_px if sigma_px is not None else torch.tensor(2e-7, **factory_kwargs)
+        )
+        sigma_y = (
+            sigma_y if sigma_y is not None else torch.tensor(175e-9, **factory_kwargs)
+        )
+        sigma_py = (
+            sigma_py if sigma_py is not None else torch.tensor(2e-7, **factory_kwargs)
+        )
+        sigma_tau = (
+            sigma_tau if sigma_tau is not None else torch.tensor(1e-6, **factory_kwargs)
+        )
+        sigma_p = (
+            sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
+        )
+        cor_x = cor_x if cor_x is not None else torch.tensor(0.0, **factory_kwargs)
+        cor_y = cor_y if cor_y is not None else torch.tensor(0.0, **factory_kwargs)
+        cor_tau = (
+            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
+        total_charge = (
+            total_charge
+            if total_charge is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
 
         mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
         mu = torch.stack(
@@ -116,7 +161,7 @@ class ParameterBeam(Beam):
             cor_tau,
             sigma_p,
         )
-        cov = torch.zeros(*sigma_x.shape, 7, 7)
+        cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
         cov[..., 0, 0] = sigma_x**2
         cov[..., 0, 1] = cor_x
         cov[..., 1, 0] = cor_x
@@ -154,12 +199,11 @@ class ParameterBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParameterBeam":
-        # Figure out if arguments were passed, figure out their shape
-        not_nones = [
-            argument
-            for argument in [
+        # Extract device and dtype from given arguments
+        device, dtype = verify_device_and_dtype(
+            [
                 beta_x,
                 alpha_x,
                 emittance_x,
@@ -171,32 +215,45 @@ class ParameterBeam(Beam):
                 cor_tau,
                 energy,
                 total_charge,
-            ]
-            if argument is not None
-        ]
-        shape = not_nones[0].shape if len(not_nones) > 0 else torch.Size([1])
-        if len(not_nones) > 1:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
+            ],
+            device,
+            dtype,
+        )
+        factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
-        beta_x = beta_x if beta_x is not None else torch.full(shape, 1.0)
-        alpha_x = alpha_x if alpha_x is not None else torch.full(shape, 0.0)
+        beta_x = beta_x if beta_x is not None else torch.tensor(1.0, **factory_kwargs)
+        alpha_x = (
+            alpha_x if alpha_x is not None else torch.tensor(0.0, **factory_kwargs)
+        )
         emittance_x = (
-            emittance_x if emittance_x is not None else torch.full(shape, 7.1971891e-13)
+            emittance_x
+            if emittance_x is not None
+            else torch.tensor(7.1971891e-13, **factory_kwargs)
         )
-        beta_y = beta_y if beta_y is not None else torch.full(shape, 1.0)
-        alpha_y = alpha_y if alpha_y is not None else torch.full(shape, 0.0)
+        beta_y = beta_y if beta_y is not None else torch.tensor(1.0, **factory_kwargs)
+        alpha_y = (
+            alpha_y if alpha_y is not None else torch.tensor(0.0, **factory_kwargs)
+        )
         emittance_y = (
-            emittance_y if emittance_y is not None else torch.full(shape, 7.1971891e-13)
+            emittance_y
+            if emittance_y is not None
+            else torch.tensor(7.1971891e-13, **factory_kwargs)
         )
-        sigma_tau = sigma_tau if sigma_tau is not None else torch.full(shape, 1e-6)
-        sigma_p = sigma_p if sigma_p is not None else torch.full(shape, 1e-6)
-        cor_tau = cor_tau if cor_tau is not None else torch.full(shape, 0.0)
-        energy = energy if energy is not None else torch.full(shape, 1e8)
+        sigma_tau = (
+            sigma_tau if sigma_tau is not None else torch.tensor(1e-6, **factory_kwargs)
+        )
+        sigma_p = (
+            sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
+        )
+        cor_tau = (
+            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
-            total_charge if total_charge is not None else torch.full(shape, 0.0)
+            total_charge
+            if total_charge is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
 
         assert torch.all(
@@ -287,7 +344,7 @@ class ParameterBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> "ParameterBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -425,6 +482,14 @@ class ParameterBeam(Beam):
     @property
     def sigma_ypy(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
+
+    def clone(self) -> "ParameterBeam":
+        return ParameterBeam(
+            mu=self._mu.clone(),
+            cov=self._cov.clone(),
+            energy=self.energy.clone(),
+            total_charge=self.total_charge.clone(),
+        )
 
     def __repr__(self) -> str:
         return (

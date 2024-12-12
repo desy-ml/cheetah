@@ -1,13 +1,16 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
-from torch import nn
 
 from cheetah.accelerator.element import Element
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -25,24 +28,21 @@ class HorizontalCorrector(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        angle: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "angle",
-            (
-                torch.as_tensor(angle, **factory_kwargs)
-                if angle is not None
-                else torch.zeros_like(self.length)
-            ),
-        )
+        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if angle is not None:
+            self.angle = torch.as_tensor(angle, **factory_kwargs)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device

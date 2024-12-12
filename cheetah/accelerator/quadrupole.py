@@ -1,16 +1,15 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -34,44 +33,34 @@ class Quadrupole(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        k1: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        k1: Optional[torch.Tensor] = None,
+        misalignment: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
         num_steps: int = 1,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length, k1, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "k1",
-            (
-                torch.as_tensor(k1, **factory_kwargs)
-                if k1 is not None
-                else torch.zeros_like(self.length)
-            ),
-        )
-        self.register_buffer(
-            "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.zeros((*self.length.shape, 2), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "tilt",
-            (
-                torch.as_tensor(tilt, **factory_kwargs)
-                if tilt is not None
-                else torch.zeros_like(self.length)
-            ),
-        )
+        self.register_buffer("k1", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
+        self.register_buffer("tilt", torch.tensor(0.0, **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if k1 is not None:
+            self.k1 = torch.as_tensor(k1, **factory_kwargs)
+        if misalignment is not None:
+            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
+        if tilt is not None:
+            self.tilt = torch.as_tensor(tilt, **factory_kwargs)
+
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
@@ -185,9 +174,12 @@ class Quadrupole(Element):
         )
 
         outgoing_beam = ParticleBeam(
-            torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
-            ref_energy,
+            particles=torch.stack(
+                (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
+            ),
+            energy=ref_energy,
             particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
