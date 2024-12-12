@@ -941,14 +941,12 @@ class ParticleBeam(Beam):
         # Handle units
         if dimension in ("x", "y", "tau"):
             base_unit = "m"
-        elif dimension in ("px", "py"):
-            base_unit = "rad"
-        elif dimension == "p":
+        elif dimension in ("px", "py", "p"):
             base_unit = "%"
 
-        if dimension in ("x", "px", "y", "py", "tau"):
+        if dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
-        elif dimension == "p":
+        elif dimension in ("px", "py", "p"):
             format_axis_as_percentage(ax.xaxis)
 
         return ax
@@ -1024,26 +1022,22 @@ class ParticleBeam(Beam):
         # Handle units
         if x_dimension in ("x", "y", "tau"):
             x_base_unit = "m"
-        elif x_dimension in ("px", "py"):
-            x_base_unit = "rad"
-        elif x_dimension == "p":
+        elif x_dimension in ("px", "py", "p"):
             x_base_unit = "%"
 
         if y_dimension in ("x", "y", "tau"):
             y_base_unit = "m"
-        elif y_dimension in ("px", "py"):
-            y_base_unit = "rad"
-        elif y_dimension == "p":
+        elif y_dimension in ("px", "py", "p"):
             y_base_unit = "%"
 
-        if x_dimension in ("x", "px", "y", "py", "tau"):
+        if x_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
-        elif x_dimension == "p":
+        elif x_dimension in ("px", "py", "p"):
             format_axis_as_percentage(ax.xaxis)
 
-        if y_dimension in ("x", "px", "y", "py", "tau"):
+        if y_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
-        elif y_dimension == "p":
+        elif y_dimension in ("px", "py", "p"):
             format_axis_as_percentage(ax.yaxis)
 
         return ax
@@ -1119,25 +1113,10 @@ class ParticleBeam(Beam):
                 )
                 / 10,
             )
-            momentum_idxs = [
-                i for i, dimension in enumerate(dimensions) if dimension in ["px", "py"]
-            ]
-            momentum_bin_range = (
-                full_tensor[momentum_idxs, :].min()
-                - (
-                    full_tensor[momentum_idxs, :].max()
-                    - full_tensor[momentum_idxs, :].min()
-                )
-                / 10,
-                full_tensor[momentum_idxs, :].max()
-                + (
-                    full_tensor[momentum_idxs, :].max()
-                    - full_tensor[momentum_idxs, :].min()
-                )
-                / 10,
-            )
             unitless_idxs = [
-                i for i, dimension in enumerate(dimensions) if dimension in ["p"]
+                i
+                for i, dimension in enumerate(dimensions)
+                if dimension in ["px", "py", "p"]
             ]
             unitless_bin_range = (
                 full_tensor[unitless_idxs, :].min()
@@ -1155,9 +1134,9 @@ class ParticleBeam(Beam):
             )
             bin_range_dict = {
                 "x": spacial_bin_range,
-                "px": momentum_bin_range,
+                "px": unitless_bin_range,
                 "y": spacial_bin_range,
-                "py": momentum_bin_range,
+                "py": unitless_bin_range,
                 "tau": spacial_bin_range,
                 "p": unitless_bin_range,
             }
@@ -1216,7 +1195,7 @@ class ParticleBeam(Beam):
         self, scatter_kws: Optional[dict] = None, ax: Optional[plt.Axes] = None
     ) -> plt.Axes:
         """
-        Plot a 2D scatter plot of the particle distribution.
+        Plot a 3D point cloud of the spatial coordinates of the particles.
 
         :param scatter_kws: Additional keyword arguments to be passed to the `scatter`
             plotting function of matplotlib.
