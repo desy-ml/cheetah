@@ -104,14 +104,14 @@ class Dipole(Element):
         if fringe_integral is not None:
             self.fringe_integral = torch.as_tensor(fringe_integral, **factory_kwargs)
         self.fringe_integral_exit = (
-            torch.tensor(fringe_integral_exit, **factory_kwargs)
+            torch.as_tensor(fringe_integral_exit, **factory_kwargs)
             if fringe_integral_exit is not None
             else self.fringe_integral
         )
         if gap is not None:
             self.gap = torch.as_tensor(gap, **factory_kwargs)
         self.gap_exit = (
-            torch.tensor(gap_exit, **factory_kwargs)
+            torch.as_tensor(gap_exit, **factory_kwargs)
             if gap_exit is not None
             else self.gap
         )
