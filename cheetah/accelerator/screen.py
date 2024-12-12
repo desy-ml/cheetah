@@ -57,7 +57,7 @@ class Screen(Element):
             [pixel_size, misalignment, kde_bandwidth], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
         assert method in [
             "histogram",
@@ -70,34 +70,16 @@ class Screen(Element):
         self.is_blocking = is_blocking
         self.is_active = is_active
 
-        self.register_buffer(
-            "pixel_size",
-            (
-                torch.as_tensor(pixel_size, **factory_kwargs)
-                if pixel_size is not None
-                else torch.tensor((1e-3, 1e-3), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.tensor((0.0, 0.0), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "length",
-            torch.zeros(self.misalignment.shape[:-1], **factory_kwargs),
-        )
-        self.register_buffer(
-            "kde_bandwidth",
-            (
-                torch.as_tensor(kde_bandwidth, **factory_kwargs)
-                if kde_bandwidth is not None
-                else torch.clone(self.pixel_size[0])
-            ),
-        )
+        self.register_buffer("pixel_size", torch.tensor((1e-3, 1e-3), **factory_kwargs))
+        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
+        self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
+
+        if pixel_size is not None:
+            self.pixel_size = torch.as_tensor(pixel_size, **factory_kwargs)
+        if misalignment is not None:
+            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
+        if kde_bandwidth is not None:
+            self.kde_bandwidth = torch.as_tensor(kde_bandwidth, **factory_kwargs)
 
         self.set_read_beam(None)
         self.cached_reading = None
