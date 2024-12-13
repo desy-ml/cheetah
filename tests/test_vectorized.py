@@ -458,8 +458,6 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
     Test that apertures work in a vectorised setting and that broadcasting rules are
     applied correctly.
     """
-    torch.manual_seed(0)
-
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000,
         sigma_py=torch.tensor(1e-4),
