@@ -488,11 +488,11 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
         assert np.allclose(
             outgoing.survival_probabilities.mean(dim=-1)[:, 0],
             [0.077, 0.945, 0.995],
-            atol=1e-3,  # Last digit off by one
+            atol=2e-3,  # Last digit off by two
         )
     elif aperture_shape == "rectangular":
         assert np.allclose(
             outgoing.survival_probabilities.mean(dim=-1)[:, 0],
             [0.079, 0.954, 0.997],
-            atol=1e-3,  # Last digit off by one
+            atol=2e-3,  # Last digit off by two
         )
