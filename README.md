@@ -122,7 +122,7 @@ If you use Cheetah, please cite the following two papers:
 
 Activate your virtual environment. (Optional)
 
-Install the cheetah package as editable
+Install the `cheetah` package as editable
 
 ```sh
 pip install -e .
