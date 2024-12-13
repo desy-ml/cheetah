@@ -8,7 +8,7 @@
 
 # Cheetah
 
-<img src="images/logo.png" align="right" width="25%"/>
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/logo.png" align="right" width="25%"/>
 
 Cheetah is a high-speed differentiable beam dynamics code specifically design to support machine learning applications for particle accelerators.
 
@@ -87,7 +87,7 @@ You may plot a segment with reference particle traces bay calling
 segment.plot_overview(incoming=beam)
 ```
 
-![Overview Plot](images/misalignment.png)
+![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/misalignment.png)
 
 where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
 
@@ -122,7 +122,7 @@ If you use Cheetah, please cite the following two papers:
 
 Activate your virtual environment. (Optional)
 
-Install the cheetah package as editable
+Install the `cheetah` package as editable
 
 ```sh
 pip install -e .
@@ -137,7 +137,38 @@ pre-commit install
 
 ## Acknowledgements
 
-We acknowledge the contributions of the following people to the development of Cheetah: Jan Kaiser, Chenran Xu, Oliver Stein, Annika Eichler, Andrea Santamaria Garcia and others.
+### Author Contributions
+
+The following people have contributed to the development of Cheetah:
+
+- Jan Kaiser (@jank324)
+- Chenran Xu (@cr-xu)
+- Annika Eichler (@AnEichler)
+- Andrea Santamaria Garcia (@ansantam)
+- Christian Hespe (@Hespe)
+- Oliver Stein (@OliStein523)
+- Grégoire Charleux (@greglenerd)
+- Remi Lehe (@RemiLehe)
+- Axel Huebl (@ax3l)
+- Juan Pablo Gonzalez-Aguilera (@jp-ga)
+- Ryan Roussel (@roussel-ryan)
+- Auralee Edelen (@lee-edelen)
+
+### Institutions
+
+The development of Cheetah is a joint effort by members of the following institutions:
+
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/desy.png" alt="DESY" style="width: 5em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/kit.png" alt="KIT" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/lbnl.png" alt="LBNL" style="width: 11em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_chicago.png" alt="University of Chicago" style="width: 11em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/slac.png" alt="SLAC" style="width: 9em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>
+
+### Funding
 
 The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
+Further, we gratefully acknowledge funding by the EuXFEL R&D project "RP-513: Learning Based Methods".
+This work is also supported by the U.S. Department of Energy, Office of Science under Contract No. DE-AC02-76SF00515 and the Center for Bright Beams, NSF Award No. PHY-1549132.
 In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
