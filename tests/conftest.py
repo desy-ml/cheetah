@@ -13,6 +13,11 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_report_header(config) -> str:
+    """Report chosen seed to command line for reproducability."""
+    return f"seed: {config.getoption("--seed")}"
+
+
 @pytest.fixture(autouse=True)
 def seed_random_generators(request):
     """
