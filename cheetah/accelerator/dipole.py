@@ -1,7 +1,6 @@
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
@@ -104,14 +103,14 @@ class Dipole(Element):
         if fringe_integral is not None:
             self.fringe_integral = torch.as_tensor(fringe_integral, **factory_kwargs)
         self.fringe_integral_exit = (
-            torch.tensor(fringe_integral_exit, **factory_kwargs)
+            torch.as_tensor(fringe_integral_exit, **factory_kwargs)
             if fringe_integral_exit is not None
             else self.fringe_integral
         )
         if gap is not None:
             self.gap = torch.as_tensor(gap, **factory_kwargs)
         self.gap_exit = (
-            torch.tensor(gap_exit, **factory_kwargs)
+            torch.as_tensor(gap_exit, **factory_kwargs)
             if gap_exit is not None
             else self.gap
         )
@@ -493,7 +492,7 @@ class Dipole(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2

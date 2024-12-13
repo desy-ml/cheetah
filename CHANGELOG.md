@@ -47,6 +47,7 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Fix plotting for segments that contain tensors with `require_grad=True` (see #288) (@hespe)
 - Fix bug where `Element.length` could not be set as a `torch.nn.Parameter` (see #301) (@jank324, @hespe)
 - Fix registration of `torch.nn.Parameter` at initilization for elements and beams (see #303) (@hespe)
+- Fix warnings about NumPy deprecations and unintentional tensor clones (see #308) (@hespe)
 
 ### 🐆 Other
 
