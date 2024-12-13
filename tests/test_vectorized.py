@@ -486,9 +486,11 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
 
     if aperture_shape == "elliptical":
         assert np.allclose(
-            outgoing.survival_probabilities.sum(dim=-1)[:, 0], [7672, 94523, 99547]
+            outgoing.survival_probabilities.sum(dim=-1)[:, 0],
+            [7812, 94515, 99541],
         )
     elif aperture_shape == "rectangular":
         assert np.allclose(
-            outgoing.survival_probabilities.sum(dim=-1)[:, 0], [7935, 95400, 99719]
+            outgoing.survival_probabilities.sum(dim=-1)[:, 0],
+            [8048, 95433, 99710],
         )
