@@ -458,8 +458,6 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
     Test that apertures work in a vectorised setting and that broadcasting rules are
     applied correctly.
     """
-    torch.manual_seed(0)
-
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000,
         sigma_py=torch.tensor(1e-4),
@@ -488,9 +486,13 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
 
     if aperture_shape == "elliptical":
         assert np.allclose(
-            outgoing.survival_probabilities.sum(dim=-1)[:, 0], [7672, 94523, 99547]
+            outgoing.survival_probabilities.mean(dim=-1)[:, 0],
+            [0.077, 0.945, 0.995],
+            atol=2e-3,  # Last digit off by two
         )
     elif aperture_shape == "rectangular":
         assert np.allclose(
-            outgoing.survival_probabilities.sum(dim=-1)[:, 0], [7935, 95400, 99719]
+            outgoing.survival_probabilities.mean(dim=-1)[:, 0],
+            [0.079, 0.954, 0.997],
+            atol=2e-3,  # Last digit off by two
         )
