@@ -76,7 +76,7 @@ We are proud to announce this new major release of Cheetah! This is probably the
 - Fix logo display in README (see #252) (@jank324)
 - Made `Beam` an abstract class (see #284) (@Hespe)
 - Releases are now automatically archived on Zenodo and given a DOI (@jank324)
-- The Acknowledgements section in the README has been updated to reflect new contributors (see #304) (@jank324)
+- The Acknowledgements section in the README has been updated to reflect new contributors (see #304) (@jank324, @AnEichler )
 
 ### 🌟 First Time Contributors
 
@@ -87,6 +87,7 @@ We are proud to announce this new major release of Cheetah! This is probably the
 - Andrea Santamaria Garcia (@ansantam)
 - Ryan Roussel (@roussel-ryan)
 - Christian Hespe (@Hespe)
+- Annika Eichler (@AnEichler)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 
