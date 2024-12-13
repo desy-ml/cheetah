@@ -1,6 +1,8 @@
 import pytest
 import torch
 
+from cheetah.utils import is_mps_available_and_functional
+
 SEED = 42
 
 
@@ -14,5 +16,5 @@ def seed_random_generators():
     torch.manual_seed(SEED)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(SEED)
-    if torch.mps.is_available():
+    if is_mps_available_and_functional():
         torch.mps.manual_seed(SEED)
