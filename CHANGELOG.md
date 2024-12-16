@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Add a conversion to [OpenPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) with export to h5 files for the `ParticleBeam` class. This allows also exporting to other file formats via the beamphysics package. (#305 @cr-xu)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
