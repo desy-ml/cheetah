@@ -19,5 +19,12 @@ setup(
     long_description_content_type="text/markdown",
     packages=[package for package in find_packages() if package.startswith("cheetah")],
     python_requires=">=3.9",
-    install_requires=["matplotlib", "numpy", "scipy", "torch", "openpmd-beamphysics"],
+    install_requires=[
+        "h5py",
+        "matplotlib",
+        "numpy",
+        "openpmd-beamphysics",
+        "scipy",
+        "torch",
+    ],
 )
