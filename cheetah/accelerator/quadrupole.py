@@ -1,7 +1,6 @@
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
@@ -215,7 +214,7 @@ class Quadrupole(Element):
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )
