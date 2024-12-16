@@ -656,6 +656,57 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
+    @classmethod
+    def from_openpmd_file(
+        cls, path: str, energy: torch.Tensor, device=None, dtype=torch.float32
+    ) -> "ParticleBeam":
+        """Load an OpenPMD particle distribution file as a Cheetah Beam."""
+
+        particle_group = ParticleGroup(path)
+        return cls.from_openpmd_particlegroup(
+            particle_group, energy, device=device, dtype=dtype
+        )
+
+    @classmethod
+    def from_openpmd_particlegroup(
+        cls,
+        particle_group: ParticleGroup,
+        energy: torch.Tensor,
+        device=None,
+        dtype=torch.float32,
+    ) -> "ParticleBeam":
+        """Convert an OpenPMD ParticleGroup to a Cheetah Beam.
+
+        :param particle_group: OpenPMD ParticleGroup object.
+        :param energy: Reference energy of the beam in eV.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
+        """
+
+        # Assume only electron now
+        p0c = torch.sqrt(energy**2 - electron_mass_eV**2)
+
+        x = torch.from_numpy(particle_group.x)
+        y = torch.from_numpy(particle_group.y)
+        px = torch.from_numpy(particle_group.px) / p0c
+        py = torch.from_numpy(particle_group.py) / p0c
+        tau = torch.from_numpy(particle_group.t) * speed_of_light
+        delta = (torch.from_numpy(particle_group.energy) - energy) / p0c
+
+        particles = torch.stack([x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1)
+        particle_charges = torch.from_numpy(particle_group.weight)
+        survival_probabilities = torch.from_numpy(particle_group.status)
+
+        return cls(
+            particles=particles,
+            energy=energy,
+            particle_charges=particle_charges,
+            survival_probabilities=survival_probabilities,
+            device=device,
+            dtype=dtype,
+        )
+
     def transformed_to(
         self,
         mu_x: Optional[torch.Tensor] = None,
@@ -1078,27 +1129,33 @@ class ParticleBeam(Beam):
 
         :param filename: Path to the file where the beam should be saved.
         """
-        particle_group = self.to_openpmd_particles()
-        particle_group.writ(filename)
+        particle_group = self.to_openpmd_particlegroup()
+        particle_group.write(filename)
 
-    def to_openpmd_particles(self) -> None:
+    def to_openpmd_particlegroup(self) -> None:
         """
         Convert the beam to an OpenPMD-beamphysics ParticleGroup object.
+
+        Note: Currently OpenPMD-beamphysics only supports boolean particle status
+        flags, i.e. alive or dead. The survival_probabilities will be converted to
+        status flags by thresholding at 0.5.
 
         :return: OpenPMD-beamphysics ParticleGroup object with the beam's particles.
         """
         # For now only support none-batched particles
-        if len(self.particles.shape[0]) != 3:
+        if len(self.particles.shape) != 2:
             raise ValueError("Only non-batched particles are supported.")
 
         n_particles = self.num_particles
         weights = np.ones(n_particles)
-        beta = self.relativistic_beta
         px = self.px * self.p0c
         py = self.py * self.p0c
-        pz = self.p0c * (1 + self.p)
-        t = self.tau / (beta * speed_of_light)
+        p_total = torch.sqrt(self.energies**2 - electron_mass_eV**2)
+        pz = torch.sqrt(p_total**2 - px**2 - py**2)
+        t = self.tau / speed_of_light
         weights = self.particle_charges
+        # To be discussed
+        status = self.survival_probabilities > 0.5
 
         data = {
             "x": self.x.numpy(),
@@ -1109,6 +1166,7 @@ class ParticleBeam(Beam):
             "pz": pz.numpy(),
             "t": t.numpy(),
             "weight": weights,
+            "status": status,
             # To be modified after adding support for other species
             "species": "electron",
         }
