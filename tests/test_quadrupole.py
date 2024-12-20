@@ -132,7 +132,7 @@ def test_quadrupole_length_multiple_vector_dimensions():
     lengths = torch.tensor([[0.2, 0.3, 0.4], [0.5, 0.4, 0.7]])
     segment = Segment(
         [
-            Quadrupole(length=lengths, k1=torch.tensor(4.2)),
+            Quadrupole(length=lengths, k1=4.2),
             Drift(length=lengths * 2),
         ]
     )

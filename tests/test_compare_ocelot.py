@@ -681,10 +681,10 @@ def test_cavity():
         parray=p_array, dtype=torch.float64
     )
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor(1.0377),
-        voltage=torch.tensor(0.01815975e9),
-        frequency=torch.tensor(1.3e9),
-        phase=torch.tensor(0.0),
+        length=1.0377,
+        voltage=0.01815975e9,
+        frequency=1.3e9,
+        phase=0.0,
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_cavity.track(incoming_beam)

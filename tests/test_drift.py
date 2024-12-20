@@ -48,7 +48,7 @@ def test_device_like_torch_module():
     if not torch.cuda.is_available():
         return
 
-    element = cheetah.Drift(length=torch.tensor(0.2), device="cuda")
+    element = cheetah.Drift(length=0.2, device="cuda")
 
     assert element.length.device.type == "cuda"
 

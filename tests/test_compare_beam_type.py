@@ -49,7 +49,7 @@ def test_drift():
     """Test that the drift output for both beam types is roughly the same."""
 
     # Set up lattice
-    cheetah_drift = cheetah.Drift(length=torch.tensor(1.0))
+    cheetah_drift = cheetah.Drift(length=1.0)
 
     # Parameter beam
     incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
