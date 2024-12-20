@@ -10,7 +10,7 @@ def test_drift_end():
     original drift.
     """
     original_drift = cheetah.Drift(length=torch.tensor([2.0, 2.5]))
-    split_drift = cheetah.Segment(original_drift.split(resolution=torch.tensor(0.1)))
+    split_drift = cheetah.Segment(original_drift.split(resolution=0.1))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -32,9 +32,7 @@ def test_quadrupole_end():
     original_quadrupole = cheetah.Quadrupole(
         length=torch.tensor([0.2, 0.3]), k1=torch.tensor([4.2, 3.6])
     )
-    split_quadrupole = cheetah.Segment(
-        original_quadrupole.split(resolution=torch.tensor(0.01))
-    )
+    split_quadrupole = cheetah.Segment(original_quadrupole.split(resolution=0.01))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -59,7 +57,7 @@ def test_cavity_end():
         frequency=torch.tensor([1.3e9, 3.9e9]),
         phase=torch.tensor([0.0, 4.2]),
     )
-    split_cavity = cheetah.Segment(original_cavity.split(resolution=torch.tensor(0.1)))
+    split_cavity = cheetah.Segment(original_cavity.split(resolution=0.1))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -81,9 +79,7 @@ def test_solenoid_end():
     original_solenoid = cheetah.Solenoid(
         length=torch.tensor([0.2, 0.3]), k=torch.tensor([4.2, 3.6])
     )
-    split_solenoid = cheetah.Segment(
-        original_solenoid.split(resolution=torch.tensor(0.01))
-    )
+    split_solenoid = cheetah.Segment(original_solenoid.split(resolution=0.01))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -106,7 +102,7 @@ def test_dipole_end():
     original_dipole = cheetah.Dipole(
         length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
-    split_dipole = cheetah.Segment(original_dipole.split(resolution=torch.tensor(0.01)))
+    split_dipole = cheetah.Segment(original_dipole.split(resolution=0.01))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -126,9 +122,7 @@ def test_undulator_end():
     the original undulator.
     """
     original_undulator = cheetah.Undulator(length=torch.tensor([3.142, 2.7]))
-    split_undulator = cheetah.Segment(
-        original_undulator.split(resolution=torch.tensor(0.1))
-    )
+    split_undulator = cheetah.Segment(original_undulator.split(resolution=0.1))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -152,7 +146,7 @@ def test_horizontal_corrector_end():
         length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_horizontal_corrector = cheetah.Segment(
-        original_horizontal_corrector.split(resolution=torch.tensor(0.01))
+        original_horizontal_corrector.split(resolution=0.01)
     )
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -177,7 +171,7 @@ def test_vertical_corrector_end():
         length=torch.tensor([0.2, 0.3]), angle=torch.tensor([4.2, 3.6])
     )
     split_vertical_corrector = cheetah.Segment(
-        original_vertical_corrector.split(resolution=torch.tensor(0.01))
+        original_vertical_corrector.split(resolution=0.01)
     )
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -210,8 +204,8 @@ def test_split_preserves_dtype(ElementType):
     """
     Test that the dtype of a drift section's splits is the same as the original drift.
     """
-    original = ElementType(length=torch.tensor(2.0), dtype=torch.float64)
-    splits = original.split(resolution=torch.tensor(0.1))
+    original = ElementType(length=2.0, dtype=torch.float64)
+    splits = original.split(resolution=0.1)
 
     for split in splits:
         assert original.length.dtype == split.length.dtype

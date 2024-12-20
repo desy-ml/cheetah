@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 
@@ -30,27 +30,25 @@ def are_all_the_same_dtype(tensors: list[torch.Tensor]) -> torch.dtype:
 
 
 def verify_device_and_dtype(
-    tensors: list[Optional[torch.Tensor]],
+    arguments: list[Optional[Union[torch.Tensor, float]]],
     desired_device: Optional[torch.device],
     desired_dtype: Optional[torch.dtype],
 ) -> tuple[torch.device, torch.dtype]:
     """
-    Verifies that a unique device and dtype can be determined from the passed tensors
+    Verifies that a unique device and dtype can be determined from the passed arguments
     and the optional desired device and dtype. If no desired values are requested,
-    then all tensors (if they are not `None`) must have the same device and dtype.
+    then all tensors must have the same device and dtype.
 
     If all verifications pass, this function returns the determined device and dtype.
     """
-    not_nones = [tensor for tensor in tensors if tensor is not None]
+    tensors = [arg for arg in arguments if isinstance(arg, torch.Tensor)]
 
     chosen_device = (
         desired_device
         if desired_device is not None
-        else are_all_the_same_device(not_nones)
+        else are_all_the_same_device(tensors)
     )
     chosen_dtype = (
-        desired_dtype
-        if desired_dtype is not None
-        else are_all_the_same_dtype(not_nones)
+        desired_dtype if desired_dtype is not None else are_all_the_same_dtype(tensors)
     )
     return (chosen_device, chosen_dtype)

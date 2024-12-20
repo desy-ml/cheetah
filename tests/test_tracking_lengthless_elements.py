@@ -18,13 +18,9 @@ def test_tracking_marker_only():
 def test_tracking_lengthless_elements():
     segment = cheetah.Segment(
         [
-            cheetah.Cavity(
-                length=torch.tensor(0.1), voltage=torch.tensor(1e6), name="C2"
-            ),
+            cheetah.Cavity(length=0.1, voltage=1e6, name="C2"),
             cheetah.Marker(name="start"),
-            cheetah.Cavity(
-                length=torch.tensor(0.1), voltage=torch.tensor(1e6), name="C1"
-            ),
+            cheetah.Cavity(length=0.1, voltage=1e6, name="C1"),
         ]
     )
 

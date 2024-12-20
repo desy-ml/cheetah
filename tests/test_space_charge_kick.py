@@ -32,15 +32,15 @@ def test_cold_uniform_beam_expansion():
     beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(10_000),
-        total_charge=torch.tensor(1e-9),
+        num_particles=10_000,
+        total_charge=1e-9,
         energy=energy,
         radius_x=R0,
         radius_y=R0,
         radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_px=torch.tensor(1e-15),
-        sigma_py=torch.tensor(1e-15),
-        sigma_p=torch.tensor(1e-15),
+        sigma_px=1e-15,
+        sigma_py=1e-15,
+        sigma_p=1e-15,
     )
 
     # Compute section length
@@ -85,7 +85,7 @@ def test_vectorized():
     gamma = energy / rest_energy
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         total_charge=torch.tensor([[1e-9, 2e-9], [3e-9, 4e-9], [5e-9, 6e-9]]),
         energy=energy.expand([3, 2]),
         radius_x=R0.expand([3, 2]),
@@ -137,15 +137,15 @@ def test_vectorized_cold_uniform_beam_expansion():
     beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(10_000),
-        total_charge=torch.tensor(1e-9),
+        num_particles=10_000,
+        total_charge=1e-9,
         energy=energy,
         radius_x=R0,
         radius_y=R0,
         radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
-        sigma_px=torch.tensor(1e-15),
-        sigma_py=torch.tensor(1e-15),
-        sigma_p=torch.tensor(1e-15),
+        sigma_px=1e-15,
+        sigma_py=1e-15,
+        sigma_p=1e-15,
     )
 
     # Compute section length
@@ -182,14 +182,12 @@ def test_incoming_beam_not_modified():
     torch.manual_seed(42)
 
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000, sigma_px=2e-7, sigma_py=2e-7
     )
     # Initial beam properties
     incoming_beam_before = incoming_beam.particles
 
-    section_length = torch.tensor(1.0)
+    section_length = 1.0
     segment_space_charge = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
@@ -215,9 +213,7 @@ def test_gradient():
     Tests that the gradient of the track method is computed withouth throwing an error.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000, sigma_px=2e-7, sigma_py=2e-7
     )
 
     segment_length = nn.Parameter(torch.tensor(1.0))
@@ -245,7 +241,7 @@ def test_does_not_break_segment_length():
     Test that the computation of a `Segment`'s length does not break when
     `SpaceChargeKick` is used.
     """
-    section_length = torch.tensor(1.0)
+    section_length = 1.0
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
@@ -270,8 +266,8 @@ def test_space_charge_with_ares_astra_beam():
     """
     segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(1.0)),
+            cheetah.Drift(length=1.0),
+            cheetah.SpaceChargeKick(effect_length=1.0),
         ]
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
@@ -286,25 +282,21 @@ def test_space_charge_with_aperture_cutoff():
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.2)),
+            cheetah.Drift(length=0.2),
             cheetah.Aperture(
-                x_max=torch.tensor(1e-4),
-                y_max=torch.tensor(1e-4),
+                x_max=1e-4,
+                y_max=1e-4,
                 shape="rectangular",
                 is_active="False",
                 name="aperture",
             ),
-            cheetah.Drift(length=torch.tensor(0.25)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5)),
-            cheetah.Drift(length=torch.tensor(0.25)),
+            cheetah.Drift(length=0.25),
+            cheetah.SpaceChargeKick(effect_length=0.5),
+            cheetah.Drift(length=0.25),
         ]
     )
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        total_charge=torch.tensor(1e-9),
-        mu_x=torch.tensor(5e-5),
-        sigma_px=torch.tensor(1e-4),
-        sigma_py=torch.tensor(1e-4),
+        num_particles=10_000, total_charge=1e-9, mu_x=5e-5, sigma_px=1e-4, sigma_py=1e-4
     )
 
     # Track with inactive aperture

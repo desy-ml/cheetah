@@ -5,8 +5,8 @@ from cheetah.utils import unbiased_weighted_covariance, unbiased_weighted_varian
 
 def test_unbiased_weighted_variance_with_single_element():
     """Test that the variance is NaN when there is only one element."""
-    data = torch.tensor([42.0])
-    weights = torch.tensor([1.0])
+    data = torch.tensor(42.0)
+    weights = torch.tensor(1.0)
 
     computed_variance = unbiased_weighted_variance(data, weights)
 

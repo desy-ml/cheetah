@@ -92,36 +92,78 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
-        mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
-        mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
-        mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
-        mu_py = mu_py if mu_py is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_x = (
+            torch.as_tensor(mu_x, **factory_kwargs)
+            if mu_x is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        mu_px = (
+            torch.as_tensor(mu_px, **factory_kwargs)
+            if mu_px is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        mu_y = (
+            torch.as_tensor(mu_y, **factory_kwargs)
+            if mu_y is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        mu_py = (
+            torch.as_tensor(mu_py, **factory_kwargs)
+            if mu_py is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
         sigma_x = (
-            sigma_x if sigma_x is not None else torch.tensor(175e-9, **factory_kwargs)
+            torch.as_tensor(sigma_x, **factory_kwargs)
+            if sigma_x is not None
+            else torch.tensor(175e-9, **factory_kwargs)
         )
         sigma_px = (
-            sigma_px if sigma_px is not None else torch.tensor(2e-7, **factory_kwargs)
+            torch.as_tensor(sigma_px, **factory_kwargs)
+            if sigma_px is not None
+            else torch.tensor(2e-7, **factory_kwargs)
         )
         sigma_y = (
-            sigma_y if sigma_y is not None else torch.tensor(175e-9, **factory_kwargs)
+            torch.as_tensor(sigma_y, **factory_kwargs)
+            if sigma_y is not None
+            else torch.tensor(175e-9, **factory_kwargs)
         )
         sigma_py = (
-            sigma_py if sigma_py is not None else torch.tensor(2e-7, **factory_kwargs)
+            torch.as_tensor(sigma_py, **factory_kwargs)
+            if sigma_py is not None
+            else torch.tensor(2e-7, **factory_kwargs)
         )
         sigma_tau = (
-            sigma_tau if sigma_tau is not None else torch.tensor(1e-6, **factory_kwargs)
+            torch.as_tensor(sigma_tau, **factory_kwargs)
+            if sigma_tau is not None
+            else torch.tensor(1e-6, **factory_kwargs)
         )
         sigma_p = (
-            sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
+            torch.as_tensor(sigma_p, **factory_kwargs)
+            if sigma_p is not None
+            else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_x = cor_x if cor_x is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_y = cor_y if cor_y is not None else torch.tensor(0.0, **factory_kwargs)
+        cor_x = (
+            torch.as_tensor(cor_x, **factory_kwargs)
+            if cor_x is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        cor_y = (
+            torch.as_tensor(cor_y, **factory_kwargs)
+            if cor_y is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
         cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+            torch.as_tensor(cor_tau, **factory_kwargs)
+            if cor_tau is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
-        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
+        energy = (
+            torch.as_tensor(energy, **factory_kwargs)
+            if energy is not None
+            else torch.tensor(1e8, **factory_kwargs)
+        )
         total_charge = (
-            total_charge
+            torch.as_tensor(total_charge, **factory_kwargs)
             if total_charge is not None
             else torch.tensor(0.0, **factory_kwargs)
         )
@@ -222,36 +264,58 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
-        beta_x = beta_x if beta_x is not None else torch.tensor(1.0, **factory_kwargs)
+        beta_x = (
+            torch.as_tensor(beta_x, **factory_kwargs)
+            if beta_x is not None
+            else torch.tensor(1.0, **factory_kwargs)
+        )
         alpha_x = (
-            alpha_x if alpha_x is not None else torch.tensor(0.0, **factory_kwargs)
+            torch.as_tensor(alpha_x, **factory_kwargs)
+            if alpha_x is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
         emittance_x = (
-            emittance_x
+            torch.as_tensor(emittance_x, **factory_kwargs)
             if emittance_x is not None
             else torch.tensor(7.1971891e-13, **factory_kwargs)
         )
-        beta_y = beta_y if beta_y is not None else torch.tensor(1.0, **factory_kwargs)
+        beta_y = (
+            torch.as_tensor(beta_y, **factory_kwargs)
+            if beta_y is not None
+            else torch.tensor(1.0, **factory_kwargs)
+        )
         alpha_y = (
-            alpha_y if alpha_y is not None else torch.tensor(0.0, **factory_kwargs)
+            torch.as_tensor(alpha_y, **factory_kwargs)
+            if alpha_y is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
         emittance_y = (
-            emittance_y
+            torch.as_tensor(emittance_y, **factory_kwargs)
             if emittance_y is not None
             else torch.tensor(7.1971891e-13, **factory_kwargs)
         )
         sigma_tau = (
-            sigma_tau if sigma_tau is not None else torch.tensor(1e-6, **factory_kwargs)
+            torch.as_tensor(sigma_tau, **factory_kwargs)
+            if sigma_tau is not None
+            else torch.tensor(1e-6, **factory_kwargs)
         )
         sigma_p = (
-            sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
+            torch.as_tensor(sigma_p, **factory_kwargs)
+            if sigma_p is not None
+            else torch.tensor(1e-6, **factory_kwargs)
         )
         cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+            torch.as_tensor(cor_tau, **factory_kwargs)
+            if cor_tau is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
-        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
+        energy = (
+            torch.as_tensor(energy, **factory_kwargs)
+            if energy is not None
+            else torch.tensor(1e8, **factory_kwargs)
+        )
         total_charge = (
-            total_charge
+            torch.as_tensor(total_charge, **factory_kwargs)
             if total_charge is not None
             else torch.tensor(0.0, **factory_kwargs)
         )

@@ -11,22 +11,22 @@ def test_create_from_parameters():
     Test that a `ParticleBeam` created from parameters actually has those parameters.
     """
     beam = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000_000),
-        mu_x=torch.tensor(1e-5),
-        mu_px=torch.tensor(1e-7),
-        mu_y=torch.tensor(2e-5),
-        mu_py=torch.tensor(2e-7),
-        sigma_x=torch.tensor(1.75e-7),
-        sigma_px=torch.tensor(2e-7),
-        sigma_y=torch.tensor(1.75e-7),
-        sigma_py=torch.tensor(2e-7),
-        sigma_tau=torch.tensor(0.000001),
-        sigma_p=torch.tensor(0.000001),
-        cor_x=torch.tensor(0.0),
-        cor_y=torch.tensor(0.0),
-        cor_tau=torch.tensor(0.0),
-        energy=torch.tensor(1e7),
-        total_charge=torch.tensor(1e-9),
+        num_particles=1_000_000,
+        mu_x=1e-5,
+        mu_px=1e-7,
+        mu_y=2e-5,
+        mu_py=2e-7,
+        sigma_x=1.75e-7,
+        sigma_px=2e-7,
+        sigma_y=1.75e-7,
+        sigma_py=2e-7,
+        sigma_tau=0.000001,
+        sigma_p=0.000001,
+        cor_x=0.0,
+        cor_y=0.0,
+        cor_tau=0.0,
+        energy=1e7,
+        total_charge=1e-9,
     )
 
     assert beam.num_particles == 1_000_000
@@ -51,18 +51,18 @@ def test_transform_to():
     """
     original_beam = ParticleBeam.from_parameters()
     transformed_beam = original_beam.transformed_to(
-        mu_x=torch.tensor(1e-5),
-        mu_px=torch.tensor(1e-7),
-        mu_y=torch.tensor(2e-5),
-        mu_py=torch.tensor(2e-7),
-        sigma_x=torch.tensor(1.75e-7),
-        sigma_px=torch.tensor(2e-7),
-        sigma_y=torch.tensor(1.75e-7),
-        sigma_py=torch.tensor(2e-7),
-        sigma_tau=torch.tensor(0.000001),
-        sigma_p=torch.tensor(0.000001),
-        energy=torch.tensor(1e7),
-        total_charge=torch.tensor(1e-9),
+        mu_x=1e-5,
+        mu_px=1e-7,
+        mu_y=2e-5,
+        mu_py=2e-7,
+        sigma_x=1.75e-7,
+        sigma_px=2e-7,
+        sigma_y=1.75e-7,
+        sigma_py=2e-7,
+        sigma_tau=0.000001,
+        sigma_p=0.000001,
+        energy=1e7,
+        total_charge=1e-9,
     )
 
     assert isinstance(transformed_beam, ParticleBeam)
@@ -88,14 +88,14 @@ def test_from_twiss_to_twiss():
     parameters.
     """
     beam = ParticleBeam.from_twiss(
-        num_particles=torch.tensor(10_000_000),
-        beta_x=torch.tensor(5.91253676811640894),
-        alpha_x=torch.tensor(3.55631307633660354),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        beta_y=torch.tensor(5.91253676811640982),
-        alpha_y=torch.tensor(1.0),  # TODO: set realistic value
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        num_particles=10_000_000,
+        beta_x=5.91253676811640894,
+        alpha_x=3.55631307633660354,
+        emittance_x=3.494768647122823e-09,
+        beta_y=5.91253676811640982,
+        alpha_y=1.0,  # TODO: set realistic value
+        emittance_y=3.497810737006068e-09,
+        energy=6e6,
     )
     # rather loose rtol is needed here due to the random sampling of the beam
     assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894, rtol=1e-2)
@@ -117,14 +117,13 @@ def test_generate_uniform_ellipsoid_vectorized():
     radius_y = torch.tensor([1e-4, 2e-4])
     radius_tau = torch.tensor([1e-5, 2e-5])
 
-    num_particles = torch.tensor(1_000_000)
     sigma_px = torch.tensor([2e-7, 1e-7])
     sigma_py = torch.tensor([3e-7, 2e-7])
     sigma_p = torch.tensor([0.000001, 0.000002])
     energy = torch.tensor([1e7, 2e7])
     total_charge = torch.tensor([1e-9, 3e-9])
 
-    num_particles = torch.tensor(1_000_000)
+    num_particles = 1_000_000
     beam = ParticleBeam.uniform_3d_ellipsoid(
         num_particles=num_particles,
         radius_x=radius_x,
@@ -155,7 +154,7 @@ def test_only_sigma_vectorized():
     """
     beam = ParticleBeam.from_parameters(
         num_particles=10_000,
-        mu_x=torch.tensor(1e-5),
+        mu_x=1e-5,
         sigma_x=torch.tensor([1.75e-7, 2.75e-7]),
     )
     assert beam.particles.shape == (2, 10_000, 7)
@@ -169,9 +168,7 @@ def test_indexing_with_vectorized_beamline():
     quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.2).unsqueeze(0), k1=torch.rand((5, 2))
     )
-    incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=1_000, sigma_x=torch.tensor(1e-5)
-    )
+    incoming = cheetah.ParticleBeam.from_parameters(num_particles=1_000, sigma_x=1e-5)
 
     outgoing = quadrupole.track(incoming)
     sub_beam = outgoing[:3]
@@ -192,10 +189,10 @@ def test_indexing_with_vectorized_incoming_beam():
     Test that indexing into a vectorised outgoing beam works when the vectorisation
     originates in the incoming beam.
     """
-    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(0.1))
+    quadrupole = cheetah.Quadrupole(length=0.2, k1=0.1)
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=1_000,
-        sigma_x=torch.tensor(1e-5),
+        sigma_x=1e-5,
         energy=torch.rand((5, 2)) * 154e6,
     )
 

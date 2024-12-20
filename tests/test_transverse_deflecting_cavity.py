@@ -14,10 +14,10 @@ def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
         "tests/resources/bmadx/incoming.pt", weights_only=False
     ).to(dtype)
     tdc = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor(1.0),
-        voltage=torch.tensor(1e7),
+        length=1.0,
+        voltage=1e7,
         phase=torch.tensor(0.2, dtype=dtype),
-        frequency=torch.tensor(1e9),
+        frequency=1e9,
         tracking_method="bmadx",
         dtype=dtype,
     )
@@ -45,16 +45,16 @@ def test_transverse_deflecting_cavity_energy_length_vectorization():
     correct shape, when the input beam's energy and the TDC's length are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000,
+        sigma_px=2e-7,
+        sigma_py=2e-7,
         energy=torch.tensor([50e6, 60e6]),
     )
     tdc = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor(1.0),
+        length=1.0,
         voltage=torch.tensor([[1e7], [2e7], [3e7]]),
-        phase=torch.tensor(0.4),
-        frequency=torch.tensor(1e9),
+        phase=0.4,
+        frequency=1e9,
         tracking_method="bmadx",
     )
 
@@ -69,16 +69,16 @@ def test_transverse_deflecting_cavity_energy_phase_vectorization():
     correct shape, when the input beam's energy and the TDC's phase are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000,
+        sigma_px=2e-7,
+        sigma_py=2e-7,
         energy=torch.tensor([50e6, 60e6]),
     )
     tdc = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor(1.0),
-        voltage=torch.tensor(1e7),
+        length=1.0,
+        voltage=1e7,
         phase=torch.tensor([[0.6], [0.5], [0.4]]),
-        frequency=torch.tensor(1e9),
+        frequency=1e9,
         tracking_method="bmadx",
     )
 
@@ -93,15 +93,15 @@ def test_transverse_deflecting_cavity_energy_frequency_vectorization():
     correct shape, when the input beam's energy and the TDC's frequency are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000,
+        sigma_px=2e-7,
+        sigma_py=2e-7,
         energy=torch.tensor([50e6, 60e6]),
     )
     tdc3 = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor(1.0),
-        voltage=torch.tensor(1e7),
-        phase=torch.tensor(0.4),
+        length=1.0,
+        voltage=1e7,
+        phase=0.4,
         frequency=torch.tensor([[1e9], [2e9], [3e9]]),
         tracking_method="bmadx",
     )
@@ -117,13 +117,13 @@ def test_transverse_deflecting_cavity_all_parameters_vectorization():
     correct shape, when all parameters are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000,
+        sigma_px=2e-7,
+        sigma_py=2e-7,
         energy=torch.tensor([50e6, 60e6]),
     )
     tdc = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor(1.0),
+        length=1.0,
         voltage=torch.ones([4, 1, 1, 1]) * 1e7,
         phase=torch.ones([1, 3, 1, 1]) * 0.4,
         frequency=torch.ones([1, 1, 2, 1]) * 1e9,
@@ -140,9 +140,7 @@ def test_tracking_inactive_in_segment():
     Test that tracking through a `Segment` that contains an inactive
     `TransverseDeflectingCavity` does not throw an exception. This was an issue in #290.
     """
-    segment = cheetah.Segment(
-        elements=[cheetah.TransverseDeflectingCavity(length=torch.tensor(1.0))]
-    )
+    segment = cheetah.Segment(elements=[cheetah.TransverseDeflectingCavity(length=1.0)])
     beam = cheetah.ParticleBeam.from_parameters()
 
     segment.track(beam)

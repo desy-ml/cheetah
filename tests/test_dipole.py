@@ -16,11 +16,9 @@ def test_dipole_off():
     """
     Test that a dipole with angle=0 behaves still like a drift.
     """
-    dipole = Dipole(length=torch.tensor(1.0), angle=torch.tensor(0.0))
-    drift = Drift(length=torch.tensor(1.0))
-    incoming_beam = ParameterBeam.from_parameters(
-        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
-    )
+    dipole = Dipole(length=1.0, angle=0.0)
+    drift = Drift(length=1.0)
+    incoming_beam = ParameterBeam.from_parameters(sigma_px=2e-7, sigma_py=2e-7)
     outbeam_dipole_off = dipole(incoming_beam)
     outbeam_drift = drift(incoming_beam)
 
@@ -36,15 +34,13 @@ def test_dipole_focussing():
     """
     Test that a dipole with focussing moment behaves like a quadrupole.
     """
-    dipole = Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
-    quadrupole = Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
-    incoming_beam = ParameterBeam.from_parameters(
-        sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
-    )
+    dipole = Dipole(length=1.0, k1=10.0)
+    quadrupole = Quadrupole(length=1.0, k1=10.0)
+    incoming_beam = ParameterBeam.from_parameters(sigma_px=2e-7, sigma_py=2e-7)
     outbeam_dipole_on = dipole.track(incoming_beam)
     outbeam_quadrupole = quadrupole.track(incoming_beam)
 
-    dipole.k1 = torch.tensor([0.0], device=dipole.k1.device)
+    dipole.k1 = torch.tensor(0.0, device=dipole.k1.device)
     outbeam_dipole_off = dipole.track(incoming_beam)
 
     assert dipole.name is not None
@@ -58,9 +54,9 @@ def test_dipole_vectorized_execution(DipoleType):
     Test that a dipole with vector dimensions behaves as expected.
     """
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(100),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+        num_particles=100,
+        energy=1e9,
+        mu_x=1e-5,
     )
 
     # Test vectorisation to generate 3 beam lines
@@ -70,7 +66,7 @@ def test_dipole_vectorized_execution(DipoleType):
                 length=torch.tensor([0.5, 0.5, 0.5]),
                 angle=torch.tensor([0.1, 0.2, 0.1]),
             ),
-            Drift(length=torch.tensor(0.5)),
+            Drift(length=0.5),
         ]
     )
     outgoing = segment(incoming)
@@ -126,13 +122,13 @@ def test_dipole_bmadx_tracking(dtype):
     e1 = angle / 2
     e2 = angle - e1
     dipole_cheetah_bmadx = Dipole(
-        length=torch.tensor(0.5),
+        length=0.5,
         angle=angle,
         dipole_e1=e1,
         dipole_e2=e2,
         tilt=torch.tensor(0.1, dtype=dtype),
-        fringe_integral=torch.tensor(0.5),
-        fringe_integral_exit=torch.tensor(0.5),
+        fringe_integral=0.5,
+        fringe_integral_exit=0.5,
         gap=torch.tensor(0.05, dtype=dtype),
         gap_exit=torch.tensor(0.05, dtype=dtype),
         fringe_at="both",
@@ -159,16 +155,16 @@ def test_dipole_bmadx_tracking(dtype):
 
 def test_buffer_registration():
     """Test that buffers are properly registered in the dipole element."""
-    length = torch.tensor(0.5)
-    angle = torch.tensor(2e-3)
-    k1 = torch.tensor(1.2)
-    dipole_e1 = torch.tensor(1e-3)
-    dipole_e2 = torch.tensor(-1e-3)
-    tilt = torch.tensor(0.1)
-    gap = torch.tensor(0.1)
-    gap_exit = torch.tensor(0.1)
-    fringe_integral = torch.tensor(0.5)
-    fringe_integral_exit = torch.tensor(0.5)
+    length = 0.5
+    angle = 2e-3
+    k1 = 1.2
+    dipole_e1 = 1e-3
+    dipole_e2 = -1e-3
+    tilt = 0.1
+    gap = 0.1
+    gap_exit = 0.1
+    fringe_integral = 0.5
+    fringe_integral_exit = 0.5
     fringe_at = "both"
     fringe_type = "linear_edge"
     tracking_method = "cheetah"
