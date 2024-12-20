@@ -30,6 +30,7 @@ def convert_element(
     """
     parsed = context[name]
 
+    # If the element is a list, it is a sequence of elements
     if isinstance(parsed, list):
         return cheetah.Segment(
             elements=[
@@ -38,8 +39,13 @@ def convert_element(
             ],
             name=name,
         )
-    elif isinstance(parsed, dict) and "element_type" in parsed:
-        if parsed["element_type"] == "sole":
+
+    # Make all keys lowercase so matching is case-insensitive
+    parsed = {k.lower(): v for k, v in parsed.items()}
+
+    # Convert the element based on its type
+    if isinstance(parsed, dict) and "element_type" in parsed:
+        if parsed["element_type"].lower() == "sole":
             # The group property does not have an analoge in Cheetah, so it is neglected
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Solenoid(
@@ -48,7 +54,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in ["hkick", "hkic"]:
+        elif parsed["element_type"].lower() in ["hkick", "hkic"]:
             validate_understood_properties(
                 ["element_type", "l", "kick", "group"], parsed
             )
@@ -59,7 +65,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in ["vkick", "vkic"]:
+        elif parsed["element_type"].lower() in ["vkick", "vkic"]:
             validate_understood_properties(
                 ["element_type", "l", "kick", "group"], parsed
             )
@@ -70,10 +76,10 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "mark":
+        elif parsed["element_type"].lower() == "mark":
             validate_understood_properties(["element_type", "group"], parsed)
             return cheetah.Marker(name=name)
-        elif parsed["element_type"] == "kick":
+        elif parsed["element_type"].lower() == "kick":
             validate_understood_properties(["element_type", "l", "group"], parsed)
 
             # TODO Find proper element class
@@ -83,7 +89,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in ["drift", "drif"]:
+        elif parsed["element_type"].lower() in ["drift", "drif"]:
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
                 length=torch.tensor(parsed.get("l", 0.0)),
@@ -91,7 +97,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in ["csrdrift", "csrdrif"]:
+        elif parsed["element_type"].lower() in ["csrdrift", "csrdrif"]:
             # Drift that includes effects from coherent synchrotron radiation
             validate_understood_properties(
                 ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"], parsed
@@ -102,7 +108,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] in ["lscdrift", "lscdrif"]:
+        elif parsed["element_type"].lower() in ["lscdrift", "lscdrif"]:
             # Drift that includes space charge effects
             validate_understood_properties(
                 [
@@ -124,7 +130,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "ecol":
+        elif parsed["element_type"].lower() == "ecol":
             validate_understood_properties(
                 ["element_type", "l", "x_max", "y_max"],
                 parsed,
@@ -148,7 +154,7 @@ def convert_element(
                 ],
                 name=name + "_segment",
             )
-        elif parsed["element_type"] == "rcol":
+        elif parsed["element_type"].lower() == "rcol":
             validate_understood_properties(
                 ["element_type", "l", "x_max", "y_max"],
                 parsed,
@@ -172,7 +178,7 @@ def convert_element(
                 ],
                 name=name + "_segment",
             )
-        elif parsed["element_type"] == "quad":
+        elif parsed["element_type"].lower() == "quad":
             validate_understood_properties(
                 ["element_type", "l", "k1", "tilt", "group"],
                 parsed,
@@ -185,7 +191,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "sext":
+        elif parsed["element_type"].lower() == "sext":
             # validate_understood_properties(
             #     ["element_type", "l", "group"],
             #     parsed,
@@ -198,7 +204,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "moni":
+        elif parsed["element_type"].lower() == "moni":
             validate_understood_properties(["element_type", "group", "l"], parsed)
             if "l" in parsed:
                 return cheetah.Segment(
@@ -221,7 +227,7 @@ def convert_element(
                 )
             else:
                 return cheetah.BPM(name=name)
-        elif parsed["element_type"] == "ematrix":
+        elif parsed["element_type"].lower() == "ematrix":
             validate_understood_properties(
                 ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]", "group"],
                 parsed,
@@ -255,7 +261,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "rfca":
+        elif parsed["element_type"].lower() == "rfca":
             validate_understood_properties(
                 [
                     "element_type",
@@ -284,7 +290,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "rfcw":
+        elif parsed["element_type"].lower() == "rfcw":
             validate_understood_properties(
                 [
                     "element_type",
@@ -328,7 +334,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "rfdf":
+        elif parsed["element_type"].lower() == "rfdf":
             validate_understood_properties(
                 [
                     "element_type",
@@ -353,7 +359,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "sben":
+        elif parsed["element_type"].lower() == "sben":
             validate_understood_properties(
                 ["element_type", "l", "angle", "k1", "e1", "e2", "tilt", "group"],
                 parsed,
@@ -369,7 +375,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "rben":
+        elif parsed["element_type"].lower() == "rben":
             validate_understood_properties(
                 ["element_type", "l", "angle", "e1", "e2", "tilt", "group"],
                 parsed,
@@ -384,7 +390,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "csrcsben":
+        elif parsed["element_type"].lower() == "csrcsben":
             validate_understood_properties(
                 [
                     "element_type",
@@ -420,12 +426,12 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "watch":
+        elif parsed["element_type"].lower() == "watch":
             validate_understood_properties(
                 ["element_type", "group", "filename"], parsed
             )
             return cheetah.Marker(name=name)
-        elif parsed["element_type"] in ["charge", "wake"]:
+        elif parsed["element_type"].lower() in ["charge", "wake"]:
             print(
                 f"WARNING: Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"

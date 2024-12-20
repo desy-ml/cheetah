@@ -32,7 +32,7 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
     # Replace lines calling external files with the lines of the external file
     replaced_lines = []
     for line in lines:
-        if line.startswith("call, file ="):
+        if line.lower().startswith("call, file ="):
             external_file_path = Path(line.split("=")[1].strip())
             resolved_external_file_path = Path(
                 *[
@@ -48,10 +48,6 @@ def read_clean_lines(lattice_file_path: Path) -> list[str]:
             replaced_lines += external_file_lines
         else:
             replaced_lines.append(line)
-
-    # Make lines all lower case (done late because environment variables are case
-    # sensitive)
-    replaced_lines = [line.lower() for line in replaced_lines]
 
     # Finally remove spaces again, because some may now have appeared
     replaced_lines = [line.strip() for line in replaced_lines]
@@ -118,7 +114,7 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         pass
 
     # Check against allowed keywords
-    if expression in ["open", "electron", "t", "f", "traveling_wave", "full"]:
+    if expression.lower() in ["open", "electron", "t", "f", "traveling_wave", "full"]:
         return expression
 
     # Check against previously defined variables
@@ -128,14 +124,14 @@ def evaluate_expression(expression: str, context: dict) -> Any:
     # Evaluate as a mathematical expression
     try:
         # Surround expressions in brackets with quotes
-        expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
+        expression = re.sub(r"\[([a-zA-Z0-9_%]+)\]", r"['\1']", expression)
         # Replace power operator with python equivalent
         expression = re.sub(r"\^", r"**", expression)
         # Replace abs with abs_func when it is followed by a (
         # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
         # lattice file. I'm not sure this replacement will lead to the intended
         # behaviour.
-        expression = re.sub(r"abs\(", r"abs_func(", expression)
+        expression = re.sub(r"abs\(", r"abs_func(", expression)  # TODO
 
         return (
             eval(expression, context)
@@ -188,7 +184,7 @@ def assign_property(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
+    pattern = r"([a-zA-Z0-9_\*:]+)\[([a-zA-Z0-9_%]+)\]\s*=(.*)"
     match = re.fullmatch(pattern, line)
 
     object_name = match.group(1).strip()
@@ -219,7 +215,7 @@ def assign_variable(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_]+)\s*=(.*)"
+    pattern = r"([a-zA-Z0-9_]+)\s*=(.*)"
     match = re.fullmatch(pattern, line)
 
     variable_name = match.group(1).strip()
@@ -239,7 +235,7 @@ def define_element(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\,(.*))?"
+    pattern = r"([a-zA-Z0-9_\.]+)\s*\:\s*([a-zA-Z0-9_]+)(\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
@@ -254,7 +250,7 @@ def define_element(line: str, context: dict) -> dict:
         element_properties_string = match.group(4).strip()
 
         property_pattern = (
-            r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9_]+\s*\=\s*[^\=\,\"]+)"
+            r"([a-zA-Z0-9_]+\s*\=\s*\"[^\"]+\"|[a-zA-Z0-9_]+\s*\=\s*[^\=\,\"]+)"
         )
         property_matches = re.findall(property_pattern, element_properties_string)
 
@@ -283,7 +279,7 @@ def define_line(line: str, context: dict) -> dict:
         to read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
+    pattern = r"([a-zA-Z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
     match = re.fullmatch(pattern, line)
 
     line_name = match.group(1).strip()
@@ -309,8 +305,8 @@ def define_overlay(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    knot_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"  # noqa: E501
-    expression_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}\s*(\,.*)*"  # noqa: E501
+    knot_based_pattern = r"([a-zA-Z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{\s*([a-zA-Z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"  # noqa: E501
+    expression_based_pattern = r"([a-zA-Z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}\s*(\,.*)*"  # noqa: E501
 
     expression_match = re.fullmatch(expression_based_pattern, line)
     knot_match = re.fullmatch(knot_based_pattern, line)
@@ -355,7 +351,7 @@ def parse_use_line(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"use\s*\,\s*([a-z0-9_]+)"
+    pattern = r"use\s*\,\s*([a-zA-Z0-9_]+)"
     match = re.fullmatch(pattern, line)
 
     use_line_name = match.group(1).strip()
@@ -372,12 +368,12 @@ def parse_lines(lines: str) -> dict:
     :param lines: List of lines to parse.
     :return: Dictionary of variables defined in the lattice file.
     """
-    property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
-    variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
-    element_definition_pattern = r"[a-z0-9_\.]+\s*\:\s*[a-z0-9_]+.*"
-    line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
-    overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
-    use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
+    property_assignment_pattern = r"[a-zA-Z0-9_\*:]+\[[a-zA-Z0-9_%]+\]\s*=.*"
+    variable_assignment_pattern = r"[a-zA-Z0-9_]+\s*=.*"
+    element_definition_pattern = r"[a-zA-Z0-9_\.]+\s*\:\s*[a-zA-Z0-9_]+.*"
+    line_definition_pattern = r"[a-zA-Z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
+    overlay_definition_pattern = r"[a-zA-Z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
+    use_line_pattern = r"use\s*\,\s*[a-zA-Z0-9_]+"
 
     context = {
         "pi": scipy.constants.pi,
@@ -425,7 +421,9 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
     :return: None
     """
     for property in properties:
-        assert any([re.fullmatch(pattern, property) for pattern in understood]), (
+        assert any(
+            [re.fullmatch(pattern, property.lower()) for pattern in understood]
+        ), (
             f"Property {property} with value {properties[property]} for element type"
             f" {properties['element_type']} is currently not understood. Other values"
             f" in properties are {properties.keys()}."  # noqa: B038

@@ -51,12 +51,12 @@ def test_cavity_import():
     file_path = "tests/resources/cavity.lte"
     converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
-    assert np.isclose(converted.c1.length, 0.7)
-    assert np.isclose(converted.c1.frequency, 1.2e9)
-    assert np.isclose(converted.c1.voltage, 16.175e6)
+    assert np.isclose(converted.C1.length, 0.7)
+    assert np.isclose(converted.C1.frequency, 1.2e9)
+    assert np.isclose(converted.C1.voltage, 16.175e6)
 
     # Cheetah and Elegant use different phase conventions shifted by 90 deg
-    assert np.isclose(converted.c1.phase, 0.0)
+    assert np.isclose(converted.C1.phase, 0.0)
 
 
 def test_custom_transfer_map_import():
@@ -76,7 +76,7 @@ def test_custom_transfer_map_import():
         ]
     )
 
-    assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
+    assert torch.allclose(converted.C1E.predefined_transfer_map, correct_transfer_map)
 
 
 @pytest.mark.parametrize(
