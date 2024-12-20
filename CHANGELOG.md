@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Allow passing Python `float` for scalar arguments of elements and beams instead of `torch.Tensor`. (see #314) (@Hespe)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
