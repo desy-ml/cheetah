@@ -24,7 +24,7 @@ def test_element_buffer_contents_and_location(ElementClass):
     Test that the buffers of cloned elements have the same content while not sharing the
     same memory location.
     """
-    element = ElementClass(length=torch.tensor(1.0))
+    element = ElementClass(length=1.0)
     clone = element.clone()
 
     for buffer, buffer_clone in zip(element.buffers(), clone.buffers()):

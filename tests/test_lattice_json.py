@@ -41,7 +41,7 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     """
     custom_transfer_map_element = cheetah.CustomTransferMap(
         predefined_transfer_map=torch.eye(7, 7),
-        length=torch.tensor(1.0),
+        length=1.0,
         name="my_custom_transfer_map_element",
     )
     segment = cheetah.Segment([custom_transfer_map_element], name="test_segment")

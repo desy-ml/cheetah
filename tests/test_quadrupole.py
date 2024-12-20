@@ -8,11 +8,9 @@ def test_quadrupole_off():
     """
     Test that a quadrupole with k1=0 behaves still like a drift.
     """
-    quadrupole = Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(0.0))
-    drift = Drift(length=torch.tensor(1.0))
-    incoming_beam = ParameterBeam.from_parameters(
-        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
-    )
+    quadrupole = Quadrupole(length=1.0, k1=0.0)
+    drift = Drift(length=1.0)
+    incoming_beam = ParameterBeam.from_parameters(sigma_px=2e-7, sigma_py=2e-7)
     outbeam_quad = quadrupole(incoming_beam)
     outbeam_drift = drift(incoming_beam)
 
@@ -28,17 +26,11 @@ def test_quadrupole_with_misalignments_vectorized():
     Test that a quadrupole with misalignments behaves as expected.
     """
     quad_with_misalignment = Quadrupole(
-        length=torch.tensor(1.0),
-        k1=torch.tensor(1.0),
-        misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0),
+        length=1.0, k1=1.0, misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0)
     )
 
-    quad_without_misalignment = Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0)
-    )
-    incoming_beam = ParameterBeam.from_parameters(
-        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
-    )
+    quad_without_misalignment = Quadrupole(length=1.0, k1=1.0)
+    incoming_beam = ParameterBeam.from_parameters(sigma_px=2e-7, sigma_py=2e-7)
     outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
     outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
 
@@ -54,17 +46,11 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
     not raise an error and behaves as expected.
     """
     quad_with_misalignment = Quadrupole(
-        length=torch.tensor(1.0),
-        k1=torch.tensor(1.0),
-        misalignment=torch.randn((4, 3, 2)) * 5e-4,
+        length=1.0, k1=1.0, misalignment=torch.randn((4, 3, 2)) * 5e-4
     )
-    quad_without_misalignment = Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0)
-    )
+    quad_without_misalignment = Quadrupole(length=1.0, k1=1.0)
 
-    incoming = ParameterBeam.from_parameters(
-        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
-    )
+    incoming = ParameterBeam.from_parameters(sigma_px=2e-7, sigma_py=2e-7)
 
     outgoing_with_misalignment = quad_with_misalignment(incoming)
     outgoing_without_misalignment = quad_without_misalignment(incoming)
@@ -83,18 +69,16 @@ def test_tilted_quadrupole_vectorized():
     Test that a quadrupole with a tilt behaves as expected in vectorised mode.
     """
     incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+        num_particles=1_000_000, energy=1e9, mu_x=1e-5
     )
     segment = Segment(
         [
             Quadrupole(
-                length=torch.tensor(0.5),
-                k1=torch.tensor(1.0),
+                length=0.5,
+                k1=1.0,
                 tilt=torch.tensor([torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4]),
             ),
-            Drift(length=torch.tensor(0.5)),
+            Drift(length=0.5),
         ]
     )
     outgoing = segment(incoming)
@@ -114,8 +98,8 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
     segment = Segment(
         [
             Quadrupole(
-                length=torch.tensor(0.5),
-                k1=torch.tensor(1.0),
+                length=0.5,
+                k1=1.0,
                 tilt=torch.tensor(
                     [
                         [torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4],
@@ -123,15 +107,11 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
                     ]
                 ),
             ),
-            Drift(length=torch.tensor(0.5)),
+            Drift(length=0.5),
         ]
     )
 
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
-    )
+    incoming = ParticleBeam.from_parameters(num_particles=10_000, energy=1e9, mu_x=1e-5)
 
     outgoing = segment(incoming)
 
@@ -157,11 +137,7 @@ def test_quadrupole_length_multiple_vector_dimensions():
         ]
     )
 
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
-    )
+    incoming = ParticleBeam.from_parameters(num_particles=10_000, energy=1e9, mu_x=1e-5)
 
     outgoing = segment(incoming)
 
@@ -179,10 +155,10 @@ def test_quadrupole_bmadx_tracking(dtype):
         dtype
     )
     quadrupole = Quadrupole(
-        length=torch.tensor(1.0),
-        k1=torch.tensor(10.0),
+        length=1.0,
+        k1=10.0,
         misalignment=torch.tensor([0.01, -0.02], dtype=dtype),
-        tilt=torch.tensor(0.5),
+        tilt=0.5,
         num_steps=10,
         tracking_method="bmadx",
         dtype=dtype,
@@ -215,7 +191,7 @@ def test_tracking_method_vectorization(tracking_method):
         length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
         k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
         misalignment=torch.zeros(2),
-        tilt=torch.tensor(0.0),
+        tilt=0.0,
         tracking_method=tracking_method,
     )
     incoming = ParticleBeam.from_parameters(

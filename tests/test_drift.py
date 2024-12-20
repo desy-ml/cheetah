@@ -9,10 +9,8 @@ def test_diverging_parameter_beam():
     Test that that a parameter beam with sigma_px > 0 and sigma_py > 0 increases in
     size in both dimensions when travelling through a drift section.
     """
-    drift = cheetah.Drift(length=torch.tensor(1.0))
-    incoming_beam = cheetah.ParameterBeam.from_parameters(
-        sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
-    )
+    drift = cheetah.Drift(length=1.0)
+    incoming_beam = cheetah.ParameterBeam.from_parameters(sigma_px=2e-7, sigma_py=2e-7)
     outgoing_beam = drift.track(incoming_beam)
 
     assert outgoing_beam.sigma_x > incoming_beam.sigma_x
@@ -25,11 +23,9 @@ def test_diverging_particle_beam():
     Test that that a particle beam with sigma_px > 0 and sigma_py > 0 increases in
     size in both dimensions when travelling through a drift section.
     """
-    drift = cheetah.Drift(length=torch.tensor(1.0))
+    drift = cheetah.Drift(length=1.0)
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=1_000, sigma_px=2e-7, sigma_py=2e-7
     )
     outgoing_beam = drift.track(incoming_beam)
 
@@ -70,9 +66,7 @@ def test_drift_bmadx_tracking(dtype):
     incoming_beam = torch.load(
         "tests/resources/bmadx/incoming.pt", weights_only=False
     ).to(dtype)
-    drift = cheetah.Drift(
-        length=torch.tensor(1.0), tracking_method="bmadx", dtype=dtype
-    )
+    drift = cheetah.Drift(length=1.0, tracking_method="bmadx", dtype=dtype)
 
     # Run tracking
     outgoing_beam = drift.track(incoming_beam)

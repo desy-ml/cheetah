@@ -217,13 +217,13 @@ def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
     there are no errors. This test does NOT check physical correctness.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor(3.0441),
+        length=3.0441,
         voltage=torch.tensor([0.0, 48_198_468.0, 0.0]),
-        phase=torch.tensor(48198468.0),
-        frequency=torch.tensor(2.8560e09),
+        phase=48198468.0,
+        frequency=2.8560e09,
         name="my_test_cavity",
     )
-    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+    incoming = BeamClass.from_parameters(sigma_x=1e-5)
 
     outgoing = cavity.track(incoming)
 
@@ -249,7 +249,7 @@ def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
 def test_vectorized_undulator(BeamClass):
     """Test that a vectorized `Undulator` is able to track a particle beam."""
     element = cheetah.Undulator(length=torch.tensor([0.4, 0.7]))
-    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+    incoming = BeamClass.from_parameters(sigma_x=1e-5)
 
     outgoing = element.track(incoming)
 
@@ -277,7 +277,7 @@ def test_vectorized_solenoid(BeamClass):
     element = cheetah.Solenoid(
         length=torch.tensor([0.4, 0.7]), k=torch.tensor([4.2, 3.1])
     )
-    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+    incoming = BeamClass.from_parameters(sigma_x=1e-5)
 
     outgoing = element.track(incoming)
 
@@ -308,7 +308,7 @@ def test_vectorized_screen_2d(BeamClass, method):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=1.0),
             cheetah.Screen(
                 resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
@@ -325,7 +325,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         ],
         name="my_segment",
     )
-    incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
+    incoming = BeamClass.from_parameters(sigma_x=1e-5)
 
     _ = segment.track(incoming)
 
@@ -416,9 +416,7 @@ def test_broadcasting_corrector_angles(ElementClass):
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
-    element = ElementClass(
-        length=torch.tensor(0.15), angle=torch.tensor([[1e-5], [2e-5], [3e-5]])
-    )
+    element = ElementClass(length=0.15, angle=torch.tensor([[1e-5], [2e-5], [3e-5]]))
 
     outgoing = element.track(incoming)
 
@@ -435,7 +433,7 @@ def test_broadcasting_solenoid_misalignment():
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
     element = cheetah.Solenoid(
-        length=torch.tensor(0.15),
+        length=0.15,
         misalignment=torch.tensor(
             [
                 [[1e-5, 2e-5], [2e-5, 3e-5]],
@@ -462,19 +460,19 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
 
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000,
-        sigma_py=torch.tensor(1e-4),
-        sigma_px=torch.tensor(2e-4),
+        sigma_py=1e-4,
+        sigma_px=2e-4,
         energy=torch.tensor([154e6, 14e9]),
     )
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Drift(length=0.5),
             cheetah.Aperture(
                 x_max=torch.tensor([[1e-5], [2e-4], [3e-4]]),
-                y_max=torch.tensor(2e-4),
+                y_max=2e-4,
                 shape=aperture_shape,
             ),
-            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Drift(length=0.5),
         ]
     )
 

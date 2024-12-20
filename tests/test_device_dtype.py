@@ -24,9 +24,7 @@ from cheetah.utils import is_mps_available_and_functional
 )
 def test_move_quadrupole_to_device(target_device: torch.device):
     """Test that a quadrupole magnet can be successfully moved to a different device."""
-    quad = cheetah.Quadrupole(
-        length=torch.tensor(0.2), k1=torch.tensor(4.2), name="my_quad"
-    )
+    quad = cheetah.Quadrupole(length=0.2, k1=4.2, name="my_quad")
 
     # Test that by default the quadrupole is on the CPU
     assert quad.length.device.type == "cpu"
@@ -120,8 +118,8 @@ def test_change_quadrupole_dtype():
     Test that a quadrupole magnet can be successfully changed to a different dtype.
     """
     quad = cheetah.Quadrupole(
-        length=torch.tensor(0.2),
-        k1=torch.tensor(4.2),
+        length=0.2,
+        k1=4.2,
         name="my_quad",
     )
 
@@ -265,14 +263,12 @@ def test_transformed_beam_dtype(BeamClass):
     """
     Test that Beam.transformed_to keeps the dtype by default.
     """
-    beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5), dtype=torch.float64)
+    beam = BeamClass.from_parameters(mu_x=1e-5, dtype=torch.float64)
 
     # Verify the dtype is kept by default
-    transformed_beam = beam.transformed_to(mu_x=torch.tensor(-2e-5))
+    transformed_beam = beam.transformed_to(mu_x=-2e-5)
     assert transformed_beam.mu_x.dtype == torch.float64
 
     # Check that the manual dtype selection works
-    transformed_beam = beam.transformed_to(
-        mu_x=torch.tensor(-2e-5), dtype=torch.float32
-    )
+    transformed_beam = beam.transformed_to(mu_x=-2e-5, dtype=torch.float32)
     assert transformed_beam.mu_x.dtype == torch.float32

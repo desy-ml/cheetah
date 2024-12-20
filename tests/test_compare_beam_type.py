@@ -12,25 +12,23 @@ def test_from_twiss():
     Test that a beams created from Twiss parameters have the same properties.
     """
     parameter_beam = cheetah.ParameterBeam.from_twiss(
-        beta_x=torch.tensor(5.91253676811640894),
-        alpha_x=torch.tensor(3.55631307633660354),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        beta_y=torch.tensor(5.91253676811640982),
-        alpha_y=torch.tensor(2e-7),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        beta_x=5.91253676811640894,
+        alpha_x=3.55631307633660354,
+        emittance_x=3.494768647122823e-09,
+        beta_y=5.91253676811640982,
+        alpha_y=2e-7,
+        emittance_y=3.497810737006068e-09,
+        energy=6e6,
     )
     particle_beam = cheetah.ParticleBeam.from_twiss(
-        num_particles=torch.tensor(
-            [10_000_000]
-        ),  # Large number of particles reduces noise
-        beta_x=torch.tensor(5.91253676811640894),
-        alpha_x=torch.tensor(3.55631307633660354),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        beta_y=torch.tensor(5.91253676811640982),
-        alpha_y=torch.tensor(2e-7),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        num_particles=10_000_000,  # Large number of particles reduces noise
+        beta_x=5.91253676811640894,
+        alpha_x=3.55631307633660354,
+        emittance_x=3.494768647122823e-09,
+        beta_y=5.91253676811640982,
+        alpha_y=2e-7,
+        emittance_y=3.497810737006068e-09,
+        energy=6e6,
     )
 
     assert torch.isclose(parameter_beam.mu_x, particle_beam.mu_x, atol=1e-6)
@@ -97,9 +95,7 @@ def test_quadrupole():
     """Test that the quadrupole output for both beam types is roughly the same."""
 
     # Set up lattice
-    cheetah_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor(0.15), k1=torch.tensor(4.2)
-    )
+    cheetah_quadrupole = cheetah.Quadrupole(length=0.15, k1=4.2)
 
     # Parameter beam
     incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
@@ -149,10 +145,10 @@ def test_cavity_from_astra():
 
     # Set up lattice
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor(1.0377),
-        voltage=torch.tensor(0.01815975e9),
-        frequency=torch.tensor(1.3e9),
-        phase=torch.tensor(0.0),
+        length=1.0377,
+        voltage=0.01815975e9,
+        frequency=1.3e9,
+        phase=0.0,
     )
 
     # Parameter beam
@@ -221,34 +217,34 @@ def test_cavity_from_twiss():
 
     # Set up lattice
     cheetah_cavity = cheetah.Cavity(
-        length=torch.tensor(1.0377),
-        voltage=torch.tensor(0.01815975e9),
-        frequency=torch.tensor(1.3e9),
-        phase=torch.tensor(0.0),
+        length=1.0377,
+        voltage=0.01815975e9,
+        frequency=1.3e9,
+        phase=0.0,
     )
 
     # Parameter beam
     incoming_parameter_beam = cheetah.ParameterBeam.from_twiss(
-        beta_x=torch.tensor(5.91253677),
-        alpha_x=torch.tensor(3.55631308),
-        beta_y=torch.tensor(5.91253677),
-        alpha_y=torch.tensor(3.55631308),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emittance_x=3.494768647122823e-09,
+        emittance_y=3.497810737006068e-09,
+        energy=6e6,
     )
     outgoing_parameter_beam = cheetah_cavity.track(incoming_parameter_beam)
 
     # Particle beam
     incoming_particle_beam = cheetah.ParticleBeam.from_twiss(
         num_particles=1_000_000,
-        beta_x=torch.tensor(5.91253677),
-        alpha_x=torch.tensor(3.55631308),
-        beta_y=torch.tensor(5.91253677),
-        alpha_y=torch.tensor(3.55631308),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emittance_x=3.494768647122823e-09,
+        emittance_y=3.497810737006068e-09,
+        energy=6e6,
     )
     outgoing_particle_beam = cheetah_cavity.track(incoming_particle_beam)
 

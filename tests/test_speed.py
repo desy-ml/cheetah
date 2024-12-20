@@ -1,7 +1,5 @@
 import time
 
-import torch
-
 import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
@@ -17,9 +15,7 @@ def test_tracking_speed():
     segment.AREABSCR1.is_active = True  # Turn screen on and off
 
     particles = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(int(1e5)),
-        sigma_x=torch.tensor(175e-6),
-        sigma_y=torch.tensor(175e-6),
+        num_particles=100_000, sigma_x=175e-6, sigma_y=175e-6
     )
 
     t1 = time.time()

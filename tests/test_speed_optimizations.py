@@ -15,12 +15,10 @@ def test_merged_transfer_maps_tracking():
 
     original_segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(4.2)),
-            cheetah.Drift(length=torch.tensor(0.4)),
-            cheetah.HorizontalCorrector(
-                length=torch.tensor(0.1), angle=torch.tensor(1e-4)
-            ),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=4.2),
+            cheetah.Drift(length=0.4),
+            cheetah.HorizontalCorrector(length=0.1, angle=1e-4),
         ]
     )
     merged_segment = original_segment.transfer_maps_merged(incoming_beam=incoming_beam)
@@ -53,12 +51,10 @@ def test_merged_transfer_maps_tracking_vectorized():
 
     original_segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(4.2)),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=4.2),
             cheetah.Drift(length=torch.linspace(0.3, 0.5, 10)),
-            cheetah.HorizontalCorrector(
-                length=torch.tensor(0.1), angle=torch.tensor(1e-4)
-            ),
+            cheetah.HorizontalCorrector(length=0.1, angle=1e-4),
         ]
     )
     merged_segment = original_segment.transfer_maps_merged(incoming_beam=incoming_beam)
@@ -90,12 +86,10 @@ def test_merged_transfer_maps_num_elements():
 
     original_segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(4.2)),
-            cheetah.Drift(length=torch.tensor(0.4)),
-            cheetah.HorizontalCorrector(
-                length=torch.tensor(0.1), angle=torch.tensor(1e-4)
-            ),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=4.2),
+            cheetah.Drift(length=0.4),
+            cheetah.HorizontalCorrector(length=0.1, angle=1e-4),
         ]
     )
     merged_segment = original_segment.transfer_maps_merged(incoming_beam=incoming_beam)
@@ -110,13 +104,11 @@ def test_no_markers_left_after_removal():
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(4.2)),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=4.2),
             cheetah.Marker(),
-            cheetah.Drift(length=torch.tensor(0.4)),
-            cheetah.HorizontalCorrector(
-                length=torch.tensor(0.1), angle=torch.tensor(1e-4)
-            ),
+            cheetah.Drift(length=0.4),
+            cheetah.HorizontalCorrector(length=0.1, angle=1e-4),
             cheetah.Marker(),
         ]
     )
@@ -133,9 +125,9 @@ def test_inactive_magnet_is_replaced_by_drift():
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(0.0)),
-            cheetah.Drift(length=torch.tensor(0.4)),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=0.0),
+            cheetah.Drift(length=0.4),
         ]
     )
 
@@ -153,9 +145,9 @@ def test_active_elements_not_replaced_by_drift():
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor([4.2, 0.0])),
-            cheetah.Drift(length=torch.tensor(0.4)),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=torch.tensor([4.2, 0.0])),
+            cheetah.Drift(length=0.4),
         ]
     )
 
@@ -172,11 +164,9 @@ def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6), dtype=dtype),
-            cheetah.Quadrupole(
-                length=torch.tensor(0.2), k1=torch.tensor(0.0), dtype=dtype
-            ),
-            cheetah.Drift(length=torch.tensor(0.4), dtype=dtype),
+            cheetah.Drift(length=0.6, dtype=dtype),
+            cheetah.Quadrupole(length=0.2, k1=0.0, dtype=dtype),
+            cheetah.Drift(length=0.4, dtype=dtype),
         ]
     )
 
@@ -192,11 +182,9 @@ def test_inactive_magnet_drift_except_for():
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(
-                length=torch.tensor(0.2), k1=torch.tensor(0.0), name="my_quad"
-            ),
-            cheetah.Drift(length=torch.tensor(0.4)),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=0.0, name="my_quad"),
+            cheetah.Drift(length=0.4),
         ]
     )
 
@@ -215,15 +203,11 @@ def test_skippable_elements_reset():
     )
     original_segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6)),
-            cheetah.Quadrupole(
-                length=torch.tensor(0.2), k1=torch.tensor(4.2), name="Q1"
-            ),
-            cheetah.Drift(length=torch.tensor(0.4)),
-            cheetah.HorizontalCorrector(
-                length=torch.tensor(0.1), angle=torch.tensor(1e-4), name="HCOR_1"
-            ),
-            cheetah.Drift(length=torch.tensor(0.4)),
+            cheetah.Drift(length=0.6),
+            cheetah.Quadrupole(length=0.2, k1=4.2, name="Q1"),
+            cheetah.Drift(length=0.4),
+            cheetah.HorizontalCorrector(length=0.1, angle=1e-4, name="HCOR_1"),
+            cheetah.Drift(length=0.4),
         ]
     )
 
@@ -241,14 +225,12 @@ def test_without_zero_length_elements():
     """Test that zero-length elements are properly recognized and removed."""
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.Dipole(length=torch.tensor(0.0), angle=torch.tensor(0.0)),
-            cheetah.Dipole(
-                length=torch.tensor(0.0), angle=torch.tensor(0.0), name="my_dipole"
-            ),
-            cheetah.Dipole(length=torch.tensor([0.0, 0.1]), angle=torch.tensor(0.0)),
-            cheetah.Drift(length=torch.tensor(0.0)),
-            cheetah.Dipole(length=torch.tensor(0.0), angle=torch.tensor([0.5, 0.0])),
+            cheetah.Drift(length=1.0),
+            cheetah.Dipole(length=0.0, angle=0.0),
+            cheetah.Dipole(length=0.0, angle=0.0, name="my_dipole"),
+            cheetah.Dipole(length=torch.tensor([0.0, 0.1]), angle=0.0),
+            cheetah.Drift(length=0.0),
+            cheetah.Dipole(length=0.0, angle=torch.tensor([0.5, 0.0])),
         ]
     )
 

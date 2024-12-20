@@ -36,15 +36,15 @@ def test_reference_particle_plot():
     segment = cheetah.Segment(
         elements=[
             cheetah.BPM(name="BPM1SMATCH"),
-            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=1.0),
             cheetah.BPM(name="BPM6SMATCH"),
-            cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
-            cheetah.Drift(length=torch.tensor(0.2)),
-            cheetah.HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
-            cheetah.Drift(length=torch.tensor(7.0)),
-            cheetah.HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
-            cheetah.Drift(length=torch.tensor(0.05)),
+            cheetah.Drift(length=1.0),
+            cheetah.VerticalCorrector(length=0.3, name="V7SMATCH"),
+            cheetah.Drift(length=0.2),
+            cheetah.HorizontalCorrector(length=0.3, name="H10SMATCH"),
+            cheetah.Drift(length=7.0),
+            cheetah.HorizontalCorrector(length=0.3, name="H12SMATCH"),
+            cheetah.Drift(length=0.05),
             cheetah.BPM(name="BPM13SMATCH"),
         ]
     )
