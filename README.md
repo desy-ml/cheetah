@@ -35,15 +35,15 @@ from cheetah import BPM, Drift, HorizontalCorrector, Segment, VerticalCorrector
 segment = Segment(
     elements=[
         BPM(name="BPM1SMATCH"),
-        Drift(length=torch.tensor(1.0)),
+        Drift(length=1.0),
         BPM(name="BPM6SMATCH"),
-        Drift(length=torch.tensor(1.0)),
-        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
-        Drift(length=torch.tensor(0.2)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
-        Drift(length=torch.tensor(7.0)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
-        Drift(length=torch.tensor(0.05)),
+        Drift(length=1.0),
+        VerticalCorrector(length=0.3, name="V7SMATCH"),
+        Drift(length=0.2),
+        HorizontalCorrector(length=0.3, name="H10SMATCH"),
+        Drift(length=7.0),
+        HorizontalCorrector(length=0.3, name="H12SMATCH"),
+        Drift(length=0.05),
         BPM(name="BPM13SMATCH"),
     ]
 )
