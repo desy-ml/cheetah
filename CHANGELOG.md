@@ -12,7 +12,7 @@
 
 ### 🐆 Other
 
-- CI is run with fixed seed for the PRNG, preventing random test failures (see #309) (@Hespe)
+- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
 
 ### 🌟 First Time Contributors
 
