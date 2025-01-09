@@ -12,6 +12,8 @@
 
 ### 🐆 Other
 
+- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
+
 ### 🌟 First Time Contributors
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
