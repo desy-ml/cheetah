@@ -494,8 +494,8 @@ class Segment(Element):
 
     def plot_overview(
         self,
+        incoming: Beam,
         fig: Optional[matplotlib.figure.Figure] = None,
-        incoming: Optional[Beam] = None,
         num_particles: int = 10,
         resolution: float = 0.01,
         vector_idx: Optional[tuple] = None,
@@ -503,8 +503,8 @@ class Segment(Element):
         """
         Plot an overview of the segment with the lattice and traced reference particles.
 
-        :param fig: Figure to plot the overview into.
         :param incoming: Entering beam from which the reference particles are sampled.
+        :param fig: Figure to plot the overview into.
         :param num_particles: Number of reference particles to plot. Must not be larger
             than number of particles passed in `beam`.
         :param resolution: Minimum resolution of the tracking of the reference particles
