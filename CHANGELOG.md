@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking Changes
 
+- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
+
 ### 🚀 Features
 
 - Add a conversion to [OpenPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) with export to h5 files for the `ParticleBeam` class. This allows also exporting to other file formats via the beamphysics package. (#305 @cr-xu)
@@ -11,6 +13,8 @@
 ### 🐛 Bug fixes
 
 ### 🐆 Other
+
+- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
 
 ### 🌟 First Time Contributors
 
