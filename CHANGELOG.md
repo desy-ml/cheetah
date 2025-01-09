@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-- `Segment.plot_overview` now requires an incoming `Beam` to be passed, requiring a change in the order of arguments. (see #316) (@Hespe)
+- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
 
 ### 🚀 Features
 
