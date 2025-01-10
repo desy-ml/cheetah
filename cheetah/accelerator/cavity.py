@@ -60,7 +60,7 @@ class Cavity(Element):
             self.phase = torch.as_tensor(phase, **factory_kwargs)
         if frequency is not None:
             self.frequency = torch.as_tensor(frequency, **factory_kwargs)
-            
+
         self.cavity_type = cavity_type
 
     @property
@@ -257,9 +257,9 @@ class Cavity(Element):
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
-        if self.cavity_type == 'standing_wave':
+        if self.cavity_type == "standing_wave":
             r11 = torch.cos(alpha)
-            - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+            -torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
@@ -285,23 +285,20 @@ class Cavity(Element):
                 )
             )
 
-        if self.cavity_type == 'traveling_wave':
+        if self.cavity_type == "traveling_wave":
             # reference paper:Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             f = (Ei / dE) * torch.log(1 + (dE / Ei))
-            Mbody = torch.tensor([
-                [1, self.length * f],
-                [0, Ei / Ef]
-            ], device=device, dtype=dtype)
+            Mbody = torch.tensor(
+                [[1, self.length * f], [0, Ei / Ef]], device=device, dtype=dtype
+            )
 
-            Mfent = torch.tensor([
-                [1, 0],
-                [-dE / (2 * self.length * Ei), 1]
-            ], device=device, dtype=dtype)
+            Mfent = torch.tensor(
+                [[1, 0], [-dE / (2 * self.length * Ei), 1]], device=device, dtype=dtype
+            )
 
-            Mfexit = torch.tensor([
-                [1, 0],
-                [dE / (2 * self.length * Ef), 1]
-            ], device=device, dtype=dtype)
+            Mfexit = torch.tensor(
+                [[1, 0], [dE / (2 * self.length * Ef), 1]], device=device, dtype=dtype
+            )
             result = Mfexit @ Mbody @ Mfent
 
             r11 = result[0, 0]
@@ -310,7 +307,9 @@ class Cavity(Element):
             r22 = result[1, 1]
 
         else:
-            raise ValueError(f"Unrecognized cavity type: '{self.cavity_type}'. Valid types are 'standing_wave' and 'Traveling_wave'.")
+            raise ValueError(
+                f"Unrecognized cavity type: '{self.cavity_type}'. Valid types are 'standing_wave' and 'Traveling_wave'."
+            )
 
         r56 = torch.tensor(0.0, **factory_kwargs)
         beta0 = torch.tensor(1.0, **factory_kwargs)
@@ -379,7 +378,13 @@ class Cavity(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "voltage", "phase", "frequency", "cavity_type"]
+        return super().defining_features + [
+            "length",
+            "voltage",
+            "phase",
+            "frequency",
+            "cavity_type",
+        ]
 
     def __repr__(self) -> str:
         return (
