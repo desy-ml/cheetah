@@ -116,6 +116,7 @@ def convert_element_to_cheetah(
             voltage=torch.tensor(element.v, dtype=torch.float32) * 1e9,
             frequency=torch.tensor(element.freq, dtype=torch.float32),
             phase=torch.tensor(element.phi, dtype=torch.float32),
+            cavity_type="standing_wave",
             name=element.id,
             device=device,
             dtype=dtype,
