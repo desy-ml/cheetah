@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
@@ -38,7 +38,7 @@ class Cavity(Element):
         voltage: Optional[torch.Tensor] = None,
         phase: Optional[torch.Tensor] = None,
         frequency: Optional[torch.Tensor] = None,
-        cavity_type: Optional[str] = "standing_wave",
+        cavity_type: Literal["standing_wave", "traveling_wave"] = "standing_wave",
         name: Optional[str] = None,
         device=None,
         dtype=None,
