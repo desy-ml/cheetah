@@ -674,7 +674,7 @@ class ParticleBeam(Beam):
     def from_openpmd_file(
         cls, path: str, energy: torch.Tensor, device=None, dtype=None
     ) -> "ParticleBeam":
-        """Load an OpenPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
+        """Load an openPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
         particle_group = openpmd.ParticleGroup(path)
         return cls.from_openpmd_particlegroup(
             particle_group, energy, device=device, dtype=dtype
@@ -689,9 +689,9 @@ class ParticleBeam(Beam):
         dtype=None,
     ) -> "ParticleBeam":
         """
-        Create a Cheetah `ParticleBeam` from an OpenPMD `ParticleGroup` object.
+        Create a Cheetah `ParticleBeam` from an openPMD `ParticleGroup` object.
 
-        :param particle_group: OpenPMD `ParticleGroup` object.
+        :param particle_group: openPMD `ParticleGroup` object.
         :param energy: Reference energy of the beam in eV.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
@@ -722,7 +722,7 @@ class ParticleBeam(Beam):
 
     def save_as_openpmd_h5(self, path: str) -> None:
         """
-        Save the `ParticleBeam` as an OpenPMD particle group HDF5 file.
+        Save the `ParticleBeam` as an openPMD particle group HDF5 file.
 
         :param path: Path to the file where the beam should be saved.
         """
@@ -731,15 +731,15 @@ class ParticleBeam(Beam):
 
     def to_openpmd_particlegroup(self) -> openpmd.ParticleGroup:
         """
-        Convert the `ParticleBeam` to an OpenPMD `ParticleGroup` object.
+        Convert the `ParticleBeam` to an openPMD `ParticleGroup` object.
 
-        NOTE: OpenPMD uses boolean particle status flags, i.e. alive or dead. Cheetah's
+        NOTE: openPMD uses boolean particle status flags, i.e. alive or dead. Cheetah's
             survival probabilities are converted to status flags by thresholding at 0.5.
 
         NOTE: At the moment this method only supports non-batched particles
             distributions.
 
-        :return: OpenPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
+        :return: openPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
         """
         # For now only support non-batched particles
         if len(self.particles.shape) != 2:
