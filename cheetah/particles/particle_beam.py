@@ -646,9 +646,9 @@ class ParticleBeam(Beam):
         particle_charges = torch.tensor(parray.q_array)
 
         return cls(
-            particles=particles.unsqueeze(0),
-            energy=torch.tensor(1e9 * parray.E).unsqueeze(0),
-            particle_charges=particle_charges.unsqueeze(0),
+            particles=particles,
+            energy=torch.tensor(1e9 * parray.E),
+            particle_charges=particle_charges,
             device=device,
             dtype=dtype,
         )
