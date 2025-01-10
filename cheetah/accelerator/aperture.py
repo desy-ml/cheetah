@@ -16,7 +16,7 @@ class Aperture(Element):
     Physical aperture.
 
     NOTE: The aperture currently only affects beams of type `ParticleBeam` and only has
-    an effect when the aperture is active.
+        an effect when the aperture is active.
 
     :param x_max: half size horizontal offset in [m].
     :param y_max: half size vertical offset in [m].
