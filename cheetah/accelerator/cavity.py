@@ -252,7 +252,6 @@ class Cavity(Element):
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
-        dE = Ef - Ei
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
@@ -290,6 +289,7 @@ class Cavity(Element):
             )
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
+            dE = Ef - Ei
             f = (Ei / dE) * torch.log(1 + (dE / Ei))
 
             M_body = torch.eye(2, **factory_kwargs)
