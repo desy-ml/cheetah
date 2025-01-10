@@ -286,25 +286,25 @@ class Cavity(Element):
             )
 
         if self.cavity_type == "traveling_wave":
-            # reference paper:Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
+            # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             f = (Ei / dE) * torch.log(1 + (dE / Ei))
-            Mbody = torch.tensor(
-                [[1, self.length * f], [0, Ei / Ef]], device=device, dtype=dtype
-            )
 
-            Mfent = torch.tensor(
-                [[1, 0], [-dE / (2 * self.length * Ei), 1]], device=device, dtype=dtype
-            )
+            M_body = torch.eye(2, **factory_kwargs)
+            M_body[0, 1] = self.length * f
+            M_body[1, 1] = Ei / Ef
 
-            Mfexit = torch.tensor(
-                [[1, 0], [dE / (2 * self.length * Ef), 1]], device=device, dtype=dtype
-            )
-            result = Mfexit @ Mbody @ Mfent
+            M_f_entry = torch.eye(2, **factory_kwargs)
+            M_f_entry[1, 0] = -dE / (2 * self.length * Ei)
 
-            r11 = result[0, 0]
-            r12 = result[0, 1]
-            r21 = result[1, 0]
-            r22 = result[1, 1]
+            M_f_exit = torch.eye(2, **factory_kwargs)
+            M_f_exit[1, 0] = dE / (2 * self.length * Ef)
+
+            M_combined = M_f_exit @ M_body @ M_f_entry
+
+            r11 = M_combined[0, 0]
+            r12 = M_combined[0, 1]
+            r21 = M_combined[1, 0]
+            r22 = M_combined[1, 1]
 
         else:
             raise ValueError(
