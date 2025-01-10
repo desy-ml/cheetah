@@ -142,37 +142,30 @@ The development of Cheetah is a joint effort by members of the following institu
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/desy.png
     :alt: DESY
     :width: 5em
-    :vspace: 2em
 
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/kit.png
     :alt: KIT
     :width: 7em
-    :vspace: 2em
 
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/lbnl.png
     :alt: LBNL
     :width: 11em
-    :vspace: 2em
 
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_chicago.png
     :alt: University of Chicago
     :width: 11em
-    :vspace: 2em
 
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/slac.png
     :alt: SLAC
     :width: 9em
-    :vspace: 2em
 
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png
     :alt: University of Liverpool
     :width: 10em
-    :vspace: 2em
 
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png
     :alt: Cockcroft Institute
     :width: 7em
-    :vspace: 2em
 
 Funding
 ~~~~~~~
