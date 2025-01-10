@@ -17,8 +17,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the horizontal plane.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the horizontal plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
