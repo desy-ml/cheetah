@@ -17,7 +17,7 @@ class Drift(Element):
     """
     Drift section in a particle accelerator.
 
-    Note: the transfer map now uses the linear approximation.
+    NOTE: The transfer map now uses the linear approximation.
     Including the R_56 = L / (beta**2 * gamma **2)
 
     :param length: Length in meters.
