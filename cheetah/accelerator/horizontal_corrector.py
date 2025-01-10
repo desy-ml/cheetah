@@ -1,7 +1,6 @@
 from typing import Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 
@@ -18,8 +17,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class HorizontalCorrector(Element):
     """
     Horizontal corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the horizontal plane.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the horizontal plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the horizontal plane in rad.
@@ -88,7 +87,7 @@ class HorizontalCorrector(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:blue", alpha=alpha, zorder=2

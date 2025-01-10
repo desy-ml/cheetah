@@ -2,6 +2,7 @@ import itertools
 from typing import List, Literal, Optional, Tuple, Union
 
 import numpy as np
+import pmd_beamphysics as openpmd
 import torch
 from matplotlib import pyplot as plt
 from scipy import constants
@@ -668,6 +669,109 @@ class ParticleBeam(Beam):
             device=device,
             dtype=dtype,
         )
+
+    @classmethod
+    def from_openpmd_file(
+        cls, path: str, energy: torch.Tensor, device=None, dtype=None
+    ) -> "ParticleBeam":
+        """Load an openPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
+        particle_group = openpmd.ParticleGroup(path)
+        return cls.from_openpmd_particlegroup(
+            particle_group, energy, device=device, dtype=dtype
+        )
+
+    @classmethod
+    def from_openpmd_particlegroup(
+        cls,
+        particle_group: openpmd.ParticleGroup,
+        energy: torch.Tensor,
+        device=None,
+        dtype=None,
+    ) -> "ParticleBeam":
+        """
+        Create a Cheetah `ParticleBeam` from an openPMD `ParticleGroup` object.
+
+        :param particle_group: openPMD `ParticleGroup` object.
+        :param energy: Reference energy of the beam in eV.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
+        """
+        # For now, assume an electron beam
+        p0c = torch.sqrt(energy**2 - electron_mass_eV**2)
+
+        x = torch.from_numpy(particle_group.x)
+        y = torch.from_numpy(particle_group.y)
+        px = torch.from_numpy(particle_group.px) / p0c
+        py = torch.from_numpy(particle_group.py) / p0c
+        tau = torch.from_numpy(particle_group.t) * speed_of_light
+        delta = (torch.from_numpy(particle_group.energy) - energy) / p0c
+
+        particles = torch.stack([x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1)
+        particle_charges = torch.from_numpy(particle_group.weight)
+        survival_probabilities = torch.from_numpy(particle_group.status)
+
+        return cls(
+            particles=particles,
+            energy=energy,
+            particle_charges=particle_charges,
+            survival_probabilities=survival_probabilities,
+            device=device,
+            dtype=dtype,
+        )
+
+    def save_as_openpmd_h5(self, path: str) -> None:
+        """
+        Save the `ParticleBeam` as an openPMD particle group HDF5 file.
+
+        :param path: Path to the file where the beam should be saved.
+        """
+        particle_group = self.to_openpmd_particlegroup()
+        particle_group.write(path)
+
+    def to_openpmd_particlegroup(self) -> openpmd.ParticleGroup:
+        """
+        Convert the `ParticleBeam` to an openPMD `ParticleGroup` object.
+
+        NOTE: openPMD uses boolean particle status flags, i.e. alive or dead. Cheetah's
+            survival probabilities are converted to status flags by thresholding at 0.5.
+
+        NOTE: At the moment this method only supports non-batched particles
+            distributions.
+
+        :return: openPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
+        """
+        # For now only support non-batched particles
+        if len(self.particles.shape) != 2:
+            raise ValueError("Only non-batched particles are supported.")
+
+        n_particles = self.num_particles
+        weights = np.ones(n_particles)
+        px = self.px * self.p0c
+        py = self.py * self.p0c
+        p_total = torch.sqrt(self.energies**2 - electron_mass_eV**2)
+        pz = torch.sqrt(p_total**2 - px**2 - py**2)
+        t = self.tau / speed_of_light
+        weights = self.particle_charges
+        # To be discussed
+        status = self.survival_probabilities > 0.5
+
+        data = {
+            "x": self.x.numpy(),
+            "y": self.y.numpy(),
+            "z": self.tau.numpy(),
+            "px": px.numpy(),
+            "py": py.numpy(),
+            "pz": pz.numpy(),
+            "t": t.numpy(),
+            "weight": weights,
+            "status": status,
+            # TODO: Modify when support for other species was added
+            "species": "electron",
+        }
+        particle_group = openpmd.ParticleGroup(data=data)
+
+        return particle_group
 
     def transformed_to(
         self,
