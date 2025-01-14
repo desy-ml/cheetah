@@ -257,8 +257,9 @@ class Cavity(Element):
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
         if self.cavity_type == "standing_wave":
-            r11 = torch.cos(alpha)
-            -torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+            r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
+                alpha
+            )
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
