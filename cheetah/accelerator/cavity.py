@@ -289,22 +289,26 @@ class Cavity(Element):
             dE = Ef - Ei
             f = (Ei / dE) * torch.log(1 + (dE / Ei))
 
-            M_body = torch.eye(2, **factory_kwargs)
-            M_body[0, 1] = self.length * f
-            M_body[1, 1] = Ei / Ef
+            vector_shape = torch.broadcast_shapes(
+                self.length.shape, f.shape, Ei.shape, Ef.shape, dE.shape
+            )
 
-            M_f_entry = torch.eye(2, **factory_kwargs)
-            M_f_entry[1, 0] = -dE / (2 * self.length * Ei)
+            M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_body[..., 0, 1] = self.length * f
+            M_body[..., 1, 1] = Ei / Ef
 
-            M_f_exit = torch.eye(2, **factory_kwargs)
-            M_f_exit[1, 0] = dE / (2 * self.length * Ef)
+            M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
+
+            M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
 
-            r11 = M_combined[0, 0]
-            r12 = M_combined[0, 1]
-            r21 = M_combined[1, 0]
-            r22 = M_combined[1, 1]
+            r11 = M_combined[..., 0, 0]
+            r12 = M_combined[..., 0, 1]
+            r21 = M_combined[..., 1, 0]
+            r22 = M_combined[..., 1, 1]
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
