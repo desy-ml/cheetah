@@ -256,10 +256,6 @@ class Cavity(Element):
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
-        assert self.cavity_type in ["standing_wave", "traveling_wave"], (
-            f"Unsuported value for cavity_type: '{self.cavity_type}'. "
-            + "Valid values are 'standing_wave' and 'traveling_wave'."
-        )
         if self.cavity_type == "standing_wave":
             r11 = torch.cos(alpha)
             -torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
@@ -308,6 +304,8 @@ class Cavity(Element):
             r12 = M_combined[0, 1]
             r21 = M_combined[1, 0]
             r22 = M_combined[1, 1]
+        else:
+            raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
         r56 = torch.tensor(0.0, **factory_kwargs)
         beta0 = torch.tensor(1.0, **factory_kwargs)
