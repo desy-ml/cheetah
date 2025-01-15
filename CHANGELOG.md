@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - `ParticleBeam` now supports importing from and exporting to [openPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) HDF5 files and `ParticleGroup` objects. This allows for easy conversion to and from other file formats supported by openPMD-beamphysics. (see #305) (@cr-xu)
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument. (see #286) (@zihan-zh, @jank324)
 
 ### 🐛 Bug fixes
 
@@ -19,6 +20,8 @@
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 
 ### 🌟 First Time Contributors
+
+- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 
