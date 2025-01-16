@@ -150,9 +150,7 @@ def test_track_a_quadrupole_with_ion():
     Here we use carbon-12 with +3 charge.
     """
     particle_species = cheetah.Species(
-        name="#12C+3",
-        charge=3,
-        mass=12 * atomic_mass_eV,
+        name="#12C+3", charge=3, mass=12 * atomic_mass_eV
     )
 
     test_drift_lat = """
