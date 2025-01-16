@@ -20,7 +20,6 @@ from cheetah.utils import (
 )
 
 speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
-electron = Species("electron")
 
 
 class ParticleBeam(Beam):
@@ -33,11 +32,10 @@ class ParticleBeam(Beam):
     :param survival_probabilities: Vector of probabilities that each particle has
         survived (i.e. not been lost), where 1.0 means the particle has survived and
         0.0 means the particle has been lost. Defaults to ones.
+    :param species: Particle species of the beam. Defaults to electron.
     :param device: Device to move the beam's particle array to. If set to `"auto"` a
         CUDA GPU is selected if available. The CPU is used otherwise.
     :param dtype: Data type of the generated particles.
-    :param species: Particle species of the beam.
-        Defaul to `Electron`.
     """
 
     PRETTY_DIMENSION_LABELS = {
@@ -55,7 +53,7 @@ class ParticleBeam(Beam):
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
         survival_probabilities: Optional[torch.Tensor] = None,
-        species=electron,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> None:
@@ -85,7 +83,7 @@ class ParticleBeam(Beam):
         if survival_probabilities is not None:
             self.survival_probabilities = survival_probabilities.to(**factory_kwargs)
 
-        self.species = species
+        self.species = species if species is not None else Species("electron")
 
     @classmethod
     def from_parameters(
@@ -106,7 +104,7 @@ class ParticleBeam(Beam):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
-        species=electron,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParticleBeam":
@@ -133,8 +131,7 @@ class ParticleBeam(Beam):
         :param cor_tau: Correlation between s and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param species: Particle species of the beam.
-            Default to `electron`.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
@@ -262,9 +259,9 @@ class ParticleBeam(Beam):
             particles,
             energy,
             particle_charges=particle_charges,
+            species=species,
             device=device,
             dtype=dtype,
-            species=species,
         )
 
     @classmethod
@@ -282,7 +279,7 @@ class ParticleBeam(Beam):
         sigma_p: Optional[torch.Tensor] = None,
         cor_tau: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
-        species=electron,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParticleBeam":
@@ -365,9 +362,9 @@ class ParticleBeam(Beam):
             cor_x=cor_x,
             cor_y=cor_y,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
-            species=species,
         )
 
     @classmethod
@@ -382,7 +379,7 @@ class ParticleBeam(Beam):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
-        species=electron,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ):
@@ -408,12 +405,10 @@ class ParticleBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
-        :param species: Particle species of the beam.
-            Default to `electron`.
-
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
         """
         # Extract device and dtype from given arguments
@@ -501,9 +496,9 @@ class ParticleBeam(Beam):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
-            species=species,
         )
 
         # Replace the spatial coordinates with the generated ones
@@ -529,7 +524,7 @@ class ParticleBeam(Beam):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
-        species=electron,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParticleBeam":
@@ -551,8 +546,7 @@ class ParticleBeam(Beam):
             in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Energy of the beam in eV.
-        :param species: Particle species of the beam.
-            Default to `electron`.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
@@ -647,6 +641,7 @@ class ParticleBeam(Beam):
             particles=particles,
             energy=energy,
             particle_charges=particle_charges,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -665,6 +660,7 @@ class ParticleBeam(Beam):
             particles=particles.unsqueeze(0),
             energy=torch.tensor(1e9 * parray.E).unsqueeze(0),
             particle_charges=particle_charges.unsqueeze(0),
+            species=Species("electron"),
             device=device,
             dtype=dtype,
         )
@@ -682,6 +678,7 @@ class ParticleBeam(Beam):
             particles=particles_7d,
             energy=torch.tensor(energy),
             particle_charges=particle_charges,
+            species=Species("electron"),
             device=device,
             dtype=dtype,
         )
@@ -722,8 +719,7 @@ class ParticleBeam(Beam):
         :param dtype: Data type of the generated particles.
         """
         # For now, assume an electron beam
-        species_name = particle_group.species
-        species = Species(species_name)
+        species = Species(particle_group.species)
         p0c = torch.sqrt(energy**2 - species.mass_eV**2)
 
         x = torch.from_numpy(particle_group.x)
@@ -969,7 +965,7 @@ class ParticleBeam(Beam):
         survival_probabilities: Optional[torch.Tensor] = None,
         device=None,
         dtype=torch.float32,
-        species=electron,
+        species: Optional[Species] = None,
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
@@ -981,9 +977,9 @@ class ParticleBeam(Beam):
             energy=energy,
             particle_charges=particle_charges,
             survival_probabilities=survival_probabilities,
+            species=species,
             device=device,
             dtype=dtype,
-            species=species,
         )
 
         p0 = (

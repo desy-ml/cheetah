@@ -6,8 +6,6 @@ from torch import nn
 
 from cheetah.particles.species import Species
 
-electron = Species("electron")
-
 
 class Beam(ABC, nn.Module):
     r"""
@@ -53,7 +51,7 @@ class Beam(ABC, nn.Module):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
-        species: Species = electron,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "Beam":
@@ -79,8 +77,7 @@ class Beam(ABC, nn.Module):
         :param cor_tau: Correlation between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param species: Particle species of the beam.
-            "electron" is used by default.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -102,9 +99,9 @@ class Beam(ABC, nn.Module):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
-        species: Species = electron,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -122,11 +119,10 @@ class Beam(ABC, nn.Module):
         :param cor_tau: Correlation between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
-        :param species: Particle species of the beam.
-            "electron" is used by default.
         """
         raise NotImplementedError
 
@@ -182,7 +178,6 @@ class Beam(ABC, nn.Module):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
-            Can be a `Species` object or a string in the provided list.
         :param device: Device to create the transformed beam on. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
@@ -309,13 +304,9 @@ class Beam(ABC, nn.Module):
         raise NotImplementedError
 
     @property
-    def mass_eV(self) -> float:
-        return self.species.mass_eV
-
-    @property
     def relativistic_gamma(self) -> torch.Tensor:
         """Reference relativistic gamma of the beam."""
-        return self.energy / self.mass_eV
+        return self.energy / self.species.mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
@@ -329,7 +320,7 @@ class Beam(ABC, nn.Module):
     @property
     def p0c(self) -> torch.Tensor:
         """Get the reference momentum * speed of light in eV."""
-        return self.relativistic_beta * self.relativistic_gamma * self.mass_eV
+        return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property
     @abstractmethod
