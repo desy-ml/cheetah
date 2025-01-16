@@ -17,7 +17,9 @@ class TransverseDeflectingCavity(Element):
     Transverse deflecting cavity element.
 
     :param length: Length in meters.
-    :param voltage: Voltage of the cavity in volts.
+    :param voltage: Voltage of the cavity in volts. NOTE: This assumes the effective
+        voltage, if the particle does not have unit charge, the voltage needs to be
+        scaled properly.
     :param phase: Phase of the cavity in (radians / 2 pi).
     :param frequency: Frequency of the cavity in Hz.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
@@ -27,9 +29,6 @@ class TransverseDeflectingCavity(Element):
         element when tracking method is set to `"bmadx"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
-
-    Note: here we use the "effective" voltage, if the particle does not have unit
-    charge, the voltage needs to be scaled properly.
     """
 
     def __init__(

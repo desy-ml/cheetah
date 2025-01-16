@@ -5,8 +5,7 @@ electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][
 
 
 def compute_relativistic_factors(
-    energy: torch.Tensor,
-    particle_mass_eV: float = electron_mass_eV,
+    energy: torch.Tensor, particle_mass_eV: torch.Tensor = electron_mass_eV
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Computes the relativistic factors gamma, inverse gamma squared and beta for

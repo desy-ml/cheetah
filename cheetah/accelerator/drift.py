@@ -37,7 +37,7 @@ class Drift(Element):
         self.tracking_method = tracking_method
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype

@@ -44,7 +44,7 @@ class HorizontalCorrector(Element):
             self.angle = torch.as_tensor(angle, **factory_kwargs)
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype

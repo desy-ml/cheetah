@@ -34,7 +34,7 @@ def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
     hx: torch.Tensor,
-    particle_mass_eV: float,
+    particle_mass_eV: torch.Tensor,
     tilt: Optional[torch.Tensor] = None,
     energy: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:

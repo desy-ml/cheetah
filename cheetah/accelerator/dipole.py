@@ -368,7 +368,7 @@ class Dipole(Element):
         return px_f, py_f
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype

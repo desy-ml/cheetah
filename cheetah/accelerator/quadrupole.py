@@ -61,7 +61,7 @@ class Quadrupole(Element):
         self.tracking_method = tracking_method
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         R = base_rmatrix(
             length=self.length,
