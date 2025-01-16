@@ -4,7 +4,7 @@ from typing import Optional
 import torch
 from torch import nn
 
-from cheetah.utils import Species
+from cheetah.particles.species import Species
 
 electron = Species("electron")
 

@@ -5,9 +5,8 @@ import torch
 from pytao import Tao
 from scipy.constants import physical_constants
 
-from cheetah import Dipole, Drift, ParticleBeam, Quadrupole
+import cheetah
 from cheetah.utils.bmadx import bmad_to_cheetah_z_pz, cheetah_to_bmad_coords
-from cheetah.utils.particle_species import Species
 
 atomic_mass_eV = (
     physical_constants["atomic mass constant energy equivalent in MeV"][0] * 1e6
@@ -15,13 +14,13 @@ atomic_mass_eV = (
 
 cheetah_elements_and_respective_bmad_strs = {
     "drift": {
-        "cheetah": Drift(
+        "cheetah": cheetah.Drift(
             length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.double
         ),
         "bmad": "d1: drift, L = 1.0",
     },
     "dipole": {
-        "cheetah": Dipole(
+        "cheetah": cheetah.Dipole(
             length=torch.tensor(1.0),
             angle=torch.tensor(0.2),
             dipole_e1=torch.tensor(0.1),
@@ -43,7 +42,7 @@ cheetah_elements_and_respective_bmad_strs = {
         ),
     },
     "quadrupole": {
-        "cheetah": Quadrupole(
+        "cheetah": cheetah.Quadrupole(
             length=torch.tensor(1.0), k1=torch.tensor(1.0), tracking_method="bmadx"
         ),
         "bmad": "q1: quad, L = 1.0, K1 = 1.0",
@@ -71,7 +70,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     Test that tracking different particle species through a drift element in Cheetah
     agrees with Bmad results.
     """
-    particle_species = Species(species_name)
+    particle_species = cheetah.Species(species_name)
 
     bmad_drift_lattice_str = f"""
     parameter[lattice] = test_drift
@@ -110,7 +109,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     cheetah_coordinates[:, 4] = tau
     cheetah_coordinates[:, 5] = delta
 
-    incoming = ParticleBeam(
+    incoming = cheetah.ParticleBeam(
         particles=cheetah_coordinates,
         energy=ref_energy,
         species=particle_species,
@@ -150,7 +149,7 @@ def test_track_a_quadrupole_with_ion():
     Cheetah agrees with Bmad results.
     Here we use carbon-12 with +3 charge.
     """
-    particle_species = Species(
+    particle_species = cheetah.Species(
         name="#12C+3",
         charge=3,
         mass=12 * atomic_mass_eV,
@@ -191,14 +190,14 @@ def test_track_a_quadrupole_with_ion():
     coords_cheetah[4] = tau
     coords_cheetah[5] = delta
 
-    p_in = ParticleBeam(
+    p_in = cheetah.ParticleBeam(
         particles=coords_cheetah.unsqueeze(0),
         energy=ref_energy,
         species=particle_species,
         dtype=torch.double,
     )
 
-    quadrupole = Quadrupole(
+    quadrupole = cheetah.Quadrupole(
         length=torch.tensor([0.5], dtype=torch.double),
         k1=torch.tensor([1.0], dtype=torch.double),
         tracking_method="bmadx",
