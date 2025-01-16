@@ -1547,7 +1547,7 @@ class ParticleBeam(Beam):
     @property
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
-        return torch.sqrt(self.energies**2 - self.mass_eV**2)
+        return torch.sqrt(self.energies**2 - self.species.mass_eV**2)
 
     def clone(self) -> "ParticleBeam":
         return ParticleBeam(

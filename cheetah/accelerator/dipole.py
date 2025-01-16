@@ -186,7 +186,7 @@ class Dipole(Element):
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
-        mc2 = incoming.mass_eV
+        mc2 = incoming.species.mass_eV
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 

@@ -90,18 +90,18 @@ class Drift(Element):
         delta = incoming.p
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, incoming.mass_eV
+            tau, delta, incoming.energy, incoming.species.mass_eV
         )
 
         # Begin Bmad-X tracking
         x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, incoming.mass_eV
+            self.length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
         )
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
         tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, incoming.mass_eV
+            z, pz, p0c, incoming.species.mass_eV
         )
 
         # Broadcast to align their shapes so that they can be stacked

@@ -64,7 +64,7 @@ class Element(ABC, nn.Module):
         :return: Beam of particles exiting the element.
         """
         if isinstance(incoming, ParameterBeam):
-            tm = self.transfer_map(incoming.energy, incoming.mass_eV)
+            tm = self.transfer_map(incoming.energy, incoming.species.mass_eV)
             mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
             return ParameterBeam(
@@ -76,7 +76,7 @@ class Element(ABC, nn.Module):
                 dtype=mu.dtype,
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy, incoming.mass_eV)
+            tm = self.transfer_map(incoming.energy, incoming.species.mass_eV)
             new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
             return ParticleBeam(
                 new_particles,

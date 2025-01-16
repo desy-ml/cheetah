@@ -63,10 +63,14 @@ class CustomTransferMap(Element):
         )
 
         device = (
-            elements[0].transfer_map(incoming_beam.energy, incoming_beam.mass_eV).device
+            elements[0]
+            .transfer_map(incoming_beam.energy, incoming_beam.species.mass_eV)
+            .device
         )
         dtype = (
-            elements[0].transfer_map(incoming_beam.energy, incoming_beam.mass_eV).dtype
+            elements[0]
+            .transfer_map(incoming_beam.energy, incoming_beam.species.mass_eV)
+            .dtype
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(
@@ -74,7 +78,10 @@ class CustomTransferMap(Element):
         )
         for element in elements:
             tm = torch.matmul(
-                element.transfer_map(incoming_beam.energy, incoming_beam.mass_eV), tm
+                element.transfer_map(
+                    incoming_beam.energy, incoming_beam.species.mass_eV
+                ),
+                tm,
             )
             incoming_beam = element.track(incoming_beam)
 

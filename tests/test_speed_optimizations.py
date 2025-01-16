@@ -232,10 +232,10 @@ def test_skippable_elements_reset():
     )
 
     original_tm = original_segment.elements[2].transfer_map(
-        energy=incoming_beam.energy, particle_mass_eV=incoming_beam.mass_eV
+        energy=incoming_beam.energy, particle_mass_eV=incoming_beam.species.mass_eV
     )
     merged_tm = merged_segment.elements[2].transfer_map(
-        energy=incoming_beam.energy, particle_mass_eV=incoming_beam.mass_eV
+        energy=incoming_beam.energy, particle_mass_eV=incoming_beam.species.mass_eV
     )
 
     assert torch.allclose(original_tm, merged_tm)
