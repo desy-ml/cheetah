@@ -715,7 +715,9 @@ class ParticleBeam(Beam):
         :param dtype: Data type of the generated particles.
         """
         # For now, assume an electron beam
-        p0c = torch.sqrt(energy**2 - electron_mass_eV**2)
+        species_name = particle_group.species
+        species = Species(species_name)
+        p0c = torch.sqrt(energy**2 - species.mass_eV**2)
 
         x = torch.from_numpy(particle_group.x)
         y = torch.from_numpy(particle_group.y)
@@ -733,6 +735,7 @@ class ParticleBeam(Beam):
             energy=energy,
             particle_charges=particle_charges,
             survival_probabilities=survival_probabilities,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -766,7 +769,7 @@ class ParticleBeam(Beam):
         weights = np.ones(n_particles)
         px = self.px * self.p0c
         py = self.py * self.p0c
-        p_total = torch.sqrt(self.energies**2 - electron_mass_eV**2)
+        p_total = torch.sqrt(self.energies**2 - self.species.mass_eV**2)
         pz = torch.sqrt(p_total**2 - px**2 - py**2)
         t = self.tau / speed_of_light
         weights = self.particle_charges
