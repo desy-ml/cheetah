@@ -12,17 +12,17 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        # include:
-        #   - os: macos-latest
-        #     python-version: "3.12"
+        include:
+          - os: macos-latest
+            python-version: "3.12"
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          miniconda-version: "latest"
-          conda-solver: "classic"
+          miniconda-version: 'latest'
+          conda-solver: 'classic'
           python-version: ${{ matrix.python-version }}
           activate-environment: test_environment
       - name: Install Bmad and Pytao
