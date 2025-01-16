@@ -61,6 +61,7 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
     tao.cmd(f"set particle_start pz={coordinates[5]}")
 
 
+@pytest.mark.bmad
 @pytest.mark.parametrize(
     "species_name", ["proton", "electron", "positron", "antiproton", "deuteron"]
 )
@@ -143,6 +144,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
 
 
+@pytest.mark.bmad
 def test_track_a_quadrupole_with_ion():
     """
     Test that tracking ions through a quadrupole element in
