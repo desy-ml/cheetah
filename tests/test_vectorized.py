@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import torch
 
@@ -309,7 +310,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         elements=[
             cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
-                resolution=torch.tensor((100, 100)),
+                resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 misalignment=torch.tensor(
                     [
@@ -449,3 +450,49 @@ def test_broadcasting_solenoid_misalignment():
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
     assert outgoing.energy.shape == (2,)
+
+
+@pytest.mark.parametrize("aperture_shape", ["rectangular", "elliptical"])
+def test_vectorized_aperture_broadcasting(aperture_shape):
+    """
+    Test that apertures work in a vectorised setting and that broadcasting rules are
+    applied correctly.
+    """
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000,
+        sigma_py=torch.tensor(1e-4),
+        sigma_px=torch.tensor(2e-4),
+        energy=torch.tensor([154e6, 14e9]),
+    )
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Aperture(
+                x_max=torch.tensor([[1e-5], [2e-4], [3e-4]]),
+                y_max=torch.tensor(2e-4),
+                shape=aperture_shape,
+            ),
+            cheetah.Drift(length=torch.tensor(0.5)),
+        ]
+    )
+
+    outgoing = segment.track(incoming)
+
+    # Particle positions are unaffected by the aperture ... only their survival is
+    assert outgoing.particles.shape == (2, 100_000, 7)
+    assert outgoing.energy.shape == (2,)
+    assert outgoing.particle_charges.shape == (100_000,)
+    assert outgoing.survival_probabilities.shape == (3, 2, 100_000)
+
+    if aperture_shape == "elliptical":
+        assert np.allclose(
+            outgoing.survival_probabilities.mean(dim=-1)[:, 0],
+            [0.077, 0.945, 0.995],
+            atol=2e-3,  # Last digit off by two
+        )
+    elif aperture_shape == "rectangular":
+        assert np.allclose(
+            outgoing.survival_probabilities.mean(dim=-1)[:, 0],
+            [0.079, 0.954, 0.997],
+            atol=2e-3,  # Last digit off by two
+        )

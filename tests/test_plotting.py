@@ -103,3 +103,54 @@ def test_reference_particle_plot_vectorized_2d():
 
     # Run the plotting to see if it raises an exception
     segment.plot_overview(incoming=incoming, resolution=0.1, vector_idx=(0, 2))
+
+
+def test_plotting_with_nonleaf_tensors():
+    """Test that the plotting routines can handle elements with non-leaf tensors."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
+            cheetah.BPM(is_active=True),
+        ]
+    )
+
+    incoming = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Prepopulate the segment
+    segment.track(incoming)
+
+    # Test that plotting does not raise an exception
+    segment.plot_overview(incoming=incoming)
+    segment.plot_twiss(incoming=incoming)
+
+
+def test_plotting_with_gradients():
+    """
+    Test that plotting doesn't raise an exception for segments that contain tensors
+    that require gradients.
+    """
+    segment = cheetah.Segment(
+        elements=[cheetah.Drift(length=torch.tensor(1.0, requires_grad=True))]
+    )
+    beam = cheetah.ParameterBeam.from_parameters()
+
+    segment.plot_overview(incoming=beam)
+    segment.plot_twiss(incoming=beam)
+
+
+def test_plot_6d_particle_beam_distribution():
+    """Test that the 6D `ParticleBeam` distribution plot does not raise an exception."""
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    # Run the plotting to see if it raises an exception
+    _ = beam.plot_distribution(bin_ranges="unit_same", plot_2d_kws={"contour": True})
+
+
+def test_plot_particle_beam_point_cloud():
+    """Test that the `ParticleBeam`'s point cloud plot does not raise an exception."""
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    # Run the plotting to see if it raises an exception
+    _ = beam.plot_point_cloud()
