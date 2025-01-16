@@ -16,7 +16,7 @@ def test_reading_shows_beam_particle(screen_method):
         elements=[
             cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
-                resolution=torch.tensor((100, 100)),
+                resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 is_active=True,
                 method=screen_method,
@@ -46,12 +46,12 @@ def test_screen_kde_bandwidth(kde_bandwidth):
         elements=[
             cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
-                resolution=torch.tensor((100, 100)),
+                resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 is_active=True,
                 method="kde",
                 name="my_screen",
-                kde_bandwidth=kde_bandwidth,
+                kde_bandwidth=torch.tensor(kde_bandwidth),
             ),
         ],
     )
@@ -78,7 +78,7 @@ def test_reading_shows_beam_parameter(screen_method):
         elements=[
             cheetah.Drift(length=torch.tensor(1.0)),
             cheetah.Screen(
-                resolution=torch.tensor((100, 100)),
+                resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
                 is_active=True,
                 method=screen_method,
@@ -113,15 +113,13 @@ def test_reading_shows_beam_ares(screen_method):
 
     segment.AREABSCR1.method = screen_method
 
-    segment.AREABSCR1.resolution = torch.tensor(
-        (2448, 2040), device=segment.AREABSCR1.resolution.device
-    )
+    segment.AREABSCR1.resolution = (2448, 2040)
     segment.AREABSCR1.pixel_size = torch.tensor(
         (3.3198e-6, 2.4469e-6),
         device=segment.AREABSCR1.pixel_size.device,
         dtype=segment.AREABSCR1.pixel_size.dtype,
     )
-    segment.AREABSCR1.binning = torch.tensor(1, device=segment.AREABSCR1.binning.device)
+    segment.AREABSCR1.binning = 1
     segment.AREABSCR1.is_active = True
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import torch
@@ -8,7 +9,7 @@ from cheetah.utils import Species
 electron = Species("electron")
 
 
-class Beam(nn.Module):
+class Beam(ABC, nn.Module):
     r"""
     Parent class to represent a beam of particles. You should not instantiate this
     class directly, but use one of the subclasses.
@@ -33,9 +34,8 @@ class Beam(nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
-    empty = "I'm an empty beam!"
-
     @classmethod
+    @abstractmethod
     def from_parameters(
         cls,
         mu_x: Optional[torch.Tensor] = None,
@@ -54,6 +54,8 @@ class Beam(nn.Module):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         species: Species = electron,
+        device=None,
+        dtype=None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -79,10 +81,14 @@ class Beam(nn.Module):
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
             "electron" is used by default.
+        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
+            selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the beam.
         """
         raise NotImplementedError
 
     @classmethod
+    @abstractmethod
     def from_twiss(
         cls,
         beta_x: Optional[torch.Tensor] = None,
@@ -91,13 +97,13 @@ class Beam(nn.Module):
         beta_y: Optional[torch.Tensor] = None,
         alpha_y: Optional[torch.Tensor] = None,
         emittance_y: Optional[torch.Tensor] = None,
-        sigma_s: Optional[torch.Tensor] = None,
+        sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_s: Optional[torch.Tensor] = None,
+        cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
         species: Species = electron,
     ) -> "Beam":
         """
@@ -109,12 +115,15 @@ class Beam(nn.Module):
         :param beta_y: Beta function in y direction in meters.
         :param alpha_y: Alpha function in y direction in rad.
         :param emittance_y: Emittance in y direction in m*rad.
-        :param sigma_s: Sigma of the particle distribution in s direction in meters.
-        :param sigma_p: Sigma of the particle distribution in p direction in meters.
-        :param cor_s: Correlation of the particle distribution in s direction.
+        :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
+            in meters.
+        :param sigma_p: Sigma of the particle distribution in p direction,
+            dimensionless.
+        :param cor_tau: Correlation between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
-        :param device: Device to create the beam on.
+        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
+            selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
         :param species: Particle species of the beam.
             "electron" is used by default.
@@ -122,14 +131,16 @@ class Beam(nn.Module):
         raise NotImplementedError
 
     @classmethod
-    def from_ocelot(cls, parray) -> "Beam":
+    @abstractmethod
+    def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
         raise NotImplementedError
 
     @classmethod
-    def from_astra(cls, path: str, **kwargs) -> "Beam":
+    @abstractmethod
+    def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 
@@ -148,6 +159,8 @@ class Beam(nn.Module):
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         species: Optional[Species] = None,
+        device=None,
+        dtype=None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -170,7 +183,13 @@ class Beam(nn.Module):
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
             Can be a `Species` object or a string in the provided list.
+        :param device: Device to create the transformed beam on. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the transformed beam.
         """
+        device = device if device is not None else self.mu_x.device
+        dtype = dtype if dtype is not None else self.mu_x.dtype
+
         # Figure out vector dimensions of the original beam and check that passed
         # arguments have the same vector dimensions.
         shape = self.mu_x.shape
@@ -225,69 +244,67 @@ class Beam(nn.Module):
             energy=energy,
             total_charge=total_charge,
             species=species,
+            device=device,
+            dtype=dtype,
         )
 
     @property
-    def parameters(self) -> dict:
-        return {
-            "mu_x": self.mu_x,
-            "mu_px": self.mu_px,
-            "mu_y": self.mu_y,
-            "mu_py": self.mu_py,
-            "sigma_x": self.sigma_x,
-            "sigma_px": self.sigma_px,
-            "sigma_y": self.sigma_y,
-            "sigma_py": self.sigma_py,
-            "sigma_tau": self.sigma_tau,
-            "sigma_p": self.sigma_p,
-            "energy": self.energy,
-        }
-
-    @property
+    @abstractmethod
     def mu_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_x(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_px(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_y(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_py(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
-    def mu_s(self) -> torch.Tensor:
+    @abstractmethod
+    def mu_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_tau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def mu_p(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_p(self) -> torch.Tensor:
         raise NotImplementedError
 
@@ -315,11 +332,13 @@ class Beam(nn.Module):
         return self.relativistic_beta * self.relativistic_gamma * self.mass_eV
 
     @property
+    @abstractmethod
     def sigma_xpx(self) -> torch.Tensor:
         # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
+    @abstractmethod
     def sigma_ypy(self) -> torch.Tensor:
         raise NotImplementedError
 
@@ -372,6 +391,11 @@ class Beam(nn.Module):
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
         return -self.sigma_ypy / self.emittance_y
+
+    @abstractmethod
+    def clone(self) -> "Beam":
+        """Return a cloned beam that does not share the underlying memory."""
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return (

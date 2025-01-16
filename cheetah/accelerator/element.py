@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -18,11 +19,11 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: Optional[str] = None, device=None, dtype=None) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        self.register_buffer("length", torch.tensor(0.0))
+        self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
     def transfer_map(
         self, energy: torch.Tensor, particle_mass_eV: float
@@ -62,9 +63,7 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty:
-            return incoming
-        elif isinstance(incoming, ParameterBeam):
+        if isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy, incoming.mass_eV)
             mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
@@ -83,6 +82,7 @@ class Element(ABC, nn.Module):
                 new_particles,
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
+                survival_probabilities=incoming.survival_probabilities,
                 device=new_particles.device,
                 dtype=new_particles.dtype,
             )
@@ -113,7 +113,20 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return []
+        return ["name"]
+
+    def clone(self) -> "Element":
+        """Create a copy of the element which does not share the underlying memory."""
+        return self.__class__(
+            **{
+                feature: (
+                    getattr(self, feature).clone()
+                    if isinstance(getattr(self, feature), torch.Tensor)
+                    else deepcopy(getattr(self, feature))
+                )
+                for feature in self.defining_features
+            }
+        )
 
     @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
