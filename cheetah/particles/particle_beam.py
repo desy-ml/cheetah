@@ -718,7 +718,6 @@ class ParticleBeam(Beam):
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
         """
-        # For now, assume an electron beam
         species = Species(particle_group.species)
         p0c = torch.sqrt(energy**2 - species.mass_eV**2)
 
@@ -924,9 +923,9 @@ class ParticleBeam(Beam):
             particles=particles,
             energy=energy,
             particle_charges=particle_charges,
+            species=species,
             device=device,
             dtype=dtype,
-            species=species,
         )
 
     def linspaced(self, num_particles: int) -> "ParticleBeam":
@@ -951,9 +950,9 @@ class ParticleBeam(Beam):
             sigma_p=self.sigma_p,
             energy=self.energy,
             total_charge=self.total_charge,
+            species=self.species,
             device=self.particles.device,
             dtype=self.particles.dtype,
-            species=self.species,
         )
 
     @classmethod
@@ -963,9 +962,9 @@ class ParticleBeam(Beam):
         energy: torch.Tensor,
         particle_charges: Optional[torch.Tensor] = None,
         survival_probabilities: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=torch.float32,
-        species: Optional[Species] = None,
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.

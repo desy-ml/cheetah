@@ -395,6 +395,6 @@ class Beam(ABC, nn.Module):
             f" sigma_px={self.sigma_px}, sigma_y={self.sigma_y},"
             f" sigma_py={self.sigma_py}, sigma_tau={self.sigma_tau},"
             f" sigma_p={self.sigma_p}, energy={self.energy}),"
-            f" species={self.species},"
-            f" total_charge={self.total_charge})"
+            f" total_charge={self.total_charge},"
+            f" species={self.species})"
         )

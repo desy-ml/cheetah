@@ -20,6 +20,7 @@ class ParameterBeam(Beam):
     :param species: Particle species of the beam. Defaults to electron.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
+    :param dtype: Data type of the beam.
     """
 
     def __init__(
@@ -515,6 +516,6 @@ class ParameterBeam(Beam):
             f" sigma_px={repr(self.sigma_px)}, sigma_y={repr(self.sigma_y)},"
             f" sigma_py={repr(self.sigma_py)}, sigma_tau={repr(self.sigma_tau)},"
             f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
-            f" total_charge={repr(self.total_charge)})"
+            f" total_charge={repr(self.total_charge)},"
             f" species={repr(self.species)})"
         )
