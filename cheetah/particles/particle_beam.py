@@ -2,7 +2,6 @@ import itertools
 from typing import List, Literal, Optional, Tuple, Union
 
 import numpy as np
-import pmd_beamphysics as openpmd
 import torch
 from matplotlib import pyplot as plt
 from scipy import constants
@@ -675,6 +674,14 @@ class ParticleBeam(Beam):
         cls, path: str, energy: torch.Tensor, device=None, dtype=None
     ) -> "ParticleBeam":
         """Load an openPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
+        try:
+            import pmd_beamphysics as openpmd
+        except ImportError:
+            raise ImportError(
+                """To use the openPMD beam import, openPMD-beamphysics must be
+                installed."""
+            )
+
         particle_group = openpmd.ParticleGroup(path)
         return cls.from_openpmd_particlegroup(
             particle_group, energy, device=device, dtype=dtype
@@ -683,7 +690,7 @@ class ParticleBeam(Beam):
     @classmethod
     def from_openpmd_particlegroup(
         cls,
-        particle_group: openpmd.ParticleGroup,
+        particle_group: "openpmd.ParticleGroup",  # noqa: F821
         energy: torch.Tensor,
         device=None,
         dtype=None,
@@ -729,7 +736,7 @@ class ParticleBeam(Beam):
         particle_group = self.to_openpmd_particlegroup()
         particle_group.write(path)
 
-    def to_openpmd_particlegroup(self) -> openpmd.ParticleGroup:
+    def to_openpmd_particlegroup(self) -> "openpmd.ParticleGroup":  # noqa: F821
         """
         Convert the `ParticleBeam` to an openPMD `ParticleGroup` object.
 
@@ -741,6 +748,14 @@ class ParticleBeam(Beam):
 
         :return: openPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
         """
+        try:
+            import pmd_beamphysics as openpmd
+        except ImportError:
+            raise ImportError(
+                """To use the openPMD beam export, openPMD-beamphysics must be
+                installed."""
+            )
+
         # For now only support non-batched particles
         if len(self.particles.shape) != 2:
             raise ValueError("Only non-batched particles are supported.")
