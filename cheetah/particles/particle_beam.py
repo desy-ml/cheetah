@@ -10,8 +10,8 @@ from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
+from cheetah.particles.species import Species
 from cheetah.utils import (
-    Species,
     elementwise_linspace,
     format_axis_as_percentage,
     format_axis_with_prefixed_unit,
@@ -765,8 +765,7 @@ class ParticleBeam(Beam):
         if len(self.particles.shape) != 2:
             raise ValueError("Only non-batched particles are supported.")
 
-        n_particles = self.num_particles
-        weights = np.ones(n_particles)
+        weights = np.ones(self.num_particles)
         px = self.px * self.p0c
         py = self.py * self.p0c
         p_total = torch.sqrt(self.energies**2 - self.species.mass_eV**2)

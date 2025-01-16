@@ -5,7 +5,8 @@ import torch
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
-from cheetah.utils import Species, verify_device_and_dtype
+from cheetah.particles.species import Species
+from cheetah.utils import verify_device_and_dtype
 
 electron = Species("electron")
 
