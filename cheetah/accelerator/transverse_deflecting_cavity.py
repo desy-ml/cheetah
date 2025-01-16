@@ -18,7 +18,7 @@ class TransverseDeflectingCavity(Element):
 
     :param length: Length in meters.
     :param voltage: Voltage of the cavity in volts. NOTE: This assumes the effective
-        voltage, if the particle does not have unit charge, the voltage needs to be
+        voltage. If the particle does not have unit charge, the voltage needs to be
         scaled properly.
     :param phase: Phase of the cavity in (radians / 2 pi).
     :param frequency: Frequency of the cavity in Hz.
