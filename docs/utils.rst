@@ -15,10 +15,6 @@ Utils
     :members:
     :undoc-members:
 
-.. automodule:: utils.particle_species
-    :members:
-    :undoc-members:
-
 .. automodule:: utils.physics
     :members:
     :undoc-members:
