@@ -21,7 +21,7 @@ class Marker(Element):
         super().__init__(name=name)
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)

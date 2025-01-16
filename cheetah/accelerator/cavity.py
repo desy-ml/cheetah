@@ -22,13 +22,12 @@ class Cavity(Element):
     Accelerating cavity in a particle accelerator.
 
     :param length: Length in meters.
-    :param voltage: Voltage of the cavity in volts.
+    :param voltage: Voltage of the cavity in volts. NOTE: This assumes the effective
+        voltage, if the particle does not have unit charge, the voltage needs to be
+        scaled properly.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
-
-    Note: here we use the "effective" voltage, if the particle does not have unit
-    charge, the voltage needs to be scaled properly.
     """
 
     def __init__(
@@ -68,7 +67,7 @@ class Cavity(Element):
         return not self.is_active
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
@@ -241,7 +240,7 @@ class Cavity(Element):
             return outgoing
 
     def _cavity_rmatrix(
-        self, energy: torch.Tensor, particle_mass_eV: float
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
     ) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
