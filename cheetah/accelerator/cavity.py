@@ -105,7 +105,7 @@ class Cavity(Element):
 
         phi = torch.deg2rad(self.phase)
 
-        tm = self.transfer_map(incoming.energy, incoming.mass_eV)
+        tm = self.transfer_map(incoming.energy, incoming.species.mass_eV)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = torch.matmul(
@@ -153,7 +153,7 @@ class Cavity(Element):
                     - torch.cos(phi).unsqueeze(-1)
                 )
 
-            dgamma = self.voltage / incoming.mass_eV
+            dgamma = self.voltage / incoming.species.mass_eV
             if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
