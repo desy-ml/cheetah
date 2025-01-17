@@ -51,6 +51,7 @@ class Element(ABC, nn.Module):
         affine transformation.
 
         :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
+        :param particle_mass_eV: Mass of the beam's particle species in eV.
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
