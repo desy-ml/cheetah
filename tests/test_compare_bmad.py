@@ -2,7 +2,7 @@ import os
 
 import pytest
 import torch
-from pytao import SubprocessTao, Tao
+from pytao import Tao
 from scipy.constants import physical_constants
 
 import cheetah
@@ -17,35 +17,40 @@ cheetah_elements_and_respective_bmad_strs = {
         "cheetah": cheetah.Drift(
             length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.double
         ),
-        "bmad": "d1: drift, L = 1.0",
+        "bmad": "e1: drift, L = 1.0",
     },
     "dipole": {
         "cheetah": cheetah.Dipole(
-            length=torch.tensor(1.0),
+            length=torch.tensor(0.5),
             angle=torch.tensor(0.2),
             dipole_e1=torch.tensor(0.1),
             dipole_e2=torch.tensor(0.1),
             tilt=torch.tensor(0.1),
             fringe_integral=torch.tensor(0.5),
             fringe_integral_exit=torch.tensor(0.5),
-            gap=torch.tensor(0.03),
-            gap_exit=torch.tensor(0.03),
-            fringe_at="both_ends",
+            gap=torch.tensor(0.06),
+            gap_exit=torch.tensor(0.06),
+            fringe_at="both",
             fringe_type="linear_edge",
             tracking_method="bmadx",
             dtype=torch.double,
         ),
         "bmad": (
-            "b1: sbend, L = 1.0, angle = 0.2, fringe_at = both_ends, "
-            "fringe_type = linear_edge, E1 = 0.1, E2 = 0.1, FINT = 0.5, HGAP = 0.03, "
-            "FINTX = 0.5, HGAPX = 0.03, ref_tilt = 0.1"
+            (
+                "e1: sbend, L = 0.5, angle = 0.2, fringe_at = both_ends, "
+                "fringe_type = linear_edge, E1 = 0.1, E2 = 0.1, FINT = 0.5, "
+                "HGAP = 0.03, FINTX = 0.5, HGAPX = 0.03, ref_tilt = 0.1"
+            )
         ),
     },
     "quadrupole": {
         "cheetah": cheetah.Quadrupole(
-            length=torch.tensor(1.0), k1=torch.tensor(1.0), tracking_method="bmadx"
+            length=torch.tensor(0.5),
+            k1=torch.tensor(1.0),
+            tracking_method="bmadx",
+            dtype=torch.double,
         ),
-        "bmad": "q1: quad, L = 1.0, K1 = 1.0",
+        "bmad": "e1: quad, L = 0.5, K1 = 1.0",
     },
 }
 
@@ -85,7 +90,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
 
     {cheetah_elements_and_respective_bmad_strs[element_name]["bmad"]}
 
-    lat: line = (d1)
+    lat: line = (e1)
 
     use, lat
     """
@@ -93,7 +98,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     with open(bmad_lattice_path, "w") as f:
         f.write(bmad_drift_lattice_str)
 
-    tao = SubprocessTao(f"-lat {bmad_lattice_path} -noplot")
+    tao = Tao(f"-lat {bmad_lattice_path} -noplot")
 
     coordinate_list = [1e-3, 2e-3, -3e-3, -1e-3, 2e-3, -1e-3]
     coordinates = torch.tensor(coordinate_list, dtype=torch.double)
@@ -142,8 +147,6 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     )
 
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
-
-    tao.close_subprocess()
 
 
 @pytest.mark.bmad
