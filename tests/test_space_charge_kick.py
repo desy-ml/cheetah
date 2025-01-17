@@ -281,7 +281,7 @@ def test_space_charge_with_aperture_cutoff():
                 x_max=torch.tensor(1e-4),
                 y_max=torch.tensor(1e-4),
                 shape="rectangular",
-                is_active="False",
+                is_active=False,
                 name="aperture",
             ),
             cheetah.Drift(length=torch.tensor(0.25)),
