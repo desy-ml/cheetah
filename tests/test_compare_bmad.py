@@ -2,7 +2,7 @@ import os
 
 import pytest
 import torch
-from pytao import Tao
+from pytao import SubprocessTao, Tao
 from scipy.constants import physical_constants
 
 import cheetah
@@ -93,7 +93,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     with open(bmad_lattice_path, "w") as f:
         f.write(bmad_drift_lattice_str)
 
-    tao = Tao(f"-lat {bmad_lattice_path} -noplot")
+    tao = SubprocessTao(f"-lat {bmad_lattice_path} -noplot")
 
     coordinate_list = [1e-3, 2e-3, -3e-3, -1e-3, 2e-3, -1e-3]
     coordinates = torch.tensor(coordinate_list, dtype=torch.double)
@@ -142,6 +142,8 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     )
 
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
+
+    tao.close_subprocess()
 
 
 @pytest.mark.bmad
