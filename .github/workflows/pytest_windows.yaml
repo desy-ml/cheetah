@@ -27,4 +27,4 @@ jobs:
           pip install -r test_requirements.txt
       - name: Test with pytest
         run: |
-          pytest -m "not bmad"
+          pytest --deselect tests/test_compare_bmad.py
