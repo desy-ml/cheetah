@@ -122,7 +122,7 @@ def test_different_species_in_different_elements(tmp_path, species_name, element
     outgoing = element(incoming)
     # Convert to Bmad coordinates
     outgoing_bmad_coordinates, _ = cheetah_to_bmad_coords(
-        outgoing.particles, ref_energy=outgoing.energy, mc2=outgoing.mass_eV
+        outgoing.particles, ref_energy=outgoing.energy, mc2=outgoing.species.mass_eV
     )
 
     # Track with Tao
