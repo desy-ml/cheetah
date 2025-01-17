@@ -101,7 +101,9 @@ class Cavity(Element):
         Track particles through the cavity. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
         """
-        gamma0, igamma2, beta0 = compute_relativistic_factors(incoming.energy)
+        gamma0, igamma2, beta0 = compute_relativistic_factors(
+            incoming.energy, incoming.species.mass_eV
+        )
 
         phi = torch.deg2rad(self.phase)
 
@@ -122,7 +124,9 @@ class Cavity(Element):
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
-            gamma1, _, beta1 = compute_relativistic_factors(outgoing_energy)
+            gamma1, _, beta1 = compute_relativistic_factors(
+                outgoing_energy, incoming.species.mass_eV
+            )
 
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (
