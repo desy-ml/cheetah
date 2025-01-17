@@ -13,7 +13,6 @@ atomic_mass_eV = (
 
 def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
     """Helper function to set the initial coordinates of the particle in Tao."""
-
     tao.cmd(f"set particle_start x={coordinates[0]}")
     tao.cmd(f"set particle_start px={coordinates[1]}")
     tao.cmd(f"set particle_start y={coordinates[2]}")
