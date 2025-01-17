@@ -35,28 +35,30 @@ def test_antiproton_proton_mass_equal():
 
 def test_custom_particle_species():
     """Test that custom particle species can be defined."""
-    muon = cheetah.Species(name="muon", charge=-1, mass=105.6583755 * 1e6)
+    muon = cheetah.Species(
+        name="muon", num_elementary_charges=-1, mass_eV=105.6583755e6
+    )
     assert (
         muon.mass_eV
         == physical_constants["muon mass energy equivalent in MeV"][0] * 1e6
     )
-    assert muon.charge_C == -1 * physical_constants["elementary charge"][0]
+    assert muon.charge_coulomb == -1 * physical_constants["elementary charge"][0]
 
 
 def test_error_on_missing_species_charge():
     """
     Test that an error is raised when a particle species is defined without a charge.
     """
-    with pytest.raises(ValueError):
-        cheetah.Species(name="muon", mass=1e6)
+    with pytest.raises(AssertionError):
+        cheetah.Species(name="muon", mass_eV=1e6)
 
 
 def test_error_on_missing_species_mass():
     """
     Test that an error is raised when a particle species is defined without a mass.
     """
-    with pytest.raises(ValueError):
-        cheetah.Species(name="muon", charge=1)
+    with pytest.raises(AssertionError):
+        cheetah.Species(name="muon", num_elementary_charges=1)
 
 
 def test_error_on_missing_species_charge_and_mass():
@@ -64,5 +66,23 @@ def test_error_on_missing_species_charge_and_mass():
     Test that an error is raised when a particle species is defined without a charge and
     mass.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         cheetah.Species(name="muon")
+
+
+def test_providing_both_charges():
+    """
+    Test that an error is raised when a particle species is defined with both charge
+    parameters.
+    """
+    with pytest.raises(AssertionError):
+        cheetah.Species(name="muon", num_elementary_charges=1, charge_coulomb=1.0)
+
+
+def test_providing_both_masses():
+    """
+    Test that an error is raised when a particle species is defined with both mass
+    parameters.
+    """
+    with pytest.raises(AssertionError):
+        cheetah.Species(name="muon", mass_eV=1e6, mass_kg=1e-27)

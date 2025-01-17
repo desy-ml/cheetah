@@ -30,7 +30,9 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
         cheetah.Species("positron"),
         cheetah.Species("antiproton"),
         cheetah.Species("deuteron"),
-        cheetah.Species("#12C+3", charge=3, mass=12 * atomic_mass_eV),
+        cheetah.Species(
+            "#12C+3", num_elementary_charges=3, mass_eV=12 * atomic_mass_eV
+        ),
     ],
 )
 @pytest.mark.parametrize(
