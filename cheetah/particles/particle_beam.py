@@ -1592,6 +1592,7 @@ class ParticleBeam(Beam):
             f" sigma_x={repr(self.sigma_x)}, sigma_px={repr(self.sigma_px)},"
             f" sigma_y={repr(self.sigma_y)}, sigma_py={repr(self.sigma_py)},"
             f" sigma_tau={repr(self.sigma_tau)}, sigma_p={repr(self.sigma_p)},"
-            f" energy={repr(self.energy)})"
-            f" total_charge={repr(self.total_charge)})"
+            f" energy={repr(self.energy)},"
+            f" total_charge={repr(self.total_charge)},"
+            f" species={repr(self.species)})"
         )
