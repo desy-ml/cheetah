@@ -5,6 +5,7 @@ import torch
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
+from cheetah.particles.species import Species
 from cheetah.utils import verify_device_and_dtype
 
 
@@ -16,8 +17,10 @@ class ParameterBeam(Beam):
     :param cov: Covariance matrix of the beam with shape `(..., 7, 7)`.
     :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
+    :param species: Particle species of the beam. Defaults to electron.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
+    :param dtype: Data type of the beam.
     """
 
     def __init__(
@@ -26,6 +29,7 @@ class ParameterBeam(Beam):
         cov: torch.Tensor,
         energy: torch.Tensor,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> None:
@@ -46,6 +50,8 @@ class ParameterBeam(Beam):
         if total_charge is not None:
             self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
 
+        self.species = species if species is not None else Species("electron")
+
     @classmethod
     def from_parameters(
         cls,
@@ -64,6 +70,7 @@ class ParameterBeam(Beam):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParameterBeam":
@@ -180,6 +187,7 @@ class ParameterBeam(Beam):
             cov=cov,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -198,6 +206,7 @@ class ParameterBeam(Beam):
         cor_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParameterBeam":
@@ -281,6 +290,7 @@ class ParameterBeam(Beam):
             cor_x=cor_x,
             cor_y=cor_y,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -302,6 +312,7 @@ class ParameterBeam(Beam):
             cov=cov.unsqueeze(0),
             energy=energy.unsqueeze(0),
             total_charge=total_charge.unsqueeze(0),
+            species=Species("electron"),
             device=device,
             dtype=dtype,
         )
@@ -325,6 +336,7 @@ class ParameterBeam(Beam):
             cov=cov,
             energy=torch.tensor(energy, dtype=torch.float32),
             total_charge=total_charge,
+            species=Species("electron"),
             device=device,
             dtype=dtype,
         )
@@ -343,6 +355,7 @@ class ParameterBeam(Beam):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParameterBeam":
@@ -364,6 +377,7 @@ class ParameterBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
         :param device: Device to create the transformed beam on. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
@@ -383,6 +397,7 @@ class ParameterBeam(Beam):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
+        species = species if species is not None else self.species
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -397,6 +412,7 @@ class ParameterBeam(Beam):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -423,6 +439,7 @@ class ParameterBeam(Beam):
             sigma_p=self.sigma_p,
             energy=self.energy,
             total_charge=self.total_charge,
+            species=self.species,
             device=self._mu.device,
             dtype=self._mu.dtype,
         )
@@ -499,5 +516,6 @@ class ParameterBeam(Beam):
             f" sigma_px={repr(self.sigma_px)}, sigma_y={repr(self.sigma_y)},"
             f" sigma_py={repr(self.sigma_py)}, sigma_tau={repr(self.sigma_tau)},"
             f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
-            f" total_charge={repr(self.total_charge)})"
+            f" total_charge={repr(self.total_charge)},"
+            f" species={repr(self.species)})"
         )
