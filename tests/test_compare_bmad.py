@@ -84,7 +84,7 @@ def test_different_species_in_different_elements(
     tmp_path, species, cheetah_element, bmad_element_str
 ):
     """
-    Test that tracking different particle species through a drift element in Cheetah
+    Test that tracking different particle species through different elements in Cheetah
     agrees with Bmad results.
     """
     bmad_drift_lattice_str = f"""
