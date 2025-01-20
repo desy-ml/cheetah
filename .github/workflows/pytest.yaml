@@ -40,8 +40,4 @@ jobs:
           pip install -r test_requirements.txt
       - name: Test with pytest
         run: |
-          if [[ ${{ runner.os }} == 'Windows' ]]; then
-            pytest --deselect tests/test_compare_bmad.py
-          else
-            pytest
-          fi
+          pytest
