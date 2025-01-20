@@ -27,7 +27,6 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
     tao.cmd(f"set particle_start pz={coordinates[5]}")
 
 
-@pytest.mark.bmad
 @pytest.mark.parametrize(
     "species",
     [
