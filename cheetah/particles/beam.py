@@ -394,7 +394,7 @@ class Beam(ABC, nn.Module):
             f" mu_y={self.mu_y}, mu_py={self.mu_py}, sigma_x={self.sigma_x},"
             f" sigma_px={self.sigma_px}, sigma_y={self.sigma_y},"
             f" sigma_py={self.sigma_py}, sigma_tau={self.sigma_tau},"
-            f" sigma_p={self.sigma_p}, energy={self.energy}),"
+            f" sigma_p={self.sigma_p}, energy={self.energy},"
             f" total_charge={self.total_charge},"
             f" species={self.species})"
         )

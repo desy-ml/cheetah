@@ -515,7 +515,7 @@ class ParameterBeam(Beam):
             f" mu_py={repr(self.mu_py)}, sigma_x={repr(self.sigma_x)},"
             f" sigma_px={repr(self.sigma_px)}, sigma_y={repr(self.sigma_y)},"
             f" sigma_py={repr(self.sigma_py)}, sigma_tau={repr(self.sigma_tau)},"
-            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
+            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)},"
             f" total_charge={repr(self.total_charge)},"
             f" species={repr(self.species)})"
         )
