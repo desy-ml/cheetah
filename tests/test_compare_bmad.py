@@ -1,4 +1,10 @@
+import sys
+
 import pytest
+
+if sys.platform.startswith("win"):
+    pytest.skip("Skipping Bmad comparison tests on Windows", allow_module_level=True)
+
 import torch
 from pytao import Tao
 from scipy.constants import physical_constants
