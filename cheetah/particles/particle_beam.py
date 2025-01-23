@@ -436,56 +436,39 @@ class ParticleBeam(Beam):
             else torch.tensor(1e-3, **factory_kwargs)
         )
 
-        # Generate x, y and tau within the ellipsoid
-        # Broadcasting with (1,) is a hack to make the loop work. Interestingly it
-        # this does not break the assigments into the non-vectorised particle tensor of
-        # the beam object.
         vector_shape = torch.broadcast_shapes(
-            radius_x.shape, radius_y.shape, radius_tau.shape, (1,)
+            radius_x.shape, radius_y.shape, radius_tau.shape
         )
-        flattened_x = torch.empty(
-            *vector_shape, num_particles, **factory_kwargs
-        ).flatten(end_dim=-2)
-        flattened_y = torch.empty(
-            *vector_shape, num_particles, **factory_kwargs
-        ).flatten(end_dim=-2)
-        flattened_tau = torch.empty(
-            *vector_shape, num_particles, **factory_kwargs
-        ).flatten(end_dim=-2)
-        for i, (r_x, r_y, r_tau) in enumerate(
-            zip(radius_x.flatten(), radius_y.flatten(), radius_tau.flatten())
-        ):
-            num_successful = 0
-            while num_successful < num_particles:
-                x = (torch.rand(num_particles, **factory_kwargs) - 0.5) * 2 * r_x
-                y = (torch.rand(num_particles, **factory_kwargs) - 0.5) * 2 * r_y
-                tau = (torch.rand(num_particles, **factory_kwargs) - 0.5) * 2 * r_tau
 
-                is_in_ellipsoid = x**2 / r_x**2 + y**2 / r_y**2 + tau**2 / r_tau**2 < 1
-                num_to_add = min(num_particles - num_successful, is_in_ellipsoid.sum())
+        # Generate random particles in unit sphere in polar coodinates
+        # r: radius, 3rd root distribution for uniform distribution in volume
+        # theta: polar angle, uniform between 0 and pi
+        # phi: azimuthal angle, uniform between -pi and pi
+        r = torch.pow(torch.rand(*vector_shape, num_particles), 1 / 3)
+        theta = torch.arccos(2 * torch.rand(*vector_shape, num_particles) - 1)
+        phi = (torch.rand(*vector_shape, num_particles) - 0.5) * 2 * torch.pi
 
-                flattened_x[i, num_successful : num_successful + num_to_add] = x[
-                    is_in_ellipsoid
-                ][:num_to_add]
-                flattened_y[i, num_successful : num_successful + num_to_add] = y[
-                    is_in_ellipsoid
-                ][:num_to_add]
-                flattened_tau[i, num_successful : num_successful + num_to_add] = tau[
-                    is_in_ellipsoid
-                ][:num_to_add]
-
-                num_successful += num_to_add
+        # Convert to Cartesian coordinates
+        x = r * torch.sin(theta) * torch.cos(phi)
+        y = r * torch.sin(theta) * torch.sin(phi)
+        tau = r * torch.cos(theta)
 
         # Generate an uncorrelated Gaussian beam
         beam = cls.from_parameters(
             num_particles=num_particles,
             mu_px=torch.tensor(0.0, **factory_kwargs),
             mu_py=torch.tensor(0.0, **factory_kwargs),
-            sigma_x=radius_x,  # Only a placeholder, will be overwritten
+            sigma_x=radius_x.broadcast_to(
+                vector_shape
+            ),  # Only a placeholder, will be overwritten
             sigma_px=sigma_px,
-            sigma_y=radius_y,  # Only a placeholder, will be overwritten
+            sigma_y=radius_y.broadcast_to(
+                vector_shape
+            ),  # Only a placeholder, will be overwritten
             sigma_py=sigma_py,
-            sigma_tau=radius_tau,  # Only a placeholder, will be overwritten
+            sigma_tau=radius_tau.broadcast_to(
+                vector_shape
+            ),  # Only a placeholder, will be overwritten
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
@@ -493,10 +476,11 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
-        # Replace the spatial coordinates with the generated ones
-        beam.x = flattened_x.view(*vector_shape, num_particles)
-        beam.y = flattened_y.view(*vector_shape, num_particles)
-        beam.tau = flattened_tau.view(*vector_shape, num_particles)
+        # Replace the spatial coordinates with the generated ones.
+        # This involves distorting the unit sphere into the desired ellipsoid.
+        beam.x = x * radius_x.unsqueeze(-1)
+        beam.y = y * radius_y.unsqueeze(-1)
+        beam.tau = tau * radius_tau.unsqueeze(-1)
 
         return beam
 
