@@ -23,6 +23,6 @@ python:
     - requirements: docs/requirements.txt
 
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.10
   tools:
     python: "3.12"
