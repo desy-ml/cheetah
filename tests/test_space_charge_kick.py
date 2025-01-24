@@ -30,7 +30,7 @@ def test_cold_uniform_beam_expansion():
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(100_000),
-        total_charge=torch.tensor(1e-9),
+        total_charge=torch.tensor(1e-8),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
@@ -132,7 +132,7 @@ def test_vectorized_cold_uniform_beam_expansion():
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(100_000),
-        total_charge=torch.tensor(1e-9),
+        total_charge=torch.tensor(1e-8),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
