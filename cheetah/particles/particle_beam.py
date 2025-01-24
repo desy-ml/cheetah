@@ -383,8 +383,6 @@ class ParticleBeam(Beam):
         Note that:
          - The generated particles do not have correlation in the momentum directions,
            and by default a cold beam with no divergence is generated.
-         - For vectorised generation, parameters that are not `None` must have the same
-           shape.
 
         :param num_particles: Number of particles to generate.
         :param radius_x: Radius of the ellipsoid in x direction in meters.
@@ -436,9 +434,25 @@ class ParticleBeam(Beam):
             else torch.tensor(1e-3, **factory_kwargs)
         )
 
-        vector_shape = torch.broadcast_shapes(
-            radius_x.shape, radius_y.shape, radius_tau.shape
+        # Generate an uncorrelated Gaussian beam
+        beam = cls.from_parameters(
+            num_particles=num_particles,
+            mu_px=torch.tensor(0.0, **factory_kwargs),
+            mu_py=torch.tensor(0.0, **factory_kwargs),
+            sigma_x=radius_x,  # Only a placeholder, will be overwritten
+            sigma_px=sigma_px,
+            sigma_y=radius_y,  # Only a placeholder, will be overwritten
+            sigma_py=sigma_py,
+            sigma_tau=radius_tau,  # Only a placeholder, will be overwritten
+            sigma_p=sigma_p,
+            energy=energy,
+            total_charge=total_charge,
+            device=device,
+            dtype=dtype,
         )
+
+        # Extract the batch dimension of the beam
+        vector_shape = beam.sigma_x.shape
 
         # Generate random particles in unit sphere in polar coodinates
         # r: radius, 3rd root for uniform distribution in sphere volume
@@ -452,29 +466,6 @@ class ParticleBeam(Beam):
         x = r * torch.sin(theta) * torch.cos(phi)
         y = r * torch.sin(theta) * torch.sin(phi)
         tau = r * torch.cos(theta)
-
-        # Generate an uncorrelated Gaussian beam
-        beam = cls.from_parameters(
-            num_particles=num_particles,
-            mu_px=torch.tensor(0.0, **factory_kwargs),
-            mu_py=torch.tensor(0.0, **factory_kwargs),
-            sigma_x=radius_x.broadcast_to(
-                vector_shape
-            ),  # Only a placeholder, will be overwritten
-            sigma_px=sigma_px,
-            sigma_y=radius_y.broadcast_to(
-                vector_shape
-            ),  # Only a placeholder, will be overwritten
-            sigma_py=sigma_py,
-            sigma_tau=radius_tau.broadcast_to(
-                vector_shape
-            ),  # Only a placeholder, will be overwritten
-            sigma_p=sigma_p,
-            energy=energy,
-            total_charge=total_charge,
-            device=device,
-            dtype=dtype,
-        )
 
         # Replace the spatial coordinates with the generated ones.
         # This involves distorting the unit sphere into the desired ellipsoid.
