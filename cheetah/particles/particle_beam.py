@@ -441,12 +441,12 @@ class ParticleBeam(Beam):
         )
 
         # Generate random particles in unit sphere in polar coodinates
-        # r: radius, 3rd root distribution for uniform distribution in volume
-        # theta: polar angle, uniform between 0 and pi
-        # phi: azimuthal angle, uniform between -pi and pi
+        # r: radius, 3rd root for uniform distribution in sphere volume
+        # theta: polar angle, arccos for uniform distribution in sphere surface
+        # phi: azimuthal angle, uniform between 0 and 2*pi
         r = torch.pow(torch.rand(*vector_shape, num_particles), 1 / 3)
         theta = torch.arccos(2 * torch.rand(*vector_shape, num_particles) - 1)
-        phi = (torch.rand(*vector_shape, num_particles) - 0.5) * 2 * torch.pi
+        phi = torch.rand(*vector_shape, num_particles) * 2 * torch.pi
 
         # Convert to Cartesian coordinates
         x = r * torch.sin(theta) * torch.cos(phi)
