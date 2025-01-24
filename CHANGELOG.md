@@ -15,7 +15,7 @@
 
 ### 🐆 Other
 
-- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
+- Test tolerances were adjusted reduce the chance of random test failures (see #309, #324) (@Hespe, @jank324)
 - The copyright years were updated to 2025 (see #318) (@jank324)
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 
