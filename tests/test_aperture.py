@@ -19,10 +19,7 @@ def test_aperture_shape():
     aperture.shape = "elliptical"
     outgoing_elliptical = aperture.track(incoming)
 
-    assert torch.allclose(
-        outgoing_rectangular.survival_probabilities,
-        torch.ones(5),
-    )
+    assert torch.allclose(outgoing_rectangular.survival_probabilities, torch.ones(5))
     assert torch.allclose(
         outgoing_elliptical.survival_probabilities,
         torch.tensor([1.0, 0.0, 0.0, 0.0, 0.0]),
