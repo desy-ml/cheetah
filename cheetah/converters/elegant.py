@@ -70,7 +70,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "mark":
+        elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(["element_type", "group"], parsed)
             return cheetah.Marker(name=name)
         elif parsed["element_type"] == "kick":
@@ -172,7 +172,7 @@ def convert_element(
                 ],
                 name=name + "_segment",
             )
-        elif parsed["element_type"] == "quad":
+        elif parsed["element_type"] in ["quad", "quadrupole"]:
             validate_understood_properties(
                 ["element_type", "l", "k1", "tilt", "group"],
                 parsed,
