@@ -122,9 +122,7 @@ def test_vectorized_cold_uniform_beam_expansion():
 
 
 def test_vectorized():
-    """
-    Tests that the space charge kick can be applied to a vectorized beam.
-    """
+    """Tests that the space charge kick can be applied to a vectorized beam."""
 
     # Simulation parameters
     section_length = torch.tensor(0.42)
