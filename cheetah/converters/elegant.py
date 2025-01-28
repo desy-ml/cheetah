@@ -353,7 +353,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-        elif parsed["element_type"] == "sben":
+        elif parsed["element_type"] in ["sben", "csbend"]:
             validate_understood_properties(
                 ["element_type", "l", "angle", "k1", "e1", "e2", "tilt", "group"],
                 parsed,
