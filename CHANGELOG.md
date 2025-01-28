@@ -5,6 +5,7 @@
 ### 🚨 Breaking Changes
 
 - The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
+- Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
 
 ### 🚀 Features
 
@@ -15,7 +16,7 @@
 
 ### 🐆 Other
 
-- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
+- Test tolerances were adjusted reduce the chance of random test failures (see #309, #324) (@Hespe, @jank324)
 - The copyright years were updated to 2025 (see #318) (@jank324)
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 
