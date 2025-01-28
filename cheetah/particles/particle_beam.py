@@ -743,7 +743,7 @@ class ParticleBeam(Beam):
         pz = torch.sqrt(p_total**2 - px**2 - py**2)
         t = self.tau / speed_of_light
         weights = self.particle_charges
-        # To be discussed
+        # TODO: To be discussed
         status = self.survival_probabilities > 0.5
 
         data = {
@@ -754,8 +754,8 @@ class ParticleBeam(Beam):
             "py": py.numpy(),
             "pz": pz.numpy(),
             "t": t.numpy(),
-            "weight": weights,
-            "status": status,
+            "weight": weights.numpy(),
+            "status": status.numpy(),
             # TODO: Modify when support for other species was added
             "species": "electron",
         }
