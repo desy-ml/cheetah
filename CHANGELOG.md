@@ -1,14 +1,40 @@
 # Changelog
 
-## v0.7.0 [🚧 Work in Progress]
-
-This is a major release with significant upgrades under the hood of Cheetah. Despite extensive testing, you might still encounter a few bugs. Please report them by opening an issue, so we can fix them as soon as possible and improve the experience for everyone.
+## v0.7.1 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
-- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #208, #213, #215, #218, #229, #233, #258, #265) (@jank324, @cr-xu, @hespe, @roussel-ryan)
-- The fifth particle coordinate `s` is renamed to `tau`. Now Cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. In addition, the trailing "s" was removed from some beam property names (e.g. `beam.xs` becomes `beam.x`). (see #163) (@cr-xu)
+- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
+- Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
+
+### 🚀 Features
+
+- `ParticleBeam` now supports importing from and exporting to [openPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) HDF5 files and `ParticleGroup` objects. This allows for easy conversion to and from other file formats supported by openPMD-beamphysics. (see #305, #320) (@cr-xu, @Hespe)
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
+- The copyright years were updated to 2025 (see #318) (@jank324)
+- The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
+
+### 🌟 First Time Contributors
+
+## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
+
+We are proud to announce this new major release of Cheetah! This is probably the biggest release since the original Cheetah release, with many with significant upgrades under the hood. Cheetah is now fully vectorised and compatible with PyTorch broadcasting rules, while additional physics and higher fidelity options for existing physics have also been introduced. Despite extensive testing, you might still encounter a few bugs. Please report them by opening an issue, so we can fix them as soon as possible and improve the experience for everyone.
+
+### 🚨 Breaking Changes
+
+- Cheetah is now vectorised. This means that you can run multiple simulations in parallel by passing a batch of beams and settings, resulting a number of interfaces being changed. For Cheetah developers this means that you now have to account for an arbitrary-dimensional tensor of most of the properties of you element, rather than a single value, vector or whatever else a property was before. (see #116, #157, #170, #172, #173, #198, #208, #213, #215, #218, #229, #233, #258, #265, #284, #291) (@jank324, @cr-xu, @Hespe, @roussel-ryan)
+- As part of the vectorised rewrite, the `Aperture` no longer removes particles. Instead, `ParticleBeam.survival_probabilities` tracks the probability that a particle has survived (i.e. the inverse probability that it has been lost). This also comes with the removal of `Beam.empty`. Note that particle losses in `Aperture` are currently not differentiable. This will be addressed in a future release. (see #268) (@cr-xu, @jank324)
+- The fifth particle coordinate `s` is renamed to `tau`. Now Cheetah uses the canonical variables in phase space $(x,px=\frac{P_x}{p_0},y,py, \tau=c\Delta t, \delta=\Delta E/{p_0 c})$. In addition, the trailing "s" was removed from some beam property names (e.g. `beam.xs` becomes `beam.x`). (see #163, #284) (@cr-xu, @Hespe)
 - `Screen` no longer blocks the beam (by default). To return to old behaviour, set `Screen.is_blocking = True`. (see #208) (@jank324, @roussel-ryan)
+- The way `dtype`s are determined is now more in line with PyTorch's conventions. This may cause different-than-expected `dtype`s in old code. (see #254) (@Hespe, @jank324)
+- `Beam.parameters()` no longer shadows `torch.nn.Module.parameters()`. The previously returned properties now need to be queried individually. (see #300) (@Hespe)
+- `e1` and `e2` in `Dipole` and `RBend` have been renamed and made more consistent between the different magnet types. They now have prefixes `dipole_` and `rbend_` respectively. (see #289) (@Hespe, @jank324)
+- The `_transfer_map` property of `CustomTransferMap` has been renamed to `predefined_transfer_map`. (see #289) (@Hespe, @jank324)
 
 ### 🚀 Features
 
@@ -21,23 +47,29 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Moving `Element`s and `Beam`s to a different `device` and changing their `dtype` like with any `torch.nn.Module` is now possible (see #209) (@jank324)
 - `Quadrupole` now supports tracking with Cheetah's matrix-based method or with Bmad's more accurate method (see #153) (@jp-ga, @jank324)
 - Port Bmad-X tracking methods to Cheetah for `Quadrupole`, `Drift`, and `Dipole` (see #153, #240) (@jp-ga, @jank324)
-- Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240) (@jp-ga)
-- `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@hespe)
-- Implement a converter for lattice files imported from Elegant (see #222, #251) (@hespe)
+- Add `TransverseDeflectingCavity` element (following the Bmad-X implementation) (see #240, #278 #296) (@jp-ga, @cr-xu, @jank324)
+- `Dipole` and `RBend` now take a focusing moment `k1` (see #235, #247) (@Hespe)
+- Implement a converter for lattice files imported from Elegant (see #222, #251, #273, #281) (@Hespe, @jank324)
+- `Beam` and `Element` objects now have a `.clone()` method to create a deep copy (see #289) (@Hespe, @jank324)
+- `ParticleBeam` now comes with methods for plotting the beam distribution in a variety of ways (see #292) (@roussel-ryan, @jank324)
 - Add Python 3.13 support (see #275) (@jank324)
 
 ### 🐛 Bug fixes
 
 - Now all `Element` have a default length of `torch.zeros((1))`, fixing occasional issues with using elements without length, such as `Marker`, `BPM`, `Screen`, and `Aperture`. (see #143) (@cr-xu)
 - Fix bug in `Cavity` `_track_beam` (see #150) (@jp-ga)
-- Fix issue where dipoles would not get a unique name by default (see #186) (@hespe)
+- Fix issue where dipoles would not get a unique name by default (see #186) (@Hespe)
 - Add `name` to `Drift` element `__repr__` (see #201) (@ansantam)
 - Fix bug where `dtype` was not used when creating a `ParameterBeam` from Twiss parameters (see #206) (@jank324)
 - Fix bug after running `Segment.inactive_elements_as_drifts` the drifts could have the wrong `dtype` (see #206) (@jank324)
 - Fix an issue where splitting elements would result in splits with a different `dtype` (see #211) (@jank324)
 - Fix issue in Bmad import where collimators had no length by interpreting them as `Drift` + `Aperture` (see #249) (@jank324)
-- Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@hespe)
+- Fix NumPy 2 compatibility issues with PyTorch on Windows (see #220, #242) (@Hespe)
 - Fix issue with Dipole hgap conversion in Bmad import (see #261) (@cr-xu)
+- Fix plotting for segments that contain tensors with `require_grad=True` (see #288) (@Hespe)
+- Fix bug where `Element.length` could not be set as a `torch.nn.Parameter` (see #301) (@jank324, @Hespe)
+- Fix registration of `torch.nn.Parameter` at initilization for elements and beams (see #303) (@Hespe)
+- Fix warnings about NumPy deprecations and unintentional tensor clones (see #308) (@Hespe)
 
 ### 🐆 Other
 
@@ -47,11 +79,25 @@ This is a major release with significant upgrades under the hood of Cheetah. Des
 - Update reference from arXiv preprint to PRAB publication (see #166) (@jank324)
 - Rename converter modules to the respective name of the accelerator code (see #167) (@jank324)
 - Added imports to the code example in the README (see #188) (@jank324)
-- Refactor definitions of physical constants (see #189) (@hespe)
+- Refactor definitions of physical constants (see #189) (@Hespe)
 - Fix the quadrupole strength units in the quadrupole docstring (see #202) (@ansantam)
-- Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @hespe)
+- Add CI runs for macOS (arm64) and Windows (see #226) (@cr-xu, @jank324, @Hespe)
 - Clean up CI pipelines (see #243, #244) (@jank324)
 - Fix logo display in README (see #252) (@jank324)
+- Made `Beam` an abstract class (see #284) (@Hespe)
+- Releases are now automatically archived on Zenodo and given a DOI (@jank324)
+- The Acknowledgements section in the README has been updated to reflect new contributors (see #304) (@jank324, @AnEichler)
+
+### 🌟 First Time Contributors
+
+- Grégoire Charleux (@greglenerd)
+- Remi Lehe (@RemiLehe)
+- Axel Huebl (@ax3l)
+- Juan Pablo Gonzalez-Aguilera (@jp-ga)
+- Andrea Santamaria Garcia (@ansantam)
+- Ryan Roussel (@roussel-ryan)
+- Christian Hespe (@Hespe)
+- Annika Eichler (@AnEichler)
 
 ## [v0.6.3](https://github.com/desy-ml/cheetah/releases/tag/v0.6.3) (2024-03-28)
 

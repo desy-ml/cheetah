@@ -1,9 +1,8 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
@@ -18,7 +17,7 @@ class Drift(Element):
     """
     Drift section in a particle accelerator.
 
-    Note: the transfer map now uses the linear approximation.
+    NOTE: The transfer map now uses the linear approximation.
     Including the R_56 = L / (beta**2 * gamma **2)
 
     :param length: Length in meters.
@@ -28,16 +27,16 @@ class Drift(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
+        length: torch.Tensor,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
+        self.length = torch.as_tensor(length, **factory_kwargs)
         self.tracking_method = tracking_method
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
@@ -115,6 +114,7 @@ class Drift(Element):
             ),
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )

@@ -1,14 +1,13 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants, speed_of_light
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -34,62 +33,42 @@ class TransverseDeflectingCavity(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        tilt: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        voltage: Optional[torch.Tensor] = None,
+        phase: Optional[torch.Tensor] = None,
+        frequency: Optional[torch.Tensor] = None,
+        misalignment: Optional[torch.Tensor] = None,
+        tilt: Optional[torch.Tensor] = None,
         num_steps: int = 1,
         tracking_method: Literal["bmadx"] = "bmadx",
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length, voltage, phase, frequency, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "voltage",
-            (
-                torch.as_tensor(voltage, **factory_kwargs)
-                if voltage is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "phase",
-            (
-                torch.as_tensor(phase, **factory_kwargs)
-                if phase is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "frequency",
-            (
-                torch.as_tensor(frequency, **factory_kwargs)
-                if frequency is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.zeros((*self.length.shape, 2), **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "tilt",
-            (
-                torch.as_tensor(tilt, **factory_kwargs)
-                if tilt is not None
-                else torch.zeros_like(self.length)
-            ),
-        )
+        self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
+        self.register_buffer("tilt", torch.tensor(0.0, **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if voltage is not None:
+            self.voltage = torch.as_tensor(voltage, **factory_kwargs)
+        if phase is not None:
+            self.phase = torch.as_tensor(phase, **factory_kwargs)
+        if frequency is not None:
+            self.frequency = torch.as_tensor(frequency, **factory_kwargs)
+        if misalignment is not None:
+            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
+        if tilt is not None:
+            self.tilt = torch.as_tensor(tilt, **factory_kwargs)
+
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
@@ -99,7 +78,8 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return not self.is_active
+        # TODO: Implement drrift-like `transfer_map` and set to `self.is_active`
+        return False
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -157,14 +137,15 @@ class TransverseDeflectingCavity(Element):
 
         voltage = self.voltage / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
+        # Phase that the particle sees
         phase = (
             2
             * torch.pi
             * (
-                self.phase
+                self.phase.unsqueeze(-1)
                 - (
                     bmadx.particle_rf_time(z, pz, p0c, electron_mass_eV)
-                    * self.frequency
+                    * self.frequency.unsqueeze(-1)
                 )
             )
         )
@@ -173,16 +154,15 @@ class TransverseDeflectingCavity(Element):
         # two separate variables
         px = px + voltage.unsqueeze(-1) * torch.sin(phase)
 
-        beta = (
+        beta_old = (
             (1 + pz)
             * p0c.unsqueeze(-1)
             / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + electron_mass_eV**2)
         )
-        beta_old = beta
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(
-            phase
-        ) * k_rf * x * p0c.unsqueeze(-1)
+        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
+            -1
+        ) * x * p0c.unsqueeze(-1)
         pc = torch.sqrt(E_new**2 - electron_mass_eV**2)
         beta = pc / E_new
 
@@ -204,9 +184,12 @@ class TransverseDeflectingCavity(Element):
         )
 
         outgoing_beam = ParticleBeam(
-            torch.stack((x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1),
-            ref_energy,
+            particles=torch.stack(
+                (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
+            ),
+            energy=ref_energy,
             particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )

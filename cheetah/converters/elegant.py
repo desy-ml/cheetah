@@ -146,6 +146,7 @@ def convert_element(
                         dtype=dtype,
                     ),
                 ],
+                name=name + "_segment",
             )
         elif parsed["element_type"] == "rcol":
             validate_understood_properties(
@@ -169,6 +170,7 @@ def convert_element(
                         dtype=dtype,
                     ),
                 ],
+                name=name + "_segment",
             )
         elif parsed["element_type"] == "quad":
             validate_understood_properties(
@@ -198,17 +200,27 @@ def convert_element(
             )
         elif parsed["element_type"] == "moni":
             validate_understood_properties(["element_type", "group", "l"], parsed)
-            return cheetah.Segment(
-                elements=[
-                    cheetah.Drift(
-                        length=torch.tensor(parsed.get("l", 0.0)),
-                        name=name + "_drift",
-                        device=device,
-                        dtype=dtype,
-                    ),
-                    cheetah.Marker(name=name),
-                ]
-            )
+            if "l" in parsed:
+                return cheetah.Segment(
+                    elements=[
+                        cheetah.Drift(
+                            length=torch.tensor(parsed["l"] / 2),
+                            name=name + "_predrift",
+                            device=device,
+                            dtype=dtype,
+                        ),
+                        cheetah.BPM(name=name),
+                        cheetah.Drift(
+                            length=torch.tensor(parsed["l"] / 2),
+                            name=name + "_postdrift",
+                            device=device,
+                            dtype=dtype,
+                        ),
+                    ],
+                    name=name + "_segment",
+                )
+            else:
+                return cheetah.BPM(name=name)
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
                 ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]", "group"],
@@ -225,14 +237,21 @@ def convert_element(
                 [
                     [parsed.get(f"r{i + 1}{j + 1}", 0.0) for j in range(6)]
                     for i in range(6)
-                ]
+                ],
+                device=device,
+                dtype=dtype,
             )
             # Add affine component (constant offset)
-            R[:6, 6] = torch.tensor(parsed.get(f"c{i + 1}", 0.0) for i in range(6))
+            R[:6, 6] = torch.tensor(
+                [parsed.get(f"c{i + 1}", 0.0) for i in range(6)],
+                device=device,
+                dtype=dtype,
+            )
 
             return cheetah.CustomTransferMap(
                 length=torch.tensor(parsed["l"]),
-                transfer_map=R,
+                predefined_transfer_map=R,
+                name=name,
                 device=device,
                 dtype=dtype,
             )
@@ -343,8 +362,8 @@ def convert_element(
                 length=torch.tensor(parsed["l"]),
                 angle=torch.tensor(parsed.get("angle", 0.0)),
                 k1=torch.tensor(parsed.get("k1", 0.0)),
-                e1=torch.tensor(parsed["e1"]),
-                e2=torch.tensor(parsed.get("e2", 0.0)),
+                dipole_e1=torch.tensor(parsed.get("e1", 0.0)),
+                dipole_e2=torch.tensor(parsed.get("e2", 0.0)),
                 tilt=torch.tensor(parsed.get("tilt", 0.0)),
                 name=name,
                 device=device,
@@ -358,8 +377,8 @@ def convert_element(
             return cheetah.RBend(
                 length=torch.tensor(parsed["l"]),
                 angle=torch.tensor(parsed.get("angle", 0.0)),
-                e1=torch.tensor(parsed["e1"]),
-                e2=torch.tensor(parsed.get("e2", 0.0)),
+                rbend_e1=torch.tensor(parsed.get("e1", 0.0)),
+                rbend_e2=torch.tensor(parsed.get("e2", 0.0)),
                 tilt=torch.tensor(parsed.get("tilt", 0.0)),
                 name=name,
                 device=device,
@@ -394,8 +413,8 @@ def convert_element(
                 length=torch.tensor(parsed["l"]),
                 angle=torch.tensor(parsed.get("angle", 0.0)),
                 k1=torch.tensor(parsed.get("k1", 0.0)),
-                e1=torch.tensor(parsed["e1"]),
-                e2=torch.tensor(parsed.get("e2", 0.0)),
+                dipole_e1=torch.tensor(parsed.get("e1", 0.0)),
+                dipole_e2=torch.tensor(parsed.get("e2", 0.0)),
                 tilt=torch.tensor(parsed.get("tilt", 0.0)),
                 name=name,
                 device=device,
