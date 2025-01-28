@@ -1,14 +1,16 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -28,24 +30,21 @@ class VerticalCorrector(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        angle: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "angle",
-            (
-                torch.as_tensor(angle, **factory_kwargs)
-                if angle is not None
-                else torch.zeros_like(self.length)
-            ),
-        )
+        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if angle is not None:
+            self.angle = torch.as_tensor(angle, **factory_kwargs)
 
     def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
         device = self.length.device
@@ -82,7 +81,7 @@ class VerticalCorrector(Element):
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
-            for i in range(num_splits)
+            for _ in range(num_splits)
         ]
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
@@ -91,7 +90,7 @@ class VerticalCorrector(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (np.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:cyan", alpha=alpha, zorder=2

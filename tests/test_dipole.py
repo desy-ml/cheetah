@@ -121,19 +121,20 @@ def test_dipole_bmadx_tracking(dtype):
         dtype
     )
 
-    angle = torch.tensor([20 * torch.pi / 180], dtype=dtype)
+    # TODO: See if Bmad-X test dtypes can be cleaned up now that dtype PR was merged
+    angle = torch.tensor(20 * torch.pi / 180, dtype=dtype)
     e1 = angle / 2
     e2 = angle - e1
     dipole_cheetah_bmadx = Dipole(
-        length=torch.tensor([0.5]),
+        length=torch.tensor(0.5),
         angle=angle,
-        e1=e1,
-        e2=e2,
-        tilt=torch.tensor([0.1], dtype=dtype),
-        fringe_integral=torch.tensor([0.5]),
-        fringe_integral_exit=torch.tensor([0.5]),
-        gap=torch.tensor([0.05], dtype=dtype),
-        gap_exit=torch.tensor([0.05], dtype=dtype),
+        dipole_e1=e1,
+        dipole_e2=e2,
+        tilt=torch.tensor(0.1, dtype=dtype),
+        fringe_integral=torch.tensor(0.5),
+        fringe_integral_exit=torch.tensor(0.5),
+        gap=torch.tensor(0.05, dtype=dtype),
+        gap_exit=torch.tensor(0.05, dtype=dtype),
         fringe_at="both",
         fringe_type="linear_edge",
         tracking_method="bmadx",
@@ -154,3 +155,59 @@ def test_dipole_bmadx_tracking(dtype):
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
         atol=1e-14 if dtype == torch.float64 else 1e-6,
     )
+
+
+def test_buffer_registration():
+    """Test that buffers are properly registered in the dipole element."""
+    length = torch.tensor(0.5)
+    angle = torch.tensor(2e-3)
+    k1 = torch.tensor(1.2)
+    dipole_e1 = torch.tensor(1e-3)
+    dipole_e2 = torch.tensor(-1e-3)
+    tilt = torch.tensor(0.1)
+    gap = torch.tensor(0.1)
+    gap_exit = torch.tensor(0.1)
+    fringe_integral = torch.tensor(0.5)
+    fringe_integral_exit = torch.tensor(0.5)
+    fringe_at = "both"
+    fringe_type = "linear_edge"
+    tracking_method = "cheetah"
+    name = "some_dipole"
+
+    dipole = Dipole(
+        length=length,
+        angle=angle,
+        k1=k1,
+        dipole_e1=dipole_e1,
+        dipole_e2=dipole_e2,
+        tilt=tilt,
+        gap=gap,
+        gap_exit=gap_exit,
+        fringe_integral=fringe_integral,
+        fringe_integral_exit=fringe_integral_exit,
+        fringe_at=fringe_at,
+        fringe_type=fringe_type,
+        tracking_method=tracking_method,
+        name=name,
+    )
+
+    # Check for expected number of buffers
+    assert len(list(dipole.buffers())) == 10
+
+    # Should be buffers
+    assert length in dipole.buffers()
+    assert angle in dipole.buffers()
+    assert k1 in dipole.buffers()
+    assert dipole_e1 in dipole.buffers()
+    assert dipole_e2 in dipole.buffers()
+    assert tilt in dipole.buffers()
+    assert gap in dipole.buffers()
+    assert gap_exit in dipole.buffers()
+    assert fringe_integral in dipole.buffers()
+    assert fringe_integral_exit in dipole.buffers()
+
+    # Should not be buffers
+    assert fringe_at not in dipole.buffers()
+    assert fringe_type not in dipole.buffers()
+    assert tracking_method not in dipole.buffers()
+    assert name not in dipole.buffers()

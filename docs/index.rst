@@ -10,7 +10,7 @@ Welcome to Cheetah's documentation!
 
 GitHub repository: https://github.com/desy-ml/cheetah
 
-Paper: https://arxiv.org/abs/2401.05815
+Paper: https://doi.org/10.1103/PhysRevAccelBeams.27.054601
 
 
 Installation
@@ -111,6 +111,69 @@ We suggest installing pre-commit hooks to automatically conform with the code fo
 
     pip install pre-commit
     pre-commit install
+
+
+Acknowledgements
+----------------
+
+Author Contributions
+~~~~~~~~~~~~~~~~~~~~~
+
+The following people have contributed to the development of Cheetah:
+
+- Jan Kaiser (@jank324)
+- Chenran Xu (@cr-xu)
+- Annika Eichler (@AnEichler)
+- Andrea Santamaria Garcia (@ansantam)
+- Christian Hespe (@Hespe)
+- Oliver Stein (@OliStein523)
+- Grégoire Charleux (@greglenerd)
+- Remi Lehe (@RemiLehe)
+- Axel Huebl (@ax3l)
+- Juan Pablo Gonzalez-Aguilera (@jp-ga)
+- Ryan Roussel (@roussel-ryan)
+- Auralee Edelen (@lee-edelen)
+
+Institutions
+~~~~~~~~~~~~
+
+The development of Cheetah is a joint effort by members of the following institutions:
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/desy.png
+    :alt: DESY
+    :width: 5em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/kit.png
+    :alt: KIT
+    :width: 7em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/lbnl.png
+    :alt: LBNL
+    :width: 11em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_chicago.png
+    :alt: University of Chicago
+    :width: 11em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/slac.png
+    :alt: SLAC
+    :width: 9em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png
+    :alt: University of Liverpool
+    :width: 10em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png
+    :alt: Cockcroft Institute
+    :width: 7em
+
+Funding
+~~~~~~~
+
+The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
+Further, we gratefully acknowledge funding by the EuXFEL R&D project "RP-513: Learning Based Methods".
+This work was also supported by the U.S. National Science Foundation under Award PHY-1549132, the Center for Bright Beams.
+In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
 
 
 Indices and tables

@@ -1,16 +1,19 @@
-from typing import Optional, Union
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 from scipy.constants import physical_constants
-from torch import nn
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam
 from cheetah.track_methods import base_rmatrix
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -30,42 +33,31 @@ class Cavity(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter],
-        voltage: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        phase: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        frequency: Optional[Union[torch.Tensor, nn.Parameter]] = None,
+        length: torch.Tensor,
+        voltage: Optional[torch.Tensor] = None,
+        phase: Optional[torch.Tensor] = None,
+        frequency: Optional[torch.Tensor] = None,
         name: Optional[str] = None,
         device=None,
-        dtype=torch.float32,
+        dtype=None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length, voltage, phase, frequency], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "voltage",
-            (
-                torch.as_tensor(voltage, **factory_kwargs)
-                if voltage is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "phase",
-            (
-                torch.as_tensor(phase, **factory_kwargs)
-                if phase is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer(
-            "frequency",
-            (
-                torch.as_tensor(frequency, **factory_kwargs)
-                if frequency is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
+        self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
+        self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
+
+        self.length = torch.as_tensor(length, **factory_kwargs)
+        if voltage is not None:
+            self.voltage = torch.as_tensor(voltage, **factory_kwargs)
+        if phase is not None:
+            self.phase = torch.as_tensor(phase, **factory_kwargs)
+        if frequency is not None:
+            self.frequency = torch.as_tensor(frequency, **factory_kwargs)
 
     @property
     def is_active(self) -> bool:
@@ -97,9 +89,7 @@ class Cavity(Element):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty:
-            return incoming
-        elif isinstance(incoming, (ParameterBeam, ParticleBeam)):
+        if isinstance(incoming, (ParameterBeam, ParticleBeam)):
             return self._track_beam(incoming)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
@@ -238,9 +228,10 @@ class Cavity(Element):
             return outgoing
         else:  # ParticleBeam
             outgoing = ParticleBeam(
-                outgoing_particles,
-                outgoing_energy,
+                particles=outgoing_particles,
+                energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
+                survival_probabilities=incoming.survival_probabilities,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )
@@ -248,13 +239,12 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: torch.Tensor) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
         delta_energy = self.voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, device=device, dtype=dtype)
+        eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / electron_mass_eV
         Ef = (energy + delta_energy) / electron_mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
@@ -288,12 +278,12 @@ class Cavity(Element):
             )
         )
 
-        r56 = torch.tensor(0.0)
-        beta0 = torch.tensor(1.0)
-        beta1 = torch.tensor(1.0)
+        r56 = torch.tensor(0.0, **factory_kwargs)
+        beta0 = torch.tensor(1.0, **factory_kwargs)
+        beta1 = torch.tensor(1.0, **factory_kwargs)
 
-        k = 2 * torch.pi * self.frequency / torch.tensor(constants.speed_of_light)
-        r55_cor = torch.tensor(0.0)
+        k = 2 * torch.pi * self.frequency / constants.speed_of_light
+        r55_cor = torch.tensor(0.0, **factory_kwargs)
         if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
             beta0 = torch.sqrt(1 - 1 / Ei**2)
             beta1 = torch.sqrt(1 - 1 / Ef**2)
@@ -320,7 +310,7 @@ class Cavity(Element):
             r11, r12, r21, r22, r55_cor, r56, r65, r66
         )
 
-        R = torch.eye(7, device=device, dtype=dtype).repeat((*r11.shape, 1, 1))
+        R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
         R[..., 0, 0] = r11
         R[..., 0, 1] = r12
         R[..., 1, 0] = r21
