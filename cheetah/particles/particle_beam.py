@@ -1035,13 +1035,9 @@ class ParticleBeam(Beam):
         # Handle units
         if dimension in ("x", "y", "tau"):
             base_unit = "m"
-        elif dimension in ("px", "py", "p"):
-            base_unit = "%"
 
         if dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
-        elif dimension in ("px", "py", "p"):
-            format_axis_as_percentage(ax.xaxis)
 
         return ax
 
@@ -1116,23 +1112,15 @@ class ParticleBeam(Beam):
         # Handle units
         if x_dimension in ("x", "y", "tau"):
             x_base_unit = "m"
-        elif x_dimension in ("px", "py", "p"):
-            x_base_unit = "%"
 
         if y_dimension in ("x", "y", "tau"):
             y_base_unit = "m"
-        elif y_dimension in ("px", "py", "p"):
-            y_base_unit = "%"
 
         if x_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
-        elif x_dimension in ("px", "py", "p"):
-            format_axis_as_percentage(ax.xaxis)
 
         if y_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
-        elif y_dimension in ("px", "py", "p"):
-            format_axis_as_percentage(ax.yaxis)
 
         return ax
 
