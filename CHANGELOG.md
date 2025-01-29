@@ -10,12 +10,15 @@
 ### 🚀 Features
 
 - `ParticleBeam` now supports importing from and exporting to [openPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) HDF5 files and `ParticleGroup` objects. This allows for easy conversion to and from other file formats supported by openPMD-beamphysics. (see #305, #320) (@cr-xu, @Hespe)
+- Add `marker`, `quadrupole` and `csbend` element names to the Elegant converter (see #327) (@jank324)
 
 ### 🐛 Bug fixes
 
+- Fix issue where a space before a comma could cause the Elegant and Bmad converters to fail (see #327) (@jank324)
+
 ### 🐆 Other
 
-- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
+- Test tolerances were adjusted reduce the chance of random test failures (see #309, #324) (@Hespe, @jank324)
 - The copyright years were updated to 2025 (see #318) (@jank324)
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 
