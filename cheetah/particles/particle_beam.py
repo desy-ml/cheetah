@@ -12,7 +12,6 @@ from torch.distributions import MultivariateNormal
 from cheetah.particles.beam import Beam
 from cheetah.utils import (
     elementwise_linspace,
-    format_axis_as_percentage,
     format_axis_with_prefixed_unit,
     unbiased_weighted_covariance,
     unbiased_weighted_std,
