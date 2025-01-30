@@ -410,7 +410,7 @@ class ParameterBeam(Beam):
         """
         from cheetah.particles.particle_beam import ParticleBeam  # No circular import
 
-        return ParticleBeam.make_from_parameters(
+        return ParticleBeam.from_parameters(
             num_particles=num_particles,
             mu_x=self.mu_x,
             mu_y=self.mu_y,
