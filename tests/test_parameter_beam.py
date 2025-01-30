@@ -123,3 +123,20 @@ def test_from_twiss_dtype():
 
     assert beam._mu.dtype == torch.float64
     assert beam._cov.dtype == torch.float64
+
+
+def test_conversion_to_and_from_particle_beam():
+    """
+    Test that converting a `ParameterBeam` to a `ParticleBeam` and back results in the
+    an equivalent `ParameterBeam`.
+    """
+    original_parameter_beam = ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    particle_beam = original_parameter_beam.as_particle_beam(num_particles=1_000_000)
+    reconstructed_parameter_beam = ParameterBeam.from_particle_beam(particle_beam)
+
+    assert torch.allclose(original_parameter_beam._mu, reconstructed_parameter_beam._mu)
+    assert torch.allclose(
+        original_parameter_beam._cov, reconstructed_parameter_beam._cov
+    )
