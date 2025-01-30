@@ -886,7 +886,7 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
-    def as_parameter_beam(self) -> "ParameterBeam":
+    def as_parameter_beam(self) -> "ParameterBeam":  # noqa: F821
         """
         Convert the the beam to a `ParameterBeam`.
 

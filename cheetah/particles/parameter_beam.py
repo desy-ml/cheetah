@@ -400,7 +400,7 @@ class ParameterBeam(Beam):
             dtype=dtype,
         )
 
-    def as_particle_beam(self, num_particles: int) -> "ParticleBeam":
+    def as_particle_beam(self, num_particles: int) -> "ParticleBeam":  # noqa: F821
         """
         Convert this beam to a `ParticleBeam` beam with `num_particles` particles.
 
@@ -431,7 +431,7 @@ class ParameterBeam(Beam):
             dtype=self._mu.dtype,
         )
 
-    def linspaced(self, num_particles: int) -> "ParticleBeam":
+    def linspaced(self, num_particles: int) -> "ParticleBeam":  # noqa: F821
         """
         Create a `ParticleBeam` beam with the same parameters as this beam and
         `num_particles` particles evenly distributed in the beam.
