@@ -1,8 +1,7 @@
 import numpy as np
 import torch
-from icecream import ic
 
-from cheetah import ParameterBeam, ParticleBeam
+from cheetah import ParameterBeam
 
 
 def test_create_from_parameters():
