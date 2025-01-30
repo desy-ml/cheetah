@@ -431,7 +431,7 @@ class ParameterBeam(Beam):
             dtype=self._mu.dtype,
         )
 
-    def linspaced(self, num_particles: int) -> "ParameterBeam":
+    def linspaced(self, num_particles: int) -> "ParticleBeam":
         """
         Create a `ParticleBeam` beam with the same parameters as this beam and
         `num_particles` particles evenly distributed in the beam.
@@ -439,6 +439,8 @@ class ParameterBeam(Beam):
         :param num_particles: Number of particles to create.
         :return: `ParticleBeam` with `num_particles` particles.
         """
+        from cheetah.particles.particle_beam import ParticleBeam  # No circular import
+
         return ParticleBeam.make_linspaced(
             num_particles=num_particles,
             mu_x=self.mu_x,
