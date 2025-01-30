@@ -4,7 +4,6 @@ import numpy as np
 import torch
 
 from cheetah.particles.beam import Beam
-from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.utils import verify_device_and_dtype
 
 
@@ -401,7 +400,7 @@ class ParameterBeam(Beam):
             dtype=dtype,
         )
 
-    def as_particle_beam(self, num_particles: int) -> ParticleBeam:
+    def as_particle_beam(self, num_particles: int) -> "ParticleBeam":
         """
         Convert this beam to a `ParticleBeam` beam with `num_particles` particles.
 
@@ -409,6 +408,8 @@ class ParameterBeam(Beam):
         :return: `ParticleBeam` with `num_particles` particles and the same parameters
             as this beam.
         """
+        from cheetah.particles.particle_beam import ParticleBeam  # No circular import
+
         return ParticleBeam.make_from_parameters(
             num_particles=num_particles,
             mu_x=self.mu_x,
@@ -430,7 +431,7 @@ class ParameterBeam(Beam):
             dtype=self._mu.dtype,
         )
 
-    def linspaced(self, num_particles: int) -> ParticleBeam:
+    def linspaced(self, num_particles: int) -> "ParameterBeam":
         """
         Create a `ParticleBeam` beam with the same parameters as this beam and
         `num_particles` particles evenly distributed in the beam.
