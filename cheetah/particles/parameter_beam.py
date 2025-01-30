@@ -401,6 +401,35 @@ class ParameterBeam(Beam):
             dtype=dtype,
         )
 
+    def as_particle_beam(self, num_particles: int) -> ParticleBeam:
+        """
+        Convert this beam to a `ParticleBeam` beam with `num_particles` particles.
+
+        :param num_particles: Number of macro particles to create.
+        :return: `ParticleBeam` with `num_particles` particles and the same parameters
+            as this beam.
+        """
+        return ParticleBeam.make_from_parameters(
+            num_particles=num_particles,
+            mu_x=self.mu_x,
+            mu_y=self.mu_y,
+            mu_px=self.mu_px,
+            mu_py=self.mu_py,
+            sigma_x=self.sigma_x,
+            sigma_y=self.sigma_y,
+            sigma_px=self.sigma_px,
+            sigma_py=self.sigma_py,
+            sigma_tau=self.sigma_tau,
+            cor_x=self.sigma_xpx,
+            cor_y=self.sigma_ypy,
+            cor_tau=self._cov[..., 4, 5],
+            sigma_p=self.sigma_p,
+            energy=self.energy,
+            total_charge=self.total_charge,
+            device=self._mu.device,
+            dtype=self._mu.dtype,
+        )
+
     def linspaced(self, num_particles: int) -> ParticleBeam:
         """
         Create a `ParticleBeam` beam with the same parameters as this beam and

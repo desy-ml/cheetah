@@ -10,6 +10,7 @@ from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
+from cheetah.particles.parameter_beam import ParameterBeam
 from cheetah.utils import (
     elementwise_linspace,
     format_axis_as_percentage,
@@ -884,6 +885,21 @@ class ParticleBeam(Beam):
             particle_charges=particle_charges,
             device=device,
             dtype=dtype,
+        )
+
+    def as_parameter_beam(self) -> ParameterBeam:
+        """
+        Convert the the beam to a `ParameterBeam`.
+
+        :return: `ParameterBeam` having the same parameters as this beam.
+        """
+        return ParameterBeam(
+            mu=self.particles.mean(dim=-2),
+            cov=torch.cov(self.particles.transpose(-2, -1)),
+            energy=self.energy,
+            total_charge=self.total_charge,
+            device=self.particles.device,
+            dtype=self.particles.dtype,
         )
 
     def linspaced(self, num_particles: int) -> "ParticleBeam":
