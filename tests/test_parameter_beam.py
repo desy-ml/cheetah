@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from cheetah import ParameterBeam
+from cheetah import ParameterBeam, ParticleBeam
 
 
 def test_create_from_parameters():
@@ -134,7 +134,7 @@ def test_conversion_to_and_from_particle_beam():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     particle_beam = original_parameter_beam.as_particle_beam(num_particles=1_000_000)
-    reconstructed_parameter_beam = ParameterBeam.from_particle_beam(particle_beam)
+    reconstructed_parameter_beam = particle_beam.as_parameter_beam()
 
     assert torch.allclose(original_parameter_beam._mu, reconstructed_parameter_beam._mu)
     assert torch.allclose(
