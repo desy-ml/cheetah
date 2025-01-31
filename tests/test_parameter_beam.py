@@ -129,9 +129,11 @@ def test_conversion_to_and_from_particle_beam():
     """
     Test that converting a `ParameterBeam` to a `ParticleBeam` and back results in the
     an equivalent `ParameterBeam`.
+
+    NOTE: Runs in double precision to avoid numerical issues.
     """
     original_parameter_beam = ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
     particle_beam = original_parameter_beam.as_particle_beam(num_particles=10_000_000)
     reconstructed_parameter_beam = particle_beam.as_parameter_beam()
