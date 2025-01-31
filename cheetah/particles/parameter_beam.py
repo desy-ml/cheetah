@@ -52,15 +52,17 @@ class ParameterBeam(Beam):
         mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_x: Optional[torch.Tensor] = None,
-        cor_y: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_x: Optional[torch.Tensor] = None,
+        cov_y: Optional[torch.Tensor] = None,
+        cov_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -73,15 +75,17 @@ class ParameterBeam(Beam):
                 mu_px,
                 mu_y,
                 mu_py,
+                mu_tau,
+                mu_p,
                 sigma_x,
                 sigma_px,
                 sigma_y,
                 sigma_py,
                 sigma_tau,
                 sigma_p,
-                cor_x,
-                cor_y,
-                cor_tau,
+                cov_x,
+                cov_y,
+                cov_tau,
                 energy,
                 total_charge,
             ],
@@ -95,6 +99,8 @@ class ParameterBeam(Beam):
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
         mu_py = mu_py if mu_py is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_tau = mu_tau if mu_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_p = mu_p if mu_p is not None else torch.tensor(0.0, **factory_kwargs)
         sigma_x = (
             sigma_x if sigma_x is not None else torch.tensor(175e-9, **factory_kwargs)
         )
@@ -113,10 +119,10 @@ class ParameterBeam(Beam):
         sigma_p = (
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_x = cor_x if cor_x is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_y = cor_y if cor_y is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_x = cov_x if cov_x is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_y = cov_y if cov_y is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_tau = (
+            cov_tau if cov_tau is not None else torch.tensor(0.0, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
@@ -125,53 +131,47 @@ class ParameterBeam(Beam):
             else torch.tensor(0.0, **factory_kwargs)
         )
 
-        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
+        mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
+            mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p
+        )
         mu = torch.stack(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                torch.zeros_like(mu_x),
-                torch.zeros_like(mu_x),
-                torch.ones_like(mu_x),
-            ],
+            [mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p, torch.ones_like(mu_x)],
             dim=-1,
         )
 
         (
             sigma_x,
-            cor_x,
+            cov_x,
             sigma_px,
             sigma_y,
-            cor_y,
+            cov_y,
             sigma_py,
             sigma_tau,
-            cor_tau,
+            cov_tau,
             sigma_p,
         ) = torch.broadcast_tensors(
             sigma_x,
-            cor_x,
+            cov_x,
             sigma_px,
             sigma_y,
-            cor_y,
+            cov_y,
             sigma_py,
             sigma_tau,
-            cor_tau,
+            cov_tau,
             sigma_p,
         )
         cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
         cov[..., 0, 0] = sigma_x**2
-        cov[..., 0, 1] = cor_x
-        cov[..., 1, 0] = cor_x
+        cov[..., 0, 1] = cov_x
+        cov[..., 1, 0] = cov_x
         cov[..., 1, 1] = sigma_px**2
         cov[..., 2, 2] = sigma_y**2
-        cov[..., 2, 3] = cor_y
-        cov[..., 3, 2] = cor_y
+        cov[..., 2, 3] = cov_y
+        cov[..., 3, 2] = cov_y
         cov[..., 3, 3] = sigma_py**2
         cov[..., 4, 4] = sigma_tau**2
-        cov[..., 4, 5] = cor_tau
-        cov[..., 5, 4] = cor_tau
+        cov[..., 4, 5] = cov_tau
+        cov[..., 5, 4] = cov_tau
         cov[..., 5, 5] = sigma_p**2
 
         return cls(
@@ -194,7 +194,7 @@ class ParameterBeam(Beam):
         emittance_y: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_tau: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -211,7 +211,7 @@ class ParameterBeam(Beam):
                 emittance_y,
                 sigma_tau,
                 sigma_p,
-                cor_tau,
+                cov_tau,
                 energy,
                 total_charge,
             ],
@@ -245,8 +245,8 @@ class ParameterBeam(Beam):
         sigma_p = (
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_tau = (
+            cov_tau if cov_tau is not None else torch.tensor(0.0, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
@@ -266,8 +266,8 @@ class ParameterBeam(Beam):
         sigma_px = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = torch.sqrt(emittance_y * beta_y)
         sigma_py = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
-        cor_x = -emittance_x * alpha_x
-        cor_y = -emittance_y * alpha_y
+        cov_x = -emittance_x * alpha_x
+        cov_y = -emittance_y * alpha_y
         return cls.from_parameters(
             sigma_x=sigma_x,
             sigma_px=sigma_px,
@@ -276,9 +276,9 @@ class ParameterBeam(Beam):
             sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
-            cor_tau=cor_tau,
-            cor_x=cor_x,
-            cor_y=cor_y,
+            cov_tau=cov_tau,
+            cov_x=cov_x,
+            cov_y=cov_y,
             total_charge=total_charge,
             device=device,
             dtype=dtype,
@@ -334,6 +334,8 @@ class ParameterBeam(Beam):
         mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
@@ -352,6 +354,8 @@ class ParameterBeam(Beam):
         :param mu_px: Center of the particle distribution on px, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on yp, dimensionless.
+        :param mu_tau: Center of the particle distribution on tau in meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
@@ -374,6 +378,8 @@ class ParameterBeam(Beam):
         mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
         mu_py = mu_py if mu_py is not None else self.mu_py
+        mu_tau = mu_tau if mu_tau is not None else self.mu_tau
+        mu_p = mu_p if mu_p is not None else self.mu_p
         sigma_x = sigma_x if sigma_x is not None else self.sigma_x
         sigma_px = sigma_px if sigma_px is not None else self.sigma_px
         sigma_y = sigma_y if sigma_y is not None else self.sigma_y
@@ -388,6 +394,8 @@ class ParameterBeam(Beam):
             mu_px=mu_px,
             mu_y=mu_y,
             mu_py=mu_py,
+            mu_tau=mu_tau,
+            mu_p=mu_p,
             sigma_x=sigma_x,
             sigma_px=sigma_px,
             sigma_y=sigma_y,
@@ -416,15 +424,17 @@ class ParameterBeam(Beam):
             mu_y=self.mu_y,
             mu_px=self.mu_px,
             mu_py=self.mu_py,
+            mu_tau=self.mu_tau,
+            mu_p=self.mu_p,
             sigma_x=self.sigma_x,
             sigma_y=self.sigma_y,
             sigma_px=self.sigma_px,
             sigma_py=self.sigma_py,
             sigma_tau=self.sigma_tau,
-            cor_x=self.sigma_xpx,
-            cor_y=self.sigma_ypy,
-            cor_tau=self._cov[..., 4, 5],
             sigma_p=self.sigma_p,
+            cov_x=self.cov_x,
+            cov_y=self.cov_y,
+            cov_tau=self.cov_tau,
             energy=self.energy,
             total_charge=self.total_charge,
             device=self._mu.device,
@@ -447,6 +457,8 @@ class ParameterBeam(Beam):
             mu_y=self.mu_y,
             mu_px=self.mu_px,
             mu_py=self.mu_py,
+            mu_tau=self.mu_tau,
+            mu_p=self.mu_p,
             sigma_x=self.sigma_x,
             sigma_y=self.sigma_y,
             sigma_px=self.sigma_px,
@@ -508,12 +520,16 @@ class ParameterBeam(Beam):
         return torch.sqrt(torch.clamp_min(self._cov[..., 5, 5], 1e-20))
 
     @property
-    def sigma_xpx(self) -> torch.Tensor:
+    def cov_x(self) -> torch.Tensor:
         return self._cov[..., 0, 1]
 
     @property
-    def sigma_ypy(self) -> torch.Tensor:
+    def cov_y(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
+
+    @property
+    def cov_tau(self) -> torch.Tensor:
+        return self._cov[..., 4, 5]
 
     def clone(self) -> "ParameterBeam":
         return ParameterBeam(
@@ -525,11 +541,8 @@ class ParameterBeam(Beam):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(mu_x={repr(self.mu_x)},"
-            f" mu_px={repr(self.mu_px)}, mu_y={repr(self.mu_y)},"
-            f" mu_py={repr(self.mu_py)}, sigma_x={repr(self.sigma_x)},"
-            f" sigma_px={repr(self.sigma_px)}, sigma_y={repr(self.sigma_y)},"
-            f" sigma_py={repr(self.sigma_py)}, sigma_tau={repr(self.sigma_tau)},"
-            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
-            f" total_charge={repr(self.total_charge)})"
+            f"{self.__class__.__name__}(mu={repr(self._mu)}, "
+            + f"cov={repr(self._cov)}, "
+            + f"energy={repr(self.energy)}, "
+            + f"total_charge={repr(self.total_charge)})"
         )
