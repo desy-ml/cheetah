@@ -49,9 +49,9 @@ class Beam(ABC, nn.Module):
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cov_x: Optional[torch.Tensor] = None,
-        cov_y: Optional[torch.Tensor] = None,
-        cov_tau: Optional[torch.Tensor] = None,
+        cov_xpx: Optional[torch.Tensor] = None,
+        cov_ypy: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -76,9 +76,9 @@ class Beam(ABC, nn.Module):
             in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
-        :param cov_x: Covariance between x and px.
-        :param cov_y: Covariance between y and yp.
-        :param cov_tau: Covariance between tau and p.
+        :param cov_xpx: Covariance between x and px.
+        :param cov_ypy: Covariance between y and yp.
+        :param cov_taup: Covariance between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
@@ -99,7 +99,7 @@ class Beam(ABC, nn.Module):
         emittance_y: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cov_tau: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -118,7 +118,7 @@ class Beam(ABC, nn.Module):
             in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
-        :param cov_tau: Covariance between tau and p.
+        :param cov_taup: Covariance between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
@@ -331,18 +331,18 @@ class Beam(ABC, nn.Module):
 
     @property
     @abstractmethod
-    def cov_x(self) -> torch.Tensor:
+    def cov_xpx(self) -> torch.Tensor:
         # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def cov_y(self) -> torch.Tensor:
+    def cov_ypy(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def cov_tau(self) -> torch.Tensor:
+    def cov_taup(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -350,7 +350,7 @@ class Beam(ABC, nn.Module):
         """Emittance of the beam in x direction in m."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_x**2 * self.sigma_px**2 - self.cov_x**2,
+                self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,
                 torch.finfo(self.sigma_x.dtype).tiny,
             )
         )
@@ -368,14 +368,14 @@ class Beam(ABC, nn.Module):
     @property
     def alpha_x(self) -> torch.Tensor:
         """Alpha function in x direction, dimensionless."""
-        return -self.cov_x / self.emittance_x
+        return -self.cov_xpx / self.emittance_x
 
     @property
     def emittance_y(self) -> torch.Tensor:
         """Emittance of the beam in y direction in m."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_y**2 * self.sigma_py**2 - self.cov_y**2,
+                self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2,
                 torch.finfo(self.sigma_y.dtype).tiny,
             )
         )
@@ -393,7 +393,7 @@ class Beam(ABC, nn.Module):
     @property
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
-        return -self.cov_y / self.emittance_y
+        return -self.cov_ypy / self.emittance_y
 
     @abstractmethod
     def clone(self) -> "Beam":
