@@ -90,18 +90,20 @@ class ParticleBeam(Beam):
         cls,
         num_particles: int = 100_000,
         mu_x: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_x: Optional[torch.Tensor] = None,
-        cor_y: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_xpx: Optional[torch.Tensor] = None,
+        cov_ypy: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
@@ -112,22 +114,25 @@ class ParticleBeam(Beam):
 
         :param num_particles: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_y: Center of the particle distribution on y in meters.
         :param mu_px: Center of the particle distribution on px, dimensionless.
+        :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on py , dimensionless.
+        :param mu_tau: Center of the particle distribution on tau (longitudinal) in
+            meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_py: Sigma of the particle distribution in py direction,
             dimensionless.
         :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
             in meters.
         :param sigma_p: Sigma of the particle distribution in longitudinal momentum,
             dimensionless.
-        :param cor_x: Correlation between x and px.
-        :param cor_y: Correlation between y and py.
-        :param cor_tau: Correlation between s and p.
+        :param cov_xpx: Correlation between x and px.
+        :param cov_ypy: Correlation between y and py.
+        :param cov_taup: Correlation between s and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param device: Device to move the beam's particle array to. If set to `"auto"` a
@@ -141,15 +146,17 @@ class ParticleBeam(Beam):
                 mu_px,
                 mu_y,
                 mu_py,
+                mu_tau,
+                mu_p,
                 sigma_x,
                 sigma_px,
                 sigma_y,
                 sigma_py,
                 sigma_tau,
                 sigma_p,
-                cor_x,
-                cor_y,
-                cor_tau,
+                cov_xpx,
+                cov_ypy,
+                cov_taup,
                 energy,
                 total_charge,
             ],
@@ -163,6 +170,8 @@ class ParticleBeam(Beam):
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
         mu_py = mu_py if mu_py is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_tau = mu_tau if mu_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_p = mu_p if mu_p is not None else torch.tensor(0.0, **factory_kwargs)
         sigma_x = (
             sigma_x if sigma_x is not None else torch.tensor(175e-9, **factory_kwargs)
         )
@@ -181,10 +190,14 @@ class ParticleBeam(Beam):
         sigma_p = (
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_x = cor_x if cor_x is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_y = cor_y if cor_y is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_xpx = (
+            cov_xpx if cov_xpx is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_ypy = (
+            cov_ypy if cov_ypy is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_taup = (
+            cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
@@ -198,45 +211,44 @@ class ParticleBeam(Beam):
             / num_particles
         )
 
-        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
-        mean = torch.stack(
-            [mu_x, mu_px, mu_y, mu_py, torch.zeros_like(mu_x), torch.zeros_like(mu_x)],
-            dim=-1,
+        mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
+            mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p
         )
+        mean = torch.stack([mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p], dim=-1)
 
         (
             sigma_x,
-            cor_x,
             sigma_px,
+            cov_xpx,
             sigma_y,
-            cor_y,
             sigma_py,
+            cov_ypy,
             sigma_tau,
-            cor_tau,
             sigma_p,
+            cov_taup,
         ) = torch.broadcast_tensors(
             sigma_x,
-            cor_x,
             sigma_px,
+            cov_xpx,
             sigma_y,
-            cor_y,
             sigma_py,
+            cov_ypy,
             sigma_tau,
-            cor_tau,
             sigma_p,
+            cov_taup,
         )
         cov = torch.zeros(*sigma_x.shape, 6, 6, **factory_kwargs)
         cov[..., 0, 0] = sigma_x**2
-        cov[..., 0, 1] = cor_x
-        cov[..., 1, 0] = cor_x
+        cov[..., 0, 1] = cov_xpx
+        cov[..., 1, 0] = cov_xpx
         cov[..., 1, 1] = sigma_px**2
         cov[..., 2, 2] = sigma_y**2
-        cov[..., 2, 3] = cor_y
-        cov[..., 3, 2] = cor_y
+        cov[..., 2, 3] = cov_ypy
+        cov[..., 3, 2] = cov_ypy
         cov[..., 3, 3] = sigma_py**2
         cov[..., 4, 4] = sigma_tau**2
-        cov[..., 4, 5] = cor_tau
-        cov[..., 5, 4] = cor_tau
+        cov[..., 4, 5] = cov_taup
+        cov[..., 5, 4] = cov_taup
         cov[..., 5, 5] = sigma_p**2
 
         vector_shape = torch.broadcast_shapes(mean.shape[:-1], cov.shape[:-2])
@@ -273,7 +285,7 @@ class ParticleBeam(Beam):
         energy: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
         device=None,
         dtype=None,
@@ -290,7 +302,7 @@ class ParticleBeam(Beam):
                 energy,
                 sigma_tau,
                 sigma_p,
-                cor_tau,
+                cov_taup,
                 total_charge,
             ],
             device,
@@ -324,8 +336,8 @@ class ParticleBeam(Beam):
         sigma_p = (
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_taup = (
+            cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
         total_charge = (
             total_charge
@@ -337,8 +349,8 @@ class ParticleBeam(Beam):
         sigma_px = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = torch.sqrt(beta_y * emittance_y)
         sigma_py = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
-        cor_x = -emittance_x * alpha_x
-        cor_y = -emittance_y * alpha_y
+        cov_xpx = -emittance_x * alpha_x
+        cov_ypy = -emittance_y * alpha_y
 
         return cls.from_parameters(
             num_particles=num_particles,
@@ -353,9 +365,9 @@ class ParticleBeam(Beam):
             sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
-            cor_tau=cor_tau,
-            cor_x=cor_x,
-            cor_y=cor_y,
+            cov_taup=cov_taup,
+            cov_xpx=cov_xpx,
+            cov_ypy=cov_ypy,
             total_charge=total_charge,
             device=device,
             dtype=dtype,
@@ -480,12 +492,14 @@ class ParticleBeam(Beam):
         cls,
         num_particles: int = 10,
         mu_x: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
@@ -499,13 +513,16 @@ class ParticleBeam(Beam):
 
         :param n: Number of particles to generate.
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_y: Center of the particle distribution on y in meters.
         :param mu_px: Center of the particle distribution on px, dimensionless.
+        :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on py , dimensionless.
+        :param mu_tau: Center of the particle distribution on tau (longitudinal) in
+            meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_py: Sigma of the particle distribution in py direction,
             dimensionless.
         :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
@@ -542,6 +559,8 @@ class ParticleBeam(Beam):
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
         mu_py = mu_py if mu_py is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_tau = mu_tau if mu_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_p = mu_p if mu_p is not None else torch.tensor(0.0, **factory_kwargs)
         sigma_x = (
             sigma_x if sigma_x is not None else torch.tensor(175e-9, **factory_kwargs)
         )
@@ -577,6 +596,8 @@ class ParticleBeam(Beam):
             mu_px.shape,
             mu_y.shape,
             mu_py.shape,
+            mu_tau.shape,
+            mu_p.shape,
             sigma_x.shape,
             sigma_px.shape,
             sigma_y.shape,
@@ -598,8 +619,12 @@ class ParticleBeam(Beam):
         particles[..., 3] = elementwise_linspace(
             mu_py - sigma_py, mu_py + sigma_py, num_particles
         )
-        particles[..., 4] = elementwise_linspace(-sigma_tau, sigma_tau, num_particles)
-        particles[..., 5] = elementwise_linspace(-sigma_p, sigma_p, num_particles)
+        particles[..., 4] = elementwise_linspace(
+            mu_tau - sigma_tau, mu_tau + sigma_tau, num_particles
+        )
+        particles[..., 5] = elementwise_linspace(
+            mu_p - sigma_p, mu_p + sigma_p, num_particles
+        )
 
         return cls(
             particles=particles,
@@ -766,12 +791,14 @@ class ParticleBeam(Beam):
     def transformed_to(
         self,
         mu_x: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
         mu_px: Optional[torch.Tensor] = None,
+        mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
+        sigma_y: Optional[torch.Tensor] = None,
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
@@ -784,13 +811,16 @@ class ParticleBeam(Beam):
         Create version of this beam that is transformed to new beam parameters.
 
         :param mu_x: Center of the particle distribution on x in meters.
-        :param mu_y: Center of the particle distribution on y in meters.
         :param mu_px: Center of the particle distribution on px, dimensionless.
+        :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on py , dimensionless.
+        :param mu_tau: Center of the particle distribution on tau (longitudinal) in
+            meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
-        :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
+        :param sigma_y: Sigma of the particle distribution in y direction in meters.
         :param sigma_py: Sigma of the particle distribution in py direction,
             dimensionless.
         :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
@@ -806,12 +836,14 @@ class ParticleBeam(Beam):
         dtype = dtype if dtype is not None else self.mu_x.dtype
 
         mu_x = mu_x if mu_x is not None else self.mu_x
-        mu_y = mu_y if mu_y is not None else self.mu_y
         mu_px = mu_px if mu_px is not None else self.mu_px
+        mu_y = mu_y if mu_y is not None else self.mu_y
         mu_py = mu_py if mu_py is not None else self.mu_py
+        mu_tau = mu_tau if mu_tau is not None else self.mu_tau
+        mu_p = mu_p if mu_p is not None else self.mu_p
         sigma_x = sigma_x if sigma_x is not None else self.sigma_x
-        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
         sigma_px = sigma_px if sigma_px is not None else self.sigma_px
+        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
         sigma_py = sigma_py if sigma_py is not None else self.sigma_py
         sigma_tau = sigma_tau if sigma_tau is not None else self.sigma_tau
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
@@ -830,11 +862,10 @@ class ParticleBeam(Beam):
                 / self.particle_charges.shape[-1]
             )
 
-        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
-        new_mu = torch.stack(
-            [mu_x, mu_px, mu_y, mu_py, torch.zeros_like(mu_x), torch.zeros_like(mu_x)],
-            dim=-1,
+        mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
+            mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p
         )
+        new_mu = torch.stack([mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p], dim=-1)
         sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p = (
             torch.broadcast_tensors(
                 sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p
@@ -845,14 +876,7 @@ class ParticleBeam(Beam):
         )
 
         old_mu = torch.stack(
-            [
-                self.mu_x,
-                self.mu_px,
-                self.mu_y,
-                self.mu_py,
-                torch.zeros_like(self.mu_x),
-                torch.zeros_like(self.mu_x),
-            ],
+            [self.mu_x, self.mu_px, self.mu_y, self.mu_py, self.mu_tau, self.mu_p],
             dim=-1,
         )
         old_sigma = torch.stack(
@@ -886,6 +910,23 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
+    def as_parameter_beam(self) -> "ParameterBeam":  # noqa: F821
+        """
+        Convert the the beam to a `ParameterBeam`.
+
+        :return: `ParameterBeam` having the same parameters as this beam.
+        """
+        from cheetah.particles.parameter_beam import ParameterBeam  # No circular import
+
+        return ParameterBeam(
+            mu=self.particles.mean(dim=-2),
+            cov=torch.cov(self.particles.transpose(-2, -1)),
+            energy=self.energy,
+            total_charge=self.total_charge,
+            device=self.particles.device,
+            dtype=self.particles.dtype,
+        )
+
     def linspaced(self, num_particles: int) -> "ParticleBeam":
         """
         Create a new beam with the same parameters as this beam, but with
@@ -897,12 +938,14 @@ class ParticleBeam(Beam):
         return self.make_linspaced(
             num_particles=num_particles,
             mu_x=self.mu_x,
-            mu_y=self.mu_y,
             mu_px=self.mu_px,
+            mu_y=self.mu_y,
             mu_py=self.mu_py,
+            mu_tau=self.mu_tau,
+            mu_p=self.mu_p,
             sigma_x=self.sigma_x,
-            sigma_y=self.sigma_y,
             sigma_px=self.sigma_px,
+            sigma_y=self.sigma_y,
             sigma_py=self.sigma_py,
             sigma_tau=self.sigma_tau,
             sigma_p=self.sigma_p,
@@ -1475,7 +1518,7 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def sigma_xpx(self) -> torch.Tensor:
+    def cov_xpx(self) -> torch.Tensor:
         r"""
         Returns the covariance between x and px. :math:`\sigma_{x, px}^2`.
         It is weighted by the survival probability of the particles.
@@ -1485,13 +1528,23 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def sigma_ypy(self) -> torch.Tensor:
+    def cov_ypy(self) -> torch.Tensor:
         r"""
         Returns the covariance between y and py. :math:`\sigma_{y, py}^2`.
         It is weighted by the survival probability of the particles.
         """
         return unbiased_weighted_covariance(
             self.y, self.py, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_taup(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between tau and p. :math:`\sigma_{\tau, p}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.tau, self.p, weights=self.survival_probabilities, dim=-1
         )
 
     @property
@@ -1541,12 +1594,8 @@ class ParticleBeam(Beam):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(n={repr(self.num_particles)},"
-            f" mu_x={repr(self.mu_x)}, mu_px={repr(self.mu_px)},"
-            f" mu_y={repr(self.mu_y)}, mu_py={repr(self.mu_py)},"
-            f" sigma_x={repr(self.sigma_x)}, sigma_px={repr(self.sigma_px)},"
-            f" sigma_y={repr(self.sigma_y)}, sigma_py={repr(self.sigma_py)},"
-            f" sigma_tau={repr(self.sigma_tau)}, sigma_p={repr(self.sigma_p)},"
-            f" energy={repr(self.energy)})"
-            f" total_charge={repr(self.total_charge)})"
+            f"{self.__class__.__name__}(particles={self.particles}, "
+            + f"energy={self.energy}, "
+            + f"particle_charges={self.particle_charges}, "
+            + f"survival_probabilities={self.survival_probabilities})"
         )

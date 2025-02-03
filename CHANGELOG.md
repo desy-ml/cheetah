@@ -6,12 +6,15 @@
 
 - The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
 - Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
+- The covariance properties of the different beam classes were renamed from names like `cor_x` and `sigma_xpx` to consistent names like `cov_xpx` (see #331) (@jank324)
 
 ### 🚀 Features
 
 - `ParticleBeam` now supports importing from and exporting to [openPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) HDF5 files and `ParticleGroup` objects. This allows for easy conversion to and from other file formats supported by openPMD-beamphysics. (see #305, #320) (@cr-xu, @Hespe)
 - Add `marker`, `quadrupole` and `csbend` element names to the Elegant converter (see #327) (@jank324)
 - Add Python 3.13 support (see #275) (@jank324)
+- Methods `to_parameter_beam` and `to_particle_beam` have been added for convenient conversion between `ParticleBeam` and `ParameterBeam` (see #331) (@jank324)
+- Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
 
 ### 🐛 Bug fixes
 
