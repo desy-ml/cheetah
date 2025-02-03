@@ -19,9 +19,9 @@ def test_create_from_parameters():
         sigma_py=torch.tensor(2e-7),
         sigma_tau=torch.tensor(0.000001),
         sigma_p=torch.tensor(0.000001),
-        cor_x=torch.tensor(0.0),
-        cor_y=torch.tensor(0.0),
-        cor_tau=torch.tensor(0.0),
+        cov_xpx=torch.tensor(0.0),
+        cov_ypy=torch.tensor(0.0),
+        cov_taup=torch.tensor(0.0),
         energy=torch.tensor(1e7),
     )
 
@@ -123,3 +123,72 @@ def test_from_twiss_dtype():
 
     assert beam._mu.dtype == torch.float64
     assert beam._cov.dtype == torch.float64
+
+
+def test_conversion_to_and_from_particle_beam():
+    """
+    Test that converting a `ParameterBeam` to a `ParticleBeam` and back results in the
+    an equivalent `ParameterBeam`.
+
+    NOTE: Runs in double precision to avoid numerical issues.
+    """
+    original_parameter_beam = ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+    particle_beam = original_parameter_beam.as_particle_beam(num_particles=10_000_000)
+    reconstructed_parameter_beam = particle_beam.as_parameter_beam()
+
+    # Side check that the `ParticleBeam` has the correct number of particles
+    assert particle_beam.num_particles == 10_000_000
+
+    # Check that reconstructed `ParameterBeam` has the same parameters as the original
+    assert torch.isclose(
+        original_parameter_beam.mu_x, reconstructed_parameter_beam.mu_x, atol=1e-6
+    )
+    assert torch.isclose(
+        original_parameter_beam.mu_y, reconstructed_parameter_beam.mu_y, atol=1e-6
+    )
+    assert torch.isclose(
+        original_parameter_beam.sigma_x, reconstructed_parameter_beam.sigma_x, rtol=1e-3
+    )
+    assert torch.isclose(
+        original_parameter_beam.sigma_y, reconstructed_parameter_beam.sigma_y, rtol=1e-3
+    )
+    assert torch.isclose(
+        original_parameter_beam.mu_px, reconstructed_parameter_beam.mu_px, atol=1e-6
+    )
+    assert torch.isclose(
+        original_parameter_beam.mu_py, reconstructed_parameter_beam.mu_py, atol=1e-6
+    )
+    assert torch.isclose(
+        original_parameter_beam.sigma_px,
+        reconstructed_parameter_beam.sigma_px,
+        rtol=1e-3,
+    )
+    assert torch.isclose(
+        original_parameter_beam.sigma_py,
+        reconstructed_parameter_beam.sigma_py,
+        rtol=1e-3,
+    )
+    # TODO: Fix after #332 has been clarified
+    # assert torch.isclose(
+    #     original_parameter_beam.mu_tau, reconstructed_parameter_beam.mu_tau, atol=1e-6
+    # )
+    assert torch.isclose(
+        original_parameter_beam.sigma_tau,
+        reconstructed_parameter_beam.sigma_tau,
+        rtol=1e-3,
+    )
+    # TODO: Fix after #332 has been clarified
+    # assert torch.isclose(
+    #     original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-6
+    # )
+    assert torch.isclose(
+        original_parameter_beam.sigma_p, reconstructed_parameter_beam.sigma_p, rtol=1e-3
+    )
+    assert torch.isclose(
+        original_parameter_beam.energy, reconstructed_parameter_beam.energy
+    )
+    assert torch.isclose(
+        original_parameter_beam.total_charge, reconstructed_parameter_beam.total_charge
+    )
