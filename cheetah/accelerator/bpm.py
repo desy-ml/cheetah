@@ -24,7 +24,7 @@ class BPM(Element):
         super().__init__(name=name)
 
         self.is_active = is_active
-        self.reading = None
+        self.register_buffer("reading", torch.tensor(torch.nan))
 
     @property
     def is_skippable(self) -> bool:
