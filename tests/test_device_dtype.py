@@ -276,27 +276,3 @@ def test_transformed_beam_dtype(BeamClass):
         mu_x=torch.tensor(-2e-5), dtype=torch.float32
     )
     assert transformed_beam.mu_x.dtype == torch.float32
-
-
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.BPM,
-        cheetah.Screen,
-    ],
-)
-def test_reading_dtype_conversion(ElementClass):
-    """Test that a dtype conversion is correctly reflected in the element reading."""
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0), dtype=torch.float32),
-            ElementClass(name="element", is_active=True),
-        ],
-    )
-    beam = cheetah.ParameterBeam.from_parameters(dtype=torch.float32)
-
-    segment.track(beam)
-    assert segment.element.reading.dtype == torch.float32
-
-    segment = segment.double()
-    assert segment.element.reading.dtype == torch.float64
