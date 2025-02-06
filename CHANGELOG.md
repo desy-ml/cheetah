@@ -19,6 +19,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue where a space before a comma could cause the Elegant and Bmad converters to fail (see #327) (@jank324)
+- Fix issue of `BPM` and `Screen` not properly converting the `dtype` of their readings (#335) (@Hespe)
 
 ### 🐆 Other
 
