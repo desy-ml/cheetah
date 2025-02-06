@@ -146,15 +146,16 @@ def test_reading_dtype_conversion():
     assert segment.screen.reading.dtype == torch.float32
 
     # Test generating new image
-    segment.track(beam)
-    converted = segment.double()
-    assert torch.all(torch.isnan(segment.screen.cached_reading))
-    assert converted.screen.reading.dtype == torch.float64
+    cloned = segment.clone()
+    cloned.track(beam)
+    cloned = cloned.double()
+    assert torch.all(torch.isnan(cloned.screen.cached_reading))
+    assert cloned.screen.reading.dtype == torch.float64
 
     # Test reading from cache
     segment.track(beam)
     assert segment.screen.reading.dtype == torch.float32
     assert segment.screen.cached_reading.dtype == torch.float32
-    converted = segment.double()
-    assert converted.screen.cached_reading.dtype == torch.float64
-    assert converted.screen.reading.dtype == torch.float64
+    segment = segment.double()
+    assert segment.screen.cached_reading.dtype == torch.float64
+    assert segment.screen.reading.dtype == torch.float64
