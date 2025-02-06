@@ -73,8 +73,13 @@ class Screen(Element):
         self.register_buffer("pixel_size", torch.tensor((1e-3, 1e-3), **factory_kwargs))
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
         self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
+
+        # NOTE: According to its type hint, the operation on resolution below is a
+        # no-op. However, this form is robust against accidentally passing a
+        # torch.Tensor, preventing crashes in some instances.
         self.register_buffer(
-            "cached_reading", torch.full(resolution, torch.nan, **factory_kwargs)
+            "cached_reading",
+            torch.full((resolution[0], resolution[1]), torch.nan, **factory_kwargs),
         )
 
         if pixel_size is not None:
@@ -298,7 +303,7 @@ class Screen(Element):
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
         self.cached_reading = torch.full(
-            self.resolution,
+            (self.resolution[0], self.resolution[1]),
             torch.nan,
             device=self.cached_reading.device,
             dtype=self.cached_reading.dtype,
