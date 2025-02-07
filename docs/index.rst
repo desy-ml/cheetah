@@ -167,6 +167,10 @@ The development of Cheetah is a joint effort by members of the following institu
     :alt: Cockcroft Institute
     :width: 7em
 
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png
+    :alt: Hamburg University of Technology
+    :width: 5em
+
 Funding
 ~~~~~~~
 
