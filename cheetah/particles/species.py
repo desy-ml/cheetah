@@ -43,6 +43,7 @@ class Species:
         charge_coulomb: Optional[torch.Tensor] = None,
         mass_eV: Optional[torch.Tensor] = None,
         mass_kg: Optional[torch.Tensor] = None,
+        dt
     ) -> None:
         if name in self.__class__.known:  # Known particle species
             assert all(

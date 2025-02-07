@@ -67,10 +67,13 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
+        self.species = species if species is not None else Species("electron")
+
         self.register_buffer("particles", None)
         self.register_buffer("energy", None)
         self.register_buffer(
-            "particle_charges", torch.zeros(particles.shape[-2], **factory_kwargs)
+            "particle_charges",
+            torch.full(species.charge_coulomb, particles.shape[-2], **factory_kwargs),
         )
         self.register_buffer(
             "survival_probabilities", torch.ones(particles.shape[-2], **factory_kwargs)
@@ -82,8 +85,6 @@ class ParticleBeam(Beam):
             self.particle_charges = particle_charges.to(**factory_kwargs)
         if survival_probabilities is not None:
             self.survival_probabilities = survival_probabilities.to(**factory_kwargs)
-
-        self.species = species if species is not None else Species("electron")
 
     @classmethod
     def from_parameters(
@@ -168,6 +169,8 @@ class ParticleBeam(Beam):
         )
         factory_kwargs = {"device": device, "dtype": dtype}
 
+        species = species if species is not None else Species("electron")
+
         # Set default values without function call in function signature
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
@@ -206,7 +209,7 @@ class ParticleBeam(Beam):
         total_charge = (
             total_charge
             if total_charge is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else species.charge_coulomb * num_particles
         )
         particle_charges = (
             torch.ones((*total_charge.shape, num_particles), **factory_kwargs)
@@ -343,11 +346,6 @@ class ParticleBeam(Beam):
         )
         cov_taup = (
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
-        )
-        total_charge = (
-            total_charge
-            if total_charge is not None
-            else torch.tensor(0.0, **factory_kwargs)
         )
 
         sigma_x = torch.sqrt(beta_x * emittance_x)
