@@ -201,7 +201,7 @@ def test_incoming_beam_not_modified():
 
 def test_gradient():
     """
-    Tests that the gradient of the track method is computed withouth throwing an error.
+    Tests that the gradient of the track method is computed accurately.
     """
 
     # Simulation parameters
@@ -261,8 +261,7 @@ def test_gradient():
 
 def test_forward_gradient():
     """
-    Tests that the gradient of the track method, in forward mode, is computed withouth
-    throwing an error.
+    Tests that the gradient of the track method, in forward mode, is computed accurately.
 
     See: https://pytorch.org/tutorials/intermediate/forward_ad_usage.html
     """
