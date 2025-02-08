@@ -297,7 +297,7 @@ def test_forward_gradient():
     Nb = incoming_beam.total_charge / elementary_charge
     segment_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
 
-    tangent = torch.rand_like(segment_length)
+    tangent = torch.zeros_like(segment_length)
 
     with fwAD.dual_level():
 
