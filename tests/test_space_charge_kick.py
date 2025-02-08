@@ -1,4 +1,5 @@
 import torch
+import torch.autograd.forward_ad as fwAD
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
@@ -224,8 +225,50 @@ def test_gradient():
     # Track the beam
     outgoing_beam = segment.track(incoming_beam)
 
-    # Compute the gradient ... would throw an error if in-place operations are used
-    outgoing_beam.sigma_x.mean().backward()
+    # Compute the gradient of the beam size with respect to the segment length
+    # This would throw an error if in-place operations are used
+    beam_size = outgoing_beam.sigma_x.mean()
+    beam_size.backward()
+
+
+def test_forward_gradient():
+    """
+    Tests that the gradient of the track method, in forward mode, is computed withouth
+    throwing an error.
+
+    See: https://pytorch.org/tutorials/intermediate/forward_ad_usage.html
+    """
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=torch.tensor([10_000]),
+        sigma_px=torch.tensor([2e-7]),
+        sigma_py=torch.tensor([2e-7]),
+    )
+
+    segment_length = torch.tensor([1.0])
+    tangent = torch.rand_like(segment_length)
+
+    with fwAD.dual_level():
+
+        segment_length = fwAD.make_dual(segment_length, tangent)
+
+        segment = cheetah.Segment(
+            elements=[
+                cheetah.Drift(segment_length / 6),
+                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.Drift(segment_length / 3),
+                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.Drift(segment_length / 3),
+                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.Drift(segment_length / 6),
+            ]
+        )
+
+    # Track the beam
+    outgoing_beam = segment.track(incoming_beam)
+
+    # Compute the gradient of the beam size with respect to the segment length
+    beam_size = outgoing_beam.sigma_x.mean()
+    jvp = fwAD.unpack_dual(beam_size)
 
 
 def test_does_not_break_segment_length():
