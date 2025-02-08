@@ -229,6 +229,7 @@ def test_gradient():
     # This would throw an error if in-place operations are used
     beam_size = outgoing_beam.sigma_x.mean()
     beam_size.backward()
+    print(segment_length.grad)
 
 
 def test_forward_gradient():
@@ -263,12 +264,13 @@ def test_forward_gradient():
             ]
         )
 
-    # Track the beam
-    outgoing_beam = segment.track(incoming_beam)
+        # Track the beam
+        outgoing_beam = segment.track(incoming_beam)
 
-    # Compute the gradient of the beam size with respect to the segment length
-    beam_size = outgoing_beam.sigma_x.mean()
-    jvp = fwAD.unpack_dual(beam_size)
+        # Compute the gradient of the beam size with respect to the segment length
+        beam_size = outgoing_beam.sigma_x.mean()
+        jvp = fwAD.unpack_dual(beam_size).tangent
+        print(jvp)
 
 
 def test_does_not_break_segment_length():
