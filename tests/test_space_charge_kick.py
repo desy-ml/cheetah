@@ -256,6 +256,7 @@ def test_gradient():
     # This would throw an error if in-place operations are used
     beam_size = outgoing_beam.sigma_x.mean()
     beam_size.backward()
+    print(beam_size)
     print(segment_length.grad)
 
 
@@ -297,7 +298,7 @@ def test_forward_gradient():
     Nb = incoming_beam.total_charge / elementary_charge
     segment_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
 
-    tangent = torch.zeros_like(segment_length)
+    tangent = torch.ones_like(segment_length)
 
     with fwAD.dual_level():
 
