@@ -261,9 +261,9 @@ def test_gradient():
     # derivative of the beam radius as a function of the segment length
     dsigma_dL = segment_length.grad
     # For a sphere, the radius is sqrt(5) bigger than sigma_x
-    dR_dL = 5**.5 * dsigma_dL
+    dR_dL = 5**0.5 * dsigma_dL
     # Theoretical formula obtained by conservation of energy in the beam frame
-    dR_dL_expected = torch.sqrt((Nb * electron_radius)/R0)/gamma
+    dR_dL_expected = torch.sqrt((Nb * electron_radius) / R0) / gamma
     assert torch.allclose(dR_dL, dR_dL_expected, rtol=0.1)
 
 
@@ -331,9 +331,9 @@ def test_forward_gradient():
         # derivative of the beam radius as a function of the segment length
         dsigma_dL = fwAD.unpack_dual(beam_size).tangent
         # For a sphere, the radius is sqrt(5) bigger than sigma_x
-        dR_dL = 5**.5 * dsigma_dL
+        dR_dL = 5**0.5 * dsigma_dL
         # Theoretical formula obtained by conservation of energy in the beam frame
-        dR_dL_expected = torch.sqrt((Nb * electron_radius)/R0)/gamma
+        dR_dL_expected = torch.sqrt((Nb * electron_radius) / R0) / gamma
         assert torch.allclose(dR_dL, dR_dL_expected, rtol=0.1)
 
 
