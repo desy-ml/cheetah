@@ -13,7 +13,7 @@ def test_cold_uniform_beam_expansion():
     travelling through a drift section with space_charge. (cf ImpactX test:
     https://impactx.readthedocs.io/en/latest/usage/examples/cfchannel/README.html#constant-focusing-channel-with-space-charge)
     See Free Expansion of a Cold Uniform Bunch in
-    https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf.
+    https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf
     """
 
     # Simulation parameters
@@ -254,10 +254,12 @@ def test_gradient():
 
     # Compute the gradient of the beam size with respect to the segment length
     # This would throw an error if in-place operations are used
-    beam_size = outgoing_beam.sigma_x.mean()
+    beam_size = outgoing_beam.sigma_x
     beam_size.backward()
-    print(beam_size)
-    print(segment_length.grad)
+    dR_dL = segment_length.grad
+    dR_dL_expected = torch.sqrt((Nb * electron_radius)/R0)/gamma
+    print(dR_dL)
+    print(dR_dL_expected)
 
 
 def test_forward_gradient():
@@ -320,7 +322,7 @@ def test_forward_gradient():
         outgoing_beam = segment.track(incoming_beam)
 
         # Compute the gradient of the beam size with respect to the segment length
-        beam_size = outgoing_beam.sigma_x.mean()
+        beam_size = outgoing_beam.sigma_x
         jvp = fwAD.unpack_dual(beam_size).tangent
         print(jvp)
 
