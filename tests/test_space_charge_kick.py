@@ -269,7 +269,8 @@ def test_gradient():
 
 def test_forward_gradient():
     """
-    Tests that the gradient of the track method, in forward mode, is computed accurately.
+    Tests that the gradient of the track method,
+    in forward mode, is computed accurately.
 
     See: https://pytorch.org/tutorials/intermediate/forward_ad_usage.html
     """
