@@ -43,7 +43,6 @@ class Species:
         charge_coulomb: Optional[torch.Tensor] = None,
         mass_eV: Optional[torch.Tensor] = None,
         mass_kg: Optional[torch.Tensor] = None,
-        dt
     ) -> None:
         if name in self.__class__.known:  # Known particle species
             assert all(
@@ -56,10 +55,10 @@ class Species:
             ), "Known particle species should not have charge and mass provided."
 
             self.name = name
-            self.num_elementary_charges = self.__class__.known[name][
-                "num_elementary_charges"
-            ]
-            self.mass_eV = self.__class__.known[name]["mass_eV"]
+            self.num_elementary_charges = torch.tensor(
+                self.__class__.known[name]["num_elementary_charges"]
+            )
+            self.mass_eV = torch.tensor(self.__class__.known[name]["mass_eV"])
         else:  # Custom particle species
             assert any(
                 [num_elementary_charges is not None, charge_coulomb is not None]
