@@ -73,7 +73,9 @@ class ParticleBeam(Beam):
         self.register_buffer("energy", None)
         self.register_buffer(
             "particle_charges",
-            torch.full(species.charge_coulomb, particles.shape[-2], **factory_kwargs),
+            torch.full(
+                (particles.shape[-2],), self.species.charge_coulomb, **factory_kwargs
+            ),
         )
         self.register_buffer(
             "survival_probabilities", torch.ones(particles.shape[-2], **factory_kwargs)
@@ -793,8 +795,7 @@ class ParticleBeam(Beam):
             "t": t.numpy(),
             "weight": weights.numpy(),
             "status": status.numpy(),
-            # TODO: Modify when support for other species was added
-            "species": "electron",
+            "species": self.species.name,
         }
         particle_group = openpmd.ParticleGroup(data=data)
 
