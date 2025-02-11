@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import torch
 
 import cheetah
@@ -185,7 +184,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
                 phase=torch.tensor(
-                    -np.degrees(bmad_parsed.get("phi0", 0.0) * 2 * np.pi),
+                    -torch.rad2deg(bmad_parsed.get("phi0", 0.0) * 2 * torch.pi),
                     **factory_kwargs,
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
@@ -206,10 +205,10 @@ def convert_element(
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
-                            bmad_parsed.get("x_limit", np.inf), **factory_kwargs
+                            bmad_parsed.get("x_limit", torch.inf), **factory_kwargs
                         ),
                         y_max=torch.tensor(
-                            bmad_parsed.get("y_limit", np.inf), **factory_kwargs
+                            bmad_parsed.get("y_limit", torch.inf), **factory_kwargs
                         ),
                         shape="rectangular",
                         name=name + "_aperture",
@@ -232,10 +231,10 @@ def convert_element(
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
-                            bmad_parsed.get("x_limit", np.inf), **factory_kwargs
+                            bmad_parsed.get("x_limit", torch.inf), **factory_kwargs
                         ),
                         y_max=torch.tensor(
-                            bmad_parsed.get("y_limit", np.inf), **factory_kwargs
+                            bmad_parsed.get("y_limit", torch.inf), **factory_kwargs
                         ),
                         shape="elliptical",
                         name=name + "_aperture",
