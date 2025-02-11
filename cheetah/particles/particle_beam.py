@@ -635,21 +635,31 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=torch.float32) -> "ParticleBeam":
+    def from_ocelot(cls, parray, device=None, dtype=None) -> "ParticleBeam":
         """
         Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
         """
+        particle_charges = torch.as_tensor(parray.q_array, device=device, dtype=dtype)
+
+        # If no explicit values are given, device and dtype are determined from the
+        # Ocelot input data.
+        factory_kwargs = {
+            "device": particle_charges.device,
+            "dtype": particle_charges.dtype,
+        }
+
         num_particles = parray.rparticles.shape[1]
-        particles = torch.ones((num_particles, 7))
-        particles[:, :6] = torch.tensor(parray.rparticles.transpose())
-        particle_charges = torch.tensor(parray.q_array)
+        particles = torch.ones((num_particles, 7), **factory_kwargs)
+        particles[:, :6] = torch.as_tensor(
+            parray.rparticles.transpose(), **factory_kwargs
+        )
+        energy = torch.as_tensor(1e9 * parray.E, **factory_kwargs)
 
         return cls(
             particles=particles.unsqueeze(0),
-            energy=torch.tensor(1e9 * parray.E).unsqueeze(0),
+            energy=energy.unsqueeze(0),
             particle_charges=particle_charges.unsqueeze(0),
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod

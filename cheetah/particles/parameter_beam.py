@@ -289,24 +289,30 @@ class ParameterBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=torch.float32) -> "ParameterBeam":
+    def from_ocelot(cls, parray, device=None, dtype=None) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        mu = torch.ones(7)
-        mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
+        total_charge = torch.as_tensor(
+            np.sum(parray.q_array), device=device, dtype=dtype
+        )
 
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
+        # If no explicit values are given, device and dtype are determined from the
+        # Ocelot input data.
+        factory_kwargs = {"device": total_charge.device, "dtype": total_charge.dtype}
 
-        energy = torch.tensor(1e9 * parray.E, dtype=torch.float32)
-        total_charge = torch.tensor(np.sum(parray.q_array), dtype=torch.float32)
+        mu = torch.ones(7, **factory_kwargs)
+        mu[:6] = torch.as_tensor(parray.rparticles.mean(axis=1), **factory_kwargs)
+
+        cov = torch.zeros(7, 7, **factory_kwargs)
+        cov[:6, :6] = torch.as_tensor(np.cov(parray.rparticles), **factory_kwargs)
+
+        energy = torch.as_tensor(1e9 * parray.E, **factory_kwargs)
 
         return cls(
             mu=mu.unsqueeze(0),
             cov=cov.unsqueeze(0),
             energy=energy.unsqueeze(0),
             total_charge=total_charge.unsqueeze(0),
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod
