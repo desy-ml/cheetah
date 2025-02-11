@@ -658,15 +658,23 @@ class ParticleBeam(Beam):
         from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
-        particles_7d = torch.ones((particles.shape[0], 7))
-        particles_7d[:, :6] = torch.from_numpy(particles)
-        particle_charges = torch.from_numpy(particle_charges)
+        particle_charges = torch.as_tensor(particle_charges, device=device, dtype=dtype)
+
+        # If no explicit values are given, device and dtype are determined from the
+        # astra input data.
+        factory_kwargs = {
+            "device": particle_charges.device,
+            "dtype": particle_charges.dtype,
+        }
+
+        particles_7d = torch.ones((particles.shape[0], 7), **factory_kwargs)
+        particles_7d[:, :6] = torch.as_tensor(particles, **factory_kwargs)
+
         return cls(
             particles=particles_7d,
-            energy=torch.tensor(energy),
+            energy=torch.as_tensor(energy, **factory_kwargs),
             particle_charges=particle_charges,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod
@@ -760,14 +768,11 @@ class ParticleBeam(Beam):
         if len(self.particles.shape) != 2:
             raise ValueError("Only non-batched particles are supported.")
 
-        n_particles = self.num_particles
-        weights = np.ones(n_particles)
         px = self.px * self.p0c
         py = self.py * self.p0c
         p_total = torch.sqrt(self.energies**2 - electron_mass_eV**2)
         pz = torch.sqrt(p_total**2 - px**2 - py**2)
         t = self.tau / speed_of_light
-        weights = self.particle_charges
         # TODO: To be discussed
         status = self.survival_probabilities > 0.5
 
@@ -779,7 +784,7 @@ class ParticleBeam(Beam):
             "py": py.numpy(),
             "pz": pz.numpy(),
             "t": t.numpy(),
-            "weight": weights.numpy(),
+            "weight": self.particle_charges.numpy(),
             "status": status.numpy(),
             # TODO: Modify when support for other species was added
             "species": "electron",
