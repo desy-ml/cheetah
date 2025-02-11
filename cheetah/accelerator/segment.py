@@ -246,8 +246,8 @@ class Segment(Element):
         cell,
         name: Optional[str] = None,
         warnings: bool = True,
-        device=None,
-        dtype=torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
         **kwargs,
     ) -> "Segment":
         """
