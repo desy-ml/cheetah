@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import torch
 
@@ -15,8 +15,8 @@ from cheetah.converters.utils.fortran_namelist import (
 def convert_element(
     name: str,
     context: dict,
-    device: Optional[Union[str, torch.device]] = None,
-    dtype: torch.dtype = torch.float32,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
 ) -> "cheetah.Element":
     """Convert a parsed elegant element dict to a cheetah Element.
 
@@ -24,10 +24,12 @@ def convert_element(
     :param context: Context dictionary parsed from elegant lattice file(s).
     :param device: Device to put the element on. If `None`, the device is set to
         `torch.device("cpu")`.
-    :param dtype: Data type to use for the element. Default is `torch.float32`.
+    :param dtype: Data type to use for the element. If `None`, the default is determined
+        from `torch.get_default_dtype()`.
     :return: Converted cheetah Element. If you are calling this function yourself
         as a user of Cheetah, this is most likely a `Segment`.
     """
+    factory_kwargs = {"device": device, "dtype": dtype}
     parsed = context[name]
 
     if isinstance(parsed, list):
@@ -43,32 +45,29 @@ def convert_element(
             # The group property does not have an analoge in Cheetah, so it is neglected
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Solenoid(
-                length=torch.tensor(parsed["l"]),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["hkick", "hkic"]:
             validate_understood_properties(
                 ["element_type", "l", "kick", "group"], parsed
             )
             return cheetah.HorizontalCorrector(
-                length=torch.tensor(parsed.get("l", 0.0)),
-                angle=torch.tensor(parsed.get("kick", 0.0)),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                angle=torch.tensor(parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["vkick", "vkic"]:
             validate_understood_properties(
                 ["element_type", "l", "kick", "group"], parsed
             )
             return cheetah.VerticalCorrector(
-                length=torch.tensor(parsed.get("l", 0.0)),
-                angle=torch.tensor(parsed.get("kick", 0.0)),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                angle=torch.tensor(parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(["element_type", "group"], parsed)
@@ -78,18 +77,16 @@ def convert_element(
 
             # TODO Find proper element class
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0)),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["drift", "drif"]:
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0)),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["csrdrift", "csrdrif"]:
             # Drift that includes effects from coherent synchrotron radiation
@@ -97,10 +94,9 @@ def convert_element(
                 ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"], parsed
             )
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0)),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["lscdrift", "lscdrif"]:
             # Drift that includes space charge effects
@@ -119,10 +115,9 @@ def convert_element(
                 parsed,
             )
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0)),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "ecol":
             validate_understood_properties(
@@ -132,18 +127,20 @@ def convert_element(
             return cheetah.Segment(
                 elements=[
                     cheetah.Drift(
-                        length=torch.tensor(parsed.get("l", 0.0)),
+                        length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                         name=name + "_drift",
-                        device=device,
-                        dtype=dtype,
+                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
-                        x_max=torch.tensor(parsed.get("x_max", torch.inf)),
-                        y_max=torch.tensor(parsed.get("y_max", torch.inf)),
+                        x_max=torch.tensor(
+                            parsed.get("x_max", torch.inf), **factory_kwargs
+                        ),
+                        y_max=torch.tensor(
+                            parsed.get("y_max", torch.inf), **factory_kwargs
+                        ),
                         shape="elliptical",
                         name=name + "_aperture",
-                        device=device,
-                        dtype=dtype,
+                        **factory_kwargs,
                     ),
                 ],
                 name=name + "_segment",
@@ -156,18 +153,20 @@ def convert_element(
             return cheetah.Segment(
                 elements=[
                     cheetah.Drift(
-                        length=torch.tensor(parsed.get("l", 0.0)),
+                        length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                         name=name + "_drift",
-                        device=device,
-                        dtype=dtype,
+                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
-                        x_max=torch.tensor(parsed.get("x_max", torch.inf)),
-                        y_max=torch.tensor(parsed.get("y_max", torch.inf)),
+                        x_max=torch.tensor(
+                            parsed.get("x_max", torch.inf), **factory_kwargs
+                        ),
+                        y_max=torch.tensor(
+                            parsed.get("y_max", torch.inf), **factory_kwargs
+                        ),
                         shape="rectangular",
                         name=name + "_aperture",
-                        device=device,
-                        dtype=dtype,
+                        **factory_kwargs,
                     ),
                 ],
                 name=name + "_segment",
@@ -178,25 +177,11 @@ def convert_element(
                 parsed,
             )
             return cheetah.Quadrupole(
-                length=torch.tensor(parsed["l"]),
-                k1=torch.tensor(parsed["k1"]),
-                tilt=torch.tensor(parsed.get("tilt", 0.0)),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
+                k1=torch.tensor(parsed["k1"], **factory_kwargs),
+                tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
-            )
-        elif parsed["element_type"] == "sext":
-            # validate_understood_properties(
-            #     ["element_type", "l", "group"],
-            #     parsed,
-            # )
-
-            # TODO Parse properly! Missing element class
-            return cheetah.Drift(
-                length=torch.tensor(parsed["l"]),
-                name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "moni":
             validate_understood_properties(["element_type", "group", "l"], parsed)
@@ -204,17 +189,15 @@ def convert_element(
                 return cheetah.Segment(
                     elements=[
                         cheetah.Drift(
-                            length=torch.tensor(parsed["l"] / 2),
+                            length=torch.tensor(parsed["l"] / 2, **factory_kwargs),
                             name=name + "_predrift",
-                            device=device,
-                            dtype=dtype,
+                            **factory_kwargs,
                         ),
                         cheetah.BPM(name=name),
                         cheetah.Drift(
-                            length=torch.tensor(parsed["l"] / 2),
+                            length=torch.tensor(parsed["l"] / 2, **factory_kwargs),
                             name=name + "_postdrift",
-                            device=device,
-                            dtype=dtype,
+                            **factory_kwargs,
                         ),
                     ],
                     name=name + "_segment",
@@ -231,29 +214,26 @@ def convert_element(
                 raise ValueError("Only first order modelling is supported")
 
             # Initially zero in elegant by convention
-            R = torch.zeros((7, 7), device=device, dtype=dtype)
+            R = torch.zeros((7, 7), **factory_kwargs)
             # Add linear component
             R[:6, :6] = torch.tensor(
                 [
                     [parsed.get(f"r{i + 1}{j + 1}", 0.0) for j in range(6)]
                     for i in range(6)
                 ],
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
             # Add affine component (constant offset)
             R[:6, 6] = torch.tensor(
                 [parsed.get(f"c{i + 1}", 0.0) for i in range(6)],
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
 
             return cheetah.CustomTransferMap(
-                length=torch.tensor(parsed["l"]),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
                 predefined_transfer_map=R,
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "rfca":
             validate_understood_properties(
@@ -274,15 +254,14 @@ def convert_element(
 
             # TODO Properly handle all parameters
             return cheetah.Cavity(
-                length=torch.tensor(parsed["l"]),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
-                phase=torch.tensor(parsed["phase"] - 90),
-                voltage=torch.tensor(parsed["volt"]),
-                frequency=torch.tensor(parsed["freq"]),
+                phase=torch.tensor(parsed["phase"] - 90, **factory_kwargs),
+                voltage=torch.tensor(parsed["volt"], **factory_kwargs),
+                frequency=torch.tensor(parsed["freq"], **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "rfcw":
             validate_understood_properties(
@@ -318,15 +297,14 @@ def convert_element(
 
             # TODO Properly handle all parameters
             return cheetah.Cavity(
-                length=torch.tensor(parsed["l"]),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
-                phase=torch.tensor(parsed["phase"] - 90),
-                voltage=torch.tensor(parsed["volt"]),
-                frequency=torch.tensor(parsed["freq"]),
+                phase=torch.tensor(parsed["phase"] - 90, **factory_kwargs),
+                voltage=torch.tensor(parsed["volt"], **factory_kwargs),
+                frequency=torch.tensor(parsed["freq"], **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "rfdf":
             validate_understood_properties(
@@ -343,15 +321,14 @@ def convert_element(
 
             # TODO Properly handle all parameters
             return cheetah.TransverseDeflectingCavity(
-                length=torch.tensor(parsed["l"]),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
-                phase=torch.tensor(parsed["phase"] - 90),
-                voltage=torch.tensor(parsed["voltage"]),
-                frequency=torch.tensor(parsed["frequency"]),
+                phase=torch.tensor(parsed["phase"] - 90, **factory_kwargs),
+                voltage=torch.tensor(parsed["voltage"], **factory_kwargs),
+                frequency=torch.tensor(parsed["frequency"], **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] in ["sben", "csbend"]:
             validate_understood_properties(
@@ -359,15 +336,14 @@ def convert_element(
                 parsed,
             )
             return cheetah.Dipole(
-                length=torch.tensor(parsed["l"]),
-                angle=torch.tensor(parsed.get("angle", 0.0)),
-                k1=torch.tensor(parsed.get("k1", 0.0)),
-                dipole_e1=torch.tensor(parsed.get("e1", 0.0)),
-                dipole_e2=torch.tensor(parsed.get("e2", 0.0)),
-                tilt=torch.tensor(parsed.get("tilt", 0.0)),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
+                angle=torch.tensor(parsed.get("angle", 0.0), **factory_kwargs),
+                k1=torch.tensor(parsed.get("k1", 0.0), **factory_kwargs),
+                dipole_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
+                dipole_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
+                tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "rben":
             validate_understood_properties(
@@ -375,14 +351,13 @@ def convert_element(
                 parsed,
             )
             return cheetah.RBend(
-                length=torch.tensor(parsed["l"]),
-                angle=torch.tensor(parsed.get("angle", 0.0)),
-                rbend_e1=torch.tensor(parsed.get("e1", 0.0)),
-                rbend_e2=torch.tensor(parsed.get("e2", 0.0)),
-                tilt=torch.tensor(parsed.get("tilt", 0.0)),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
+                angle=torch.tensor(parsed.get("angle", 0.0), **factory_kwargs),
+                rbend_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
+                rbend_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
+                tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "csrcsben":
             validate_understood_properties(
@@ -410,15 +385,14 @@ def convert_element(
                 parsed,
             )
             return cheetah.Dipole(
-                length=torch.tensor(parsed["l"]),
-                angle=torch.tensor(parsed.get("angle", 0.0)),
-                k1=torch.tensor(parsed.get("k1", 0.0)),
-                dipole_e1=torch.tensor(parsed.get("e1", 0.0)),
-                dipole_e2=torch.tensor(parsed.get("e2", 0.0)),
-                tilt=torch.tensor(parsed.get("tilt", 0.0)),
+                length=torch.tensor(parsed["l"], **factory_kwargs),
+                angle=torch.tensor(parsed.get("angle", 0.0), **factory_kwargs),
+                k1=torch.tensor(parsed.get("k1", 0.0), **factory_kwargs),
+                dipole_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
+                dipole_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
+                tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
         elif parsed["element_type"] == "watch":
             validate_understood_properties(
@@ -440,9 +414,8 @@ def convert_element(
             # TODO: Remove the length if by adding markers to Cheetah
             return cheetah.Drift(
                 name=name,
-                length=torch.tensor(parsed.get("l", 0.0)),
-                device=device,
-                dtype=dtype,
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                **factory_kwargs,
             )
     else:
         raise ValueError(
@@ -453,8 +426,8 @@ def convert_element(
 def convert_lattice_to_cheetah(
     elegant_lattice_file_path: Path,
     name: str,
-    device: Optional[Union[str, torch.device]] = None,
-    dtype: torch.dtype = torch.float32,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
 ) -> "cheetah.Element":
     """
     Convert a elegant lattice file to a Cheetah `Segment`.
@@ -463,7 +436,8 @@ def convert_lattice_to_cheetah(
     :param name: Name of the root element.
     :param device: Device to use for the lattice. If `None`, the device is set to
         `torch.device("cpu")`.
-    :param dtype: Data type to use for the lattice. Default is `torch.float32`.
+    :param dtype: Data type to use for the lattice. If `None`, the default is determined
+        from `torch.get_default_dtype()`.
     :return: Cheetah `Segment` representing the elegant lattice.
     """
 
