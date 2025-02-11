@@ -1,6 +1,7 @@
 import numpy as np
 import ocelot
 import pytest
+import torch
 
 import cheetah
 
@@ -65,6 +66,31 @@ def test_ocelot_to_particlebeam():
     assert np.allclose(beam.particles[0, :, 5].cpu().numpy(), parray.p())
     assert np.allclose(beam.energy.cpu().numpy(), parray.E * 1e9)
     assert np.allclose(beam.particle_charges.cpu().numpy(), parray.q_array)
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+@pytest.mark.parametrize("target_dtype", [torch.float32, torch.float64, None])
+def test_ocelot_to_beam_dtypes(BeamClass: cheetah.Beam, target_dtype: torch.dtype):
+    """Test that Ocelot beams are correctly loaded into cheetah beams."""
+    parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
+    beam = BeamClass.from_ocelot(parray, dtype=target_dtype)
+
+    # The imported numpy data has dtype float64, therefore that should be the default
+    if target_dtype is None:
+        target_dtype = torch.float64
+
+    assert beam.mu_x.dtype == target_dtype
+    assert beam.mu_px.dtype == target_dtype
+    assert beam.mu_y.dtype == target_dtype
+    assert beam.mu_py.dtype == target_dtype
+    assert beam.sigma_x.dtype == target_dtype
+    assert beam.sigma_px.dtype == target_dtype
+    assert beam.sigma_y.dtype == target_dtype
+    assert beam.sigma_py.dtype == target_dtype
+    assert beam.sigma_tau.dtype == target_dtype
+    assert beam.sigma_p.dtype == target_dtype
+    assert beam.energy.dtype == target_dtype
+    assert beam.total_charge.dtype == target_dtype
 
 
 def test_ocelot_lattice_import():

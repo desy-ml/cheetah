@@ -246,8 +246,8 @@ class Segment(Element):
         cell,
         name: Optional[str] = None,
         warnings: bool = True,
-        device=None,
-        dtype=torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
         **kwargs,
     ) -> "Segment":
         """
@@ -280,8 +280,8 @@ class Segment(Element):
         cls,
         bmad_lattice_file_path: str,
         environment_variables: Optional[dict] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -308,8 +308,8 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from an elegant lattice file.
