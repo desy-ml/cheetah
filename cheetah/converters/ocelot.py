@@ -1,10 +1,15 @@
+from typing import Optional
+
 import torch
 
 import cheetah
 
 
 def convert_element_to_cheetah(
-    element, warnings: bool = True, device=None, dtype=None
+    element,
+    warnings: bool = True,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
 ) -> "cheetah.Element":
     """
     Translate an Ocelot element to a Cheetah element.
@@ -29,7 +34,10 @@ def convert_element_to_cheetah(
         installed, see https://github.com/ocelot-collab/ocelot """
         )
 
-    factory_kwargs = {"device": device, "dtype": dtype}
+    factory_kwargs = {
+        "device": device,
+        "dtype": dtype if dtype is not None else torch.get_default_dtype(),
+    }
 
     if isinstance(element, ocelot.Drift):
         return cheetah.Drift(
