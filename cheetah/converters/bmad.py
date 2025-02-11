@@ -62,9 +62,7 @@ def convert_element(
             )
             if "l" in bmad_parsed:
                 return cheetah.Drift(
-                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
-                    name=name,
-                    **factory_kwargs,
+                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
                 )
             else:
                 return cheetah.Marker(name=name)
@@ -74,9 +72,7 @@ def convert_element(
             )
             if "l" in bmad_parsed:
                 return cheetah.Drift(
-                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
-                    name=name,
-                    **factory_kwargs,
+                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
                 )
             else:
                 return cheetah.Marker(name=name)
@@ -85,18 +81,14 @@ def convert_element(
                 ["element_type", "alias", "type", "l", "descrip"], bmad_parsed
             )
             return cheetah.Drift(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
             )
         elif bmad_parsed["element_type"] == "drift":
             validate_understood_properties(
                 ["element_type", "l", "type", "descrip"], bmad_parsed
             )
             return cheetah.Drift(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(
@@ -106,7 +98,6 @@ def convert_element(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
@@ -116,7 +107,6 @@ def convert_element(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "sbend":
             validate_understood_properties(
@@ -154,7 +144,6 @@ def convert_element(
                     else None
                 ),
                 name=name,
-                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
             # TODO: Aperture for quadrupoles?
@@ -167,7 +156,6 @@ def convert_element(
                 k1=torch.tensor(bmad_parsed["k1"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(
@@ -177,7 +165,6 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k=torch.tensor(bmad_parsed["ks"], **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "lcavity":
             validate_understood_properties(
@@ -203,7 +190,6 @@ def convert_element(
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
@@ -217,7 +203,6 @@ def convert_element(
                             bmad_parsed.get("l", 0.0), **factory_kwargs
                         ),
                         name=name + "_drift",
-                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -228,7 +213,6 @@ def convert_element(
                         ),
                         shape="rectangular",
                         name=name + "_aperture",
-                        **factory_kwargs,
                     ),
                 ],
                 name=name,
@@ -245,7 +229,6 @@ def convert_element(
                             bmad_parsed.get("l", 0.0), **factory_kwargs
                         ),
                         name=name + "_drift",
-                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -256,7 +239,6 @@ def convert_element(
                         ),
                         shape="elliptical",
                         name=name + "_aperture",
-                        **factory_kwargs,
                     ),
                 ],
             )
@@ -276,9 +258,7 @@ def convert_element(
                 bmad_parsed,
             )
             return cheetah.Undulator(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
             )
         elif bmad_parsed["element_type"] == "patch":
             # TODO: Does this need to be implemented in Cheetah in a more proper way?
@@ -286,7 +266,6 @@ def convert_element(
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         else:
             print(
@@ -295,9 +274,8 @@ def convert_element(
             )
             # TODO: Remove the length if by adding markers to Cheeath
             return cheetah.Drift(
-                name=name,
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
-                **factory_kwargs,
+                name=name,
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
