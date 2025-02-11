@@ -45,9 +45,7 @@ def convert_element(
             # The group property does not have an analoge in Cheetah, so it is neglected
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Solenoid(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(parsed["l"], **factory_kwargs), name=name
             )
         elif parsed["element_type"] in ["hkick", "hkic"]:
             validate_understood_properties(
@@ -57,7 +55,6 @@ def convert_element(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] in ["vkick", "vkic"]:
             validate_understood_properties(
@@ -67,7 +64,6 @@ def convert_element(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(["element_type", "group"], parsed)
@@ -77,16 +73,12 @@ def convert_element(
 
             # TODO Find proper element class
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs), name=name
             )
         elif parsed["element_type"] in ["drift", "drif"]:
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs), name=name
             )
         elif parsed["element_type"] in ["csrdrift", "csrdrif"]:
             # Drift that includes effects from coherent synchrotron radiation
@@ -94,9 +86,7 @@ def convert_element(
                 ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"], parsed
             )
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs), name=name
             )
         elif parsed["element_type"] in ["lscdrift", "lscdrif"]:
             # Drift that includes space charge effects
@@ -115,9 +105,7 @@ def convert_element(
                 parsed,
             )
             return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                **factory_kwargs,
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs), name=name
             )
         elif parsed["element_type"] == "ecol":
             validate_understood_properties(
@@ -129,7 +117,6 @@ def convert_element(
                     cheetah.Drift(
                         length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                         name=name + "_drift",
-                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -140,7 +127,6 @@ def convert_element(
                         ),
                         shape="elliptical",
                         name=name + "_aperture",
-                        **factory_kwargs,
                     ),
                 ],
                 name=name + "_segment",
@@ -155,7 +141,6 @@ def convert_element(
                     cheetah.Drift(
                         length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                         name=name + "_drift",
-                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -166,7 +151,6 @@ def convert_element(
                         ),
                         shape="rectangular",
                         name=name + "_aperture",
-                        **factory_kwargs,
                     ),
                 ],
                 name=name + "_segment",
@@ -181,7 +165,6 @@ def convert_element(
                 k1=torch.tensor(parsed["k1"], **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "moni":
             validate_understood_properties(["element_type", "group", "l"], parsed)
@@ -191,13 +174,11 @@ def convert_element(
                         cheetah.Drift(
                             length=torch.tensor(parsed["l"] / 2, **factory_kwargs),
                             name=name + "_predrift",
-                            **factory_kwargs,
                         ),
                         cheetah.BPM(name=name),
                         cheetah.Drift(
                             length=torch.tensor(parsed["l"] / 2, **factory_kwargs),
                             name=name + "_postdrift",
-                            **factory_kwargs,
                         ),
                     ],
                     name=name + "_segment",
@@ -233,7 +214,6 @@ def convert_element(
                 length=torch.tensor(parsed["l"], **factory_kwargs),
                 predefined_transfer_map=R,
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "rfca":
             validate_understood_properties(
@@ -261,7 +241,6 @@ def convert_element(
                 voltage=torch.tensor(parsed["volt"], **factory_kwargs),
                 frequency=torch.tensor(parsed["freq"], **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "rfcw":
             validate_understood_properties(
@@ -304,7 +283,6 @@ def convert_element(
                 voltage=torch.tensor(parsed["volt"], **factory_kwargs),
                 frequency=torch.tensor(parsed["freq"], **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "rfdf":
             validate_understood_properties(
@@ -328,7 +306,6 @@ def convert_element(
                 voltage=torch.tensor(parsed["voltage"], **factory_kwargs),
                 frequency=torch.tensor(parsed["frequency"], **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] in ["sben", "csbend"]:
             validate_understood_properties(
@@ -343,7 +320,6 @@ def convert_element(
                 dipole_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "rben":
             validate_understood_properties(
@@ -357,7 +333,6 @@ def convert_element(
                 rbend_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "csrcsben":
             validate_understood_properties(
@@ -392,7 +367,6 @@ def convert_element(
                 dipole_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
-                **factory_kwargs,
             )
         elif parsed["element_type"] == "watch":
             validate_understood_properties(
@@ -413,9 +387,7 @@ def convert_element(
             )
             # TODO: Remove the length if by adding markers to Cheetah
             return cheetah.Drift(
-                name=name,
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                **factory_kwargs,
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs), name=name
             )
     else:
         raise ValueError(
