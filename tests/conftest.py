@@ -34,3 +34,18 @@ def seed_random_generators(request):
         torch.cuda.manual_seed_all(seed)
     if is_mps_available_and_functional():
         torch.mps.manual_seed(seed)
+
+
+@pytest.fixture
+def default_dtype(request):
+    """Test fixture for parametrizing the default torch dtype."""
+    stored_dtype = torch.get_default_dtype()
+
+    # Set desired default dtype
+    torch.set_default_dtype(request.param)
+
+    # Execute test
+    yield
+
+    # Restore original default dtype
+    torch.set_default_dtype(stored_dtype)

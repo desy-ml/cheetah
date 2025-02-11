@@ -30,7 +30,10 @@ def convert_element(
     :return: Converted cheetah Element. If you are calling this function yourself
         as a user of Cheetah, this is most likely a `Segment`.
     """
-    factory_kwargs = {"device": device, "dtype": dtype}
+    factory_kwargs = {
+        "device": device,
+        "dtype": dtype if dtype is not None else torch.get_default_dtype(),
+    }
     bmad_parsed = context[name]
 
     if isinstance(bmad_parsed, list):
