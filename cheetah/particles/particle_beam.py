@@ -659,7 +659,6 @@ class ParticleBeam(Beam):
             particles=particles.unsqueeze(0),
             energy=energy.unsqueeze(0),
             particle_charges=particle_charges.unsqueeze(0),
-            **factory_kwargs,
         )
 
     @classmethod
@@ -684,7 +683,6 @@ class ParticleBeam(Beam):
             particles=particles_7d,
             energy=torch.as_tensor(energy, **factory_kwargs),
             particle_charges=particle_charges,
-            **factory_kwargs,
         )
 
     @classmethod
