@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from scipy.constants import physical_constants
 
@@ -5,7 +7,7 @@ from scipy.constants import physical_constants
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
+def from_astrabeam(path: str) -> Tuple[np.ndarray, float, np.ndarray]:
     """
     Read from a ASTRA beam distribution, and prepare for conversion to a Cheetah
     ParticleBeam or ParameterBeam.
@@ -39,7 +41,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     energy = gamref * electron_mass_eV
 
     n_particles = xp.shape[0]
-    particles = np.zeros((n_particles, 6))
+    particles = np.zeros((n_particles, 6), dtype=P0.dtype)
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
     gamma = np.sqrt(1 + np.sum(u * u, 1) / electron_mass_eV**2)
