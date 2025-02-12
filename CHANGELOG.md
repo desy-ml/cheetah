@@ -27,6 +27,7 @@
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 - Added `pyproject.toml` to conform with PEP 660 as enforced as of pip 25 for editable installs (see #334) (@jank324)
 - Add TUHH logo to contributing institution logos (see #338) (@jank324)
+- Doc: ImpactX Example (Space Charge) #341 (@ax3l)
 
 ### 🌟 First Time Contributors
 
