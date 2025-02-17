@@ -121,7 +121,6 @@ class Segment3DBuilder:
         """
         # Map the asset key to the corresponding resource file name.
         asset_map = {
-            #"gun" "ares_ea_gun.glb", # electromagnetic source for beam generation
             "dipole_vcor": "ares_ea_small_steerer_vcor.glb",
             "dipole_hcor": "ares_ea_small_steerer_hcor.glb",
             "quadrupole": "ares_ea_quadrupole.glb",
@@ -202,6 +201,9 @@ class Segment3DBuilder:
                 handler(element)
             
             self.current_position += length
+
+        # Represents the total length after processing last element
+        logger.info(f"Final lattice segment length: {self.current_position}")
 
         # Export the final scene to a GLTF file
         self.export(output_filename)
