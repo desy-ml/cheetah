@@ -11,7 +11,7 @@ def test_cold_uniform_beam_expansion():
     """
     Tests that that a cold uniform beam doubles in size in both dimensions when
     travelling through a drift section with space_charge. (cf ImpactX test:
-    https://impactx.readthedocs.io/en/latest/usage/examples/expanding_beam/README.html
+    https://impactx.readthedocs.io/en/latest/usage/examples/expanding_beam/README.html)
     See Free Expansion of a Cold Uniform Bunch in
     https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf
     """
