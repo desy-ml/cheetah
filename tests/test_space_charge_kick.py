@@ -1,4 +1,5 @@
 import torch
+import torch.autograd.forward_ad as fwAD
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
@@ -12,7 +13,7 @@ def test_cold_uniform_beam_expansion():
     travelling through a drift section with space_charge. (cf ImpactX test:
     https://impactx.readthedocs.io/en/latest/usage/examples/expanding_beam/README.html)
     See Free Expansion of a Cold Uniform Bunch in
-    https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf.
+    https://accelconf.web.cern.ch/hb2023/papers/thbp44.pdf
     """
 
     # Simulation parameters
@@ -40,7 +41,7 @@ def test_cold_uniform_beam_expansion():
         sigma_p=torch.tensor(1e-15),
     )
 
-    # Compute section length
+    # Compute section length that results in a doubling of the beam size
     kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
         3 + 2 * torch.sqrt(torch.tensor(2))
     )
@@ -200,15 +201,42 @@ def test_incoming_beam_not_modified():
 
 def test_gradient():
     """
-    Tests that the gradient of the track method is computed withouth throwing an error.
+    Tests that the gradient of the track method is computed accurately.
     """
-    incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+
+    # Simulation parameters
+    R0 = torch.tensor(0.001)
+    energy = torch.tensor(2.5e8)
+    rest_energy = torch.tensor(
+        constants.electron_mass
+        * constants.speed_of_light**2
+        / constants.elementary_charge
+    )
+    elementary_charge = torch.tensor(constants.elementary_charge)
+    electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
+    gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
+
+    incoming_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
+        num_particles=torch.tensor(100_000),
+        total_charge=torch.tensor(1e-8),
+        energy=energy,
+        radius_x=R0,
+        radius_y=R0,
+        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        sigma_px=torch.tensor(1e-15),
+        sigma_py=torch.tensor(1e-15),
+        sigma_p=torch.tensor(1e-15),
     )
 
-    segment_length = nn.Parameter(torch.tensor(1.0))
+    # Compute section length that results in a doubling of the beam size
+    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
+        3 + 2 * torch.sqrt(torch.tensor(2))
+    )
+    Nb = incoming_beam.total_charge / elementary_charge
+    segment_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+
+    segment_length = nn.Parameter(segment_length)
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(segment_length / 6),
@@ -224,8 +252,90 @@ def test_gradient():
     # Track the beam
     outgoing_beam = segment.track(incoming_beam)
 
-    # Compute the gradient ... would throw an error if in-place operations are used
-    outgoing_beam.sigma_x.mean().backward()
+    # Compute the gradient of the beam size with respect to the segment length
+    # This would throw an error if in-place operations are used
+    beam_size = outgoing_beam.sigma_x
+    beam_size.backward()
+
+    # Check that the gradient is correct by comparing the
+    # derivative of the beam radius as a function of the segment length
+    dsigma_dL = segment_length.grad
+    # For a sphere, the radius is sqrt(5) bigger than sigma_x
+    dR_dL = 5**0.5 * dsigma_dL
+    # Theoretical formula obtained by conservation of energy in the beam frame
+    dR_dL_expected = torch.sqrt((Nb * electron_radius) / R0) / gamma
+    assert torch.allclose(dR_dL, dR_dL_expected, rtol=0.1)
+
+
+def test_forward_gradient():
+    """
+    Tests that the gradient of the track method,
+    in forward mode, is computed accurately.
+
+    See: https://pytorch.org/tutorials/intermediate/forward_ad_usage.html
+    """
+    # Simulation parameters
+    R0 = torch.tensor(0.001)
+    energy = torch.tensor(2.5e8)
+    rest_energy = torch.tensor(
+        constants.electron_mass
+        * constants.speed_of_light**2
+        / constants.elementary_charge
+    )
+    elementary_charge = torch.tensor(constants.elementary_charge)
+    electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
+    gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
+
+    incoming_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
+        num_particles=torch.tensor(100_000),
+        total_charge=torch.tensor(1e-8),
+        energy=energy,
+        radius_x=R0,
+        radius_y=R0,
+        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        sigma_px=torch.tensor(1e-15),
+        sigma_py=torch.tensor(1e-15),
+        sigma_p=torch.tensor(1e-15),
+    )
+
+    # Compute section length that results in a doubling of the beam size
+    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
+        3 + 2 * torch.sqrt(torch.tensor(2))
+    )
+    Nb = incoming_beam.total_charge / elementary_charge
+    segment_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+
+    tangent = torch.ones_like(segment_length)
+
+    with fwAD.dual_level():
+
+        segment_length = fwAD.make_dual(segment_length, tangent)
+
+        segment = cheetah.Segment(
+            elements=[
+                cheetah.Drift(segment_length / 6),
+                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.Drift(segment_length / 3),
+                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.Drift(segment_length / 3),
+                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.Drift(segment_length / 6),
+            ]
+        )
+
+        # Track the beam
+        outgoing_beam = segment.track(incoming_beam)
+        beam_size = outgoing_beam.sigma_x
+
+        # Check that the gradient is correct by comparing the
+        # derivative of the beam radius as a function of the segment length
+        dsigma_dL = fwAD.unpack_dual(beam_size).tangent
+        # For a sphere, the radius is sqrt(5) bigger than sigma_x
+        dR_dL = 5**0.5 * dsigma_dL
+        # Theoretical formula obtained by conservation of energy in the beam frame
+        dR_dL_expected = torch.sqrt((Nb * electron_radius) / R0) / gamma
+        assert torch.allclose(dR_dL, dR_dL_expected, rtol=0.1)
 
 
 def test_does_not_break_segment_length():
