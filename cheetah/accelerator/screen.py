@@ -132,7 +132,9 @@ class Screen(Element):
             (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(
+        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
+    ) -> torch.Tensor:
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 
