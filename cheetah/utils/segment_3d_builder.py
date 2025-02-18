@@ -1,16 +1,15 @@
-from typing import Dict, List, Optional, Union, Any
-import os
-import math
-import json
+import importlib.resources as pkg_resources
 import logging
-from pathlib import Path
+import math
+import os
+from typing import List, Optional, Union
 
 import torch
 import trimesh
-import importlib.resources as pkg_resources
+
 import cheetah._assets
 from cheetah import _assets  # note the underscore to indicate a private module
-from cheetah import Segment, Dipole, Quadrupole, BPM, Drift, Cavity, Undulator
+from cheetah import BPM, Cavity, Dipole, Drift, Quadrupole, Segment, Undulator
 
 """
 A 3D builder class for creating and exporting accelerator lattice segments.
@@ -40,12 +39,16 @@ DEFAULT_ROTATION_AXIS = [0, 1, 0]
 class MeshTransformer:
     """Helper class for 3D mesh transformations."""
 
-    def __init__(self, scale_factor: float, rotation_angle: float, rotation_axis: List[float]):
+    def __init__(
+        self, scale_factor: float, rotation_angle: float, rotation_axis: List[float]
+    ):
         self.scale_factor = scale_factor
         self.rotation_angle = rotation_angle
         self.rotation_axis = rotation_axis
 
-    def transform_mesh(self, mesh: trimesh.Trimesh, translation_vector: List[float]) -> None:
+    def transform_mesh(
+        self, mesh: trimesh.Trimesh, translation_vector: List[float]
+    ) -> None:
         """Apply transformations to mesh."""
         rotation_matrix = trimesh.transformations.rotation_matrix(
             self.rotation_angle, self.rotation_axis
@@ -69,10 +72,11 @@ class Segment3DBuilder:
     The builder places components in 3D space according to their sequence
     and parameters defined in the configuration.
     """
+
     def __init__(self, segment: Segment):
         """
         Initialize the 3D segment builder.
-        
+
         Args:
             segment: Lattice element definitions
         """
@@ -83,13 +87,13 @@ class Segment3DBuilder:
         config = {
             "scale_factor": DEFAULT_SCALE_FACTOR,
             "rotation_angle": DEFAULT_ROTATION_ANGLE,
-            "rotation_axis": DEFAULT_ROTATION_AXIS
+            "rotation_axis": DEFAULT_ROTATION_AXIS,
         }
 
         self.transformer = MeshTransformer(
             scale_factor=config["scale_factor"],
             rotation_angle=config["rotation_angle"],
-            rotation_axis=config["rotation_axis"]
+            rotation_axis=config["rotation_axis"],
         )
 
         # Track current longitudinal position along the segment
@@ -114,10 +118,12 @@ class Segment3DBuilder:
         """Set current longitudinal position."""
         self._current_position = value
 
-    def _load_and_transform_mesh(self, asset_key: str, translation_vector: List[float]) -> None:
+    def _load_and_transform_mesh(
+        self, asset_key: str, translation_vector: List[float]
+    ) -> None:
         """
         Load and transform 3D model mesh and adds it to the scene
-        
+
         Args:
             filename: Path to GLB/GLTF file (3D model)
             translation_vector: [x, y, z] translation coordinates to place the model in the correct position
@@ -129,7 +135,7 @@ class Segment3DBuilder:
             "quadrupole": "ares_ea_quadrupole.glb",
             "monitor": "ares_ea_screen_station.glb",
             "cavity": "ares_ea_cavity.glb",
-            "undulator": "ares_ea_undulator.glb"
+            "undulator": "ares_ea_undulator.glb",
         }
 
         filename = asset_map.get(asset_key)
@@ -140,7 +146,9 @@ class Segment3DBuilder:
             # Use importlib.resources to access the asset file.
             with pkg_resources.path(_assets, filename) as asset_path:
                 # Force loading 3D model as a scene to ensure multiple geometries are handled properly.
-                scene = trimesh.load(str(asset_path), file_type="glb", force="scene")  # try to coerce everything into a scene instead of a single mesh
+                scene = trimesh.load(
+                    str(asset_path), file_type="glb", force="scene"
+                )  # try to coerce everything into a scene instead of a single mesh
 
                 for mesh in scene.geometry.values():
                     self.transformer.transform_mesh(mesh, translation_vector)
@@ -150,15 +158,20 @@ class Segment3DBuilder:
             logger.error(f"Failed to load mesh for asset key {asset_key}: {e}")
             raise
 
-    def _add_element(self, element: Union[Dipole, Quadrupole, BPM, Undulator, Cavity],
-                    component_key: str) -> None:
+    def _add_element(
+        self,
+        element: Union[Dipole, Quadrupole, BPM, Undulator, Cavity],
+        component_key: str,
+    ) -> None:
         """Add element to scene."""
         translation_vector = [0, 0, self.current_position]
 
         self._load_and_transform_mesh(component_key, translation_vector)
         self._track_component_position(element.name)
 
-        logger.info(f"Added {element.__class__.__name__}: {element.name} at position {self.current_position}")
+        logger.info(
+            f"Added {element.__class__.__name__}: {element.name} at position {self.current_position}"
+        )
 
     def add_dipole(self, element: Dipole) -> None:
         """Add dipole magnet to scene."""
@@ -185,46 +198,53 @@ class Segment3DBuilder:
         """Store the component position dynamically."""
         self.component_positions[component_name] = self.current_position
 
-    def build_segment(self, output_filename: Optional[str] = None) -> None:
+    def build_segment(
+        self, output_filename: Optional[str] = None, is_export_enabled: bool = True
+    ) -> None:
         """
         Build complete 3D segment scene. Iterates through the segment and adds each element (Dipole/Quadrupole) to the 3D scene.
         Other elements (like Drift or BPM) only advance the current position.
-        
+
         Args:
             output_filename: Output GLB/GLTF filename for the exported 3D scene
         """
         # For Drift, or other elements, we do not add geometry.
         for element in self.segment.elements:
-            length = element.length.item() if isinstance(element.length, torch.Tensor) else float(element.length)
+            length = (
+                element.length.item()
+                if isinstance(element.length, torch.Tensor)
+                else float(element.length)
+            )
 
             element_handlers = {
                 Dipole: self.add_dipole,
                 Quadrupole: self.add_quadrupole,
                 BPM: self.add_monitor,
                 Undulator: self.add_undulator,
-                Cavity: self.add_cavity
+                Cavity: self.add_cavity,
             }
 
             handler = element_handlers.get(type(element))
             if handler:
                 handler(element)
-            
+
             self.current_position += length
 
         # Represents the total length after processing last element
         logger.info(f"Final lattice segment length: {self.current_position}")
 
         # Export the final scene to a GLTF file
-        self.export(output_filename)
+        if is_export_enabled:
+            self.export(output_filename)
 
     def export(self, output_file: Optional[str] = None) -> None:
         """
         Export scene to file.
-        
+
         Args:
             output_file: Output filename
         """
-        # Optionally, store the exported .glb file in the assets directory, 
+        # Optionally, store the exported .glb file in the assets directory,
         # using a default filename if none is provided.
         if output_file is None:
             output_file = "scene.glb"
@@ -246,11 +266,15 @@ class Segment3DBuilder:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(
         description="Build and export a 3D accelerator lattice scene."
     )
     parser.add_argument(
-        "-c", "--config", default="config.json", help="Path to the configuration file (default: config.json)"
+        "-c",
+        "--config",
+        default="config.json",
+        help="Path to the configuration file (default: config.json)",
     )
     parser.add_argument(
         "-o", "--output-scene", default=None, help="Output GLB filename (default: None)"
