@@ -74,6 +74,14 @@ class Screen(Element):
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
         self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
 
+        # NOTE: According to its type hint, the operation on resolution below is a
+        # no-op. However, this form is robust against accidentally passing a
+        # torch.Tensor, preventing crashes in some instances.
+        self.register_buffer(
+            "cached_reading",
+            torch.full((resolution[0], resolution[1]), torch.nan, **factory_kwargs),
+        )
+
         if pixel_size is not None:
             self.pixel_size = torch.as_tensor(pixel_size, **factory_kwargs)
         if misalignment is not None:
@@ -82,7 +90,6 @@ class Screen(Element):
             self.kde_bandwidth = torch.as_tensor(kde_bandwidth, **factory_kwargs)
 
         self.set_read_beam(None)
-        self.cached_reading = None
 
     @property
     def is_skippable(self) -> bool:
@@ -190,8 +197,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
-        image = None
-        if self.cached_reading is not None:
+        if not torch.all(torch.isnan(self.cached_reading)):
             return self.cached_reading
 
         read_beam = self.get_read_beam()
@@ -296,7 +302,12 @@ class Screen(Element):
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
-        self.cached_reading = None
+        self.cached_reading = torch.full(
+            (self.resolution[0], self.resolution[1]),
+            torch.nan,
+            device=self.cached_reading.device,
+            dtype=self.cached_reading.dtype,
+        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
