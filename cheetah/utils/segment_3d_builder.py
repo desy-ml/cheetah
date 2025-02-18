@@ -101,6 +101,9 @@ class Segment3DBuilder:
         # Creates a visualization scene using triangular meshes with an automatically generated camera and lighting
         self.scene = trimesh.Scene()
 
+        # Track lattice component positions
+        self.component_positions = {}
+
     @property
     def current_position(self) -> float:
         """Current longitudinal position along the segment."""
@@ -153,6 +156,8 @@ class Segment3DBuilder:
         translation_vector = [0, 0, self.current_position]
 
         self._load_and_transform_mesh(component_key, translation_vector)
+        self._track_component_position(element.name)
+
         logger.info(f"Added {element.__class__.__name__}: {element.name} at position {self.current_position}")
 
     def add_dipole(self, element: Dipole) -> None:
@@ -175,6 +180,10 @@ class Segment3DBuilder:
     def add_cavity(self, element: Cavity) -> None:
         """Add RF cavity to scene."""
         self._add_element(element, "cavity")
+
+    def _track_component_position(self, component_name: str) -> None:
+        """Store the component position dynamically."""
+        self.component_positions[component_name] = self.current_position
 
     def build_segment(self, output_filename: Optional[str] = None) -> None:
         """
