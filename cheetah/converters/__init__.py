@@ -1,1 +1,1 @@
-from . import astra, bmad, elegant, nxtables, ocelot  # noqa: F401
+from . import astra, bmad, elegant, madx, nxtables, ocelot  # noqa: F401
