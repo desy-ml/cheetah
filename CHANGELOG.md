@@ -22,11 +22,14 @@
 
 ### 🐆 Other
 
+- The tests for backward-mode differentiation with space charge was improved, by checking the accuracy of the gradients (see #339) (@RemiLehe)
+- A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Test tolerances were adjusted reduce the chance of random test failures (see #309, #324) (@Hespe, @jank324)
 - The copyright years were updated to 2025 (see #318) (@jank324)
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 - Added `pyproject.toml` to conform with PEP 660 as enforced as of pip 25 for editable installs (see #334) (@jank324)
 - Add TUHH logo to contributing institution logos (see #338) (@jank324)
+- Doc: ImpactX Example (Space Charge) #341 (@ax3l)
 
 ### 🌟 First Time Contributors
 
