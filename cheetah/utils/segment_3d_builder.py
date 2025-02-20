@@ -9,7 +9,17 @@ import trimesh
 
 import cheetah._assets
 from cheetah import _assets  # note the underscore to indicate a private module
-from cheetah import BPM, Cavity, Dipole, Drift, Quadrupole, Segment, Undulator
+from cheetah import (
+    BPM,
+    Cavity,
+    Dipole,
+    Drift,
+    HorizontalCorrector,
+    Quadrupole,
+    Segment,
+    Undulator,
+    VerticalCorrector,
+)
 
 """
 A 3D builder class for creating and exporting accelerator lattice segments.
@@ -26,12 +36,16 @@ Usage Example:
     builder.build_segment("scene.glb")
 """
 
+# Set logging level based on environment
+debug_mode = os.getenv("DEBUG_MODE", "False").lower() == "true"
+
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG if debug_mode else logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Constants
-DEFAULT_SCALE_FACTOR = 0.25
+DEFAULT_SCALE_FACTOR = 0.20
 DEFAULT_ROTATION_ANGLE = math.pi
 DEFAULT_ROTATION_AXIS = [0, 1, 0]
 
@@ -130,12 +144,12 @@ class Segment3DBuilder:
         """
         # Map the asset key to the corresponding resource file name.
         asset_map = {
-            "dipole_vcor": "ares_ea_small_steerer_vcor.glb",
-            "dipole_hcor": "ares_ea_small_steerer_hcor.glb",
-            "quadrupole": "ares_ea_quadrupole.glb",
-            "monitor": "ares_ea_screen_station.glb",
-            "cavity": "ares_ea_cavity.glb",
-            "undulator": "ares_ea_undulator.glb",
+            "vertical_corrector": "vertical_corrector.glb",
+            "horizontal_corrector": "horizontal_corrector.glb",
+            "quadrupole": "quadrupole.glb",
+            "monitor": "beam_position_monitor.glb",
+            "cavity": "cavity.glb",
+            "undulator": "undulator.glb",
         }
 
         filename = asset_map.get(asset_key)
@@ -178,6 +192,14 @@ class Segment3DBuilder:
         component_key = "dipole_vcor" if "vcor" in element.name else "dipole_hcor"
         self._add_element(element, component_key)
 
+    def add_vertical_corrector(self, element: VerticalCorrector) -> None:
+        """Add vertical corrector dipole magnet to scene."""
+        self._add_element(element, "vertical_corrector")
+
+    def add_horizontal_corrector(self, element: HorizontalCorrector) -> None:
+        """Add horizontal corrector dipole magnet to scene."""
+        self._add_element(element, "horizontal_corrector")
+
     def add_quadrupole(self, element: Quadrupole) -> None:
         """Add quadrupole magnet to scene."""
         self._add_element(element, "quadrupole")
@@ -208,25 +230,28 @@ class Segment3DBuilder:
         Args:
             output_filename: Output GLB/GLTF filename for the exported 3D scene
         """
+        element_handlers = {
+            Dipole: self.add_dipole,
+            Quadrupole: self.add_quadrupole,
+            BPM: self.add_monitor,
+            Undulator: self.add_undulator,
+            Cavity: self.add_cavity,
+            HorizontalCorrector: self.add_horizontal_corrector,
+            VerticalCorrector: self.add_vertical_corrector,
+        }
+
         # For Drift, or other elements, we do not add geometry.
         for element in self.segment.elements:
+            handler = element_handlers.get(type(element))
+
+            if handler:
+                handler(element)
+
             length = (
                 element.length.item()
                 if isinstance(element.length, torch.Tensor)
                 else float(element.length)
             )
-
-            element_handlers = {
-                Dipole: self.add_dipole,
-                Quadrupole: self.add_quadrupole,
-                BPM: self.add_monitor,
-                Undulator: self.add_undulator,
-                Cavity: self.add_cavity,
-            }
-
-            handler = element_handlers.get(type(element))
-            if handler:
-                handler(element)
 
             self.current_position += length
 
