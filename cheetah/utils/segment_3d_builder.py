@@ -15,10 +15,12 @@ from cheetah import (
     Dipole,
     Drift,
     HorizontalCorrector,
+    Marker,
     Quadrupole,
+    Screen,
     Segment,
     Undulator,
-    VerticalCorrector,
+    VerticalCorrector
 )
 
 """
@@ -81,7 +83,7 @@ class Segment3DBuilder:
     - Dipole magnets (used for beam bending)
     - Vertical and horizontal correctors (for beam steering)
     - Quadrupole magnets (for beam focusing)
-    - Beam Position Monitors (BPMs) (for beam diagnostics)
+    - Screen (for beam diagnostics)
     - RF Cavities (for accelerating particles)
     - Undulators (for generating synchrotron radiation)
 
@@ -106,7 +108,7 @@ class Segment3DBuilder:
             VerticalCorrector: "vertical_corrector.glb",
             HorizontalCorrector: "horizontal_corrector.glb",
             Quadrupole: "quadrupole.glb",
-            BPM: "beam_position_monitor.glb",
+            Screen: "screen.glb",
             Cavity: "cavity.glb",
             Undulator: "undulator.glb",
         }
@@ -179,12 +181,12 @@ class Segment3DBuilder:
     def add_element_to_scene(
         self,
         element: Union[
-            Dipole,
-            Quadrupole,
-            BPM,
-            Undulator,
             Cavity,
+            Dipole,
             HorizontalCorrector,
+            Quadrupole,
+            Screen,
+            Undulator,
             VerticalCorrector,
         ],
     ) -> None:
