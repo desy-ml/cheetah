@@ -2,7 +2,7 @@ import importlib.resources as pkg_resources
 import logging
 import math
 import os
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import torch
 import trimesh
@@ -74,17 +74,19 @@ class MeshTransformer:
 
 class Segment3DBuilder:
     """
-    Builds 3D representations of accelerator lattice segments.
+    Builds 3D representations of accelerator lattice segments by creating and positioning
+    detailed models of beamline components in a virtual scene.
 
-    Creates and manages 3D models of accelerator components including:
-    - Dipole magnets
-    - Quadrupole magnets
-    - Beam Position Monitors (BPMs)
-    - RF Cavities
-    - Undulators
+    These models represent various beamline elements used in particle accelerators, including:
+    - Dipole magnets (used for beam bending)
+    - Vertical and horizontal correctors (for beam steering)
+    - Quadrupole magnets (for beam focusing)
+    - Beam Position Monitors (BPMs) (for beam diagnostics)
+    - RF Cavities (for accelerating particles)
+    - Undulators (for generating synchrotron radiation)
 
-    The builder places components in 3D space according to their sequence
-    and parameters defined in the configuration.
+    The builder arranges these components in 3D space based on their sequence
+    and configuration parameters.
     """
 
     def __init__(self, segment: Segment):
@@ -92,25 +94,38 @@ class Segment3DBuilder:
         Initialize the 3D segment builder.
 
         Args:
-            segment: Lattice element definitions
+            segment: Lattice element specification.
         """
-        # Segment object containing lattice elements (e.g., Dipole, Quadrupole)
+        # Segment object representing a sequence of lattice elements
+        # (e.g., Dipole, Quadrupole) that define the accelerator beamline.
         self.segment = segment
 
-        # Initialize transformer
+        # Maps each accelerator component type to its corresponding 3D model asset file (.glb).
+        # This dictionary allows dynamic lookup of the appropriate 3D model for each element in the scene.
+        self.ASSET_MAP = {
+            VerticalCorrector: "vertical_corrector.glb",
+            HorizontalCorrector: "horizontal_corrector.glb",
+            Quadrupole: "quadrupole.glb",
+            BPM: "beam_position_monitor.glb",
+            Cavity: "cavity.glb",
+            Undulator: "undulator.glb",
+        }
+
+        # Default transformation settings for scaling and rotation of 3D models
         config = {
             "scale_factor": DEFAULT_SCALE_FACTOR,
             "rotation_angle": DEFAULT_ROTATION_ANGLE,
             "rotation_axis": DEFAULT_ROTATION_AXIS,
         }
 
+        # Handles scaling, rotation, and positioning of 3D models
         self.transformer = MeshTransformer(
             scale_factor=config["scale_factor"],
             rotation_angle=config["rotation_angle"],
             rotation_axis=config["rotation_axis"],
         )
 
-        # Track current longitudinal position along the segment
+        # Track the current longitudinal position along the segment
         self.current_position = 0.0
 
         # Determine the base directory for assets (or for storing outputs)
@@ -132,120 +147,19 @@ class Segment3DBuilder:
         """Set current longitudinal position."""
         self._current_position = value
 
-    def _load_and_transform_mesh(
-        self, asset_key: str, translation_vector: List[float]
-    ) -> None:
-        """
-        Load and transform 3D model mesh and adds it to the scene
-
-        Args:
-            filename: Path to GLB/GLTF file (3D model)
-            translation_vector: [x, y, z] translation coordinates to place the model in the correct position
-        """
-        # Map the asset key to the corresponding resource file name.
-        asset_map = {
-            "vertical_corrector": "vertical_corrector.glb",
-            "horizontal_corrector": "horizontal_corrector.glb",
-            "quadrupole": "quadrupole.glb",
-            "monitor": "beam_position_monitor.glb",
-            "cavity": "cavity.glb",
-            "undulator": "undulator.glb",
-        }
-
-        filename = asset_map.get(asset_key)
-        if filename is None:
-            raise ValueError(f"Asset for key '{asset_key}' not found.")
-
-        try:
-            # Use importlib.resources to access the asset file.
-            with pkg_resources.path(_assets, filename) as asset_path:
-                # Force loading 3D model as a scene to ensure multiple geometries are handled properly.
-                scene = trimesh.load(
-                    str(asset_path), file_type="glb", force="scene"
-                )  # try to coerce everything into a scene instead of a single mesh
-
-                for mesh in scene.geometry.values():
-                    self.transformer.transform_mesh(mesh, translation_vector)
-                    self.scene.add_geometry(mesh)
-
-        except Exception as e:
-            logger.error(f"Failed to load mesh for asset key {asset_key}: {e}")
-            raise
-
-    def _add_element(
-        self,
-        element: Union[Dipole, Quadrupole, BPM, Undulator, Cavity],
-        component_key: str,
-    ) -> None:
-        """Add element to scene."""
-        translation_vector = [0, 0, self.current_position]
-
-        self._load_and_transform_mesh(component_key, translation_vector)
-        self._track_component_position(element.name)
-
-        logger.info(
-            f"Added {element.__class__.__name__}: {element.name} at position {self.current_position}"
-        )
-
-    def add_dipole(self, element: Dipole) -> None:
-        """Add dipole magnet to scene."""
-        component_key = "dipole_vcor" if "vcor" in element.name else "dipole_hcor"
-        self._add_element(element, component_key)
-
-    def add_vertical_corrector(self, element: VerticalCorrector) -> None:
-        """Add vertical corrector dipole magnet to scene."""
-        self._add_element(element, "vertical_corrector")
-
-    def add_horizontal_corrector(self, element: HorizontalCorrector) -> None:
-        """Add horizontal corrector dipole magnet to scene."""
-        self._add_element(element, "horizontal_corrector")
-
-    def add_quadrupole(self, element: Quadrupole) -> None:
-        """Add quadrupole magnet to scene."""
-        self._add_element(element, "quadrupole")
-
-    def add_monitor(self, element: BPM) -> None:
-        """Add beam position monitor to scene."""
-        self._add_element(element, "monitor")
-
-    def add_undulator(self, element: Undulator) -> None:
-        """Add undulator to scene."""
-        self._add_element(element, "undulator")
-
-    def add_cavity(self, element: Cavity) -> None:
-        """Add RF cavity to scene."""
-        self._add_element(element, "cavity")
-
-    def _track_component_position(self, component_name: str) -> None:
-        """Store the component position dynamically."""
-        self.component_positions[component_name] = self.current_position
-
     def build_segment(
         self, output_filename: Optional[str] = None, is_export_enabled: bool = True
     ) -> None:
         """
-        Build complete 3D segment scene. Iterates through the segment and adds each element (Dipole/Quadrupole) to the 3D scene.
-        Other elements (like Drift or BPM) only advance the current position.
+        Build complete 3D segment scene by iterating through the segment and adding the elements (Dipole/Quadrupole) to the 3D scene.
+        Other elements (like Drift) only advance the current position.
 
         Args:
             output_filename: Output GLB/GLTF filename for the exported 3D scene
         """
-        element_handlers = {
-            Dipole: self.add_dipole,
-            Quadrupole: self.add_quadrupole,
-            BPM: self.add_monitor,
-            Undulator: self.add_undulator,
-            Cavity: self.add_cavity,
-            HorizontalCorrector: self.add_horizontal_corrector,
-            VerticalCorrector: self.add_vertical_corrector,
-        }
-
         # For Drift, or other elements, we do not add geometry.
         for element in self.segment.elements:
-            handler = element_handlers.get(type(element))
-
-            if handler:
-                handler(element)
+            self.add_element_to_scene(element)
 
             length = (
                 element.length.item()
@@ -261,6 +175,28 @@ class Segment3DBuilder:
         # Export the final scene to a GLTF file
         if is_export_enabled:
             self.export(output_filename)
+
+    def add_element_to_scene(
+        self,
+        element: Union[
+            Dipole,
+            Quadrupole,
+            BPM,
+            Undulator,
+            Cavity,
+            HorizontalCorrector,
+            VerticalCorrector,
+        ],
+    ) -> None:
+        """Add an element to the scene."""
+        if type(element) in self.ASSET_MAP:
+            self._load_and_transform_mesh(element)
+            self._track_component_position(element.name)
+            logger.info(
+                f"Added {element.__class__.__name__}: {element.name} at position {self.current_position}"
+            )
+        else:
+            logger.warning(f"Element type {type(element).__name__} not recognized.")
 
     def export(self, output_file: Optional[str] = None) -> None:
         """
@@ -283,6 +219,45 @@ class Segment3DBuilder:
         except Exception as e:
             logger.error(f"Failed to export scene: {e}")
             raise
+
+    def _load_and_transform_mesh(self, element: Any) -> None:
+        """
+        Load and transform 3D model mesh based on element type to the scene.
+
+        Args:
+            element: An accelerator lattice component (e.g., Quadrupole, Dipole, BPM).
+                     Represents a physical element to be visualized in the 3D scene.
+        """
+        asset_filename = self.ASSET_MAP.get(type(element))
+
+        if asset_filename is None:
+            raise ValueError(
+                f"Asset for element type '{type(element).__name__}' not found."
+            )
+
+        try:
+            # Use importlib.resources to access the asset file.
+            with pkg_resources.path(_assets, asset_filename) as asset_path:
+                # Force loading 3D model as a scene to ensure multiple geometries are handled properly.
+                scene = trimesh.load(
+                    str(asset_path), file_type="glb", force="scene"
+                )  # try to coerce everything into a scene instead of a single mesh
+
+                for mesh in scene.geometry.values():
+                    # Translation vector [x, y, z] defining the model's position in 3D space.
+                    # Determines where the component is placed within the scene.
+                    translation_vector = [0, 0, self.current_position]
+                    self.transformer.transform_mesh(mesh, translation_vector)
+                    self.scene.add_geometry(mesh)
+
+        except Exception as e:
+            logger.error(f"Failed to load mesh for asset key {asset_key}: {e}")
+            raise
+
+    def _track_component_position(self, component_name: str) -> None:
+        """Store the component position dynamically."""
+        self.component_positions[component_name] = self.current_position
+
 
     def __repr__(self) -> str:
         """String representation."""
