@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
+- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316, #344) (@Hespe)
 - Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
 - The covariance properties of the different beam classes were renamed from names like `cor_x` and `sigma_xpx` to consistent names like `cov_xpx` (see #331) (@jank324)
 
@@ -27,6 +27,10 @@
 - The copyright years were updated to 2025 (see #318) (@jank324)
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 - Added `pyproject.toml` to conform with PEP 660 as enforced as of pip 25 for editable installs (see #334) (@jank324)
+- Add TUHH logo to contributing institution logos (see #338) (@jank324)
+- The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
+- A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
+- Link to different ImpactX example in test docstring (see #341) (@ax3l)
 
 ### 🌟 First Time Contributors
 
