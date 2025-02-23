@@ -20,11 +20,19 @@ class BPM(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, is_active: bool = False, name: Optional[str] = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        is_active: bool = False,
+        name: Optional[str] = None,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__(name=name, device=device, dtype=dtype)
 
         self.is_active = is_active
-        self.reading = None
+        self.register_buffer(
+            "reading", torch.tensor(torch.nan, device=device, dtype=dtype)
+        )
 
     @property
     def is_skippable(self) -> bool:
