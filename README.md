@@ -89,7 +89,7 @@ segment.plot_overview(incoming=beam)
 
 ![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/misalignment.png)
 
-where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
+where the keyword argument `beam` is the incoming beam represented by the reference particles.
 
 To generate and view 3D visualizations of lattice segments, simply run the following command:
 
