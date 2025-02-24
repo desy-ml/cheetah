@@ -247,3 +247,17 @@ We are proud to announce this new major release of Cheetah! This is probably the
 ## [v0.5.12](https://github.com/desy-ml/cheetah/releases/tag/v0.5.12) (2022-06-16)
 
 - First Release of Cheetah 🐆🎉
+
+## [Unreleased]
+- Updated the 3D visualization tool for lattice segments. 
+- Added a command `view-lattice --config config.json` to generate and explore 3D lattice geometry.
+- Fixed minor bugs related to visual rendering in different segment configurations.
+
+## [1.2.0] - 2025-02-24
+- Integrated 3D visualization for lattice segments.
+- Updated the command-line interface for better user interaction.
+- Improved the performance of lattice segment rendering.
+
+## [1.1.0] - 2025-02-15
+- Added support for advanced geometric transformations.
+- Optimized the lattice data processing pipeline.
