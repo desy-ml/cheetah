@@ -1,25 +1,3 @@
-from importlib.resources import files
-import logging
-import math
-import os
-from typing import Any, List, Optional, Union
-
-import torch
-import trimesh
-
-import cheetah._assets
-from cheetah import _assets  # note the underscore to indicate a private module
-from cheetah import (
-    Cavity,
-    Dipole,
-    HorizontalCorrector,
-    Quadrupole,
-    Screen,
-    Segment,
-    Undulator,
-    VerticalCorrector,
-)
-
 """
 A 3D builder class for creating and exporting accelerator lattice segments.
 Handles the construction and visualization of beam line elements like dipoles,
@@ -34,6 +12,27 @@ Usage Example:
     builder = Segment3DBuilder(config)
     builder.build_segment("scene.glb")
 """
+import argparse
+from importlib.resources import files
+import logging
+import math
+import os
+from typing import Any, List, Optional, Union
+
+import torch
+import trimesh
+
+from cheetah import _assets
+from cheetah import (
+    Cavity,
+    Dipole,
+    HorizontalCorrector,
+    Quadrupole,
+    Screen,
+    Segment,
+    Undulator,
+    VerticalCorrector,
+)
 
 # Set logging level based on environment
 debug_mode = os.getenv("DEBUG_MODE", "False").lower() == "true"
@@ -116,7 +115,7 @@ class Segment3DBuilder:
         # asset file (.glb).
         # This dictionary allows dynamic lookup of the appropriate 3D model for
         # each element in the scene.
-        self.ASSET_MAP = {
+        self.asset_map = {
             VerticalCorrector: "vertical_corrector.glb",
             HorizontalCorrector: "horizontal_corrector.glb",
             Quadrupole: "quadrupole.glb",
@@ -143,7 +142,7 @@ class Segment3DBuilder:
         self.current_position = 0.0
 
         # Determine the base directory for assets (or for storing outputs)
-        self.assets_dir = os.path.dirname(cheetah._assets.__file__)
+        self.assets_dir = os.path.dirname(_assets.__file__)
 
         # Creates a visualization scene using triangular meshes with an
         # automatically generated camera and lighting
@@ -211,7 +210,7 @@ class Segment3DBuilder:
             self.current_position += length
 
         # Represents the total length after processing last element
-        logger.info(f"Final lattice segment length: {self.current_position}")
+        logger.info("Final lattice segment length: %s", self.current_position)
 
         # Export the final scene to a GLTF file
         if is_export_enabled:
@@ -239,7 +238,7 @@ class Segment3DBuilder:
                             Screen, Undulator, or VerticalCorrector.
         :raises: If the element type is not recognized, a warning is logged.
         """
-        if type(element) in self.ASSET_MAP:
+        if type(element) in self.asset_map:
             self._load_and_transform_mesh(element)
             self._track_component_position(element.name)
             logger.info(
@@ -249,7 +248,7 @@ class Segment3DBuilder:
                 self.current_position,
             )
         else:
-            logger.warning(f"Element type {type(element).__name__} not recognized.")
+            logger.warning("Element type %s not recognized.", type(element).__name__)
 
     def export(self, output_file: Optional[str] = None) -> None:
         """
@@ -271,9 +270,9 @@ class Segment3DBuilder:
 
         try:
             self.scene.export(output_path, include_normals=True)
-            logger.info(f"Exported 3D scene to {output_path}")
+            logger.info("Exported 3D scene to %s", output_path)
         except Exception as e:
-            logger.error(f"Failed to export scene: {e}")
+            logger.error("Failed to export scene: %s", e)
             raise
 
     def _load_and_transform_mesh(self, element: Any) -> None:
@@ -284,10 +283,10 @@ class Segment3DBuilder:
                         This represents a physical element to be visualized
                         in the 3D scene.
         :raises ValueError: If the asset for the element type is not found
-                            in the ASSET_MAP.
+                            in the asset_map.
         :raises Exception: If there is an error while loading or transforming the mesh.
         """
-        asset_filename = self.ASSET_MAP.get(type(element))
+        asset_filename = self.asset_map.get(type(element))
 
         if asset_filename is None:
             raise ValueError(
@@ -313,7 +312,7 @@ class Segment3DBuilder:
                 self.scene.add_geometry(mesh)
 
         except Exception as e:
-            logger.error(f"Failed to load mesh for asset key {self.ASSET_MAP}: {e}")
+            logger.error("Failed to load mesh for asset key %s: %s", self.asset_map, e)
             raise
 
     def _track_component_position(self, component_name: str) -> None:
@@ -329,14 +328,14 @@ class Segment3DBuilder:
 
     def __repr__(self) -> str:
         """String representation."""
-        return "Segment3DBuilder(elements={}, position={})".format(
-            len(self.segment.elements), self.current_position
-        )
+        return f"Segment3DBuilder(elements={len(self.segment.elements)},\
+        position={self.current_position})"
 
 
 def main():
-    import argparse
-
+    """
+    Main function to parse arguments, build the 3D segment, and export it to a file.
+    """
     parser = argparse.ArgumentParser(
         description="Build and export a 3D accelerator lattice scene."
     )
