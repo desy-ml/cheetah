@@ -1,4 +1,4 @@
-import importlib.resources as pkg_resources
+from importlib.resources import files
 import logging
 import math
 import os
@@ -296,20 +296,21 @@ class Segment3DBuilder:
 
         try:
             # Use importlib.resources to access the asset file.
-            with pkg_resources.path(_assets, asset_filename) as asset_path:
-                # Force loading 3D model as a scene to ensure multiple geometries are
-                # handled properly.
-                scene = trimesh.load(
-                    str(asset_path), file_type="glb", force="scene"
-                )  # try to coerce everything into a scene instead of a single mesh
+            asset_path = files(_assets) / asset_filename
 
-                for mesh in scene.geometry.values():
-                    # Translation vector [x, y, z] defining the model's position
-                    # in 3D space.
-                    # Determines where the component is placed within the scene.
-                    translation_vector = [0, 0, self.current_position]
-                    self.transformer.transform_mesh(mesh, translation_vector)
-                    self.scene.add_geometry(mesh)
+            # Force loading 3D model as a scene to ensure multiple geometries are
+            # handled properly.
+            scene = trimesh.load(
+                str(asset_path), file_type="glb", force="scene"
+            )  # try to coerce everything into a scene instead of a single mesh
+
+            for mesh in scene.geometry.values():
+                # Translation vector [x, y, z] defining the model's position
+                # in 3D space.
+                # Determines where the component is placed within the scene.
+                translation_vector = [0, 0, self.current_position]
+                self.transformer.transform_mesh(mesh, translation_vector)
+                self.scene.add_geometry(mesh)
 
         except Exception as e:
             logger.error(f"Failed to load mesh for asset key {self.ASSET_MAP}: {e}")
