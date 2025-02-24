@@ -137,7 +137,7 @@ class Segment3DBuilder:
         self.scene = trimesh.Scene()
 
         # Track lattice component positions
-        self.component_positions = {}
+        self._component_positions = {}
 
     @property
     def current_position(self) -> float:
@@ -148,6 +148,18 @@ class Segment3DBuilder:
     def current_position(self, value: float) -> None:
         """Set current longitudinal position."""
         self._current_position = value
+
+    @property
+    def component_positions(self) -> dict:
+        """Return a copy of component positions to prevent external modification."""
+        return self._component_positions.copy()
+
+    @component_positions.setter
+    def component_positions(self, positions: dict) -> None:
+        """Set component positions safely, ensuring correct format."""
+        if not isinstance(positions, dict):
+            raise ValueError("component_positions must be a dictionary.")
+        self._component_positions = positions
 
     def build_segment(
         self, output_filename: Optional[str] = None, is_export_enabled: bool = True
@@ -258,8 +270,7 @@ class Segment3DBuilder:
 
     def _track_component_position(self, component_name: str) -> None:
         """Store the component position dynamically."""
-        self.component_positions[component_name] = self.current_position
-
+        self._component_positions[component_name] = self.current_position
 
     def __repr__(self) -> str:
         """String representation."""
