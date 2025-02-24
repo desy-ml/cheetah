@@ -131,47 +131,78 @@ class CompactJSONEncoder(json.JSONEncoder):
             return json.dumps(obj)
 
 
-def nontorch2feature(value: Any) -> Any:
+def nontorch2feature(
+    value: Any,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> Any:
     """
     Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary.
     Values of type `str` and `bool` are not converted, because all currently existing
     `cheetah.Element` subclasses expect these values to not be of type `torch.Tensor`.
 
     :param value: Value to convert to a `torch.Tensor` if necessary.
+    :param device: Device to place the lattice elements on.
+    :param dtype: Data type to use for the lattice elements.
     :return: Value converted to a `torch.Tensor` if necessary.
     """
-    return value if isinstance(value, (str, bool)) else torch.tensor(value)
+    return (
+        value
+        if isinstance(value, (str, bool))
+        else torch.tensor(value, device=device, dtype=dtype)
+    )
 
 
-def parse_element(name: str, lattice_dict: dict) -> "cheetah.Element":
+def parse_element(
+    name: str,
+    lattice_dict: dict,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> "cheetah.Element":
     """
     Parse an `Element` named `name` from a `lattice_dict`.
 
     :param name: Name of the `Element` to parse.
     :param lattice_dict: Dictionary containing the lattice information.
+    :param device: Device to place the lattice elements on.
+    :param dtype: Data type to use for the lattice elements.
     """
     element_class = getattr(cheetah, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
 
-    converted_params = {key: nontorch2feature(value) for key, value in params.items()}
+    converted_params = {
+        key: nontorch2feature(value, device=device, dtype=dtype)
+        for key, value in params.items()
+    }
 
     return element_class(name=name, **converted_params)
 
 
-def parse_segment(name: str, lattice_dict: dict) -> "cheetah.Segment":
+def parse_segment(
+    name: str,
+    lattice_dict: dict,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> "cheetah.Segment":
     """
     Parse a `Segment` named `name` from a `lattice_dict`.
 
     :param name: Name of the `Segment` to parse.
     :param lattice_dict: Dictionary containing the lattice information.
+    :param device: Device to place the lattice elements on.
+    :param dtype: Data type to use for the lattice elements.
     """
     elements = []
     for element_name in lattice_dict["lattices"][name]:
         # Construct new element
         if element_name in lattice_dict["lattices"]:
-            new_element = parse_segment(element_name, lattice_dict)
+            new_element = parse_segment(
+                element_name, lattice_dict, device=device, dtype=dtype
+            )
         else:
-            new_element = parse_element(element_name, lattice_dict)
+            new_element = parse_element(
+                element_name, lattice_dict, device=device, dtype=dtype
+            )
 
         # Append the element to the list of elements
         elements.append(new_element)
@@ -179,16 +210,24 @@ def parse_segment(name: str, lattice_dict: dict) -> "cheetah.Segment":
     return cheetah.Segment(elements=elements, name=name)
 
 
-def load_cheetah_model(filename: str) -> "cheetah.Segment":
+def load_cheetah_model(
+    filename: str,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+) -> "cheetah.Segment":
     """
     Load a Cheetah model from a JSON file.
 
     :param filename: Name/path of the file to load the lattice from.
+    :param device: Device to place the lattice elements on.
+    :param dtype: Data type to use for the lattice elements.
     :return: Loaded Cheetah `Segment`.
     """
+    dtype = dtype if dtype is not None else torch.get_default_dtype()
+
     with open(filename, "r") as f:
         lattice_dict = json.load(f)
 
     root_name = lattice_dict["root"]
 
-    return parse_segment(root_name, lattice_dict)
+    return parse_segment(root_name, lattice_dict, device=device, dtype=dtype)
