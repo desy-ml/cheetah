@@ -12,17 +12,18 @@ Usage Example:
     builder = Segment3DBuilder(config)
     builder.build_segment("scene.glb")
 """
+
 import argparse
-from importlib.resources import files
 import logging
 import math
 import os
-from typing import Any, List, Optional, Union
+from importlib.resources import files
+from typing import Any, Dict, List, Optional, Union, cast
 
 import torch
 import trimesh
+from trimesh import Scene, Trimesh
 
-from cheetah import _assets
 from cheetah import (
     Cavity,
     Dipole,
@@ -32,6 +33,7 @@ from cheetah import (
     Segment,
     Undulator,
     VerticalCorrector,
+    _assets,
 )
 
 # Set logging level based on environment
@@ -43,9 +45,9 @@ logger = logging.getLogger(__name__)
 
 
 # Constants
-DEFAULT_SCALE_FACTOR = 0.20
-DEFAULT_ROTATION_ANGLE = math.pi
-DEFAULT_ROTATION_AXIS = [0, 1, 0]
+DEFAULT_SCALE_FACTOR: float = 0.20
+DEFAULT_ROTATION_ANGLE: float = math.pi
+DEFAULT_ROTATION_AXIS: List[int] = [0, 1, 0]
 
 
 class MeshTransformer:
@@ -69,9 +71,7 @@ class MeshTransformer:
         self.rotation_angle = rotation_angle
         self.rotation_axis = rotation_axis
 
-    def transform_mesh(
-        self, mesh: trimesh.Trimesh, translation_vector: List[float]
-    ) -> None:
+    def transform_mesh(self, mesh: Trimesh, translation_vector: List[float]) -> None:
         """Apply transformations to mesh."""
         rotation_matrix = trimesh.transformations.rotation_matrix(
             self.rotation_angle, self.rotation_axis
@@ -115,7 +115,7 @@ class Segment3DBuilder:
         # asset file (.glb).
         # This dictionary allows dynamic lookup of the appropriate 3D model for
         # each element in the scene.
-        self.asset_map = {
+        self.asset_map: dict[type, str] = {
             VerticalCorrector: "vertical_corrector.glb",
             HorizontalCorrector: "horizontal_corrector.glb",
             Quadrupole: "quadrupole.glb",
@@ -125,7 +125,7 @@ class Segment3DBuilder:
         }
 
         # Default transformation settings for scaling and rotation of 3D models
-        config = {
+        config: Dict[str, Union[float, List[int]]] = {
             "scale_factor": DEFAULT_SCALE_FACTOR,
             "rotation_angle": DEFAULT_ROTATION_ANGLE,
             "rotation_axis": DEFAULT_ROTATION_AXIS,
@@ -133,9 +133,9 @@ class Segment3DBuilder:
 
         # Handles scaling, rotation, and positioning of 3D models
         self.transformer = MeshTransformer(
-            scale_factor=config["scale_factor"],
-            rotation_angle=config["rotation_angle"],
-            rotation_axis=config["rotation_axis"],
+            scale_factor=cast(float, config["scale_factor"]),
+            rotation_angle=cast(float, config["rotation_angle"]),
+            rotation_axis=cast(list, config["rotation_axis"]),
         )
 
         # Track the current longitudinal position along the segment
@@ -146,10 +146,10 @@ class Segment3DBuilder:
 
         # Creates a visualization scene using triangular meshes with an
         # automatically generated camera and lighting
-        self.scene = trimesh.Scene()
+        self.scene: Scene = Scene()
 
         # Track lattice component positions
-        self._component_positions = {}
+        self._component_positions: dict[str, float] = {}
 
     @property
     def current_position(self) -> float:
@@ -298,15 +298,15 @@ class Segment3DBuilder:
             asset_path = files(_assets) / asset_filename
 
             # Force loading 3D model as a scene to ensure multiple geometries are
-            # handled properly.
-            scene = trimesh.load(
-                str(asset_path), file_type="glb", force="scene"
-            )  # try to coerce everything into a scene instead of a single mesh
+            # handled properly. Additioanlly, try to coerce everything into a scene
+            # instead of a single mesh
+            scene = cast(
+                Scene, trimesh.load(str(asset_path), file_type="glb", force="scene")
+            )
 
             for mesh in scene.geometry.values():
                 # Translation vector [x, y, z] defining the model's position
-                # in 3D space.
-                # Determines where the component is placed within the scene.
+                # in 3D space. Determines where the component is placed within the scene
                 translation_vector = [0, 0, self.current_position]
                 self.transformer.transform_mesh(mesh, translation_vector)
                 self.scene.add_geometry(mesh)
