@@ -10,17 +10,14 @@ import trimesh
 import cheetah._assets
 from cheetah import _assets  # note the underscore to indicate a private module
 from cheetah import (
-    BPM,
     Cavity,
     Dipole,
-    Drift,
     HorizontalCorrector,
-    Marker,
     Quadrupole,
     Screen,
     Segment,
     Undulator,
-    VerticalCorrector
+    VerticalCorrector,
 )
 
 """
@@ -56,8 +53,19 @@ class MeshTransformer:
     """Helper class for 3D mesh transformations."""
 
     def __init__(
-        self, scale_factor: float, rotation_angle: float, rotation_axis: List[float]
+        self,
+        scale_factor: float,
+        rotation_angle: float,
+        rotation_axis: List[float],
     ):
+        """
+        Initializes the object with scaling and rotation parameters.
+
+        :param scale_factor: The factor by which to scale an object.
+        :param rotation_angle: The angle (in degrees or radians)
+                               by which to rotate the object.
+        :param rotation_axis: A 3D vector representing the axis of rotation.
+        """
         self.scale_factor = scale_factor
         self.rotation_angle = rotation_angle
         self.rotation_axis = rotation_axis
@@ -76,10 +84,12 @@ class MeshTransformer:
 
 class Segment3DBuilder:
     """
-    Builds 3D representations of accelerator lattice segments by creating and positioning
-    detailed models of beamline components in a virtual scene.
+    Builds 3D representations of accelerator lattice segments
+    by creating and positioning detailed models of beamline components
+    in a virtual scene.
 
-    These models represent various beamline elements used in particle accelerators, including:
+    These models represent various beamline elements used in particle accelerators,
+    including:
     - Dipole magnets (used for beam bending)
     - Vertical and horizontal correctors (for beam steering)
     - Quadrupole magnets (for beam focusing)
@@ -102,8 +112,10 @@ class Segment3DBuilder:
         # (e.g., Dipole, Quadrupole) that define the accelerator beamline.
         self.segment = segment
 
-        # Maps each accelerator component type to its corresponding 3D model asset file (.glb).
-        # This dictionary allows dynamic lookup of the appropriate 3D model for each element in the scene.
+        # Maps each accelerator component type to its corresponding 3D model
+        # asset file (.glb).
+        # This dictionary allows dynamic lookup of the appropriate 3D model for
+        # each element in the scene.
         self.ASSET_MAP = {
             VerticalCorrector: "vertical_corrector.glb",
             HorizontalCorrector: "horizontal_corrector.glb",
@@ -133,7 +145,8 @@ class Segment3DBuilder:
         # Determine the base directory for assets (or for storing outputs)
         self.assets_dir = os.path.dirname(cheetah._assets.__file__)
 
-        # Creates a visualization scene using triangular meshes with an automatically generated camera and lighting
+        # Creates a visualization scene using triangular meshes with an
+        # automatically generated camera and lighting
         self.scene = trimesh.Scene()
 
         # Track lattice component positions
@@ -156,20 +169,34 @@ class Segment3DBuilder:
 
     @component_positions.setter
     def component_positions(self, positions: dict) -> None:
-        """Set component positions safely, ensuring correct format."""
+        """
+        Set component positions safely, ensuring correct format.
+
+        :param positions: A dictionary containing the component positions.
+                          The keys are the component identifiers and
+                          the values are their respective positions.
+        :raises ValueError: If the input is not a dictionary.
+        """
         if not isinstance(positions, dict):
             raise ValueError("component_positions must be a dictionary.")
         self._component_positions = positions
 
     def build_segment(
-        self, output_filename: Optional[str] = None, is_export_enabled: bool = True
+        self,
+        output_filename: Optional[str] = None,
+        is_export_enabled: bool = True,
     ) -> None:
         """
-        Build complete 3D segment scene by iterating through the segment and adding the elements (Dipole/Quadrupole) to the 3D scene.
+        Build a complete 3D segment scene by iterating through the segment
+        and adding the elements (Dipole/Quadrupole) to the 3D scene.
         Other elements (like Drift) only advance the current position.
 
-        Args:
-            output_filename: Output GLB/GLTF filename for the exported 3D scene
+        :param output_filename: Optional; the output GLB/GLTF filename
+                                for the exported 3D scene. If not provided,
+                                the scene will not be exported.
+        :param is_export_enabled: A boolean flag to enable or disable the export.
+                                  Default is True, meaning the scene will
+                                  be exported if an output filename is provided.
         """
         # For Drift, or other elements, we do not add geometry.
         for element in self.segment.elements:
@@ -202,22 +229,37 @@ class Segment3DBuilder:
             VerticalCorrector,
         ],
     ) -> None:
-        """Add an element to the scene."""
+        """
+        Add an element to the scene by loading its mesh, transforming it,
+        and tracking its position.
+
+        :param element: The element to be added to the scene.
+                        It can be one of the following types:
+                            Cavity, Dipole, HorizontalCorrector, Quadrupole,
+                            Screen, Undulator, or VerticalCorrector.
+        :raises: If the element type is not recognized, a warning is logged.
+        """
         if type(element) in self.ASSET_MAP:
             self._load_and_transform_mesh(element)
             self._track_component_position(element.name)
             logger.info(
-                f"Added {element.__class__.__name__}: {element.name} at position {self.current_position}"
+                "Added %s: %s at position %s",
+                element.__class__.__name__,
+                element.name,
+                self.current_position,
             )
         else:
             logger.warning(f"Element type {type(element).__name__} not recognized.")
 
     def export(self, output_file: Optional[str] = None) -> None:
         """
-        Export scene to file.
+        Export the 3D scene to a file in the GLB format.
 
-        Args:
-            output_file: Output filename
+        :param output_file: Optional; the output filename for the exported scene.
+                            If not provided, the scene will be saved as "scene.glb"
+                            in the assets directory.
+        :raises Exception: If there is an error during the export process,
+                           an exception is raised and logged.
         """
         # Optionally, store the exported .glb file in the assets directory,
         # using a default filename if none is provided.
@@ -236,11 +278,14 @@ class Segment3DBuilder:
 
     def _load_and_transform_mesh(self, element: Any) -> None:
         """
-        Load and transform 3D model mesh based on element type to the scene.
+        Load and transform the 3D model mesh based on the element type to the scene.
 
-        Args:
-            element: An accelerator lattice component (e.g., Quadrupole, Dipole, BPM).
-                     Represents a physical element to be visualized in the 3D scene.
+        :param element: An accelerator lattice component (e.g., Quadrupole, Dipole).
+                        This represents a physical element to be visualized
+                        in the 3D scene.
+        :raises ValueError: If the asset for the element type is not found
+                            in the ASSET_MAP.
+        :raises Exception: If there is an error while loading or transforming the mesh.
         """
         asset_filename = self.ASSET_MAP.get(type(element))
 
@@ -252,29 +297,40 @@ class Segment3DBuilder:
         try:
             # Use importlib.resources to access the asset file.
             with pkg_resources.path(_assets, asset_filename) as asset_path:
-                # Force loading 3D model as a scene to ensure multiple geometries are handled properly.
+                # Force loading 3D model as a scene to ensure multiple geometries are
+                # handled properly.
                 scene = trimesh.load(
                     str(asset_path), file_type="glb", force="scene"
                 )  # try to coerce everything into a scene instead of a single mesh
 
                 for mesh in scene.geometry.values():
-                    # Translation vector [x, y, z] defining the model's position in 3D space.
+                    # Translation vector [x, y, z] defining the model's position
+                    # in 3D space.
                     # Determines where the component is placed within the scene.
                     translation_vector = [0, 0, self.current_position]
                     self.transformer.transform_mesh(mesh, translation_vector)
                     self.scene.add_geometry(mesh)
 
         except Exception as e:
-            logger.error(f"Failed to load mesh for asset key {asset_key}: {e}")
+            logger.error(f"Failed to load mesh for asset key {self.ASSET_MAP}: {e}")
             raise
 
     def _track_component_position(self, component_name: str) -> None:
-        """Store the component position dynamically."""
+        """
+        Store the current position of a component dynamically.
+
+        :param component_name: The name of the component whose position
+                               is being tracked. The name is used as a key
+                               to store the position in the component positions
+                               dictionary.
+        """
         self._component_positions[component_name] = self.current_position
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"Segment3DBuilder(elements={len(self.segment.elements)}, position={self.current_position})"
+        return "Segment3DBuilder(elements={}, position={})".format(
+            len(self.segment.elements), self.current_position
+        )
 
 
 def main():
@@ -290,7 +346,10 @@ def main():
         help="Path to the configuration file (default: config.json)",
     )
     parser.add_argument(
-        "-o", "--output-scene", default=None, help="Output GLB filename (default: None)"
+        "-o",
+        "--output-scene",
+        default=None,
+        help="Output GLB filename (default: None)",
     )
     args = parser.parse_args()
 
