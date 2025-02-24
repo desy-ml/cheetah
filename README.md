@@ -91,6 +91,15 @@ segment.plot_overview(incoming=beam)
 
 where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
 
+To generate and view 3D visualizations of lattice segments, simply run the following command:
+
+```bash
+view-lattice --config config.json
+```
+
+This will process the lattice segment defined in your config.json file and generate the corresponding 3D visualization. You can visualize and explore the geometry of the segments natively in the tool.
+
+![3D Lattice View](https://github.com/desy-ml/cheetah/raw/master/images/3d_lattice_segment.png)
 ## Cite Cheetah
 
 If you use Cheetah, please cite the following two papers:
