@@ -45,28 +45,29 @@ def test_astra_to_particle_beam():
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
-@pytest.mark.parametrize("target_dtype", [None, torch.float32, torch.float64])
-def test_dtypes(BeamClass: cheetah.Beam, target_dtype: torch.dtype):
+@pytest.mark.parametrize("desired_dtype", [None, torch.float32, torch.float64])
+def test_dtypes(BeamClass: cheetah.Beam, desired_dtype: torch.dtype):
     """
     Test that Astra beams are correctly loaded into different types of Cheetah beams
     with different dtypes.
     """
-    # If no target_dtype is specified, the default dtype of PyTorch should be used
-    target_dtype = target_dtype or torch.get_default_dtype()
-
     beam = BeamClass.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=target_dtype
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=desired_dtype
     )
 
-    assert beam.mu_x.dtype == target_dtype
-    assert beam.mu_px.dtype == target_dtype
-    assert beam.mu_y.dtype == target_dtype
-    assert beam.mu_py.dtype == target_dtype
-    assert beam.sigma_x.dtype == target_dtype
-    assert beam.sigma_px.dtype == target_dtype
-    assert beam.sigma_y.dtype == target_dtype
-    assert beam.sigma_py.dtype == target_dtype
-    assert beam.sigma_tau.dtype == target_dtype
-    assert beam.sigma_p.dtype == target_dtype
-    assert beam.energy.dtype == target_dtype
-    assert beam.total_charge.dtype == target_dtype
+    correct_dtype = (
+        desired_dtype if desired_dtype is not None else torch.get_default_dtype()
+    )
+
+    assert beam.mu_x.dtype == correct_dtype
+    assert beam.mu_px.dtype == correct_dtype
+    assert beam.mu_y.dtype == correct_dtype
+    assert beam.mu_py.dtype == correct_dtype
+    assert beam.sigma_x.dtype == correct_dtype
+    assert beam.sigma_px.dtype == correct_dtype
+    assert beam.sigma_y.dtype == correct_dtype
+    assert beam.sigma_py.dtype == correct_dtype
+    assert beam.sigma_tau.dtype == correct_dtype
+    assert beam.sigma_p.dtype == correct_dtype
+    assert beam.energy.dtype == correct_dtype
+    assert beam.total_charge.dtype == correct_dtype
