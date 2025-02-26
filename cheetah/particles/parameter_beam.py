@@ -288,7 +288,9 @@ class ParameterBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=None) -> "ParameterBeam":
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
         total_charge = torch.as_tensor(parray.q_array, device=device, dtype=dtype).sum()
 
@@ -305,12 +307,7 @@ class ParameterBeam(Beam):
 
         energy = torch.as_tensor(1e9 * parray.E, **factory_kwargs)
 
-        return cls(
-            mu=mu.unsqueeze(0),
-            cov=cov.unsqueeze(0),
-            energy=energy.unsqueeze(0),
-            total_charge=total_charge.unsqueeze(0),
-        )
+        return cls(mu=mu, cov=cov, energy=energy, total_charge=total_charge)
 
     @classmethod
     def from_astra(
@@ -325,7 +322,7 @@ class ParameterBeam(Beam):
         ).sum()
 
         # If no explicit values are given, device and dtype are determined from the
-        # astra input data.
+        # Astra input data.
         factory_kwargs = {"device": total_charge.device, "dtype": total_charge.dtype}
         particles = torch.as_tensor(particles, **factory_kwargs)
 
