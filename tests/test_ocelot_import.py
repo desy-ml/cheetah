@@ -75,9 +75,7 @@ def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype)
     parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
     beam = BeamClass.from_ocelot(parray, dtype=desired_dtype)
 
-    correct_dtype = (
-        desired_dtype if desired_dtype is not None else torch.get_default_dtype()
-    )
+    correct_dtype = desired_dtype or torch.get_default_dtype()
 
     assert beam.mu_x.dtype == correct_dtype
     assert beam.mu_px.dtype == correct_dtype
