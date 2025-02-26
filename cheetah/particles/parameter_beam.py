@@ -319,26 +319,23 @@ class ParameterBeam(Beam):
         from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
-        total_charge = torch.as_tensor(
-            particle_charges, device=device, dtype=dtype
-        ).sum()
+        particles = torch.as_tensor(particles)
+        energy = torch.as_tensor(energy)
+        particle_charges = torch.as_tensor(particle_charges)
 
-        # If no explicit values are given, device and dtype are determined from the
-        # Astra input data.
-        factory_kwargs = {"device": total_charge.device, "dtype": total_charge.dtype}
-        particles = torch.as_tensor(particles, **factory_kwargs)
-
-        mu = torch.ones(7, **factory_kwargs)
+        mu = torch.ones(7)
         mu[:6] = particles.mean(dim=0)
 
-        cov = torch.zeros(7, 7, **factory_kwargs)
+        cov = torch.zeros(7, 7)
         cov[:6, :6] = particles.T.cov()
 
         return cls(
             mu=mu,
             cov=cov,
-            energy=torch.as_tensor(energy, **factory_kwargs),
-            total_charge=total_charge,
+            energy=energy,
+            total_charge=particle_charges.sum(),
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
         )
 
     def transformed_to(
