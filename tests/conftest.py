@@ -37,15 +37,16 @@ def seed_random_generators(request):
 
 
 @pytest.fixture
-def default_dtype(request):
+def default_torch_dtype(request):
     """Test fixture for parametrizing the default torch dtype."""
-    stored_dtype = torch.get_default_dtype()
+    tmp_dtype_for_test = request.param
+    previous_dtype = torch.get_default_dtype()
 
     # Set desired default dtype
-    torch.set_default_dtype(request.param)
+    torch.set_default_dtype(tmp_dtype_for_test)
 
     # Execute test
-    yield
+    yield tmp_dtype_for_test
 
     # Restore original default dtype
-    torch.set_default_dtype(stored_dtype)
+    torch.set_default_dtype(previous_dtype)
