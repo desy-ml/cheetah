@@ -662,22 +662,16 @@ class ParticleBeam(Beam):
         from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
-        particle_charges = torch.as_tensor(particle_charges, device=device, dtype=dtype)
 
-        # If no explicit values are given, device and dtype are determined from the
-        # astra input data.
-        factory_kwargs = {
-            "device": particle_charges.device,
-            "dtype": particle_charges.dtype,
-        }
-
-        particles_7d = torch.ones((particles.shape[0], 7), **factory_kwargs)
-        particles_7d[:, :6] = torch.as_tensor(particles, **factory_kwargs)
+        particles_7d = torch.ones((particles.shape[0], 7), device=device, dtype=dtype)
+        particles_7d[:, :6] = torch.as_tensor(particles, device=device, dtype=dtype)
 
         return cls(
             particles=particles_7d,
-            energy=torch.as_tensor(energy, **factory_kwargs),
-            particle_charges=particle_charges,
+            energy=torch.as_tensor(energy),
+            particle_charges=torch.as_tensor(particle_charges),
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
         )
 
     @classmethod
