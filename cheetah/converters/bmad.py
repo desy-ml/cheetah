@@ -23,16 +23,16 @@ def convert_element(
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
-    :param device: Device to put the element on. If `None`, the device is set to
-        `torch.device("cpu")`.
-    :param dtype: Data type to use for the element. If `None`, the default is determined
-        from `torch.get_default_dtype()`.
+    :param device: Device to put the element on. If `None`, the current default device
+        of PyTorch is used.
+    :param dtype: Data type to use for the element. If `None`, the current default dtype
+        of PyTorch is used.
     :return: Converted cheetah Element. If you are calling this function yourself
         as a user of Cheetah, this is most likely a `Segment`.
     """
     factory_kwargs = {
-        "device": device,
-        "dtype": dtype if dtype is not None else torch.get_default_dtype(),
+        "device": device or torch.get_default_device(),
+        "dtype": dtype or torch.get_default_dtype(),
     }
     bmad_parsed = context[name]
 
@@ -300,10 +300,10 @@ def convert_lattice_to_cheetah(
     :param bmad_lattice_file_path: Path to the Bmad lattice file.
     :param environment_variables: Dictionary of environment variables to use when
         parsing the lattice file.
-    :param device: Device to use for the lattice. If `None`, the device is set to
-        `torch.device("cpu")`.
-    :param dtype: Data type to use for the lattice. If `None`, the default is determined
-        from `torch.get_default_dtype()`.
+    :param device: Device to use for the lattice. If `None`, the current default device
+        of PyTorch is used.
+    :param dtype: Data type to use for the lattice. If `None`, the current default dtype
+        of PyTorch is used.
     :return: Cheetah `Segment` representing the Bmad lattice.
     """
 
