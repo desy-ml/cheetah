@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 from scipy.constants import physical_constants
 
@@ -7,7 +5,7 @@ from scipy.constants import physical_constants
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-def from_astrabeam(path: str) -> Tuple[np.ndarray, float, np.ndarray]:
+def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     """
     Read from a ASTRA beam distribution, and prepare for conversion to a Cheetah
     ParticleBeam or ParameterBeam.
