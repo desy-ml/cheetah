@@ -662,7 +662,9 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_astra(cls, path: str, device=None, dtype=torch.float32) -> "ParticleBeam":
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astra import from_astrabeam
 
