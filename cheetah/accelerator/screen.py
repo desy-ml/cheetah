@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
@@ -41,7 +41,7 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: tuple[int, int] = (1024, 1024),
+        resolution: Union[tuple[int, int], list[int]] = (1024, 1024),
         pixel_size: Optional[torch.Tensor] = None,
         binning: int = 1,
         misalignment: Optional[torch.Tensor] = None,
@@ -60,7 +60,7 @@ class Screen(Element):
         super().__init__(name=name, **factory_kwargs)
 
         assert (
-            isinstance(resolution, tuple) and len(resolution) == 2
+            isinstance(resolution, (tuple, list)) and len(resolution) == 2
         ), "Invalid resolution. Must be a tuple of 2 integers."
         assert method in [
             "histogram",
