@@ -39,7 +39,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     energy = gamref * electron_mass_eV
 
     n_particles = xp.shape[0]
-    particles = np.zeros((n_particles, 6), dtype=P0.dtype)
+    particles = np.zeros((n_particles, 6))
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
     gamma = np.sqrt(1 + np.sum(u * u, 1) / electron_mass_eV**2)
