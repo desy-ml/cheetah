@@ -642,7 +642,7 @@ class ParticleBeam(Beam):
         num_particles = parray.rparticles.shape[1]
         particles = torch.ones((num_particles, 7), device=device, dtype=dtype)
         particles[:, :6] = torch.as_tensor(
-            parray.rparticles, device=device, dtype=dtype
+            parray.rparticles.transpose(), device=device, dtype=dtype
         )
         particle_charges = torch.as_tensor(parray.q_array)
 
