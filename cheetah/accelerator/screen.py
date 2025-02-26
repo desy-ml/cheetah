@@ -64,7 +64,7 @@ class Screen(Element):
             "kde",
         ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
 
-        self.resolution = (int(resolution[0]), int(resolution[1]))
+        self.resolution = resolution
         self.binning = binning
         self.method = method
         self.is_blocking = is_blocking
@@ -79,7 +79,7 @@ class Screen(Element):
         # torch.Tensor, preventing crashes in some instances.
         self.register_buffer(
             "cached_reading",
-            torch.full(self.resolution, torch.nan, **factory_kwargs),
+            torch.full((resolution[0], resolution[1]), torch.nan, **factory_kwargs),
         )
 
         if pixel_size is not None:
@@ -303,7 +303,7 @@ class Screen(Element):
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
         self.cached_reading = torch.full(
-            self.resolution,
+            (self.resolution[0], self.resolution[1]),
             torch.nan,
             device=self.cached_reading.device,
             dtype=self.cached_reading.dtype,
