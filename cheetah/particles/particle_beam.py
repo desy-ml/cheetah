@@ -644,7 +644,7 @@ class ParticleBeam(Beam):
         particles[:, :6] = torch.as_tensor(
             parray.rparticles, device=device, dtype=dtype
         )
-        particle_charges = torch.as_tensor(parray.q)
+        particle_charges = torch.as_tensor(parray.q_array)
 
         return cls(
             particles=particles,
