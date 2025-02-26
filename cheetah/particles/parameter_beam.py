@@ -1,5 +1,6 @@
 from typing import Optional
 
+import numpy as np
 import torch
 
 from cheetah.particles.beam import Beam
@@ -299,7 +300,7 @@ class ParameterBeam(Beam):
 
         cov = torch.zeros(7, 7, device=device, dtype=dtype)
         cov[:6, :6] = torch.as_tensor(
-            parray.rparticles.cov(), device=device, dtype=dtype
+            np.cov(parray.rparticles), device=device, dtype=dtype
         )
 
         energy = 1e9 * torch.as_tensor(parray.E)
@@ -328,7 +329,7 @@ class ParameterBeam(Beam):
 
         cov = torch.zeros(7, 7, device=device, dtype=dtype)
         cov[:6, :6] = torch.as_tensor(
-            particles.transpose().cov(), device=device, dtype=dtype
+            np.cov(particles.transpose()), device=device, dtype=dtype
         )
 
         total_charge = torch.as_tensor(particle_charges).sum()
