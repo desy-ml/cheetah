@@ -71,8 +71,8 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
 
 
-@pytest.mark.parametrize("target_dtype", [torch.float32, torch.float64])
-def test_dtype(tmp_path, target_dtype: torch.dtype):
+@pytest.mark.parametrize("desired_dtype", [torch.float32, torch.float64])
+def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     """
     Test that the lattice JSON import correctly interprets its optional dtype parameter.
     """
@@ -86,11 +86,11 @@ def test_dtype(tmp_path, target_dtype: torch.dtype):
     original_segment.to_lattice_json(str(tmp_path / "dummy_lattice.json"))
 
     reloaded_segment = cheetah.Segment.from_lattice_json(
-        str(tmp_path / "dummy_lattice.json"), dtype=target_dtype
+        str(tmp_path / "dummy_lattice.json"), dtype=desired_dtype
     )
 
     assert all(
-        buffer.dtype == target_dtype
+        buffer.dtype == desired_dtype
         for element in reloaded_segment.elements
         for buffer in element.buffers()
     )
