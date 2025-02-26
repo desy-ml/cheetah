@@ -30,6 +30,7 @@
 - Added `pyproject.toml` to conform with PEP 660 as enforced as of pip 25 for editable installs (see #334) (@jank324)
 - Add TUHH logo to contributing institution logos (see #338) (@jank324)
 - Doc: ImpactX Example (Space Charge) #341 (@ax3l)
+- Add link to the new Discord server (see #355) (@jank324)
 
 ### 🌟 First Time Contributors
 
