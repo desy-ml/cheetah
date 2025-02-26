@@ -635,10 +635,10 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=None) -> "ParticleBeam":
-        """
-        Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
-        """
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParticleBeam":
+        """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         particle_charges = torch.as_tensor(parray.q_array, device=device, dtype=dtype)
 
         # If no explicit values are given, device and dtype are determined from the
