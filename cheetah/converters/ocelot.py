@@ -35,90 +35,90 @@ def convert_element_to_cheetah(
         )
 
     factory_kwargs = {
-        "device": device,
-        "dtype": dtype if dtype is not None else torch.get_default_dtype(),
+        "device": device or torch.get_default_device(),
+        "dtype": dtype or torch.get_default_dtype(),
     }
 
     if isinstance(element, ocelot.Drift):
         return cheetah.Drift(
-            length=torch.tensor(element.l, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Quadrupole):
         return cheetah.Quadrupole(
-            length=torch.tensor(element.l, **factory_kwargs),
-            k1=torch.tensor(element.k1, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            k1=torch.as_tensor(element.k1, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Solenoid):
         return cheetah.Solenoid(
-            length=torch.tensor(element.l, **factory_kwargs),
-            k=torch.tensor(element.k, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            k=torch.as_tensor(element.k, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Hcor):
         return cheetah.HorizontalCorrector(
-            length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            angle=torch.as_tensor(element.angle, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Vcor):
         return cheetah.VerticalCorrector(
-            length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            angle=torch.as_tensor(element.angle, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Bend):
         return cheetah.Dipole(
-            length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
-            dipole_e1=torch.tensor(element.e1, **factory_kwargs),
-            dipole_e2=torch.tensor(element.e2, **factory_kwargs),
-            tilt=torch.tensor(element.tilt, **factory_kwargs),
-            fringe_integral=torch.tensor(element.fint, **factory_kwargs),
-            fringe_integral_exit=torch.tensor(element.fintx, **factory_kwargs),
-            gap=torch.tensor(element.gap, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            angle=torch.as_tensor(element.angle, **factory_kwargs),
+            dipole_e1=torch.as_tensor(element.e1, **factory_kwargs),
+            dipole_e2=torch.as_tensor(element.e2, **factory_kwargs),
+            tilt=torch.as_tensor(element.tilt, **factory_kwargs),
+            fringe_integral=torch.as_tensor(element.fint, **factory_kwargs),
+            fringe_integral_exit=torch.as_tensor(element.fintx, **factory_kwargs),
+            gap=torch.as_tensor(element.gap, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.SBend):
         return cheetah.Dipole(
-            length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
-            dipole_e1=torch.tensor(element.e1, **factory_kwargs),
-            dipole_e2=torch.tensor(element.e2, **factory_kwargs),
-            tilt=torch.tensor(element.tilt, **factory_kwargs),
-            fringe_integral=torch.tensor(element.fint, **factory_kwargs),
-            fringe_integral_exit=torch.tensor(element.fintx, **factory_kwargs),
-            gap=torch.tensor(element.gap, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            angle=torch.as_tensor(element.angle, **factory_kwargs),
+            dipole_e1=torch.as_tensor(element.e1, **factory_kwargs),
+            dipole_e2=torch.as_tensor(element.e2, **factory_kwargs),
+            tilt=torch.as_tensor(element.tilt, **factory_kwargs),
+            fringe_integral=torch.as_tensor(element.fint, **factory_kwargs),
+            fringe_integral_exit=torch.as_tensor(element.fintx, **factory_kwargs),
+            gap=torch.as_tensor(element.gap, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.RBend):
         return cheetah.RBend(
-            length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
-            rbend_e1=torch.tensor(element.e1, **factory_kwargs) - element.angle / 2,
-            rbend_e2=torch.tensor(element.e2, **factory_kwargs) - element.angle / 2,
-            tilt=torch.tensor(element.tilt, **factory_kwargs),
-            fringe_integral=torch.tensor(element.fint, **factory_kwargs),
-            fringe_integral_exit=torch.tensor(element.fintx, **factory_kwargs),
-            gap=torch.tensor(element.gap, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            angle=torch.as_tensor(element.angle, **factory_kwargs),
+            rbend_e1=torch.as_tensor(element.e1, **factory_kwargs) - element.angle / 2,
+            rbend_e2=torch.as_tensor(element.e2, **factory_kwargs) - element.angle / 2,
+            tilt=torch.as_tensor(element.tilt, **factory_kwargs),
+            fringe_integral=torch.as_tensor(element.fint, **factory_kwargs),
+            fringe_integral_exit=torch.as_tensor(element.fintx, **factory_kwargs),
+            gap=torch.as_tensor(element.gap, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Cavity):
         return cheetah.Cavity(
-            length=torch.tensor(element.l, **factory_kwargs),
-            voltage=torch.tensor(element.v, **factory_kwargs) * 1e9,
-            frequency=torch.tensor(element.freq, **factory_kwargs),
-            phase=torch.tensor(element.phi, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            voltage=torch.as_tensor(element.v, **factory_kwargs) * 1e9,
+            frequency=torch.as_tensor(element.freq, **factory_kwargs),
+            phase=torch.as_tensor(element.phi, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.TDCavity):
         # TODO: Better replacement at some point?
         return cheetah.Cavity(
-            length=torch.tensor(element.l, **factory_kwargs),
-            voltage=torch.tensor(element.v, **factory_kwargs) * 1e9,
-            frequency=torch.tensor(element.freq, **factory_kwargs),
-            phase=torch.tensor(element.phi, **factory_kwargs),
+            length=torch.as_tensor(element.l, **factory_kwargs),
+            voltage=torch.as_tensor(element.v, **factory_kwargs) * 1e9,
+            frequency=torch.as_tensor(element.freq, **factory_kwargs),
+            phase=torch.as_tensor(element.phi, **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
@@ -131,7 +131,7 @@ def convert_element_to_cheetah(
             )
         return cheetah.Screen(
             resolution=(2448, 2040),
-            pixel_size=torch.tensor([3.5488e-6, 2.5003e-6], **factory_kwargs),
+            pixel_size=torch.as_tensor([3.5488e-6, 2.5003e-6], **factory_kwargs),
             name=element.id,
         )
     elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
@@ -142,13 +142,13 @@ def convert_element_to_cheetah(
         return cheetah.Marker(name=element.id)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
-            torch.tensor(element.l, **factory_kwargs), name=element.id
+            torch.as_tensor(element.l, **factory_kwargs), name=element.id
         )
     elif isinstance(element, ocelot.Aperture):
         shape_translation = {"rect": "rectangular", "elip": "elliptical"}
         return cheetah.Aperture(
-            x_max=torch.tensor(element.xmax, **factory_kwargs),
-            y_max=torch.tensor(element.ymax, **factory_kwargs),
+            x_max=torch.as_tensor(element.xmax, **factory_kwargs),
+            y_max=torch.as_tensor(element.ymax, **factory_kwargs),
             shape=shape_translation[element.type],
             is_active=True,
             name=element.id,
@@ -160,7 +160,7 @@ def convert_element_to_cheetah(
                 " replacing with drift section."
             )
         return cheetah.Drift(
-            length=torch.tensor(element.l, **factory_kwargs), name=element.id
+            length=torch.as_tensor(element.l, **factory_kwargs), name=element.id
         )
 
 
