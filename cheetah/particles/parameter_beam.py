@@ -292,21 +292,24 @@ class ParameterBeam(Beam):
         cls, parray, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        particles = torch.as_tensor(parray.particles)
-        E = torch.as_tensor(parray.E)
-        q_array = torch.as_tensor(parray.q_array)
+        mu = torch.ones(7, device=device, dtype=dtype)
+        mu[:6] = torch.as_tensor(
+            parray.rparticles.mean(axis=1), device=device, dtype=dtype
+        )
 
-        mu = torch.ones(7)
-        mu[:6] = particles.mean(dim=1)
+        cov = torch.zeros(7, 7, device=device, dtype=dtype)
+        cov[:6, :6] = torch.as_tensor(
+            parray.rparticles.cov(), device=device, dtype=dtype
+        )
 
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = particles.cov()
+        energy = 1e9 * torch.as_tensor(parray.E)
+        total_charge = torch.as_tensor(parray.q_array).sum()
 
         return cls(
             mu=mu,
             cov=cov,
-            energy=1e9 * E,
-            total_charge=q_array.sum(),
+            energy=energy,
+            total_charge=total_charge,
             device=device or torch.get_default_device(),
             dtype=dtype or torch.get_default_dtype(),
         )
@@ -319,21 +322,22 @@ class ParameterBeam(Beam):
         from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
-        particles = torch.as_tensor(particles)
-        energy = torch.as_tensor(energy)
-        particle_charges = torch.as_tensor(particle_charges)
 
-        mu = torch.ones(7)
-        mu[:6] = particles.mean(dim=0)
+        mu = torch.ones(7, device=device, dtype=dtype)
+        mu[:6] = torch.as_tensor(particles.mean(axis=0), device=device, dtype=dtype)
 
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = particles.T.cov()
+        cov = torch.zeros(7, 7, device=device, dtype=dtype)
+        cov[:6, :6] = torch.as_tensor(
+            particles.transpose().cov(), device=device, dtype=dtype
+        )
+
+        total_charge = torch.as_tensor(particle_charges).sum()
 
         return cls(
             mu=mu,
             cov=cov,
             energy=energy,
-            total_charge=particle_charges.sum(),
+            total_charge=total_charge,
             device=device or torch.get_default_device(),
             dtype=dtype or torch.get_default_dtype(),
         )
