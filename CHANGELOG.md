@@ -35,6 +35,7 @@
 - A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
 - Add link to the new Discord server (see #355) (@jank324)
+- Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 
 ### 🌟 First Time Contributors
 

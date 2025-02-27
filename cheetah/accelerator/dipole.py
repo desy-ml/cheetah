@@ -151,7 +151,7 @@ class Dipole(Element):
 
     def track(self, incoming: Beam) -> Beam:
         """
-        Track particles through the quadrupole element.
+        Track particles through the dipole element.
 
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
