@@ -83,3 +83,21 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.b.dipole_e1.dtype == dtype
     assert converted.q.length.dtype == dtype
     assert converted.q.k1.dtype == dtype
+
+
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float32, torch.float64], indirect=True
+)
+def test_default_dtype(default_torch_dtype):
+    """Test that the default dtype is used if no explicit type is passed."""
+    file_path = "tests/resources/bmad_tutorial_lattice.bmad"
+
+    # Convert the lattice while passing the dtype
+    converted = cheetah.Segment.from_bmad(file_path)
+
+    # Check that the properties of the loaded elements are of the correct dtype
+    assert converted.d.length.dtype == default_torch_dtype
+    assert converted.b.length.dtype == default_torch_dtype
+    assert converted.b.dipole_e1.dtype == default_torch_dtype
+    assert converted.q.length.dtype == default_torch_dtype
+    assert converted.q.k1.dtype == default_torch_dtype

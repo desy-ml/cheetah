@@ -635,38 +635,43 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=torch.float32) -> "ParticleBeam":
-        """
-        Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
-        """
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParticleBeam":
+        """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         num_particles = parray.rparticles.shape[1]
-        particles = torch.ones((num_particles, 7))
-        particles[:, :6] = torch.tensor(parray.rparticles.transpose())
-        particle_charges = torch.tensor(parray.q_array)
+        particles = torch.ones((num_particles, 7), device=device, dtype=dtype)
+        particles[:, :6] = torch.as_tensor(
+            parray.rparticles.transpose(), device=device, dtype=dtype
+        )
+        particle_charges = torch.as_tensor(parray.q_array)
 
         return cls(
-            particles=particles.unsqueeze(0),
-            energy=torch.tensor(1e9 * parray.E).unsqueeze(0),
-            particle_charges=particle_charges.unsqueeze(0),
-            device=device,
-            dtype=dtype,
+            particles=particles,
+            energy=1e9 * torch.as_tensor(parray.E),
+            particle_charges=particle_charges,
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
         )
 
     @classmethod
-    def from_astra(cls, path: str, device=None, dtype=torch.float32) -> "ParticleBeam":
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
-        particles_7d = torch.ones((particles.shape[0], 7))
-        particles_7d[:, :6] = torch.from_numpy(particles)
-        particle_charges = torch.from_numpy(particle_charges)
+
+        particles_7d = torch.ones((particles.shape[0], 7), device=device, dtype=dtype)
+        particles_7d[:, :6] = torch.as_tensor(particles, device=device, dtype=dtype)
+
         return cls(
             particles=particles_7d,
-            energy=torch.tensor(energy),
-            particle_charges=particle_charges,
-            device=device,
-            dtype=dtype,
+            energy=torch.as_tensor(energy),
+            particle_charges=torch.as_tensor(particle_charges),
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
         )
 
     @classmethod
@@ -760,14 +765,11 @@ class ParticleBeam(Beam):
         if len(self.particles.shape) != 2:
             raise ValueError("Only non-batched particles are supported.")
 
-        n_particles = self.num_particles
-        weights = np.ones(n_particles)
         px = self.px * self.p0c
         py = self.py * self.p0c
         p_total = torch.sqrt(self.energies**2 - electron_mass_eV**2)
         pz = torch.sqrt(p_total**2 - px**2 - py**2)
         t = self.tau / speed_of_light
-        weights = self.particle_charges
         # TODO: To be discussed
         status = self.survival_probabilities > 0.5
 
@@ -779,7 +781,7 @@ class ParticleBeam(Beam):
             "py": py.numpy(),
             "pz": pz.numpy(),
             "t": t.numpy(),
-            "weight": weights.numpy(),
+            "weight": self.particle_charges.numpy(),
             "status": status.numpy(),
             # TODO: Modify when support for other species was added
             "species": "electron",
