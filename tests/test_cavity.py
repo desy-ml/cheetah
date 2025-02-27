@@ -73,7 +73,11 @@ def test_vectorized_cavity_zero_voltage(voltage):
     outgoing = cavity.track(incoming)
 
     assert not torch.isnan(
-        cavity.transfer_map(incoming.energy, incoming.species.mass_eV)
+        cavity.transfer_map(
+            incoming.energy,
+            incoming.species.mass_eV,
+            incoming.species.num_elementary_charges,
+        )
     ).any()
 
     assert not torch.isnan(outgoing.sigma_x).any()

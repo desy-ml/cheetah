@@ -17,11 +17,11 @@ class Species:
     :param name: Name of the particle species. For species in `Species.known`, charge
         and mass are populated automatically. Custom particle species like ions can be
         defined by providing charge and mass.
-    :param charge_elementary: Charge of the particle species in units of elementary
-        charge e. NOTE: Only one of `charge_elementary` and `charge_coulomb` should be
-        provided.
+    :param num_elementary_charges: Charge of the particle species in units of elementary
+        charge e. NOTE: Only one of `num_elementary_charges` and `charge_coulomb`
+        should be provided.
     :param charge_coulomb: Charge of the particle species in Coulombs. NOTE: Only one
-        of `charge_elementary` and `charge_coulomb` should be provided.
+        of `num_elementary_charges` and `charge_coulomb` should be provided.
     :param mass_eV: Mass of the particle species in eV. NOTE: Only one of `mass_eV` and
         `mass_kg` should be provided.
     :param mass_kg: Mass of the particle species in kg. NOTE: Only one of `mass_eV` and
