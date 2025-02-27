@@ -300,49 +300,60 @@ class ParameterBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=torch.float32) -> "ParameterBeam":
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        mu = torch.ones(7)
-        mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
-
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
-
-        energy = torch.tensor(1e9 * parray.E, dtype=torch.float32)
-        total_charge = torch.tensor(np.sum(parray.q_array), dtype=torch.float32)
-
-        return cls(
-            mu=mu.unsqueeze(0),
-            cov=cov.unsqueeze(0),
-            energy=energy.unsqueeze(0),
-            total_charge=total_charge.unsqueeze(0),
-            species=Species("electron"),
-            device=device,
-            dtype=dtype,
+        mu = torch.ones(7, device=device, dtype=dtype)
+        mu[:6] = torch.as_tensor(
+            parray.rparticles.mean(axis=1), device=device, dtype=dtype
         )
 
-    @classmethod
-    def from_astra(cls, path: str, device=None, dtype=torch.float32) -> "ParameterBeam":
-        """Load an Astra particle distribution as a Cheetah Beam."""
-        from cheetah.converters.astra import from_astrabeam
+        cov = torch.zeros(7, 7, device=device, dtype=dtype)
+        cov[:6, :6] = torch.as_tensor(
+            np.cov(parray.rparticles), device=device, dtype=dtype
+        )
 
-        particles, energy, particle_charges = from_astrabeam(path)
-        mu = torch.ones(7)
-        mu[:6] = torch.tensor(particles.mean(axis=0))
-
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()), dtype=torch.float32)
-
-        total_charge = torch.tensor(np.sum(particle_charges), dtype=torch.float32)
+        energy = 1e9 * torch.as_tensor(parray.E)
+        total_charge = torch.as_tensor(parray.q_array).sum()
 
         return cls(
             mu=mu,
             cov=cov,
-            energy=torch.tensor(energy, dtype=torch.float32),
+            energy=energy,
             total_charge=total_charge,
             species=Species("electron"),
-            device=device,
-            dtype=dtype,
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
+        )
+
+    @classmethod
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParameterBeam":
+        """Load an Astra particle distribution as a Cheetah Beam."""
+        from cheetah.converters.astra import from_astrabeam
+
+        particles, energy, particle_charges = from_astrabeam(path)
+
+        mu = torch.ones(7, device=device, dtype=dtype)
+        mu[:6] = torch.as_tensor(particles.mean(axis=0), device=device, dtype=dtype)
+
+        cov = torch.zeros(7, 7, device=device, dtype=dtype)
+        cov[:6, :6] = torch.as_tensor(
+            np.cov(particles.transpose()), device=device, dtype=dtype
+        )
+
+        total_charge = torch.as_tensor(particle_charges).sum()
+
+        return cls(
+            mu=mu,
+            cov=cov,
+            energy=energy,
+            total_charge=total_charge,
+            species=Species("electron"),
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
         )
 
     def transformed_to(

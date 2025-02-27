@@ -12,6 +12,8 @@ GitHub repository: https://github.com/desy-ml/cheetah
 
 Paper: https://doi.org/10.1103/PhysRevAccelBeams.27.054601
 
+Discord server: https://discord.gg/hrwYPC3a
+
 
 Installation
 ------------
