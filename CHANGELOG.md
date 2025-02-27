@@ -15,6 +15,7 @@
 - Add Python 3.13 support (see #275) (@jank324)
 - Methods `to_parameter_beam` and `to_particle_beam` have been added for convenient conversion between `ParticleBeam` and `ParameterBeam` (see #331) (@jank324)
 - Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
+- Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
 - Add options to include or exclude the first and last element when retreiving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
 
 ### 🐛 Bug fixes
@@ -32,6 +33,7 @@
 - The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
 - A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
+- Add link to the new Discord server (see #355) (@jank324)
 
 ### 🌟 First Time Contributors
 

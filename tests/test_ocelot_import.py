@@ -1,6 +1,7 @@
 import numpy as np
 import ocelot
 import pytest
+import torch
 
 import cheetah
 
@@ -57,14 +58,37 @@ def test_ocelot_to_particlebeam():
     parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
     beam = cheetah.ParticleBeam.from_ocelot(parray)
 
-    assert np.allclose(beam.particles[0, :, 0].cpu().numpy(), parray.x())
-    assert np.allclose(beam.particles[0, :, 1].cpu().numpy(), parray.px())
-    assert np.allclose(beam.particles[0, :, 2].cpu().numpy(), parray.y())
-    assert np.allclose(beam.particles[0, :, 3].cpu().numpy(), parray.py())
-    assert np.allclose(beam.particles[0, :, 4].cpu().numpy(), parray.tau())
-    assert np.allclose(beam.particles[0, :, 5].cpu().numpy(), parray.p())
+    assert np.allclose(beam.particles[:, 0].cpu().numpy(), parray.x())
+    assert np.allclose(beam.particles[:, 1].cpu().numpy(), parray.px())
+    assert np.allclose(beam.particles[:, 2].cpu().numpy(), parray.y())
+    assert np.allclose(beam.particles[:, 3].cpu().numpy(), parray.py())
+    assert np.allclose(beam.particles[:, 4].cpu().numpy(), parray.tau())
+    assert np.allclose(beam.particles[:, 5].cpu().numpy(), parray.p())
     assert np.allclose(beam.energy.cpu().numpy(), parray.E * 1e9)
     assert np.allclose(beam.particle_charges.cpu().numpy(), parray.q_array)
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+@pytest.mark.parametrize("desired_dtype", [None, torch.float32, torch.float64])
+def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype):
+    """Test that Ocelot import respects the desired dtype."""
+    parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")
+    beam = BeamClass.from_ocelot(parray, dtype=desired_dtype)
+
+    correct_dtype = desired_dtype or torch.get_default_dtype()
+
+    assert beam.mu_x.dtype == correct_dtype
+    assert beam.mu_px.dtype == correct_dtype
+    assert beam.mu_y.dtype == correct_dtype
+    assert beam.mu_py.dtype == correct_dtype
+    assert beam.sigma_x.dtype == correct_dtype
+    assert beam.sigma_px.dtype == correct_dtype
+    assert beam.sigma_y.dtype == correct_dtype
+    assert beam.sigma_py.dtype == correct_dtype
+    assert beam.sigma_tau.dtype == correct_dtype
+    assert beam.sigma_p.dtype == correct_dtype
+    assert beam.energy.dtype == correct_dtype
+    assert beam.total_charge.dtype == correct_dtype
 
 
 def test_ocelot_lattice_import():
