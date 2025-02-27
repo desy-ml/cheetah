@@ -5,7 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
@@ -60,14 +60,12 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
             hx=torch.zeros_like(self.length),
-            particle_mass_eV=particle_mass_eV,
+            species=species,
             tilt=self.tilt,
             energy=energy,
         )

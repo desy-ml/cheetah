@@ -5,7 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
@@ -367,9 +367,7 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
@@ -381,7 +379,7 @@ class Dipole(Element):
                 length=self.length,
                 k1=self.k1,
                 hx=self.hx,
-                particle_mass_eV=particle_mass_eV,
+                species=species,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
             )  # Tilt is applied after adding edges

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -20,9 +20,7 @@ class Marker(Element):
     def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name=name)
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )

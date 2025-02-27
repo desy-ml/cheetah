@@ -4,6 +4,7 @@ from typing import Optional
 
 import torch
 
+from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
 
 
@@ -34,7 +35,7 @@ def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
     hx: torch.Tensor,
-    particle_mass_eV: torch.Tensor,
+    species: Species,
     tilt: Optional[torch.Tensor] = None,
     energy: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
@@ -44,6 +45,7 @@ def base_rmatrix(
     :param length: Length of the element in m.
     :param k1: Quadrupole strength in 1/m**2.
     :param hx: Curvature (1/radius) of the element in 1/m**2.
+    :param species: Particle species of the beam.
     :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
     :return: Transfer matrix for the element.
@@ -56,7 +58,7 @@ def base_rmatrix(
         energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
     )
 
-    _, igamma2, beta = compute_relativistic_factors(energy, particle_mass_eV)
+    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     # Avoid division by zero
     k1 = k1.clone()
