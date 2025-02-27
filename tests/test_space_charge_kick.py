@@ -205,7 +205,8 @@ def test_gradient_value_backward_ad():
     # Simulation parameters
     R0 = torch.tensor(0.001)
     energy = torch.tensor(2.5e8)
-    gamma, _, beta = compute_relativistic_factors(energy)
+    species = cheetah.Species("electron")
+    gamma, _, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     incoming_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(100_000),
@@ -217,6 +218,7 @@ def test_gradient_value_backward_ad():
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
+        species=species,
     )
 
     # Compute section length that results in a doubling of the beam size
@@ -267,7 +269,8 @@ def test_gradient_value_forward_ad():
     # Simulation parameters
     R0 = torch.tensor(0.001)
     energy = torch.tensor(2.5e8)
-    gamma, _, beta = compute_relativistic_factors(energy)
+    species = cheetah.Species("electron")
+    gamma, _, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     incoming_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(100_000),
@@ -279,6 +282,7 @@ def test_gradient_value_forward_ad():
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
+        species=species,
     )
 
     # Compute section length that results in a doubling of the beam size
