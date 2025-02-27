@@ -129,15 +129,17 @@ class Beam(ABC, nn.Module):
 
     @classmethod
     @abstractmethod
-    def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
-        """
-        Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
-        """
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "Beam":
+        """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 

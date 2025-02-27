@@ -213,14 +213,21 @@ class Segment(Element):
         )
 
     @classmethod
-    def from_lattice_json(cls, filepath: str) -> "Segment":
+    def from_lattice_json(
+        cls,
+        filepath: str,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> "Segment":
         """
         Load a Cheetah model from a JSON file.
 
-        :param filename: Name/path of the file to load the lattice from.
+        :param filepath: Path of the file to load the lattice from.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return load_cheetah_model(filepath)
+        return load_cheetah_model(filepath, device=device, dtype=dtype)
 
     def to_lattice_json(
         self,
@@ -246,8 +253,8 @@ class Segment(Element):
         cell,
         name: Optional[str] = None,
         warnings: bool = True,
-        device=None,
-        dtype=torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
         **kwargs,
     ) -> "Segment":
         """
@@ -263,6 +270,8 @@ class Segment(Element):
         :param name: Unique identifier for the entire segment.
         :param warnings: Whether to print warnings when objects are not supported by
             Cheetah or converted with potentially unexpected behavior.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
         from cheetah.converters import ocelot
@@ -280,8 +289,8 @@ class Segment(Element):
         cls,
         bmad_lattice_file_path: str,
         environment_variables: Optional[dict] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -308,8 +317,8 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from an elegant lattice file.

@@ -15,6 +15,7 @@
 - Add Python 3.13 support (see #275) (@jank324)
 - Methods `to_parameter_beam` and `to_particle_beam` have been added for convenient conversion between `ParticleBeam` and `ParameterBeam` (see #331) (@jank324)
 - Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
+- Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
 
 ### 🐛 Bug fixes
 

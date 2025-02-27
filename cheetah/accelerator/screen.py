@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
@@ -41,7 +41,7 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: tuple[int, int] = (1024, 1024),
+        resolution: Union[tuple[int, int], list[int]] = (1024, 1024),
         pixel_size: Optional[torch.Tensor] = None,
         binning: int = 1,
         misalignment: Optional[torch.Tensor] = None,
@@ -59,6 +59,9 @@ class Screen(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
+        assert (
+            isinstance(resolution, (tuple, list)) and len(resolution) == 2
+        ), "Invalid resolution. Must be a tuple of 2 integers."
         assert method in [
             "histogram",
             "kde",
@@ -74,12 +77,9 @@ class Screen(Element):
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
         self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
 
-        # NOTE: According to its type hint, the operation on resolution below is a
-        # no-op. However, this form is robust against accidentally passing a
-        # torch.Tensor, preventing crashes in some instances.
         self.register_buffer(
             "cached_reading",
-            torch.full((resolution[0], resolution[1]), torch.nan, **factory_kwargs),
+            torch.full((resolution[1], resolution[0]), torch.nan, **factory_kwargs),
         )
 
         if pixel_size is not None:
