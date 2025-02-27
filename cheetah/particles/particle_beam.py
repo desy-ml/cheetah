@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
 import torch
@@ -54,10 +54,10 @@ class ParticleBeam(Beam):
         self,
         particles: torch.Tensor,
         energy: torch.Tensor,
-        particle_charges: Optional[torch.Tensor] = None,
-        survival_probabilities: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        particle_charges: torch.Tensor | None = None,
+        survival_probabilities: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [particles, energy, particle_charges], device, dtype
@@ -89,25 +89,25 @@ class ParticleBeam(Beam):
     def from_parameters(
         cls,
         num_particles: int = 100_000,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        mu_tau: Optional[torch.Tensor] = None,
-        mu_p: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        cov_xpx: Optional[torch.Tensor] = None,
-        cov_ypy: Optional[torch.Tensor] = None,
-        cov_taup: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        mu_x: torch.Tensor | None = None,
+        mu_px: torch.Tensor | None = None,
+        mu_y: torch.Tensor | None = None,
+        mu_py: torch.Tensor | None = None,
+        mu_tau: torch.Tensor | None = None,
+        mu_p: torch.Tensor | None = None,
+        sigma_x: torch.Tensor | None = None,
+        sigma_px: torch.Tensor | None = None,
+        sigma_y: torch.Tensor | None = None,
+        sigma_py: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        cov_xpx: torch.Tensor | None = None,
+        cov_ypy: torch.Tensor | None = None,
+        cov_taup: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles.
@@ -276,19 +276,19 @@ class ParticleBeam(Beam):
     def from_twiss(
         cls,
         num_particles: int = 100_000,
-        beta_x: Optional[torch.Tensor] = None,
-        alpha_x: Optional[torch.Tensor] = None,
-        emittance_x: Optional[torch.Tensor] = None,
-        beta_y: Optional[torch.Tensor] = None,
-        alpha_y: Optional[torch.Tensor] = None,
-        emittance_y: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        cov_taup: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        beta_x: torch.Tensor | None = None,
+        alpha_x: torch.Tensor | None = None,
+        emittance_x: torch.Tensor | None = None,
+        beta_y: torch.Tensor | None = None,
+        alpha_y: torch.Tensor | None = None,
+        emittance_y: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        cov_taup: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         # Extract device and dtype from given arguments
         device, dtype = verify_device_and_dtype(
@@ -377,16 +377,16 @@ class ParticleBeam(Beam):
     def uniform_3d_ellipsoid(
         cls,
         num_particles: int = 100_000,
-        radius_x: Optional[torch.Tensor] = None,
-        radius_y: Optional[torch.Tensor] = None,
-        radius_tau: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        radius_x: torch.Tensor | None = None,
+        radius_y: torch.Tensor | None = None,
+        radius_tau: torch.Tensor | None = None,
+        sigma_px: torch.Tensor | None = None,
+        sigma_py: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         """
         Generate a particle beam with spatially uniformly distributed particles inside
@@ -491,22 +491,22 @@ class ParticleBeam(Beam):
     def make_linspaced(
         cls,
         num_particles: int = 10,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        mu_tau: Optional[torch.Tensor] = None,
-        mu_p: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        mu_x: torch.Tensor | None = None,
+        mu_px: torch.Tensor | None = None,
+        mu_y: torch.Tensor | None = None,
+        mu_py: torch.Tensor | None = None,
+        mu_tau: torch.Tensor | None = None,
+        mu_p: torch.Tensor | None = None,
+        sigma_x: torch.Tensor | None = None,
+        sigma_px: torch.Tensor | None = None,
+        sigma_y: torch.Tensor | None = None,
+        sigma_py: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of *n* linspaced particles.
@@ -676,7 +676,11 @@ class ParticleBeam(Beam):
 
     @classmethod
     def from_openpmd_file(
-        cls, path: str, energy: torch.Tensor, device=None, dtype=None
+        cls,
+        path: str,
+        energy: torch.Tensor,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """Load an openPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
         try:
@@ -697,8 +701,8 @@ class ParticleBeam(Beam):
         cls,
         particle_group: "openpmd.ParticleGroup",  # noqa: F821
         energy: torch.Tensor,
-        device=None,
-        dtype=None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Create a Cheetah `ParticleBeam` from an openPMD `ParticleGroup` object.
@@ -792,22 +796,22 @@ class ParticleBeam(Beam):
 
     def transformed_to(
         self,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        mu_tau: Optional[torch.Tensor] = None,
-        mu_p: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        mu_x: torch.Tensor | None = None,
+        mu_px: torch.Tensor | None = None,
+        mu_y: torch.Tensor | None = None,
+        mu_py: torch.Tensor | None = None,
+        mu_tau: torch.Tensor | None = None,
+        mu_p: torch.Tensor | None = None,
+        sigma_x: torch.Tensor | None = None,
+        sigma_px: torch.Tensor | None = None,
+        sigma_y: torch.Tensor | None = None,
+        sigma_py: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -962,9 +966,9 @@ class ParticleBeam(Beam):
         cls,
         xp_coordinates: torch.Tensor,
         energy: torch.Tensor,
-        particle_charges: Optional[torch.Tensor] = None,
-        survival_probabilities: Optional[torch.Tensor] = None,
-        device=None,
+        particle_charges: torch.Tensor | None = None,
+        survival_probabilities: torch.Tensor | None = None,
+        device: torch.device | None = None,
         dtype=torch.float32,
     ) -> torch.Tensor:
         """
@@ -1041,10 +1045,10 @@ class ParticleBeam(Beam):
         self,
         dimension: Literal["x", "px", "y", "py", "tau", "p"],
         bins: int = 100,
-        bin_range: Optional[Tuple[float]] = None,
+        bin_range: tuple[float] | None = None,
         smoothing: float = 0.0,
-        plot_kws: Optional[dict] = None,
-        ax: Optional[plt.Axes] = None,
+        plot_kws: dict | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
         Plot a 1D histogram of the given dimension of the particle distribution.
@@ -1096,12 +1100,12 @@ class ParticleBeam(Beam):
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         contour: bool = False,
         bins: int = 100,
-        bin_ranges: Optional[Tuple[Tuple[float]]] = None,
+        bin_ranges: tuple[tuple[float]] | None = None,
         histogram_smoothing: float = 0.0,
         contour_smoothing: float = 3.0,
-        pcolormesh_kws: Optional[dict] = None,
-        contour_kws: Optional[dict] = None,
-        ax: Optional[plt.Axes] = None,
+        pcolormesh_kws: dict | None = None,
+        contour_kws: dict | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
         Plot a 2D histogram of the given dimensions of the particle distribution.
@@ -1183,13 +1187,11 @@ class ParticleBeam(Beam):
 
     def plot_distribution(
         self,
-        dimensions: Tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
+        dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 100,
-        bin_ranges: Optional[
-            Union[Literal["same"], Tuple[float], List[Tuple[float]]]
-        ] = None,
-        plot_1d_kws: Optional[dict] = None,
-        plot_2d_kws: Optional[dict] = None,
+        bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
+        plot_1d_kws: dict | None = None,
+        plot_2d_kws: dict | None = None,
     ) -> plt.Figure:
         """
         Plot of coordinates projected into 2D planes.
@@ -1331,7 +1333,7 @@ class ParticleBeam(Beam):
         return fig
 
     def plot_point_cloud(
-        self, scatter_kws: Optional[dict] = None, ax: Optional[plt.Axes] = None
+        self, scatter_kws: dict | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
         """
         Plot a 3D point cloud of the spatial coordinates of the particles.
@@ -1384,7 +1386,7 @@ class ParticleBeam(Beam):
         return self.survival_probabilities.sum(dim=-1)
 
     @property
-    def x(self) -> Optional[torch.Tensor]:
+    def x(self) -> torch.Tensor | None:
         return self.particles[..., 0]
 
     @x.setter
@@ -1392,7 +1394,7 @@ class ParticleBeam(Beam):
         self.particles[..., 0] = value
 
     @property
-    def mu_x(self) -> Optional[torch.Tensor]:
+    def mu_x(self) -> torch.Tensor | None:
         """
         Mean of the :math:`x` coordinates of the particles, weighted by their
         survival probability.
@@ -1402,7 +1404,7 @@ class ParticleBeam(Beam):
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_x(self) -> Optional[torch.Tensor]:
+    def sigma_x(self) -> torch.Tensor | None:
         """
         Standard deviation of the :math:`x` coordinates of the particles, weighted
         by their survival probability.
@@ -1412,7 +1414,7 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def px(self) -> Optional[torch.Tensor]:
+    def px(self) -> torch.Tensor | None:
         return self.particles[..., 1]
 
     @px.setter
@@ -1420,7 +1422,7 @@ class ParticleBeam(Beam):
         self.particles[..., 1] = value
 
     @property
-    def mu_px(self) -> Optional[torch.Tensor]:
+    def mu_px(self) -> torch.Tensor | None:
         """
         Mean of the :math:`px` coordinates of the particles, weighted by their
         survival probability.
@@ -1430,7 +1432,7 @@ class ParticleBeam(Beam):
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_px(self) -> Optional[torch.Tensor]:
+    def sigma_px(self) -> torch.Tensor | None:
         """
         Standard deviation of the :math:`px` coordinates of the particles, weighted
         by their survival probability.
@@ -1440,7 +1442,7 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def y(self) -> Optional[torch.Tensor]:
+    def y(self) -> torch.Tensor | None:
         return self.particles[..., 2]
 
     @y.setter
@@ -1448,19 +1450,19 @@ class ParticleBeam(Beam):
         self.particles[..., 2] = value
 
     @property
-    def mu_y(self) -> Optional[float]:
+    def mu_y(self) -> float | None:
         return torch.sum(
             (self.y * self.survival_probabilities), dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_y(self) -> Optional[torch.Tensor]:
+    def sigma_y(self) -> torch.Tensor | None:
         return unbiased_weighted_std(
             self.y, weights=self.survival_probabilities, dim=-1
         )
 
     @property
-    def py(self) -> Optional[torch.Tensor]:
+    def py(self) -> torch.Tensor | None:
         return self.particles[..., 3]
 
     @py.setter
@@ -1468,19 +1470,19 @@ class ParticleBeam(Beam):
         self.particles[..., 3] = value
 
     @property
-    def mu_py(self) -> Optional[torch.Tensor]:
+    def mu_py(self) -> torch.Tensor | None:
         return torch.sum(
             (self.py * self.survival_probabilities), dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_py(self) -> Optional[torch.Tensor]:
+    def sigma_py(self) -> torch.Tensor | None:
         return unbiased_weighted_std(
             self.py, weights=self.survival_probabilities, dim=-1
         )
 
     @property
-    def tau(self) -> Optional[torch.Tensor]:
+    def tau(self) -> torch.Tensor | None:
         return self.particles[..., 4]
 
     @tau.setter
@@ -1488,19 +1490,19 @@ class ParticleBeam(Beam):
         self.particles[..., 4] = value
 
     @property
-    def mu_tau(self) -> Optional[torch.Tensor]:
+    def mu_tau(self) -> torch.Tensor | None:
         return torch.sum(
             (self.tau * self.survival_probabilities), dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_tau(self) -> Optional[torch.Tensor]:
+    def sigma_tau(self) -> torch.Tensor | None:
         return unbiased_weighted_std(
             self.tau, weights=self.survival_probabilities, dim=-1
         )
 
     @property
-    def p(self) -> Optional[torch.Tensor]:
+    def p(self) -> torch.Tensor | None:
         return self.particles[..., 5]
 
     @p.setter
@@ -1508,13 +1510,13 @@ class ParticleBeam(Beam):
         self.particles[..., 5] = value
 
     @property
-    def mu_p(self) -> Optional[torch.Tensor]:
+    def mu_p(self) -> torch.Tensor | None:
         return torch.sum(
             (self.p * self.survival_probabilities), dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_p(self) -> Optional[torch.Tensor]:
+    def sigma_p(self) -> torch.Tensor | None:
         return unbiased_weighted_std(
             self.p, weights=self.survival_probabilities, dim=-1
         )
@@ -1567,7 +1569,7 @@ class ParticleBeam(Beam):
             survival_probabilities=self.survival_probabilities.clone(),
         )
 
-    def __getitem__(self, item: Union[int, slice, torch.Tensor]) -> "ParticleBeam":
+    def __getitem__(self, item: int | slice | torch.Tensor) -> "ParticleBeam":
         vector_shape = torch.broadcast_shapes(
             self.particles.shape[:-2],
             self.energy.shape,

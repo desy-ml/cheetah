@@ -1,5 +1,3 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -35,11 +33,11 @@ class Solenoid(Element):
     def __init__(
         self,
         length: torch.Tensor = None,
-        k: Optional[torch.Tensor] = None,
-        misalignment: Optional[torch.Tensor] = None,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        k: torch.Tensor | None = None,
+        misalignment: torch.Tensor | None = None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [length, k, misalignment], device, dtype
@@ -113,7 +111,7 @@ class Solenoid(Element):
         # TODO: Implement splitting for solenoid properly, for now just return self
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
