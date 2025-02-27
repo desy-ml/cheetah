@@ -686,7 +686,7 @@ class ParticleBeam(Beam):
             species=Species("electron"),
             device=device or torch.get_default_device(),
             dtype=dtype or torch.get_default_dtype(),
-    )
+        )
 
     @classmethod
     def from_openpmd_file(
