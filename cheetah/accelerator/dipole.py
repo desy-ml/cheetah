@@ -143,8 +143,8 @@ class Dipole(Element):
         return self.tracking_method == "cheetah"
 
     @property
-    def is_active(self):
-        return torch.any(self.angle != 0)
+    def is_active(self) -> bool:
+        return torch.any(self.angle != 0).item()
 
     def track(self, incoming: Beam) -> Beam:
         """
