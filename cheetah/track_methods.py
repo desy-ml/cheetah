@@ -1,7 +1,5 @@
 """Utility functions for creating transfer maps for elements."""
 
-from typing import Optional
-
 import torch
 
 from cheetah.utils import compute_relativistic_factors
@@ -34,8 +32,8 @@ def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
     hx: torch.Tensor,
-    tilt: Optional[torch.Tensor] = None,
-    energy: Optional[torch.Tensor] = None,
+    tilt: torch.Tensor | None = None,
+    energy: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
     Create a universal transfer matrix for a beamline element.

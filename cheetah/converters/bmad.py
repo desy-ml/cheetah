@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 import torch
 
@@ -16,8 +15,8 @@ from cheetah.converters.utils.fortran_namelist import (
 def convert_element(
     name: str,
     context: dict,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
     """Convert a parsed Bmad element dict to a cheetah Element.
 
@@ -285,9 +284,9 @@ def convert_element(
 
 def convert_lattice_to_cheetah(
     bmad_lattice_file_path: Path,
-    environment_variables: Optional[dict] = None,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    environment_variables: dict | None = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
     """
     Convert a Bmad lattice file to a Cheetah `Segment`.
