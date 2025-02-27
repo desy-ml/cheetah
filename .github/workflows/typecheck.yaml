@@ -21,4 +21,4 @@ jobs:
         run: pip install mypy
 
       - name: Run mypy
-        run: mypy .
+        run: mypy cheetah/ tests/ docs/conf.py setup.py
