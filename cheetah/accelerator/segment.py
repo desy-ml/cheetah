@@ -53,9 +53,9 @@ class Segment(Element):
         """
         Extract a subcell from this segment.
 
-        If `start` is not part of the original segment, an empty subcell is returned.
-        If `end` is not part of the original segment, the subcell contains all elements
-        after `start`.
+        If either `start` or `end` is `None`, the subcell starts or ends at the same
+        element as the original segment. If `start` or `end` is not part of the segment,
+        a `ValueError` is raised.
 
         :param start: Name of the element at the start of the subcell. If `None` is
             passed, the subcell starts at the same element as the original segment.
