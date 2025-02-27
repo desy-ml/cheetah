@@ -23,7 +23,7 @@ class Cavity(Element):
 
     :param length: Length in meters.
     :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
-        voltage. Positive voltage for acceleration.
+        voltage. Positive voltage will accelerate electron-like particles.
         For particle with charge `n*e`, the energy gain on crest will be `n*voltage`.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
@@ -70,11 +70,11 @@ class Cavity(Element):
         self,
         energy: torch.Tensor,
         particle_mass_eV: torch.Tensor,
-        particle_charge: torch.Tensor,
+        num_elementary_charges: torch.Tensor,
     ) -> torch.Tensor:
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
-            self._cavity_rmatrix(energy, particle_mass_eV, particle_charge),
+            self._cavity_rmatrix(energy, particle_mass_eV, num_elementary_charges),
             base_rmatrix(
                 length=self.length,
                 k1=torch.zeros_like(self.length),
@@ -123,9 +123,7 @@ class Cavity(Element):
         else:  # ParticleBeam
             outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
         delta_energy = (
-            self.voltage
-            * torch.cos(phi)
-            * torch.abs(incoming.species.num_elementary_charges)
+            self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
@@ -258,13 +256,13 @@ class Cavity(Element):
         self,
         energy: torch.Tensor,
         particle_mass_eV: torch.Tensor,
-        particle_charge: torch.Tensor,
+        num_elementary_charges: torch.Tensor,
     ) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        delta_energy = self.voltage * torch.cos(phi) * torch.abs(particle_charge)
+        delta_energy = self.voltage * torch.cos(phi) * num_elementary_charges * -1
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / particle_mass_eV

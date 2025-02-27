@@ -17,9 +17,9 @@ class TransverseDeflectingCavity(Element):
     Transverse deflecting cavity element.
 
     :param length: Length in meters.
-    :param voltage: Voltage of the cavity in volts. NOTE: This assumes the effective
-        voltage. If the particle does not have unit charge, the voltage needs to be
-        scaled properly.
+    :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
+        voltage. The sign is default for electron-like particles.
+        For particles with a positive charge, the sign should be flipped.
     :param phase: Phase of the cavity in (radians / 2 pi).
     :param frequency: Frequency of the cavity in Hz.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
@@ -132,9 +132,7 @@ class TransverseDeflectingCavity(Element):
 
         x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
-        voltage = (
-            self.voltage * torch.abs(incoming.species.num_elementary_charges) / p0c
-        )
+        voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (
