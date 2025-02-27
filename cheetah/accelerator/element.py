@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -25,9 +25,7 @@ class Element(ABC, nn.Module):
         self.name = name if name is not None else generate_unique_name()
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element.
@@ -50,8 +48,8 @@ class Element(ABC, nn.Module):
         represented using a matrix multiplication, i.e. the augmented matrix as in an
         affine transformation.
 
-        :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
-        :param particle_mass_eV: Mass of the beam's particle species in eV.
+        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
+        :param species: Species of the particles in the beam
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
@@ -65,7 +63,7 @@ class Element(ABC, nn.Module):
         :return: Beam of particles exiting the element.
         """
         if isinstance(incoming, ParameterBeam):
-            tm = self.transfer_map(incoming.energy, incoming.species.mass_eV)
+            tm = self.transfer_map(incoming.energy, incoming.species)
             mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
             return ParameterBeam(
@@ -77,7 +75,7 @@ class Element(ABC, nn.Module):
                 dtype=mu.dtype,
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy, incoming.species.mass_eV)
+            tm = self.transfer_map(incoming.energy, incoming.species)
             new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
             return ParticleBeam(
                 new_particles,

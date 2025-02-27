@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -139,9 +139,7 @@ class Screen(Element):
             (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
         )
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 

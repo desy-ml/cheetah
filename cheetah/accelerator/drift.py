@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -36,13 +36,11 @@ class Drift(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
         self.tracking_method = tracking_method
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy, particle_mass_eV)
+        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 

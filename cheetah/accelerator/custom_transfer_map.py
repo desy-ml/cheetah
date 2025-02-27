@@ -5,7 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -63,14 +63,10 @@ class CustomTransferMap(Element):
         )
 
         device = (
-            elements[0]
-            .transfer_map(incoming_beam.energy, incoming_beam.species.mass_eV)
-            .device
+            elements[0].transfer_map(incoming_beam.energy, incoming_beam.species).device
         )
         dtype = (
-            elements[0]
-            .transfer_map(incoming_beam.energy, incoming_beam.species.mass_eV)
-            .dtype
+            elements[0].transfer_map(incoming_beam.energy, incoming_beam.species).dtype
         )
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(
@@ -78,9 +74,7 @@ class CustomTransferMap(Element):
         )
         for element in elements:
             tm = torch.matmul(
-                element.transfer_map(
-                    incoming_beam.energy, incoming_beam.species.mass_eV
-                ),
+                element.transfer_map(incoming_beam.energy, incoming_beam.species),
                 tm,
             )
             incoming_beam = element.track(incoming_beam)
@@ -93,9 +87,7 @@ class CustomTransferMap(Element):
             tm, length=combined_length, device=device, dtype=dtype, name=combined_name
         )
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return self.predefined_transfer_map
 
     @property

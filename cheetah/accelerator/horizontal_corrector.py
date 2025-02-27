@@ -5,6 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
+from cheetah.particles import Species
 from cheetah.utils import (
     UniqueNameGenerator,
     compute_relativistic_factors,
@@ -43,13 +44,11 @@ class HorizontalCorrector(Element):
         if angle is not None:
             self.angle = torch.as_tensor(angle, **factory_kwargs)
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy, particle_mass_eV)
+        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(
             self.length.shape, igamma2.shape, self.angle.shape

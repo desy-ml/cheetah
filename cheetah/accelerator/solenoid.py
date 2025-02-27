@@ -5,6 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
+from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
@@ -53,13 +54,11 @@ class Solenoid(Element):
         if misalignment is not None:
             self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
 
-    def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
-    ) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma, _, _ = compute_relativistic_factors(energy, particle_mass_eV)
+        gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
 
