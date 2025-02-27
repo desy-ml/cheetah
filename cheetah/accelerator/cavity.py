@@ -22,9 +22,9 @@ class Cavity(Element):
     Accelerating cavity in a particle accelerator.
 
     :param length: Length in meters.
-    :param voltage: Voltage of the cavity in volts. NOTE: This assumes the effective
-        voltage. If the particle does not have unit charge, the voltage needs to be
-        scaled properly.
+    :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
+        voltage. Positive voltage for acceleration.
+        For particle with charge `n*e`, the energy gain on crest will be `n*voltage`.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
@@ -67,11 +67,14 @@ class Cavity(Element):
         return not self.is_active
 
     def transfer_map(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
+        self,
+        energy: torch.Tensor,
+        particle_mass_eV: torch.Tensor,
+        particle_charge: torch.Tensor,
     ) -> torch.Tensor:
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
-            self._cavity_rmatrix(energy, particle_mass_eV),
+            self._cavity_rmatrix(energy, particle_mass_eV, particle_charge),
             base_rmatrix(
                 length=self.length,
                 k1=torch.zeros_like(self.length),
@@ -107,7 +110,11 @@ class Cavity(Element):
 
         phi = torch.deg2rad(self.phase)
 
-        tm = self.transfer_map(incoming.energy, incoming.species.mass_eV)
+        tm = self.transfer_map(
+            incoming.energy,
+            incoming.species.mass_eV,
+            incoming.species.num_elementary_charges,
+        )
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = torch.matmul(
@@ -115,7 +122,11 @@ class Cavity(Element):
             )
         else:  # ParticleBeam
             outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
-        delta_energy = self.voltage * torch.cos(phi)
+        delta_energy = (
+            self.voltage
+            * torch.cos(phi)
+            * torch.abs(incoming.species.num_elementary_charges)
+        )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
         T556 = torch.full_like(self.length, 0.0)
@@ -244,13 +255,16 @@ class Cavity(Element):
             return outgoing
 
     def _cavity_rmatrix(
-        self, energy: torch.Tensor, particle_mass_eV: torch.Tensor
+        self,
+        energy: torch.Tensor,
+        particle_mass_eV: torch.Tensor,
+        particle_charge: torch.Tensor,
     ) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        delta_energy = self.voltage * torch.cos(phi)
+        delta_energy = self.voltage * torch.cos(phi) * torch.abs(particle_charge)
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / particle_mass_eV
