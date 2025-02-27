@@ -6,6 +6,7 @@ from .accelerator import (  # noqa: F401
     CustomTransferMap,
     Dipole,
     Drift,
+    Element,
     HorizontalCorrector,
     Marker,
     Quadrupole,

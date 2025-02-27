@@ -103,8 +103,9 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k != 0)
+        return torch.any(self.k != 0).item()
 
+    @property
     def is_skippable(self) -> bool:
         return True
 
