@@ -47,7 +47,8 @@ class Segment(Element):
         self,
         start: Optional[str] = None,
         end: Optional[str] = None,
-        endpoint: bool = True,
+        include_start: bool = True,
+        include_end: bool = True,
     ) -> "Segment":
         """
         Extract a subcell from this segment.
@@ -60,19 +61,34 @@ class Segment(Element):
             passed, the subcell starts at the same element as the original segment.
         :param end: Name of the element at the end of the subcell. If `None` is
             passed, the subcell ends at the same element as the original segment.
-        :param endpoint: If True, `end` is included in the subcell, otherwise not.
+        :param include_start: If `True`, `start` is included in the subcell, otherwise
+            not.
+        :param include_end: If `True`, `end` is included in the subcell, otherwise not.
         :return: Subcell of elements from `start` to `end`.
         """
+        is_start_in_segment = start is None or start in self.__dict__
+        if not is_start_in_segment:
+            raise ValueError(f"Element {start} is not part of the segment.")
+        is_end_in_segment = end is None or end in self.__dict__
+        if not is_end_in_segment:
+            raise ValueError(f"Element {end} is not part of the segment.")
+
         subcell = []
         is_in_subcell = start is None
         for element in self.elements:
             if element.name == start:
                 is_in_subcell = True
-            if is_in_subcell:
-                if endpoint or element.name != end:
+                if include_start:
                     subcell.append(element)
+                continue
+
             if element.name == end:
+                if include_end and is_in_subcell:
+                    subcell.append(element)
                 break
+
+            if is_in_subcell:
+                subcell.append(element)
 
         return self.__class__(subcell)
 
