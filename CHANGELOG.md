@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
+- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316, #344) (@Hespe)
 - Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
 - The covariance properties of the different beam classes were renamed from names like `cor_x` and `sigma_xpx` to consistent names like `cov_xpx` (see #331) (@jank324)
 
@@ -15,11 +15,14 @@
 - Add Python 3.13 support (see #275) (@jank324)
 - Methods `to_parameter_beam` and `to_particle_beam` have been added for convenient conversion between `ParticleBeam` and `ParameterBeam` (see #331) (@jank324)
 - Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
+- Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
+- Add options to include or exclude the first and last element when retreiving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
 - Add support for particle species through a new `Species` class (see #276) (@cr-xu, @jank324)
 
 ### 🐛 Bug fixes
 
 - Fix issue where a space before a comma could cause the Elegant and Bmad converters to fail (see #327) (@jank324)
+- Fix issue of `BPM` and `Screen` not properly converting the `dtype` of their readings (see #335) (@Hespe)
 
 ### 🐆 Other
 
@@ -28,6 +31,10 @@
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
 - Added `pyproject.toml` to conform with PEP 660 as enforced as of pip 25 for editable installs (see #334) (@jank324)
 - Add TUHH logo to contributing institution logos (see #338) (@jank324)
+- The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
+- A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
+- Link to different ImpactX example in test docstring (see #341) (@ax3l)
+- Add link to the new Discord server (see #355) (@jank324)
 
 ### 🌟 First Time Contributors
 
