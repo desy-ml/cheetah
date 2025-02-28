@@ -1,14 +1,12 @@
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
-from cheetah.utils import UniqueNameGenerator
+from cheetah.particles import Species
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Undulator(Element):
@@ -37,12 +35,11 @@ class Undulator(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
         self.is_active = is_active
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV
-        igamma2 = torch.where(gamma != 0, 1 / gamma**2, torch.zeros_like(gamma))
+        _, igamma2, _ = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 

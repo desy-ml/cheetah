@@ -3,7 +3,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -60,14 +60,20 @@ class CustomTransferMap(Element):
             " incorrect tracking results."
         )
 
-        device = elements[0].transfer_map(incoming_beam.energy).device
-        dtype = elements[0].transfer_map(incoming_beam.energy).dtype
+        first_element_transfer_map = elements[0].transfer_map(
+            incoming_beam.energy, incoming_beam.species
+        )
+        device = first_element_transfer_map.device
+        dtype = first_element_transfer_map.dtype
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(
             (*incoming_beam.energy.shape, 1, 1)
         )
         for element in elements:
-            tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
+            tm = torch.matmul(
+                element.transfer_map(incoming_beam.energy, incoming_beam.species),
+                tm,
+            )
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
@@ -78,7 +84,7 @@ class CustomTransferMap(Element):
             tm, length=combined_length, device=device, dtype=dtype, name=combined_name
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return self.predefined_transfer_map
 
     @property
