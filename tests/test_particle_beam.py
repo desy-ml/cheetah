@@ -22,9 +22,9 @@ def test_create_from_parameters():
         sigma_py=torch.tensor(2e-7),
         sigma_tau=torch.tensor(0.000001),
         sigma_p=torch.tensor(0.000001),
-        cor_x=torch.tensor(0.0),
-        cor_y=torch.tensor(0.0),
-        cor_tau=torch.tensor(0.0),
+        cov_xpx=torch.tensor(0.0),
+        cov_ypy=torch.tensor(0.0),
+        cov_taup=torch.tensor(0.0),
         energy=torch.tensor(1e7),
         total_charge=torch.tensor(1e-9),
     )

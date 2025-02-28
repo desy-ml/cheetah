@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import torch
@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -41,7 +41,7 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: tuple[int, int] = (1024, 1024),
+        resolution: Union[tuple[int, int], list[int]] = (1024, 1024),
         pixel_size: Optional[torch.Tensor] = None,
         binning: int = 1,
         misalignment: Optional[torch.Tensor] = None,
@@ -59,6 +59,9 @@ class Screen(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
+        assert (
+            isinstance(resolution, (tuple, list)) and len(resolution) == 2
+        ), "Invalid resolution. Must be a tuple of 2 integers."
         assert method in [
             "histogram",
             "kde",
@@ -74,6 +77,11 @@ class Screen(Element):
         self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
         self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
 
+        self.register_buffer(
+            "cached_reading",
+            torch.full((resolution[1], resolution[0]), torch.nan, **factory_kwargs),
+        )
+
         if pixel_size is not None:
             self.pixel_size = torch.as_tensor(pixel_size, **factory_kwargs)
         if misalignment is not None:
@@ -82,7 +90,6 @@ class Screen(Element):
             self.kde_bandwidth = torch.as_tensor(kde_bandwidth, **factory_kwargs)
 
         self.set_read_beam(None)
-        self.cached_reading = None
 
     @property
     def is_skippable(self) -> bool:
@@ -132,7 +139,7 @@ class Screen(Element):
             (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 
@@ -190,8 +197,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
-        image = None
-        if self.cached_reading is not None:
+        if not torch.all(torch.isnan(self.cached_reading)):
             return self.cached_reading
 
         read_beam = self.get_read_beam()
@@ -296,7 +302,12 @@ class Screen(Element):
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
-        self.cached_reading = None
+        self.cached_reading = torch.full(
+            (self.resolution[0], self.resolution[1]),
+            torch.nan,
+            device=self.cached_reading.device,
+            dtype=self.cached_reading.dtype,
+        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
