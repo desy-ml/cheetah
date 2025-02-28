@@ -191,6 +191,7 @@ def convert_element(
                     **factory_kwargs,
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
+                cavity_type=bmad_parsed["cavity_type"],
                 name=name,
             )
         elif bmad_parsed["element_type"] == "rcollimator":

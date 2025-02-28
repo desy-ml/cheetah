@@ -19,6 +19,7 @@
 - Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
 - Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
 - Add support for particle species through a new `Species` class (see #276) (@cr-xu, @jank324, @Hespe)
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
 
 ### 🐛 Bug fixes
 
@@ -40,6 +41,8 @@
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 
 ### 🌟 First Time Contributors
+
+- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 

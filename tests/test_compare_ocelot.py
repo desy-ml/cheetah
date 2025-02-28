@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import ocelot
+import pytest
 import torch
 
 import cheetah
@@ -637,7 +638,8 @@ def test_asymmetric_bend():
     )
 
 
-def test_cavity():
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+def test_cavity(cavity_type):
     """
     Compare tracking through a cavity that is on.
 
@@ -680,7 +682,11 @@ def test_cavity():
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
-    cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
+    cell = (
+        [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
+        if cavity_type == "standing_wave"
+        else [ocelot.TWCavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=0.0)]
+    )
     lattice = ocelot.MagneticLattice(cell)
     navigator = ocelot.Navigator(lattice=lattice)
 
@@ -696,6 +702,7 @@ def test_cavity():
         voltage=torch.tensor(0.01815975e9),
         frequency=torch.tensor(1.3e9),
         phase=torch.tensor(0.0),
+        cavity_type=cavity_type,
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_cavity.track(incoming_beam)
@@ -718,7 +725,8 @@ def test_cavity():
     )
 
 
-def test_cavity_non_zero_phase():
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+def test_cavity_non_zero_phase(cavity_type):
     """Compare tracking through a cavity with a phase offset."""
     # Ocelot
     tws = ocelot.Twiss()
@@ -734,7 +742,11 @@ def test_cavity_non_zero_phase():
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
-    cell = [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=30.0)]
+    cell = (
+        [ocelot.Cavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=30.0)]
+        if cavity_type == "standing_wave"
+        else [ocelot.TWCavity(l=1.0377, v=0.01815975, freq=1.3e9, phi=30.0)]
+    )
     lattice = ocelot.MagneticLattice(cell)
     navigator = ocelot.Navigator(lattice=lattice)
 
@@ -750,6 +762,7 @@ def test_cavity_non_zero_phase():
         voltage=torch.tensor(0.01815975e9),
         frequency=torch.tensor(1.3e9),
         phase=torch.tensor(30.0),
+        cavity_type=cavity_type,
         dtype=torch.float64,
     )
     outgoing_beam = cheetah_cavity.track(incoming_beam)
