@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 
 import torch
-from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+from cheetah.particles.species import Species
 
 
 class Beam(ABC, nn.Module):
@@ -53,6 +52,7 @@ class Beam(ABC, nn.Module):
         cov_taup: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Beam":
@@ -80,6 +80,7 @@ class Beam(ABC, nn.Module):
         :param cov_taup: Covariance between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -101,6 +102,7 @@ class Beam(ABC, nn.Module):
         cov_taup: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Beam":
@@ -120,6 +122,7 @@ class Beam(ABC, nn.Module):
         :param cov_taup: Covariance between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -158,6 +161,7 @@ class Beam(ABC, nn.Module):
         sigma_p: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        species: Optional[Species] = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Beam":
@@ -182,6 +186,7 @@ class Beam(ABC, nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
         :param device: Device to create the transformed beam on. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
@@ -231,6 +236,7 @@ class Beam(ABC, nn.Module):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
+        species = species if species is not None else self.species
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -247,6 +253,7 @@ class Beam(ABC, nn.Module):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -314,7 +321,7 @@ class Beam(ABC, nn.Module):
     @property
     def relativistic_gamma(self) -> torch.Tensor:
         """Reference relativistic gamma of the beam."""
-        return self.energy / electron_mass_eV
+        return self.energy / self.species.mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
@@ -328,7 +335,7 @@ class Beam(ABC, nn.Module):
     @property
     def p0c(self) -> torch.Tensor:
         """Get the reference momentum * speed of light in eV."""
-        return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
+        return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property
     @abstractmethod
