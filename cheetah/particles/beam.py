@@ -161,7 +161,7 @@ class Beam(ABC, nn.Module):
         sigma_p: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
-        species: Optional[Species] = None,
+        species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Beam":
