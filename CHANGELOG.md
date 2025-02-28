@@ -4,20 +4,41 @@
 
 ### 🚨 Breaking Changes
 
-- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316) (@Hespe)
+- The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316, #344) (@Hespe)
+- Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
+- The covariance properties of the different beam classes were renamed from names like `cor_x` and `sigma_xpx` to consistent names like `cov_xpx` (see #331) (@jank324)
+- The signature of the `transfer_map` method of all element subclasses was extended by a non-optional `species` argument (see #276) (@cr-xu, @jank324, @Hespe)
 
 ### 🚀 Features
 
-- `ParticleBeam` now supports importing from and exporting to [openPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) HDF5 files and `ParticleGroup` objects. This allows for easy conversion to and from other file formats supported by openPMD-beamphysics. (see #305) (@cr-xu)
-- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument. (see #286) (@zihan-zh, @jank324)
+- `ParticleBeam` now supports importing from and exporting to [openPMD-beamphysics](https://github.com/ChristopherMayes/openPMD-beamphysics) HDF5 files and `ParticleGroup` objects. This allows for easy conversion to and from other file formats supported by openPMD-beamphysics. (see #305, #320) (@cr-xu, @Hespe)
+- Add `marker`, `quadrupole` and `csbend` element names to the Elegant converter (see #327) (@jank324)
+- Add Python 3.13 support (see #275) (@jank324)
+- Methods `to_parameter_beam` and `to_particle_beam` have been added for convenient conversion between `ParticleBeam` and `ParameterBeam` (see #331) (@jank324)
+- Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
+- Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
+- Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
+- Add support for particle species through a new `Species` class (see #276) (@cr-xu, @jank324, @Hespe)
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
 
 ### 🐛 Bug fixes
 
+- Fix issue where a space before a comma could cause the Elegant and Bmad converters to fail (see #327) (@jank324)
+- Fix issue of `BPM` and `Screen` not properly converting the `dtype` of their readings (see #335) (@Hespe)
+- Fix `is_active` and `is_skippable` of some elements not being boolean properties (see #357) (@jank324)
+
 ### 🐆 Other
 
-- Test seeds for CI are fixed to prevent random test failures (see #309) (@Hespe)
+- Test tolerances were adjusted reduce the chance of random test failures (see #309, #324) (@Hespe, @jank324)
 - The copyright years were updated to 2025 (see #318) (@jank324)
 - The broken institution logo rendering in the documentation has been fixed (see #318) (@jank324)
+- Added `pyproject.toml` to conform with PEP 660 as enforced as of pip 25 for editable installs (see #334) (@jank324)
+- Add TUHH logo to contributing institution logos (see #338) (@jank324)
+- The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
+- A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
+- Link to different ImpactX example in test docstring (see #341) (@ax3l)
+- Add link to the new Discord server (see #355) (@jank324)
+- Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 
 ### 🌟 First Time Contributors
 

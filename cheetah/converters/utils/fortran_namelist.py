@@ -239,7 +239,7 @@ def define_element(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\,(.*))?"
+    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
