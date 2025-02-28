@@ -5,6 +5,7 @@ import torch
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
+from cheetah.particles.species import Species
 from cheetah.utils import verify_device_and_dtype
 
 
@@ -16,8 +17,10 @@ class ParameterBeam(Beam):
     :param cov: Covariance matrix of the beam with shape `(..., 7, 7)`.
     :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
+    :param species: Particle species of the beam. Defaults to electron.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
+    :param dtype: Data type of the beam.
     """
 
     def __init__(
@@ -26,6 +29,7 @@ class ParameterBeam(Beam):
         cov: torch.Tensor,
         energy: torch.Tensor,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> None:
@@ -46,6 +50,8 @@ class ParameterBeam(Beam):
         if total_charge is not None:
             self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
 
+        self.species = species if species is not None else Species("electron")
+
     @classmethod
     def from_parameters(
         cls,
@@ -53,17 +59,20 @@ class ParameterBeam(Beam):
         mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_x: Optional[torch.Tensor] = None,
-        cor_y: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_xpx: Optional[torch.Tensor] = None,
+        cov_ypy: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParameterBeam":
@@ -74,15 +83,17 @@ class ParameterBeam(Beam):
                 mu_px,
                 mu_y,
                 mu_py,
+                mu_tau,
+                mu_p,
                 sigma_x,
                 sigma_px,
                 sigma_y,
                 sigma_py,
                 sigma_tau,
                 sigma_p,
-                cor_x,
-                cor_y,
-                cor_tau,
+                cov_xpx,
+                cov_ypy,
+                cov_taup,
                 energy,
                 total_charge,
             ],
@@ -96,6 +107,8 @@ class ParameterBeam(Beam):
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
         mu_y = mu_y if mu_y is not None else torch.tensor(0.0, **factory_kwargs)
         mu_py = mu_py if mu_py is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_tau = mu_tau if mu_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        mu_p = mu_p if mu_p is not None else torch.tensor(0.0, **factory_kwargs)
         sigma_x = (
             sigma_x if sigma_x is not None else torch.tensor(175e-9, **factory_kwargs)
         )
@@ -114,10 +127,14 @@ class ParameterBeam(Beam):
         sigma_p = (
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_x = cor_x if cor_x is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_y = cor_y if cor_y is not None else torch.tensor(0.0, **factory_kwargs)
-        cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_xpx = (
+            cov_xpx if cov_xpx is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_ypy = (
+            cov_ypy if cov_ypy is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_taup = (
+            cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
@@ -126,53 +143,47 @@ class ParameterBeam(Beam):
             else torch.tensor(0.0, **factory_kwargs)
         )
 
-        mu_x, mu_px, mu_y, mu_py = torch.broadcast_tensors(mu_x, mu_px, mu_y, mu_py)
+        mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
+            mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p
+        )
         mu = torch.stack(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                torch.zeros_like(mu_x),
-                torch.zeros_like(mu_x),
-                torch.ones_like(mu_x),
-            ],
+            [mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p, torch.ones_like(mu_x)],
             dim=-1,
         )
 
         (
             sigma_x,
-            cor_x,
+            cov_xpx,
             sigma_px,
             sigma_y,
-            cor_y,
+            cov_ypy,
             sigma_py,
             sigma_tau,
-            cor_tau,
+            cov_taup,
             sigma_p,
         ) = torch.broadcast_tensors(
             sigma_x,
-            cor_x,
+            cov_xpx,
             sigma_px,
             sigma_y,
-            cor_y,
+            cov_ypy,
             sigma_py,
             sigma_tau,
-            cor_tau,
+            cov_taup,
             sigma_p,
         )
         cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
         cov[..., 0, 0] = sigma_x**2
-        cov[..., 0, 1] = cor_x
-        cov[..., 1, 0] = cor_x
+        cov[..., 0, 1] = cov_xpx
+        cov[..., 1, 0] = cov_xpx
         cov[..., 1, 1] = sigma_px**2
         cov[..., 2, 2] = sigma_y**2
-        cov[..., 2, 3] = cor_y
-        cov[..., 3, 2] = cor_y
+        cov[..., 2, 3] = cov_ypy
+        cov[..., 3, 2] = cov_ypy
         cov[..., 3, 3] = sigma_py**2
         cov[..., 4, 4] = sigma_tau**2
-        cov[..., 4, 5] = cor_tau
-        cov[..., 5, 4] = cor_tau
+        cov[..., 4, 5] = cov_taup
+        cov[..., 5, 4] = cov_taup
         cov[..., 5, 5] = sigma_p**2
 
         return cls(
@@ -180,6 +191,7 @@ class ParameterBeam(Beam):
             cov=cov,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -195,9 +207,10 @@ class ParameterBeam(Beam):
         emittance_y: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParameterBeam":
@@ -212,7 +225,7 @@ class ParameterBeam(Beam):
                 emittance_y,
                 sigma_tau,
                 sigma_p,
-                cor_tau,
+                cov_taup,
                 energy,
                 total_charge,
             ],
@@ -246,8 +259,8 @@ class ParameterBeam(Beam):
         sigma_p = (
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
-        cor_tau = (
-            cor_tau if cor_tau is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_taup = (
+            cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
@@ -267,8 +280,8 @@ class ParameterBeam(Beam):
         sigma_px = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
         sigma_y = torch.sqrt(emittance_y * beta_y)
         sigma_py = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
-        cor_x = -emittance_x * alpha_x
-        cor_y = -emittance_y * alpha_y
+        cov_xpx = -emittance_x * alpha_x
+        cov_ypy = -emittance_y * alpha_y
         return cls.from_parameters(
             sigma_x=sigma_x,
             sigma_px=sigma_px,
@@ -277,56 +290,70 @@ class ParameterBeam(Beam):
             sigma_tau=sigma_tau,
             sigma_p=sigma_p,
             energy=energy,
-            cor_tau=cor_tau,
-            cor_x=cor_x,
-            cor_y=cor_y,
+            cov_taup=cov_taup,
+            cov_xpx=cov_xpx,
+            cov_ypy=cov_ypy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
 
     @classmethod
-    def from_ocelot(cls, parray, device=None, dtype=torch.float32) -> "ParameterBeam":
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        mu = torch.ones(7)
-        mu[:6] = torch.tensor(parray.rparticles.mean(axis=1), dtype=torch.float32)
-
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(parray.rparticles), dtype=torch.float32)
-
-        energy = torch.tensor(1e9 * parray.E, dtype=torch.float32)
-        total_charge = torch.tensor(np.sum(parray.q_array), dtype=torch.float32)
-
-        return cls(
-            mu=mu.unsqueeze(0),
-            cov=cov.unsqueeze(0),
-            energy=energy.unsqueeze(0),
-            total_charge=total_charge.unsqueeze(0),
-            device=device,
-            dtype=dtype,
+        mu = torch.ones(7, device=device, dtype=dtype)
+        mu[:6] = torch.as_tensor(
+            parray.rparticles.mean(axis=1), device=device, dtype=dtype
         )
 
-    @classmethod
-    def from_astra(cls, path: str, device=None, dtype=torch.float32) -> "ParameterBeam":
-        """Load an Astra particle distribution as a Cheetah Beam."""
-        from cheetah.converters.astra import from_astrabeam
+        cov = torch.zeros(7, 7, device=device, dtype=dtype)
+        cov[:6, :6] = torch.as_tensor(
+            np.cov(parray.rparticles), device=device, dtype=dtype
+        )
 
-        particles, energy, particle_charges = from_astrabeam(path)
-        mu = torch.ones(7)
-        mu[:6] = torch.tensor(particles.mean(axis=0))
-
-        cov = torch.zeros(7, 7)
-        cov[:6, :6] = torch.tensor(np.cov(particles.transpose()), dtype=torch.float32)
-
-        total_charge = torch.tensor(np.sum(particle_charges), dtype=torch.float32)
+        energy = 1e9 * torch.as_tensor(parray.E)
+        total_charge = torch.as_tensor(parray.q_array).sum()
 
         return cls(
             mu=mu,
             cov=cov,
-            energy=torch.tensor(energy, dtype=torch.float32),
+            energy=energy,
             total_charge=total_charge,
-            device=device,
-            dtype=dtype,
+            species=Species("electron"),
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
+        )
+
+    @classmethod
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParameterBeam":
+        """Load an Astra particle distribution as a Cheetah Beam."""
+        from cheetah.converters.astra import from_astrabeam
+
+        particles, energy, particle_charges = from_astrabeam(path)
+
+        mu = torch.ones(7, device=device, dtype=dtype)
+        mu[:6] = torch.as_tensor(particles.mean(axis=0), device=device, dtype=dtype)
+
+        cov = torch.zeros(7, 7, device=device, dtype=dtype)
+        cov[:6, :6] = torch.as_tensor(
+            np.cov(particles.transpose()), device=device, dtype=dtype
+        )
+
+        total_charge = torch.as_tensor(particle_charges).sum()
+
+        return cls(
+            mu=mu,
+            cov=cov,
+            energy=energy,
+            total_charge=total_charge,
+            species=Species("electron"),
+            device=device or torch.get_default_device(),
+            dtype=dtype or torch.get_default_dtype(),
         )
 
     def transformed_to(
@@ -335,6 +362,8 @@ class ParameterBeam(Beam):
         mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
@@ -343,6 +372,7 @@ class ParameterBeam(Beam):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "ParameterBeam":
@@ -353,6 +383,8 @@ class ParameterBeam(Beam):
         :param mu_px: Center of the particle distribution on px, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on yp, dimensionless.
+        :param mu_tau: Center of the particle distribution on tau in meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
@@ -364,6 +396,7 @@ class ParameterBeam(Beam):
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
         :param device: Device to create the transformed beam on. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
@@ -375,6 +408,8 @@ class ParameterBeam(Beam):
         mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
         mu_py = mu_py if mu_py is not None else self.mu_py
+        mu_tau = mu_tau if mu_tau is not None else self.mu_tau
+        mu_p = mu_p if mu_p is not None else self.mu_p
         sigma_x = sigma_x if sigma_x is not None else self.sigma_x
         sigma_px = sigma_px if sigma_px is not None else self.sigma_px
         sigma_y = sigma_y if sigma_y is not None else self.sigma_y
@@ -383,12 +418,15 @@ class ParameterBeam(Beam):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
+        species = species if species is not None else self.species
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
             mu_px=mu_px,
             mu_y=mu_y,
             mu_py=mu_py,
+            mu_tau=mu_tau,
+            mu_p=mu_p,
             sigma_x=sigma_x,
             sigma_px=sigma_px,
             sigma_y=sigma_y,
@@ -397,11 +435,45 @@ class ParameterBeam(Beam):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
 
-    def linspaced(self, num_particles: int) -> ParticleBeam:
+    def as_particle_beam(self, num_particles: int) -> "ParticleBeam":  # noqa: F821
+        """
+        Convert this beam to a `ParticleBeam` beam with `num_particles` particles.
+
+        :param num_particles: Number of macro particles to create.
+        :return: `ParticleBeam` with `num_particles` particles and the same parameters
+            as this beam.
+        """
+        from cheetah.particles.particle_beam import ParticleBeam  # No circular import
+
+        return ParticleBeam.from_parameters(
+            num_particles=num_particles,
+            mu_x=self.mu_x,
+            mu_y=self.mu_y,
+            mu_px=self.mu_px,
+            mu_py=self.mu_py,
+            mu_tau=self.mu_tau,
+            mu_p=self.mu_p,
+            sigma_x=self.sigma_x,
+            sigma_y=self.sigma_y,
+            sigma_px=self.sigma_px,
+            sigma_py=self.sigma_py,
+            sigma_tau=self.sigma_tau,
+            sigma_p=self.sigma_p,
+            cov_xpx=self.cov_xpx,
+            cov_ypy=self.cov_ypy,
+            cov_taup=self.cov_taup,
+            energy=self.energy,
+            total_charge=self.total_charge,
+            device=self._mu.device,
+            dtype=self._mu.dtype,
+        )
+
+    def linspaced(self, num_particles: int) -> "ParticleBeam":  # noqa: F821
         """
         Create a `ParticleBeam` beam with the same parameters as this beam and
         `num_particles` particles evenly distributed in the beam.
@@ -409,12 +481,16 @@ class ParameterBeam(Beam):
         :param num_particles: Number of particles to create.
         :return: `ParticleBeam` with `num_particles` particles.
         """
+        from cheetah.particles.particle_beam import ParticleBeam  # No circular import
+
         return ParticleBeam.make_linspaced(
             num_particles=num_particles,
             mu_x=self.mu_x,
             mu_y=self.mu_y,
             mu_px=self.mu_px,
             mu_py=self.mu_py,
+            mu_tau=self.mu_tau,
+            mu_p=self.mu_p,
             sigma_x=self.sigma_x,
             sigma_y=self.sigma_y,
             sigma_px=self.sigma_px,
@@ -423,6 +499,7 @@ class ParameterBeam(Beam):
             sigma_p=self.sigma_p,
             energy=self.energy,
             total_charge=self.total_charge,
+            species=self.species,
             device=self._mu.device,
             dtype=self._mu.dtype,
         )
@@ -476,12 +553,16 @@ class ParameterBeam(Beam):
         return torch.sqrt(torch.clamp_min(self._cov[..., 5, 5], 1e-20))
 
     @property
-    def sigma_xpx(self) -> torch.Tensor:
+    def cov_xpx(self) -> torch.Tensor:
         return self._cov[..., 0, 1]
 
     @property
-    def sigma_ypy(self) -> torch.Tensor:
+    def cov_ypy(self) -> torch.Tensor:
         return self._cov[..., 2, 3]
+
+    @property
+    def cov_taup(self) -> torch.Tensor:
+        return self._cov[..., 4, 5]
 
     def clone(self) -> "ParameterBeam":
         return ParameterBeam(
@@ -493,11 +574,9 @@ class ParameterBeam(Beam):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(mu_x={repr(self.mu_x)},"
-            f" mu_px={repr(self.mu_px)}, mu_y={repr(self.mu_y)},"
-            f" mu_py={repr(self.mu_py)}, sigma_x={repr(self.sigma_x)},"
-            f" sigma_px={repr(self.sigma_px)}, sigma_y={repr(self.sigma_y)},"
-            f" sigma_py={repr(self.sigma_py)}, sigma_tau={repr(self.sigma_tau)},"
-            f" sigma_p={repr(self.sigma_p)}, energy={repr(self.energy)}),"
-            f" total_charge={repr(self.total_charge)})"
+            f"{self.__class__.__name__}(mu={repr(self._mu)}, "
+            + f"cov={repr(self._cov)}, "
+            + f"energy={repr(self.energy)}, "
+            + f"total_charge={repr(self.total_charge)}, "
+            + f"species={repr(self.species)})"
         )

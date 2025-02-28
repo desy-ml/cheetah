@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import torch
-from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+from cheetah.particles.species import Species
 
 
 class Beam(ABC, nn.Module):
@@ -41,17 +40,20 @@ class Beam(ABC, nn.Module):
         mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
         sigma_py: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_x: Optional[torch.Tensor] = None,
-        cor_y: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_xpx: Optional[torch.Tensor] = None,
+        cov_ypy: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "Beam":
@@ -62,6 +64,8 @@ class Beam(ABC, nn.Module):
         :param mu_px: Center of the particle distribution on px, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on yp, dimensionless.
+        :param mu_tau: Center of the particle distribution on tau in meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
@@ -72,11 +76,12 @@ class Beam(ABC, nn.Module):
             in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
-        :param cor_x: Correlation between x and px.
-        :param cor_y: Correlation between y and yp.
-        :param cor_tau: Correlation between tau and p.
+        :param cov_xpx: Covariance between x and px.
+        :param cov_ypy: Covariance between y and yp.
+        :param cov_taup: Covariance between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -95,9 +100,10 @@ class Beam(ABC, nn.Module):
         emittance_y: Optional[torch.Tensor] = None,
         sigma_tau: Optional[torch.Tensor] = None,
         sigma_p: Optional[torch.Tensor] = None,
-        cor_tau: Optional[torch.Tensor] = None,
+        cov_taup: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "Beam":
@@ -114,9 +120,10 @@ class Beam(ABC, nn.Module):
             in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
-        :param cor_tau: Correlation between tau and p.
+        :param cov_taup: Covariance between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -125,15 +132,17 @@ class Beam(ABC, nn.Module):
 
     @classmethod
     @abstractmethod
-    def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
-        """
-        Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
-        """
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "Beam":
+        """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 
@@ -143,6 +152,8 @@ class Beam(ABC, nn.Module):
         mu_px: Optional[torch.Tensor] = None,
         mu_y: Optional[torch.Tensor] = None,
         mu_py: Optional[torch.Tensor] = None,
+        mu_tau: Optional[torch.Tensor] = None,
+        mu_p: Optional[torch.Tensor] = None,
         sigma_x: Optional[torch.Tensor] = None,
         sigma_px: Optional[torch.Tensor] = None,
         sigma_y: Optional[torch.Tensor] = None,
@@ -151,6 +162,7 @@ class Beam(ABC, nn.Module):
         sigma_p: Optional[torch.Tensor] = None,
         energy: Optional[torch.Tensor] = None,
         total_charge: Optional[torch.Tensor] = None,
+        species: Optional[Species] = None,
         device=None,
         dtype=None,
     ) -> "Beam":
@@ -161,6 +173,8 @@ class Beam(ABC, nn.Module):
         :param mu_px: Center of the particle distribution on px, dimensionless.
         :param mu_y: Center of the particle distribution on y in meters.
         :param mu_py: Center of the particle distribution on yp, dimensionless.
+        :param mu_tau: Center of the particle distribution on tau in meters.
+        :param mu_p: Center of the particle distribution on p, dimensionless.
         :param sigma_x: Sigma of the particle distribution in x direction in meters.
         :param sigma_px: Sigma of the particle distribution in px direction,
             dimensionless.
@@ -173,6 +187,7 @@ class Beam(ABC, nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
         :param device: Device to create the transformed beam on. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
@@ -190,6 +205,8 @@ class Beam(ABC, nn.Module):
                 mu_px,
                 mu_y,
                 mu_py,
+                mu_tau,
+                mu_p,
                 sigma_x,
                 sigma_px,
                 sigma_y,
@@ -210,6 +227,8 @@ class Beam(ABC, nn.Module):
         mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
         mu_py = mu_py if mu_py is not None else self.mu_py
+        mu_tau = mu_tau if mu_tau is not None else self.mu_tau
+        mu_p = mu_p if mu_p is not None else self.mu_p
         sigma_x = sigma_x if sigma_x is not None else self.sigma_x
         sigma_px = sigma_px if sigma_px is not None else self.sigma_px
         sigma_y = sigma_y if sigma_y is not None else self.sigma_y
@@ -218,12 +237,15 @@ class Beam(ABC, nn.Module):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
+        species = species if species is not None else self.species
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
             mu_px=mu_px,
             mu_y=mu_y,
             mu_py=mu_py,
+            mu_tau=mu_tau,
+            mu_p=mu_p,
             sigma_x=sigma_x,
             sigma_px=sigma_px,
             sigma_y=sigma_y,
@@ -232,6 +254,7 @@ class Beam(ABC, nn.Module):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -299,7 +322,7 @@ class Beam(ABC, nn.Module):
     @property
     def relativistic_gamma(self) -> torch.Tensor:
         """Reference relativistic gamma of the beam."""
-        return self.energy / electron_mass_eV
+        return self.energy / self.species.mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
@@ -313,17 +336,22 @@ class Beam(ABC, nn.Module):
     @property
     def p0c(self) -> torch.Tensor:
         """Get the reference momentum * speed of light in eV."""
-        return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
+        return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property
     @abstractmethod
-    def sigma_xpx(self) -> torch.Tensor:
+    def cov_xpx(self) -> torch.Tensor:
         # The covariance of (x,px) ~ $\sigma_{xpx}$
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def sigma_ypy(self) -> torch.Tensor:
+    def cov_ypy(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_taup(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
@@ -331,7 +359,7 @@ class Beam(ABC, nn.Module):
         """Emittance of the beam in x direction in m."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_x**2 * self.sigma_px**2 - self.sigma_xpx**2,
+                self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,
                 torch.finfo(self.sigma_x.dtype).tiny,
             )
         )
@@ -349,14 +377,14 @@ class Beam(ABC, nn.Module):
     @property
     def alpha_x(self) -> torch.Tensor:
         """Alpha function in x direction, dimensionless."""
-        return -self.sigma_xpx / self.emittance_x
+        return -self.cov_xpx / self.emittance_x
 
     @property
     def emittance_y(self) -> torch.Tensor:
         """Emittance of the beam in y direction in m."""
         return torch.sqrt(
             torch.clamp_min(
-                self.sigma_y**2 * self.sigma_py**2 - self.sigma_ypy**2,
+                self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2,
                 torch.finfo(self.sigma_y.dtype).tiny,
             )
         )
@@ -374,7 +402,7 @@ class Beam(ABC, nn.Module):
     @property
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
-        return -self.sigma_ypy / self.emittance_y
+        return -self.cov_ypy / self.emittance_y
 
     @abstractmethod
     def clone(self) -> "Beam":
@@ -382,11 +410,4 @@ class Beam(ABC, nn.Module):
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(mu_x={self.mu_x}, mu_px={self.mu_px},"
-            f" mu_y={self.mu_y}, mu_py={self.mu_py}, sigma_x={self.sigma_x},"
-            f" sigma_px={self.sigma_px}, sigma_y={self.sigma_y},"
-            f" sigma_py={self.sigma_py}, sigma_tau={self.sigma_tau},"
-            f" sigma_p={self.sigma_p}, energy={self.energy}),"
-            f" total_charge={self.total_charge})"
-        )
+        raise NotImplementedError

@@ -12,6 +12,8 @@ GitHub repository: https://github.com/desy-ml/cheetah
 
 Paper: https://doi.org/10.1103/PhysRevAccelBeams.27.054601
 
+Discord server: https://discord.gg/hrwYPC3a
+
 
 Installation
 ------------
@@ -166,6 +168,10 @@ The development of Cheetah is a joint effort by members of the following institu
 .. image:: https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png
     :alt: Cockcroft Institute
     :width: 7em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png
+    :alt: Hamburg University of Technology
+    :width: 5em
 
 Funding
 ~~~~~~~

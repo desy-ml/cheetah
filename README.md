@@ -14,7 +14,7 @@ Cheetah is a high-speed differentiable beam dynamics code specifically design to
 
 Its speed helps generate data fast, for example for extremely data-hungry reinforcement learning algorithms, while its differentiability can be used for a variety of applications, including accelerator tuning, system identification and physics-informed prior means for Bayesian optimisation. Its native integration with machine learning toolchains around PyTorch also makes Cheetah an ideal candidate for coupling of physics-based and neural network beam dynamics models that remain fast and differentiable.
 
-To learn more about what Cheetah can do, we recommend reading our [PRAB paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601). To learn how to use Cheetah, we refer to the example notebooks in the [Cheetah documentation](https://cheetah-accelerator.readthedocs.io/).
+To learn more about what Cheetah can do, we recommend reading our [PRAB paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601). To learn how to use Cheetah, we refer to the example notebooks in the [Cheetah documentation](https://cheetah-accelerator.readthedocs.io/). We also have a public [Discord server](https://discord.gg/hrwYPC3a) where you can ask questions and get help.
 
 ## Installation
 
@@ -89,7 +89,7 @@ segment.plot_overview(incoming=beam)
 
 ![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/misalignment.png)
 
-where the optional keyword argument `beam` is the incoming beam represented by the reference particles. Cheetah will use a default incoming beam, if no beam is passed.
+where the keyword argument `beam` is the incoming beam represented by the reference particles.
 
 ## Cite Cheetah
 
@@ -164,7 +164,8 @@ The development of Cheetah is a joint effort by members of the following institu
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_chicago.png" alt="University of Chicago" style="width: 11em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/slac.png" alt="SLAC" style="width: 9em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="2em"/>&nbsp;&nbsp;
-<img src="https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png" alt="Hamburg University of Technology" style="width: 5em;" vspace="2em"/>
 
 ### Funding
 

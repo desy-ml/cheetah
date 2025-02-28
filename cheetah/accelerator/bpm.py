@@ -5,7 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -20,17 +20,25 @@ class BPM(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, is_active: bool = False, name: Optional[str] = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        is_active: bool = False,
+        name: Optional[str] = None,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__(name=name, device=device, dtype=dtype)
 
         self.is_active = is_active
-        self.reading = None
+        self.register_buffer(
+            "reading", torch.tensor(torch.nan, device=device, dtype=dtype)
+        )
 
     @property
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )
