@@ -3,16 +3,13 @@ from typing import Literal, Optional
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Dipole(Element):
@@ -189,10 +186,9 @@ class Dipole(Element):
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
+        mc2 = incoming.species.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
@@ -207,9 +203,7 @@ class Dipole(Element):
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
-        x, px, y, py, z, pz = self._bmadx_body(
-            x, px, y, py, z, pz, p0c, electron_mass_eV
-        )
+        x, px, y, py, z, pz = self._bmadx_body(x, px, y, py, z, pz, p0c, mc2)
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
@@ -225,9 +219,7 @@ class Dipole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
-        )
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         # Broadcast to align their shapes so that they can be stacked
         x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)
@@ -241,6 +233,7 @@ class Dipole(Element):
             survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
+            species=incoming.species,
         )
         return outgoing_beam
 
@@ -374,7 +367,7 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
@@ -386,6 +379,7 @@ class Dipole(Element):
                 length=self.length,
                 k1=self.k1,
                 hx=self.hx,
+                species=species,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
             )  # Tilt is applied after adding edges

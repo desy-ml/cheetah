@@ -9,7 +9,7 @@ def test_assert_ei_greater_zero():
     Reproduces
 
     ```
-       1127 Ef = (energy + delta_energy) / electron_mass_eV
+       1127 Ef = (energy + delta_energy) / particle_mass_eV
        1128 Ep = (Ef - Ei) / self.length  # Derivative of the energy
     -> 1129 assert Ei > 0, "Initial energy must be larger than 0"
        1131 alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
@@ -72,7 +72,7 @@ def test_vectorized_cavity_zero_voltage(voltage):
 
     outgoing = cavity.track(incoming)
 
-    assert not torch.isnan(cavity.transfer_map(incoming.energy)).any()
+    assert not torch.isnan(cavity.transfer_map(incoming.energy, incoming.species)).any()
 
     assert not torch.isnan(outgoing.sigma_x).any()
     assert not torch.isnan(outgoing.sigma_y).any()
