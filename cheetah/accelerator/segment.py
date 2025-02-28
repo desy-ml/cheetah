@@ -13,7 +13,7 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -395,11 +395,11 @@ class Segment(Element):
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
-                tm = torch.matmul(element.transfer_map(energy), tm)
+                tm = torch.matmul(element.transfer_map(energy, species), tm)
             return tm
         else:
             return None

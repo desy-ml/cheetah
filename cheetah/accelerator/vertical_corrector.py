@@ -3,9 +3,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
+from cheetah.particles import Species
 from cheetah.utils import (
     UniqueNameGenerator,
     compute_relativistic_factors,
@@ -13,8 +13,6 @@ from cheetah.utils import (
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class VerticalCorrector(Element):
@@ -46,11 +44,11 @@ class VerticalCorrector(Element):
         if angle is not None:
             self.angle = torch.as_tensor(angle, **factory_kwargs)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy)
+        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(
             self.length.shape, igamma2.shape, self.angle.shape
