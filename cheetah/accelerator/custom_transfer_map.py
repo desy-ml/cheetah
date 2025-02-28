@@ -62,12 +62,11 @@ class CustomTransferMap(Element):
             " incorrect tracking results."
         )
 
-        device = (
-            elements[0].transfer_map(incoming_beam.energy, incoming_beam.species).device
+        first_element_transfer_map = elements[0].transfer_map(
+            incoming_beam.energy, incoming_beam.species
         )
-        dtype = (
-            elements[0].transfer_map(incoming_beam.energy, incoming_beam.species).dtype
-        )
+        device = first_element_transfer_map.device
+        dtype = first_element_transfer_map.dtype
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(
             (*incoming_beam.energy.shape, 1, 1)
