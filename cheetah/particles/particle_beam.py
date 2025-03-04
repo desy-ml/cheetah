@@ -1218,7 +1218,7 @@ class ParticleBeam(Beam):
         :param axs: List of Matplotlib axes objects to use for plotting. If set to
             `None`, a new figure is created. Must have the shape `(len(dimensions),
             len(dimensions))`.
-        :return: Matplotlib figure object.
+        :return: Matplotlib figure and axes objects with the plot.
         """
         if axs is None:
             fig, axs = plt.subplots(
