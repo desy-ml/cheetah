@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 
 import cheetah
@@ -8,8 +6,8 @@ import cheetah
 def convert_element_to_cheetah(
     element,
     warnings: bool = True,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
     """
     Translate an Ocelot element to a Cheetah element.

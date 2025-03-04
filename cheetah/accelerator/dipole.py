@@ -1,18 +1,15 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Dipole(Element):
@@ -46,21 +43,21 @@ class Dipole(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        angle: Optional[torch.Tensor] = None,
-        k1: Optional[torch.Tensor] = None,
-        dipole_e1: Optional[torch.Tensor] = None,
-        dipole_e2: Optional[torch.Tensor] = None,
-        tilt: Optional[torch.Tensor] = None,
-        gap: Optional[torch.Tensor] = None,
-        gap_exit: Optional[torch.Tensor] = None,
-        fringe_integral: Optional[torch.Tensor] = None,
-        fringe_integral_exit: Optional[torch.Tensor] = None,
+        angle: torch.Tensor | None = None,
+        k1: torch.Tensor | None = None,
+        dipole_e1: torch.Tensor | None = None,
+        dipole_e2: torch.Tensor | None = None,
+        tilt: torch.Tensor | None = None,
+        gap: torch.Tensor | None = None,
+        gap_exit: torch.Tensor | None = None,
+        fringe_integral: torch.Tensor | None = None,
+        fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         device, dtype = verify_device_and_dtype(
             [
@@ -146,8 +143,8 @@ class Dipole(Element):
         return self.tracking_method == "cheetah"
 
     @property
-    def is_active(self):
-        return torch.any(self.angle != 0)
+    def is_active(self) -> bool:
+        return torch.any(self.angle != 0).item()
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -189,10 +186,9 @@ class Dipole(Element):
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
+        mc2 = incoming.species.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
@@ -207,9 +203,7 @@ class Dipole(Element):
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
-        x, px, y, py, z, pz = self._bmadx_body(
-            x, px, y, py, z, pz, p0c, electron_mass_eV
-        )
+        x, px, y, py, z, pz = self._bmadx_body(x, px, y, py, z, pz, p0c, mc2)
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
@@ -225,9 +219,7 @@ class Dipole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
-        )
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         # Broadcast to align their shapes so that they can be stacked
         x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)
@@ -241,6 +233,7 @@ class Dipole(Element):
             survival_probabilities=incoming.survival_probabilities,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
+            species=incoming.species,
         )
         return outgoing_beam
 
@@ -374,7 +367,7 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
@@ -386,6 +379,7 @@ class Dipole(Element):
                 length=self.length,
                 k1=self.k1,
                 hx=self.hx,
+                species=species,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
             )  # Tilt is applied after adding edges
@@ -486,7 +480,7 @@ class Dipole(Element):
             "tracking_method",
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle

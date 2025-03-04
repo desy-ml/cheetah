@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -41,17 +41,17 @@ class Screen(Element):
 
     def __init__(
         self,
-        resolution: Union[tuple[int, int], list[int]] = (1024, 1024),
-        pixel_size: Optional[torch.Tensor] = None,
+        resolution: tuple[int, int] | list[int] = (1024, 1024),
+        pixel_size: torch.Tensor | None = None,
         binning: int = 1,
-        misalignment: Optional[torch.Tensor] = None,
+        misalignment: torch.Tensor | None = None,
         method: Literal["histogram", "kde"] = "histogram",
-        kde_bandwidth: Optional[torch.Tensor] = None,
+        kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
         is_active: bool = False,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [pixel_size, misalignment, kde_bandwidth], device, dtype
@@ -139,7 +139,7 @@ class Screen(Element):
             (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 
@@ -312,7 +312,7 @@ class Screen(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2
