@@ -12,7 +12,6 @@ from cheetah.particles.beam import Beam
 from cheetah.particles.species import Species
 from cheetah.utils import (
     elementwise_linspace,
-    format_axis_as_percentage,
     format_axis_with_prefixed_unit,
     unbiased_weighted_covariance,
     unbiased_weighted_std,
@@ -1105,13 +1104,9 @@ class ParticleBeam(Beam):
         # Handle units
         if dimension in ("x", "y", "tau"):
             base_unit = "m"
-        elif dimension in ("px", "py", "p"):
-            base_unit = "%"
 
         if dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
-        elif dimension in ("px", "py", "p"):
-            format_axis_as_percentage(ax.xaxis)
 
         return ax
 
@@ -1119,7 +1114,7 @@ class ParticleBeam(Beam):
         self,
         x_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
-        contour: bool = False,
+        style: Literal["histogram", "contour"] = "histogram",
         bins: int = 100,
         bin_ranges: tuple[tuple[float]] | None = None,
         histogram_smoothing: float = 0.0,
@@ -1135,7 +1130,7 @@ class ParticleBeam(Beam):
             `('x', 'px', 'y', 'py', 'tau', 'p')`.
         :param y_dimension: Name of the y dimension to plot. Should be one of
             `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param contour: If `True`, overlay contour lines on the 2D histogram plot.
+        :param style: Style of the plot. Should be one of `('histogram', 'contour')`.
         :param bins: Number of bins to use for the histogram in both dimensions.
         :param bin_ranges: Ranges of the bins to use for the histogram in each
             dimension.
@@ -1163,14 +1158,14 @@ class ParticleBeam(Beam):
         # Post-process and plot
         smoothed_histogram = gaussian_filter(histogram, histogram_smoothing)
         clipped_histogram = np.where(smoothed_histogram > 1, smoothed_histogram, np.nan)
-        ax.pcolormesh(
-            x_edges,
-            y_edges,
-            clipped_histogram.T / smoothed_histogram.max(),
-            **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
-        )
-
-        if contour:
+        if style == "histogram":
+            ax.pcolormesh(
+                x_edges,
+                y_edges,
+                clipped_histogram.T / smoothed_histogram.max(),
+                **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
+            )
+        elif style == "contour":
             contour_histogram = gaussian_filter(histogram, contour_smoothing)
 
             ax.contour(
@@ -1186,23 +1181,15 @@ class ParticleBeam(Beam):
         # Handle units
         if x_dimension in ("x", "y", "tau"):
             x_base_unit = "m"
-        elif x_dimension in ("px", "py", "p"):
-            x_base_unit = "%"
 
         if y_dimension in ("x", "y", "tau"):
             y_base_unit = "m"
-        elif y_dimension in ("px", "py", "p"):
-            y_base_unit = "%"
 
         if x_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
-        elif x_dimension in ("px", "py", "p"):
-            format_axis_as_percentage(ax.xaxis)
 
         if y_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
-        elif y_dimension in ("px", "py", "p"):
-            format_axis_as_percentage(ax.yaxis)
 
         return ax
 
@@ -1213,7 +1200,8 @@ class ParticleBeam(Beam):
         bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
         plot_1d_kws: dict | None = None,
         plot_2d_kws: dict | None = None,
-    ) -> plt.Figure:
+        axs: list[plt.Axes] | None = None,
+    ) -> tuple[plt.Figure, np.ndarray]:
         """
         Plot of coordinates projected into 2D planes.
 
@@ -1230,13 +1218,23 @@ class ParticleBeam(Beam):
             `ParticleBeam.plot_1d_distribution` for plotting 1D histograms.
         :param plot_2d_kws: Additional keyword arguments to be passed to
             `ParticleBeam.plot_2d_distribution` for plotting 2D histograms.
-        :return: Matplotlib figure object.
+        :param axs: List of Matplotlib axes objects to use for plotting. If set to
+            `None`, a new figure is created. Must have the shape `(len(dimensions),
+            len(dimensions))`.
+        :return: Matplotlib figure and axes objects with the plot.
         """
-        fig, axs = plt.subplots(
-            len(dimensions),
-            len(dimensions),
-            figsize=(2 * len(dimensions), 2 * len(dimensions)),
-        )
+        if axs is None:
+            fig, axs = plt.subplots(
+                len(dimensions),
+                len(dimensions),
+                figsize=(2 * len(dimensions), 2 * len(dimensions)),
+            )
+        else:
+            fig = axs[0, 0].figure
+            assert axs.shape == (len(dimensions), len(dimensions)), (
+                "If `axs` is provided, it must have the shape "
+                f"`({len(dimensions)}, {len(dimensions)})`."
+            )
 
         # Determine bin ranges for all plots in the grid at once
         full_tensor = (
@@ -1351,7 +1349,7 @@ class ParticleBeam(Beam):
             axs[i, i].set_yticks([])
             axs[i, i].set_ylabel(None)
 
-        return fig
+        return fig, axs
 
     def plot_point_cloud(
         self, scatter_kws: dict | None = None, ax: plt.Axes | None = None
