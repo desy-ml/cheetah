@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
@@ -43,21 +43,21 @@ class Dipole(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        angle: Optional[torch.Tensor] = None,
-        k1: Optional[torch.Tensor] = None,
-        dipole_e1: Optional[torch.Tensor] = None,
-        dipole_e2: Optional[torch.Tensor] = None,
-        tilt: Optional[torch.Tensor] = None,
-        gap: Optional[torch.Tensor] = None,
-        gap_exit: Optional[torch.Tensor] = None,
-        fringe_integral: Optional[torch.Tensor] = None,
-        fringe_integral_exit: Optional[torch.Tensor] = None,
+        angle: torch.Tensor | None = None,
+        k1: torch.Tensor | None = None,
+        dipole_e1: torch.Tensor | None = None,
+        dipole_e2: torch.Tensor | None = None,
+        tilt: torch.Tensor | None = None,
+        gap: torch.Tensor | None = None,
+        gap_exit: torch.Tensor | None = None,
+        fringe_integral: torch.Tensor | None = None,
+        fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         device, dtype = verify_device_and_dtype(
             [
@@ -480,7 +480,7 @@ class Dipole(Element):
             "tracking_method",
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle

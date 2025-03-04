@@ -39,6 +39,7 @@
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
 - Add link to the new Discord server (see #355) (@jank324)
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
+- Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
 
 ### 🌟 First Time Contributors
 

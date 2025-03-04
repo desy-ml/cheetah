@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 
 
@@ -30,9 +28,9 @@ def are_all_the_same_dtype(tensors: list[torch.Tensor]) -> torch.dtype:
 
 
 def verify_device_and_dtype(
-    tensors: list[Optional[torch.Tensor]],
-    desired_device: Optional[torch.device],
-    desired_dtype: Optional[torch.dtype],
+    tensors: list[torch.Tensor | None],
+    desired_device: torch.device | None,
+    desired_dtype: torch.dtype | None,
 ) -> tuple[torch.device, torch.dtype]:
     """
     Verifies that a unique device and dtype can be determined from the passed tensors
