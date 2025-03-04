@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
@@ -19,7 +18,12 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, name: Optional[str] = None, device=None, dtype=None) -> None:
+    def __init__(
+        self,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
@@ -140,7 +144,7 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 

@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
@@ -30,14 +30,14 @@ class Quadrupole(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        k1: Optional[torch.Tensor] = None,
-        misalignment: Optional[torch.Tensor] = None,
-        tilt: Optional[torch.Tensor] = None,
+        k1: torch.Tensor | None = None,
+        misalignment: torch.Tensor | None = None,
+        tilt: torch.Tensor | None = None,
         num_steps: int = 1,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [length, k1, misalignment, tilt], device, dtype
@@ -202,7 +202,7 @@ class Quadrupole(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_k1 = self.k1[vector_idx] if self.k1.dim() > 0 else self.k1
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length

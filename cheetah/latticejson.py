@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import torch
 
@@ -39,7 +39,7 @@ def convert_element(element: "cheetah.Element"):
     return element.name, element.__class__.__name__, params
 
 
-def convert_segment(segment: "cheetah.Segment") -> Tuple[dict, dict]:
+def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
     """
     Deconstruct a segment into its name, a list of its elements and a dictionary of
     its element parameters for saving to JSON.
@@ -74,7 +74,7 @@ def convert_segment(segment: "cheetah.Segment") -> Tuple[dict, dict]:
 def save_cheetah_model(
     segment: "cheetah.Segment",
     filename: str,
-    title: Optional[str] = None,
+    title: str | None = None,
     info: str = "This is a placeholder lattice description",
 ) -> None:
     """
@@ -132,9 +132,7 @@ class CompactJSONEncoder(json.JSONEncoder):
 
 
 def nontorch2feature(
-    value: Any,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    value: Any, device: torch.device | None = None, dtype: torch.dtype | None = None
 ) -> Any:
     """
     Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary.
@@ -158,8 +156,8 @@ def nontorch2feature(
 def parse_element(
     name: str,
     lattice_dict: dict,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
     """
     Parse an `Element` named `name` from a `lattice_dict`.
@@ -183,8 +181,8 @@ def parse_element(
 def parse_segment(
     name: str,
     lattice_dict: dict,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Segment":
     """
     Parse a `Segment` named `name` from a `lattice_dict`.
@@ -213,9 +211,7 @@ def parse_segment(
 
 
 def load_cheetah_model(
-    filename: str,
-    device: Optional[torch.device] = None,
-    dtype: Optional[torch.dtype] = None,
+    filename: str, device: torch.device | None = None, dtype: torch.dtype | None = None
 ) -> "cheetah.Segment":
     """
     Load a Cheetah model from a JSON file.

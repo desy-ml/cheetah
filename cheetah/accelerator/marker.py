@@ -1,5 +1,3 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 
@@ -17,7 +15,7 @@ class Marker(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(self, name: str | None = None) -> None:
         super().__init__(name=name)
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
@@ -37,7 +35,7 @@ class Marker(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         # Do nothing on purpose. Maybe later we decide markers should be shown, but for
         # now they are invisible.
         pass

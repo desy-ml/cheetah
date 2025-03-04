@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from scipy.constants import physical_constants
 
@@ -39,10 +37,10 @@ class Species:
     def __init__(
         self,
         name: str,
-        num_elementary_charges: Optional[torch.Tensor] = None,
-        charge_coulomb: Optional[torch.Tensor] = None,
-        mass_eV: Optional[torch.Tensor] = None,
-        mass_kg: Optional[torch.Tensor] = None,
+        num_elementary_charges: torch.Tensor | None = None,
+        charge_coulomb: torch.Tensor | None = None,
+        mass_eV: torch.Tensor | None = None,
+        mass_kg: torch.Tensor | None = None,
     ) -> None:
         if name in self.__class__.known:  # Known particle species
             assert all(
