@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -27,7 +27,7 @@ class Segment(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, elements: list[Element], name: Optional[str] = None) -> None:
+    def __init__(self, elements: list[Element], name: str | None = None) -> None:
         super().__init__(name=name)
 
         self.elements = nn.ModuleList(elements)
@@ -43,17 +43,52 @@ class Segment(Element):
             else:
                 self.__dict__[element.name] = element
 
-    def subcell(self, start: str, end: str) -> "Segment":
-        """Extract a subcell `[start, end]` from an this segment."""
+    def subcell(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        include_start: bool = True,
+        include_end: bool = True,
+    ) -> "Segment":
+        """
+        Extract a subcell from this segment.
+
+        If either `start` or `end` is `None`, the subcell starts or ends at the same
+        element as the original segment. If `start` or `end` is not part of the segment,
+        a `ValueError` is raised.
+
+        :param start: Name of the element at the start of the subcell. If `None` is
+            passed, the subcell starts at the same element as the original segment.
+        :param end: Name of the element at the end of the subcell. If `None` is
+            passed, the subcell ends at the same element as the original segment.
+        :param include_start: If `True`, `start` is included in the subcell, otherwise
+            not.
+        :param include_end: If `True`, `end` is included in the subcell, otherwise not.
+        :return: Subcell of elements from `start` to `end`.
+        """
+        is_start_in_segment = start is None or start in self.__dict__
+        if not is_start_in_segment:
+            raise ValueError(f"Element {start} is not part of the segment.")
+        is_end_in_segment = end is None or end in self.__dict__
+        if not is_end_in_segment:
+            raise ValueError(f"Element {end} is not part of the segment.")
+
         subcell = []
-        is_in_subcell = False
+        is_in_subcell = start is None
         for element in self.elements:
             if element.name == start:
                 is_in_subcell = True
+                if include_start:
+                    subcell.append(element)
+                continue
+
+            if element.name == end:
+                if include_end and is_in_subcell:
+                    subcell.append(element)
+                break
+
             if is_in_subcell:
                 subcell.append(element)
-            if element.name == end:
-                break
 
         return self.__class__(subcell)
 
@@ -72,7 +107,7 @@ class Segment(Element):
         return Segment(elements=flattened_elements, name=self.name)
 
     def transfer_maps_merged(
-        self, incoming_beam: Beam, except_for: Optional[list[str]] = None
+        self, incoming_beam: Beam, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where the transfer maps of skipable elements are merged into
@@ -122,7 +157,7 @@ class Segment(Element):
         return Segment(elements=merged_elements, name=self.name)
 
     def without_inactive_markers(
-        self, except_for: Optional[list[str]] = None
+        self, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where all inactive markers are removed. This can be used to
@@ -149,7 +184,7 @@ class Segment(Element):
         )
 
     def without_inactive_zero_length_elements(
-        self, except_for: Optional[list[str]] = None
+        self, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where all inactive zero length elements are removed. This can
@@ -177,7 +212,7 @@ class Segment(Element):
         )
 
     def inactive_elements_as_drifts(
-        self, except_for: Optional[list[str]] = None
+        self, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where all inactive elements (that have a length) are replaced
@@ -213,19 +248,26 @@ class Segment(Element):
         )
 
     @classmethod
-    def from_lattice_json(cls, filepath: str) -> "Segment":
+    def from_lattice_json(
+        cls,
+        filepath: str,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> "Segment":
         """
         Load a Cheetah model from a JSON file.
 
-        :param filename: Name/path of the file to load the lattice from.
+        :param filepath: Path of the file to load the lattice from.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return load_cheetah_model(filepath)
+        return load_cheetah_model(filepath, device=device, dtype=dtype)
 
     def to_lattice_json(
         self,
         filepath: str,
-        title: Optional[str] = None,
+        title: str | None = None,
         info: str = "This is a placeholder lattice description",
     ) -> None:
         """
@@ -244,10 +286,10 @@ class Segment(Element):
     def from_ocelot(
         cls,
         cell,
-        name: Optional[str] = None,
+        name: str | None = None,
         warnings: bool = True,
-        device=None,
-        dtype=torch.float32,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
         **kwargs,
     ) -> "Segment":
         """
@@ -263,6 +305,8 @@ class Segment(Element):
         :param name: Unique identifier for the entire segment.
         :param warnings: Whether to print warnings when objects are not supported by
             Cheetah or converted with potentially unexpected behavior.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
         from cheetah.converters import ocelot
@@ -279,9 +323,9 @@ class Segment(Element):
     def from_bmad(
         cls,
         bmad_lattice_file_path: str,
-        environment_variables: Optional[dict] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        environment_variables: dict | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -308,8 +352,8 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from an elegant lattice file.
@@ -327,7 +371,7 @@ class Segment(Element):
         )
 
     @classmethod
-    def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
+    def from_nx_tables(cls, filepath: Path | str) -> "Element":
         """
         Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
         `Segment`.
@@ -351,11 +395,11 @@ class Segment(Element):
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
-                tm = torch.matmul(element.transfer_map(energy), tm)
+                tm = torch.matmul(element.transfer_map(energy, species), tm)
             return tm
         else:
             return None
@@ -390,7 +434,7 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         element_lengths = [element.length for element in self.elements]
         element_ss = [torch.tensor(0.0)] + [
             sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
@@ -422,7 +466,7 @@ class Segment(Element):
         incoming: Beam,
         num_particles: int = 10,
         resolution: float = 0.01,
-        vector_idx: Optional[tuple] = None,
+        vector_idx: tuple | None = None,
     ) -> None:
         """
         Plot `n` reference particles along the segment view in x- and y-direction.
@@ -495,10 +539,10 @@ class Segment(Element):
     def plot_overview(
         self,
         incoming: Beam,
-        fig: Optional[matplotlib.figure.Figure] = None,
+        fig: matplotlib.figure.Figure | None = None,
         num_particles: int = 10,
         resolution: float = 0.01,
-        vector_idx: Optional[tuple] = None,
+        vector_idx: tuple | None = None,
     ) -> None:
         """
         Plot an overview of the segment with the lattice and traced reference particles.
@@ -534,10 +578,7 @@ class Segment(Element):
         plt.tight_layout()
 
     def plot_twiss(
-        self,
-        incoming: Beam,
-        ax: Optional[Any] = None,
-        vector_idx: Optional[tuple] = None,
+        self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
     ) -> None:
         """Plot twiss parameters along the segment."""
         longitudinal_beams = [incoming]
