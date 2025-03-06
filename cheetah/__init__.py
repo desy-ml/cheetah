@@ -6,6 +6,7 @@ from .accelerator import (  # noqa: F401
     CustomTransferMap,
     Dipole,
     Drift,
+    Element,
     HorizontalCorrector,
     Marker,
     Quadrupole,
@@ -18,4 +19,4 @@ from .accelerator import (  # noqa: F401
     Undulator,
     VerticalCorrector,
 )
-from .particles import Beam, ParameterBeam, ParticleBeam  # noqa: F401
+from .particles import Beam, ParameterBeam, ParticleBeam, Species  # noqa: F401

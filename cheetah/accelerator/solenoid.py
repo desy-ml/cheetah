@@ -1,11 +1,9 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
+from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
@@ -14,8 +12,6 @@ from cheetah.utils import (
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Solenoid(Element):
@@ -35,11 +31,11 @@ class Solenoid(Element):
     def __init__(
         self,
         length: torch.Tensor = None,
-        k: Optional[torch.Tensor] = None,
-        misalignment: Optional[torch.Tensor] = None,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        k: torch.Tensor | None = None,
+        misalignment: torch.Tensor | None = None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [length, k, misalignment], device, dtype
@@ -56,11 +52,11 @@ class Solenoid(Element):
         if misalignment is not None:
             self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma, _, _ = compute_relativistic_factors(energy)
+        gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
 
@@ -104,8 +100,9 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k != 0)
+        return torch.any(self.k != 0).item()
 
+    @property
     def is_skippable(self) -> bool:
         return True
 
@@ -113,7 +110,7 @@ class Solenoid(Element):
         # TODO: Implement splitting for solenoid properly, for now just return self
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
