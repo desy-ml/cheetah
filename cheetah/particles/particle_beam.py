@@ -1623,3 +1623,17 @@ class ParticleBeam(Beam):
             + f"survival_probabilities={self.survival_probabilities}, "
             + f"species={repr(self.species)})"
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ParticleBeam):
+            return False
+
+        return all(
+            [
+                torch.all(self.particles == other.particles),
+                torch.all(self.energy == other.energy),
+                torch.all(self.particle_charges == other.particle_charges),
+                torch.all(self.survival_probabilities == other.survival_probabilities),
+                self.species == other.species,
+            ]
+        )

@@ -41,7 +41,6 @@ def test_reading_shows_beam_particle(screen_method):
 @pytest.mark.parametrize("kde_bandwidth", [5e-6, 1e-5, 5e-5])
 def test_screen_kde_bandwidth(kde_bandwidth):
     """Test screen reading with KDE method and different explicit bandwidths."""
-
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0)),
@@ -156,3 +155,63 @@ def test_reading_dtype_conversion():
     assert segment.screen.reading.dtype == torch.float32
     segment = segment.double()
     assert segment.screen.reading.dtype == torch.float64
+
+
+def test_screen_reading_not_unintentionally_modified_parameter_beam():
+    """
+    Test that the screen reading is not unintentionally modified if the user modifies
+    the incoming out outgoing beam after tracking. Considers the case where the incoming
+    beam is a `ParameterBeam`.
+    """
+    incoming = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    screen = cheetah.Screen(is_active=True)
+
+    outgoing = screen.track(incoming)
+    original_read_beam = screen.get_read_beam()
+
+    incoming._mu *= 2.0
+    incoming._cov *= 3.0
+    incoming.energy *= 4.0
+    incoming.total_charge *= 5.0
+    incoming.species.charge_coulomb *= 6.0
+    outgoing._mu *= 0.7
+    outgoing._cov *= 0.5
+    outgoing.energy *= 0.3
+    outgoing.total_charge *= 0.2
+    outgoing.species.charge_coulomb *= 0.1
+
+    read_beam_after_modification = screen.get_read_beam()
+
+    assert original_read_beam == read_beam_after_modification
+
+
+def test_screen_reading_not_unintentionally_modified_particle_beam():
+    """
+    Test that the screen reading is not unintentionally modified if the user modifies
+    the incoming out outgoing beam after tracking. Considers the case where the incoming
+    beam is a `ParticleBeam`.
+    """
+    incoming = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    screen = cheetah.Screen(is_active=True)
+
+    outgoing = screen.track(incoming)
+    original_read_beam = screen.get_read_beam()
+
+    incoming.particles *= 2.0
+    incoming.energy *= 3.0
+    incoming.particle_charges *= 4.0
+    incoming.survival_probabilities *= 0.9
+    incoming.species.charge_coulomb *= 5.0
+    outgoing.particles *= 0.7
+    outgoing.energy *= 0.5
+    outgoing.particle_charges *= 0.3
+    outgoing.survival_probabilities *= 0.1
+    outgoing.species.charge_coulomb *= 0.2
+
+    read_beam_after_modification = screen.get_read_beam()
+
+    assert original_read_beam == read_beam_after_modification

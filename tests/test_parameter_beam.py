@@ -192,3 +192,31 @@ def test_conversion_to_and_from_particle_beam():
     assert torch.isclose(
         original_parameter_beam.total_charge, reconstructed_parameter_beam.total_charge
     )
+
+
+def test_equality():
+    """Test that two equal beams are identified as equal."""
+    beam1 = ParameterBeam.from_parameters()
+    beam2 = ParameterBeam.from_parameters()
+
+    assert beam1 == beam2
+
+
+def test_inequality():
+    """Test that two different beams are identified as unequal."""
+    beam1 = ParameterBeam.from_parameters()
+    beam2 = ParameterBeam.from_parameters(
+        mu_x=torch.tensor(1e-5),
+        mu_px=torch.tensor(1e-7),
+        mu_y=torch.tensor(2e-5),
+        mu_py=torch.tensor(2e-7),
+        sigma_x=torch.tensor(1.75e-7),
+        sigma_px=torch.tensor(2e-7),
+        sigma_y=torch.tensor(1.75e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_tau=torch.tensor(0.000001),
+        sigma_p=torch.tensor(0.000001),
+        energy=torch.tensor(1e7),
+    )
+
+    assert beam1 != beam2
