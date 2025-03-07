@@ -578,17 +578,3 @@ class ParameterBeam(Beam):
             + f"total_charge={repr(self.total_charge)}, "
             + f"species={repr(self.species)})"
         )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ParameterBeam):
-            return False
-
-        return all(
-            [
-                torch.all(self._mu == other._mu),
-                torch.all(self._cov == other._cov),
-                torch.all(self.energy == other.energy),
-                torch.all(self.total_charge == other.total_charge),
-                self.species == other.species,
-            ]
-        )

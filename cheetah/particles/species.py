@@ -100,15 +100,3 @@ class Species:
             + f"num_elementary_charges={repr(self.num_elementary_charges)}, "
             + f"mass_eV={repr(self.mass_eV)})"
         )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Species):
-            return False
-
-        return all(
-            [
-                self.name == other.name,
-                torch.all(self.num_elementary_charges == other.num_elementary_charges),
-                torch.all(self.mass_eV == other.mass_eV),
-            ]
-        )

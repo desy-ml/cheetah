@@ -184,7 +184,14 @@ def test_screen_reading_not_unintentionally_modified_parameter_beam():
 
     read_beam_after_modification = screen.get_read_beam()
 
-    assert original_read_beam == read_beam_after_modification
+    assert torch.all(original_read_beam._mu == read_beam_after_modification._mu)
+    assert torch.all(original_read_beam._cov == read_beam_after_modification._cov)
+    assert original_read_beam.energy == read_beam_after_modification.energy
+    assert original_read_beam.total_charge == read_beam_after_modification.total_charge
+    assert (
+        original_read_beam.species.charge_coulomb
+        == read_beam_after_modification.species.charge_coulomb
+    )
 
 
 def test_screen_reading_not_unintentionally_modified_particle_beam():
@@ -214,4 +221,19 @@ def test_screen_reading_not_unintentionally_modified_particle_beam():
 
     read_beam_after_modification = screen.get_read_beam()
 
-    assert original_read_beam == read_beam_after_modification
+    assert torch.all(
+        original_read_beam.particles == read_beam_after_modification.particles
+    )
+    assert original_read_beam.energy == read_beam_after_modification.energy
+    assert torch.all(
+        original_read_beam.particle_charges
+        == read_beam_after_modification.particle_charges
+    )
+    assert torch.all(
+        original_read_beam.survival_probabilities
+        == read_beam_after_modification.survival_probabilities
+    )
+    assert (
+        original_read_beam.species.charge_coulomb
+        == read_beam_after_modification.species.charge_coulomb
+    )

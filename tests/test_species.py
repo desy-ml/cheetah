@@ -86,19 +86,3 @@ def test_providing_both_masses():
     """
     with pytest.raises(AssertionError):
         cheetah.Species(name="muon", mass_eV=1e6, mass_kg=1e-27)
-
-
-def test_equality():
-    """Test that two equal species are identified as equal."""
-    species1 = cheetah.Species("proton")
-    species2 = cheetah.Species("proton")
-
-    assert species1 == species2
-
-
-def test_inequality():
-    """Test that two different species are identified as unequal."""
-    species1 = cheetah.Species("proton")
-    species2 = cheetah.Species("electron")
-
-    assert species1 != species2
