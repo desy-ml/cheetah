@@ -163,7 +163,9 @@ class Screen(Element):
                     copy_of_incoming.particles,
                     self.misalignment[..., 0].unsqueeze(-1).unsqueeze(-1),
                 )
-                copy_of_incoming.particles = copy_of_incoming.particles.clone()
+                copy_of_incoming.particles = (
+                    copy_of_incoming.particles.clone()
+                )  # TODO: Needed?
 
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
@@ -197,7 +199,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
-        if not torch.all(torch.isnan(self.cached_reading)):
+        if self.cached_reading is not None:
             return self.cached_reading
 
         read_beam = self.get_read_beam()
@@ -302,12 +304,7 @@ class Screen(Element):
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
-        self.cached_reading = torch.full(
-            (self.resolution[0], self.resolution[1]),
-            torch.nan,
-            device=self.cached_reading.device,
-            dtype=self.cached_reading.dtype,
-        )
+        self.cached_reading = None
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
