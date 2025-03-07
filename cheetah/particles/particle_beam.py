@@ -1581,7 +1581,7 @@ class ParticleBeam(Beam):
         return torch.sqrt(self.energies**2 - self.species.mass_eV**2)
 
     def clone(self) -> "ParticleBeam":
-        return ParticleBeam(
+        return self.__class__(
             particles=self.particles.clone(),
             energy=self.energy.clone(),
             particle_charges=self.particle_charges.clone(),

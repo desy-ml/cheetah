@@ -563,7 +563,7 @@ class ParameterBeam(Beam):
         return self._cov[..., 4, 5]
 
     def clone(self) -> "ParameterBeam":
-        return ParameterBeam(
+        return self.__class__(
             mu=self._mu.clone(),
             cov=self._cov.clone(),
             energy=self.energy.clone(),
