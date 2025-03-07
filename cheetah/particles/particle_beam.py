@@ -68,24 +68,23 @@ class ParticleBeam(Beam):
 
         self.species = species if species is not None else Species("electron")
 
-        self.register_buffer("particles", None)
-        self.register_buffer("energy", None)
-        self.register_buffer(
-            "particle_charges",
-            torch.full(
-                (particles.shape[-2],), self.species.charge_coulomb, **factory_kwargs
-            ),
+        particle_charges = (
+            particle_charges
+            if particle_charges is not None
+            else torch.ones(particles.shape[-2], **factory_kwargs)
         )
-        self.register_buffer(
-            "survival_probabilities", torch.ones(particles.shape[-2], **factory_kwargs)
+        survival_probabilities = (
+            survival_probabilities
+            if survival_probabilities is not None
+            else torch.ones(particles.shape[-2], **factory_kwargs)
         )
 
-        self.particles = particles.to(**factory_kwargs)
-        self.energy = energy.to(**factory_kwargs)
-        if particle_charges is not None:
-            self.particle_charges = particle_charges.to(**factory_kwargs)
-        if survival_probabilities is not None:
-            self.survival_probabilities = survival_probabilities.to(**factory_kwargs)
+        self.register_buffer("particles", particles.to(**factory_kwargs))
+        self.register_buffer("energy", energy.to(**factory_kwargs))
+        self.register_buffer("particle_charges", particle_charges.to(**factory_kwargs))
+        self.register_buffer(
+            "survival_probabilities", survival_probabilities.to(**factory_kwargs)
+        )
 
     @classmethod
     def from_parameters(
