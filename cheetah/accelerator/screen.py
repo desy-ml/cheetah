@@ -276,8 +276,8 @@ class Screen(Element):
                 image = kde_histogram_2d(
                     x1=broadcasted_x,
                     x2=broadcasted_y,
-                    bins1=self.pixel_bin_centers[0],
-                    bins2=self.pixel_bin_centers[1],
+                    bins1=self.pixel_bin_centers[0].to(read_beam.x),
+                    bins2=self.pixel_bin_centers[1].to(read_beam.x),
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
                 )
