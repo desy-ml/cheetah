@@ -342,6 +342,7 @@ class ParameterBeam(Beam):
             np.cov(particles.transpose()), device=device, dtype=dtype
         )
 
+        energy = torch.as_tensor(energy)
         total_charge = torch.as_tensor(particle_charges).sum()
 
         return cls(
@@ -563,7 +564,7 @@ class ParameterBeam(Beam):
         return self._cov[..., 4, 5]
 
     def clone(self) -> "ParameterBeam":
-        return ParameterBeam(
+        return self.__class__(
             mu=self._mu.clone(),
             cov=self._cov.clone(),
             energy=self.energy.clone(),
