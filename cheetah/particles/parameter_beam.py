@@ -37,14 +37,18 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
+        self.register_buffer("_mu", None)
+        self.register_buffer("_cov", None)
+        self.register_buffer("energy", None)
+        self.register_buffer("total_charge", torch.tensor(0.0, **factory_kwargs))
+
+        self._mu = torch.as_tensor(mu, **factory_kwargs)
+        self._cov = torch.as_tensor(cov, **factory_kwargs)
+        self.energy = torch.as_tensor(energy, **factory_kwargs)
+        if total_charge is not None:
+            self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
+
         self.species = species if species is not None else Species("electron")
-
-        total_charge = total_charge if total_charge is not None else torch.tensor(0.0)
-
-        self.register_buffer("_mu", mu.to(**factory_kwargs))
-        self.register_buffer("_cov", cov.to(**factory_kwargs))
-        self.register_buffer("energy", energy.to(**factory_kwargs))
-        self.register_buffer("total_charge", total_charge.to(**factory_kwargs))
 
     @classmethod
     def from_parameters(
@@ -338,7 +342,6 @@ class ParameterBeam(Beam):
             np.cov(particles.transpose()), device=device, dtype=dtype
         )
 
-        energy = torch.as_tensor(energy)
         total_charge = torch.as_tensor(particle_charges).sum()
 
         return cls(

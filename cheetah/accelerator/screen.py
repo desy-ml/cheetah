@@ -163,7 +163,9 @@ class Screen(Element):
                     copy_of_incoming.particles,
                     self.misalignment[..., 0].unsqueeze(-1).unsqueeze(-1),
                 )
-                copy_of_incoming.particles = copy_of_incoming.particles.clone()
+                copy_of_incoming.particles = (
+                    copy_of_incoming.particles.clone()
+                )  # TODO: Needed?
 
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
