@@ -43,7 +43,8 @@ class ParameterBeam(Beam):
         self.register_buffer("_cov", None)
         self.register_buffer("energy", None)
         self.register_buffer(
-            "total_charge", torch.as_tensor(species.charge_coulomb, **factory_kwargs)
+            "total_charge",
+            torch.as_tensor(self.species.charge_coulomb, **factory_kwargs),
         )
 
         self._mu = torch.as_tensor(mu, **factory_kwargs)
