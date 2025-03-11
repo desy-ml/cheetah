@@ -1,7 +1,7 @@
 import torch
 
 
-def unbiased_weighted_covariance(
+def unbiased_weightedcovariance(
     input1: torch.Tensor, input2: torch.Tensor, weights: torch.Tensor, dim: int = None
 ) -> torch.Tensor:
     """

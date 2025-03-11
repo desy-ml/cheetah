@@ -106,9 +106,9 @@ class Cavity(Element):
 
         tm = self.transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
-            outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
-            outgoing_cov = torch.matmul(
-                tm, torch.matmul(incoming._cov, tm.transpose(-2, -1))
+            outgoingmu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
+            outgoingcov = torch.matmul(
+                tm, torch.matmul(incoming.cov, tm.transpose(-2, -1))
             )
         else:  # ParticleBeam
             outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
@@ -128,12 +128,12 @@ class Cavity(Element):
             )
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (
+                outgoingmu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
                     outgoing_energy * beta1
                 ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
-                    torch.cos(-incoming._mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
+                    torch.cos(-incoming.mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
                 )
-                outgoing_cov[..., 5, 5] = incoming._cov[..., 5, 5]
+                outgoingcov[..., 5, 5] = incoming.cov[..., 5, 5]
             else:  # ParticleBeam
                 outgoing_particles[..., 5] = incoming.particles[
                     ..., 5
@@ -196,22 +196,22 @@ class Cavity(Element):
                 )
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
-                    T566 * incoming._mu[..., 5] ** 2
-                    + T556 * incoming._mu[..., 4] * incoming._mu[..., 5]
-                    + T555 * incoming._mu[..., 4] ** 2
+                outgoingmu[..., 4] = outgoingmu[..., 4] + (
+                    T566 * incoming.mu[..., 5] ** 2
+                    + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
+                    + T555 * incoming.mu[..., 4] ** 2
                 )
-                outgoing_cov[..., 4, 4] = (
-                    T566 * incoming._cov[..., 5, 5] ** 2
-                    + T556 * incoming._cov[..., 4, 5] * incoming._cov[..., 5, 5]
-                    + T555 * incoming._cov[..., 4, 4] ** 2
+                outgoingcov[..., 4, 4] = (
+                    T566 * incoming.cov[..., 5, 5] ** 2
+                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                    + T555 * incoming.cov[..., 4, 4] ** 2
                 )
-                outgoing_cov[..., 4, 5] = (
-                    T566 * incoming._cov[..., 5, 5] ** 2
-                    + T556 * incoming._cov[..., 4, 5] * incoming._cov[..., 5, 5]
-                    + T555 * incoming._cov[..., 4, 4] ** 2
+                outgoingcov[..., 4, 5] = (
+                    T566 * incoming.cov[..., 5, 5] ** 2
+                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                    + T555 * incoming.cov[..., 4, 4] ** 2
                 )
-                outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
+                outgoingcov[..., 5, 4] = outgoingcov[..., 4, 5]
             else:  # ParticleBeam
                 outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
                     T566.unsqueeze(-1) * incoming.particles[..., 5] ** 2
@@ -223,12 +223,12 @@ class Cavity(Element):
 
         if isinstance(incoming, ParameterBeam):
             outgoing = ParameterBeam(
-                mu=outgoing_mu,
-                cov=outgoing_cov,
+                mu=outgoingmu,
+                cov=outgoingcov,
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
-                device=outgoing_mu.device,
-                dtype=outgoing_mu.dtype,
+                device=outgoingmu.device,
+                dtype=outgoingmu.dtype,
             )
             return outgoing
         else:  # ParticleBeam
