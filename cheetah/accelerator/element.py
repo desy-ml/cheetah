@@ -110,7 +110,9 @@ class Element(ABC, nn.Module):
         self, name: str, value: torch.Tensor | nn.Parameter
     ) -> None:
         """
-        Register a buffer or parameter with the given name and value.
+        Register a buffer or parameter with the given name and value. Automatically
+        selects the correct method from `register_buffer` or `register_parameter` based
+        on the type of `value`.
 
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
