@@ -28,16 +28,14 @@ class CustomTransferMap(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
-        assert isinstance(predefined_transfer_map, torch.Tensor)
-        assert predefined_transfer_map.shape[-2:] == (7, 7)
-
-        self.register_buffer("predefined_transfer_map", None)
-
-        self.predefined_transfer_map = torch.as_tensor(
-            predefined_transfer_map, **factory_kwargs
-        )
         if length is not None:
             self.length = torch.as_tensor(length, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "predefined_transfer_map", predefined_transfer_map, **factory_kwargs
+        )
+
+        assert self.predefined_transfer_map.shape[-2:] == (7, 7)
 
     @classmethod
     def from_merging_elements(

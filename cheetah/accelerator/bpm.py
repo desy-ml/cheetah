@@ -28,8 +28,11 @@ class BPM(Element):
         super().__init__(name=name, device=device, dtype=dtype)
 
         self.is_active = is_active
+
         self.register_buffer(
-            "reading", torch.tensor(torch.nan, device=device, dtype=dtype)
+            "reading",
+            torch.tensor(torch.nan, device=device, dtype=dtype),
+            persistent=False,
         )
 
     @property

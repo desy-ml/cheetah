@@ -45,17 +45,19 @@ class Cavity(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
-
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if voltage is not None:
-            self.voltage = torch.as_tensor(voltage, **factory_kwargs)
-        if phase is not None:
-            self.phase = torch.as_tensor(phase, **factory_kwargs)
-        if frequency is not None:
-            self.frequency = torch.as_tensor(frequency, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "voltage",
+            voltage if voltage is not None else torch.tensor(0.0, **factory_kwargs),
+        )
+        self.register_buffer_or_parameter(
+            "phase", phase if phase is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "frequency",
+            frequency if frequency is not None else torch.tensor(0.0, **factory_kwargs),
+        )
 
     @property
     def is_active(self) -> bool:

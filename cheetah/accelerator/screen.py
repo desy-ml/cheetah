@@ -67,28 +67,33 @@ class Screen(Element):
             "kde",
         ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
 
+        self.register_buffer_or_parameter(
+            "pixel_size",
+            pixel_size if pixel_size is not None else torch.tensor((1e-3, 1e-3)),
+            **factory_kwargs,
+        )
+        self.register_buffer_or_parameter(
+            "misalignment",
+            misalignment if misalignment is not None else torch.tensor((0.0, 0.0)),
+            **factory_kwargs,
+        )
+        self.register_buffer_or_parameter(
+            "kde_bandwidth",
+            kde_bandwidth if kde_bandwidth is not None else self.pixel_size[0].clone(),
+            **factory_kwargs,
+        )
+
         self.resolution = resolution
         self.binning = binning
         self.method = method
         self.is_blocking = is_blocking
         self.is_active = is_active
 
-        self.register_buffer("pixel_size", torch.tensor((1e-3, 1e-3), **factory_kwargs))
-        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
-        self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
-
         self.register_buffer(
             "cached_reading",
             torch.full((resolution[1], resolution[0]), torch.nan, **factory_kwargs),
+            persistent=False,
         )
-
-        if pixel_size is not None:
-            self.pixel_size = torch.as_tensor(pixel_size, **factory_kwargs)
-        if misalignment is not None:
-            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
-        if kde_bandwidth is not None:
-            self.kde_bandwidth = torch.as_tensor(kde_bandwidth, **factory_kwargs)
-
         self.set_read_beam(None)
 
     @property

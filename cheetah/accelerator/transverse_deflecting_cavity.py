@@ -51,23 +51,29 @@ class TransverseDeflectingCavity(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
-        self.register_buffer("tilt", torch.tensor(0.0, **factory_kwargs))
-
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if voltage is not None:
-            self.voltage = torch.as_tensor(voltage, **factory_kwargs)
-        if phase is not None:
-            self.phase = torch.as_tensor(phase, **factory_kwargs)
-        if frequency is not None:
-            self.frequency = torch.as_tensor(frequency, **factory_kwargs)
-        if misalignment is not None:
-            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
-        if tilt is not None:
-            self.tilt = torch.as_tensor(tilt, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "voltage",
+            voltage if voltage is not None else torch.tensor(0.0),
+            **factory_kwargs,
+        )
+        self.register_buffer_or_parameter(
+            "phase", phase if phase is not None else torch.tensor(0.0), **factory_kwargs
+        )
+        self.register_buffer_or_parameter(
+            "frequency",
+            frequency if frequency is not None else torch.tensor(0.0),
+            **factory_kwargs,
+        )
+        self.register_buffer_or_parameter(
+            "misalignment",
+            (misalignment if misalignment is not None else torch.tensor((0.0, 0.0))),
+            **factory_kwargs,
+        )
+        self.register_buffer_or_parameter(
+            "tilt", tilt if tilt is not None else torch.tensor(0.0), **factory_kwargs
+        )
 
         self.num_steps = num_steps
         self.tracking_method = tracking_method
