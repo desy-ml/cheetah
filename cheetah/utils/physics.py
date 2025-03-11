@@ -1,7 +1,4 @@
 import torch
-from scipy.constants import physical_constants
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 def compute_relativistic_factors(
