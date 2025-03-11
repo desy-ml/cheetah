@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch import nn
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
@@ -37,18 +38,34 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        self.register_buffer("_mu", None)
-        self.register_buffer("_cov", None)
-        self.register_buffer("energy", None)
-        self.register_buffer("total_charge", torch.tensor(0.0, **factory_kwargs))
+        mu = torch.as_tensor(mu, **factory_kwargs)
+        cov = torch.as_tensor(cov, **factory_kwargs)
+        energy = torch.as_tensor(energy, **factory_kwargs)
+        total_charge = (
+            torch.as_tensor(total_charge, **factory_kwargs)
+            if total_charge is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        species = species if species is not None else Species("electron")
 
-        self._mu = torch.as_tensor(mu, **factory_kwargs)
-        self._cov = torch.as_tensor(cov, **factory_kwargs)
-        self.energy = torch.as_tensor(energy, **factory_kwargs)
-        if total_charge is not None:
-            self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
+        if isinstance(mu, nn.Parameter):
+            self.register_parameter("_mu", mu)
+        else:
+            self.register_buffer("_mu", mu)
+        if isinstance(cov, nn.Parameter):
+            self.register_parameter("_cov", cov)
+        else:
+            self.register_buffer("_cov", cov)
+        if isinstance(energy, nn.Parameter):
+            self.register_parameter("energy", energy)
+        else:
+            self.register_buffer("energy", energy)
+        if isinstance(total_charge, nn.Parameter):
+            self.register_parameter("total_charge", total_charge)
+        else:
+            self.register_buffer("total_charge", total_charge)
 
-        self.species = species if species is not None else Species("electron")
+        self.species = species
 
     @classmethod
     def from_parameters(
