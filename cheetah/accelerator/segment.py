@@ -30,7 +30,7 @@ class Segment(Element):
     def __init__(self, elements: list[Element], name: str | None = None) -> None:
         super().__init__(name=name)
 
-        self.elements = nn.ModuleList(elements)
+        self.register_module("elements", nn.ModuleList(elements))
 
         for element in self.elements:
             # Make elements accessible via .name attribute. If multiple elements have
@@ -409,13 +409,21 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
+            was_last_skippable = False
             for element in self.elements:
-                if not element.is_skippable:
-                    todos.append(element)
-                elif not todos or not todos[-1].is_skippable:
-                    todos.append(Segment([element], name="temporary_todo"))
+                if element.is_skippable:
+                    if was_last_skippable:
+                        # Skippable elements are combined into a skippable segment
+                        todos[-1].elements.append(element)
+                    else:
+                        # Skippable elements are appended as a new skippable segment
+                        todos.append(Segment([element], name="temporary_todo"))
+
+                    was_last_skippable = True
                 else:
-                    todos[-1].elements.append(element)
+                    # Non-skippable elements are always appended as is
+                    todos.append(element)
+                    was_last_skippable = False
 
             for todo in todos:
                 incoming = todo.track(incoming)
