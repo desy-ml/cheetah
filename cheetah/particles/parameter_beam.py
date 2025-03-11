@@ -37,13 +37,18 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        self.register_buffer_or_parameter("_mu", mu, **factory_kwargs)
-        self.register_buffer_or_parameter("_cov", cov, **factory_kwargs)
-        self.register_buffer_or_parameter("energy", energy, **factory_kwargs)
+        self.register_buffer_or_parameter("_mu", torch.as_tensor(mu, **factory_kwargs))
+        self.register_buffer_or_parameter(
+            "_cov", torch.as_tensor(cov, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "energy", torch.as_tensor(energy, **factory_kwargs)
+        )
         self.register_buffer_or_parameter(
             "total_charge",
-            total_charge if total_charge is not None else torch.tensor(0.0),
-            **factory_kwargs,
+            torch.as_tensor(
+                total_charge if total_charge is not None else 0.0, **factory_kwargs
+            ),
         )
 
         self.species = species if species is not None else Species("electron")

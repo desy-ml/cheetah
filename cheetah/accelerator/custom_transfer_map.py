@@ -32,7 +32,8 @@ class CustomTransferMap(Element):
             self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.register_buffer_or_parameter(
-            "predefined_transfer_map", predefined_transfer_map, **factory_kwargs
+            "predefined_transfer_map",
+            torch.as_tensor(predefined_transfer_map, **factory_kwargs),
         )
 
         assert self.predefined_transfer_map.shape[-2:] == (7, 7)

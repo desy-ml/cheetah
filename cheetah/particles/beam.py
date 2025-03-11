@@ -409,11 +409,7 @@ class Beam(ABC, nn.Module):
         raise NotImplementedError
 
     def register_buffer_or_parameter(
-        self,
-        name: str,
-        value: torch.Tensor | nn.Parameter,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        self, name: str, value: torch.Tensor | nn.Parameter
     ) -> None:
         """
         Register a buffer or parameter with the given name and value.
@@ -421,14 +417,11 @@ class Beam(ABC, nn.Module):
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
         :param default: Default value of the buffer.
-        :param device: Device to store the buffer or parameter on.
-        :param dtype: Data type of the buffer or parameter.
         """
-        value_tensor = torch.as_tensor(value, device=device, dtype=dtype)
-        if isinstance(value_tensor, nn.Parameter):
-            self.register_parameter(name, value_tensor)
+        if isinstance(value, nn.Parameter):
+            self.register_parameter(name, value)
         else:
-            self.register_buffer(name, value_tensor)
+            self.register_buffer(name, value)
 
     def __repr__(self) -> str:
         raise NotImplementedError

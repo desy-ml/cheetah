@@ -41,13 +41,15 @@ class Aperture(Element):
 
         self.register_buffer_or_parameter(
             "x_max",
-            x_max if x_max is not None else torch.tensor(float("inf")),
-            **factory_kwargs,
+            torch.as_tensor(
+                x_max if x_max is not None else float("inf"), **factory_kwargs
+            ),
         )
         self.register_buffer_or_parameter(
             "y_max",
-            y_max if y_max is not None else torch.tensor(float("inf")),
-            **factory_kwargs,
+            torch.as_tensor(
+                y_max if y_max is not None else float("inf"), **factory_kwargs
+            ),
         )
 
         self.shape = shape
