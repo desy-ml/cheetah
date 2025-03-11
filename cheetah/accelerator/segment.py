@@ -409,21 +409,24 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
-            was_last_skippable = False
+            continuous_skippable_elements = []
             for element in self.elements:
                 if element.is_skippable:
-                    if was_last_skippable:
-                        # Skippable elements are combined into a skippable segment
-                        todos[-1].elements.append(element)
-                    else:
-                        # Skippable elements are appended as a new skippable segment
-                        todos.append(Segment([element], name="temporary_todo"))
-
-                    was_last_skippable = True
+                    # Collect skippable elements until a non-skippable element is found
+                    continuous_skippable_elements.append(element)
                 else:
-                    # Non-skippable elements are always appended as is
+                    # If a non-skippable element is found, merge the skippable elements
+                    # and append them before the non-skippable element
+                    if len(continuous_skippable_elements) > 0:
+                        todos.append(Segment(elements=continuous_skippable_elements))
+                        continuous_skippable_elements = []
+
                     todos.append(element)
-                    was_last_skippable = False
+
+            # If there are still skippable elements at the end of the segment append
+            # them as well
+            if len(continuous_skippable_elements) > 0:
+                todos.append(Segment(elements=continuous_skippable_elements))
 
             for todo in todos:
                 incoming = todo.track(incoming)
