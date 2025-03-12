@@ -171,21 +171,21 @@ def test_screen_reading_not_unintentionally_modified_parameter_beam():
     outgoing = screen.track(incoming)
     original_read_beam = screen.get_read_beam()
 
-    incoming._mu *= 2.0
-    incoming._cov *= 3.0
+    incoming.mu *= 2.0
+    incoming.cov *= 3.0
     incoming.energy *= 4.0
     incoming.total_charge *= 5.0
     incoming.species.charge_coulomb *= 6.0
-    outgoing._mu *= 0.7
-    outgoing._cov *= 0.5
+    outgoing.mu *= 0.7
+    outgoing.cov *= 0.5
     outgoing.energy *= 0.3
     outgoing.total_charge *= 0.2
     outgoing.species.charge_coulomb *= 0.1
 
     read_beam_after_modification = screen.get_read_beam()
 
-    assert torch.all(original_read_beam._mu == read_beam_after_modification._mu)
-    assert torch.all(original_read_beam._cov == read_beam_after_modification._cov)
+    assert torch.all(original_read_beam.mu == read_beam_after_modification.mu)
+    assert torch.all(original_read_beam.cov == read_beam_after_modification.cov)
     assert original_read_beam.energy == read_beam_after_modification.energy
     assert original_read_beam.total_charge == read_beam_after_modification.total_charge
     assert (
