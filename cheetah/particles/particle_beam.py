@@ -1,5 +1,4 @@
 import itertools
-from copy import deepcopy
 from typing import Literal
 
 import numpy as np
@@ -1589,7 +1588,7 @@ class ParticleBeam(Beam):
             energy=self.energy.clone(),
             particle_charges=self.particle_charges.clone(),
             survival_probabilities=self.survival_probabilities.clone(),
-            species=deepcopy(self.species),
+            species=self.species.clone(),
         )
 
     def __getitem__(self, item: int | slice | torch.Tensor) -> "ParticleBeam":

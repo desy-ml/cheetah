@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -96,7 +95,7 @@ class Aperture(Element):
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities * survived_mask,
-            species=deepcopy(incoming.species),
+            species=incoming.species.clone(),
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
