@@ -31,7 +31,7 @@ class BPM(Element):
 
         self.register_buffer(
             "reading",
-            torch.as_tensor(torch.nan, device=device, dtype=dtype),
+            torch.as_tensor((torch.nan, torch.nan), device=device, dtype=dtype),
             persistent=False,
         )
 

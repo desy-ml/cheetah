@@ -169,7 +169,7 @@ def test_screen_reading_not_unintentionally_modified_parameter_beam():
     screen = cheetah.Screen(is_active=True)
 
     outgoing = screen.track(incoming)
-    original_read_beam = screen.get_read_beam()
+    original_read_beam = screen.get_read_beam().clone()
 
     incoming.mu *= 2.0
     incoming.cov *= 3.0
@@ -206,7 +206,7 @@ def test_screen_reading_not_unintentionally_modified_particle_beam():
     screen = cheetah.Screen(is_active=True)
 
     outgoing = screen.track(incoming)
-    original_read_beam = screen.get_read_beam()
+    original_read_beam = screen.get_read_beam().clone()
 
     incoming.particles *= 2.0
     incoming.energy *= 3.0
