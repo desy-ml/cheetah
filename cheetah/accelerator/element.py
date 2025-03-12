@@ -75,7 +75,7 @@ class Element(ABC, nn.Module):
                 cov,
                 incoming.energy,
                 total_charge=incoming.total_charge,
-                species=deepcopy(incoming.species),
+                species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
@@ -85,7 +85,7 @@ class Element(ABC, nn.Module):
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
-                species=deepcopy(incoming.species),
+                species=incoming.species.clone(),
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")

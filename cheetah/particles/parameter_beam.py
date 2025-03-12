@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import numpy as np
 import torch
 
@@ -573,7 +571,7 @@ class ParameterBeam(Beam):
             cov=self.cov.clone(),
             energy=self.energy.clone(),
             total_charge=self.total_charge.clone(),
-            species=deepcopy(self.species),
+            species=self.species.clone(),
         )
 
     def __repr__(self) -> str:
