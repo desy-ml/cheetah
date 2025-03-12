@@ -570,6 +570,7 @@ class ParameterBeam(Beam):
             cov=self.cov.clone(),
             energy=self.energy.clone(),
             total_charge=self.total_charge.clone(),
+            species=self.species.clone(),
         )
 
     def __repr__(self) -> str:
