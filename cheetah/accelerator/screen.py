@@ -215,10 +215,10 @@ class Screen(Element):
                     "like to see, please open an issue on GitHub."
                 )
 
-            transversemu = torch.stack(
+            transverse_mu = torch.stack(
                 [read_beam.mu[..., 0], read_beam.mu[..., 2]], dim=-1
             )
-            transversecov = torch.stack(
+            transverse_cov = torch.stack(
                 [
                     torch.stack(
                         [read_beam.cov[..., 0, 0], read_beam.cov[..., 0, 2]], dim=-1
@@ -229,7 +229,9 @@ class Screen(Element):
                 ],
                 dim=-1,
             )
-            dist = MultivariateNormal(loc=transversemu, covariance_matrix=transversecov)
+            dist = MultivariateNormal(
+                loc=transverse_mu, covariance_matrix=transverse_cov
+            )
 
             left = self.extent[0]
             right = self.extent[1]

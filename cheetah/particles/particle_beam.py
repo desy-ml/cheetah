@@ -13,8 +13,8 @@ from cheetah.particles.species import Species
 from cheetah.utils import (
     elementwise_linspace,
     format_axis_with_prefixed_unit,
+    unbiased_weighted_covariance,
     unbiased_weighted_std,
-    unbiased_weightedcovariance,
     verify_device_and_dtype,
 )
 
@@ -263,8 +263,8 @@ class ParticleBeam(Beam):
         cov = cov.expand(*vector_shape, 6, 6)
         particles = torch.ones((*vector_shape, num_particles, 7), **factory_kwargs)
         distributions = [
-            MultivariateNormal(sample_mean, covariance_matrix=samplecov)
-            for sample_mean, samplecov in zip(mean.view(-1, 6), cov.view(-1, 6, 6))
+            MultivariateNormal(sample_mean, covariance_matrix=sample_cov)
+            for sample_mean, sample_cov in zip(mean.view(-1, 6), cov.view(-1, 6, 6))
         ]
         particles[..., :6] = torch.stack(
             [distribution.sample((num_particles,)) for distribution in distributions],
@@ -887,7 +887,7 @@ class ParticleBeam(Beam):
         mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
             mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p
         )
-        newmu = torch.stack([mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p], dim=-1)
+        new_mu = torch.stack([mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p], dim=-1)
         sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p = (
             torch.broadcast_tensors(
                 sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p
@@ -897,7 +897,7 @@ class ParticleBeam(Beam):
             [sigma_x, sigma_px, sigma_y, sigma_py, sigma_tau, sigma_p], dim=-1
         )
 
-        oldmu = torch.stack(
+        old_mu = torch.stack(
             [self.mu_x, self.mu_px, self.mu_y, self.mu_py, self.mu_tau, self.mu_p],
             dim=-1,
         )
@@ -915,10 +915,10 @@ class ParticleBeam(Beam):
 
         phase_space = self.particles[..., :6]
         phase_space = (
-            (phase_space.transpose(-2, -1) - oldmu.unsqueeze(-1))
+            (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
             / old_sigma.unsqueeze(-1)
             * new_sigma.unsqueeze(-1)
-            + newmu.unsqueeze(-1)
+            + new_mu.unsqueeze(-1)
         ).transpose(-2, -1)
 
         particles = torch.ones(*phase_space.shape[:-1], 7)
@@ -1546,7 +1546,7 @@ class ParticleBeam(Beam):
         Returns the covariance between x and px. :math:`\sigma_{x, px}^2`.
         It is weighted by the survival probability of the particles.
         """
-        return unbiased_weightedcovariance(
+        return unbiased_weighted_covariance(
             self.x, self.px, weights=self.survival_probabilities, dim=-1
         )
 
@@ -1556,7 +1556,7 @@ class ParticleBeam(Beam):
         Returns the covariance between y and py. :math:`\sigma_{y, py}^2`.
         It is weighted by the survival probability of the particles.
         """
-        return unbiased_weightedcovariance(
+        return unbiased_weighted_covariance(
             self.y, self.py, weights=self.survival_probabilities, dim=-1
         )
 
@@ -1566,7 +1566,7 @@ class ParticleBeam(Beam):
         Returns the covariance between tau and p. :math:`\sigma_{\tau, p}^2`.
         It is weighted by the survival probability of the particles.
         """
-        return unbiased_weightedcovariance(
+        return unbiased_weighted_covariance(
             self.tau, self.p, weights=self.survival_probabilities, dim=-1
         )
 

@@ -1,6 +1,6 @@
 import torch
 
-from cheetah.utils import unbiased_weighted_variance, unbiased_weightedcovariance
+from cheetah.utils import unbiased_weighted_covariance, unbiased_weighted_variance
 
 
 def test_unbiased_weighted_variance_with_single_element():
@@ -59,7 +59,7 @@ def test_unbiased_weighted_variance_with_small_numbers():
     assert torch.allclose(computed_variance, expected_variance)
 
 
-def test_unbiased_weightedcovariance_reduced_to_variance():
+def test_unbiased_weighted_covariance_reduced_to_variance():
     """
     Test that the covariance computation is correctly reduced to the variance when both
     inputs are the same.
@@ -68,6 +68,6 @@ def test_unbiased_weightedcovariance_reduced_to_variance():
     weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
 
     variance = unbiased_weighted_variance(data, weights)
-    covariance = unbiased_weightedcovariance(data, data, weights)
+    covariance = unbiased_weighted_covariance(data, data, weights)
 
     assert torch.allclose(covariance, variance)

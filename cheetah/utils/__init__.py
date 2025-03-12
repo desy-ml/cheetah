@@ -9,8 +9,8 @@ from .plot import (  # noqa: F401
     format_axis_with_prefixed_unit,
 )
 from .statistics import (  # noqa: F401
+    unbiased_weighted_covariance,
     unbiased_weighted_std,
     unbiased_weighted_variance,
-    unbiased_weightedcovariance,
 )
 from .unique_name_generator import UniqueNameGenerator  # noqa: F401

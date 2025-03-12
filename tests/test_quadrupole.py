@@ -48,7 +48,7 @@ def test_quadrupole_with_misalignments_vectorized():
     )
 
 
-def test_quadrupole_with_misalignmentsmultiple_vector_dimensions():
+def test_quadrupole_with_misalignments_multiple_vector_dimensions():
     """
     Test that a quadrupole with misalignments that have multiple vector dimensions does
     not raise an error and behaves as expected.
@@ -106,7 +106,7 @@ def test_tilted_quadrupole_vectorized():
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
 
-def test_tilted_quadrupolemultiple_vector_dimensions():
+def test_tilted_quadrupole_multiple_vector_dimensions():
     """
     Test that a quadrupole with tilts that have multiple vectorisation dimensions does
     not raise an error and behaves as expected.
@@ -144,7 +144,7 @@ def test_tilted_quadrupolemultiple_vector_dimensions():
     assert torch.allclose(outgoing.particles[0, 2], outgoing.particles[1, 0])
 
 
-def test_quadrupole_lengthmultiple_vector_dimensions():
+def test_quadrupole_length_multiple_vector_dimensions():
     """
     Test that a quadrupole with lengths that have multiple vectorisation dimensions does
     not raise an error and behaves as expected.

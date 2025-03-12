@@ -106,8 +106,8 @@ class Cavity(Element):
 
         tm = self.transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
-            outgoingmu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
-            outgoingcov = torch.matmul(
+            outgoing_mu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
+            outgoing_cov = torch.matmul(
                 tm, torch.matmul(incoming.cov, tm.transpose(-2, -1))
             )
         else:  # ParticleBeam
@@ -128,12 +128,12 @@ class Cavity(Element):
             )
 
             if isinstance(incoming, ParameterBeam):
-                outgoingmu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
+                outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
                     outgoing_energy * beta1
                 ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
                     torch.cos(-incoming.mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
                 )
-                outgoingcov[..., 5, 5] = incoming.cov[..., 5, 5]
+                outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
             else:  # ParticleBeam
                 outgoing_particles[..., 5] = incoming.particles[
                     ..., 5
@@ -196,22 +196,22 @@ class Cavity(Element):
                 )
 
             if isinstance(incoming, ParameterBeam):
-                outgoingmu[..., 4] = outgoingmu[..., 4] + (
+                outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
                     T566 * incoming.mu[..., 5] ** 2
                     + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
                     + T555 * incoming.mu[..., 4] ** 2
                 )
-                outgoingcov[..., 4, 4] = (
+                outgoing_cov[..., 4, 4] = (
                     T566 * incoming.cov[..., 5, 5] ** 2
                     + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
                     + T555 * incoming.cov[..., 4, 4] ** 2
                 )
-                outgoingcov[..., 4, 5] = (
+                outgoing_cov[..., 4, 5] = (
                     T566 * incoming.cov[..., 5, 5] ** 2
                     + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
                     + T555 * incoming.cov[..., 4, 4] ** 2
                 )
-                outgoingcov[..., 5, 4] = outgoingcov[..., 4, 5]
+                outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
             else:  # ParticleBeam
                 outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
                     T566.unsqueeze(-1) * incoming.particles[..., 5] ** 2
@@ -223,12 +223,12 @@ class Cavity(Element):
 
         if isinstance(incoming, ParameterBeam):
             outgoing = ParameterBeam(
-                mu=outgoingmu,
-                cov=outgoingcov,
+                mu=outgoing_mu,
+                cov=outgoing_cov,
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
-                device=outgoingmu.device,
-                dtype=outgoingmu.dtype,
+                device=outgoing_mu.device,
+                dtype=outgoing_mu.dtype,
             )
             return outgoing
         else:  # ParticleBeam
