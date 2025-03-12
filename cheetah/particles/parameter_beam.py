@@ -39,19 +39,17 @@ class ParameterBeam(Beam):
 
         self.species = species if species is not None else Species("electron")
 
-        self.register_buffer("mu", None)
-        self.register_buffer("cov", None)
-        self.register_buffer("energy", None)
-        self.register_buffer(
-            "total_charge",
-            torch.as_tensor(self.species.charge_coulomb, **factory_kwargs),
+        self.register_buffer_or_parameter("mu", torch.as_tensor(mu, **factory_kwargs))
+        self.register_buffer_or_parameter("cov", torch.as_tensor(cov, **factory_kwargs))
+        self.register_buffer_or_parameter(
+            "energy", torch.as_tensor(energy, **factory_kwargs)
         )
-
-        self.mu = torch.as_tensor(mu, **factory_kwargs)
-        self.cov = torch.as_tensor(cov, **factory_kwargs)
-        self.energy = torch.as_tensor(energy, **factory_kwargs)
-        if total_charge is not None:
-            self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
+        self.register_buffer_or_parameter(
+            "total_charge",
+            torch.as_tensor(
+                total_charge if total_charge is not None else 0.0, **factory_kwargs
+            ),
+        )
 
     @classmethod
     def from_parameters(
@@ -345,6 +343,7 @@ class ParameterBeam(Beam):
             np.cov(particles.transpose()), device=device, dtype=dtype
         )
 
+        energy = torch.as_tensor(energy)
         total_charge = torch.as_tensor(particle_charges).sum()
 
         return cls(
@@ -566,7 +565,7 @@ class ParameterBeam(Beam):
         return self.cov[..., 4, 5]
 
     def clone(self) -> "ParameterBeam":
-        return ParameterBeam(
+        return self.__class__(
             mu=self.mu.clone(),
             cov=self.cov.clone(),
             energy=self.energy.clone(),

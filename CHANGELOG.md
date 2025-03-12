@@ -22,6 +22,7 @@
 - Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
 - Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
 - Add support for particle species through a new `Species` class (see #276) (@cr-xu, @jank324, @Hespe)
+- Various optimisations for a roughly 2x speed improvement over `v0.7.0` (see #367) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 

@@ -18,8 +18,6 @@ from cheetah.utils import (
     verify_device_and_dtype,
 )
 
-speed_of_light = torch.tensor(constants.speed_of_light)  # In m/s
-
 
 class ParticleBeam(Beam):
     """
@@ -66,26 +64,34 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.species = species if species is not None else Species("electron")
+        species = species if species is not None else Species("electron")
 
-        self.register_buffer("particles", None)
-        self.register_buffer("energy", None)
-        self.register_buffer(
+        self.register_buffer_or_parameter(
+            "particles", torch.as_tensor(particles, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "energy", torch.as_tensor(energy, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
             "particle_charges",
-            torch.full(
-                (particles.shape[-2],), self.species.charge_coulomb, **factory_kwargs
+            (
+                torch.as_tensor(particle_charges, **factory_kwargs)
+                if particle_charges is not None
+                else torch.full(
+                    (particles.shape[-2],), species.charge_coulomb, **factory_kwargs
+                )
             ),
         )
-        self.register_buffer(
-            "survival_probabilities", torch.ones(particles.shape[-2], **factory_kwargs)
+        self.register_buffer_or_parameter(
+            "survival_probabilities",
+            (
+                torch.as_tensor(survival_probabilities, **factory_kwargs)
+                if survival_probabilities is not None
+                else torch.ones(particles.shape[-2], **factory_kwargs)
+            ),
         )
 
-        self.particles = particles.to(**factory_kwargs)
-        self.energy = energy.to(**factory_kwargs)
-        if particle_charges is not None:
-            self.particle_charges = particle_charges.to(**factory_kwargs)
-        if survival_probabilities is not None:
-            self.survival_probabilities = survival_probabilities.to(**factory_kwargs)
+        self.species = species
 
     @classmethod
     def from_parameters(
@@ -735,7 +741,7 @@ class ParticleBeam(Beam):
         y = torch.from_numpy(particle_group.y)
         px = torch.from_numpy(particle_group.px) / p0c
         py = torch.from_numpy(particle_group.py) / p0c
-        tau = torch.from_numpy(particle_group.t) * speed_of_light
+        tau = torch.from_numpy(particle_group.t) * constants.speed_of_light
         delta = (torch.from_numpy(particle_group.energy) - energy) / p0c
 
         particles = torch.stack([x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1)
@@ -789,7 +795,7 @@ class ParticleBeam(Beam):
         py = self.py * self.p0c
         p_total = torch.sqrt(self.energies**2 - self.species.mass_eV**2)
         pz = torch.sqrt(p_total**2 - px**2 - py**2)
-        t = self.tau / speed_of_light
+        t = self.tau / constants.speed_of_light
         # TODO: To be discussed
         status = self.survival_probabilities > 0.5
 
@@ -1011,14 +1017,16 @@ class ParticleBeam(Beam):
             beam.relativistic_gamma
             * beam.relativistic_beta
             * beam.species.mass_kg
-            * speed_of_light
+            * constants.speed_of_light
         )
         p = torch.sqrt(
             xp_coordinates[..., 1] ** 2
             + xp_coordinates[..., 3] ** 2
             + xp_coordinates[..., 5] ** 2
         )
-        gamma = torch.sqrt(1 + (p / (beam.species.mass_kg * speed_of_light)) ** 2)
+        gamma = torch.sqrt(
+            1 + (p / (beam.species.mass_kg * constants.speed_of_light)) ** 2
+        )
 
         beam.particles[..., 1] = xp_coordinates[..., 1] / p0.unsqueeze(-1)
         beam.particles[..., 3] = xp_coordinates[..., 3] / p0.unsqueeze(-1)
@@ -1041,14 +1049,14 @@ class ParticleBeam(Beam):
             self.relativistic_gamma
             * self.relativistic_beta
             * self.species.mass_kg
-            * speed_of_light
+            * constants.speed_of_light
         )  # Reference momentum in (kg m/s)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
             torch.ones(self.particles.shape[:-1])
             + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
-        momentum = gamma * self.species.mass_kg * beta * speed_of_light
+        momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
@@ -1583,7 +1591,7 @@ class ParticleBeam(Beam):
         return torch.sqrt(self.energies**2 - self.species.mass_eV**2)
 
     def clone(self) -> "ParticleBeam":
-        return ParticleBeam(
+        return self.__class__(
             particles=self.particles.clone(),
             energy=self.energy.clone(),
             particle_charges=self.particle_charges.clone(),
