@@ -151,13 +151,13 @@ class Screen(Element):
             copy_of_incoming = incoming.clone()
 
             if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu, _ = torch.broadcast_tensors(
-                    copy_of_incoming._mu, self.misalignment[..., 0]
+                copy_of_incoming.mu, _ = torch.broadcast_tensors(
+                    copy_of_incoming.mu, self.misalignment[..., 0]
                 )
-                copy_of_incoming._mu = copy_of_incoming._mu.clone()
+                copy_of_incoming.mu = copy_of_incoming.mu.clone()
 
-                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
-                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
+                copy_of_incoming.mu[..., 0] -= self.misalignment[..., 0]
+                copy_of_incoming.mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
                 copy_of_incoming.particles, _ = torch.broadcast_tensors(
                     copy_of_incoming.particles,
@@ -178,8 +178,8 @@ class Screen(Element):
         if self.is_active and self.is_blocking:
             if isinstance(incoming, ParameterBeam):
                 return ParameterBeam(
-                    mu=incoming._mu,
-                    cov=incoming._cov,
+                    mu=incoming.mu,
+                    cov=incoming.cov,
                     energy=incoming.energy,
                     total_charge=torch.zeros_like(incoming.total_charge),
                 )
@@ -208,7 +208,7 @@ class Screen(Element):
                 dtype=self.misalignment.dtype,
             )
         elif isinstance(read_beam, ParameterBeam):
-            if torch.numel(read_beam._mu[..., 0]) > 1:
+            if torch.numel(read_beam.mu[..., 0]) > 1:
                 raise NotImplementedError(
                     "`Screen` does not support vectorization of `ParameterBeam`. "
                     "Please use `ParticleBeam` instead. If this is a feature you would "
@@ -216,15 +216,15 @@ class Screen(Element):
                 )
 
             transverse_mu = torch.stack(
-                [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
+                [read_beam.mu[..., 0], read_beam.mu[..., 2]], dim=-1
             )
             transverse_cov = torch.stack(
                 [
                     torch.stack(
-                        [read_beam._cov[..., 0, 0], read_beam._cov[..., 0, 2]], dim=-1
+                        [read_beam.cov[..., 0, 0], read_beam.cov[..., 0, 2]], dim=-1
                     ),
                     torch.stack(
-                        [read_beam._cov[..., 2, 0], read_beam._cov[..., 2, 2]], dim=-1
+                        [read_beam.cov[..., 2, 0], read_beam.cov[..., 2, 2]], dim=-1
                     ),
                 ],
                 dim=-1,
