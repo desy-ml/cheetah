@@ -100,8 +100,7 @@ class Aperture(Element):
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities * survived_mask,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
+            species=incoming.species.clone(),
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
