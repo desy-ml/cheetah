@@ -96,11 +96,14 @@ class Species:
 
     def clone(self) -> "Species":
         """Return a copy of the species."""
-        return Species(
-            name=self.name,
-            num_elementary_charges=self.num_elementary_charges.clone(),
-            mass_eV=self.mass_eV.clone(),
-        )
+        if self.name in self.__class__.known:
+            return Species(name=self.name)
+        else:
+            return Species(
+                name=self.name,
+                num_elementary_charges=self.num_elementary_charges.clone(),
+                mass_eV=self.mass_eV.clone(),
+            )
 
     def __repr__(self) -> str:
         return (
