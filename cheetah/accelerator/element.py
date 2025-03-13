@@ -68,15 +68,14 @@ class Element(ABC, nn.Module):
         """
         if isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
-            mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
-            cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
+            mu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
+            cov = torch.matmul(tm, torch.matmul(incoming.cov, tm.transpose(-2, -1)))
             return ParameterBeam(
                 mu,
                 cov,
                 incoming.energy,
                 total_charge=incoming.total_charge,
-                device=mu.device,
-                dtype=mu.dtype,
+                species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
@@ -86,8 +85,7 @@ class Element(ABC, nn.Module):
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
-                device=new_particles.device,
-                dtype=new_particles.dtype,
+                species=incoming.species.clone(),
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
@@ -105,6 +103,23 @@ class Element(ABC, nn.Module):
         elements.
         """
         raise NotImplementedError
+
+    def register_buffer_or_parameter(
+        self, name: str, value: torch.Tensor | nn.Parameter
+    ) -> None:
+        """
+        Register a buffer or parameter with the given name and value. Automatically
+        selects the correct method from `register_buffer` or `register_parameter` based
+        on the type of `value`.
+
+        :param name: Name of the buffer or parameter.
+        :param value: Value of the buffer or parameter.
+        :param default: Default value of the buffer.
+        """
+        if isinstance(value, nn.Parameter):
+            self.register_parameter(name, value)
+        else:
+            self.register_buffer(name, value)
 
     @property
     @abstractmethod

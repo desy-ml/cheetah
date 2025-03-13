@@ -33,6 +33,7 @@ class Undulator(Element):
         super().__init__(name=name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
+
         self.is_active = is_active
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:

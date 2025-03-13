@@ -94,6 +94,17 @@ class Species:
     def charge_coulomb(self, value: torch.Tensor) -> None:
         self.num_elementary_charges = value / elementary_charge
 
+    def clone(self) -> "Species":
+        """Return a copy of the species."""
+        if self.name in self.__class__.known:
+            return Species(name=self.name)
+        else:
+            return Species(
+                name=self.name,
+                num_elementary_charges=self.num_elementary_charges.clone(),
+                mass_eV=self.mass_eV.clone(),
+            )
+
     def __repr__(self) -> str:
         return (
             f"Species(name={repr(self.name)}, "
