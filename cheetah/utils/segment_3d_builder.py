@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_SCALE_FACTOR: float = 0.20
-DEFAULT_ROTATION_ANGLE: float = math.pi
+DEFAULT_ROTATION_ANGLE: float = 2 * math.pi
 DEFAULT_ROTATION_AXIS: List[int] = [0, 1, 0]
 
 
