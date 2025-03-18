@@ -40,7 +40,7 @@
 - The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
 - A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
-- Add link to the new Discord server (see #355) (@jank324)
+- Add link to the new Discord server (see #355, #382) (@jank324)
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 - Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
 
