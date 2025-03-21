@@ -67,28 +67,42 @@ class Screen(Element):
             "kde",
         ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
 
+        self.register_buffer_or_parameter(
+            "pixel_size",
+            torch.as_tensor(
+                pixel_size if pixel_size is not None else (1e-3, 1e-3), **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "misalignment",
+            torch.as_tensor(
+                misalignment if misalignment is not None else (0.0, 0.0),
+                **factory_kwargs,
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "kde_bandwidth",
+            torch.as_tensor(
+                (
+                    kde_bandwidth
+                    if kde_bandwidth is not None
+                    else self.pixel_size[0].clone()
+                ),
+                **factory_kwargs,
+            ),
+        )
+
         self.resolution = resolution
         self.binning = binning
         self.method = method
         self.is_blocking = is_blocking
         self.is_active = is_active
 
-        self.register_buffer("pixel_size", torch.tensor((1e-3, 1e-3), **factory_kwargs))
-        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
-        self.register_buffer("kde_bandwidth", torch.clone(self.pixel_size[0]))
-
         self.register_buffer(
             "cached_reading",
             torch.full((resolution[1], resolution[0]), torch.nan, **factory_kwargs),
+            persistent=False,
         )
-
-        if pixel_size is not None:
-            self.pixel_size = torch.as_tensor(pixel_size, **factory_kwargs)
-        if misalignment is not None:
-            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
-        if kde_bandwidth is not None:
-            self.kde_bandwidth = torch.as_tensor(kde_bandwidth, **factory_kwargs)
-
         self.set_read_beam(None)
 
     @property
@@ -151,19 +165,19 @@ class Screen(Element):
             copy_of_incoming = incoming.clone()
 
             if isinstance(incoming, ParameterBeam):
-                copy_of_incoming._mu, _ = torch.broadcast_tensors(
-                    copy_of_incoming._mu, self.misalignment[..., 0]
+                broadcasted_mu, _ = torch.broadcast_tensors(
+                    copy_of_incoming.mu, self.misalignment[..., 0]
                 )
-                copy_of_incoming._mu = copy_of_incoming._mu.clone()
+                copy_of_incoming.mu = broadcasted_mu.clone()
 
-                copy_of_incoming._mu[..., 0] -= self.misalignment[..., 0]
-                copy_of_incoming._mu[..., 2] -= self.misalignment[..., 1]
+                copy_of_incoming.mu[..., 0] -= self.misalignment[..., 0]
+                copy_of_incoming.mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
-                copy_of_incoming.particles, _ = torch.broadcast_tensors(
+                broadcasted_particles, _ = torch.broadcast_tensors(
                     copy_of_incoming.particles,
                     self.misalignment[..., 0].unsqueeze(-1).unsqueeze(-1),
                 )
-                copy_of_incoming.particles = copy_of_incoming.particles.clone()
+                copy_of_incoming.particles = broadcasted_particles.clone()
 
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
@@ -178,8 +192,8 @@ class Screen(Element):
         if self.is_active and self.is_blocking:
             if isinstance(incoming, ParameterBeam):
                 return ParameterBeam(
-                    mu=incoming._mu,
-                    cov=incoming._cov,
+                    mu=incoming.mu,
+                    cov=incoming.cov,
                     energy=incoming.energy,
                     total_charge=torch.zeros_like(incoming.total_charge),
                 )
@@ -197,7 +211,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
-        if not torch.all(torch.isnan(self.cached_reading)):
+        if self.cached_reading is not None:
             return self.cached_reading
 
         read_beam = self.get_read_beam()
@@ -208,7 +222,7 @@ class Screen(Element):
                 dtype=self.misalignment.dtype,
             )
         elif isinstance(read_beam, ParameterBeam):
-            if torch.numel(read_beam._mu[..., 0]) > 1:
+            if torch.numel(read_beam.mu[..., 0]) > 1:
                 raise NotImplementedError(
                     "`Screen` does not support vectorization of `ParameterBeam`. "
                     "Please use `ParticleBeam` instead. If this is a feature you would "
@@ -216,15 +230,15 @@ class Screen(Element):
                 )
 
             transverse_mu = torch.stack(
-                [read_beam._mu[..., 0], read_beam._mu[..., 2]], dim=-1
+                [read_beam.mu[..., 0], read_beam.mu[..., 2]], dim=-1
             )
             transverse_cov = torch.stack(
                 [
                     torch.stack(
-                        [read_beam._cov[..., 0, 0], read_beam._cov[..., 0, 2]], dim=-1
+                        [read_beam.cov[..., 0, 0], read_beam.cov[..., 0, 2]], dim=-1
                     ),
                     torch.stack(
-                        [read_beam._cov[..., 2, 0], read_beam._cov[..., 2, 2]], dim=-1
+                        [read_beam.cov[..., 2, 0], read_beam.cov[..., 2, 2]], dim=-1
                     ),
                 ],
                 dim=-1,
@@ -302,12 +316,7 @@ class Screen(Element):
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
-        self.cached_reading = torch.full(
-            (self.resolution[0], self.resolution[1]),
-            torch.nan,
-            device=self.cached_reading.device,
-            dtype=self.cached_reading.dtype,
-        )
+        self.cached_reading = None
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]

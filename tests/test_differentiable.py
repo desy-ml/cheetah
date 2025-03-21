@@ -67,13 +67,13 @@ def test_ea_incoming_parameter_beam():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    incoming_beam._mu = nn.Parameter(incoming_beam._mu)
-    incoming_beam._cov = nn.Parameter(incoming_beam._cov)
+    incoming_beam.mu = nn.Parameter(incoming_beam.mu)
+    incoming_beam.cov = nn.Parameter(incoming_beam.cov)
 
     outgoing_beam = ea.track(incoming_beam)
 
-    assert outgoing_beam._mu.grad_fn is not None
-    assert outgoing_beam._cov.grad_fn is not None
+    assert outgoing_beam.mu.grad_fn is not None
+    assert outgoing_beam.cov.grad_fn is not None
 
 
 def test_ea_incoming_particle_beam():

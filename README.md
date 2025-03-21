@@ -15,7 +15,7 @@ Cheetah is a high-speed differentiable beam dynamics code specifically design to
 
 Its speed helps generate data fast, for example for extremely data-hungry reinforcement learning algorithms, while its differentiability can be used for a variety of applications, including accelerator tuning, system identification and physics-informed prior means for Bayesian optimisation. Its native integration with machine learning toolchains around PyTorch also makes Cheetah an ideal candidate for coupling of physics-based and neural network beam dynamics models that remain fast and differentiable.
 
-To learn more about what Cheetah can do, we recommend reading our [PRAB paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601). To learn how to use Cheetah, we refer to the example notebooks in the [Cheetah documentation](https://cheetah-accelerator.readthedocs.io/). We also have a public [Discord server](https://discord.gg/hrwYPC3a) where you can ask questions and get help.
+To learn more about what Cheetah can do, we recommend reading our [PRAB paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601). To learn how to use Cheetah, we refer to the example notebooks in the [Cheetah documentation](https://cheetah-accelerator.readthedocs.io/). We also have a public [Discord server](https://discord.gg/7k7kzSDwpn) where you can ask questions and get help.
 
 ## Installation
 
