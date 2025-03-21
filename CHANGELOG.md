@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.7.1 [🚧 Work in Progress]
+## v0.7.2 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.1](https://github.com/desy-ml/cheetah/releases/tag/v0.7.1) (2025-03-21)
 
 ### 🚨 Breaking Changes
 
@@ -44,8 +56,7 @@
 - Add link to the new Discord server (see #355, #382) (@jank324)
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 - Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
-
-### 🌟 First Time Contributors
+- Add badge to the README for the number of downloads from PyPI (see #364) (@jank324)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 
