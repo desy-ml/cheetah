@@ -428,6 +428,10 @@ def convert_lattice_to_cheetah(
     merged_lines = merge_delimiter_continued_lines(
         merged_lines, delimiter="{", remove_delimiter=False
     )
+
+    #strip EOL char (;) from final merged lines
+    merged_lines = [line.strip(";") for line in merged_lines]
+    
     assert len(merged_lines) <= len(
         lines
     ), "Merging lines should never produce more lines than there were before."
