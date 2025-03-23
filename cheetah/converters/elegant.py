@@ -309,6 +309,26 @@ def convert_element(
                 frequency=torch.tensor(parsed["frequency"], **factory_kwargs),
                 name=name,
             )
+        elif parsed["element_type"] == "kicker":
+            validate_understood_properties(
+                ["element_type", "hkick", "vkick"],
+                parsed
+            )
+            return cheetah.Segment(
+                elements=[
+                    cheetah.HorizontalCorrector(
+                        length=torch.tensor(parsed.get("l", 0.0)/2, **factory_kwargs),
+                        angle=torch.tensor(parsed["hkick"], **factory_kwargs),
+                        name=name + "_hkick",
+                    ),
+                    cheetah.VerticalCorrector(
+                        length=torch.tensor(parsed.get("l", 0.0)/2, **factory_kwargs),
+                        angle=torch.tensor(parsed["vkick"], **factory_kwargs),
+                        name=name + "_vkick",
+                    ),
+                ],
+                name=name + "_segment",
+            )
         elif parsed["element_type"] in ["sben", "csbend"]:
             validate_understood_properties(
                 ["element_type", "l", "angle", "k1", "e1", "e2", "tilt", "group"],
