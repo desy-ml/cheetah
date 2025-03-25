@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.7.1 [🚧 Work in Progress]
+## v0.7.2 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.1](https://github.com/desy-ml/cheetah/releases/tag/v0.7.1) (2025-03-21)
 
 ### 🚨 Breaking Changes
 
@@ -9,6 +21,8 @@
 - The covariance properties of the different beam classes were renamed from names like `cor_x` and `sigma_xpx` to consistent names like `cov_xpx` (see #331) (@jank324)
 - The signature of the `transfer_map` method of all element subclasses was extended by a non-optional `species` argument (see #276) (@cr-xu, @jank324, @Hespe)
 - `ParticleBeam.plot_distribution` allows for Seaborn-style passing of `axs` and returns the latter as well. In line with that change for the purpose of overlaying distributions, the `contour` argument of `ParticleBeam.plot_2d_distribution` was replaced by a `style` argument. (see #330) (@jank324)
+- The default values for `total_charge` in both beam classes are no longer `0.0` but more sensible values (see #377) (@jank324)
+- `ParameterBeam._mu` and `ParameterBeam._cov` were renamed to `ParameterBeam.mu` and `ParameterBeam.cov` (see #378) (@jank324)
 
 ### 🚀 Features
 
@@ -19,7 +33,8 @@
 - Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
 - Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
 - Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
-- Add support for particle species through a new `Species` class (see #276) (@cr-xu, @jank324, @Hespe)
+- Add support for particle species through a new `Species` class (see #276, #376) (@cr-xu, @jank324, @Hespe)
+- Various optimisations for a roughly 2x speed improvement over `v0.7.0` (see #367) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
@@ -37,11 +52,10 @@
 - The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
 - A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
-- Add link to the new Discord server (see #355) (@jank324)
+- Add link to the new Discord server (see #355, #382) (@jank324)
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 - Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
-
-### 🌟 First Time Contributors
+- Add badge to the README for the number of downloads from PyPI (see #364) (@jank324)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 

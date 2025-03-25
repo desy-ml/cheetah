@@ -34,6 +34,7 @@ class Drift(Element):
         super().__init__(name=name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
+
         self.tracking_method = tracking_method
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
@@ -112,8 +113,6 @@ class Drift(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
             species=incoming.species,
         )
         return outgoing_beam

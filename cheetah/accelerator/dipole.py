@@ -78,41 +78,58 @@ class Dipole(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("k1", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("_e1", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("_e2", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("fringe_integral", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("fringe_integral_exit", None)
-        self.register_buffer("gap", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("gap_exit", None)
-        self.register_buffer("tilt", torch.tensor(0.0, **factory_kwargs))
-
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if angle is not None:
-            self.angle = torch.as_tensor(angle, **factory_kwargs)
-        if k1 is not None:
-            self.k1 = torch.as_tensor(k1, **factory_kwargs)
-        if dipole_e1 is not None:
-            self._e1 = torch.as_tensor(dipole_e1, **factory_kwargs)
-        if dipole_e2 is not None:
-            self._e2 = torch.as_tensor(dipole_e2, **factory_kwargs)
-        if fringe_integral is not None:
-            self.fringe_integral = torch.as_tensor(fringe_integral, **factory_kwargs)
-        self.fringe_integral_exit = (
-            torch.as_tensor(fringe_integral_exit, **factory_kwargs)
-            if fringe_integral_exit is not None
-            else self.fringe_integral
+
+        self.register_buffer_or_parameter(
+            "angle",
+            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
         )
-        if gap is not None:
-            self.gap = torch.as_tensor(gap, **factory_kwargs)
-        self.gap_exit = (
-            torch.as_tensor(gap_exit, **factory_kwargs)
-            if gap_exit is not None
-            else self.gap
+        self.register_buffer_or_parameter(
+            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
         )
-        if tilt is not None:
-            self.tilt = torch.as_tensor(tilt, **factory_kwargs)
+        self.register_buffer_or_parameter(
+            "_e1",
+            torch.as_tensor(
+                dipole_e1 if dipole_e1 is not None else 0.0, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "_e2",
+            torch.as_tensor(
+                dipole_e2 if dipole_e2 is not None else 0.0, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "fringe_integral",
+            torch.as_tensor(
+                fringe_integral if fringe_integral is not None else 0.0,
+                **factory_kwargs,
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "fringe_integral_exit",
+            torch.as_tensor(
+                (
+                    fringe_integral_exit
+                    if fringe_integral_exit is not None
+                    else self.fringe_integral
+                ),
+                **factory_kwargs,
+            ),
+        )
+
+        self.register_buffer_or_parameter(
+            "gap", torch.as_tensor(gap if gap is not None else 0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "gap_exit",
+            torch.as_tensor(
+                gap_exit if gap_exit is not None else self.gap, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+        )
 
         self.fringe_at = fringe_at
         self.fringe_type = fringe_type
@@ -231,8 +248,6 @@ class Dipole(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
             species=incoming.species,
         )
         return outgoing_beam
