@@ -569,18 +569,15 @@ class Segment(Element):
         self,
         incoming: Beam,
         fig: matplotlib.figure.Figure | None = None,
-        num_particles: int = 10,
         resolution: float = 0.01,
         vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot an overview of the segment with the lattice and traced reference particles.
+        Plot an overview of the segment with the lattice along with the beam position and size.
 
-        :param incoming: Entering beam from which the reference particles are sampled.
+        :param incoming: Entering beam from which the mean and standard deviation are shown.
         :param fig: Figure to plot the overview into.
-        :param num_particles: Number of reference particles to plot. Must not be larger
-            than number of particles passed in `beam`.
-        :param resolution: Minimum resolution of the tracking of the reference particles
+        :param resolution: Minimum resolution of the tracking of the mean and standard deviation
             in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
