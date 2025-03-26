@@ -82,7 +82,7 @@ ocelot_beam = ParticleBeam.from_ocelot(parray)
 astra_beam = ParticleBeam.from_astra(filepath)
 ```
 
-You may plot a segment with reference particle traces bay calling
+You may plot a segment with the beam position and size by calling
 
 ```python
 segment.plot_overview(incoming=beam)
@@ -90,7 +90,7 @@ segment.plot_overview(incoming=beam)
 
 ![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/misalignment.png)
 
-where the keyword argument `beam` is the incoming beam represented by the reference particles.
+where the keyword argument `beam` is the incoming beam represented in the plot.
 
 ## Cite Cheetah
 
