@@ -512,19 +512,27 @@ class Segment(Element):
         x_stds = [reference_beam.sigma_x for reference_beam in references]
         broadcast_x_means = torch.broadcast_tensors(*x_means)
         stacked_x_means = torch.stack(broadcast_x_means)
-        dimension_reordered_x_means = stacked_x_means.movedim(0, -1)  # Place vector dims first
+        dimension_reordered_x_means = stacked_x_means.movedim(
+            0, -1
+        )  # Place vector dims first
         broadcast_x_stds = torch.broadcast_tensors(*x_stds)
         stacked_x_stds = torch.stack(broadcast_x_stds)
-        dimension_reordered_x_stds = stacked_x_stds.movedim(0, -1)  # Place vector dims first
+        dimension_reordered_x_stds = stacked_x_stds.movedim(
+            0, -1
+        )  # Place vector dims first
 
         y_means = [reference_beam.mu_y for reference_beam in references]
         y_stds = [reference_beam.sigma_y for reference_beam in references]
         broadcast_y_means = torch.broadcast_tensors(*y_means)
         stacked_y_means = torch.stack(broadcast_y_means)
-        dimension_reordered_y_means = stacked_y_means.movedim(0, -1)  # Place vector dims first
+        dimension_reordered_y_means = stacked_y_means.movedim(
+            0, -1
+        )  # Place vector dims first
         broadcast_y_stds = torch.broadcast_tensors(*y_stds)
         stacked_y_stds = torch.stack(broadcast_y_stds)
-        dimension_reordered_y_stds = stacked_y_stds.movedim(0, -1)  # Place vector dims first
+        dimension_reordered_y_stds = stacked_y_stds.movedim(
+            0, -1
+        )  # Place vector dims first
 
         plot_ss = (
             dimensions_reordered_ss[vector_idx]
@@ -552,11 +560,15 @@ class Segment(Element):
             else dimension_reordered_y_stds
         ).detach()
 
-        axx.plot(plot_ss, plot_x_means )
-        axx.fill_between(plot_ss, plot_x_means - plot_x_stds, plot_x_means + plot_x_stds, alpha=0.7)
+        axx.plot(plot_ss, plot_x_means)
+        axx.fill_between(
+            plot_ss, plot_x_means - plot_x_stds, plot_x_means + plot_x_stds, alpha=0.7
+        )
 
-        axy.plot(plot_ss, plot_y_means )
-        axy.fill_between(plot_ss, plot_y_means - plot_y_stds, plot_y_means + plot_y_stds, alpha=0.7)
+        axy.plot(plot_ss, plot_y_means)
+        axy.fill_between(
+            plot_ss, plot_y_means - plot_y_stds, plot_y_means + plot_y_stds, alpha=0.7
+        )
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
