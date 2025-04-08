@@ -479,18 +479,18 @@ class Segment(Element):
         vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot the mean and standard deviation (i.e. beam size) of the beam along the
-        segment view in x- and y-direction.
+        Plot the mean (i.e. beam position) and standard deviation (i.e. beam size)
+        of the beam along the segment view in x- and y-direction.
 
         :param axx: Axes to plot the particle traces into viewed in x-direction.
         :param axy: Axes to plot the particle traces into viewed in y-direction.
-        :param incoming: Entering beam from which the mean and standard deviation are shown.
-        :param resolution: Minimum resolution of the tracking of the mean and standard deviation
-            in the plot.
-        :param vector_idx: Index of the vector dimension to plot. If the model has more
-            than one vector dimension, this can be used to select a specific one. In the
-            case of present vector dimension but no index provided, the first one is
-            used by default.
+        :param incoming: Entering beam for which the position and size are shown
+        :param resolution: Minimum resolution of the tracking of the beam position
+            and beam size in the plot.
+        :param vector_idx: Index of the vector dimension to plot. If the model has
+            more than one vector dimension, this can be used to select a specific
+            one. In the case of present vector dimension but no index provided, the
+            first one is used by default.
         """
         reference_segment = self.clone()
         splits = reference_segment.split(resolution=torch.tensor(resolution))
@@ -585,16 +585,17 @@ class Segment(Element):
         vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot an overview of the segment with the lattice along with the beam position and size.
+        Plot an overview of the segment with the lattice along with the beam
+        position and size.
 
-        :param incoming: Entering beam from which the mean and standard deviation are shown.
+        :param incoming: Entering beam for which the position and size are shown
         :param fig: Figure to plot the overview into.
-        :param resolution: Minimum resolution of the tracking of the mean and standard deviation
-            in the plot.
-        :param vector_idx: Index of the vector dimension to plot. If the model has more
-            than one vector dimension, this can be used to select a specific one. In the
-            case of present vector dimension but no index provided, the first one is
-            used by default.
+        :param resolution: Minimum resolution of the tracking of the beam position
+            and beam size in the plot.
+        :param vector_idx: Index of the vector dimension to plot. If the model has
+            more than one vector dimension, this can be used to select a specific
+            one. In the case of present vector dimension but no index provided, the
+            first one is used by default.
         """
         if fig is None:
             fig = plt.figure()
