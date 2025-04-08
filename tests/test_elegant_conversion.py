@@ -6,10 +6,10 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 
-@pytest.mark.parametrize("file_path", [
-    "tests/resources/fodo.lte",
-    "tests/resources/fodo_no_line_endings.lte"
-])
+@pytest.mark.parametrize(
+    "file_path",
+    ["tests/resources/fodo.lte", "tests/resources/fodo_semicolon_terminated.lte"],
+)
 def test_fodo(file_path: str):
     """Test importing a FODO lattice defined in the Elegant file format."""
     converted = cheetah.Segment.from_elegant(file_path, "fodo")
