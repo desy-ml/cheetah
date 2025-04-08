@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
@@ -41,7 +43,6 @@
 - Fix issue where a space before a comma could cause the Elegant and Bmad converters to fail (see #327) (@jank324)
 - Fix issue of `BPM` and `Screen` not properly converting the `dtype` of their readings (see #335) (@Hespe)
 - Fix `is_active` and `is_skippable` of some elements not being boolean properties (see #357) (@jank324)
-- Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
 
 ### 🐆 Other
 
