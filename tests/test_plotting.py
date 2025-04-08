@@ -31,8 +31,9 @@ def test_twiss_plot():
 
 def test_mean_and_std_particle_plot():
     """
-    Test that the mean and standard deviation particle plot does not raise an exception using the example
-    from the `simple.ipynb` example notebook from the documentation.
+    Test that the mean and standard deviation particle plot does not
+    raise an exception using the example from the `simple.ipynb`
+    example notebook from the documentation.
     """
     segment = cheetah.Segment(
         elements=[
