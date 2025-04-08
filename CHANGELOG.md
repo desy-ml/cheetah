@@ -14,6 +14,8 @@
 
 ### 🌟 First Time Contributors
 
+- Amelia Pollard (@amylizzle)
+
 ## [v0.7.1](https://github.com/desy-ml/cheetah/releases/tag/v0.7.1) (2025-03-21)
 
 ### 🚨 Breaking Changes
