@@ -428,14 +428,15 @@ def convert_lattice_to_cheetah(
     merged_lines = merge_delimiter_continued_lines(
         merged_lines, delimiter="{", remove_delimiter=False
     )
-    # Strip EOL char (;) from final merged lines
-    merged_lines = [line.strip(";") for line in merged_lines]
     assert len(merged_lines) <= len(
         lines
     ), "Merging lines should never produce more lines than there were before."
 
+    # Strip EOL char (;) from final merged lines
+    stripped_lines = [line.strip(";") for line in merged_lines]
+
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(merged_lines)
+    context = parse_lines(stripped_lines)
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(name, context, device, dtype)
