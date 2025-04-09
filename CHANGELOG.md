@@ -8,9 +8,13 @@
 
 ### 🐛 Bug fixes
 
+- Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
+
+- Amelia Pollard (@amylizzle)
 
 ## [v0.7.1](https://github.com/desy-ml/cheetah/releases/tag/v0.7.1) (2025-03-21)
 
