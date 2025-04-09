@@ -1,17 +1,38 @@
 from typing import Any
 
+def try_eval_expression(expression: str, context: dict) -> Any:
+    """
+    Tries to evaluate an expression in reverse Polish notation.
 
-def is_valid_expression(expression: str) -> bool:
-    """Checks if expression is a reverse Polish notation."""
+    Throws Syntax Exception if the expression is not valid.
+    """
+    stack = []
     stripped = expression.strip()
-    return stripped[-1] in "+-/*" and len(stripped.split(" ")) == 3
+    for token in stripped.split(" "):
+        if token in '+-*/':
+            b = stack.pop()
+            a = stack.pop()
 
-
-def eval_expression(expression: str, context: dict) -> Any:
-    """
-    Evaluates an expression in reverse Polish notation.
-
-    NOTE: Does not support nested expressions.
-    """
-    splits = expression.strip().split(" ")
-    return eval(" ".join([splits[0], splits[2], splits[1]]), context)
+            # if else instead of match for compatibility reasons
+            if token == '+':
+                stack.append(a + b)
+            elif token == '-':
+                stack.append(a - b)
+            elif token == '*':
+                stack.append(a * b)
+            elif token == '/':
+                stack.append(a / b)
+            else:
+                raise SyntaxError(f"Invalid expression: {expression} - Invalid operator: {token}")
+        else:
+            if token.isnumeric():
+                number = float(token) #putting everything as float since it's all torch in the back anyway
+            elif token in context:
+                number = context[token]
+            else:
+                raise SyntaxError(f"Invalid expression: {expression} - {token} is not a number or a variable")
+            stack.append(number)
+    if len(stack) != 1:
+        raise SyntaxError(f"Invalid expression: {expression} - Stack not empty after evaluation")
+    return stack[0]
+  

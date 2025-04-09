@@ -7,8 +7,28 @@ def test_valid_rpn_expression():
     RPN expression.
     """
     expression = "2 3 +"
+    # try with empty context
+    assert rpn.try_eval_expression(expression, []) == 5
 
-    assert rpn.is_valid_expression(expression)
+
+def test_complex_rpn_expression():
+    """
+    Test that a valid RPN expression with nesting is correctly recognised as a valid
+    RPN expression.
+    """
+    expression = "10 2 * 3 4 * +"  # 20 + 12 = 32
+    # try with empty context
+    assert rpn.try_eval_expression(expression, []) == 32
+
+
+def test_complex_rpn_expression_with_context():
+    """
+    Test that a valid RPN expression with nesting and a varaiable is correctly
+    recognised as a valid RPN expression.
+    """
+    context = {"pi" : 3}  # close enough :D
+    expression = "10 2 * pi 4 * +"  # 20 + 12 = 32
+    assert rpn.try_eval_expression(expression, context) == 32
 
 
 def test_valid_rpn_expression_with_single_quotes():
@@ -18,8 +38,11 @@ def test_valid_rpn_expression_with_single_quotes():
     before calling the function.
     """
     expression = "'2 3 +'"
-
-    assert not rpn.is_valid_expression(expression)
+    try:
+        rpn.try_eval_expression(expression, [])
+        assert False, "Expected SyntaxError"
+    except SyntaxError:
+        assert True
 
 
 def test_falsely_validated_normal_expression():
@@ -30,4 +53,8 @@ def test_falsely_validated_normal_expression():
     """
     expression = "ldsp2h +dldsp17h +lblxsph/2-lbxsph/2"
 
-    assert not rpn.is_valid_expression(expression)
+    try:
+        rpn.try_eval_expression(expression, [])
+        assert False, "Expected SyntaxError"
+    except SyntaxError:
+        assert True
