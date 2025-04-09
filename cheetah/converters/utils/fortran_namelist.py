@@ -137,18 +137,12 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         # behaviour.
         expression = re.sub(r"abs\(", r"abs_func(", expression)
 
-        return (
-            eval(expression, context)
-            if not rpn.is_valid_expression(expression)
-            else rpn.eval_expression(expression, context)
-        )
+        # Try an evaluate, throwing a SyntaxError if it fails
+        return rpn.try_eval_expression(expression, context)
     except SyntaxError:
-        if not (
-            len(expression.split(":")) == 3 or len(expression.split(":")) == 4
-        ):  # It's probably an alias
-            print(
-                f"DEBUG: Evaluating expression {expression}. Assuming it is a string."
-            )
+        print(
+            f"WARNING: Evaluating expression {expression} failed. Assuming it's a str."
+        )
         return expression
     except Exception as e:
         print(expression)
