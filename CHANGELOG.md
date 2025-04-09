@@ -1,6 +1,22 @@
 # Changelog
 
-## v0.7.1 [🚧 Work in Progress]
+## v0.7.2 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+- Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+- Amelia Pollard (@amylizzle)
+
+## [v0.7.1](https://github.com/desy-ml/cheetah/releases/tag/v0.7.1) (2025-03-21)
 
 ### 🚨 Breaking Changes
 
@@ -41,11 +57,10 @@
 - The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
 - A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
-- Add link to the new Discord server (see #355) (@jank324)
+- Add link to the new Discord server (see #355, #382) (@jank324)
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 - Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
-
-### 🌟 First Time Contributors
+- Add badge to the README for the number of downloads from PyPI (see #364) (@jank324)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 
