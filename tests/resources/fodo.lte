@@ -1,5 +1,5 @@
 c: charge,total=0.25e-9
-q1: quad,l=0.1,k1=1.5 
+q1: quad,l=0.1,k1=1.5
 q2: quad,l=0.2,k1=-3
 d1: drift,l=1
 d2: drift ,l=2
