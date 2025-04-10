@@ -600,7 +600,7 @@ class Segment(Element):
         gs = fig.add_gridspec(3, hspace=0, height_ratios=[2, 2, 1])
         axs = gs.subplots(sharex=True)
 
-        axs[0].set_title("Beam position and size")
+        axs[0].set_title("Beam Position and Size")
         self.plot_mean_and_std(
             axx=axs[0],
             axy=axs[1],
