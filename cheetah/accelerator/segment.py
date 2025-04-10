@@ -501,7 +501,7 @@ class Segment(Element):
         ]
         broadcast_ss = torch.broadcast_tensors(*ss)
         stacked_ss = torch.stack(broadcast_ss)
-        dimensions_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
+        dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
 
         references = [incoming]
         for split in splits:
@@ -509,12 +509,12 @@ class Segment(Element):
             references.append(sample)
 
         x_means = [reference_beam.mu_x for reference_beam in references]
-        x_stds = [reference_beam.sigma_x for reference_beam in references]
         broadcast_x_means = torch.broadcast_tensors(*x_means)
         stacked_x_means = torch.stack(broadcast_x_means)
         dimension_reordered_x_means = stacked_x_means.movedim(
             0, -1
         )  # Place vector dims first
+        x_stds = [reference_beam.sigma_x for reference_beam in references]
         broadcast_x_stds = torch.broadcast_tensors(*x_stds)
         stacked_x_stds = torch.stack(broadcast_x_stds)
         dimension_reordered_x_stds = stacked_x_stds.movedim(
@@ -522,12 +522,12 @@ class Segment(Element):
         )  # Place vector dims first
 
         y_means = [reference_beam.mu_y for reference_beam in references]
-        y_stds = [reference_beam.sigma_y for reference_beam in references]
         broadcast_y_means = torch.broadcast_tensors(*y_means)
         stacked_y_means = torch.stack(broadcast_y_means)
         dimension_reordered_y_means = stacked_y_means.movedim(
             0, -1
         )  # Place vector dims first
+        y_stds = [reference_beam.sigma_y for reference_beam in references]
         broadcast_y_stds = torch.broadcast_tensors(*y_stds)
         stacked_y_stds = torch.stack(broadcast_y_stds)
         dimension_reordered_y_stds = stacked_y_stds.movedim(
@@ -535,9 +535,9 @@ class Segment(Element):
         )  # Place vector dims first
 
         plot_ss = (
-            dimensions_reordered_ss[vector_idx]
+            dimension_reordered_ss[vector_idx]
             if stacked_ss.dim() > 1
-            else dimensions_reordered_ss
+            else dimension_reordered_ss
         ).detach()
         plot_x_means = (
             dimension_reordered_x_means[vector_idx]
