@@ -88,7 +88,7 @@ You may plot a segment with the beam position and size by calling
 segment.plot_overview(incoming=beam)
 ```
 
-![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/misalignment.png)
+![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/readme_overview_plot.png)
 
 where the keyword argument `beam` is the incoming beam represented in the plot.
 
