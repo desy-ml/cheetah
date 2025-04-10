@@ -11,7 +11,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
-- Fix issues where generating screen images did not work on GPU because `Screen.pixel_bin_centers` was not on the same device (see #372) (@roussel-ryan, @jank324)
+- Fix issue where generating screen images did not work on GPU because `Screen.pixel_bin_centers` was not on the same device (see #372) (@roussel-ryan, @jank324)
 
 ### 🐆 Other
 
