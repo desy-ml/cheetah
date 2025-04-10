@@ -36,7 +36,8 @@ def try_eval_expression(expression: str, context: dict) -> Any:
                 number = context[token]
             else:
                 raise SyntaxError(
-                    f"Invalid expression: {expression} - {token} is not a number or a variable"
+                    f"Invalid expression: {expression} - {token} is"
+                    + " not a number or a variable"
                 )
             stack.append(number)
     if len(stack) != 1:
