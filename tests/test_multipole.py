@@ -108,8 +108,7 @@ def test_multipole_with_misalignment():
 
     # Create a beam centered at origin
     centered_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        energy=torch.tensor(1e9),
+        num_particles=torch.tensor(1_000), energy=torch.tensor(1e9)
     )
 
     # Create an offset beam with opposite offset relative to misalignment
@@ -159,19 +158,19 @@ def test_skew_multipole_behavior():
     normal quadrupole).
     """
     # Normal quadrupole (using B1)
-    normal_quad = Multipole(
+    normal_quad = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=torch.tensor([0.0, 5.0]),  # Strong for clear effect
     )
 
     # Skew quadrupole (using A1)
-    skew_quad = Multipole(
+    skew_quad = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_a=torch.tensor([0.0, 5.0]),
     )
 
     # Create a beam with x offset only
-    incoming = ParticleBeam.from_parameters(
+    incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000),
         energy=torch.tensor(1e9),
         mu_x=torch.tensor(1e-3),
@@ -192,14 +191,14 @@ def test_multipole_max_order():
     Test that the max_order parameter correctly limits the polynomial orders.
     """
     # Create a multipole with coefficients up to order 5
-    multipole_full = Multipole(
+    multipole_full = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=torch.tensor([0.0, 1.0, 0.5, 0.2, 0.1, 0.05]),  # Orders 0-5
         max_order=5,
     )
 
     # Create a multipole with the same coefficients but limited to order 2
-    multipole_limited = Multipole(
+    multipole_limited = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=torch.tensor(
             [0.0, 1.0, 0.5, 0.2, 0.1, 0.05]
@@ -215,7 +214,7 @@ def test_multipole_max_order():
     polynom_b_extra = torch.zeros(10)
     polynom_b_extra[1] = 1.0  # Set B1 = 1.0
 
-    multipole_extra = Multipole(
+    multipole_extra = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=polynom_b_extra,
         max_order=2,
@@ -231,7 +230,7 @@ def test_multipole_tracking_methods(tracking_method):
     Test that different tracking methods don't crash.
     """
     # Create a multipole with both normal and skew components
-    multipole = Multipole(
+    multipole = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=torch.tensor([0.0, 1.0, 1.0]),  # B1 and B2 components
         polynom_a=torch.tensor([0.0, 0.5]),  # A1 component
@@ -240,7 +239,7 @@ def test_multipole_tracking_methods(tracking_method):
     )
 
     # Create a beam with offset to see effects
-    incoming = ParticleBeam.from_parameters(
+    incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000),
         energy=torch.tensor(1e9),
         mu_x=torch.tensor(1e-3),
@@ -259,7 +258,7 @@ def test_multipole_split():
     Test that splitting a multipole into smaller segments works correctly.
     """
     # Create a quadrupole-like multipole
-    original = Multipole(
+    original = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=torch.tensor([0.0, 1.0]),
         fringe_quad_entrance=1,
@@ -270,7 +269,7 @@ def test_multipole_split():
     split_elements = original.split(torch.tensor(0.2))
 
     assert len(split_elements) == 5
-    assert isinstance(split_elements[0], Multipole)
+    assert isinstance(split_elements[0], cheetah.Multipole)
 
     # Check that fringe fields are only applied at the beginning and end
     assert split_elements[0].fringe_quad_entrance == 1
@@ -298,18 +297,18 @@ def test_multipole_parameter_validation():
     Test that the multipole element properly validates and initializes parameters.
     """
     # Test with default parameters
-    multipole = Multipole(length=torch.tensor(1.0))
+    multipole = cheetah.Multipole(length=torch.tensor(1.0))
     assert multipole.polynom_a.size(0) == 2  # Should contain orders 0, 1
     assert multipole.polynom_b.size(0) == 2
     assert multipole.max_order == 1
 
     # Test with custom max_order
-    multipole = Multipole(length=torch.tensor(1.0), max_order=3)
+    multipole = cheetah.Multipole(length=torch.tensor(1.0), max_order=3)
     assert multipole.polynom_a.size(0) == 4  # Should contain orders 0, 1, 2, 3
     assert multipole.polynom_b.size(0) == 4
 
     # Test with partial polynomial coefficients
-    multipole = Multipole(
+    multipole = cheetah.Multipole(
         length=torch.tensor(1.0), polynom_b=torch.tensor([0.0, 1.0]), max_order=3
     )
     assert multipole.polynom_b.size(0) == 4  # Should be padded to max_order+1
@@ -323,14 +322,14 @@ def test_multipole_vectorization():
     """Test that a multipole with vectorized parameters works correctly."""
     # Create a multipole with vectorized k1 values (quadrupole strengths)
     k1_values = torch.tensor([1.0, 2.0, 3.0])
-    multipole = Multipole(
+    multipole = cheetah.Multipole(
         length=torch.tensor(1.0),
         polynom_b=torch.tensor([0.0, 1.0]).unsqueeze(0).repeat(3, 1)
         * k1_values.unsqueeze(1),
     )
 
     # Create a simple beam
-    incoming = ParticleBeam.from_parameters(
+    incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000),
         energy=torch.tensor(1e9),
         mu_x=torch.tensor(1e-3),  # Small offset to see focusing effects
