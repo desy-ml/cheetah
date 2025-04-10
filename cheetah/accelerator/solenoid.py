@@ -125,7 +125,6 @@ class Solenoid(Element):
             )
             for _ in range(num_splits)
         ]
-        return [self]
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
