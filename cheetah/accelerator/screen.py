@@ -138,11 +138,15 @@ class Screen(Element):
                 -self.resolution[0] * self.pixel_size[0] / 2,
                 self.resolution[0] * self.pixel_size[0] / 2,
                 int(self.effective_resolution[0]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
             torch.linspace(
                 -self.resolution[1] * self.pixel_size[1] / 2,
                 self.resolution[1] * self.pixel_size[1] / 2,
                 int(self.effective_resolution[1]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
         )
 
@@ -290,8 +294,8 @@ class Screen(Element):
                 image = kde_histogram_2d(
                     x1=broadcasted_x,
                     x2=broadcasted_y,
-                    bins1=self.pixel_bin_centers[0].to(read_beam.x),
-                    bins2=self.pixel_bin_centers[1].to(read_beam.x),
+                    bins1=self.pixel_bin_centers[0],
+                    bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
                 )
