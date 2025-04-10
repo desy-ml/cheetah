@@ -90,7 +90,7 @@ segment.plot_overview(incoming=beam)
 
 ![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/readme_overview_plot.png)
 
-where the keyword argument `beam` is the incoming beam represented in the plot.
+where the keyword argument `incoming` is the incoming beam represented in the plot.
 
 ## Cite Cheetah
 
