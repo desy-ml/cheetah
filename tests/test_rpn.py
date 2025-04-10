@@ -40,7 +40,7 @@ def test_valid_rpn_expression_with_single_quotes():
     expression = "'2 3 +'"
     try:
         rpn.try_eval_expression(expression, [])
-        assert False, "Expected SyntaxError"
+        raise AssertionError("Expected SyntaxError")
     except SyntaxError:
         assert True
 
@@ -55,6 +55,6 @@ def test_falsely_validated_normal_expression():
 
     try:
         rpn.try_eval_expression(expression, [])
-        assert False, "Expected SyntaxError"
+        raise AssertionError("Expected SyntaxError")
     except SyntaxError:
         assert True
