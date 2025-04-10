@@ -562,20 +562,18 @@ class Segment(Element):
 
         axx.plot(plot_ss, plot_x_means)
         axx.fill_between(
-            plot_ss, plot_x_means - plot_x_stds, plot_x_means + plot_x_stds, alpha=0.7
+            plot_ss, plot_x_means - plot_x_stds, plot_x_means + plot_x_stds, alpha=0.4
         )
 
         axy.plot(plot_ss, plot_y_means)
         axy.fill_between(
-            plot_ss, plot_y_means - plot_y_stds, plot_y_means + plot_y_stds, alpha=0.7
+            plot_ss, plot_y_means - plot_y_stds, plot_y_means + plot_y_stds, alpha=0.4
         )
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
-        axx.grid()
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
-        axy.grid()
 
     def plot_overview(
         self,
