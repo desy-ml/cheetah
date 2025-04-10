@@ -120,7 +120,6 @@ class Solenoid(Element):
                 length=split_length,
                 k=self.k,
                 misalignment=self.misalignment,
-                name=generate_unique_name(),
                 device=device,
                 dtype=dtype,
             )
