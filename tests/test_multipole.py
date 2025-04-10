@@ -108,20 +108,17 @@ def test_multipole_with_misalignment():
 
     # Create a beam centered at origin
     centered_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000), energy=torch.tensor(1e9)
+        num_particles=1_000, energy=torch.tensor(1e9)
     )
 
     # Create an offset beam with opposite offset relative to misalignment
     offset_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        energy=torch.tensor(1e9),
-        mu_x=-offset_x,
-        mu_y=-offset_y,
+        num_particles=1_000, energy=torch.tensor(1e9), mu_x=-offset_x, mu_y=-offset_y
     )
 
     # Track through both scenarios
-    outbeam_misaligned_quad = multipole_misaligned(centered_beam)
-    outbeam_offset_beam = multipole_centered(offset_beam)
+    outbeam_misaligned_quad = multipole_misaligned.track(centered_beam)
+    outbeam_offset_beam = multipole_centered.track(offset_beam)
 
     # Transform the offset beam results back to the lab frame
     # For offset beam case, the beam was offset by (-offset_x, -offset_y)
@@ -171,15 +168,15 @@ def test_skew_multipole_behavior():
 
     # Create a beam with x offset only
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
+        num_particles=1_000,
         energy=torch.tensor(1e9),
         mu_x=torch.tensor(1e-3),
         mu_y=torch.tensor(0.0),
     )
 
     # Track through both elements
-    out_normal = normal_quad(incoming)
-    out_skew = skew_quad(incoming)
+    out_normal = normal_quad.track(incoming)
+    out_skew = skew_quad.track(incoming)
 
     # Normal and skew quadrupoles should have different coupling behaviors
     # Skew quadrupole should have larger py change from x offset compared to normal quad
@@ -240,13 +237,11 @@ def test_multipole_tracking_methods(tracking_method):
 
     # Create a beam with offset to see effects
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-3),
+        num_particles=1_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-3)
     )
 
     # Track - should run without errors
-    outgoing = multipole(incoming)
+    outgoing = multipole.track(incoming)
 
     # Output should have expected dimensions
     assert outgoing is not None
@@ -330,13 +325,13 @@ def test_multipole_vectorization():
 
     # Create a simple beam
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
+        num_particles=1_000,
         energy=torch.tensor(1e9),
         mu_x=torch.tensor(1e-3),  # Small offset to see focusing effects
     )
 
     # Track through the multipole
-    outgoing = multipole(incoming)
+    outgoing = multipole.track(incoming)
 
     # Verify the output shape matches the vectorization
     assert outgoing.mu_px.shape == (3,)
