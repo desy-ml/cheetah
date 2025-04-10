@@ -26,7 +26,7 @@ def test_complex_rpn_expression_with_context():
     Test that a valid RPN expression with nesting and a varaiable is correctly
     recognised as a valid RPN expression.
     """
-    context = {"pi" : 3}  # close enough :D
+    context = {"pi": 3}  # close enough :D
     expression = "10 2 * pi 4 * +"  # 20 + 12 = 32
     assert rpn.try_eval_expression(expression, context) == 32
 
