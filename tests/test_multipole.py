@@ -13,12 +13,11 @@ def test_multipole_as_drift():
         num_particles=1_000, energy=torch.tensor(1e9)
     )
 
-    # Track through both elements
     outgoing_multipole = multipole.track(incoming)
     outgoing_drift = drift.track(incoming)
 
     assert torch.allclose(
-        outgoing_multipole.particles, outgoing_drift.particles, atol=1e-5
+        outgoing_multipole.particles, outgoing_drift.particles, rtol=1e-6
     )
 
 
@@ -42,17 +41,12 @@ def test_multipole_as_quadrupole():
         num_particles=1_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-3)
     )
 
-    # Track through both elements
     outgoing_multipole = multipole.track(incoming)
     outgoing_quadrupole = quadrupole.track(incoming)
 
-    # Both should cause focusing/defocusing, but exact values will differ due to
-    # different tracking methods. Just verify they both affect the beam.
-    assert abs(outgoing_multipole.mu_px) > 1e-9
-    assert abs(outgoing_quadrupole.mu_px) > 1e-9
-
-    # The sign of px change should be the same for both
-    assert torch.sign(outgoing_multipole.mu_px) == torch.sign(outgoing_quadrupole.mu_px)
+    assert torch.allclose(
+        outgoing_multipole.particles, outgoing_quadrupole.particles, rtol=1e-6
+    )
 
 
 def test_multipole_as_horizontal_corrector():
@@ -74,15 +68,12 @@ def test_multipole_as_horizontal_corrector():
         num_particles=1_000, energy=torch.tensor(1e9)
     )
 
-    # Track through both elements
     outgoing_corrector = corrector.track(beam)
     outgoing_multipole = multipole.track(beam)
 
-    # Verify they produce similar results
-    assert torch.allclose(outgoing_corrector.mu_px, outgoing_multipole.mu_px, atol=1e-9)
-    assert torch.allclose(outgoing_corrector.mu_py, outgoing_multipole.mu_py, atol=1e-9)
-    assert torch.allclose(outgoing_corrector.mu_x, outgoing_multipole.mu_x, atol=1e-9)
-    assert torch.allclose(outgoing_corrector.mu_y, outgoing_multipole.mu_y, atol=1e-9)
+    assert torch.allclose(
+        outgoing_corrector.particles, outgoing_multipole.particles, rtol=1e-6
+    )
 
 
 def test_multipole_with_misalignment():
