@@ -586,7 +586,7 @@ class Segment(Element):
         Plot an overview of the segment with the lattice along with the beam position
         and size.
 
-        :param incoming: Entering beam for which the position and size are shown
+        :param incoming: Entering beam for which the position and size are shown.
         :param fig: Figure to plot the overview into.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
