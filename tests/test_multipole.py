@@ -10,7 +10,7 @@ def test_multipole_as_drift():
     drift = cheetah.Drift(length=torch.tensor(1.0))
 
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000), energy=torch.tensor(1e9)
+        num_particles=1_000, energy=torch.tensor(1e9)
     )
 
     # Track through both elements
@@ -39,9 +39,7 @@ def test_multipole_as_quadrupole():
     )
 
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-3),
+        num_particles=1_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-3)
     )
 
     # Track through both elements
@@ -62,73 +60,60 @@ def test_multipole_as_horizontal_corrector():
     Test that a multipole with B0 coefficient behaves like a horizontal corrector
     element.
     """
-    # Set parameters
-    length = torch.tensor(1e-9)  # Very short element
-    angle = torch.tensor(2e-3)  # Angle in radians
+    length = torch.tensor(1e-9)
+    angle = torch.tensor(2e-3)
 
-    # Create elements
-    hcorr = HorizontalCorrector(length=length, angle=angle)
-    multipole_hcorr = Multipole(
+    corrector = cheetah.HorizontalCorrector(length=length, angle=angle)
+    multipole = cheetah.Multipole(
         length=length,
         polynom_b=torch.tensor([-angle / length, 0.0]),  # B0 = -angle/length
         max_order=1,
     )
 
-    # Create test beam
-    beam = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        energy=torch.tensor(1e9),
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=1_000, energy=torch.tensor(1e9)
     )
 
     # Track through both elements
-    out_hcorr = hcorr(beam)
-    out_multipole = multipole_hcorr(beam)
-
-    # Compare results
-    print("\nComparison Results:")
-    print(f"HCM horizontal momentum: {out_hcorr.mu_px.item():.8e}")
-    print(f"Multipole horizontal momentum: {out_multipole.mu_px.item():.8e}")
-    print(f"Difference: {(out_hcorr.mu_px - out_multipole.mu_px).item():.8e}")
+    outgoing_corrector = corrector.track(beam)
+    outgoing_multipole = multipole.track(beam)
 
     # Verify they produce similar results
-    assert torch.allclose(out_hcorr.mu_px, out_multipole.mu_px, atol=1e-9)
-    assert torch.allclose(out_hcorr.mu_py, out_multipole.mu_py, atol=1e-9)
-    assert torch.allclose(out_hcorr.mu_x, out_multipole.mu_x, atol=1e-9)
-    assert torch.allclose(out_hcorr.mu_y, out_multipole.mu_y, atol=1e-9)
+    assert torch.allclose(outgoing_corrector.mu_px, outgoing_multipole.mu_px, atol=1e-9)
+    assert torch.allclose(outgoing_corrector.mu_py, outgoing_multipole.mu_py, atol=1e-9)
+    assert torch.allclose(outgoing_corrector.mu_x, outgoing_multipole.mu_x, atol=1e-9)
+    assert torch.allclose(outgoing_corrector.mu_y, outgoing_multipole.mu_y, atol=1e-9)
 
 
 def test_multipole_with_misalignment():
     """
-    Test that a multipole with misalignment behaves equivalently to a centered
-    multipole with an offset beam (with appropriate transformation).
+    Test that a multipole with misalignment behaves equivalently to a centered multipole
+    with an offset beam (with appropriate transformation).
     """
-    # Parameters
     length = torch.tensor(1.0)
-    k1 = torch.tensor(20.0)  # Strong quadrupole for clear effect
-    offset_x = torch.tensor(0.001)  # 1mm horizontal offset
-    offset_y = torch.tensor(0.002)  # 2mm vertical offset
+    k1 = torch.tensor(20.0)
+    offset_x = torch.tensor(0.001)
+    offset_y = torch.tensor(0.002)
 
-    # Create a quadrupole-like multipole with misalignment
-    multipole_with_misalignment = Multipole(
+    # Create a quadrupole-like multipole with and without misalignment
+    multipole_misaligned = cheetah.Multipole(
         length=length,
         polynom_b=torch.tensor([0.0, k1]),
         misalignment=torch.tensor([offset_x, offset_y]),
     )
-
-    # Create a centered multipole
-    multipole_centered = Multipole(
+    multipole_centered = cheetah.Multipole(
         length=length,
         polynom_b=torch.tensor([0.0, k1]),
     )
 
     # Create a beam centered at origin
-    centered_beam = ParticleBeam.from_parameters(
+    centered_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000),
         energy=torch.tensor(1e9),
     )
 
     # Create an offset beam with opposite offset relative to misalignment
-    offset_beam = ParticleBeam.from_parameters(
+    offset_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000),
         energy=torch.tensor(1e9),
         mu_x=-offset_x,
@@ -136,7 +121,7 @@ def test_multipole_with_misalignment():
     )
 
     # Track through both scenarios
-    outbeam_misaligned_quad = multipole_with_misalignment(centered_beam)
+    outbeam_misaligned_quad = multipole_misaligned(centered_beam)
     outbeam_offset_beam = multipole_centered(offset_beam)
 
     # Transform the offset beam results back to the lab frame
