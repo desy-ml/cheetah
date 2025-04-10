@@ -1,73 +1,60 @@
 import pytest
 import torch
 
-from cheetah import Drift, ParticleBeam
-from cheetah.accelerator.horizontal_corrector import HorizontalCorrector
-from cheetah.accelerator.multipole import Multipole
-from cheetah.accelerator.quadrupole import Quadrupole
+import cheetah
 
 
 def test_multipole_as_drift():
-    """
-    Test that a multipole with all coefficients zero approximates drift behavior.
-    """
-    # Create a multipole with zero coefficients and a drift
-    multipole = Multipole(length=torch.tensor(1.0))  # All coefficients default to zero
-    drift = Drift(length=torch.tensor(1.0))
+    """Test that a multipole with all coefficients zero approximates drift behaviour."""
+    multipole = cheetah.Multipole(length=torch.tensor(1.0))
+    drift = cheetah.Drift(length=torch.tensor(1.0))
 
-    # Create a particle beam
-    incoming_beam = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        energy=torch.tensor(1e9),
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=torch.tensor(1_000), energy=torch.tensor(1e9)
     )
 
     # Track through both elements
-    outbeam_multipole = multipole(incoming_beam)
-    outbeam_drift = drift(incoming_beam)
+    outgoing_multipole = multipole.track(incoming)
+    outgoing_drift = drift.track(incoming)
 
-    # Compare statistical properties - should be similar but not identical
-    assert torch.allclose(outbeam_multipole.mu_x, outbeam_drift.mu_x, atol=1e-5)
-    assert torch.allclose(outbeam_multipole.mu_px, outbeam_drift.mu_px, atol=1e-5)
-    assert torch.allclose(outbeam_multipole.mu_y, outbeam_drift.mu_y, atol=1e-5)
-    assert torch.allclose(outbeam_multipole.mu_py, outbeam_drift.mu_py, atol=1e-5)
-
-
-def test_multipole_vs_quadrupole():
-    """
-    Compare a multipole configured as a quadrupole with a native Quadrupole element.
-    """
-    # Create a multipole with B1 (quadrupole) coefficient
-    k1 = torch.tensor(2.0)  # Quadrupole strength
-    multipole_quad = Multipole(
-        length=torch.tensor(1.0), polynom_b=torch.tensor([0.0, k1])  # B1 = k1
+    assert torch.allclose(
+        outgoing_multipole.particles, outgoing_drift.particles, atol=1e-5
     )
 
-    # Create an equivalent native quadrupole with bmadx tracking
-    quadrupole = Quadrupole(
+
+def test_multipole_as_quadrupole():
+    """
+    Compare a multipole configured as a quadrupole with a native quadrupole element.
+    """
+    k1 = torch.tensor(4.2)
+
+    multipole = cheetah.Multipole(
+        length=torch.tensor(1.0), polynom_b=torch.tensor([0.0, k1])  # B1 = k1
+    )
+    quadrupole = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=k1,
         tracking_method="bmadx",
         num_steps=10,  # Use multiple steps for better accuracy
     )
 
-    # Create a beam with offset to see focusing effects
-    incoming_beam = ParticleBeam.from_parameters(
+    incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000),
         energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-3),  # 1mm offset
+        mu_x=torch.tensor(1e-3),
     )
 
     # Track through both elements
-    outbeam_multipole = multipole_quad(incoming_beam)
-    outbeam_quadrupole = quadrupole(incoming_beam)
+    outgoing_multipole = multipole.track(incoming)
+    outgoing_quadrupole = quadrupole.track(incoming)
 
-    # Both should cause focusing/defocusing, but exact values will differ
-    # due to different tracking methods. Just verify they both affect the beam.
-    assert abs(outbeam_multipole.mu_px) > 1e-9
-    assert abs(outbeam_quadrupole.mu_px) > 1e-9
+    # Both should cause focusing/defocusing, but exact values will differ due to
+    # different tracking methods. Just verify they both affect the beam.
+    assert abs(outgoing_multipole.mu_px) > 1e-9
+    assert abs(outgoing_quadrupole.mu_px) > 1e-9
 
     # The sign of px change should be the same for both
-    assert torch.sign(outbeam_multipole.mu_px) == torch.sign(outbeam_quadrupole.mu_px)
+    assert torch.sign(outgoing_multipole.mu_px) == torch.sign(outgoing_quadrupole.mu_px)
 
 
 def test_multipole_as_horizontal_corrector():
