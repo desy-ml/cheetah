@@ -138,11 +138,15 @@ class Screen(Element):
                 -self.resolution[0] * self.pixel_size[0] / 2,
                 self.resolution[0] * self.pixel_size[0] / 2,
                 int(self.effective_resolution[0]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
             torch.linspace(
                 -self.resolution[1] * self.pixel_size[1] / 2,
                 self.resolution[1] * self.pixel_size[1] / 2,
                 int(self.effective_resolution[1]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
         )
 
