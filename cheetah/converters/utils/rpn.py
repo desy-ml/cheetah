@@ -10,32 +10,37 @@ def try_eval_expression(expression: str, context: dict) -> Any:
     stack = []
     stripped = expression.strip()
     for token in stripped.split(" "):
-        if token in "+-*/":
-            b = stack.pop()
-            a = stack.pop()
-
-            match token:
-                case "+":
-                    stack.append(a + b)
-                case "-":
-                    stack.append(a - b)
-                case "*":
-                    stack.append(a * b)
-                case "/":
-                    stack.append(a / b)
-        else:
-            if token.isnumeric():
-                number = float(
-                    token
-                )  # putting everything as float since it's all torch in the back anyway
-            elif token in context:
-                number = context[token]
-            else:
-                raise SyntaxError(
-                    f"Invalid expression: {expression} - {token} is"
-                    + " not a number or a variable"
-                )
-            stack.append(number)
+        match token:
+            case "+":
+                b = stack.pop()
+                a = stack.pop()
+                stack.append(a + b)
+            case "-":
+                b = stack.pop()
+                a = stack.pop()
+                stack.append(a - b)
+            case "*":
+                b = stack.pop()
+                a = stack.pop()
+                stack.append(a * b)
+            case "/":
+                b = stack.pop()
+                a = stack.pop()
+                stack.append(a / b)
+            case "#":  # commment, ignore this and all following tokens
+                break
+            case _:  # all other tokens
+                if token.isnumeric():
+                    # read as float since it's all torch in the back anyway
+                    number = float(token)
+                elif token in context:
+                    number = context[token]
+                else:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - {token} is"
+                        + " not a number or a variable"
+                    )
+                stack.append(number)
     if len(stack) != 1:
         raise SyntaxError(
             f"Invalid expression: {expression} - Stack not empty after evaluation"
