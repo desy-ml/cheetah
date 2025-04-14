@@ -1,3 +1,5 @@
+import pytest
+
 from cheetah.converters.utils import rpn
 
 
@@ -38,11 +40,8 @@ def test_valid_rpn_expression_with_single_quotes():
     before calling the function.
     """
     expression = "'2 3 +'"
-    try:
+    with pytest.raises(SyntaxError):
         rpn.try_eval_expression(expression, [])
-        raise AssertionError("Expected SyntaxError")
-    except SyntaxError:
-        assert True
 
 
 def test_falsely_validated_normal_expression():
@@ -53,8 +52,5 @@ def test_falsely_validated_normal_expression():
     """
     expression = "ldsp2h +dldsp17h +lblxsph/2-lbxsph/2"
 
-    try:
+    with pytest.raises(SyntaxError):
         rpn.try_eval_expression(expression, [])
-        raise AssertionError("Expected SyntaxError")
-    except SyntaxError:
-        assert True
