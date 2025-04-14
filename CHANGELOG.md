@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
+- Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail (see #387) (@amylizzle)
 
 ### 🐛 Bug fixes
 
