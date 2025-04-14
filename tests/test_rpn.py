@@ -23,6 +23,16 @@ def test_complex_rpn_expression():
     assert rpn.try_eval_expression(expression, []) == 32
 
 
+def test_complex_rpn_expression_with_comment():
+    """
+    Test that a valid RPN expression with a comment is correctly recognised as a valid
+    RPN expression.
+    """
+    expression = "10 2 * 3 4 * + # should be valid"  # 20 + 12 = 32
+    # try with empty context
+    assert rpn.try_eval_expression(expression, []) == 32
+
+
 def test_complex_rpn_expression_with_context():
     """
     Test that a valid RPN expression with nesting and a variable is correctly
