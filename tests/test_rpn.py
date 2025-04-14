@@ -25,7 +25,7 @@ def test_complex_rpn_expression():
 
 def test_complex_rpn_expression_with_context():
     """
-    Test that a valid RPN expression with nesting and a varaiable is correctly
+    Test that a valid RPN expression with nesting and a variable is correctly
     recognised as a valid RPN expression.
     """
     context = {"pi": 3}  # close enough :D

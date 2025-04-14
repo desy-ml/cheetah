@@ -14,19 +14,15 @@ def try_eval_expression(expression: str, context: dict) -> Any:
             b = stack.pop()
             a = stack.pop()
 
-            # if else instead of match for compatibility reasons
-            if token == "+":
-                stack.append(a + b)
-            elif token == "-":
-                stack.append(a - b)
-            elif token == "*":
-                stack.append(a * b)
-            elif token == "/":
-                stack.append(a / b)
-            else:
-                raise SyntaxError(
-                    f"Invalid expression: {expression} - Invalid operator: {token}"
-                )
+            match token:
+                case "+":
+                    stack.append(a + b)
+                case "-":
+                    stack.append(a - b)
+                case "*":
+                    stack.append(a * b)
+                case "/":
+                    stack.append(a / b)
         else:
             if token.isnumeric():
                 number = float(
