@@ -10,7 +10,7 @@ def try_eval_expression(expression: str, context: dict) -> Any:
     stack = []
     stripped = expression.strip()
     for token in stripped.split(" "):
-        match token:
+        match token:  # match only the first character
             case "+":
                 b = stack.pop()
                 a = stack.pop()
@@ -30,6 +30,9 @@ def try_eval_expression(expression: str, context: dict) -> Any:
             case "#":  # commment, ignore this and all following tokens
                 break
             case _:  # all other tokens
+                if token[0] == "#":
+                    # this is a comment without a space
+                    break
                 try:
                     # read as float since it's all torch in the back anyway
                     number = float(token)
