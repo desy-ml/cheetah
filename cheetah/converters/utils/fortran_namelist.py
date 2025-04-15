@@ -1,4 +1,3 @@
-import math
 import os
 import re
 from copy import deepcopy
@@ -127,16 +126,6 @@ def evaluate_expression(expression: str, context: dict) -> Any:
 
     # Evaluate as a mathematical expression
     try:
-        # Surround expressions in brackets with quotes
-        expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
-        # Replace power operator with python equivalent
-        expression = re.sub(r"\^", r"**", expression)
-        # Replace abs with abs_func when it is followed by a (
-        # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
-        # lattice file. I'm not sure this replacement will lead to the intended
-        # behaviour.
-        expression = re.sub(r"abs\(", r"abs_func(", expression)
-
         # Try an evaluate, throwing a SyntaxError if it fails
         return rpn.try_eval_expression(expression, context)
     except SyntaxError:
@@ -381,11 +370,6 @@ def parse_lines(lines: str) -> dict:
         "m_electron": (
             physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
         ),
-        "sqrt": math.sqrt,
-        "asin": math.asin,
-        "sin": math.sin,
-        "cos": math.cos,
-        "abs_func": abs,
         "raddeg": scipy.constants.degree,
     }
 
