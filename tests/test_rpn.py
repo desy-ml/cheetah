@@ -18,9 +18,9 @@ def test_complex_rpn_expression():
     Test that a valid RPN expression with nesting is correctly recognised as a valid
     RPN expression.
     """
-    expression = "10 2 * 3 4 * +"  # 20 + 12 = 32
+    expression = "10 2 * 4 2 ^ + sqrt"  # sqrt(20 + 16) = 6
     # try with empty context
-    assert rpn.try_eval_expression(expression, []) == 32
+    assert rpn.try_eval_expression(expression, []) == 6
 
 
 def test_complex_rpn_expression_with_comment():

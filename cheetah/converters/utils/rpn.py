@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 
@@ -27,6 +28,25 @@ def try_eval_expression(expression: str, context: dict) -> Any:
                 b = stack.pop()
                 a = stack.pop()
                 stack.append(a / b)
+            case "^":
+                b = stack.pop()
+                a = stack.pop()
+                stack.append(a**b)
+            case "sqrt":
+                a = stack.pop()
+                stack.append(math.sqrt(a))
+            case "sin":
+                a = stack.pop()
+                stack.append(math.sin(a))
+            case "cos":
+                a = stack.pop()
+                stack.append(math.cos(a))
+            case "tan":
+                a = stack.pop()
+                stack.append(math.tan(a))
+            case "asin":
+                a = stack.pop()
+                stack.append(math.asin(a))
             case "#":  # commment, ignore this and all following tokens
                 break
             case _:  # all other tokens
