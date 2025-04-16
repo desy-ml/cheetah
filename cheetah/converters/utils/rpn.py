@@ -47,11 +47,9 @@ def try_eval_expression(expression: str, context: dict) -> Any:
             case "asin":
                 a = stack.pop()
                 stack.append(math.asin(a))
-            case "#":  # commment, ignore this and all following tokens
-                break
             case _:  # all other tokens
+                # commment, ignore this and all following tokens
                 if token[0] == "#":
-                    # this is a comment without a space
                     break
                 try:
                     # read as float since it's all torch in the back anyway
