@@ -29,10 +29,10 @@ def test_twiss_plot():
     segment.plot_twiss(incoming_beam)
 
 
-def test_reference_particle_plot():
+def test_mean_and_std_particle_plot():
     """
-    Test that the reference particle plot does not raise an exception using the example
-    from the `simple.ipynb` example notebook from the documentation.
+    Test that the mean and standard deviation particle plot does not raise an exception
+    using the example from the `simple.ipynb` example notebook from the documentation.
     """
     segment = cheetah.Segment(
         elements=[
@@ -62,8 +62,8 @@ def test_reference_particle_plot():
 
 def test_twiss_plot_vectorized_2d():
     """
-    Test that the Twiss plot does not raise an exception using the ARES EA as an
-    example and when the model has two vector dimensions.
+    Test that the Twiss plot does not raise an exception using the ARES EA as an example
+    and when the model has two vector dimensions.
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     segment.AREAMQZM1.k1 = torch.tensor(5.0)
@@ -85,8 +85,8 @@ def test_twiss_plot_vectorized_2d():
 
 def test_reference_particle_plot_vectorized_2d():
     """
-    Test that the Twiss plot does not raise an exception using the ARES EA as an
-    example and when the model has two vector dimensions.
+    Test that the Twiss plot does not raise an exception using the ARES EA as an example
+    and when the model has two vector dimensions.
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     segment.AREAMQZM1.k1 = torch.tensor(5.0)
