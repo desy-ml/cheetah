@@ -1,4 +1,3 @@
-import math
 import os
 import re
 from copy import deepcopy
@@ -127,28 +126,12 @@ def evaluate_expression(expression: str, context: dict) -> Any:
 
     # Evaluate as a mathematical expression
     try:
-        # Surround expressions in brackets with quotes
-        expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
-        # Replace power operator with python equivalent
-        expression = re.sub(r"\^", r"**", expression)
-        # Replace abs with abs_func when it is followed by a (
-        # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
-        # lattice file. I'm not sure this replacement will lead to the intended
-        # behaviour.
-        expression = re.sub(r"abs\(", r"abs_func(", expression)
-
-        return (
-            eval(expression, context)
-            if not rpn.is_valid_expression(expression)
-            else rpn.eval_expression(expression, context)
-        )
+        # Try an evaluate, throwing a SyntaxError if it fails
+        return rpn.try_eval_expression(expression, context)
     except SyntaxError:
-        if not (
-            len(expression.split(":")) == 3 or len(expression.split(":")) == 4
-        ):  # It's probably an alias
-            print(
-                f"DEBUG: Evaluating expression {expression}. Assuming it is a string."
-            )
+        print(
+            f"WARNING: Evaluating expression {expression} failed. Assuming it's a str."
+        )
         return expression
     except Exception as e:
         print(expression)
@@ -387,11 +370,6 @@ def parse_lines(lines: str) -> dict:
         "m_electron": (
             physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
         ),
-        "sqrt": math.sqrt,
-        "asin": math.asin,
-        "sin": math.sin,
-        "cos": math.cos,
-        "abs_func": abs,
         "raddeg": scipy.constants.degree,
     }
 
