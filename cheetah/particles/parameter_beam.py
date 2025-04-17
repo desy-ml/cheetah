@@ -37,18 +37,19 @@ class ParameterBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        self.register_buffer("_mu", None)
-        self.register_buffer("_cov", None)
-        self.register_buffer("energy", None)
-        self.register_buffer("total_charge", torch.tensor(0.0, **factory_kwargs))
-
-        self._mu = torch.as_tensor(mu, **factory_kwargs)
-        self._cov = torch.as_tensor(cov, **factory_kwargs)
-        self.energy = torch.as_tensor(energy, **factory_kwargs)
-        if total_charge is not None:
-            self.total_charge = torch.as_tensor(total_charge, **factory_kwargs)
-
         self.species = species if species is not None else Species("electron")
+
+        self.register_buffer_or_parameter("mu", torch.as_tensor(mu, **factory_kwargs))
+        self.register_buffer_or_parameter("cov", torch.as_tensor(cov, **factory_kwargs))
+        self.register_buffer_or_parameter(
+            "energy", torch.as_tensor(energy, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "total_charge",
+            torch.as_tensor(
+                total_charge if total_charge is not None else 0.0, **factory_kwargs
+            ),
+        )
 
     @classmethod
     def from_parameters(
@@ -342,6 +343,7 @@ class ParameterBeam(Beam):
             np.cov(particles.transpose()), device=device, dtype=dtype
         )
 
+        energy = torch.as_tensor(energy)
         total_charge = torch.as_tensor(particle_charges).sum()
 
         return cls(
@@ -467,8 +469,8 @@ class ParameterBeam(Beam):
             cov_taup=self.cov_taup,
             energy=self.energy,
             total_charge=self.total_charge,
-            device=self._mu.device,
-            dtype=self._mu.dtype,
+            device=self.mu.device,
+            dtype=self.mu.dtype,
         )
 
     def linspaced(self, num_particles: int) -> "ParticleBeam":  # noqa: F821
@@ -498,82 +500,83 @@ class ParameterBeam(Beam):
             energy=self.energy,
             total_charge=self.total_charge,
             species=self.species,
-            device=self._mu.device,
-            dtype=self._mu.dtype,
+            device=self.mu.device,
+            dtype=self.mu.dtype,
         )
 
     @property
     def mu_x(self) -> torch.Tensor:
-        return self._mu[..., 0]
+        return self.mu[..., 0]
 
     @property
     def sigma_x(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[..., 0, 0], 1e-20))
+        return torch.sqrt(torch.clamp_min(self.cov[..., 0, 0], 1e-20))
 
     @property
     def mu_px(self) -> torch.Tensor:
-        return self._mu[..., 1]
+        return self.mu[..., 1]
 
     @property
     def sigma_px(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[..., 1, 1], 1e-20))
+        return torch.sqrt(torch.clamp_min(self.cov[..., 1, 1], 1e-20))
 
     @property
     def mu_y(self) -> torch.Tensor:
-        return self._mu[..., 2]
+        return self.mu[..., 2]
 
     @property
     def sigma_y(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[..., 2, 2], 1e-20))
+        return torch.sqrt(torch.clamp_min(self.cov[..., 2, 2], 1e-20))
 
     @property
     def mu_py(self) -> torch.Tensor:
-        return self._mu[..., 3]
+        return self.mu[..., 3]
 
     @property
     def sigma_py(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[..., 3, 3], 1e-20))
+        return torch.sqrt(torch.clamp_min(self.cov[..., 3, 3], 1e-20))
 
     @property
     def mu_tau(self) -> torch.Tensor:
-        return self._mu[..., 4]
+        return self.mu[..., 4]
 
     @property
     def sigma_tau(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[..., 4, 4], 1e-20))
+        return torch.sqrt(torch.clamp_min(self.cov[..., 4, 4], 1e-20))
 
     @property
     def mu_p(self) -> torch.Tensor:
-        return self._mu[..., 5]
+        return self.mu[..., 5]
 
     @property
     def sigma_p(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self._cov[..., 5, 5], 1e-20))
+        return torch.sqrt(torch.clamp_min(self.cov[..., 5, 5], 1e-20))
 
     @property
     def cov_xpx(self) -> torch.Tensor:
-        return self._cov[..., 0, 1]
+        return self.cov[..., 0, 1]
 
     @property
     def cov_ypy(self) -> torch.Tensor:
-        return self._cov[..., 2, 3]
+        return self.cov[..., 2, 3]
 
     @property
     def cov_taup(self) -> torch.Tensor:
-        return self._cov[..., 4, 5]
+        return self.cov[..., 4, 5]
 
     def clone(self) -> "ParameterBeam":
-        return ParameterBeam(
-            mu=self._mu.clone(),
-            cov=self._cov.clone(),
+        return self.__class__(
+            mu=self.mu.clone(),
+            cov=self.cov.clone(),
             energy=self.energy.clone(),
             total_charge=self.total_charge.clone(),
+            species=self.species.clone(),
         )
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(mu={repr(self._mu)}, "
-            + f"cov={repr(self._cov)}, "
+            f"{self.__class__.__name__}(mu={repr(self.mu)}, "
+            + f"cov={repr(self.cov)}, "
             + f"energy={repr(self.energy)}, "
             + f"total_charge={repr(self.total_charge)}, "
             + f"species={repr(self.species)})"

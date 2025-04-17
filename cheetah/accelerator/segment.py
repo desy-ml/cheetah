@@ -30,7 +30,7 @@ class Segment(Element):
     def __init__(self, elements: list[Element], name: str | None = None) -> None:
         super().__init__(name=name)
 
-        self.elements = nn.ModuleList(elements)
+        self.register_module("elements", nn.ModuleList(elements))
 
         for element in self.elements:
             # Make elements accessible via .name attribute. If multiple elements have
@@ -409,13 +409,24 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
+            continuous_skippable_elements = []
             for element in self.elements:
-                if not element.is_skippable:
-                    todos.append(element)
-                elif not todos or not todos[-1].is_skippable:
-                    todos.append(Segment([element], name="temporary_todo"))
+                if element.is_skippable:
+                    # Collect skippable elements until a non-skippable element is found
+                    continuous_skippable_elements.append(element)
                 else:
-                    todos[-1].elements.append(element)
+                    # If a non-skippable element is found, merge the skippable elements
+                    # and append them before the non-skippable element
+                    if len(continuous_skippable_elements) > 0:
+                        todos.append(Segment(elements=continuous_skippable_elements))
+                        continuous_skippable_elements = []
+
+                    todos.append(element)
+
+            # If there are still skippable elements at the end of the segment append
+            # them as well
+            if len(continuous_skippable_elements) > 0:
+                todos.append(Segment(elements=continuous_skippable_elements))
 
             for todo in todos:
                 incoming = todo.track(incoming)
@@ -459,25 +470,23 @@ class Segment(Element):
         ax.set_xlabel("s (m)")
         ax.set_yticks([])
 
-    def plot_reference_particle_traces(
+    def plot_mean_and_std(
         self,
         axx: plt.Axes,
         axy: plt.Axes,
         incoming: Beam,
-        num_particles: int = 10,
         resolution: float = 0.01,
         vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot `n` reference particles along the segment view in x- and y-direction.
+        Plot the mean (i.e. beam position) and standard deviation (i.e. beam size) of
+        the beam along the segment view in x- and y-direction.
 
         :param axx: Axes to plot the particle traces into viewed in x-direction.
         :param axy: Axes to plot the particle traces into viewed in y-direction.
-        :param incoming: Entering beam from which the reference particles are sampled.
-        :param num_particles: Number of reference particles to plot. Must not be larger
-            than number of particles passed in `beam`.
-        :param resolution: Minimum resolution of the tracking of the reference particles
-            in the plot.
+        :param incoming: Entering beam for which the position and size are shown
+        :param resolution: Minimum resolution of the tracking of the beam position and
+            beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
@@ -492,67 +501,95 @@ class Segment(Element):
         ]
         broadcast_ss = torch.broadcast_tensors(*ss)
         stacked_ss = torch.stack(broadcast_ss)
-        dimensions_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
+        dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
 
-        references = [incoming.linspaced(num_particles)]
+        references = [incoming]
         for split in splits:
             sample = split(references[-1])
             references.append(sample)
 
-        xs = [reference_beam.x for reference_beam in references]
-        broadcast_xs = torch.broadcast_tensors(*xs)
-        stacked_xs = torch.stack(broadcast_xs)
-        dimension_reordered_xs = stacked_xs.movedim(0, -1)  # Place vector dims first
+        x_means = [reference_beam.mu_x for reference_beam in references]
+        broadcast_x_means = torch.broadcast_tensors(*x_means)
+        stacked_x_means = torch.stack(broadcast_x_means)
+        dimension_reordered_x_means = stacked_x_means.movedim(
+            0, -1
+        )  # Place vector dims first
+        x_stds = [reference_beam.sigma_x for reference_beam in references]
+        broadcast_x_stds = torch.broadcast_tensors(*x_stds)
+        stacked_x_stds = torch.stack(broadcast_x_stds)
+        dimension_reordered_x_stds = stacked_x_stds.movedim(
+            0, -1
+        )  # Place vector dims first
 
-        ys = [reference_beam.y for reference_beam in references]
-        broadcast_ys = torch.broadcast_tensors(*ys)
-        stacked_ys = torch.stack(broadcast_ys)
-        dimension_reordered_ys = stacked_ys.movedim(0, -1)  # Place vector dims first
+        y_means = [reference_beam.mu_y for reference_beam in references]
+        broadcast_y_means = torch.broadcast_tensors(*y_means)
+        stacked_y_means = torch.stack(broadcast_y_means)
+        dimension_reordered_y_means = stacked_y_means.movedim(
+            0, -1
+        )  # Place vector dims first
+        y_stds = [reference_beam.sigma_y for reference_beam in references]
+        broadcast_y_stds = torch.broadcast_tensors(*y_stds)
+        stacked_y_stds = torch.stack(broadcast_y_stds)
+        dimension_reordered_y_stds = stacked_y_stds.movedim(
+            0, -1
+        )  # Place vector dims first
 
         plot_ss = (
-            dimensions_reordered_ss[vector_idx]
+            dimension_reordered_ss[vector_idx]
             if stacked_ss.dim() > 1
-            else dimensions_reordered_ss
+            else dimension_reordered_ss
         ).detach()
-        plot_xs = (
-            dimension_reordered_xs[vector_idx]
-            if stacked_xs.dim() > 2
-            else dimension_reordered_xs
+        plot_x_means = (
+            dimension_reordered_x_means[vector_idx]
+            if stacked_x_means.dim() > 2
+            else dimension_reordered_x_means
         ).detach()
-        plot_ys = (
-            dimension_reordered_ys[vector_idx]
-            if stacked_ys.dim() > 2
-            else dimension_reordered_ys
+        plot_x_stds = (
+            dimension_reordered_x_stds[vector_idx]
+            if stacked_x_stds.dim() > 2
+            else dimension_reordered_x_stds
+        ).detach()
+        plot_y_means = (
+            dimension_reordered_y_means[vector_idx]
+            if stacked_y_means.dim() > 2
+            else dimension_reordered_y_means
+        ).detach()
+        plot_y_stds = (
+            dimension_reordered_y_stds[vector_idx]
+            if stacked_y_stds.dim() > 2
+            else dimension_reordered_y_stds
         ).detach()
 
-        for particle_idx in range(num_particles):
-            axx.plot(plot_ss, plot_xs[particle_idx])
-            axy.plot(plot_ss, plot_ys[particle_idx])
+        axx.plot(plot_ss, plot_x_means)
+        axx.fill_between(
+            plot_ss, plot_x_means - plot_x_stds, plot_x_means + plot_x_stds, alpha=0.4
+        )
+
+        axy.plot(plot_ss, plot_y_means)
+        axy.fill_between(
+            plot_ss, plot_y_means - plot_y_stds, plot_y_means + plot_y_stds, alpha=0.4
+        )
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
-        axx.grid()
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
-        axy.grid()
 
     def plot_overview(
         self,
         incoming: Beam,
         fig: matplotlib.figure.Figure | None = None,
-        num_particles: int = 10,
         resolution: float = 0.01,
         vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot an overview of the segment with the lattice and traced reference particles.
+        Plot an overview of the segment with the lattice along with the beam position
+        and size.
 
-        :param incoming: Entering beam from which the reference particles are sampled.
+        :param incoming: Entering beam for which the position and size are shown.
         :param fig: Figure to plot the overview into.
-        :param num_particles: Number of reference particles to plot. Must not be larger
-            than number of particles passed in `beam`.
-        :param resolution: Minimum resolution of the tracking of the reference particles
-            in the plot.
+        :param resolution: Minimum resolution of the tracking of the beam position and
+            beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
@@ -563,12 +600,11 @@ class Segment(Element):
         gs = fig.add_gridspec(3, hspace=0, height_ratios=[2, 2, 1])
         axs = gs.subplots(sharex=True)
 
-        axs[0].set_title("Reference Particle Traces")
-        self.plot_reference_particle_traces(
+        axs[0].set_title("Beam Position and Size")
+        self.plot_mean_and_std(
             axx=axs[0],
             axy=axs[1],
             incoming=incoming,
-            num_particles=num_particles,
             resolution=resolution,
             vector_idx=vector_idx,
         )
@@ -583,7 +619,7 @@ class Segment(Element):
         """Plot twiss parameters along the segment."""
         longitudinal_beams = [incoming]
         s_positions = [torch.tensor(0.0)]
-        for element in self.elements:
+        for element in self.flattened().elements:
             if torch.all(element.length == 0):
                 continue
 

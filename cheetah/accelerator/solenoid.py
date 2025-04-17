@@ -30,7 +30,7 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: torch.Tensor = None,
+        length: torch.Tensor,
         k: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         name: str | None = None,
@@ -43,14 +43,18 @@ class Solenoid(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("k", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
-
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if k is not None:
-            self.k = torch.as_tensor(k, **factory_kwargs)
-        if misalignment is not None:
-            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "k", torch.as_tensor(k if k is not None else 0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "misalignment",
+            torch.as_tensor(
+                misalignment if misalignment is not None else (0.0, 0.0),
+                **factory_kwargs,
+            ),
+        )
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
@@ -107,8 +111,20 @@ class Solenoid(Element):
         return True
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for solenoid properly, for now just return self
-        return [self]
+        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        split_length = self.length / num_splits
+        device = self.length.device
+        dtype = self.length.dtype
+        return [
+            Solenoid(
+                length=split_length,
+                k=self.k,
+                misalignment=self.misalignment,
+                device=device,
+                dtype=dtype,
+            )
+            for _ in range(num_splits)
+        ]
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s

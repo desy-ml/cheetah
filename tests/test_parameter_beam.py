@@ -121,8 +121,8 @@ def test_from_twiss_dtype():
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
-    assert beam._mu.dtype == torch.float64
-    assert beam._cov.dtype == torch.float64
+    assert beam.mu.dtype == torch.float64
+    assert beam.cov.dtype == torch.float64
 
 
 def test_conversion_to_and_from_particle_beam():
