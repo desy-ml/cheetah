@@ -13,6 +13,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
+- Fix Twiss plot to plot samples also after elements in nested (see #388) (@RemiLehe)
 
 ### 🐆 Other
 
