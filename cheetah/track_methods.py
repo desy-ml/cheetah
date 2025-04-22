@@ -19,7 +19,7 @@ def base_rmatrix(
 
     :param length: Length of the element in m.
     :param k1: Quadrupole strength in 1/m**2.
-    :param hx: Curvature (1/radius) of the element in 1/m**2. TODO: Unit correct?
+    :param hx: Curvature (1/radius) of the element in 1/m.
     :param species: Particle species of the beam.
     :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
@@ -94,7 +94,7 @@ def base_tmatrix(
     :param length: Length of the element in m.
     :param k1: Quadrupole strength in 1/m**2.
     :param k2: Sextupole strength in 1/m**3.
-    :param hx: Curvature (1/radius) of the element in 1/m**2.
+    :param hx: Curvature (1/radius) of the element in 1/m.
     :param species: Particle species of the beam.
     :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
@@ -110,19 +110,15 @@ def base_tmatrix(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    # Avoid division by zero
-    k1 = k1.clone()
-    k1[k1 == 0] = 1e-12
-
     kx2 = k1 + hx**2
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0, device=device, dtype=dtype)))
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = (torch.sin(ky * length) / ky).real
-    sx = (torch.sin(kx * length) / kx).real
-    dx = hx / kx2 * (1.0 - cx)
+    sx = torch.where(kx != 0, (torch.sin(kx * length) / kx).real, length)
+    sy = torch.where(ky != 0, (torch.sin(ky * length) / ky).real, length)
+    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length**2 / 2.0)
 
     d2y = 0.5 * sy**2
     s2y = sy * cy
@@ -156,7 +152,9 @@ def base_tmatrix(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
     )
 
-    T = torch.zeros((7, 7, 7), dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
+    T = torch.zeros((7, 7, 7), dtype=dtype, device=device).repeat(
+        *vector_shape, 1, 1, 1
+    )
     T[..., 0, 0, 0] = -1 / 6 * khk * (sx**2 + dx) - 0.5 * hx * kx2 * sx**2
     T[..., 0, 0, 1] = 2 * -1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx
     T[..., 0, 1, 1] = -1 / 6 * khk * dx**2 + 0.5 * hx * dx * cx
@@ -272,6 +270,7 @@ def base_tmatrix(
         + 0.5 * hx**2 / beta * j1
         - 0.25 / beta * (length + cy * sy)
     )
+    T[..., 6, 6, 6] = 0.0  # Constant term currently handled by first order transfer map
 
     # Rotate the R matrix for skew / vertical magnets
     if torch.any(tilt != 0):

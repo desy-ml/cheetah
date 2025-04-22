@@ -3,7 +3,8 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import compute_relativistic_factors, verify_device_and_dtype
+from cheetah.track_methods import base_rmatrix, base_tmatrix, misalignment_matrix
+from cheetah.utils import verify_device_and_dtype
 
 
 class Sextupole(Element):
@@ -48,19 +49,21 @@ class Sextupole(Element):
         )
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        R = base_rmatrix(
+            length=self.length,
+            k1=torch.zeros_like(self.length),
+            hx=torch.zeros_like(self.length),
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
 
-        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
-
-        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
-
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
-        tm[..., 0, 1] = self.length
-        tm[..., 2, 3] = self.length
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
-
-        return tm
+        if torch.all(self.misalignment == 0):
+            return R
+        else:
+            R_entry, R_exit = misalignment_matrix(self.misalignment)
+            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+            return R
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -70,36 +73,37 @@ class Sextupole(Element):
         :return: Beam exiting the element.
         """
         first_order_tm = self.transfer_map(incoming.energy, incoming.species)
-
-        second_order_tm = torch.eye(
-            7, device=self.length.device, dtype=self.length.dtype
-        ).repeat((*incoming.mu_x.shape, 1, 1))
-        second_order_tm[..., 0, 1] = self.length
-        second_order_tm[..., 2, 3] = self.length
-        second_order_tm[..., 4, 5] = (
-            -self.length
-            / incoming.relativistic_beta**2
-            * incoming.relativistic_gamma**2
+        second_order_tm = base_tmatrix(
+            length=self.length,
+            k1=torch.zeros_like(self.length),
+            k2=self.k2,
+            hx=torch.zeros_like(self.length),
+            species=incoming.species,
+            tilt=self.tilt,
+            energy=incoming.energy,
         )
-        second_order_tm[..., 1, 0] = self.k2 * self.length**3 / 6
-        second_order_tm[..., 3, 2] = self.k2 * self.length**3 / 6
-        second_order_tm[..., 5, 4] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 1, 2] = self.k2 * self.length**3 / 6
-        second_order_tm[..., 3, 4] = self.k2 * self.length**3 / 6
-        second_order_tm[..., 5, 0] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 5, 2] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 1, 4] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 3, 0] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 5, 3] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 1, 5] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 3, 2] = -self.k2 * self.length**3 / 6
-        second_order_tm[..., 5, 4] = -self.k2 * self.length**3 / 6
 
         # Apply the transfer map to the incoming beam
-        particles = torch.einsum("ijk,ikl->ijl", first_order_tm, incoming.particles)
-        particles = torch.einsum("ijk,ikl->ijl", second_order_tm, particles)
+        first_order_particles = torch.matmul(
+            incoming.particles, first_order_tm.transpose(-2, -1)
+        )
+        second_order_particles = torch.einsum(
+            "...ijk,...j,...k->...i",
+            second_order_tm,
+            incoming.particles,
+            incoming.particles,
+        )
+        outgoing_particles = second_order_particles + first_order_particles
+        from icecream import ic
+
+        ic(
+            first_order_particles.shape,
+            second_order_particles.shape,
+            outgoing_particles.shape,
+        )
+
         return ParticleBeam(
-            particles=particles,
+            particles=outgoing_particles,
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,

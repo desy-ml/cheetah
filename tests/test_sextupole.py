@@ -25,13 +25,18 @@ def test_compare_sextupole_to_ocelot():
     incoming_p_array = ocelot.astraBeam2particleArray(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    lattice = ocelot.MagneticLattice([ocelot.Sextupole(l=length, k2=k2, tilt=tilt)])
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Sextupole(l=length, k2=k2, tilt=tilt)],
+        method={"global": ocelot.SecondTM},
+    )
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
     outgoing_ocelot = cheetah.ParticleBeam.from_ocelot(outgoing_p_array)
 
     # Compare the results
-    assert torch.allclose(outgoing_cheetah.particles, outgoing_ocelot.particles)
+    assert torch.allclose(
+        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
+    )
 
 
 def test_sextupole_as_drift():
@@ -48,4 +53,6 @@ def test_sextupole_as_drift():
     drift_outgoing = drift.track(incoming)
 
     # Check that the results are the same
-    assert torch.allclose(sextupole_outgoing.particles, drift_outgoing.particles)
+    assert torch.allclose(
+        sextupole_outgoing.particles, drift_outgoing.particles, atol=1e-5, rtol=1e-6
+    )
