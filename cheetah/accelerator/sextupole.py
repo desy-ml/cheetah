@@ -94,13 +94,6 @@ class Sextupole(Element):
             incoming.particles,
         )
         outgoing_particles = second_order_particles + first_order_particles
-        from icecream import ic
-
-        ic(
-            first_order_particles.shape,
-            second_order_particles.shape,
-            outgoing_particles.shape,
-        )
 
         return ParticleBeam(
             particles=outgoing_particles,
@@ -116,7 +109,7 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k2 != 0.0)
+        return torch.any(self.k2 != 0.0).item()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         raise NotImplementedError
