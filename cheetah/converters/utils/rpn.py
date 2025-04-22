@@ -11,42 +11,92 @@ def try_eval_expression(expression: str, context: dict) -> Any:
     stack = []
     stripped = expression.strip()
     for token in stripped.split(" "):
-        match token:  # match only the first character
+        match token:
             case "+":
-                b = stack.pop()
-                a = stack.pop()
-                stack.append(a + b)
+                try:
+                    b = stack.pop()
+                    a = stack.pop()
+                    stack.append(a + b)
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need two values before +"
+                    )
             case "-":
-                b = stack.pop()
-                a = stack.pop()
-                stack.append(a - b)
+                try:
+                    b = stack.pop()
+                    a = stack.pop()
+                    stack.append(a - b)
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need two values before -"
+                    )
             case "*":
-                b = stack.pop()
-                a = stack.pop()
-                stack.append(a * b)
+                try:
+                    b = stack.pop()
+                    a = stack.pop()
+                    stack.append(a * b)
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need two values before *"
+                    )
             case "/":
-                b = stack.pop()
-                a = stack.pop()
-                stack.append(a / b)
+                try:
+                    b = stack.pop()
+                    a = stack.pop()
+                    stack.append(a / b)
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need two values before /"
+                    )
             case "^":
-                b = stack.pop()
-                a = stack.pop()
-                stack.append(a**b)
+                try:
+                    b = stack.pop()
+                    a = stack.pop()
+                    stack.append(a**b)
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need two values before ^"
+                    )
             case "sqrt":
-                a = stack.pop()
-                stack.append(math.sqrt(a))
+                try:
+                    a = stack.pop()
+                    stack.append(math.sqrt(a))
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need one value before sqrt"
+                    )
             case "sin":
-                a = stack.pop()
-                stack.append(math.sin(a))
+                try:
+                    a = stack.pop()
+                    stack.append(math.sin(a))
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need one value before sin"
+                    )
             case "cos":
-                a = stack.pop()
-                stack.append(math.cos(a))
+                try:
+                    a = stack.pop()
+                    stack.append(math.cos(a))
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need one value before cos"
+                    )
             case "tan":
-                a = stack.pop()
-                stack.append(math.tan(a))
+                try:
+                    a = stack.pop()
+                    stack.append(math.tan(a))
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need one value before tan"
+                    )
             case "asin":
-                a = stack.pop()
-                stack.append(math.asin(a))
+                try:
+                    a = stack.pop()
+                    stack.append(math.asin(a))
+                except IndexError:
+                    raise SyntaxError(
+                        f"Invalid expression: {expression} - Need one value before asin"
+                    )
             case _:  # all other tokens
                 # commment, ignore this and all following tokens
                 if token[0] == "#":
