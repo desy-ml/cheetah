@@ -94,13 +94,14 @@ def merge_delimiter_continued_lines(
     return merged_lines
 
 
-def evaluate_expression(expression: str, context: dict) -> Any:
+def evaluate_expression(expression: str, context: dict, rpn_mode: bool) -> Any:
     """
     Evaluate an expression in the context of a dictionary of variables.
 
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
+    :param rpn_mode: whether expressions should be treated as RPN
     :return: Result of evaluating the expression.
     """
 
@@ -126,8 +127,22 @@ def evaluate_expression(expression: str, context: dict) -> Any:
 
     # Evaluate as a mathematical expression
     try:
-        # Try an evaluate, throwing a SyntaxError if it fails
-        return rpn.try_eval_expression(expression, context)
+        if rpn_mode:
+            # Try an evaluate, throwing a SyntaxError if it fails
+            return rpn.try_eval_expression(expression, context)
+        else:
+            # TODO: this is not a safe way of handling this
+            # Surround expressions in brackets with quotes
+            expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
+            # Replace power operator with python equivalent
+            expression = re.sub(r"\^", r"**", expression)
+            # Replace abs with abs_func when it is followed by a (
+            # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
+            # lattice file. I'm not sure this replacement will lead to the intended
+            # behaviour.
+            expression = re.sub(r"abs\(", r"abs_func(", expression)
+            print(f"DEBUG: evaluating {expression} as eval()")
+            return eval(expression, context)
     except SyntaxError:
         print(
             f"WARNING: Evaluating expression {expression} failed. Assuming it's a str."
@@ -162,13 +177,14 @@ def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
     return type_matching_keys
 
 
-def assign_property(line: str, context: dict) -> dict:
+def assign_property(line: str, context: dict, rpn_mode: bool) -> dict:
     """
     Assign a property of an element to the context.
 
     :param line: Line of a property assignment to be parsed.
     :param context: Dictionary of variables to assign the property to and from which to
         read variables.
+    :param rpn_mode: whether expressions should be treated as RPN
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
@@ -183,7 +199,7 @@ def assign_property(line: str, context: dict) -> dict:
     else:
         object_names = [object_name]
 
-    expression_result = evaluate_expression(property_expression, context)
+    expression_result = evaluate_expression(property_expression, context, rpn_mode)
 
     for name in object_names:
         if name not in context:
@@ -193,13 +209,14 @@ def assign_property(line: str, context: dict) -> dict:
     return context
 
 
-def assign_variable(line: str, context: dict) -> dict:
+def assign_variable(line: str, context: dict, rpn_mode: bool) -> dict:
     """
     Assign a variable to the context.
 
     :param line: Line of a variable assignment to be parsed.
     :param context: Dictionary of variables to assign the variable to and from which to
         read variables.
+    :param rpn_mode: whether expressions should be treated as RPN
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*=(.*)"
@@ -208,18 +225,19 @@ def assign_variable(line: str, context: dict) -> dict:
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
 
-    context[variable_name] = evaluate_expression(variable_expression, context)
+    context[variable_name] = evaluate_expression(variable_expression, context, rpn_mode)
 
     return context
 
 
-def define_element(line: str, context: dict) -> dict:
+def define_element(line: str, context: dict, rpn_mode: bool) -> dict:
     """
     Define an element in the context.
 
     :param line: Line of an element definition to be parsed.
     :param context: Dictionary of variables to define the element in and from which to
         read variables.
+    :param rpn_mode: whether expressions should be treated as RPN
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
@@ -249,7 +267,7 @@ def define_element(line: str, context: dict) -> dict:
             property_expression = property_expression.strip()
 
             element_properties[property_name] = evaluate_expression(
-                property_expression, context
+                property_expression, context, rpn_mode
             )
 
     context[element_name] = element_properties
@@ -264,6 +282,7 @@ def define_line(line: str, context: dict) -> dict:
     :param line: Line of a beam line definition to be parsed.
     :param context: Dictionary of variables to define the beam line in and from which
         to read variables.
+
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
@@ -347,12 +366,14 @@ def parse_use_line(line: str, context: dict) -> dict:
     return context
 
 
-def parse_lines(lines: str) -> dict:
+def parse_lines(lines: str, rpn_mode: bool) -> dict:
     """
-    Parse a list of lines from a Bmad lattice file. They should be cleaned and merged
-    before being passed to this function.
+    Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
+    and merged before being passed to this function.
 
     :param lines: List of lines to parse.
+    :param rpn_mode: Whether expressions should be parsed as RPN.
+        True for Elegant. False for Bmad
     :return: Dictionary of variables defined in the lattice file.
     """
     property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
@@ -371,19 +392,20 @@ def parse_lines(lines: str) -> dict:
             physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
         ),
         "raddeg": scipy.constants.degree,
+        "abs_func": abs,
     }
 
     for line in lines:
         if re.fullmatch(property_assignment_pattern, line):
-            context = assign_property(line, context)
+            context = assign_property(line, context, rpn_mode)
         elif re.fullmatch(variable_assignment_pattern, line):
-            context = assign_variable(line, context)
+            context = assign_variable(line, context, rpn_mode)
         elif re.fullmatch(line_definition_pattern, line):
             context = define_line(line, context)
         elif re.fullmatch(overlay_definition_pattern, line):
             context = define_overlay(line, context)
         elif re.fullmatch(element_definition_pattern, line):
-            context = define_element(line, context)
+            context = define_element(line, context, rpn_mode)
         elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
 
