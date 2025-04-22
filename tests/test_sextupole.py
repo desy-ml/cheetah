@@ -56,3 +56,49 @@ def test_sextupole_as_drift():
     assert torch.allclose(
         sextupole_outgoing.particles, drift_outgoing.particles, atol=1e-5, rtol=1e-6
     )
+
+
+def test_sextupole_parameter_beam_particle_beam_agreement():
+    """
+    Test that the results of tracking an `ParameterBeam` and a `ParticleBeam` through a
+    sextupole agree.
+    """
+    # Create a sextupole
+    length = 0.34
+    k2 = 0.5
+    tilt = 0.1
+    sextupole = cheetah.Sextupole(
+        length=torch.tensor(length), k2=torch.tensor(k2), tilt=torch.tensor(tilt)
+    )
+
+    # Create an incoming ParticleBeam
+    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Create an incoming ParameterBeam
+    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    # Track through the sextupole
+    outgoing_particle_beam = sextupole.track(incoming_particle_beam)
+    outgoing_parameter_beam = sextupole.track(incoming_parameter_beam)
+
+    outgoing_particle_beam_as_parameter_beam = (
+        outgoing_particle_beam.as_parameter_beam()
+    )
+
+    # Check that the results are the same
+    assert torch.allclose(
+        outgoing_particle_beam_as_parameter_beam.mu,
+        outgoing_parameter_beam.mu,
+        atol=1e-5,
+        rtol=1e-6,
+    )
+    assert torch.allclose(
+        outgoing_particle_beam_as_parameter_beam.cov,
+        outgoing_parameter_beam.cov,
+        atol=1e-5,
+        rtol=1e-6,
+    )
