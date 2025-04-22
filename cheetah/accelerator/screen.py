@@ -282,12 +282,14 @@ class Screen(Element):
                 image, _ = torch.histogramdd(
                     torch.stack((read_beam.x, read_beam.y)).T,
                     bins=self.pixel_bin_edges,
-                    weight=read_beam.particle_charges
+                    weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
                 )
                 image = torch.flipud(image.T)
             elif self.method == "kde":
-                weights = read_beam.particle_charges * read_beam.survival_probabilities
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
+                )
                 broadcasted_x, broadcasted_y, broadcasted_weights = (
                     torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
                 )
