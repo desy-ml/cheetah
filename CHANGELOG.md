@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
+- Add a `Sextupole` element (see #406) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
