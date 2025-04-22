@@ -186,7 +186,7 @@ class Screen(Element):
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
                 ].unsqueeze(-1)
-                copy_of_incoming.particles[..., 1] -= self.misalignment[
+                copy_of_incoming.particles[..., 2] -= self.misalignment[
                     ..., 1
                 ].unsqueeze(-1)
 
