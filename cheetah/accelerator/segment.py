@@ -619,7 +619,7 @@ class Segment(Element):
         """Plot twiss parameters along the segment."""
         longitudinal_beams = [incoming]
         s_positions = [torch.tensor(0.0)]
-        for element in self.elements:
+        for element in self.flattened().elements:
             if torch.all(element.length == 0):
                 continue
 
