@@ -13,6 +13,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
+- Fix issue where `Quadrupole.tracking_method` was not preserved on cloning (see #404) (@RemiLehe, @jank324)
 
 ### 🐆 Other
 
