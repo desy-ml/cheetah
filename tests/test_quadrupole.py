@@ -236,3 +236,21 @@ def test_tracking_method_vectorization(tracking_method):
     assert outgoing.sigma_p.shape == (3, 2)
     assert outgoing.energy.shape == torch.Size([])
     assert outgoing.total_charge.shape == torch.Size([])
+
+
+@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+def test_quadrupole_clone_tracking_method(tracking_method):
+    """
+    Test that the tracking_method is preserved when cloning a Quadrupole.
+    """
+    # Create a quadrupole with bmadx tracking method
+    quadrupole = Quadrupole(
+        length=torch.tensor(1.0), k1=torch.tensor(1.0), tracking_method=tracking_method
+    )
+
+    # Clone the quadrupole
+    cloned = quadrupole.clone()
+
+    # Verify that tracking_method is preserved
+    assert cloned.tracking_method == quadrupole.tracking_method
+    assert cloned.tracking_method == tracking_method

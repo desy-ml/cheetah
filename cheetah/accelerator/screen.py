@@ -138,11 +138,15 @@ class Screen(Element):
                 -self.resolution[0] * self.pixel_size[0] / 2,
                 self.resolution[0] * self.pixel_size[0] / 2,
                 int(self.effective_resolution[0]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
             torch.linspace(
                 -self.resolution[1] * self.pixel_size[1] / 2,
                 self.resolution[1] * self.pixel_size[1] / 2,
                 int(self.effective_resolution[1]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
         )
 
@@ -182,7 +186,7 @@ class Screen(Element):
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
                 ].unsqueeze(-1)
-                copy_of_incoming.particles[..., 1] -= self.misalignment[
+                copy_of_incoming.particles[..., 2] -= self.misalignment[
                     ..., 1
                 ].unsqueeze(-1)
 
