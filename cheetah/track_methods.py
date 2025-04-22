@@ -6,29 +6,6 @@ from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
 
 
-def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
-    """Rotate the transfer map in x-y plane.
-
-    :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
-        dipole.
-    :return: Rotation matrix to be multiplied to the element's transfer matrix.
-    """
-    cs = torch.cos(angle)
-    sn = torch.sin(angle)
-
-    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
-    tm[..., 0, 0] = cs
-    tm[..., 0, 2] = sn
-    tm[..., 1, 1] = cs
-    tm[..., 1, 3] = sn
-    tm[..., 2, 0] = -sn
-    tm[..., 2, 2] = cs
-    tm[..., 3, 1] = -sn
-    tm[..., 3, 3] = cs
-
-    return tm
-
-
 def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
@@ -100,6 +77,29 @@ def base_rmatrix(
             "...ij,...jk,...kl->...il", rotation_matrix(-tilt), R, rotation_matrix(tilt)
         )
     return R
+
+
+def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
+    """Rotate the transfer map in x-y plane.
+
+    :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
+        dipole.
+    :return: Rotation matrix to be multiplied to the element's transfer matrix.
+    """
+    cs = torch.cos(angle)
+    sn = torch.sin(angle)
+
+    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
+    tm[..., 0, 0] = cs
+    tm[..., 0, 2] = sn
+    tm[..., 1, 1] = cs
+    tm[..., 1, 3] = sn
+    tm[..., 2, 0] = -sn
+    tm[..., 2, 2] = cs
+    tm[..., 3, 1] = -sn
+    tm[..., 3, 3] = cs
+
+    return tm
 
 
 def misalignment_matrix(
