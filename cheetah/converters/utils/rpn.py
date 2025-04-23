@@ -2,12 +2,14 @@ import math
 from typing import Any
 
 
-def evaluate_expression(expression: str, context: dict) -> Any:
+def evaluate_expression(expression: str, context: dict | None = None) -> Any:
     """
     Evaluates an expression in Reverse Polish Notation.
 
     Throws a `SyntaxError` if the expression is invalid.
     """
+    context = context or {}
+
     stack = []
     stripped = expression.strip()
     for token in stripped.split(" "):
