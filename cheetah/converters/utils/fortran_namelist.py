@@ -94,14 +94,13 @@ def merge_delimiter_continued_lines(
     return merged_lines
 
 
-def evaluate_expression(expression: str, context: dict, is_rpn: bool = False) -> Any:
+def evaluate_expression(expression: str, context: dict) -> Any:
     """
     Evaluate an expression in the context of a dictionary of variables.
 
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
-    :param is_rpn: Whether expressions should be treated as Reverse Polish Notation.
     :return: Result of evaluating the expression.
     """
 
@@ -126,11 +125,13 @@ def evaluate_expression(expression: str, context: dict, is_rpn: bool = False) ->
         return context[expression]
 
     # Evaluate as a mathematical expression
+    # TODO I would prefer if it tried to do normal parsing first and RPN second.
+    #   Implement when normal parsing was made safe.
     try:
-        if is_rpn:
-            return rpn.evaluate_expression(expression, context)
-        else:
-            # TODO: This is currently an unsafe eval and should be replaced with a safer
+        return rpn.evaluate_expression(expression, context)
+    except SyntaxError:
+        try:
+            # TODO This is currently an unsafe eval and should be replaced with a safer
             # implementation.
 
             # Surround expressions in brackets with quotes
@@ -144,12 +145,15 @@ def evaluate_expression(expression: str, context: dict, is_rpn: bool = False) ->
             expression = re.sub(r"abs\(", r"abs_func(", expression)
 
             return eval(expression, context)
-    except SyntaxError:
-        print(f"WARNING: Evaluating expression {expression}. Assuming it is a string.")
-        return expression
-    except Exception as e:
-        print(expression)
-        raise e
+        except SyntaxError:
+            print(
+                f"WARNING: Could not evaluate expression {expression}. It will now be "
+                f"treated as a string. This may lead to unexpected behaviour."
+            )
+            return expression
+        except Exception as e:
+            print(expression)
+            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
@@ -176,14 +180,13 @@ def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
     return type_matching_keys
 
 
-def assign_property(line: str, context: dict, is_rpn: bool) -> dict:
+def assign_property(line: str, context: dict) -> dict:
     """
     Assign a property of an element to the context.
 
     :param line: Line of a property assignment to be parsed.
     :param context: Dictionary of variables to assign the property to and from which to
         read variables.
-    :param is_rpn: Whether expressions should be treated as Reverse Polish Notation.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
@@ -198,7 +201,7 @@ def assign_property(line: str, context: dict, is_rpn: bool) -> dict:
     else:
         object_names = [object_name]
 
-    expression_result = evaluate_expression(property_expression, context, is_rpn)
+    expression_result = evaluate_expression(property_expression, context)
 
     for name in object_names:
         if name not in context:
@@ -208,14 +211,13 @@ def assign_property(line: str, context: dict, is_rpn: bool) -> dict:
     return context
 
 
-def assign_variable(line: str, context: dict, is_rpn: bool) -> dict:
+def assign_variable(line: str, context: dict) -> dict:
     """
     Assign a variable to the context.
 
     :param line: Line of a variable assignment to be parsed.
     :param context: Dictionary of variables to assign the variable to and from which to
         read variables.
-    :param is_rpn: Whether expressions should be treated as Reverse Polish Notation.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*=(.*)"
@@ -224,19 +226,18 @@ def assign_variable(line: str, context: dict, is_rpn: bool) -> dict:
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
 
-    context[variable_name] = evaluate_expression(variable_expression, context, is_rpn)
+    context[variable_name] = evaluate_expression(variable_expression, context)
 
     return context
 
 
-def define_element(line: str, context: dict, is_rpn: bool) -> dict:
+def define_element(line: str, context: dict) -> dict:
     """
     Define an element in the context.
 
     :param line: Line of an element definition to be parsed.
     :param context: Dictionary of variables to define the element in and from which to
         read variables.
-    :param is_rpn: Whether expressions should be treated as Reverse Polish Notation.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
@@ -266,7 +267,7 @@ def define_element(line: str, context: dict, is_rpn: bool) -> dict:
             property_expression = property_expression.strip()
 
             element_properties[property_name] = evaluate_expression(
-                property_expression, context, is_rpn
+                property_expression, context
             )
 
     context[element_name] = element_properties
@@ -365,14 +366,12 @@ def parse_use_line(line: str, context: dict) -> dict:
     return context
 
 
-def parse_lines(lines: str, is_rpn: bool) -> dict:
+def parse_lines(lines: str) -> dict:
     """
     Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
     and merged before being passed to this function.
 
     :param lines: List of lines to parse.
-    :param is_rpn: Whether expressions should be parsed as Reverse Polish Notation.
-        Choose `True` for Elegant and `False` for Bmad.
     :return: Dictionary of variables defined in the lattice file.
     """
     property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
@@ -396,15 +395,15 @@ def parse_lines(lines: str, is_rpn: bool) -> dict:
 
     for line in lines:
         if re.fullmatch(property_assignment_pattern, line):
-            context = assign_property(line, context, is_rpn)
+            context = assign_property(line, context)
         elif re.fullmatch(variable_assignment_pattern, line):
-            context = assign_variable(line, context, is_rpn)
+            context = assign_variable(line, context)
         elif re.fullmatch(line_definition_pattern, line):
             context = define_line(line, context)
         elif re.fullmatch(overlay_definition_pattern, line):
             context = define_overlay(line, context)
         elif re.fullmatch(element_definition_pattern, line):
-            context = define_element(line, context, is_rpn)
+            context = define_element(line, context)
         elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
 

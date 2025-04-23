@@ -436,7 +436,7 @@ def convert_lattice_to_cheetah(
     stripped_lines = [line.strip(";") for line in merged_lines]
 
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(stripped_lines, is_rpn=True)
+    context = parse_lines(stripped_lines)
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(name, context, device, dtype)
