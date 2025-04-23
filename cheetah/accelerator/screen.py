@@ -264,7 +264,7 @@ class Screen(Element):
             )
             pos = torch.dstack((x, y))
             image = dist.log_prob(pos).exp()
-            image = torch.flip(image, dims=[1])
+            image = torch.transpose(image, -2, -1)
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
                 # Catch vectorisation, which is currently not supported by "histogram"
@@ -285,7 +285,7 @@ class Screen(Element):
                     weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
                 )
-                image = torch.flipud(image.T)
+                image = torch.transpose(image, -2, -1)
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
@@ -303,8 +303,6 @@ class Screen(Element):
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)
-                # Flip up and down, now row 0 corresponds to the top
-                image = torch.flip(image, dims=[-2])
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
