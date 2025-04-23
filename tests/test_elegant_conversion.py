@@ -30,6 +30,9 @@ def test_fodo(file_path: str):
                 name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
             ),
             cheetah.Drift(name="d2", length=torch.tensor(2.0)),
+            cheetah.Quadrupole(
+                name="long-name-quad", length=torch.tensor(0.3), k1=torch.tensor(2.0)
+            ),
         ],
         name="fodo",
     )
@@ -47,6 +50,10 @@ def test_fodo(file_path: str):
     assert torch.isclose(converted.d2.length, correct_lattice.d2.length)
     assert torch.isclose(converted.s1.length, correct_lattice.s1.length)
     assert torch.isclose(converted.s1.dipole_e1, correct_lattice.s1.dipole_e1)
+    assert torch.isclose(
+        converted.long_name_quad.length, correct_lattice.long_name_quad.length
+    )
+    assert torch.isclose(converted.long_name_quad.k1, correct_lattice.long_name_quad.k1)
 
 
 def test_cavity_import():

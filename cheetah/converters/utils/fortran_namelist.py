@@ -7,7 +7,7 @@ from typing import Any
 import scipy
 from scipy.constants import physical_constants
 
-from cheetah.converters.utils import rpn
+from cheetah.converters.utils import regex_patterns, rpn
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -189,7 +189,10 @@ def assign_property(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
+    pattern = (
+        f"({regex_patterns.fortran_property_name_pattern})"
+        + r"\[([a-z0-9_%]+)\]\s*=(.*)"
+    )
     match = re.fullmatch(pattern, line)
 
     object_name = match.group(1).strip()
@@ -240,7 +243,10 @@ def define_element(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
+    pattern = (
+        f"({regex_patterns.fortran_element_name_pattern})"
+        + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
+    )
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
@@ -374,12 +380,25 @@ def parse_lines(lines: str) -> dict:
     :param lines: List of lines to parse.
     :return: Dictionary of variables defined in the lattice file.
     """
-    property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
-    variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
-    element_definition_pattern = r"[a-z0-9_\.]+\s*\:\s*[a-z0-9_]+.*"
-    line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
-    overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
-    use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
+    property_assignment_pattern = (
+        regex_patterns.fortran_property_name_pattern + r"\[[a-z0-9_%]+\]\s*=.*"
+    )
+    variable_assignment_pattern = (
+        regex_patterns.fortran_variable_name_pattern + r"\s*=.*"
+    )
+    element_definition_pattern = (
+        regex_patterns.fortran_element_name_pattern
+        + r"\s*\:\s*"
+        + regex_patterns.fortran_variable_name_pattern
+        + r".*"
+    )
+    line_definition_pattern = (
+        regex_patterns.fortran_variable_name_pattern + r"\s*\:\s*line\s*=\s*\(.*\)"
+    )
+    overlay_definition_pattern = (
+        regex_patterns.fortran_variable_name_pattern + r"\s*\:\s*overlay\s*=\s*\{.*"
+    )
+    use_line_pattern = r"use\s*\,\s*" + regex_patterns.fortran_variable_name_pattern
 
     context = {
         "pi": scipy.constants.pi,
