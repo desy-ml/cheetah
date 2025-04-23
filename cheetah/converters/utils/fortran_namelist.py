@@ -101,7 +101,7 @@ def evaluate_expression(expression: str, context: dict, rpn_mode: bool) -> Any:
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
-    :param rpn_mode: whether expressions should be treated as RPN
+    :param rpn_mode: Whether expressions should be treated as reverse Polish notation.
     :return: Result of evaluating the expression.
     """
 
@@ -184,7 +184,7 @@ def assign_property(line: str, context: dict, rpn_mode: bool) -> dict:
     :param line: Line of a property assignment to be parsed.
     :param context: Dictionary of variables to assign the property to and from which to
         read variables.
-    :param rpn_mode: whether expressions should be treated as RPN
+    :param rpn_mode: Whether expressions should be treated as reverse Polish notation.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
@@ -237,7 +237,7 @@ def define_element(line: str, context: dict, rpn_mode: bool) -> dict:
     :param line: Line of an element definition to be parsed.
     :param context: Dictionary of variables to define the element in and from which to
         read variables.
-    :param rpn_mode: whether expressions should be treated as RPN
+    :param rpn_mode: Whether expressions should be treated as reverse Polish notation.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
@@ -372,7 +372,7 @@ def parse_lines(lines: str, rpn_mode: bool) -> dict:
     and merged before being passed to this function.
 
     :param lines: List of lines to parse.
-    :param rpn_mode: Whether expressions should be parsed as RPN.
+    :param rpn_mode: Whether expressions should be parsed as reverse Polish notation.
         True for Elegant. False for Bmad
     :return: Dictionary of variables defined in the lattice file.
     """
