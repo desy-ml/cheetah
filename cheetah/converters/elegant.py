@@ -157,7 +157,7 @@ def convert_element(
                 ],
                 name=name + "_segment",
             )
-        elif parsed["element_type"] in ["quad", "quadrupole"]:
+        elif parsed["element_type"] in ["quad", "quadrupole", "kquad"]:
             validate_understood_properties(
                 ["element_type", "l", "k1", "tilt", "group"],
                 parsed,
@@ -336,7 +336,7 @@ def convert_element(
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
             )
-        elif parsed["element_type"] == "csrcsben":
+        elif parsed["element_type"] == "csrcsbend":
             validate_understood_properties(
                 [
                     "element_type",
