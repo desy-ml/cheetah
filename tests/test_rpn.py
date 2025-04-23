@@ -10,7 +10,7 @@ def test_valid_rpn_expression():
     """
     expression = "2 3 +"
     # try with empty context
-    assert rpn.try_eval_expression(expression, []) == 5
+    assert rpn.evaluate_expression(expression, []) == 5
 
 
 def test_complex_rpn_expression():
@@ -20,7 +20,7 @@ def test_complex_rpn_expression():
     """
     expression = "10 2 * 4 2 ^ + sqrt"  # sqrt(20 + 16) = 6
     # try with empty context
-    assert rpn.try_eval_expression(expression, []) == 6
+    assert rpn.evaluate_expression(expression, []) == 6
 
 
 def test_complex_rpn_expression_with_comment():
@@ -30,7 +30,7 @@ def test_complex_rpn_expression_with_comment():
     """
     expression = "10 2 * 3 4 * + #should be valid"  # 20 + 12 = 32
     # try with empty context
-    assert rpn.try_eval_expression(expression, []) == 32
+    assert rpn.evaluate_expression(expression, []) == 32
 
 
 def test_complex_rpn_expression_with_context():
@@ -40,7 +40,7 @@ def test_complex_rpn_expression_with_context():
     """
     context = {"pi": 3}  # close enough :D
     expression = "10 2 * pi 4 * +"  # 20 + 12 = 32
-    assert rpn.try_eval_expression(expression, context) == 32
+    assert rpn.evaluate_expression(expression, context) == 32
 
 
 def test_valid_rpn_expression_with_single_quotes():
@@ -51,7 +51,7 @@ def test_valid_rpn_expression_with_single_quotes():
     """
     expression = "'2 3 +'"
     with pytest.raises(SyntaxError):
-        rpn.try_eval_expression(expression, [])
+        rpn.evaluate_expression(expression, [])
 
 
 def test_falsely_validated_normal_expression():
@@ -63,4 +63,4 @@ def test_falsely_validated_normal_expression():
     expression = "ldsp2h +dldsp17h +lblxsph/2-lbxsph/2"
 
     with pytest.raises(SyntaxError):
-        rpn.try_eval_expression(expression, [])
+        rpn.evaluate_expression(expression, [])
