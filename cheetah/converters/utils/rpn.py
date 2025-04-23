@@ -117,6 +117,6 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
                 stack.append(number)
     if len(stack) != 1:
         raise SyntaxError(
-            f"Invalid expression: {expression} - Stack not empty after evaluation"
+            f"Invalid RPN expression: {expression} - Stack not empty after evaluation"
         )
     return stack[0]
