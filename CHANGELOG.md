@@ -18,6 +18,7 @@
 - Fix issue where generating screen images did not work on GPU because `Screen.pixel_bin_centers` was not on the same device (see #372) (@roussel-ryan, @jank324)
 - Fix issue where `Quadrupole.tracking_method` was not preserved on cloning (see #404) (@RemiLehe, @jank324)
 - The vertical screen misalignment is now correctly applied to `y` instead of `px` (see #405) (@RemiLehe)
+- Fix issues when generating screen images caused by the sign of particle charges (see #394) (@Hespe, @jank324)
 
 ### 🐆 Other
 
