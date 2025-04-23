@@ -128,10 +128,11 @@ def evaluate_expression(expression: str, context: dict, is_rpn: bool = False) ->
     # Evaluate as a mathematical expression
     try:
         if is_rpn:
-            # Try an evaluate, throwing a SyntaxError if it fails
-            return rpn.try_eval_expression(expression, context)
+            return rpn.evaluate_expression(expression, context)
         else:
-            # TODO: this is not a safe way of handling this
+            # TODO: This is currently an unsafe eval and should be replaced with a safer
+            # implementation.
+
             # Surround expressions in brackets with quotes
             expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
             # Replace power operator with python equivalent

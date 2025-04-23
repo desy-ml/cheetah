@@ -2,11 +2,11 @@ import math
 from typing import Any
 
 
-def try_eval_expression(expression: str, context: dict) -> Any:
+def evaluate_expression(expression: str, context: dict) -> Any:
     """
-    Tries to evaluate an expression in reverse Polish notation.
+    Evaluates an expression in Reverse Polish Notation.
 
-    Throws Syntax Exception if the expression is not valid.
+    Throws a `SyntaxError` if the expression is invalid.
     """
     stack = []
     stripped = expression.strip()
