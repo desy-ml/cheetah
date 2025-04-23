@@ -337,7 +337,7 @@ def convert_lattice_to_cheetah(
     ), "Merging lines should never produce more lines than there were before."
 
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(merged_lines, rpn_mode=False)
+    context = parse_lines(merged_lines, is_rpn=False)
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(context["__use__"], context, device, dtype)
