@@ -84,37 +84,8 @@ class Sextupole(Element):
         )
 
         if isinstance(incoming, ParameterBeam):
-            # Apply the transfer map to the incoming particles
-            first_order_mu = torch.matmul(
-                first_order_tm, incoming.mu.unsqueeze(-1)
-            ).squeeze(-1)
-            second_order_mu = torch.einsum(
-                "...ijk,...j,...k->...i",
-                second_order_tm,
-                incoming.mu,
-                incoming.mu,
-            )
-            outgoing_mu = first_order_mu + second_order_mu
-            first_order_cov = torch.matmul(
-                first_order_tm,
-                torch.matmul(incoming.cov, first_order_tm.transpose(-2, -1)),
-            )
-            second_order_cov = torch.einsum(
-                "...ijk,...jkl,...l->...i",
-                second_order_tm,
-                incoming.cov,
-                incoming.mu,
-            )
-            outgoing_cov = first_order_cov + second_order_cov
-
-            return ParameterBeam(
-                mu=outgoing_mu,
-                cov=outgoing_cov,
-                energy=incoming.energy,
-                total_charge=incoming.total_charge,
-                survival_probabilities=incoming.survival_probabilities,
-                species=incoming.species,
-            )
+            # For ParameterBeam, only first-order effects are applied
+            return super().track(incoming)
         elif isinstance(incoming, ParticleBeam):
             # Apply the transfer map to the incoming particles
             first_order_particles = torch.matmul(
