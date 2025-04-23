@@ -145,15 +145,12 @@ def evaluate_expression(expression: str, context: dict) -> Any:
             expression = re.sub(r"abs\(", r"abs_func(", expression)
 
             return eval(expression, context)
-        except SyntaxError:
+        except Exception:
             print(
                 f"WARNING: Could not evaluate expression {expression}. It will now be "
                 f"treated as a string. This may lead to unexpected behaviour."
             )
             return expression
-        except Exception as e:
-            print(expression)
-            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
