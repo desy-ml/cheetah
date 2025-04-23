@@ -94,14 +94,14 @@ def merge_delimiter_continued_lines(
     return merged_lines
 
 
-def evaluate_expression(expression: str, context: dict, rpn_mode: bool) -> Any:
+def evaluate_expression(expression: str, context: dict, is_rpn: bool = False) -> Any:
     """
     Evaluate an expression in the context of a dictionary of variables.
 
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
-    :param rpn_mode: Whether expressions should be treated as reverse Polish notation.
+    :param is_rpn: Whether expressions should be treated as Reverse Polish Notation.
     :return: Result of evaluating the expression.
     """
 
@@ -127,7 +127,7 @@ def evaluate_expression(expression: str, context: dict, rpn_mode: bool) -> Any:
 
     # Evaluate as a mathematical expression
     try:
-        if rpn_mode:
+        if is_rpn:
             # Try an evaluate, throwing a SyntaxError if it fails
             return rpn.try_eval_expression(expression, context)
         else:
