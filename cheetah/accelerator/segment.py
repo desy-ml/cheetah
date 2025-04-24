@@ -496,9 +496,7 @@ class Segment(Element):
         splits = reference_segment.split(resolution=torch.tensor(resolution))
 
         split_lengths = [split.length for split in splits]
-        ss = [torch.tensor(0.0)] + [
-            sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)
-        ]
+        ss = torch.cumsum(torch.tensor([0.0] + split_lengths), dim=0)
         broadcast_ss = torch.broadcast_tensors(*ss)
         stacked_ss = torch.stack(broadcast_ss)
         dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
