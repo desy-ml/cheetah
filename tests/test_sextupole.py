@@ -59,8 +59,8 @@ def test_compare_sextupole_to_ocelot_particle_vectorized():
     )
     cheetah_sextupole = cheetah.Sextupole(
         length=torch.tensor(length),
-        k2=torch.tensor(k2).repeat([3, 2]),
-        tilt=torch.tensor(tilt),
+        k2=torch.tensor(k2).repeat([2]),
+        tilt=torch.tensor(tilt).repeat([3, 1]),
     )
     outgoing_cheetah = cheetah_sextupole.track(incoming)
 
