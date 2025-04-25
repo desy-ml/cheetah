@@ -1,4 +1,3 @@
-import math
 import os
 import re
 from copy import deepcopy
@@ -126,33 +125,35 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         return context[expression]
 
     # Evaluate as a mathematical expression
+    # TODO I would prefer if it tried to do normal parsing first and RPN second.
+    #   Implement when normal parsing was made safe.
     try:
-        # Surround expressions in brackets with quotes
-        expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
-        # Replace power operator with python equivalent
-        expression = re.sub(r"\^", r"**", expression)
-        # Replace abs with abs_func when it is followed by a (
-        # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
-        # lattice file. I'm not sure this replacement will lead to the intended
-        # behaviour.
-        expression = re.sub(r"abs\(", r"abs_func(", expression)
-
-        return (
-            eval(expression, context)
-            if not rpn.is_valid_expression(expression)
-            else rpn.eval_expression(expression, context)
-        )
+        return rpn.evaluate_expression(expression, context)
     except SyntaxError:
-        if not (
-            len(expression.split(":")) == 3 or len(expression.split(":")) == 4
-        ):  # It's probably an alias
+        try:
+            # TODO This is currently an unsafe eval and should be replaced with a safer
+            # implementation.
+
+            # Surround expressions in brackets with quotes
+            expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
+            # Replace power operator with python equivalent
+            expression = re.sub(r"\^", r"**", expression)
+            # Replace abs with abs_func when it is followed by a (
+            # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
+            # lattice file. I'm not sure this replacement will lead to the intended
+            # behaviour.
+            expression = re.sub(r"abs\(", r"abs_func(", expression)
+
+            return eval(expression, context)
+        except SyntaxError:
             print(
-                f"DEBUG: Evaluating expression {expression}. Assuming it is a string."
+                f"WARNING: Could not evaluate expression {expression}. It will now be "
+                f"treated as a string. This may lead to unexpected behaviour."
             )
-        return expression
-    except Exception as e:
-        print(expression)
-        raise e
+            return expression
+        except Exception as e:
+            print(expression)
+            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
@@ -281,6 +282,7 @@ def define_line(line: str, context: dict) -> dict:
     :param line: Line of a beam line definition to be parsed.
     :param context: Dictionary of variables to define the beam line in and from which
         to read variables.
+
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
@@ -366,8 +368,8 @@ def parse_use_line(line: str, context: dict) -> dict:
 
 def parse_lines(lines: str) -> dict:
     """
-    Parse a list of lines from a Bmad lattice file. They should be cleaned and merged
-    before being passed to this function.
+    Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
+    and merged before being passed to this function.
 
     :param lines: List of lines to parse.
     :return: Dictionary of variables defined in the lattice file.
@@ -387,12 +389,8 @@ def parse_lines(lines: str) -> dict:
         "m_electron": (
             physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
         ),
-        "sqrt": math.sqrt,
-        "asin": math.asin,
-        "sin": math.sin,
-        "cos": math.cos,
-        "abs_func": abs,
         "raddeg": scipy.constants.degree,
+        "abs_func": abs,
     }
 
     for line in lines:
