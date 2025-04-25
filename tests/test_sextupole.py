@@ -42,6 +42,46 @@ def test_compare_sextupole_to_ocelot_particle():
     )
 
 
+def test_compare_sextupole_to_ocelot_particle_vectorized():
+    """
+    Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
+    `ParticleBeam` with second order effects in Ocelot.
+
+    Vectorised version of the test.
+    """
+    length = 0.11
+    k2 = 87.0
+    tilt = torch.pi / 2
+
+    # Track through a sextupole in Cheetah
+    incoming = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_sextupole = cheetah.Sextupole(
+        length=torch.tensor(length),
+        k2=torch.tensor(k2).repeat([3, 2]),
+        tilt=torch.tensor(tilt),
+    )
+    outgoing_cheetah = cheetah_sextupole.track(incoming)
+
+    # Convert to Ocelot sextupole
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Sextupole(l=length, k2=k2, tilt=tilt)],
+        method={"global": ocelot.SecondTM},
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+    outgoing_ocelot = cheetah.ParticleBeam.from_ocelot(outgoing_p_array)
+
+    # Compare the results
+    assert torch.allclose(
+        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
+    )
+
+
 def test_compare_sextupole_to_ocelot_parameter():
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot for a
