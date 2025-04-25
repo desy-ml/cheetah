@@ -274,7 +274,11 @@ def base_ttensor(
     # Rotate the R matrix for skew / vertical magnets
     if torch.any(tilt != 0):
         T = torch.einsum(
-            "...ij,...jk,...kl->...il", rotation_matrix(-tilt), T, rotation_matrix(tilt)
+            "...ij,...jkl,...kn,...lm->...inm",
+            rotation_matrix(-tilt),
+            T,
+            rotation_matrix(tilt),
+            rotation_matrix(tilt),
         )
     return T
 
