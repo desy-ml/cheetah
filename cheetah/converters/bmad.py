@@ -185,9 +185,10 @@ def convert_element(
             return cheetah.Cavity(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
-                phase=torch.tensor(
-                    -torch.rad2deg(bmad_parsed.get("phi0", 0.0) * 2 * torch.pi),
-                    **factory_kwargs,
+                phase=-torch.rad2deg(
+                    torch.tensor(bmad_parsed.get("phi0", 0.0), **factory_kwargs)
+                    * 2
+                    * torch.pi
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
                 name=name,
