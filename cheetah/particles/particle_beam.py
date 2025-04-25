@@ -176,8 +176,6 @@ class ParticleBeam(Beam):
         )
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        species = species if species is not None else Species("electron")
-
         # Set default values without function call in function signature
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
@@ -211,17 +209,6 @@ class ParticleBeam(Beam):
         )
         cov_taup = (
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
-        )
-        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
-        total_charge = (
-            total_charge
-            if total_charge is not None
-            else species.charge_coulomb * num_particles
-        )
-        particle_charges = (
-            torch.ones((*total_charge.shape, num_particles), **factory_kwargs)
-            * total_charge.unsqueeze(-1)
-            / num_particles
         )
 
         mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
@@ -264,13 +251,72 @@ class ParticleBeam(Beam):
         cov[..., 5, 4] = cov_taup
         cov[..., 5, 5] = sigma_p**2
 
-        vector_shape = torch.broadcast_shapes(mean.shape[:-1], cov.shape[:-2])
-        mean = mean.expand(*vector_shape, 6)
+        return cls.from_distribution(
+            mu=mean,
+            cov=cov,
+            num_particles=num_particles,
+            energy=energy,
+            total_charge=total_charge,
+            species=species,
+            device=device,
+            dtype=dtype,
+        )
+
+    @classmethod
+    def from_distribution(
+        cls,
+        mu: torch.Tensor,
+        cov: torch.Tensor,
+        num_particles: int = 100_000,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        species: Species | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> "ParticleBeam":
+        """
+        Generate Cheetah Beam of random particles from a multivariate normal
+        distribution.
+
+        :param num_particles: Number of particles to generate.
+        :param mu: Mean of the multivariate normal distribution.
+        :param cov: Covariance matrix of the multivariate normal distribution.
+        :param energy: Energy of the beam in eV.
+        :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
+        :param device: Device to move the beam's particle array to. If set to `"auto"` a
+            CUDA GPU is selected if available. The CPU is used otherwise.
+        :param dtype: Data type of the generated particles.
+        :return: ParticleBeam with random particles.
+        """
+        # Extract device and dtype from given arguments
+        device, dtype = verify_device_and_dtype(
+            [mu, cov, energy, total_charge], device, dtype
+        )
+        factory_kwargs = {"device": device, "dtype": dtype}
+
+        species = species if species is not None else Species("electron")
+
+        # Set default values without function call in function signature
+        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
+        total_charge = (
+            total_charge
+            if total_charge is not None
+            else species.charge_coulomb * num_particles
+        )
+        particle_charges = (
+            torch.ones((*total_charge.shape, num_particles), **factory_kwargs)
+            * total_charge.unsqueeze(-1)
+            / num_particles
+        )
+
+        vector_shape = torch.broadcast_shapes(mu.shape[:-1], cov.shape[:-2])
+        mu = mu.expand(*vector_shape, 6)
         cov = cov.expand(*vector_shape, 6, 6)
         particles = torch.ones((*vector_shape, num_particles, 7), **factory_kwargs)
         distributions = [
-            MultivariateNormal(sample_mean, covariance_matrix=sample_cov)
-            for sample_mean, sample_cov in zip(mean.view(-1, 6), cov.view(-1, 6, 6))
+            MultivariateNormal(sample_mu, covariance_matrix=sample_cov)
+            for sample_mu, sample_cov in zip(mu.view(-1, 6), cov.view(-1, 6, 6))
         ]
         particles[..., :6] = torch.stack(
             [distribution.sample((num_particles,)) for distribution in distributions],
