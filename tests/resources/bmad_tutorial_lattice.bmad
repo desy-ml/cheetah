@@ -6,9 +6,12 @@ beginning[e_tot] = 10e6 ! eV    Or can set beginning[p0c]
 parameter[geometry] = open  ! Or closed
 parameter[particle] = electron  ! Reference particle.
 
-d: drift, L = 0.5
+! Bmad lattices treat variable and function names separately. This is to test that.
+abs = -0.6
+
+d: drift, L = 0.5 * (0.3 + 0.7)
 b: sbend, L = 0.5, g = 1, e1 = 0.1, dg = 0.001 ! g = 1/design_radius
-q: quadrupole, L = 0.6, k1 = 0.23
+q: quadrupole, L = abs(abs), k1 = 0.23
 
 lat: line = (d, b, q) ! List of lattice elements
 use, lat ! Line used to construct the lattice
