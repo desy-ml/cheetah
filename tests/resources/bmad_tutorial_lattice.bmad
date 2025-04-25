@@ -10,7 +10,7 @@ parameter[particle] = electron  ! Reference particle.
 abs = -0.6
 
 d: drift, L = 0.5 * (0.3 + 0.7)
-b: sbend, L = 0.5, g = 1, e1 = 0.1, dg = sqrt(0.000001) ! g = 1/design_radius
+b: sbend, L = 0.6  -0.1, g = 1, e1 = 0.1, dg = sqrt(0.000001) ! g = 1/design_radius
 q: quadrupole, L = abs(abs), k1 = 0.23
 
 lat: line = (d, b, q) ! List of lattice elements
