@@ -23,6 +23,8 @@
 
 ### 🐆 Other
 
+- Temporarily limit `torch` dependency to `2.6` or lower to avoid `abort trap: 6` error with `2.7` (at least on macOS) (see #419) (@jank324)
+
 ### 🌟 First Time Contributors
 
 - Amelia Pollard (@amylizzle)
