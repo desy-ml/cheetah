@@ -281,7 +281,8 @@ def base_ttensor(
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
-    """Rotate the transfer map in x-y plane.
+    """
+    Rotate the coordinate system in the x-y plane.
 
     :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
         dipole.
