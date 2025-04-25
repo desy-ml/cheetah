@@ -93,7 +93,7 @@ class Sextupole(Element):
             )
             second_order_particles = torch.einsum(
                 "...ijk,...j,...k->...i",
-                second_order_tm,
+                second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
                 incoming.particles,
                 incoming.particles,
             )
