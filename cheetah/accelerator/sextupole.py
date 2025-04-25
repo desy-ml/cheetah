@@ -88,8 +88,8 @@ class Sextupole(Element):
             return super().track(incoming)
         elif isinstance(incoming, ParticleBeam):
             # Apply the transfer map to the incoming particles
-            first_order_particles = torch.matmul(
-                incoming.particles, first_order_tm.transpose(-2, -1)
+            first_order_particles = incoming.particles @ first_order_tm.transpose(
+                -2, -1
             )
             second_order_particles = torch.einsum(
                 "...ijk,...j,...k->...i",
@@ -128,7 +128,7 @@ class Sextupole(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features() + ["length", "k2", "misalignment", "tilt"]
+        return super().defining_features + ["length", "k2", "misalignment", "tilt"]
 
     def __repr__(self) -> str:
         return (
