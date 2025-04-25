@@ -12,7 +12,7 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
 
     stack = []
     stripped = expression.strip()
-    for token in stripped.split(" "):
+    for token in stripped.split():
         match token:
             case "+":
                 try:
