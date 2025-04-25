@@ -286,6 +286,7 @@ def convert_element(
 def convert_lattice_to_cheetah(
     bmad_lattice_file_path: Path,
     environment_variables: dict | None = None,
+    warnings: bool = True,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -300,6 +301,8 @@ def convert_lattice_to_cheetah(
     :param bmad_lattice_file_path: Path to the Bmad lattice file.
     :param environment_variables: Dictionary of environment variables to use when
         parsing the lattice file.
+    :param warnings: Whether to print warnings when elements or expressions are not
+            supported by Cheetah or converted with potentially unexpected behaviour.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
@@ -338,7 +341,7 @@ def convert_lattice_to_cheetah(
     ), "Merging lines should never produce more lines than there were before."
 
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(merged_lines)
+    context = parse_lines(merged_lines, warnings)
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(context["__use__"], context, device, dtype)

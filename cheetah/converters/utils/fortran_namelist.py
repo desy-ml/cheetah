@@ -95,13 +95,15 @@ def merge_delimiter_continued_lines(
     return merged_lines
 
 
-def evaluate_expression(expression: str, context: dict) -> Any:
+def evaluate_expression(expression: str, context: dict, warnings: bool = True) -> Any:
     """
     Evaluate an expression in the context of a dictionary of variables.
 
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
+    :param warnings: Whether to print warnings for unrecognised expressions that might
+        lead to unexpected behaviour when parsed as strings.
     :return: Result of evaluating the expression.
     """
 
@@ -147,10 +149,11 @@ def evaluate_expression(expression: str, context: dict) -> Any:
 
             return eval(expression, context)
         except SyntaxError:
-            print(
-                f"WARNING: Could not evaluate expression {expression}. It will now be "
-                f"treated as a string. This may lead to unexpected behaviour."
-            )
+            if warnings:
+                print(
+                    f"WARNING: Could not evaluate expression {expression}. It will now "
+                    "be treated as a string. This may lead to unexpected behaviour."
+                )
             return expression
         except Exception as e:
             print(expression)
@@ -181,13 +184,15 @@ def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
     return type_matching_keys
 
 
-def assign_property(line: str, context: dict) -> dict:
+def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
     """
     Assign a property of an element to the context.
 
     :param line: Line of a property assignment to be parsed.
     :param context: Dictionary of variables to assign the property to and from which to
         read variables.
+    :param warnings: Whether to print warnings for unrecognised expressions that might
+        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
@@ -202,7 +207,7 @@ def assign_property(line: str, context: dict) -> dict:
     else:
         object_names = [object_name]
 
-    expression_result = evaluate_expression(property_expression, context)
+    expression_result = evaluate_expression(property_expression, context, warnings)
 
     for name in object_names:
         if name not in context:
@@ -212,13 +217,15 @@ def assign_property(line: str, context: dict) -> dict:
     return context
 
 
-def assign_variable(line: str, context: dict) -> dict:
+def assign_variable(line: str, context: dict, warnings: bool = True) -> dict:
     """
     Assign a variable to the context.
 
     :param line: Line of a variable assignment to be parsed.
     :param context: Dictionary of variables to assign the variable to and from which to
         read variables.
+    :param warnings: Whether to print warnings for unrecognised expressions that might
+        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*=(.*)"
@@ -227,18 +234,20 @@ def assign_variable(line: str, context: dict) -> dict:
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
 
-    context[variable_name] = evaluate_expression(variable_expression, context)
+    context[variable_name] = evaluate_expression(variable_expression, context, warnings)
 
     return context
 
 
-def define_element(line: str, context: dict) -> dict:
+def define_element(line: str, context: dict, warnings: bool = True) -> dict:
     """
     Define an element in the context.
 
     :param line: Line of an element definition to be parsed.
     :param context: Dictionary of variables to define the element in and from which to
         read variables.
+    :param warnings: Whether to print warnings for unrecognised expressions that might
+        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
@@ -268,7 +277,7 @@ def define_element(line: str, context: dict) -> dict:
             property_expression = property_expression.strip()
 
             element_properties[property_name] = evaluate_expression(
-                property_expression, context
+                property_expression, context, warnings
             )
 
     context[element_name] = element_properties
@@ -367,12 +376,14 @@ def parse_use_line(line: str, context: dict) -> dict:
     return context
 
 
-def parse_lines(lines: str) -> dict:
+def parse_lines(lines: str, warnings: bool = True) -> dict:
     """
     Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
     and merged before being passed to this function.
 
     :param lines: List of lines to parse.
+    :param warnings: Whether to print warnings for unrecognised expressions that might
+        lead to unexpected behaviour when parsed as strings.
     :return: Dictionary of variables defined in the lattice file.
     """
     property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
@@ -400,15 +411,15 @@ def parse_lines(lines: str) -> dict:
 
     for line in lines:
         if re.fullmatch(property_assignment_pattern, line):
-            context = assign_property(line, context)
+            context = assign_property(line, context, warnings)
         elif re.fullmatch(variable_assignment_pattern, line):
-            context = assign_variable(line, context)
+            context = assign_variable(line, context, warnings)
         elif re.fullmatch(line_definition_pattern, line):
             context = define_line(line, context)
         elif re.fullmatch(overlay_definition_pattern, line):
             context = define_overlay(line, context)
         elif re.fullmatch(element_definition_pattern, line):
-            context = define_element(line, context)
+            context = define_element(line, context, warnings)
         elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
 
