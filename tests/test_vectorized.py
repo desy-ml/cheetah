@@ -333,22 +333,18 @@ def test_vectorized_screen_2d(BeamClass, method):
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
+@pytest.mark.skip_element(
     [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
+        cheetah.Aperture,
+        cheetah.BPM,
+        cheetah.CustomTransferMap,
+        cheetah.Marker,
+        cheetah.Screen,
+        cheetah.Segment,
+        cheetah.SpaceChargeKick,
+    ]
 )
-def test_drift_broadcasting_two_different_inputs(ElementClass):
+def test_drift_broadcasting_two_different_inputs(mwe_cheetah_element):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
@@ -356,9 +352,9 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
-    element = ElementClass(length=torch.tensor([[0.6], [0.5], [0.4]]))
 
-    outgoing = element.track(incoming)
+    mwe_cheetah_element.length = torch.tensor([[0.6], [0.5], [0.4]])
+    outgoing = mwe_cheetah_element.track(incoming)
 
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)

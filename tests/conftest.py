@@ -78,6 +78,11 @@ def mwe_cheetah_element(request):
     """
     ElementClass = request.param
 
+    elements_to_skip = request.node.get_closest_marker("skip_element")
+    if elements_to_skip is not None:
+        if ElementClass in elements_to_skip.args[0]:
+            pytest.skip(f"skipped for class '{ElementClass}'")
+
     if ElementClass in ELEMENT_CLASS_DEFAULT_ARGS:
         return ElementClass(**ELEMENT_CLASS_DEFAULT_ARGS[ElementClass])
     else:
