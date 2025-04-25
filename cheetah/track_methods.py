@@ -79,7 +79,7 @@ def base_rmatrix(
     return R
 
 
-def base_tmatrix(
+def base_ttensor(
     length: torch.Tensor,
     k1: torch.Tensor,
     k2: torch.Tensor,

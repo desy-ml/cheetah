@@ -3,7 +3,7 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, base_tmatrix, misalignment_matrix
+from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
 from cheetah.utils import verify_device_and_dtype
 
 
@@ -73,7 +73,7 @@ class Sextupole(Element):
         :return: Beam exiting the element.
         """
         first_order_tm = self.transfer_map(incoming.energy, incoming.species)
-        second_order_tm = base_tmatrix(
+        second_order_tm = base_ttensor(
             length=self.length,
             k1=torch.zeros_like(self.length),
             k2=self.k2,
