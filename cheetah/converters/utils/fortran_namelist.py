@@ -1,3 +1,4 @@
+import math
 import os
 import re
 from copy import deepcopy
@@ -389,8 +390,12 @@ def parse_lines(lines: str) -> dict:
         "m_electron": (
             physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
         ),
-        "raddeg": scipy.constants.degree,
+        "sqrt": math.sqrt,
+        "asin": math.asin,
+        "sin": math.sin,
+        "cos": math.cos,
         "abs_func": abs,
+        "raddeg": scipy.constants.degree,
     }
 
     for line in lines:
