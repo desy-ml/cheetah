@@ -149,7 +149,7 @@ def base_ttensor(
     khk = k2 + 2 * hx * k1
 
     vector_shape = torch.broadcast_shapes(
-        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
+        length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
     )
 
     T = torch.zeros((7, 7, 7), dtype=dtype, device=device).repeat(
