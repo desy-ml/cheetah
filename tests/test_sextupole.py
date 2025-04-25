@@ -8,9 +8,9 @@ import cheetah
 
 def test_compare_sextupole_to_ocelot():
     """Compare the results of tracking through a sextupole in Cheetah and Ocelot."""
-    length = 0.34
-    k2 = 0.5
-    tilt = 0.1
+    length = 0.11
+    k2 = 87.0
+    tilt = torch.pi / 2
 
     # Track through a sextupole in Cheetah
     incoming = cheetah.ParticleBeam.from_astra(
@@ -45,8 +45,8 @@ def test_sextupole_as_drift():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    sextupole = cheetah.Sextupole(length=torch.tensor(0.34), k2=torch.tensor(0.0))
-    drift = cheetah.Drift(length=torch.tensor(0.34))
+    sextupole = cheetah.Sextupole(length=torch.tensor(0.11), k2=torch.tensor(0.0))
+    drift = cheetah.Drift(length=torch.tensor(0.11))
 
     # Track through the sextupole and drift
     sextupole_outgoing = sextupole.track(incoming)
@@ -64,9 +64,9 @@ def test_sextupole_parameter_beam_particle_beam_agreement():
     sextupole agree.
     """
     # Create a sextupole
-    length = 0.34
-    k2 = 0.5
-    tilt = 0.1
+    length = 0.11
+    k2 = 87.0
+    tilt = torch.pi / 2
     misalignment = (1e-4, 2e-4)
     sextupole = cheetah.Sextupole(
         length=torch.tensor(length),
