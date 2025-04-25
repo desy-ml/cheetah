@@ -12,9 +12,9 @@ class Sextupole(Element):
     A sextupole element in a particle accelerator.
 
     :param length: Length in meters.
-    :param k2: TODO
-    :param misalignment: TODO
-    :param tilt: TODO
+    :param k2: Sextupole strength in TODO What is the unit?
+    :param misalignment: Transverse misalignment in x and y directions in meters.
+    :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
     :param name: Unique identifier of the element.
     """
 
