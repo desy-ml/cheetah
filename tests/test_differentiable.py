@@ -1,4 +1,3 @@
-import pytest
 import torch
 from torch import nn
 
@@ -95,55 +94,14 @@ def test_ea_incoming_particle_beam():
     assert outgoing_beam.particles.grad_fn is not None
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
-)
-def test_nonleaf_tracking(ElementClass):
-    """
-    Test that a beam with non-leaf tensors as elements can be tracked through elements
-    with length parameter.
-    """
+def test_nonleaf_tracking(mwe_cheetah_element):
+    """Test that a beam with non-leaf tensors as elements can be tracked."""
     beam = cheetah.ParticleBeam.from_parameters()
 
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
-            ElementClass(length=torch.tensor(2.0)),
-        ]
-    )
-    segment.track(beam)
-
-
-@pytest.mark.parametrize(
-    "ElementClass", [cheetah.Aperture, cheetah.BPM, cheetah.Screen]
-)
-def test_nonleaf_lenghtless_elements(ElementClass):
-    """
-    Test that a beam with non-leaf tensors as elements can be tracked through elements
-    without length parameter.
-
-    The split into lengthless elements is necessary since there is no common constructor
-    for all element classes. Some require a length, some cannot handle a length
-    argument.
-    """
-    beam = cheetah.ParticleBeam.from_parameters()
-
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
-            ElementClass(is_active=True),
+            mwe_cheetah_element,
         ]
     )
     segment.track(beam)
