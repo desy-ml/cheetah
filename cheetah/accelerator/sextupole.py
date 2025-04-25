@@ -126,8 +126,9 @@ class Sextupole(Element):
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         raise NotImplementedError
 
+    @property
     def defining_features(self) -> list[str]:
-        return super().defining_features() + ["length", "k2"]
+        return super().defining_features() + ["length", "k2", "misalignment", "tilt"]
 
     def __repr__(self) -> str:
         return (
