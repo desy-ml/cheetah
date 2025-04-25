@@ -304,7 +304,7 @@ class Segment(Element):
         :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
         :param name: Unique identifier for the entire segment.
         :param warnings: Whether to print warnings when objects are not supported by
-            Cheetah or converted with potentially unexpected behavior.
+            Cheetah or converted with potentially unexpected behaviour.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
@@ -324,6 +324,7 @@ class Segment(Element):
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
+        warnings: bool = True,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -338,13 +339,15 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
+        :param warnings: Whether to print warnings when elements or expressions are not
+            supported by Cheetah or converted with potentially unexpected behaviour.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return bmad.convert_lattice_to_cheetah(
-            bmad_lattice_file_path, environment_variables, device, dtype
+            bmad_lattice_file_path, environment_variables, warnings, device, dtype
         )
 
     @classmethod
