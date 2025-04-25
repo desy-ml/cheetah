@@ -67,8 +67,12 @@ def test_sextupole_parameter_beam_particle_beam_agreement():
     length = 0.34
     k2 = 0.5
     tilt = 0.1
+    misalignment = (1e-4, 2e-4)
     sextupole = cheetah.Sextupole(
-        length=torch.tensor(length), k2=torch.tensor(k2), tilt=torch.tensor(tilt)
+        length=torch.tensor(length),
+        k2=torch.tensor(k2),
+        tilt=torch.tensor(tilt),
+        misalignment=torch.tensor(misalignment),
     )
 
     # Create an incoming ParticleBeam
