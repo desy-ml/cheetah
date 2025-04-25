@@ -4,30 +4,14 @@ import torch
 import cheetah
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
-)
-def test_element_buffer_contents_and_location(ElementClass):
+def test_element_buffer_contents_and_location(mwe_cheetah_element):
     """
     Test that the buffers of cloned elements have the same content while not sharing the
     same memory location.
     """
-    element = ElementClass(length=torch.tensor(1.0))
-    clone = element.clone()
+    clone = mwe_cheetah_element.clone()
 
-    for buffer, buffer_clone in zip(element.buffers(), clone.buffers()):
+    for buffer, buffer_clone in zip(mwe_cheetah_element.buffers(), clone.buffers()):
         assert torch.allclose(buffer, buffer_clone)
         assert not buffer.data_ptr() == buffer_clone.data_ptr()
 
