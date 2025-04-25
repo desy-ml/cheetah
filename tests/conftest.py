@@ -3,7 +3,27 @@ import random
 import pytest
 import torch
 
+import cheetah
 from cheetah.utils import is_mps_available_and_functional
+
+ELEMENT_CLASS_DEFAULT_ARGS = {
+    cheetah.Aperture: {},
+    cheetah.BPM: {},
+    cheetah.Cavity: {"length": torch.tensor(1.0)},
+    cheetah.CustomTransferMap: {"predefined_transfer_map": torch.eye(7)},
+    cheetah.Drift: {"length": torch.tensor(1.0)},
+    cheetah.Dipole: {"length": torch.tensor(1.0)},
+    cheetah.HorizontalCorrector: {"length": torch.tensor(1.0)},
+    cheetah.Marker: {},
+    cheetah.Quadrupole: {"length": torch.tensor(1.0)},
+    cheetah.Segment: {"elements": [cheetah.Drift(length=torch.tensor(1.0))]},
+    cheetah.Screen: {},
+    cheetah.Solenoid: {"length": torch.tensor(1.0)},
+    cheetah.SpaceChargeKick: {"effect_length": torch.tensor(1.0)},
+    cheetah.TransverseDeflectingCavity: {"length": torch.tensor(1.0)},
+    cheetah.Undulator: {"length": torch.tensor(1.0)},
+    cheetah.VerticalCorrector: {"length": torch.tensor(1.0)},
+}
 
 
 def pytest_addoption(parser):
@@ -48,3 +68,19 @@ def default_torch_dtype(request):
     yield tmp_dtype_for_test
 
     torch.set_default_dtype(previous_dtype)
+
+
+@pytest.fixture(params=cheetah.Element.__subclasses__())
+def mwe_cheetah_element(request):
+    """
+    Run a test with a minimum working example of every cheetah Element. A default
+    value is used for elements with mandatory arguments.
+    """
+    ElementClass = request.param
+
+    if ElementClass in ELEMENT_CLASS_DEFAULT_ARGS:
+        return ElementClass(**ELEMENT_CLASS_DEFAULT_ARGS[ElementClass])
+    else:
+        raise NotImplementedError(
+            f"No default arguments for element class '{ElementClass}'"
+        )
