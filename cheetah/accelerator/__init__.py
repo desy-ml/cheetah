@@ -12,7 +12,9 @@ from .quadrupole import Quadrupole  # noqa: F401
 from .rbend import RBend  # noqa: F401
 from .screen import Screen  # noqa: F401
 from .segment import Segment  # noqa: F401
+from .sextupole import Sextupole  # noqa: F401
 from .solenoid import Solenoid  # noqa: F401
 from .space_charge_kick import SpaceChargeKick  # noqa: F401
+from .transverse_deflecting_cavity import TransverseDeflectingCavity  # noqa: F401
 from .undulator import Undulator  # noqa: F401
 from .vertical_corrector import VerticalCorrector  # noqa: F401

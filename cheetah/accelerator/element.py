@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam
+from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -18,32 +18,42 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        self.register_buffer("length", torch.zeros((1,)))
+        self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
         Generates the element's transfer map that describes how the beam and its
         particles are transformed when traveling through the element.
-        The state vector consists of 6 values with a physical meaning:
-        (in the trace space notation)
+        The state vector consists of 6 values with a physical meaning.
+        They represent a particle in the phase space with
 
-        - x: Position in x direction
-        - xp: Angle in x direction
-        - y: Position in y direction
-        - yp: Angle in y direction
-        - s: Position in longitudinal direction, the zero value is set to the
+        - x: Position in x direction (m) relative to the reference particle
+        - px: Horinzontal momentum normalized over the reference momentum
+            (dimensionless) :math:`px = P_x / P_0`
+        - y: Position in y direction (m) relative to the reference particle
+        - py: Vertical momentum normalized over the reference momentum
+            (dimensionless) :math:`py = P_y / P_0`
+        - tau: Position in longitudinal direction (m) with the zero value set to the
         reference position (usually the center of the pulse)
-        - p: Relative energy deviation from the reference particle
-           :math:`p = \frac{\Delta E}{p_0 C}`
-        As well as a seventh value used to add constants to some of the prior values if
-        necessary. Through this seventh state, the addition of constants can be
-        represented using a matrix multiplication.
+        - p: Relative energy deviation from the reference particle (dimensionless)
+        :math:`p = \frac{\Delta E}{p_0 C}`
 
-        :param energy: Reference energy of the Beam. Read from the fed-in Cheetah Beam.
+        As well as a seventh value used to add constants to some of the previous values
+        if necessary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication, i.e. the augmented matrix as in an
+        affine transformation.
+
+        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
+        :param species: Species of the particles in the beam
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
@@ -56,29 +66,26 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if incoming is Beam.empty:
-            return incoming
-        elif isinstance(incoming, ParameterBeam):
-            tm = self.transfer_map(incoming.energy)
-            mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
-            cov = torch.matmul(tm, torch.matmul(incoming._cov, tm.transpose(-2, -1)))
+        if isinstance(incoming, ParameterBeam):
+            tm = self.transfer_map(incoming.energy, incoming.species)
+            mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            cov = tm @ incoming.cov @ tm.transpose(-2, -1)
             return ParameterBeam(
                 mu,
                 cov,
                 incoming.energy,
                 total_charge=incoming.total_charge,
-                device=mu.device,
-                dtype=mu.dtype,
+                species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy)
-            new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
+            tm = self.transfer_map(incoming.energy, incoming.species)
+            new_particles = incoming.particles @ tm.transpose(-2, -1)
             return ParticleBeam(
                 new_particles,
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
-                device=new_particles.device,
-                dtype=new_particles.dtype,
+                survival_probabilities=incoming.survival_probabilities,
+                species=incoming.species.clone(),
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
@@ -86,10 +93,6 @@ class Element(ABC, nn.Module):
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
-
-    def broadcast(self, shape: torch.Size) -> "Element":
-        """Broadcast the element to higher batch dimensions."""
-        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -101,6 +104,23 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def register_buffer_or_parameter(
+        self, name: str, value: torch.Tensor | nn.Parameter
+    ) -> None:
+        """
+        Register a buffer or parameter with the given name and value. Automatically
+        selects the correct method from `register_buffer` or `register_parameter` based
+        on the type of `value`.
+
+        :param name: Name of the buffer or parameter.
+        :param value: Value of the buffer or parameter.
+        :param default: Default value of the buffer.
+        """
+        if isinstance(value, nn.Parameter):
+            self.register_parameter(name, value)
+        else:
+            self.register_buffer(name, value)
+
     @property
     @abstractmethod
     def defining_features(self) -> list[str]:
@@ -111,7 +131,20 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return []
+        return ["name"]
+
+    def clone(self) -> "Element":
+        """Create a copy of the element which does not share the underlying memory."""
+        return self.__class__(
+            **{
+                feature: (
+                    getattr(self, feature).clone()
+                    if isinstance(getattr(self, feature), torch.Tensor)
+                    else deepcopy(getattr(self, feature))
+                )
+                for feature in self.defining_features
+            }
+        )
 
     @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
@@ -126,12 +159,16 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 
         :param ax: Axes to plot the representation into.
         :param s: Position of the object along s in meters.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
         """
         raise NotImplementedError
 

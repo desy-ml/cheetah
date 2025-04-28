@@ -1,13 +1,10 @@
-from typing import Optional, Union
-
 import matplotlib.pyplot as plt
 import torch
-from torch import Size, nn
+from matplotlib.patches import Rectangle
 
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
-
-from .element import Element
+from cheetah.accelerator.element import Element
+from cheetah.particles import Beam, Species
+from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -19,29 +16,27 @@ class CustomTransferMap(Element):
 
     def __init__(
         self,
-        transfer_map: Union[torch.Tensor, nn.Parameter],
-        length: Optional[torch.Tensor] = None,
-        name: Optional[str] = None,
-        device=None,
-        dtype=torch.float32,
+        predefined_transfer_map: torch.Tensor,
+        length: torch.Tensor | None = None,
+        name: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [predefined_transfer_map, length], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        assert isinstance(transfer_map, torch.Tensor)
-        assert transfer_map.shape[-2:] == (7, 7)
+        if length is not None:
+            self.length = torch.as_tensor(length, **factory_kwargs)
 
-        self.register_buffer(
-            "_transfer_map", torch.as_tensor(transfer_map, **factory_kwargs)
+        self.register_buffer_or_parameter(
+            "predefined_transfer_map",
+            torch.as_tensor(predefined_transfer_map, **factory_kwargs),
         )
-        self.register_buffer(
-            "length",
-            (
-                torch.as_tensor(length, **factory_kwargs)
-                if length is not None
-                else torch.zeros(transfer_map.shape[:-2], **factory_kwargs)
-            ),
-        )
+
+        assert self.predefined_transfer_map.shape[-2:] == (7, 7)
 
     @classmethod
     def from_merging_elements(
@@ -64,14 +59,17 @@ class CustomTransferMap(Element):
             " incorrect tracking results."
         )
 
-        device = elements[0].transfer_map(incoming_beam.energy).device
-        dtype = elements[0].transfer_map(incoming_beam.energy).dtype
+        first_element_transfer_map = elements[0].transfer_map(
+            incoming_beam.energy, incoming_beam.species
+        )
+        device = first_element_transfer_map.device
+        dtype = first_element_transfer_map.dtype
 
         tm = torch.eye(7, device=device, dtype=dtype).repeat(
             (*incoming_beam.energy.shape, 1, 1)
         )
         for element in elements:
-            tm = torch.matmul(element.transfer_map(incoming_beam.energy), tm)
+            tm = element.transfer_map(incoming_beam.energy, incoming_beam.species) @ tm
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
@@ -82,15 +80,8 @@ class CustomTransferMap(Element):
             tm, length=combined_length, device=device, dtype=dtype, name=combined_name
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        return self._transfer_map
-
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            self._transfer_map.repeat((*shape, 1, 1)),
-            length=self.length.repeat(shape),
-            name=self.name,
-        )
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+        return self.predefined_transfer_map
 
     @property
     def is_skippable(self) -> bool:
@@ -98,17 +89,24 @@ class CustomTransferMap(Element):
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}(transfer_map={repr(self._transfer_map)}, "
+            f"{self.__class__.__name__}("
+            + f"predefined_transfer_map={repr(self.predefined_transfer_map)}, "
             + f"length={repr(self.length)}, "
             + f"name={repr(self.name)})"
         )
 
+    @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["transfer_map"]
+        return super().defining_features + ["length", "predefined_transfer_map"]
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
-        # TODO: At some point think of a nice way to indicate this in a lattice plot
-        pass
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
+        height = 0.4
+
+        patch = Rectangle((plot_s, 0), plot_length, height, color="tab:olive", zorder=2)
+        ax.add_patch(patch)

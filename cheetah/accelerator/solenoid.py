@@ -1,21 +1,17 @@
-from typing import Optional, Union
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
-from torch import Size, nn
 
+from cheetah.accelerator.element import Element
+from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
-from cheetah.utils import UniqueNameGenerator
-
-from .element import Element
+from cheetah.utils import (
+    UniqueNameGenerator,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class Solenoid(Element):
@@ -34,53 +30,51 @@ class Solenoid(Element):
 
     def __init__(
         self,
-        length: Union[torch.Tensor, nn.Parameter] = None,
-        k: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        misalignment: Optional[Union[torch.Tensor, nn.Parameter]] = None,
-        name: Optional[str] = None,
-        device=None,
-        dtype=torch.float32,
+        length: torch.Tensor,
+        k: torch.Tensor | None = None,
+        misalignment: torch.Tensor | None = None,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
+        device, dtype = verify_device_and_dtype(
+            [length, k, misalignment], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, **factory_kwargs)
 
-        self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
-        self.register_buffer(
-            "k",
-            (
-                torch.as_tensor(k, **factory_kwargs)
-                if k is not None
-                else torch.zeros_like(self.length)
-            ),
+        self.length = torch.as_tensor(length, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "k", torch.as_tensor(k if k is not None else 0.0, **factory_kwargs)
         )
-        self.register_buffer(
+        self.register_buffer_or_parameter(
             "misalignment",
-            (
-                torch.as_tensor(misalignment, **factory_kwargs)
-                if misalignment is not None
-                else torch.zeros((*self.length.shape[:-1], 2), **factory_kwargs)
+            torch.as_tensor(
+                misalignment if misalignment is not None else (0.0, 0.0),
+                **factory_kwargs,
             ),
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
+        gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
         c = torch.cos(self.length * self.k)
         s = torch.sin(self.length * self.k)
 
-        s_k = torch.empty_like(self.length)
-        s_k[self.k == 0] = self.length[self.k == 0]
-        s_k[self.k != 0] = s[self.k != 0] / self.k[self.k != 0]
+        s_k = torch.where(self.k == 0.0, self.length, s / self.k)
 
-        r56 = torch.zeros_like(self.length)
-        if gamma != 0:
-            gamma2 = gamma * gamma
-            beta = torch.sqrt(1.0 - 1.0 / gamma2)
-            r56 -= self.length / (beta * beta * gamma2)
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape, self.k.shape, energy.shape
+        )
 
-        R = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        r56 = torch.where(
+            gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
+        )
+
+        R = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
         R[..., 0, 0] = c**2
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c
@@ -108,31 +102,39 @@ class Solenoid(Element):
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
             return R
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            k=self.k.repeat(shape),
-            misalignment=self.misalignment.repeat(shape),
-            name=self.name,
-        )
-
     @property
     def is_active(self) -> bool:
-        return any(self.k != 0)
+        return torch.any(self.k != 0).item()
 
+    @property
     def is_skippable(self) -> bool:
         return True
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for solenoid properly, for now just return self
-        return [self]
+        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        split_length = self.length / num_splits
+        device = self.length.device
+        dtype = self.length.dtype
+        return [
+            Solenoid(
+                length=split_length,
+                k=self.k,
+                misalignment=self.misalignment,
+                device=device,
+                dtype=dtype,
+            )
+            for _ in range(num_splits)
+        ]
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
+    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+
         alpha = 1 if self.is_active else 0.2
         height = 0.8
 
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:orange", alpha=alpha, zorder=2
+            (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
 
