@@ -6,9 +6,14 @@ beginning[e_tot] = 10e6 ! eV    Or can set beginning[p0c]
 parameter[geometry] = open  ! Or closed
 parameter[particle] = electron  ! Reference particle.
 
-d: drift, L = 0.5
-b: sbend, L = 0.5, g = 1, e1 = 0.1, dg = 0.001 ! g = 1/design_radius
-q: quadrupole, L = 0.6, k1 = 0.23
+! Bmad lattices treat variable and function names separately. This is to test that.
+abs = -0.6
+
+d: drift, L = 0.5 * (0.3 + 0.7)
+! The two spaces in the expression for L are on purpose to test the parser's ability to
+! handle this
+b: sbend, L = 0.6  -0.1, g = 1, e1 = 0.1, dg = sqrt(0.000001) ! g = 1/design_radius
+q: quadrupole, L = abs(abs), k1 = 0.23
 
 lat: line = (d, b, q) ! List of lattice elements
 use, lat ! Line used to construct the lattice
