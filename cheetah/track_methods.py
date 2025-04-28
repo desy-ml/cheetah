@@ -88,7 +88,8 @@ def base_ttensor(
     energy: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Create a second order universal transfer matrix for a beamline element.
+    Create a second order universal transfer matrix for a beamline element. Uses MAD
+    convention.
 
     :param length: Length of the element in m.
     :param k1: Quadrupole strength in 1/m**2.
