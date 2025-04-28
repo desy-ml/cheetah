@@ -12,7 +12,7 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
 
     stack = []
     stripped = expression.strip()
-    for token in stripped.split(" "):
+    for token in stripped.split():
         match token:
             case "+":
                 try:
@@ -99,12 +99,12 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
                     raise SyntaxError(
                         f"Invalid expression: {expression} - Need one value before asin"
                     )
-            case _:  # all other tokens
-                # commment, ignore this and all following tokens
+            case _:  # All other tokens
+                # Commment ... ignore this and all following tokens
                 if token[0] == "#":
                     break
                 try:
-                    # read as float since it's all torch in the back anyway
+                    # Read as float since it's all torch in the back anyway
                     number = float(token)
                 except ValueError:
                     if token in context:

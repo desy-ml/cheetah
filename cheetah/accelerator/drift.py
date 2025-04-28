@@ -5,7 +5,12 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -30,6 +35,7 @@ class Drift(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
