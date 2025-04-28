@@ -50,6 +50,8 @@ def test_forced_element_dtype(mwe_cheetah_element):
     Test that the dtype is properly overridden for all element classes.
     """
     double_element = mwe_cheetah_element.double()
+
+    # Create new element with overriden dtype
     half_element = double_element.__class__(
         **{
             feature: getattr(double_element, feature)
@@ -68,14 +70,16 @@ def test_infer_element_dtype(mwe_cheetah_element):
     Test that the dtype is properly inferred for all element classes.
     """
     double_element = mwe_cheetah_element.double()
-    element = double_element.__class__(
+
+    # Create new element and infer the dtype from passed buffers
+    inferred_element = double_element.__class__(
         **{
             feature: getattr(double_element, feature)
             for feature in double_element.defining_features
         }
     )
 
-    for buffer in element.buffers():
+    for buffer in inferred_element.buffers():
         assert buffer.dtype == torch.float64
 
 

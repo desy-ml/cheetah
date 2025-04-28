@@ -348,6 +348,8 @@ def test_drift_broadcasting_two_different_inputs(mwe_cheetah_element):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
+
+    Skipped for elements whose response is not influenced by their length.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
