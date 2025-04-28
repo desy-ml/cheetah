@@ -9,6 +9,7 @@
 ### 🐛 Bug fixes
 
 ### 🐆 Other
+- Unrecognised element properties now print a warning instead of exiting with an assertation error. (#415) (@amylizzle)
 
 ### 🌟 First Time Contributors
 
