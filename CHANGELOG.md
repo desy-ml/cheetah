@@ -6,7 +6,11 @@
 
 ### 🚀 Features
 
+- Add `KQUAD` element name to Elegant converter (see #409) (@amylizzle)
+
 ### 🐛 Bug fixes
+
+- Fix parsing of `CSRCSBEND` in Elegant lattices (see #409) (@amylizzle)
 
 ### 🐆 Other
 
@@ -33,7 +37,6 @@
 - Fix issue where `Quadrupole.tracking_method` was not preserved on cloning (see #404) (@RemiLehe, @jank324)
 - The vertical screen misalignment is now correctly applied to `y` instead of `px` (see #405) (@RemiLehe)
 - Fix issues when generating screen images caused by the sign of particle charges (see #394) (@Hespe, @jank324)
-- Fix parsing of CSRCSBEND in Elegant lattices. (see #409) (@amylizzle)
 - Fix an issue where newer versions of `torch` only accept a `torch.Tensor` as input to `torch.rad2deg` (see #417) (@jank324)
 - Fix bug that caused correlations to be lost in the conversion from a `ParameterBeam` to a `ParticleBeam` (see #408) (@jank324, @Hespe)
 
@@ -68,7 +71,6 @@
 - Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
 - Add support for particle species through a new `Species` class (see #276, #376) (@cr-xu, @jank324, @Hespe)
 - Various optimisations for a roughly 2x speed improvement over `v0.7.0` (see #367) (@jank324, @Hespe)
-- Add `kquad` element name to Elegant converter. (see #409) (@amylizzle)
 
 ### 🐛 Bug fixes
 
