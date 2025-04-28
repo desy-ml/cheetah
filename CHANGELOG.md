@@ -10,6 +10,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix `Screen` device issues when using gpu (see #428) (@jp-ga)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
