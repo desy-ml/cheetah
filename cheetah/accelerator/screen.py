@@ -185,10 +185,10 @@ class Screen(Element):
 
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
-                ].unsqueeze(-1)
+                ].unsqueeze(-1).to(copy_of_incoming.particles)
                 copy_of_incoming.particles[..., 2] -= self.misalignment[
                     ..., 1
-                ].unsqueeze(-1)
+                ].unsqueeze(-1).to(copy_of_incoming.particles)
 
             self.set_read_beam(copy_of_incoming)
 
@@ -296,8 +296,8 @@ class Screen(Element):
                 image = kde_histogram_2d(
                     x1=broadcasted_x,
                     x2=broadcasted_y,
-                    bins1=self.pixel_bin_centers[0],
-                    bins2=self.pixel_bin_centers[1],
+                    bins1=self.pixel_bin_centers[0].to(read_beam.x),
+                    bins2=self.pixel_bin_centers[1].to(read_beam.x),
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
                 )
