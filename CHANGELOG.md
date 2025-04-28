@@ -6,11 +6,9 @@
 
 ### 🚀 Features
 
-- Add `KQUAD` element name to Elegant converter (see #409) (@amylizzle)
+- Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
 
 ### 🐛 Bug fixes
-
-- Fix parsing of `CSRCSBEND` in Elegant lattices (see #409) (@amylizzle)
 
 ### 🐆 Other
 
