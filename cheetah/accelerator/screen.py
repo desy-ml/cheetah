@@ -183,12 +183,16 @@ class Screen(Element):
                 )
                 copy_of_incoming.particles = broadcasted_particles.clone()
 
-                copy_of_incoming.particles[..., 0] -= self.misalignment[
-                    ..., 0
-                ].unsqueeze(-1).to(copy_of_incoming.particles)
-                copy_of_incoming.particles[..., 2] -= self.misalignment[
-                    ..., 1
-                ].unsqueeze(-1).to(copy_of_incoming.particles)
+                copy_of_incoming.particles[..., 0] -= (
+                    self.misalignment[..., 0]
+                    .unsqueeze(-1)
+                    .to(copy_of_incoming.particles)
+                )
+                copy_of_incoming.particles[..., 2] -= (
+                    self.misalignment[..., 1]
+                    .unsqueeze(-1)
+                    .to(copy_of_incoming.particles)
+                )
 
             self.set_read_beam(copy_of_incoming)
 
