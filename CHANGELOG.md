@@ -10,6 +10,8 @@
 
 ### 🐛 Bug fixes
 
+- Parsing of element names containing `-` is now possible, though `-` will be converted to `_` for variable access (see #386) (@amylizzle)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
