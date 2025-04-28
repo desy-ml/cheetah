@@ -111,12 +111,10 @@ class Cavity(Element):
 
         tm = self.transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
-            outgoing_mu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
-            outgoing_cov = torch.matmul(
-                tm, torch.matmul(incoming.cov, tm.transpose(-2, -1))
-            )
+            outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
         else:  # ParticleBeam
-            outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
+            outgoing_particles = incoming.particles @ tm.transpose(-2, -1)
         delta_energy = (
             self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )
