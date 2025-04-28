@@ -10,7 +10,7 @@
 ### 🚀 Features
 
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
-- Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387) (@amylizzle, @Hespe, @jank324)
+- Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
 - Add a `Sextupole` element (see #406) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
@@ -21,6 +21,7 @@
 - Fix issue where `Quadrupole.tracking_method` was not preserved on cloning (see #404) (@RemiLehe, @jank324)
 - The vertical screen misalignment is now correctly applied to `y` instead of `px` (see #405) (@RemiLehe)
 - Fix issues when generating screen images caused by the sign of particle charges (see #394) (@Hespe, @jank324)
+- Fix an issue where newer versions of `torch` only accept a `torch.Tensor` as input to `torch.rad2deg` (see #417) (@jank324)
 - Fix bug that caused correlations to be lost in the conversion from a `ParameterBeam` to a `ParticleBeam` (see #408) (@jank324, @Hespe)
 
 ### 🐆 Other
