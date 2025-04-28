@@ -407,11 +407,11 @@ class Dipole(Element):
             R[..., 2, 3] = self.length
 
         # Apply fringe fields
-        R = torch.matmul(R_exit, torch.matmul(R, R_enter))
+        R = R_exit @ R @ R_enter
+
         # Apply rotation for tilted magnets
-        R = torch.matmul(
-            rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
-        )
+        R = rotation_matrix(-self.tilt) @ R @ rotation_matrix(self.tilt)
+
         return R
 
     def _transfer_map_enter(self) -> torch.Tensor:
