@@ -20,6 +20,7 @@
 - Fix issue where `Quadrupole.tracking_method` was not preserved on cloning (see #404) (@RemiLehe, @jank324)
 - The vertical screen misalignment is now correctly applied to `y` instead of `px` (see #405) (@RemiLehe)
 - Fix issues when generating screen images caused by the sign of particle charges (see #394) (@Hespe, @jank324)
+- Fix an issue where newer versions of `torch` only accept a `torch.Tensor` as input to `torch.rad2deg` (see #417) (@jank324)
 
 ### 🐆 Other
 
