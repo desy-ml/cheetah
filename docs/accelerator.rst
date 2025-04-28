@@ -55,6 +55,10 @@ Accelerator
     :members:
     :undoc-members:
 
+.. automodule:: accelerator.sextupole
+    :members:
+    :undoc-members:
+
 .. automodule:: accelerator.solenoid
     :members:
     :undoc-members:
