@@ -85,7 +85,8 @@ def mwe_cheetah_element(request):
             pytest.skip(f"skipped for class '{ElementClass}'")
 
     if ElementClass in ELEMENT_CLASS_DEFAULT_ARGS:
-        return ElementClass(**ELEMENT_CLASS_DEFAULT_ARGS[ElementClass])
+        # Clone to prevent global state between test calls
+        return ElementClass(**ELEMENT_CLASS_DEFAULT_ARGS[ElementClass]).clone()
     else:
         raise NotImplementedError(
             f"No default arguments for element class '{ElementClass}'"
