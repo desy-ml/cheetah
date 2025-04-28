@@ -36,7 +36,9 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
         cheetah.Species("antiproton"),
         cheetah.Species("deuteron"),
         cheetah.Species(
-            "#12C+3", num_elementary_charges=3, mass_eV=12 * atomic_mass_eV
+            "#12C+3",
+            num_elementary_charges=torch.tensor(3),
+            mass_eV=torch.tensor(12 * atomic_mass_eV),
         ),
     ],
 )
