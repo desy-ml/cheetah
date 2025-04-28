@@ -28,7 +28,9 @@ class Sextupole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([length, k2], device, dtype)
+        device, dtype = verify_device_and_dtype(
+            [length, k2, misalignment, tilt], device, dtype
+        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
@@ -134,5 +136,7 @@ class Sextupole(Element):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
             f"k2={repr(self.k2)}, "
+            f"misalignment={repr(self.misalignment)}, "
+            f"tilt={repr(self.tilt)}, "
             f"name={repr(self.name)})"
         )

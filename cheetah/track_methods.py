@@ -15,7 +15,7 @@ def base_rmatrix(
     energy: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Create a first order universal transfer matrix for a beamline element.
+    Create a first order universal transfer map for a beamline element.
 
     :param length: Length of the element in m.
     :param k1: Quadrupole strength in 1/m**2.
@@ -23,7 +23,7 @@ def base_rmatrix(
     :param species: Particle species of the beam.
     :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
-    :return: First order transfer matrix for the element.
+    :return: First order transfer map for the element.
     """
     device = length.device
     dtype = length.dtype
@@ -88,7 +88,7 @@ def base_ttensor(
     energy: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Create a second order universal transfer matrix for a beamline element. Uses MAD
+    Create a second order universal transfer map for a beamline element. Uses MAD
     convention.
 
     :param length: Length of the element in m.
@@ -98,7 +98,7 @@ def base_ttensor(
     :param species: Particle species of the beam.
     :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
-    :return: Second order transfer matrix for the element.
+    :return: Second order transfer map for the element.
     """
     device = length.device
     dtype = length.dtype
