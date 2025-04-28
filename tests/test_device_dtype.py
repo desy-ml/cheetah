@@ -44,53 +44,36 @@ def test_move_quadrupole_to_device(target_device: torch.device):
     assert quad.tilt.device.type == target_device.type
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
-)
-def test_forced_element_dtype(ElementClass):
+@pytest.mark.skip_element([cheetah.Marker, cheetah.Segment])
+def test_forced_element_dtype(mwe_cheetah_element):
     """
     Test that the dtype is properly overridden for all element classes.
     """
-    element = ElementClass(
-        length=torch.tensor(1.0, dtype=torch.float64), dtype=torch.float16
+    double_element = mwe_cheetah_element.double()
+    half_element = double_element.__class__(
+        **{
+            feature: getattr(double_element, feature)
+            for feature in double_element.defining_features
+        },
+        dtype=torch.float16,
     )
 
-    for buffer in element.buffers():
+    for buffer in half_element.buffers():
         assert buffer.dtype == torch.float16
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
-)
-def test_infer_element_dtype(ElementClass):
+@pytest.mark.skip_element([cheetah.BPM, cheetah.Marker, cheetah.Segment])
+def test_infer_element_dtype(mwe_cheetah_element):
     """
     Test that the dtype is properly inferred for all element classes.
     """
-    element = ElementClass(length=torch.tensor(1.0, dtype=torch.float64))
+    double_element = mwe_cheetah_element.double()
+    element = double_element.__class__(
+        **{
+            feature: getattr(double_element, feature)
+            for feature in double_element.defining_features
+        }
+    )
 
     for buffer in element.buffers():
         assert buffer.dtype == torch.float64
