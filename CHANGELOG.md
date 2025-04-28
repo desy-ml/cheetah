@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
