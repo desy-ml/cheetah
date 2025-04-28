@@ -10,6 +10,8 @@
 
 ### 🐆 Other
 
+- Adds a minor optimisation in `Segment.plot_mean_and_std()` which provides a speed increase when plotting overviews in large lattices. (#414) (@amylizzle)
+
 ### 🌟 First Time Contributors
 
 ## [v0.7.2](https://github.com/desy-ml/cheetah/releases/tag/v0.7.2) (2025-04-28)
