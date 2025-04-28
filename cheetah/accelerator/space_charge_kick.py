@@ -45,14 +45,19 @@ class SpaceChargeKick(Element):
         self,
         effect_length: torch.Tensor,
         grid_shape: tuple[int, int, int] = (32, 32, 32),
-        grid_extend_x: torch.Tensor = 3,  # TODO: Simplify these to a single tensor?
-        grid_extend_y: torch.Tensor = 3,
-        grid_extend_tau: torch.Tensor = 3,
+        # TODO: Simplify these to a single tensor?
+        grid_extend_x: torch.Tensor | None = None,
+        grid_extend_y: torch.Tensor | None = None,
+        grid_extend_tau: torch.Tensor | None = None,
         name: str | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([effect_length], device, dtype)
+        device, dtype = verify_device_and_dtype(
+            [effect_length, grid_extend_x, grid_extend_y, grid_extend_tau],
+            device,
+            dtype,
+        )
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name, **self.factory_kwargs)
@@ -64,13 +69,25 @@ class SpaceChargeKick(Element):
         )
         # In multiples of sigma
         self.register_buffer_or_parameter(
-            "grid_extend_x", torch.as_tensor(grid_extend_x, **self.factory_kwargs)
+            "grid_extend_x",
+            torch.as_tensor(
+                grid_extend_x if grid_extend_x is not None else 3.0,
+                **self.factory_kwargs,
+            ),
         )
         self.register_buffer_or_parameter(
-            "grid_extend_y", torch.as_tensor(grid_extend_y, **self.factory_kwargs)
+            "grid_extend_y",
+            torch.as_tensor(
+                grid_extend_y if grid_extend_y is not None else 3.0,
+                **self.factory_kwargs,
+            ),
         )
         self.register_buffer_or_parameter(
-            "grid_extend_tau", torch.as_tensor(grid_extend_tau, **self.factory_kwargs)
+            "grid_extend_tau",
+            torch.as_tensor(
+                grid_extend_tau if grid_extend_tau is not None else 3.0,
+                **self.factory_kwargs,
+            ),
         )
 
     def _deposit_charge_on_grid(
