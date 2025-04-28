@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
+
 ### 🐛 Bug fixes
 - Unrecognised element properties now print a warning instead of exiting with an assertation error (see #425) (@amylizzle)
 
