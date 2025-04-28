@@ -71,8 +71,8 @@ class Element(ABC, nn.Module):
         """
         if isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
-            mu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
-            cov = torch.matmul(tm, torch.matmul(incoming.cov, tm.transpose(-2, -1)))
+            mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            cov = tm @ incoming.cov @ tm.transpose(-2, -1)
             return ParameterBeam(
                 mu,
                 cov,
@@ -82,7 +82,7 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
-            new_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
+            new_particles = incoming.particles @ tm.transpose(-2, -1)
             return ParticleBeam(
                 new_particles,
                 incoming.energy,
