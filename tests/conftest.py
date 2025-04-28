@@ -17,6 +17,7 @@ ELEMENT_CLASS_DEFAULT_ARGS = {
     cheetah.Marker: {},
     cheetah.Quadrupole: {"length": torch.tensor(1.0)},
     cheetah.Segment: {"elements": [cheetah.Drift(length=torch.tensor(1.0))]},
+    cheetah.Sextupole: {"length": torch.tensor(1.0)},
     cheetah.Screen: {},
     cheetah.Solenoid: {"length": torch.tensor(1.0)},
     cheetah.SpaceChargeKick: {"effect_length": torch.tensor(1.0)},
