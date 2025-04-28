@@ -10,6 +10,7 @@
 
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
 - Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
+- Add a `Sextupole` element (see #406) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
@@ -21,6 +22,8 @@
 - Fix issues when generating screen images caused by the sign of particle charges (see #394) (@Hespe, @jank324)
 
 ### 🐆 Other
+
+- Temporarily limit `torch` dependency to `2.6` or lower to avoid `abort trap: 6` error with `2.7` (at least on macOS) (see #419) (@jank324)
 
 ### 🌟 First Time Contributors
 

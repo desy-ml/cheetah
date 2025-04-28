@@ -342,6 +342,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         cheetah.HorizontalCorrector,
         cheetah.Quadrupole,
         cheetah.RBend,
+        cheetah.Sextupole,
         cheetah.Solenoid,
         cheetah.TransverseDeflectingCavity,
         cheetah.Undulator,
