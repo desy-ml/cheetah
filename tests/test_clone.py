@@ -12,7 +12,7 @@ def test_element_buffer_contents_and_location(mwe_cheetah_element):
     clone = mwe_cheetah_element.clone()
 
     for buffer, buffer_clone in zip(mwe_cheetah_element.buffers(), clone.buffers()):
-        assert torch.allclose(buffer, buffer_clone)
+        assert torch.allclose(buffer, buffer_clone, equal_nan=True)
         assert not buffer.data_ptr() == buffer_clone.data_ptr()
 
 
