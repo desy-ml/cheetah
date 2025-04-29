@@ -333,8 +333,8 @@ def test_vectorized_screen_2d(BeamClass, method):
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-@pytest.mark.skip_element(
-    [
+@pytest.mark.test_all_elements(
+    except_for=[
         cheetah.Aperture,
         cheetah.BPM,
         cheetah.CustomTransferMap,
