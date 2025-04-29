@@ -448,6 +448,28 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
+    def set_attrs_of_every_element_of_type(
+        self,
+        element_type: type[Element],
+        is_recursive: bool = True,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """
+        Set attributes of every element of a specific type in the segment.
+
+        :param element_type: Type of the elements to set the attributes for.
+        :param is_recursive: If `True`, the this method is applied to nested `Segment`s
+            as well. If `False`, only the elements directly in the top-level `Segment`
+            are considered.
+        :param kwargs: Attributes to set and their values.
+        """
+        for element in self.elements:
+            if isinstance(element, element_type):
+                for key, value in kwargs.items():
+                    setattr(element, key, value)
+            elif is_recursive and isinstance(element, Segment):
+                element.set_attrs_of_every_element_of_type(element_type, **kwargs)
+
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         element_lengths = [element.length for element in self.elements]
         element_ss = [torch.tensor(0.0)] + [
