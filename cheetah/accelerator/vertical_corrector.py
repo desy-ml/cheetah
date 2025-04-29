@@ -13,14 +13,14 @@ from cheetah.utils import (
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
-class VerticalCorrector(Element):
+class VerticalCorrector(Corrector):
     """
-    Verticle corrector magnet in a particle accelerator.
+    Vertical corrector magnet in a particle accelerator.
     Note: This is modeled as a drift section with
         a thin-kick in the vertical plane.
 
     :param length: Length in meters.
-    :param angle: Particle deflection angle in the vertical plane in rad.
+    :param vertical_angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
     """
 
@@ -62,8 +62,12 @@ class VerticalCorrector(Element):
         return tm
 
     @property
-    def is_skippable(self) -> bool:
-        return True
+    def angle(self) -> torch.Tensor:
+        return self.vertical_angle
+
+    @angle.setter
+    def angle(self, value: torch.Tensor) -> None:
+        self.vertical_angle = value
 
     @property
     def is_active(self) -> bool:
@@ -96,7 +100,13 @@ class VerticalCorrector(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "angle"]
+        features_with_both_angles = super().defining_features
+        cleaned_features = [
+            feature
+            for feature in features_with_both_angles
+            if feature not in ["horizontal_angle", "vertical_angle"]
+        ]
+        return cleaned_features + ["length", "angle"]
 
     def __repr__(self) -> str:
         return (

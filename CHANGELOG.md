@@ -3,6 +3,7 @@
 ## v0.7.3 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
+- New `Corrector` class and modification of `HorizontalCorrector` and `VerticalCorrector` properties (see #207) (@ansantam)
 
 ### 🚀 Features
 

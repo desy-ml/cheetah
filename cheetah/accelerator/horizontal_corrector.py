@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
+from torch import Size, nn
 
+from cheetah.accelerator.corrector import Corrector
 from cheetah.accelerator.element import Element
 from cheetah.particles import Species
 from cheetah.utils import (
@@ -13,14 +15,14 @@ from cheetah.utils import (
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
-class HorizontalCorrector(Element):
+class HorizontalCorrector(Corrector):
     """
     Horizontal corrector magnet in a particle accelerator.
 
     NOTE: This is modeled as a drift section with a thin-kick in the horizontal plane.
 
     :param length: Length in meters.
-    :param angle: Particle deflection angle in the horizontal plane in rad.
+    :param horizontal_angle: Particle deflection angle in the horizontal plane in rad.
     :param name: Unique identifier of the element.
     """
 
@@ -62,8 +64,12 @@ class HorizontalCorrector(Element):
         return tm
 
     @property
-    def is_skippable(self) -> bool:
-        return True
+    def angle(self) -> torch.Tensor:
+        return self.horizontal_angle
+
+    @angle.setter
+    def angle(self, value: torch.Tensor) -> None:
+        self.horizontal_angle = value
 
     @property
     def is_active(self) -> bool:
@@ -96,7 +102,13 @@ class HorizontalCorrector(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "angle"]
+        features_with_both_angles = super().defining_features
+        cleaned_features = [
+            feature
+            for feature in features_with_both_angles
+            if feature not in ["horizontal_angle", "vertical_angle"]
+        ]
+        return cleaned_features + ["length", "angle"]
 
     def __repr__(self) -> str:
         return (
