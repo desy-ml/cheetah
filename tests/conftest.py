@@ -60,6 +60,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
                 # Clone to prevent global state between test calls
                 elements[clazz] = clazz(**ELEMENT_CLASS_DEFAULT_ARGS[clazz]).clone()
             else:
+                # Add marker to indicate failure to generate a MWE
                 elements[clazz] = pytest.param(None, marks=pytest.mark.no_mwe)
 
         metafunc.parametrize(argument_name, elements.values(), ids=elements.keys())
@@ -106,4 +107,4 @@ def default_torch_dtype(request):
 def fail_no_mwe(request):
     """Ensure that test with the 'no_mwe' marker fail."""
     if request.node.get_closest_marker("no_mwe") is not None:
-        pytest.fail("The parametrized element class has no minimal working example")
+        pytest.fail("There is no minimal working example for the given element class!")
