@@ -29,10 +29,9 @@ class Undulator(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = torch.as_tensor(length, device=device, dtype=dtype)
 
         self.is_active = is_active
 

@@ -75,35 +75,38 @@ class Dipole(Element):
             device,
             dtype,
         )
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = torch.as_tensor(length, device=device, dtype=dtype)
 
         self.register_buffer_or_parameter(
             "angle",
-            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+            torch.as_tensor(
+                angle if angle is not None else 0.0, device=device, dtype=dtype
+            ),
         )
         self.register_buffer_or_parameter(
-            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
+            "k1",
+            torch.as_tensor(k1 if k1 is not None else 0.0, device=device, dtype=dtype),
         )
         self.register_buffer_or_parameter(
             "_e1",
             torch.as_tensor(
-                dipole_e1 if dipole_e1 is not None else 0.0, **factory_kwargs
+                dipole_e1 if dipole_e1 is not None else 0.0, device=device, dtype=dtype
             ),
         )
         self.register_buffer_or_parameter(
             "_e2",
             torch.as_tensor(
-                dipole_e2 if dipole_e2 is not None else 0.0, **factory_kwargs
+                dipole_e2 if dipole_e2 is not None else 0.0, device=device, dtype=dtype
             ),
         )
         self.register_buffer_or_parameter(
             "fringe_integral",
             torch.as_tensor(
                 fringe_integral if fringe_integral is not None else 0.0,
-                **factory_kwargs,
+                device=device,
+                dtype=dtype,
             ),
         )
         self.register_buffer_or_parameter(
@@ -114,21 +117,30 @@ class Dipole(Element):
                     if fringe_integral_exit is not None
                     else self.fringe_integral
                 ),
-                **factory_kwargs,
+                device=device,
+                dtype=dtype,
             ),
         )
 
         self.register_buffer_or_parameter(
-            "gap", torch.as_tensor(gap if gap is not None else 0.0, **factory_kwargs)
+            "gap",
+            torch.as_tensor(
+                gap if gap is not None else 0.0, device=device, dtype=dtype
+            ),
         )
         self.register_buffer_or_parameter(
             "gap_exit",
             torch.as_tensor(
-                gap_exit if gap_exit is not None else self.gap, **factory_kwargs
+                gap_exit if gap_exit is not None else self.gap,
+                device=device,
+                dtype=dtype,
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt",
+            torch.as_tensor(
+                tilt if tilt is not None else 0.0, device=device, dtype=dtype
+            ),
         )
 
         self.fringe_at = fringe_at

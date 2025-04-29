@@ -56,8 +56,7 @@ class Screen(Element):
         device, dtype = verify_device_and_dtype(
             [pixel_size, misalignment, kde_bandwidth], device, dtype
         )
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
         assert (
             isinstance(resolution, (tuple, list)) and len(resolution) == 2
@@ -70,14 +69,17 @@ class Screen(Element):
         self.register_buffer_or_parameter(
             "pixel_size",
             torch.as_tensor(
-                pixel_size if pixel_size is not None else (1e-3, 1e-3), **factory_kwargs
+                pixel_size if pixel_size is not None else (1e-3, 1e-3),
+                device=device,
+                dtype=dtype,
             ),
         )
         self.register_buffer_or_parameter(
             "misalignment",
             torch.as_tensor(
                 misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+                device=device,
+                dtype=dtype,
             ),
         )
         self.register_buffer_or_parameter(
@@ -88,7 +90,8 @@ class Screen(Element):
                     if kde_bandwidth is not None
                     else self.pixel_size[0].clone()
                 ),
-                **factory_kwargs,
+                device=device,
+                dtype=dtype,
             ),
         )
 
@@ -100,7 +103,9 @@ class Screen(Element):
 
         self.register_buffer(
             "cached_reading",
-            torch.full((resolution[1], resolution[0]), torch.nan, **factory_kwargs),
+            torch.full(
+                (resolution[1], resolution[0]), torch.nan, device=device, dtype=dtype
+            ),
             persistent=False,
         )
         self.set_read_beam(None)

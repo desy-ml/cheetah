@@ -25,15 +25,14 @@ class CustomTransferMap(Element):
         device, dtype = verify_device_and_dtype(
             [predefined_transfer_map, length], device, dtype
         )
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
         if length is not None:
-            self.length = torch.as_tensor(length, **factory_kwargs)
+            self.length = torch.as_tensor(length, device=device, dtype=dtype)
 
         self.register_buffer_or_parameter(
             "predefined_transfer_map",
-            torch.as_tensor(predefined_transfer_map, **factory_kwargs),
+            torch.as_tensor(predefined_transfer_map, device=device, dtype=dtype),
         )
 
         assert self.predefined_transfer_map.shape[-2:] == (7, 7)
