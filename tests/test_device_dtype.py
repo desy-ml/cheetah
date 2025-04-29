@@ -7,7 +7,7 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 
-@pytest.mark.test_all_elements
+@pytest.mark.initialize_elements
 @pytest.mark.parametrize(
     "target_device",
     [
@@ -25,32 +25,32 @@ from cheetah.utils import is_mps_available_and_functional
         ),
     ],
 )
-def test_move_element_to_device(mwe_cheetah_element, target_device: torch.device):
+def test_move_element_to_device(mwe_element, target_device: torch.device):
     """Test that elements can be successfully moved to a different device."""
 
     # Test that by default the element is on the CPU
-    for buffer in mwe_cheetah_element.buffers():
+    for buffer in mwe_element.buffers():
         assert buffer.dtype == "cpu"
 
     # Move the element to the target device
-    mwe_cheetah_element.to(target_device)
+    mwe_element.to(target_device)
 
     # Test that the element is now on the target device
-    for buffer in mwe_cheetah_element.buffers():
+    for buffer in mwe_element.buffers():
         assert buffer.dtype == target_device.type
 
 
-@pytest.mark.test_all_elements(except_for=[cheetah.Marker, cheetah.Segment])
-def test_forced_element_dtype(mwe_cheetah_element):
+@pytest.mark.initialize_elements(except_for=[cheetah.Marker, cheetah.Segment])
+def test_forced_element_dtype(mwe_element):
     """
     Test that the dtype is properly overridden for all element classes.
     """
     # Ensure everything is float32 by default
-    for buffer in mwe_cheetah_element.buffers():
+    for buffer in mwe_element.buffers():
         assert buffer.dtype == torch.float32
 
     # Create new element with overriden dtype
-    double_element = mwe_cheetah_element.double()
+    double_element = mwe_element.double()
     half_element = double_element.__class__(
         **{
             feature: getattr(double_element, feature)
@@ -63,19 +63,19 @@ def test_forced_element_dtype(mwe_cheetah_element):
         assert buffer.dtype == torch.float16
 
 
-@pytest.mark.test_all_elements(
+@pytest.mark.initialize_elements(
     except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
 )
-def test_infer_element_dtype(mwe_cheetah_element):
+def test_infer_element_dtype(mwe_element):
     """
     Test that the dtype is properly inferred for all element classes.
     """
     # Ensure everything is float32 by default
-    for buffer in mwe_cheetah_element.buffers():
+    for buffer in mwe_element.buffers():
         assert buffer.dtype == torch.float32
 
     # Create new element and infer the dtype from passed buffers
-    double_element = mwe_cheetah_element.double()
+    double_element = mwe_element.double()
     inferred_element = double_element.__class__(
         **{
             feature: getattr(double_element, feature)
@@ -87,23 +87,23 @@ def test_infer_element_dtype(mwe_cheetah_element):
         assert buffer.dtype == torch.float64
 
 
-@pytest.mark.test_all_elements
-def test_conflicting_element_dtype(mwe_cheetah_element):
+@pytest.mark.initialize_elements
+def test_conflicting_element_dtype(mwe_element):
     """Test that creating elements with conflicting argument dtypes fails."""
-    arguments = inspect.signature(mwe_cheetah_element.__init__).parameters
+    arguments = inspect.signature(mwe_element.__init__).parameters
 
     # Extract required arguments for this element class
     required_arguments = {
-        name: getattr(mwe_cheetah_element, name)
+        name: getattr(mwe_element, name)
         for name, properties in arguments.items()
         if name != "self" and properties.default is inspect._empty
     }
 
     # Generate list of optional tensor arguments whose dtype can be varied
     optional_tensor_arguments = {
-        feature: getattr(mwe_cheetah_element, feature)
-        for feature in mwe_cheetah_element.defining_features
-        if isinstance(getattr(mwe_cheetah_element, feature), torch.Tensor)
+        feature: getattr(mwe_element, feature)
+        for feature in mwe_element.defining_features
+        if isinstance(getattr(mwe_element, feature), torch.Tensor)
         and feature not in required_arguments
     }
 
@@ -121,29 +121,27 @@ def test_conflicting_element_dtype(mwe_cheetah_element):
     for name, value in optional_tensor_arguments.items():
         with pytest.raises(AssertionError):
             # Contains conflicting dtype
-            mwe_cheetah_element.__class__(
-                **{name: value.double()}, **required_arguments
-            )
+            mwe_element.__class__(**{name: value.double()}, **required_arguments)
 
         # Conflict can be overriden by manual dtype selection
-        mwe_cheetah_element.__class__(
+        mwe_element.__class__(
             **{name: value.double()}, **required_arguments, dtype=torch.float16
         )
 
 
-@pytest.mark.test_all_elements
-def test_change_element_dtype(mwe_cheetah_element):
+@pytest.mark.initialize_elements
+def test_change_element_dtype(mwe_element):
     """Test that elements can be successfully changed to a different dtype."""
 
     # Test that by default the element is of dtype float32
-    for buffer in mwe_cheetah_element.buffers():
+    for buffer in mwe_element.buffers():
         assert buffer.dtype == torch.float32
 
     # Change the dtype of the element
-    mwe_cheetah_element.to(torch.float64)
+    mwe_element.to(torch.float64)
 
     # Test that the element is now of dtype float64
-    for buffer in mwe_cheetah_element.buffers():
+    for buffer in mwe_element.buffers():
         assert buffer.dtype == torch.float64
 
 

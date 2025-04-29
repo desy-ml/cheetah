@@ -3,4 +3,7 @@ requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-markers = ["test_all_elements"]
+markers = [
+    "initialize_elements: Run a test with automatically initialized cheetah elements.",
+    "no_mwe: A test case for which no minimal working example could be constructed.",
+]

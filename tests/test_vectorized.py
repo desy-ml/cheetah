@@ -333,7 +333,7 @@ def test_vectorized_screen_2d(BeamClass, method):
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-@pytest.mark.test_all_elements(
+@pytest.mark.initialize_elements(
     except_for=[
         cheetah.Aperture,
         cheetah.BPM,
@@ -344,7 +344,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         cheetah.SpaceChargeKick,
     ]
 )
-def test_drift_broadcasting_two_different_inputs(mwe_cheetah_element):
+def test_drift_broadcasting_two_different_inputs(mwe_element):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
@@ -355,8 +355,8 @@ def test_drift_broadcasting_two_different_inputs(mwe_cheetah_element):
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
 
-    mwe_cheetah_element.length = torch.tensor([[0.6], [0.5], [0.4]])
-    outgoing = mwe_cheetah_element.track(incoming)
+    mwe_element.length = torch.tensor([[0.6], [0.5], [0.4]])
+    outgoing = mwe_element.track(incoming)
 
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
