@@ -3,4 +3,4 @@ requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-markers = ["skip_element"]
+markers = ["test_all_elements"]

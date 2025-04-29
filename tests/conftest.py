@@ -79,15 +79,20 @@ def mwe_cheetah_element(request):
     """
     ElementClass = request.param
 
-    elements_to_skip = request.node.get_closest_marker("skip_element")
-    if elements_to_skip is not None:
-        if ElementClass in elements_to_skip.args[0]:
-            pytest.skip(f"skipped for class '{ElementClass}'")
+    test_marker = request.node.get_closest_marker("test_all_elements")
+    if test_marker is None:
+        pytest.fail(
+            "Using 'mwe_cheetah_element' without mandatory marker 'test_all_elements'"
+        )
+    else:
+        for argument, value in test_marker.kwargs.items():
+            match (argument):
+                case "except_for":
+                    if ElementClass in value:
+                        pytest.skip(f"skipped for class '{ElementClass}'")
 
     if ElementClass in ELEMENT_CLASS_DEFAULT_ARGS:
         # Clone to prevent global state between test calls
         return ElementClass(**ELEMENT_CLASS_DEFAULT_ARGS[ElementClass]).clone()
     else:
-        raise NotImplementedError(
-            f"No default arguments for element class '{ElementClass}'"
-        )
+        pytest.fail("No default arguments for element class '{ElementClass}'")
