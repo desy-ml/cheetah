@@ -1,8 +1,0 @@
-c: charge,total=0.25e-9;
-q1: quad,l=0.1,k1=1.5;
-q2: quad,l=0.2,k1=-3;
-d1: drift,l=1;
-d2: drift ,l=2;
-s1: sben, l=0.3,e1=0.25;
-m1: mark
-fodo: line=(c,q1,d1,m1,s1,d1,q2,d2)
