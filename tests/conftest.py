@@ -27,11 +27,42 @@ ELEMENT_CLASS_DEFAULT_ARGS = {
 }
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     """Add --seed option to pytest command line interface."""
     parser.addoption(
         "--seed", action="store", type=int, default=random.Random().getrandbits(32)
     )
+
+
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    """
+    Add a parametrize like marker to the test suite that automatically initializes
+    minimal working examples of cheetah elements.
+    """
+    element_marker = metafunc.definition.get_closest_marker("initialize_elements")
+    if element_marker is not None:
+        argument_name = "mwe_element"
+        element_classes = cheetah.Element.__subclasses__()
+
+        # Handle keyword arguments
+        for keyword, value in element_marker.kwargs.items():
+            match (keyword):
+                case "arg_name":
+                    argument_name = value
+                case "except_for":
+                    for clazz in value:
+                        element_classes.remove(clazz)
+
+        # Generate minimal working examples
+        elements = {}
+        for clazz in element_classes:
+            if clazz in ELEMENT_CLASS_DEFAULT_ARGS:
+                # Clone to prevent global state between test calls
+                elements[clazz] = clazz(**ELEMENT_CLASS_DEFAULT_ARGS[clazz]).clone()
+            else:
+                elements[clazz] = pytest.param(None, marks=pytest.mark.no_mwe)
+
+        metafunc.parametrize(argument_name, elements.values(), ids=elements.keys())
 
 
 def pytest_report_header(config) -> str:
@@ -71,28 +102,8 @@ def default_torch_dtype(request):
     torch.set_default_dtype(previous_dtype)
 
 
-@pytest.fixture(params=cheetah.Element.__subclasses__())
-def mwe_cheetah_element(request):
-    """
-    Run a test with a minimum working example of every cheetah Element. A default
-    value is used for elements with mandatory arguments.
-    """
-    ElementClass = request.param
-
-    test_marker = request.node.get_closest_marker("test_all_elements")
-    if test_marker is None:
-        pytest.fail(
-            "Using 'mwe_cheetah_element' without mandatory marker 'test_all_elements'"
-        )
-    else:
-        for argument, value in test_marker.kwargs.items():
-            match (argument):
-                case "except_for":
-                    if ElementClass in value:
-                        pytest.skip(f"skipped for class '{ElementClass}'")
-
-    if ElementClass in ELEMENT_CLASS_DEFAULT_ARGS:
-        # Clone to prevent global state between test calls
-        return ElementClass(**ELEMENT_CLASS_DEFAULT_ARGS[ElementClass]).clone()
-    else:
-        pytest.fail("No default arguments for element class '{ElementClass}'")
+@pytest.fixture(autouse=True)
+def fail_no_mwe(request):
+    """Ensure that test with the 'no_mwe' marker fail."""
+    if request.node.get_closest_marker("no_mwe") is not None:
+        pytest.fail("The parametrized element class has no minimal working example")
