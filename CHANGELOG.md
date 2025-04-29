@@ -7,6 +7,7 @@
 ### 🚀 Features
 
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
+- Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
 
 ### 🐛 Bug fixes
 
