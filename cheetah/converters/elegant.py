@@ -69,7 +69,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(["element_type", "group"], parsed)
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] == "kick":
             validate_understood_properties(["element_type", "l", "group"], parsed)
 
@@ -385,14 +385,14 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "group", "filename"], parsed
             )
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] in ["charge", "wake"]:
             print(
                 f"WARNING: Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"
                 " manually providing the correct information."
             )
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, **factory_kwargs)
         else:
             print(
                 f"WARNING: Element {name} of type {parsed['element_type']} cannot"
