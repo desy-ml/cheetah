@@ -1033,6 +1033,38 @@ class ParticleBeam(Beam):
             dtype=self.particles.dtype,
         )
 
+    def thinned(
+        self,
+        num_particles: int,
+        adjust_particle_charges: bool = True,
+        random_state: torch.Generator | None = None,
+    ) -> "ParticleBeam":
+        """
+        Create a new beam with the same parameters as this beam, but with
+        `num_particles` particles randomly selected from the original beam.
+
+        :param num_particles: Number of particles to create.
+        :param adjust_particle_charges: If True, the particle charges are adjusted
+            to match the total charge of the new beam.
+        :param random_state: Random state to use for thinning. If None, a new random
+            state is created.
+        :return: New beam with `num_particles` particles.
+        """
+        if random_state is None:
+            random_state = torch.Generator(device=self.particles.device)
+
+        indices = torch.randint(
+            0, self.particles.shape[-2], (num_particles,), generator=random_state
+        )
+        thinned_beam = self.particles[indices]
+
+        if adjust_particle_charges:
+            thinned_beam.particle_charges = (
+                thinned_beam.particle_charges * num_particles / self.particles.shape[-2]
+            )
+
+        return thinned_beam
+
     @classmethod
     def from_xyz_pxpypz(
         cls,
