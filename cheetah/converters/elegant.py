@@ -168,6 +168,17 @@ def convert_element(
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
             )
+        elif parsed["element_type"] in ["sext", "sextupole"]:
+            validate_understood_properties(
+                ["element_type", "l", "k2", "tilt", "group"],
+                parsed,
+            )
+            return cheetah.Sextupole(
+                length=torch.tensor(parsed["l"], **factory_kwargs),
+                k2=torch.tensor(parsed["k2"], **factory_kwargs),
+                tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
+                name=name,
+            )
         elif parsed["element_type"] == "moni":
             validate_understood_properties(["element_type", "group", "l"], parsed)
             if "l" in parsed:
