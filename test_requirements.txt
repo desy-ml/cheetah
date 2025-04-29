@@ -2,3 +2,9 @@ git+https://github.com/cr-xu/ocelot@update-scipy-compatibility # Ocelot
 openpmd-beamphysics
 pytest
 pytest-cov
+pyoptics
+h5py
+numba
+cpymad
+pandas
+xdeps
