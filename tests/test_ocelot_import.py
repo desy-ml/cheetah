@@ -108,5 +108,10 @@ def test_ocelot_lattice_import():
     assert isinstance(segment.elements[2], cheetah.Drift)
     assert isinstance(segment.elements[3], cheetah.Sextupole)
 
-    for buffer in segment.buffers():
-        assert buffer.device.type == "cpu"
+    assert segment.elements[0].length.device.type == "cpu"
+    assert segment.elements[1].length.device.type == "cpu"
+    assert segment.elements[1].k1.device.type == "cpu"
+    assert segment.elements[1].misalignment.device.type == "cpu"
+    assert segment.elements[2].length.device.type == "cpu"
+    assert segment.elements[3].length.device.type == "cpu"
+    assert segment.elements[3].k2.device.type == "cpu"

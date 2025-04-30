@@ -71,8 +71,13 @@ def test_device_passing(device: torch.device):
     converted = cheetah.Segment.from_bmad(file_path, device=device)
 
     # Check that the properties of the loaded elements are on the correct device
-    for buffer in converted.buffers():
-        assert buffer.device.type == device.type
+    assert converted.d.length.device.type == device.type
+    assert converted.b.length.device.type == device.type
+    assert converted.b.dipole_e1.device.type == device.type
+    assert converted.q.length.device.type == device.type
+    assert converted.q.k1.device.type == device.type
+    assert converted.s.length.device.type == device.type
+    assert converted.s.k2.device.type == device.type
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -84,8 +89,13 @@ def test_dtype_passing(dtype: torch.dtype):
     converted = cheetah.Segment.from_bmad(file_path, dtype=dtype)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    for buffer in converted.buffers():
-        assert buffer.dtype == dtype
+    assert converted.d.length.dtype == dtype
+    assert converted.b.length.dtype == dtype
+    assert converted.b.dipole_e1.dtype == dtype
+    assert converted.q.length.dtype == dtype
+    assert converted.q.k1.dtype == dtype
+    assert converted.s.length.dtype == dtype
+    assert converted.s.k2.dtype == dtype
 
 
 @pytest.mark.parametrize(
@@ -99,5 +109,10 @@ def test_default_dtype(default_torch_dtype):
     converted = cheetah.Segment.from_bmad(file_path)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    for buffer in converted.buffers():
-        assert buffer.dtype == default_torch_dtype
+    assert converted.d.length.dtype == default_torch_dtype
+    assert converted.b.length.dtype == default_torch_dtype
+    assert converted.b.dipole_e1.dtype == default_torch_dtype
+    assert converted.q.length.dtype == default_torch_dtype
+    assert converted.q.k1.dtype == default_torch_dtype
+    assert converted.s.length.dtype == default_torch_dtype
+    assert converted.s.k2.dtype == default_torch_dtype
