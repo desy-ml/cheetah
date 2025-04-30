@@ -31,6 +31,13 @@ def test_fodo():
             cheetah.Sextupole(
                 name="s1", length=torch.tensor(0.2), k2=torch.tensor(-87.1)
             ),
+            cheetah.Dipole(
+                name="csrbend",
+                length=torch.tensor(0.200981),
+                angle=torch.tensor(0.113612175128842),
+                dipole_e2=torch.tensor(0.113612175128842),
+                k1=torch.tensor(0.0),
+            ),
         ],
         name="fodo",
     )
@@ -50,6 +57,10 @@ def test_fodo():
     assert torch.isclose(converted.b1.dipole_e1, correct_lattice.b1.dipole_e1)
     assert torch.isclose(converted.s1.length, correct_lattice.s1.length)
     assert torch.isclose(converted.s1.k2, correct_lattice.s1.k2)
+    assert torch.isclose(converted.csrbend.length, correct_lattice.csrbend.length)
+    assert torch.isclose(converted.csrbend.angle, correct_lattice.csrbend.angle)
+    assert torch.isclose(converted.csrbend.dipole_e2, correct_lattice.csrbend.dipole_e2)
+    assert torch.isclose(converted.csrbend.k1, correct_lattice.csrbend.k1)
 
 
 def test_cavity_import():
@@ -121,6 +132,10 @@ def test_device_passing(device: torch.device):
     assert converted.b1.dipole_e1.device.type == device.type
     assert converted.s1.length.device.type == device.type
     assert converted.s1.k2.device.type == device.type
+    assert converted.csrbend.length.device.type == device.type
+    assert converted.csrbend.angle.device.type == device.type
+    assert converted.csrbend.dipole_e2.device.type == device.type
+    assert converted.csrbend.k1.device.type == device.type
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -142,6 +157,10 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.b1.dipole_e1.dtype == dtype
     assert converted.s1.length.dtype == dtype
     assert converted.s1.k2.dtype == dtype
+    assert converted.csrbend.length.dtype == dtype
+    assert converted.csrbend.angle.dtype == dtype
+    assert converted.csrbend.dipole_e2.dtype == dtype
+    assert converted.csrbend.k1.dtype == dtype
 
 
 @pytest.mark.parametrize(
@@ -165,3 +184,7 @@ def test_default_dtype(default_torch_dtype):
     assert converted.b1.dipole_e1.dtype == default_torch_dtype
     assert converted.s1.length.dtype == default_torch_dtype
     assert converted.s1.k2.dtype == default_torch_dtype
+    assert converted.csrbend.length.dtype == default_torch_dtype
+    assert converted.csrbend.angle.dtype == default_torch_dtype
+    assert converted.csrbend.dipole_e2.dtype == default_torch_dtype
+    assert converted.csrbend.k1.dtype == default_torch_dtype
