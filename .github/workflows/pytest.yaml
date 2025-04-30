@@ -40,4 +40,4 @@ jobs:
           pip install -r test_requirements.txt
       - name: Test with pytest
         run: |
-          pytest
+          KMP_DUPLICATE_LIB_OK=TRUE pytest
