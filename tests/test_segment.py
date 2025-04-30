@@ -62,7 +62,7 @@ def test_attr_setting_by_element_type_convenience_method():
         + [cheetah.Quadrupole(length=torch.tensor(0.6))]
     )
 
-    segment.set_attrs_of_every_element_of_type(cheetah.Drift, length=torch.tensor(4.2))
+    segment.set_attrs_on_every_element_of_type(cheetah.Drift, length=torch.tensor(4.2))
 
     for element in segment.elements:
         if isinstance(element, cheetah.Drift):
