@@ -1033,7 +1033,7 @@ class ParticleBeam(Beam):
             dtype=self.particles.dtype,
         )
 
-    def thinned(
+    def random_subsample(
         self,
         num_particles: int,
         adjust_particle_charges: bool = True,
@@ -1041,7 +1041,7 @@ class ParticleBeam(Beam):
     ) -> "ParticleBeam":
         """
         Create a new beam with the same parameters as this beam, but with
-        `num_particles` particles randomly selected from the original beam.
+        `num_particles` particles randomly sampled from the original beam.
 
         :param num_particles: Number of particles to create.
         :param adjust_particle_charges: If True, the particle charges are adjusted
