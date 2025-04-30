@@ -30,6 +30,12 @@ class Segment(Element):
     def __init__(self, elements: list[Element], name: str | None = None) -> None:
         super().__init__(name=name)
 
+        # Segment inherits `length` as a buffer from `Element`. Since `length` is
+        # overwritten as a standard Python property, this is misleading when calling
+        # `Segment.buffers()`. We therefore manually remove `length` from the list of
+        # buffers.
+        del self._buffers["length"]
+
         self.register_module("elements", nn.ModuleList(elements))
 
         for element in self.elements:
