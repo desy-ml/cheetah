@@ -50,3 +50,36 @@ def test_subcell_endpoint():
     assert len(segment.subcell("drift_2").elements) == 8
     assert len(segment.subcell("drift_2", include_end=True).elements) == 8
     assert len(segment.subcell("drift_2", include_end=False).elements) == 8
+
+
+@pytest.mark.parametrize("is_recursive", [True, False])
+def test_attr_setting_by_element_type_convenience_method(is_recursive):
+    """
+    Test that the convenience method for setting attributes by element type works as
+    expected.
+    """
+    segment = cheetah.Segment(
+        elements=[cheetah.Drift(length=torch.tensor(0.5)) for i in range(10)]
+        + [
+            cheetah.Segment(
+                name="subsegment",
+                elements=[cheetah.Drift(length=torch.tensor(0.4)) for i in range(5)],
+            )
+        ]
+        + [cheetah.Quadrupole(length=torch.tensor(0.6))]
+    )
+
+    segment.set_attrs_on_every_element_of_type(
+        cheetah.Drift, is_recursive=is_recursive, length=torch.tensor(4.2)
+    )
+
+    for element in segment.elements:
+        if isinstance(element, cheetah.Drift):
+            assert element.length == 4.2
+        elif isinstance(element, cheetah.Segment):
+            for subelement in element.elements:
+                assert subelement.length == 4.2 if is_recursive else 0.5
+        elif isinstance(element, cheetah.Quadrupole):
+            assert element.length == 0.6
+        else:
+            raise ValueError(f"Unexpected element type: {type(element)}")
