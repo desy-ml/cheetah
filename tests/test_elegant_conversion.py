@@ -111,8 +111,16 @@ def test_device_passing(device: torch.device):
     converted = cheetah.Segment.from_elegant(file_path, "fodo", device=device)
 
     # Check that the properties of the loaded elements are on the correct device
-    for buffer in converted.buffers():
-        assert buffer.device.type == device.type
+    assert converted.q1.length.device.type == device.type
+    assert converted.q1.k1.device.type == device.type
+    assert converted.q2.length.device.type == device.type
+    assert converted.q2.k1.device.type == device.type
+    assert [d.length.device.type for d in converted.d1] == [device.type, device.type]
+    assert converted.d2.length.device.type == device.type
+    assert converted.b1.length.device.type == device.type
+    assert converted.b1.dipole_e1.device.type == device.type
+    assert converted.s1.length.device.type == device.type
+    assert converted.s1.k2.device.type == device.type
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -124,8 +132,16 @@ def test_dtype_passing(dtype: torch.dtype):
     converted = cheetah.Segment.from_elegant(file_path, "fodo", dtype=dtype)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    for buffer in converted.buffers():
-        assert buffer.dtype == dtype
+    assert converted.q1.length.dtype == dtype
+    assert converted.q1.k1.dtype == dtype
+    assert converted.q2.length.dtype == dtype
+    assert converted.q2.k1.dtype == dtype
+    assert [d.length.dtype for d in converted.d1] == [dtype, dtype]
+    assert converted.d2.length.dtype == dtype
+    assert converted.b1.length.dtype == dtype
+    assert converted.b1.dipole_e1.dtype == dtype
+    assert converted.s1.length.dtype == dtype
+    assert converted.s1.k2.dtype == dtype
 
 
 @pytest.mark.parametrize(
@@ -139,5 +155,13 @@ def test_default_dtype(default_torch_dtype):
     converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
     # Check that the properties of the loaded elements are of the correct dtype
-    for buffer in converted.buffers():
-        assert buffer.dtype == default_torch_dtype
+    assert converted.q1.length.dtype == default_torch_dtype
+    assert converted.q1.k1.dtype == default_torch_dtype
+    assert converted.q2.length.dtype == default_torch_dtype
+    assert converted.q2.k1.dtype == default_torch_dtype
+    assert [d.length.dtype for d in converted.d1] == [default_torch_dtype] * 2
+    assert converted.d2.length.dtype == default_torch_dtype
+    assert converted.b1.length.dtype == default_torch_dtype
+    assert converted.b1.dipole_e1.dtype == default_torch_dtype
+    assert converted.s1.length.dtype == default_torch_dtype
+    assert converted.s1.k2.dtype == default_torch_dtype
