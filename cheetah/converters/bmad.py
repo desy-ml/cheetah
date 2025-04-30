@@ -158,6 +158,18 @@ def convert_element(
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
             )
+        elif bmad_parsed["element_type"] == "sextupole":
+            # TODO: Aperture for sextupoles?
+            validate_understood_properties(
+                ["element_type", "l", "k2", "type", "aperture", "tilt"],
+                bmad_parsed,
+            )
+            return cheetah.Sextupole(
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                k2=torch.tensor(bmad_parsed["k2"], **factory_kwargs),
+                tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
+                name=name,
+            )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(
                 ["element_type", "l", "ks", "alias"], bmad_parsed
