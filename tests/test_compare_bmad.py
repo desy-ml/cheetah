@@ -5,6 +5,8 @@ import pytest
 if sys.platform.startswith("win"):
     pytest.skip("Skipping Bmad comparison tests on Windows", allow_module_level=True)
 
+from pathlib import Path
+
 import torch
 from pytao import Tao
 from scipy.constants import physical_constants
@@ -153,5 +155,12 @@ def test_different_species_in_different_elements(
         ],
         dtype=torch.double,
     )
+
+    # Save x_tao to resources directory
+    resources_path = Path(__file__).parent / "resources" / "bmad"
+    resources_path.mkdir(parents=True, exist_ok=True)
+    file_name = f"x_tao_{species.name}_{cheetah_element.__class__.__name__}.pt"
+
+    torch.save(x_tao, resources_path / file_name)
 
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
