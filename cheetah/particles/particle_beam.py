@@ -1043,9 +1043,9 @@ class ParticleBeam(Beam):
         Create a new beam with the same parameters as this beam, but with
         `num_particles` particles randomly sampled from the original beam.
 
-        :param num_particles: Number of particles to create.
+        :param num_particles: Number of particles to sample.
         :param adjust_particle_charges: If True, the particle charges are adjusted
-            to match the total charge of the new beam.
+            to match the total charge of the old beam.
         :param random_state: Random state to use for thinning. If None, a new random
             state is created.
         :return: New beam with `num_particles` particles.
