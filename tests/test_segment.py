@@ -59,6 +59,12 @@ def test_attr_setting_by_element_type_convenience_method():
     """
     segment = cheetah.Segment(
         elements=[cheetah.Drift(length=torch.tensor(0.5)) for i in range(10)]
+        + [
+            cheetah.Segment(
+                name="subsegment",
+                elements=[cheetah.Drift(length=torch.tensor(0.4)) for i in range(5)],
+            )
+        ]
         + [cheetah.Quadrupole(length=torch.tensor(0.6))]
     )
 
@@ -67,5 +73,10 @@ def test_attr_setting_by_element_type_convenience_method():
     for element in segment.elements:
         if isinstance(element, cheetah.Drift):
             assert element.length == 4.2
-        else:
+        elif isinstance(element, cheetah.Segment):
+            for subelement in element.elements:
+                assert subelement.length == 4.2
+        elif isinstance(element, cheetah.Quadrupole):
             assert element.length == 0.6
+        else:
+            raise ValueError(f"Unexpected element type: {type(element)}")
