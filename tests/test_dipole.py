@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+import cheetah
 from cheetah import (
     Dipole,
     Drift,
@@ -211,3 +212,25 @@ def test_buffer_registration():
     assert fringe_type not in dipole.buffers()
     assert tracking_method not in dipole.buffers()
     assert name not in dipole.buffers()
+
+
+def test_bmadx_zero_angle():
+    """
+    Test that a dipole with zero angle using the bmadx tracking method works at all.
+
+    There was a bug in the past where a division by zero due to the angle being zero
+    resulted in NaN values in the output.
+    """
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+    dipole = cheetah.Dipole(
+        length=torch.tensor(1.0601),
+        angle=torch.tensor(0.0),
+        tracking_method="bmadx",
+        dtype=torch.float64,
+    )
+
+    outgoing_beam = dipole.track(incoming_beam)
+
+    assert not outgoing_beam.particles.isnan().any()
