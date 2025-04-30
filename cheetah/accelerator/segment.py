@@ -538,7 +538,7 @@ class Segment(Element):
 
         references = [incoming]
         for split in splits:
-            sample = split(references[-1])
+            sample = split.track(references[-1])
             references.append(sample)
 
         x_means = [reference_beam.mu_x for reference_beam in references]
