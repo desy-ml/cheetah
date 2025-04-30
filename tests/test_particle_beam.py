@@ -245,10 +245,6 @@ def test_random_subsample():
     )
     subsampled_beam = original_beam.randomly_subsampled(50_000)
 
-    from icecream import ic
-
-    ic(original_beam.num_particles, subsampled_beam.num_particles)
-
     assert subsampled_beam.num_particles == 50_000
 
     assert torch.isclose(subsampled_beam.energy, original_beam.energy)
@@ -271,11 +267,6 @@ def test_random_subsample():
     )
     assert torch.isclose(
         subsampled_beam.mu_tau, original_beam.mu_tau, rtol=1e-5, atol=1e-5
-    )
-    ic(
-        subsampled_beam.mu_p.item(),
-        original_beam.mu_p.item(),
-        (subsampled_beam.mu_p - original_beam.mu_p).item(),
     )
     assert torch.isclose(subsampled_beam.mu_p, original_beam.mu_p, rtol=1e-5, atol=1e-5)
     assert torch.isclose(
