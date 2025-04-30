@@ -1033,7 +1033,7 @@ class ParticleBeam(Beam):
             dtype=self.particles.dtype,
         )
 
-    def random_subsample(
+    def randomly_subsampled(
         self,
         num_particles: int,
         adjust_particle_charges: bool = True,
@@ -1050,20 +1050,38 @@ class ParticleBeam(Beam):
             state is created.
         :return: New beam with `num_particles` particles.
         """
+        assert num_particles <= self.num_particles, (
+            "Number of particles to sample must be less than or equal to the number of "
+            "particles in the original beam."
+        )
+
         if random_state is None:
             random_state = torch.Generator(device=self.particles.device)
 
-        indices = torch.randint(
+        random_indices = torch.randint(
             0, self.particles.shape[-2], (num_particles,), generator=random_state
         )
-        thinned_beam = self.particles[indices]
+
+        subsampled_particles = self.particles[random_indices]
+        subsampled_particle_charges = self.particle_charges[random_indices]
+        subsampled_survival_probabilities = self.survival_probabilities[random_indices]
+
+        subsampled_beam = self.__class__(
+            particles=subsampled_particles,
+            energy=self.energy,
+            particle_charges=subsampled_particle_charges,
+            survival_probabilities=subsampled_survival_probabilities,
+            species=self.species,
+            device=self.particles.device,
+            dtype=self.particles.dtype,
+        )
 
         if adjust_particle_charges:
-            thinned_beam.particle_charges = (
-                thinned_beam.particle_charges * num_particles / self.particles.shape[-2]
+            subsampled_beam.particle_charges *= (
+                self.total_charge / subsampled_beam.total_charge
             )
 
-        return thinned_beam
+        return subsampled_beam
 
     @classmethod
     def from_xyz_pxpypz(
