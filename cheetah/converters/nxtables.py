@@ -213,8 +213,8 @@ def convert_lattice_to_cheetah(filepath: Path) -> "cheetah.Element":
     :return: Converted Cheetah `Segment`.
     """
     with open(filepath, "r") as csvfile:
-        nx_tables_rows = csv.reader(csvfile, delimiter=",")
-        nx_tables_rows = list(nx_tables_rows)
+        nx_tables_row_reader = csv.reader(csvfile, delimiter=",")
+        nx_tables_rows = list(nx_tables_row_reader)
 
     header = nx_tables_rows[0]
     nx_tables_rows = nx_tables_rows[1:]

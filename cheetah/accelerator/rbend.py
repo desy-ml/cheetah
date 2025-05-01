@@ -71,22 +71,21 @@ class RBend(Dipole):
             device,
             dtype,
         )
-        factory_kwargs = {"device": device, "dtype": dtype}
 
         angle = (
-            torch.as_tensor(angle, **factory_kwargs)
+            torch.as_tensor(angle, device=device, dtype=dtype)
             if angle is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.tensor(0.0, device=device, dtype=dtype)
         )
         rbend_e1 = (
-            torch.as_tensor(rbend_e1, **factory_kwargs)
+            torch.as_tensor(rbend_e1, device=device, dtype=dtype)
             if rbend_e1 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.tensor(0.0, device=device, dtype=dtype)
         )
         rbend_e2 = (
-            torch.as_tensor(rbend_e2, **factory_kwargs)
+            torch.as_tensor(rbend_e2, device=device, dtype=dtype)
             if rbend_e2 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            else torch.tensor(0.0, device=device, dtype=dtype)
         )
 
         super().__init__(

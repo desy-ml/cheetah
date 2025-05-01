@@ -40,19 +40,20 @@ class Solenoid(Element):
         device, dtype = verify_device_and_dtype(
             [length, k, misalignment], device, dtype
         )
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = torch.as_tensor(length, device=device, dtype=dtype)
 
         self.register_buffer_or_parameter(
-            "k", torch.as_tensor(k if k is not None else 0.0, **factory_kwargs)
+            "k",
+            torch.as_tensor(k if k is not None else 0.0, device=device, dtype=dtype),
         )
         self.register_buffer_or_parameter(
             "misalignment",
             torch.as_tensor(
                 misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+                device=device,
+                dtype=dtype,
             ),
         )
 

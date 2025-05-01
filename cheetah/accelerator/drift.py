@@ -36,10 +36,9 @@ class Drift(Element):
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([length], device, dtype)
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = torch.as_tensor(length, device=device, dtype=dtype)
 
         self.tracking_method = tracking_method
 

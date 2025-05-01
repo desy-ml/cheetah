@@ -42,23 +42,26 @@ class Cavity(Element):
         device, dtype = verify_device_and_dtype(
             [length, voltage, phase, frequency], device, dtype
         )
-        factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, device=device, dtype=dtype)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = torch.as_tensor(length, device=device, dtype=dtype)
 
         self.register_buffer_or_parameter(
             "voltage",
-            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+            torch.as_tensor(
+                voltage if voltage is not None else 0.0, device=device, dtype=dtype
+            ),
         )
         self.register_buffer_or_parameter(
             "phase",
-            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+            torch.as_tensor(
+                phase if phase is not None else 0.0, device=device, dtype=dtype
+            ),
         )
         self.register_buffer_or_parameter(
             "frequency",
             torch.as_tensor(
-                frequency if frequency is not None else 0.0, **factory_kwargs
+                frequency if frequency is not None else 0.0, device=device, dtype=dtype
             ),
         )
 
@@ -247,14 +250,15 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+        device = self.length.device
+        dtype = self.length.dtype
 
         phi = torch.deg2rad(self.phase)
         delta_energy = (
             self.voltage * torch.cos(phi) * species.num_elementary_charges * -1
         )
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, **factory_kwargs)
+        eta = torch.tensor(1.0, device=device, dtype=dtype)
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
@@ -288,12 +292,12 @@ class Cavity(Element):
             )
         )
 
-        r56 = torch.tensor(0.0, **factory_kwargs)
-        beta0 = torch.tensor(1.0, **factory_kwargs)
-        beta1 = torch.tensor(1.0, **factory_kwargs)
+        r56 = torch.tensor(0.0, device=device, dtype=dtype)
+        beta0 = torch.tensor(1.0, device=device, dtype=dtype)
+        beta1 = torch.tensor(1.0, device=device, dtype=dtype)
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        r55_cor = torch.tensor(0.0, **factory_kwargs)
+        r55_cor = torch.tensor(0.0, device=device, dtype=dtype)
         if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
             beta0 = torch.sqrt(1 - 1 / Ei**2)
             beta1 = torch.sqrt(1 - 1 / Ef**2)
@@ -320,7 +324,7 @@ class Cavity(Element):
             r11, r12, r21, r22, r55_cor, r56, r65, r66
         )
 
-        R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
+        R = torch.eye(7, device=device, dtype=dtype).repeat((*r11.shape, 1, 1))
         R[..., 0, 0] = r11
         R[..., 0, 1] = r12
         R[..., 1, 0] = r21
