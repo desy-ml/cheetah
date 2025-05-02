@@ -7,12 +7,17 @@
 ### 🚀 Features
 
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
+- Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
+- Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
 
 ### 🐛 Bug fixes
 
 - Parsing of element names containing `-` is now possible, though `-` will be converted to `_` for variable access (see #386) (@amylizzle)
 
 ### 🐆 Other
+
+- Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
+- The PyTorch pin to `<=2.6` was removed, as the issue with `abort trap: 6` was caused by Bmad is no longer actively used in the test workflow (see #429, #431) (@jank324)
 
 ### 🌟 First Time Contributors
 

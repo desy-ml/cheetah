@@ -30,6 +30,12 @@ class Segment(Element):
     def __init__(self, elements: list[Element], name: str | None = None) -> None:
         super().__init__(name=name)
 
+        # Segment inherits `length` as a buffer from `Element`. Since `length` is
+        # overwritten as a standard Python property, this is misleading when calling
+        # `Segment.buffers()`. We therefore manually remove `length` from the list of
+        # buffers.
+        del self._buffers["length"]
+
         self.register_module("elements", nn.ModuleList(elements))
 
         for element in self.elements:
@@ -447,6 +453,30 @@ class Segment(Element):
             for element in self.elements
             for split_element in element.split(resolution)
         ]
+
+    def set_attrs_on_every_element_of_type(
+        self,
+        element_type: type[Element] | tuple[type[Element]],
+        is_recursive: bool = True,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """
+        Set attributes on every element of a specific type in the segment.
+
+        :param element_type: Type of the elements to set the attributes for.
+        :param is_recursive: If `True`, the this method is applied to nested `Segment`s
+            as well. If `False`, only the elements directly in the top-level `Segment`
+            are considered.
+        :param kwargs: Attributes to set and their values.
+        """
+        for element in self.elements:
+            if isinstance(element, element_type):
+                for key, value in kwargs.items():
+                    setattr(element, key, value)
+            elif is_recursive and isinstance(element, Segment):
+                element.set_attrs_on_every_element_of_type(
+                    element_type, is_recursive=True, **kwargs
+                )
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         element_lengths = [element.length for element in self.elements]
