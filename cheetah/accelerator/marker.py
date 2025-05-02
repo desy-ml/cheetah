@@ -15,8 +15,13 @@ class Marker(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, name: str | None = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__(name=name, device=device, dtype=dtype)
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
