@@ -12,7 +12,7 @@
 
 ### 🐆 Other
 
-- Create pytest fixture for running tests on all subclasses of `Element` (see #418) (@Hespe)
+- Add a `pytest` marker for running tests on all subclasses of `Element`. The marker automatically detects if an MWE has not yet been defined for a subclass and alerts the developer through a test failure. (see #418) (@Hespe, @jank324)
 
 ### 🌟 First Time Contributors
 
