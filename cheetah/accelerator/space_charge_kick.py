@@ -635,6 +635,7 @@ class SpaceChargeKick(Element):
                 energy=incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=incoming.s,
                 species=incoming.species,
             )
 

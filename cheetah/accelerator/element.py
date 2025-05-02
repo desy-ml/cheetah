@@ -70,21 +70,25 @@ class Element(ABC, nn.Module):
             tm = self.transfer_map(incoming.energy, incoming.species)
             mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            s = incoming.s + self.length
             return ParameterBeam(
                 mu,
                 cov,
                 incoming.energy,
                 total_charge=incoming.total_charge,
+                s=s,
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
             new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=new_s,
                 species=incoming.species.clone(),
             )
         else:

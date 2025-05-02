@@ -100,6 +100,7 @@ class Aperture(Element):
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities * survived_mask,
+            s=incoming.s,
             species=incoming.species.clone(),
         )
 

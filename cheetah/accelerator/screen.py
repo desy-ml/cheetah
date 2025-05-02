@@ -200,6 +200,8 @@ class Screen(Element):
                     cov=incoming.cov,
                     energy=incoming.energy,
                     total_charge=torch.zeros_like(incoming.total_charge),
+                    s=incoming.s,
+                    species=incoming.species.clone(),
                 )
             elif isinstance(incoming, ParticleBeam):
                 return ParticleBeam(
@@ -209,6 +211,8 @@ class Screen(Element):
                     survival_probabilities=torch.zeros_like(
                         incoming.survival_probabilities
                     ),
+                    s=incoming.s,
+                    species=incoming.species.clone(),
                 )
         else:
             return incoming.clone()
