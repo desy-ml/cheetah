@@ -497,7 +497,6 @@ class Segment(Element):
                         f"tuple of strings or None."
                     )
 
-        s_positions = [torch.tensor(0.0)]
         longitudinal_property_values = [get_property_value(incoming, property_name)]
         for element in self.elements:
             if torch.all(element.length == 0):
@@ -505,7 +504,6 @@ class Segment(Element):
 
             outgoing = element.track(incoming)
 
-            s_positions.append(s_positions[-1] + element.length)
             longitudinal_property_values.append(
                 get_property_value(outgoing, property_name)
             )
@@ -514,18 +512,15 @@ class Segment(Element):
 
         match property_name:
             case None:
-                return (s_positions, longitudinal_property_values)
+                return longitudinal_property_values
             case str():
-                return (s_positions, torch.stack(longitudinal_property_values))
+                return torch.stack(longitudinal_property_values)
             case tuple():
-                return (
-                    s_positions,
-                    tuple(
-                        torch.stack(this_longitudinal_property_values)
-                        for this_longitudinal_property_values in zip(
-                            *longitudinal_property_values
-                        )
-                    ),
+                return tuple(
+                    torch.stack(this_longitudinal_property_values)
+                    for this_longitudinal_property_values in zip(
+                        *longitudinal_property_values
+                    )
                 )
             case _:
                 raise ValueError(
