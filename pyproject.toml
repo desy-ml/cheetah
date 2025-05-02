@@ -4,6 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 markers = [
-    "initialize_elements: Run a test with automatically initialized cheetah elements.",
+    "for_every_mwe_element: Runs a test with an MWE of each Cheetah `Element` subclass.",
     "no_mwe: A test case for which no minimal working example could be constructed.",
 ]

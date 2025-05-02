@@ -36,34 +36,52 @@ def pytest_addoption(parser) -> None:
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     """
-    Add a parametrize like marker to the test suite that automatically initializes
-    minimal working examples of cheetah elements.
+    Add a `pytest.mark.parametrize`-like marker that runs a test with an MWE of each
+    Cheetah `Element` subclass.
+
+    This marker can be used by adding the `@pytest.mark.for_every_mwe_element` marker to
+    a test function. The user must specify the argument name in the marker via the
+    `arg_name` keyword argument, and define an argument of that name in the test
+    function's signature. Element classes can be excluded from the test by using the
+    `except_for` keyword argument, which takes a list of element classes.
     """
-    element_marker = metafunc.definition.get_closest_marker("initialize_elements")
-    if element_marker is not None:
-        argument_name = "mwe_element"
-        element_classes = cheetah.Element.__subclasses__()
+    for_every_mwe_element_marker = metafunc.definition.get_closest_marker(
+        "for_every_mwe_element"
+    )
 
-        # Handle keyword arguments
-        for keyword, value in element_marker.kwargs.items():
-            match (keyword):
-                case "arg_name":
-                    argument_name = value
-                case "except_for":
-                    for clazz in value:
-                        element_classes.remove(clazz)
+    if for_every_mwe_element_marker is None:
+        # No marker found, return early
+        return
 
-        # Generate minimal working examples
-        elements = {}
-        for clazz in element_classes:
-            if clazz in ELEMENT_CLASS_DEFAULT_ARGS:
-                # Clone to prevent global state between test calls
-                elements[clazz] = clazz(**ELEMENT_CLASS_DEFAULT_ARGS[clazz]).clone()
-            else:
-                # Add marker to indicate failure to generate a MWE
-                elements[clazz] = pytest.param(None, marks=pytest.mark.no_mwe)
+    arg_name = (
+        for_every_mwe_element_marker.args[0]
+        if for_every_mwe_element_marker.args[0] is not None  # TODO
+        else for_every_mwe_element_marker.kwargs["arg_name"]
+    )
+    except_for = (
+        for_every_mwe_element_marker.args[1]
+        if len(for_every_mwe_element_marker.args) > 1
+        else for_every_mwe_element_marker.kwargs.get("except_for", [])
+    )
 
-        metafunc.parametrize(argument_name, elements.values(), ids=elements.keys())
+    all_element_subclasses = cheetah.Element.__subclasses__()
+    element_subclasses_to_test = [
+        subclass for subclass in all_element_subclasses if subclass not in except_for
+    ]
+
+    # Generate minimal working examples
+    element_mwe_dict = {
+        subclass.__name__: (
+            subclass
+            if subclass in ELEMENT_CLASS_DEFAULT_ARGS
+            else pytest.param(None, marks=pytest.mark.no_mwe)
+        )
+        for subclass in element_subclasses_to_test
+    }
+
+    metafunc.parametrize(
+        arg_name, element_mwe_dict.values(), ids=element_mwe_dict.keys()
+    )
 
 
 def pytest_report_header(config) -> str:

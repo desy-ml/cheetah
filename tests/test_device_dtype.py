@@ -7,7 +7,7 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 
-@pytest.mark.initialize_elements
+@pytest.mark.for_every_mwe_element("mwe_element")
 @pytest.mark.parametrize(
     "target_device",
     [
@@ -40,7 +40,9 @@ def test_move_element_to_device(mwe_element, target_device: torch.device):
         assert buffer.dtype == target_device.type
 
 
-@pytest.mark.initialize_elements(except_for=[cheetah.Marker, cheetah.Segment])
+@pytest.mark.for_every_mwe_element(
+    "mwe_element", except_for=[cheetah.Marker, cheetah.Segment]
+)
 def test_forced_element_dtype(mwe_element):
     """
     Test that the dtype is properly overridden for all element classes.
@@ -63,8 +65,8 @@ def test_forced_element_dtype(mwe_element):
         assert buffer.dtype == torch.float16
 
 
-@pytest.mark.initialize_elements(
-    except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
+@pytest.mark.for_every_mwe_element(
+    "mwe_element", except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
 )
 def test_infer_element_dtype(mwe_element):
     """
@@ -87,7 +89,7 @@ def test_infer_element_dtype(mwe_element):
         assert buffer.dtype == torch.float64
 
 
-@pytest.mark.initialize_elements
+@pytest.mark.for_every_mwe_element("mwe_element")
 def test_conflicting_element_dtype(mwe_element):
     """Test that creating elements with conflicting argument dtypes fails."""
     arguments = inspect.signature(mwe_element.__init__).parameters
@@ -129,7 +131,7 @@ def test_conflicting_element_dtype(mwe_element):
         )
 
 
-@pytest.mark.initialize_elements
+@pytest.mark.for_every_mwe_element("mwe_element")
 def test_change_element_dtype(mwe_element):
     """Test that elements can be successfully changed to a different dtype."""
 

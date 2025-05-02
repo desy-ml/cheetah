@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.initialize_elements
+@pytest.mark.for_every_mwe_element("mwe_element")
 def test_element_subclasses_is_active_boolean(mwe_element):
     """
     Test that the `is_active` property of all `Element` subclasses returns a boolean if
@@ -12,7 +12,7 @@ def test_element_subclasses_is_active_boolean(mwe_element):
     )
 
 
-@pytest.mark.initialize_elements
+@pytest.mark.for_every_mwe_element("mwe_element")
 def test_all_element_subclasses_is_skippable_boolean(mwe_element):
     """
     Test that the `is_skippable` property of all `Element` subclasses returns a boolean.
