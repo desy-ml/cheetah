@@ -648,7 +648,7 @@ class Segment(Element):
 
     def plot_twiss(
         self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
-    ) -> None:
+    ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
         longitudinal_beams = [incoming]
         s_positions = [torch.tensor(0.0)]
@@ -704,7 +704,8 @@ class Segment(Element):
         ax.plot(plot_s_positions, plot_beta_y, label=r"$\beta_y$", c="tab:green")
 
         ax.legend()
-        plt.tight_layout()
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:
