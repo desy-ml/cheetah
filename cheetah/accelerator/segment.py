@@ -454,6 +454,48 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
+    def beam_property_trajectory(
+        self,
+        incoming: Beam,
+        property_name: str | tuple[str] | None = None,
+        resolution: float | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | tuple[torch.Tensor]]:
+        """
+        Get the trajectory of a beam property along the segment.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param property_name: Name of the property to get the trajectory for. If a tuple
+            is passed, the a tuple of property trajectories is returned. If `None` is
+            passed, a list of `Beam` objects is returned.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :return: Tuple containing the s positions and the beam property values. The
+            second tuple element is a tuple of property values if a tuple of property
+            names was passed.
+        """
+        if resolution is not None:
+            return self.split(resolution).beam_property_trajectory(
+                incoming, property_name
+            )
+
+        s_positions = [torch.tensor(0.0)]
+        property_values = [getattr(incoming, property_name)]
+        for element in self.elements:
+            if torch.all(element.length == 0):
+                continue
+
+            outgoing = element.track(incoming)
+
+            s_positions.append(s_positions[-1] + element.length)
+            property_values.append(getattr(outgoing, property_name))
+
+            incoming = outgoing
+
+        return (torch.stack(s_positions), torch.stack(property_values))
+
     def set_attrs_on_every_element_of_type(
         self,
         element_type: type[Element] | tuple[type[Element]],
