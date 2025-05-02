@@ -153,13 +153,14 @@ def test_beam_trajectory_multiple_properties():
     )
 
     s_positions, longitudinal_properties = segment.beam_property_trajectory(
-        incoming=incoming_beam, property_names=["beta_x", "beta_y"]
+        incoming=incoming_beam, property_name=("beta_x", "beta_y")
     )
 
     assert len(s_positions) == 4
-    assert len(longitudinal_properties) == 4
     assert isinstance(longitudinal_properties, tuple)
+    assert len(longitudinal_properties) == 2
     for longitudinal_property in longitudinal_properties:
+        assert len(longitudinal_property) == 4
         assert isinstance(longitudinal_property, torch.Tensor)
 
 

@@ -477,12 +477,28 @@ class Segment(Element):
             names was passed.
         """
         if resolution is not None:
-            return self.split(resolution).beam_property_trajectory(
-                incoming, property_name
-            )
+            return self.__class__(
+                elements=self.split(resolution), name=f"{self.name}_split"
+            ).beam_property_trajectory(incoming, property_name)
+
+        def get_property_value(
+            beam: Beam, property_name: str | tuple[str] | None
+        ) -> Beam | torch.Tensor | tuple[torch.Tensor]:
+            match property_name:
+                case None:
+                    return beam
+                case str():
+                    return getattr(beam, property_name)
+                case tuple():
+                    return tuple(getattr(beam, name) for name in property_name)
+                case _:
+                    raise ValueError(
+                        f"Invalid property name: {property_name}. Must be a string, "
+                        f"tuple of strings or None."
+                    )
 
         s_positions = [torch.tensor(0.0)]
-        property_values = [getattr(incoming, property_name)]
+        longitudinal_property_values = [get_property_value(incoming, property_name)]
         for element in self.elements:
             if torch.all(element.length == 0):
                 continue
@@ -490,11 +506,32 @@ class Segment(Element):
             outgoing = element.track(incoming)
 
             s_positions.append(s_positions[-1] + element.length)
-            property_values.append(getattr(outgoing, property_name))
+            longitudinal_property_values.append(
+                get_property_value(outgoing, property_name)
+            )
 
             incoming = outgoing
 
-        return (torch.stack(s_positions), torch.stack(property_values))
+        match property_name:
+            case None:
+                return (s_positions, longitudinal_property_values)
+            case str():
+                return (s_positions, torch.stack(longitudinal_property_values))
+            case tuple():
+                return (
+                    s_positions,
+                    tuple(
+                        torch.stack(this_longitudinal_property_values)
+                        for this_longitudinal_property_values in zip(
+                            *longitudinal_property_values
+                        )
+                    ),
+                )
+            case _:
+                raise ValueError(
+                    f"Invalid property name: {property_name}. Must be a string, "
+                    f"tuple of strings or None."
+                )
 
     def set_attrs_on_every_element_of_type(
         self,
