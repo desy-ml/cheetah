@@ -333,7 +333,8 @@ def test_vectorized_screen_2d(BeamClass, method):
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-@pytest.mark.initialize_elements(
+@pytest.mark.for_every_mwe_element(
+    "mwe_element",
     except_for=[
         cheetah.Aperture,
         cheetah.BPM,
@@ -342,7 +343,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         cheetah.Screen,
         cheetah.Segment,
         cheetah.SpaceChargeKick,
-    ]
+    ],
 )
 def test_drift_broadcasting_two_different_inputs(mwe_element):
     """

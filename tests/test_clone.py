@@ -4,7 +4,7 @@ import torch
 import cheetah
 
 
-@pytest.mark.initialize_elements
+@pytest.mark.for_every_mwe_element("mwe_element")
 def test_element_buffer_contents_and_location(mwe_element):
     """
     Test that the buffers of cloned elements have the same content while not sharing the
