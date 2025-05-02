@@ -6,7 +6,7 @@ import torch
 import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
-ELEMENT_CLASS_DEFAULT_ARGS = {
+ELEMENT_SUBCLASSES_MWE_ARGS = {
     cheetah.Aperture: {},
     cheetah.BPM: {},
     cheetah.Cavity: {"length": torch.tensor(1.0)},
@@ -73,8 +73,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     element_mwe_dict = {
         subclass.__name__: (
             subclass
-            if subclass in ELEMENT_CLASS_DEFAULT_ARGS
-            else pytest.param(None, marks=pytest.mark.no_mwe)
+            if subclass in ELEMENT_SUBCLASSES_MWE_ARGS
+            else pytest.param(None, marks=pytest.mark.fail_because_no_mwe_args_defined)
         )
         for subclass in element_subclasses_to_test
     }
@@ -122,7 +122,10 @@ def default_torch_dtype(request):
 
 
 @pytest.fixture(autouse=True)
-def fail_no_mwe(request):
-    """Ensure that test with the 'no_mwe' marker fail."""
+def fail_because_no_mwe_args_defined(request):
+    """
+    Mark a test to fail because no MWE args are defined for the given `Element`
+    subclass.
+    """
     if request.node.get_closest_marker("no_mwe") is not None:
-        pytest.fail("There is no minimal working example for the given element class!")
+        pytest.fail("No MWE args are defined for this Element subclass.")
