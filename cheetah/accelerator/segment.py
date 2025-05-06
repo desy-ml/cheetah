@@ -636,47 +636,22 @@ class Segment(Element):
         self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
     ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
-        longitudinal_beams = [incoming]
-        s_positions = [torch.tensor(0.0)]
-        for element in self.flattened().elements:
-            if torch.all(element.length == 0):
-                continue
-
-            outgoing = element.track(longitudinal_beams[-1])
-
-            longitudinal_beams.append(outgoing)
-            s_positions.append(s_positions[-1] + element.length)
-
-        beta_x = [beam.beta_x for beam in longitudinal_beams]
-        beta_y = [beam.beta_y for beam in longitudinal_beams]
-
-        # Extraction of the correct vector element for plotting
-        broadcast_s_positions = torch.broadcast_tensors(*s_positions)
-        stacked_s_positions = torch.stack(broadcast_s_positions)
-        dimension_reordered_s_positions = stacked_s_positions.movedim(0, -1)
-        plot_s_positions = (
-            dimension_reordered_s_positions[vector_idx]
-            if stacked_s_positions.dim() > 1
-            else dimension_reordered_s_positions
-        ).detach()
-
-        broadcast_beta_x = torch.broadcast_tensors(*beta_x)
-        stacked_beta_x = torch.stack(broadcast_beta_x)
-        dimension_reordered_beta_x = stacked_beta_x.movedim(0, -1)
-        plot_beta_x = (
-            dimension_reordered_beta_x[vector_idx]
-            if stacked_beta_x.dim() > 2
-            else dimension_reordered_beta_x
-        ).detach()
-
-        broadcast_beta_y = torch.broadcast_tensors(*beta_y)
-        stacked_beta_y = torch.stack(broadcast_beta_y)
-        dimension_reordered_beta_y = stacked_beta_y.movedim(0, -1)
-        plot_beta_y = (
-            dimension_reordered_beta_y[vector_idx]
-            if stacked_beta_y.dim() > 2
-            else dimension_reordered_beta_y
-        ).detach()
+        s_positions, beta_x, beta_y = zip(
+            *(
+                (beam.s, beam.beta_x, beam.beta_y)
+                for beam in self.longitudinal_beam_generator(incoming)
+            )
+        )
+        s_positions, beta_x, beta_y = torch.broadcast_tensors(
+            *(
+                torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
+                for metric in (s_positions, beta_x, beta_y)
+            )
+        )
+        plot_s_positions, plot_beta_x, plot_beta_y = (
+            (metric[vector_idx] if metric.dim() > 1 else metric).detach()
+            for metric in (s_positions, beta_x, beta_y)
+        )
 
         if ax is None:
             fig = plt.figure()
