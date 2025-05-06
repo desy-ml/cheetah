@@ -1668,6 +1668,7 @@ class ParticleBeam(Beam):
             energy=self.energy.clone(),
             particle_charges=self.particle_charges.clone(),
             survival_probabilities=self.survival_probabilities.clone(),
+            s=self.s.clone(),
             species=self.species.clone(),
         )
 
