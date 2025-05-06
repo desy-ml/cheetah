@@ -496,9 +496,6 @@ class Segment(Element):
             )
         ]
         for element in self.elements:
-            if torch.all(element.length == 0):
-                continue
-
             outgoing = element.track(incoming)
 
             longitudinal_property_values.append(
