@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Iterator
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -456,7 +456,7 @@ class Segment(Element):
 
     def longitudinal_beam_generator(
         self, incoming: Beam, resolution: float | None = None
-    ) -> Generator[Beam]:
+    ) -> Iterator[Beam]:
         """
         Generator for beam objects along the segment either at the end of each element
         or at a given resolution.
