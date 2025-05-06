@@ -85,10 +85,10 @@ def test_attr_setting_by_element_type_convenience_method(is_recursive):
             raise ValueError(f"Unexpected element type: {type(element)}")
 
 
-def test_beam_trajectory_beam_objects():
+def test_elementwise_longitudinal_beam_generator():
     """
-    Test the `beam_property_trajectory` method in the case where it should return `Beam`
-    objects.
+    Test that the longitudinal beam generator works as expected and generates the
+    correct number of beams.
     """
     segment = cheetah.Segment(
         elements=[
@@ -101,41 +101,20 @@ def test_beam_trajectory_beam_objects():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    longitudinal_beams = segment.beam_property_trajectory(incoming=incoming_beam)
+    longitudinal_beam_generator = segment.longitudinal_beam_generator(
+        incoming=incoming_beam
+    )
+    longitudinal_beam_list = list(longitudinal_beam_generator)
 
-    assert len(longitudinal_beams) == 4
-    for longitudinal_beam in longitudinal_beams:
+    assert len(longitudinal_beam_list) == 4
+    for longitudinal_beam in longitudinal_beam_list:
         assert isinstance(longitudinal_beam, incoming_beam.__class__)
 
 
-def test_beam_trajectory_single_property():
+def test_resolution_longitudinal_beam_generator():
     """
-    Test the `beam_property_trajectory` method in the case where it should return a
-    single property.
-    """
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(0.5)),
-            cheetah.Quadrupole(length=torch.tensor(0.3)),
-            cheetah.Drift(length=torch.tensor(0.2)),
-        ]
-    )
-    incoming_beam = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-
-    longitudinal_beta_xs = segment.beam_property_trajectory(
-        incoming=incoming_beam, property_name="beta_x"
-    )
-
-    assert len(longitudinal_beta_xs) == 4
-    assert isinstance(longitudinal_beta_xs, torch.Tensor)
-
-
-def test_beam_trajectory_multiple_properties():
-    """
-    Test the `beam_property_trajectory` method in the case where it should return
-    multiple properties.
+    Test that the longitudinal beam generator works as expected and generates the
+    correct number of beams with a specified resolution.
     """
     segment = cheetah.Segment(
         elements=[
@@ -148,38 +127,11 @@ def test_beam_trajectory_multiple_properties():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    s_positions, longitudinal_beta_xs, longitudinal_beta_ys = (
-        segment.beam_property_trajectory(
-            incoming=incoming_beam, property_name=("s", "beta_x", "beta_y")
-        )
+    longitudinal_beam_generator = segment.longitudinal_beam_generator(
+        incoming=incoming_beam, resolution=0.1
     )
+    longitudinal_beam_list = list(longitudinal_beam_generator)
 
-    assert len(s_positions) == 4
-    assert isinstance(s_positions, torch.Tensor)
-    assert len(longitudinal_beta_xs) == 4
-    assert isinstance(longitudinal_beta_xs, torch.Tensor)
-    assert len(longitudinal_beta_ys) == 4
-    assert isinstance(longitudinal_beta_ys, torch.Tensor)
-
-
-def test_beam_trajectory_resolution():
-    """
-    Test the `beam_property_trajectory` method in the case where it should return a
-    single property with a specified resolution.
-    """
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(0.5)),
-            cheetah.Quadrupole(length=torch.tensor(0.3)),
-            cheetah.Drift(length=torch.tensor(0.2)),
-        ]
-    )
-    incoming_beam = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-
-    longitudinal_beta_xs = segment.beam_property_trajectory(
-        incoming=incoming_beam, property_name="beta_x", resolution=0.1
-    )
-
-    assert len(longitudinal_beta_xs) == 11
+    assert len(longitudinal_beam_list) == 11
+    for longitudinal_beam in longitudinal_beam_list:
+        assert isinstance(longitudinal_beam, incoming_beam.__class__)
