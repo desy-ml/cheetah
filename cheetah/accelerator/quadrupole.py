@@ -211,11 +211,21 @@ class Quadrupole(Element):
         ]
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
-        plot_k1 = self.k1[squash_index_for_unavailable_dims(vector_idx, self.k1.shape)]
-        plot_s = s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
-        plot_length = self.length[
-            squash_index_for_unavailable_dims(vector_idx, s.shape)
-        ]
+        plot_k1 = (
+            self.k1[squash_index_for_unavailable_dims(vector_idx, self.k1.shape)]
+            if len(self.k1.shape) > 0
+            else self.k1
+        )
+        plot_s = (
+            s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            if len(s.shape) > 0
+            else s
+        )
+        plot_length = (
+            self.length[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            if len(self.length.shape) > 0
+            else self.length
+        )
 
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
