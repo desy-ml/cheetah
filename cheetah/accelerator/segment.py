@@ -500,20 +500,9 @@ class Segment(Element):
 
         split_lengths = [torch.tensor(0.0)] + [split.length for split in splits]
 
-        # new method
         split_lengths_tensor_broadcast = torch.broadcast_tensors(*split_lengths)
         split_lengths_tensor = torch.stack(split_lengths_tensor_broadcast)
         stacked_ss = torch.cumsum(split_lengths_tensor, dim=0)
-
-        # old method
-        # ss = [
-        #     sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)
-        # ]
-        # broadcast_ss = torch.broadcast_tensors(*ss)
-        # stacked_ss = torch.stack(broadcast_ss)
-        # dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
-
-        # assert (ss2.allclose(stacked_ss, atol=1e-4))
 
         dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
 
