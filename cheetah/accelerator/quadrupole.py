@@ -7,7 +7,12 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    squash_index_for_unavailable_dims,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -176,6 +181,7 @@ class Quadrupole(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
             species=incoming.species,
         )
         return outgoing_beam
@@ -205,9 +211,11 @@ class Quadrupole(Element):
         ]
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
-        plot_k1 = self.k1[vector_idx] if self.k1.dim() > 0 else self.k1
-        plot_s = s[vector_idx] if s.dim() > 0 else s
-        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+        plot_k1 = self.k1[squash_index_for_unavailable_dims(vector_idx, self.k1.shape)]
+        plot_s = s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+        plot_length = self.length[
+            squash_index_for_unavailable_dims(vector_idx, s.shape)
+        ]
 
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)

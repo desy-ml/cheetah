@@ -83,3 +83,55 @@ def test_attr_setting_by_element_type_convenience_method(is_recursive):
             assert element.length == 0.6
         else:
             raise ValueError(f"Unexpected element type: {type(element)}")
+
+
+def test_elementwise_longitudinal_beam_generator():
+    """
+    Test that the longitudinal beam generator works as expected and generates the
+    correct number of beams.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Quadrupole(length=torch.tensor(0.3)),
+            cheetah.Drift(length=torch.tensor(0.2)),
+        ]
+    )
+    incoming_beam = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    longitudinal_beam_generator = segment.longitudinal_beam_generator(
+        incoming=incoming_beam
+    )
+    longitudinal_beam_list = list(longitudinal_beam_generator)
+
+    assert len(longitudinal_beam_list) == 4
+    for longitudinal_beam in longitudinal_beam_list:
+        assert isinstance(longitudinal_beam, incoming_beam.__class__)
+
+
+def test_resolution_longitudinal_beam_generator():
+    """
+    Test that the longitudinal beam generator works as expected and generates the
+    correct number of beams with a specified resolution.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Quadrupole(length=torch.tensor(0.3)),
+            cheetah.Drift(length=torch.tensor(0.2)),
+        ]
+    )
+    incoming_beam = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    longitudinal_beam_generator = segment.longitudinal_beam_generator(
+        incoming=incoming_beam, resolution=0.1
+    )
+    longitudinal_beam_list = list(longitudinal_beam_generator)
+
+    assert len(longitudinal_beam_list) == 11
+    for longitudinal_beam in longitudinal_beam_list:
+        assert isinstance(longitudinal_beam, incoming_beam.__class__)

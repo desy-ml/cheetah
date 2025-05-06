@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -454,6 +454,33 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
+    def longitudinal_beam_generator(
+        self, incoming: Beam, resolution: float | None = None
+    ) -> Iterator[Beam]:
+        """
+        Generator for beam objects along the segment either at the end of each element
+        or at a given resolution.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :return: Generator that yields the beam objects along the segment.
+        """
+        # If a resolution is passed, run this method for the split Segment
+        if resolution is not None:
+            yield from self.__class__(
+                elements=self.split(resolution), name=f"{self.name}_split"
+            ).longitudinal_beam_generator(incoming)
+        else:
+            yield incoming
+            for element in self.elements:
+                outgoing = element.track(incoming)
+                yield outgoing
+                incoming = outgoing
+
     def set_attrs_on_every_element_of_type(
         self,
         element_type: type[Element] | tuple[type[Element]],
@@ -480,18 +507,22 @@ class Segment(Element):
 
     def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         element_lengths = [element.length for element in self.elements]
-        element_ss = [torch.tensor(0.0)] + [
-            sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
-        ]
-        element_ss = [s + element_s for element_s in element_ss]
-        broadcast_ss = torch.broadcast_tensors(*element_ss)
-        stacked_ss = torch.stack(broadcast_ss)
-        dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
+        broadcast_element_lengths = torch.broadcast_tensors(*element_lengths)
+        stacked_element_lengths = torch.stack(broadcast_element_lengths)
+        dimension_reordered_element_lengths = stacked_element_lengths.movedim(
+            0, -1
+        )  # Place vector dims first
+        element_ss = torch.cumsum(dimension_reordered_element_lengths, dim=-1)
 
+        # The element lengths might not capture the entire vector shape with the
+        # incoming beam used in plotting functions that might use this function. The
+        # following tries to extract the correct vector index for just the s positions
+        # of the elements, while preserving the ability to use this element plotting
+        # function without an incoming beam.
         plot_ss = (
-            dimension_reordered_ss[vector_idx]
-            if stacked_ss.dim() > 1
-            else dimension_reordered_ss
+            element_ss[squash_index_for_unavailable_dims(vector_idx, element_ss.shape)]
+            if element_ss.dim() > 1
+            else element_ss
         ).detach()
 
         ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
@@ -525,73 +556,28 @@ class Segment(Element):
             case of present vector dimension but no index provided, the first one is
             used by default.
         """
-        reference_segment = self.clone()
-        splits = reference_segment.split(resolution=torch.tensor(resolution))
+        reference_segment = self.clone()  # Prevent side effects when plotting
 
-        split_lengths = [split.length for split in splits]
-        ss = [torch.tensor(0.0)] + [
-            sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)
-        ]
-        broadcast_ss = torch.broadcast_tensors(*ss)
-        stacked_ss = torch.stack(broadcast_ss)
-        dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
+        ss, x_means, x_stds, y_means, y_stds = zip(
+            *(
+                (beam.s, beam.mu_x, beam.sigma_x, beam.mu_y, beam.sigma_y)
+                for beam in reference_segment.longitudinal_beam_generator(
+                    incoming, resolution=resolution
+                )
+            )
+        )
 
-        references = [incoming]
-        for split in splits:
-            sample = split.track(references[-1])
-            references.append(sample)
+        ss, x_means, x_stds, y_means, y_stds = torch.broadcast_tensors(
+            *(
+                torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
+                for metric in (ss, x_means, x_stds, y_means, y_stds)
+            )
+        )
 
-        x_means = [reference_beam.mu_x for reference_beam in references]
-        broadcast_x_means = torch.broadcast_tensors(*x_means)
-        stacked_x_means = torch.stack(broadcast_x_means)
-        dimension_reordered_x_means = stacked_x_means.movedim(
-            0, -1
-        )  # Place vector dims first
-        x_stds = [reference_beam.sigma_x for reference_beam in references]
-        broadcast_x_stds = torch.broadcast_tensors(*x_stds)
-        stacked_x_stds = torch.stack(broadcast_x_stds)
-        dimension_reordered_x_stds = stacked_x_stds.movedim(
-            0, -1
-        )  # Place vector dims first
-
-        y_means = [reference_beam.mu_y for reference_beam in references]
-        broadcast_y_means = torch.broadcast_tensors(*y_means)
-        stacked_y_means = torch.stack(broadcast_y_means)
-        dimension_reordered_y_means = stacked_y_means.movedim(
-            0, -1
-        )  # Place vector dims first
-        y_stds = [reference_beam.sigma_y for reference_beam in references]
-        broadcast_y_stds = torch.broadcast_tensors(*y_stds)
-        stacked_y_stds = torch.stack(broadcast_y_stds)
-        dimension_reordered_y_stds = stacked_y_stds.movedim(
-            0, -1
-        )  # Place vector dims first
-
-        plot_ss = (
-            dimension_reordered_ss[vector_idx]
-            if stacked_ss.dim() > 1
-            else dimension_reordered_ss
-        ).detach()
-        plot_x_means = (
-            dimension_reordered_x_means[vector_idx]
-            if stacked_x_means.dim() > 2
-            else dimension_reordered_x_means
-        ).detach()
-        plot_x_stds = (
-            dimension_reordered_x_stds[vector_idx]
-            if stacked_x_stds.dim() > 2
-            else dimension_reordered_x_stds
-        ).detach()
-        plot_y_means = (
-            dimension_reordered_y_means[vector_idx]
-            if stacked_y_means.dim() > 2
-            else dimension_reordered_y_means
-        ).detach()
-        plot_y_stds = (
-            dimension_reordered_y_stds[vector_idx]
-            if stacked_y_stds.dim() > 2
-            else dimension_reordered_y_stds
-        ).detach()
+        plot_ss, plot_x_means, plot_x_stds, plot_y_means, plot_y_stds = (
+            (metric[vector_idx] if metric.dim() > 1 else metric).detach()
+            for metric in (ss, x_means, x_stds, y_means, y_stds)
+        )
 
         axx.plot(plot_ss, plot_x_means)
         axx.fill_between(
@@ -648,49 +634,24 @@ class Segment(Element):
 
     def plot_twiss(
         self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
-    ) -> None:
+    ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
-        longitudinal_beams = [incoming]
-        s_positions = [torch.tensor(0.0)]
-        for element in self.flattened().elements:
-            if torch.all(element.length == 0):
-                continue
-
-            outgoing = element.track(longitudinal_beams[-1])
-
-            longitudinal_beams.append(outgoing)
-            s_positions.append(s_positions[-1] + element.length)
-
-        beta_x = [beam.beta_x for beam in longitudinal_beams]
-        beta_y = [beam.beta_y for beam in longitudinal_beams]
-
-        # Extraction of the correct vector element for plotting
-        broadcast_s_positions = torch.broadcast_tensors(*s_positions)
-        stacked_s_positions = torch.stack(broadcast_s_positions)
-        dimension_reordered_s_positions = stacked_s_positions.movedim(0, -1)
-        plot_s_positions = (
-            dimension_reordered_s_positions[vector_idx]
-            if stacked_s_positions.dim() > 1
-            else dimension_reordered_s_positions
-        ).detach()
-
-        broadcast_beta_x = torch.broadcast_tensors(*beta_x)
-        stacked_beta_x = torch.stack(broadcast_beta_x)
-        dimension_reordered_beta_x = stacked_beta_x.movedim(0, -1)
-        plot_beta_x = (
-            dimension_reordered_beta_x[vector_idx]
-            if stacked_beta_x.dim() > 2
-            else dimension_reordered_beta_x
-        ).detach()
-
-        broadcast_beta_y = torch.broadcast_tensors(*beta_y)
-        stacked_beta_y = torch.stack(broadcast_beta_y)
-        dimension_reordered_beta_y = stacked_beta_y.movedim(0, -1)
-        plot_beta_y = (
-            dimension_reordered_beta_y[vector_idx]
-            if stacked_beta_y.dim() > 2
-            else dimension_reordered_beta_y
-        ).detach()
+        s_positions, beta_x, beta_y = zip(
+            *(
+                (beam.s, beam.beta_x, beam.beta_y)
+                for beam in self.longitudinal_beam_generator(incoming)
+            )
+        )
+        s_positions, beta_x, beta_y = torch.broadcast_tensors(
+            *(
+                torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
+                for metric in (s_positions, beta_x, beta_y)
+            )
+        )
+        plot_s_positions, plot_beta_x, plot_beta_y = (
+            (metric[vector_idx] if metric.dim() > 1 else metric).detach()
+            for metric in (s_positions, beta_x, beta_y)
+        )
 
         if ax is None:
             fig = plt.figure()
@@ -704,7 +665,8 @@ class Segment(Element):
         ax.plot(plot_s_positions, plot_beta_y, label=r"$\beta_y$", c="tab:green")
 
         ax.legend()
-        plt.tight_layout()
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

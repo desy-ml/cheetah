@@ -230,6 +230,7 @@ class Cavity(Element):
                 cov=outgoing_cov,
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
+                s=incoming.s + self.length,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
             )
@@ -240,6 +241,7 @@ class Cavity(Element):
                 energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=incoming.s + self.length,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )

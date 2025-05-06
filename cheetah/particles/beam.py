@@ -52,6 +52,7 @@ class Beam(ABC, nn.Module):
         cov_taup: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -80,6 +81,7 @@ class Beam(ABC, nn.Module):
         :param cov_taup: Covariance between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
@@ -102,6 +104,7 @@ class Beam(ABC, nn.Module):
         cov_taup: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -123,6 +126,7 @@ class Beam(ABC, nn.Module):
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam. Defaults to electron.
+        :param s: Position along the beamline of the reference particle in meters.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.

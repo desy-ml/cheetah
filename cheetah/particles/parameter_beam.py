@@ -15,6 +15,7 @@ class ParameterBeam(Beam):
     :param cov: Covariance matrix of the beam with shape `(..., 7, 7)`.
     :param energy: Reference energy of the beam in eV.
     :param total_charge: Total charge of the beam in C.
+    :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
     :param device: Device to use for the beam. If "auto", use CUDA if available.
         Note: Compuationally it would be faster to use CPU for ParameterBeam.
@@ -27,12 +28,13 @@ class ParameterBeam(Beam):
         cov: torch.Tensor,
         energy: torch.Tensor,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [mu, cov, energy, total_charge], device, dtype
+            [mu, cov, energy, total_charge, s], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -49,6 +51,9 @@ class ParameterBeam(Beam):
             torch.as_tensor(
                 total_charge if total_charge is not None else 0.0, **factory_kwargs
             ),
+        )
+        self.register_buffer_or_parameter(
+            "s", torch.as_tensor(s if s is not None else 0.0, **factory_kwargs)
         )
 
     @classmethod
@@ -71,6 +76,7 @@ class ParameterBeam(Beam):
         cov_taup: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -95,6 +101,7 @@ class ParameterBeam(Beam):
                 cov_taup,
                 energy,
                 total_charge,
+                s,
             ],
             device,
             dtype,
@@ -190,6 +197,7 @@ class ParameterBeam(Beam):
             cov=cov,
             energy=energy,
             total_charge=total_charge,
+            s=s,
             species=species,
             device=device,
             dtype=dtype,
@@ -209,6 +217,7 @@ class ParameterBeam(Beam):
         cov_taup: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -227,6 +236,7 @@ class ParameterBeam(Beam):
                 cov_taup,
                 energy,
                 total_charge,
+                s,
             ],
             device,
             dtype,
@@ -293,6 +303,7 @@ class ParameterBeam(Beam):
             cov_xpx=cov_xpx,
             cov_ypy=cov_ypy,
             total_charge=total_charge,
+            s=s,
             species=species,
             device=device,
             dtype=dtype,
@@ -469,6 +480,8 @@ class ParameterBeam(Beam):
             cov_taup=self.cov_taup,
             energy=self.energy,
             total_charge=self.total_charge,
+            s=self.s,
+            species=self.species,
             device=self.mu.device,
             dtype=self.mu.dtype,
         )
@@ -570,6 +583,7 @@ class ParameterBeam(Beam):
             cov=self.cov.clone(),
             energy=self.energy.clone(),
             total_charge=self.total_charge.clone(),
+            s=self.s.clone(),
             species=self.species.clone(),
         )
 
