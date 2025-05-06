@@ -1058,13 +1058,14 @@ class ParticleBeam(Beam):
         if random_state is None:
             random_state = torch.Generator(device=self.particles.device)
 
-        random_indices = torch.randint(
-            0, self.particles.shape[-2], (num_particles,), generator=random_state
-        )
+        randomly_permuted_particle_indices = torch.randperm(self.num_particles)
+        subsampled_particle_indices = randomly_permuted_particle_indices[:num_particles]
 
-        subsampled_particles = self.particles[random_indices]
-        subsampled_particle_charges = self.particle_charges[random_indices]
-        subsampled_survival_probabilities = self.survival_probabilities[random_indices]
+        subsampled_particles = self.particles[subsampled_particle_indices]
+        subsampled_particle_charges = self.particle_charges[subsampled_particle_indices]
+        subsampled_survival_probabilities = self.survival_probabilities[
+            subsampled_particle_indices
+        ]
 
         subsampled_beam = self.__class__(
             particles=subsampled_particles,
