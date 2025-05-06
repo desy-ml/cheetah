@@ -30,14 +30,14 @@ def test_move_element_to_device(mwe_element, target_device: torch.device):
 
     # Test that by default the element is on the CPU
     for buffer in mwe_element.buffers():
-        assert buffer.dtype == "cpu"
+        assert buffer.device.type == "cpu"
 
     # Move the element to the target device
     mwe_element.to(target_device)
 
     # Test that the element is now on the target device
     for buffer in mwe_element.buffers():
-        assert buffer.dtype == target_device.type
+        assert buffer.device.type == target_device.type
 
 
 @pytest.mark.for_every_mwe_element(
