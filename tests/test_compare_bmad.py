@@ -1,12 +1,7 @@
-import sys
+from pathlib import Path
 
 import pytest
-
-if sys.platform.startswith("win"):
-    pytest.skip("Skipping Bmad comparison tests on Windows", allow_module_level=True)
-
 import torch
-from pytao import Tao
 from scipy.constants import physical_constants
 
 import cheetah
@@ -15,16 +10,6 @@ from cheetah.utils.bmadx import bmad_to_cheetah_z_pz, cheetah_to_bmad_coords
 atomic_mass_eV = (
     physical_constants["atomic mass constant energy equivalent in MeV"][0] * 1e6
 )
-
-
-def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
-    """Helper function to set the initial coordinates of the particle in Tao."""
-    tao.cmd(f"set particle_start x={coordinates[0]}")
-    tao.cmd(f"set particle_start px={coordinates[1]}")
-    tao.cmd(f"set particle_start y={coordinates[2]}")
-    tao.cmd(f"set particle_start py={coordinates[3]}")
-    tao.cmd(f"set particle_start z={coordinates[4]}")
-    tao.cmd(f"set particle_start pz={coordinates[5]}")
 
 
 @pytest.mark.parametrize(
@@ -41,13 +26,12 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
     ],
 )
 @pytest.mark.parametrize(
-    ["cheetah_element", "bmad_element_str"],
+    "cheetah_element",
     [
         (
             cheetah.Drift(
                 length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.double
-            ),
-            "e1: drift, L = 1.0",
+            )
         ),
         (
             cheetah.Dipole(
@@ -64,10 +48,7 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
                 fringe_type="linear_edge",
                 tracking_method="bmadx",
                 dtype=torch.double,
-            ),
-            "e1: sbend, L = 0.5, angle = 0.2, fringe_at = both_ends, "
-            "fringe_type = linear_edge, E1 = 0.1, E2 = 0.1, FINT = 0.5, HGAP = 0.03, "
-            "FINTX = 0.5, HGAPX = 0.03, ref_tilt = 0.1",
+            )
         ),
         (
             cheetah.Quadrupole(
@@ -75,40 +56,15 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
                 k1=torch.tensor(1.0),
                 tracking_method="bmadx",
                 dtype=torch.double,
-            ),
-            "e1: quad, L = 0.5, K1 = 1.0",
+            )
         ),
     ],
 )
-def test_different_species_in_different_elements(
-    tmp_path, species, cheetah_element, bmad_element_str
-):
+def test_different_species_in_different_elements(species, cheetah_element):
     """
     Test that tracking different particle species through different elements in Cheetah
     agrees with Bmad results.
     """
-    bmad_drift_lattice_str = f"""
-    parameter[lattice] = test_drift
-
-    beginning[beta_a] = 10
-    beginning[beta_b] = 10
-
-    beginning[p0c] = 5.0e7
-    parameter[particle] = {species.name}
-    parameter[geometry] = open
-
-    {bmad_element_str}
-
-    lat: line = (e1)
-
-    use, lat
-    """
-    bmad_lattice_path = tmp_path / f"test_drift_{species.name}.bmad"
-    with open(bmad_lattice_path, "w") as f:
-        f.write(bmad_drift_lattice_str)
-
-    tao = Tao(f"-lat {bmad_lattice_path} -noplot")
-
     coordinate_list = [1e-3, 2e-3, -3e-3, -1e-3, 2e-3, -1e-3]
     coordinates = torch.tensor(coordinate_list, dtype=torch.double)
 
@@ -138,20 +94,12 @@ def test_different_species_in_different_elements(
         outgoing.particles, ref_energy=outgoing.energy, mc2=outgoing.species.mass_eV
     )
 
-    # Track with Tao
-    tao_set_particle_start(tao, coordinate_list)
-    orbit_out = tao.orbit_at_s(ele=1)
-
-    x_tao = torch.tensor(
-        [
-            orbit_out["x"],
-            orbit_out["px"],
-            orbit_out["y"],
-            orbit_out["py"],
-            orbit_out["z"],
-            orbit_out["pz"],
-        ],
-        dtype=torch.double,
+    # Load Bmad results
+    x_tao = torch.load(
+        Path(__file__).parent
+        / "resources"
+        / "bmad"
+        / f"x_tao_{species.name}_{cheetah_element.__class__.__name__}.pt"
     )
 
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
