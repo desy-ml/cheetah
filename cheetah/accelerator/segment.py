@@ -457,11 +457,14 @@ class Segment(Element):
     def beam_property_trajectory(
         self,
         incoming: Beam,
-        property_name: str | tuple[str] | None = None,
+        property_name: str | None | tuple[str | None] = None,
         resolution: float | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor | tuple[torch.Tensor]]:
         """
-        Get the trajectory of a beam property along the segment.
+        Get the trajectory of one or more beam properties along the segment.
+
+        You may pass a single property name or a tuple of property names. Passing `None`
+        on its own or as part of a tuple will return the beam object itself.
 
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
@@ -476,28 +479,22 @@ class Segment(Element):
             second tuple element is a tuple of property values if a tuple of property
             names was passed.
         """
+        # If a resolution is passed, run this method for the split Segment
         if resolution is not None:
             return self.__class__(
                 elements=self.split(resolution), name=f"{self.name}_split"
             ).beam_property_trajectory(incoming, property_name)
 
-        def get_property_value(
-            beam: Beam, property_name: str | tuple[str] | None
-        ) -> Beam | torch.Tensor | tuple[torch.Tensor]:
-            match property_name:
-                case None:
-                    return beam
-                case str():
-                    return getattr(beam, property_name)
-                case tuple():
-                    return tuple(getattr(beam, name) for name in property_name)
-                case _:
-                    raise ValueError(
-                        f"Invalid property name: {property_name}. Must be a string, "
-                        f"tuple of strings or None."
-                    )
+        property_name_tuple = (
+            (property_name,) if isinstance(property_name, str) else property_name
+        )
 
-        longitudinal_property_values = [get_property_value(incoming, property_name)]
+        longitudinal_property_values = [
+            tuple(
+                getattr(incoming, name) if name is not None else incoming
+                for name in property_name_tuple
+            )
+        ]
         for element in self.elements:
             if torch.all(element.length == 0):
                 continue
@@ -505,28 +502,20 @@ class Segment(Element):
             outgoing = element.track(incoming)
 
             longitudinal_property_values.append(
-                get_property_value(outgoing, property_name)
+                tuple(
+                    getattr(outgoing, name) if name is not None else outgoing
+                    for name in property_name_tuple
+                )
             )
 
             incoming = outgoing
 
-        match property_name:
-            case None:
-                return longitudinal_property_values
-            case str():
-                return torch.stack(longitudinal_property_values)
-            case tuple():
-                return tuple(
-                    torch.stack(this_longitudinal_property_values)
-                    for this_longitudinal_property_values in zip(
-                        *longitudinal_property_values
-                    )
-                )
-            case _:
-                raise ValueError(
-                    f"Invalid property name: {property_name}. Must be a string, "
-                    f"tuple of strings or None."
-                )
+        cleaned_longitudinal_property_values = [
+            value[0] if len(value) == 1 else value
+            for value in longitudinal_property_values
+        ]
+
+        return cleaned_longitudinal_property_values
 
     def set_attrs_on_every_element_of_type(
         self,
