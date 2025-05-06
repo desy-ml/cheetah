@@ -71,8 +71,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
     # Generate minimal working examples
     element_mwe_dict = {
-        subclass.__name__: (
-            subclass
+        subclass: (
+            subclass(**ELEMENT_SUBCLASSES_MWE_ARGS[subclass]).clone()
             if subclass in ELEMENT_SUBCLASSES_MWE_ARGS
             else pytest.param(None, marks=pytest.mark.fail_because_no_mwe_args_defined)
         )
