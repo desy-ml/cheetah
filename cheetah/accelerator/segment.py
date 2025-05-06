@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -454,65 +454,32 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def beam_property_trajectory(
-        self,
-        incoming: Beam,
-        property_name: str | None | tuple[str | None] = None,
-        resolution: float | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor | tuple[torch.Tensor]]:
+    def longitudinal_beam_generator(
+        self, incoming: Beam, resolution: float | None = None
+    ) -> Generator[Beam]:
         """
-        Get the trajectory of one or more beam properties along the segment.
-
-        You may pass a single property name or a tuple of property names. Passing `None`
-        on its own or as part of a tuple will return the beam object itself.
+        Generator for beam objects along the segment either at the end of each element
+        or at a given resolution.
 
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
-        :param property_name: Name of the property to get the trajectory for. If a tuple
-            is passed, the a tuple of property trajectories is returned. If `None` is
-            passed, a list of `Beam` objects is returned.
         :param resolution: Requested resolution of trajectory. Note that not all
             elements can be split at arbitrary resolutions, which can lead to deviations
             from the requested resolution. If `None` is passed, samples are taken at the
             end of each element.
-        :return: Tuple containing the s positions and the beam property values. The
-            second tuple element is a tuple of property values if a tuple of property
-            names was passed.
+        :return: Generator that yields the beam objects along the segment.
         """
         # If a resolution is passed, run this method for the split Segment
         if resolution is not None:
             return self.__class__(
                 elements=self.split(resolution), name=f"{self.name}_split"
-            ).beam_property_trajectory(incoming, property_name)
+            ).longitudinal_beam_generator(incoming, resolution)
 
-        property_name_tuple = (
-            (property_name,) if isinstance(property_name, str) else property_name
-        )
-
-        longitudinal_property_values = [
-            tuple(
-                getattr(incoming, name) if name is not None else incoming
-                for name in property_name_tuple
-            )
-        ]
+        yield incoming
         for element in self.elements:
             outgoing = element.track(incoming)
-
-            longitudinal_property_values.append(
-                tuple(
-                    getattr(outgoing, name) if name is not None else outgoing
-                    for name in property_name_tuple
-                )
-            )
-
+            yield outgoing
             incoming = outgoing
-
-        cleaned_longitudinal_property_values = [
-            value[0] if len(value) == 1 else value
-            for value in longitudinal_property_values
-        ]
-
-        return cleaned_longitudinal_property_values
 
     def set_attrs_on_every_element_of_type(
         self,
