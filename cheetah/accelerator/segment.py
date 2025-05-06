@@ -471,15 +471,15 @@ class Segment(Element):
         """
         # If a resolution is passed, run this method for the split Segment
         if resolution is not None:
-            return self.__class__(
+            yield from self.__class__(
                 elements=self.split(resolution), name=f"{self.name}_split"
-            ).longitudinal_beam_generator(incoming, resolution)
-
-        yield incoming
-        for element in self.elements:
-            outgoing = element.track(incoming)
-            yield outgoing
-            incoming = outgoing
+            ).longitudinal_beam_generator(incoming)
+        else:
+            yield incoming
+            for element in self.elements:
+                outgoing = element.track(incoming)
+                yield outgoing
+                incoming = outgoing
 
     def set_attrs_on_every_element_of_type(
         self,
