@@ -9,6 +9,7 @@
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
 - Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
 - Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 - `Segment` now has a `longitudinal_beam_generator` function that generates `Beam` objects along the beamline for easy computation of the longitudinal parameter trajectories. Plot functions have been refactored to make use of this function. (see #436) (@jank324)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 
@@ -33,7 +34,6 @@
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
 - Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
 - Add a `Sextupole` element (see #406) (@jank324, @Hespe)
-- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 
 ### 🐛 Bug fixes
 
