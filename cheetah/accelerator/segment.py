@@ -486,7 +486,7 @@ class Segment(Element):
         metric_names: tuple[str, ...] | str,
         incoming: Beam,
         resolution: float | None = None,
-    ) -> tuple[torch.Tensor, ...]:
+    ) -> tuple[torch.Tensor, ...] | torch.Tensor:
         """
         Get metrics along the segment either at the end of each element or at a given
         resolution.
