@@ -481,7 +481,7 @@ class Segment(Element):
                 yield outgoing
                 incoming = outgoing
 
-    def get_metrics_along_segment(
+    def get_beam_attrs_along_segment(
         self,
         metric_names: tuple[str, ...] | str,
         incoming: Beam,
@@ -602,7 +602,7 @@ class Segment(Element):
         reference_segment = self.clone()  # Prevent side effects when plotting
 
         ss, x_means, x_stds, y_means, y_stds = (
-            reference_segment.get_metrics_along_segment(
+            reference_segment.get_beam_attrs_along_segment(
                 ("s", "mu_x", "sigma_x", "mu_y", "sigma_y"),
                 incoming,
                 resolution=resolution,
@@ -678,7 +678,7 @@ class Segment(Element):
         self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
     ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
-        s_positions, beta_x, beta_y = self.get_metrics_along_segment(
+        s_positions, beta_x, beta_y = self.get_beam_attrs_along_segment(
             ("s", "beta_x", "beta_y"), incoming
         )
         s_positions, beta_x, beta_y = torch.broadcast_tensors(

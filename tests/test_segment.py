@@ -156,7 +156,7 @@ def test_longitudinal_beam_metric(metric_names):
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    result = segment.get_metrics_along_segment(metric_names, incoming_beam)
+    result = segment.get_beam_attrs_along_segment(metric_names, incoming_beam)
 
     if isinstance(metric_names, str):
         assert isinstance(result, torch.Tensor)
