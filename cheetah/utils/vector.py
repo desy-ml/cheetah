@@ -18,7 +18,7 @@ def squash_index_for_unavailable_dims(index: tuple, shape: tuple) -> tuple:
     is not vectorised, to `0`, resulting a valid index of `(0, 0)`.
 
     :param index: The index to squash.
-    :param shape: The shape of the result that was only affected part of the
+    :param shape: The shape of the result that was only affected by part of the
         vectorisations.
     :return: The squashed index that is valid indexing into a tensor of `shape`.
     """
