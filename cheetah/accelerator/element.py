@@ -68,15 +68,15 @@ class Element(ABC, nn.Module):
         """
         if isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
-            mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            cov = tm @ incoming.cov @ tm.transpose(-2, -1)
-            s = incoming.s + self.length
+            new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_s = incoming.s + self.length
             return ParameterBeam(
-                mu,
-                cov,
+                new_mu,
+                new_cov,
                 incoming.energy,
                 total_charge=incoming.total_charge,
-                s=s,
+                s=new_s,
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
