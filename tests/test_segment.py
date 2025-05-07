@@ -135,3 +135,35 @@ def test_resolution_longitudinal_beam_generator():
     assert len(longitudinal_beam_list) == 11
     for longitudinal_beam in longitudinal_beam_list:
         assert isinstance(longitudinal_beam, incoming_beam.__class__)
+
+
+@pytest.mark.parametrize("metric_names", ["beta_x", ("beta_x",), ("s", "beta_x")])
+def test_longitudinal_beam_metric(metric_names):
+    """
+    Test that the convenience method for computing a metric along the lattice works as
+    expected. Focus is put on the return being a single tensor when a metric string is
+    passed, and a tuple of tensors when a tuple of metric strings is passed (regardless
+    of the length of the tuple).
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Quadrupole(length=torch.tensor(0.3)),
+            cheetah.Drift(length=torch.tensor(0.2)),
+        ]
+    )
+    incoming_beam = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+
+    result = segment.get_longitudinal_metrics(metric_names, incoming_beam)
+
+    if isinstance(metric_names, str):
+        assert isinstance(result, torch.Tensor)
+        len(result) == 4
+    else:
+        assert isinstance(result, tuple)
+        assert len(result) == len(metric_names)
+        for metric_result in result:
+            assert isinstance(metric_result, torch.Tensor)
+            assert len(metric_result) == 4
