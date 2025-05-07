@@ -7,11 +7,16 @@
 ### 🚀 Features
 
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
+- Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
+- Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
 
 ### 🐛 Bug fixes
 - Unrecognised element properties now print a warning instead of exiting with an assertation error (see #425) (@amylizzle)
 
 ### 🐆 Other
+
+- Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
+- The PyTorch pin to `<=2.6` was removed, as the issue with `abort trap: 6` was caused by Bmad is no longer actively used in the test workflow (see #429, #431) (@jank324)
 
 ### 🌟 First Time Contributors
 
@@ -27,6 +32,7 @@
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
 - Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
 - Add a `Sextupole` element (see #406) (@jank324, @Hespe)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 
 ### 🐛 Bug fixes
 

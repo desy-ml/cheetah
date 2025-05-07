@@ -69,7 +69,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(["element_type", "group"], parsed)
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] == "kick":
             validate_understood_properties(["element_type", "l", "group"], parsed)
 
@@ -165,6 +165,17 @@ def convert_element(
             return cheetah.Quadrupole(
                 length=torch.tensor(parsed["l"], **factory_kwargs),
                 k1=torch.tensor(parsed["k1"], **factory_kwargs),
+                tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
+                name=name,
+            )
+        elif parsed["element_type"] in ["sext", "sextupole"]:
+            validate_understood_properties(
+                ["element_type", "l", "k2", "tilt", "group"],
+                parsed,
+            )
+            return cheetah.Sextupole(
+                length=torch.tensor(parsed["l"], **factory_kwargs),
+                k2=torch.tensor(parsed["k2"], **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
             )
@@ -342,21 +353,28 @@ def convert_element(
                     "element_type",
                     "l",
                     "angle",
+                    "k1",
                     "e1",
                     "e2",
                     "edge1_effects",
                     "edge2_effects",
+                    "edge_order",
                     "tilt",
                     "hgap",
                     "fint",
                     "sg_halfwidth",
                     "sg_order",
+                    "high_frequency_cutoff0",
+                    "high_frequency_cutoff1",
                     "steady_state",
                     "bins",
                     "n_kicks",
+                    "n_slices",
                     "integration_order",
                     "isr",
                     "csr",
+                    "synch_rad",
+                    "nonlinear",
                     "group",
                 ],
                 parsed,
@@ -374,14 +392,14 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "group", "filename"], parsed
             )
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] in ["charge", "wake"]:
             print(
                 f"WARNING: Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"
                 " manually providing the correct information."
             )
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, **factory_kwargs)
         else:
             print(
                 f"WARNING: Element {name} of type {parsed['element_type']} cannot"
