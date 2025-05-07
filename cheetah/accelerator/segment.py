@@ -504,12 +504,12 @@ class Segment(Element):
         attr_name_tuple = attr_names if isinstance(attr_names, tuple) else (attr_names,)
 
         results = zip(
-            *(
-                (getattr(beam, attr_name) for attr_name in attr_name_tuple)
+            *[
+                tuple(getattr(beam, attr_name) for attr_name in attr_name_tuple)
                 for beam in self.beam_along_segment_generator(
                     incoming, resolution=resolution
                 )
-            )
+            ]
         )
         broadcasted_results = tuple(
             torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(0, -1)
@@ -557,7 +557,16 @@ class Segment(Element):
         dimension_reordered_element_lengths = stacked_element_lengths.movedim(
             0, -1
         )  # Place vector dims first
-        element_ss = torch.cumsum(dimension_reordered_element_lengths, dim=-1)
+        element_end_s_positions = torch.cumsum(
+            dimension_reordered_element_lengths, dim=-1
+        )
+        s_positions = torch.cat(
+            (
+                torch.zeros_like(element_end_s_positions[..., :1]),
+                element_end_s_positions,
+            ),
+            dim=-1,
+        )
 
         # The element lengths might not capture the entire vector shape with the
         # incoming beam used in plotting functions that might use this function. The
@@ -565,15 +574,17 @@ class Segment(Element):
         # of the elements, while preserving the ability to use this element plotting
         # function without an incoming beam.
         plot_ss = (
-            element_ss[squash_index_for_unavailable_dims(vector_idx, element_ss.shape)]
-            if element_ss.dim() > 1
-            else element_ss
+            s_positions[
+                squash_index_for_unavailable_dims(vector_idx, s_positions.shape)
+            ]
+            if s_positions.dim() > 1
+            else s_positions
         ).detach()
 
         ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
 
         for element, s in zip(self.elements, plot_ss[:-1]):
-            element.plot(ax, s, vector_idx)
+            element.plot(s, vector_idx, ax)
 
         ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
@@ -675,39 +686,117 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def plot_twiss(
-        self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
+    def plot_beam_attrs(
+        self,
+        incoming: Beam,
+        attr_names: tuple[str, ...] | str,
+        resolution: float | None = None,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
-        """Plot twiss parameters along the segment."""
-        s_positions, beta_x, beta_y = self.get_beam_attrs_along_segment(
-            ("s", "beta_x", "beta_y"), incoming
+        """
+        Plot beam attributes along the segment.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param attr_names: Metrics to compute. Can be a single metric or a tuple of
+            metrics. Supported metrics are any property of beam class of `incoming`.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param ax: Axes to plot into.
+        :return: Axes with the plotted beam attributes.
+        """
+        attr_names_with_s = ("s",) + (
+            attr_names if isinstance(attr_names, tuple) else (attr_names,)
         )
-        s_positions, beta_x, beta_y = torch.broadcast_tensors(
-            s_positions, beta_x, beta_y
-        )
-        plot_s_positions, plot_beta_x, plot_beta_y = (
-            (metric[vector_idx] if metric.dim() > 1 else metric).detach()
-            for metric in (s_positions, beta_x, beta_y)
+        beam_attrs = self.get_beam_attrs_along_segment(
+            attr_names_with_s, incoming, resolution=resolution
         )
 
-        if ax is None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
+        ax = ax or plt.subplot(111)
 
-        ax.set_title("Twiss Parameters")
-        ax.set_xlabel("s (m)")
-        ax.set_ylabel(r"$\beta$ (m)")
-
-        ax.plot(plot_s_positions, plot_beta_x, label=r"$\beta_x$", c="tab:red")
-        ax.plot(plot_s_positions, plot_beta_y, label=r"$\beta_y$", c="tab:green")
+        s = beam_attrs[0]
+        for attr, attr_name in zip(beam_attrs[1:], attr_names_with_s[1:]):
+            ax.plot(
+                (s[vector_idx] if s.dim() > 1 else s).detach(),
+                (attr[vector_idx] if attr.dim() > 1 else attr).detach(),
+                label=attr_name,
+            )
 
         ax.legend()
 
         return ax
 
-    @property
-    def defining_features(self) -> list[str]:
-        return super().defining_features + ["elements"]
+    def plot_beam_attrs_over_lattice(
+        self,
+        incoming: Beam,
+        attr_names: tuple[str, ...] | str,
+        figsize=(8, 4),
+        resolution: float | None = None,
+        vector_idx: tuple | None = None,
+    ) -> None:
+        """
+        Plot beam attributes in a plot over a plot of the lattice.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param attr_names: Metrics to compute. Can be a single metric or a tuple of
+            metrics. Supported metrics are any property of beam class of `incoming`.
+        :param figsize: Size of the figure.
+        :param resolution: Minimum resolution of the tracking of the beam position and
+            beam size in the plot.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        """
+        fig = plt.figure(figsize=figsize)
+        gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
+        axs = gs.subplots(sharex=True)
+
+        self.plot_beam_attrs(
+            incoming=incoming,
+            attr_names=attr_names,
+            resolution=resolution,
+            vector_idx=vector_idx,
+            ax=axs[0],
+        )
+        self.plot(s=0.0, ax=axs[1])
+
+        plt.tight_layout()
+
+    def plot_twiss(
+        self, incoming: Beam, vector_idx: tuple | None = None, ax: Any | None = None
+    ) -> plt.Axes:
+        """Plot twiss parameters along the segment."""
+        ax = self.plot_beam_attrs(
+            incoming,
+            ("beta_x", "beta_y"),
+            resolution=None,
+            vector_idx=vector_idx,
+            ax=ax,
+        )
+
+        beta_x_line = ax.get_lines()[0]
+        beta_y_line = ax.get_lines()[1]
+
+        beta_x_line.set_label(r"$\beta_x$")
+        beta_x_line.set_color("tab:red")
+        beta_y_line.set_label(r"$\beta_y$")
+        beta_y_line.set_color("tab:green")
+
+        ax.set_title("Twiss Parameters")
+        ax.set_xlabel("s (m)")
+        ax.set_ylabel(r"$\beta$ (m)")
+        ax.legend()
+
+        return ax
 
     def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
         """Plot twiss parameters in a plot over a plot of the lattice."""
@@ -716,9 +805,13 @@ class Segment(Element):
         axs = gs.subplots(sharex=True)
 
         self.plot_twiss(incoming, ax=axs[0])
-        self.plot(axs[1], 0)
+        self.plot(s=0.0, ax=axs[1])
 
         plt.tight_layout()
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["elements"]
 
     def __repr__(self) -> str:
         return (

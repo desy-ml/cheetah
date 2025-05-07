@@ -220,6 +220,7 @@ class Quadrupole(Element):
             if len(self.k1.shape) > 0
             else self.k1
         )
+
         plot_s = (
             s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
             if len(s.shape) > 0
