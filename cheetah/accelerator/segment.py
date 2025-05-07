@@ -483,7 +483,7 @@ class Segment(Element):
 
     def get_beam_attrs_along_segment(
         self,
-        metric_names: tuple[str, ...] | str,
+        attr_names: tuple[str, ...] | str,
         incoming: Beam,
         resolution: float | None = None,
     ) -> tuple[torch.Tensor, ...] | torch.Tensor:
@@ -491,7 +491,7 @@ class Segment(Element):
         Get metrics along the segment either at the end of each element or at a given
         resolution.
 
-        :param metric_names: Metrics to compute. Can be a single metric or a tuple of
+        :param attr_names: Metrics to compute. Can be a single metric or a tuple of
             metrics. Supported metrics are any property of beam class of `incoming`.
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
@@ -501,26 +501,24 @@ class Segment(Element):
             end of each element.
         :return: Tuple of tensors containing the requested metrics along the segment.
         """
-        metric_name_tuple = (
-            metric_names if isinstance(metric_names, tuple) else (metric_names,)
-        )
+        attr_name_tuple = attr_names if isinstance(attr_names, tuple) else (attr_names,)
 
         results = zip(
             *(
-                (getattr(beam, metric_name) for metric_name in metric_name_tuple)
+                (getattr(beam, attr_name) for attr_name in attr_name_tuple)
                 for beam in self.beam_along_segment_generator(
                     incoming, resolution=resolution
                 )
             )
         )
         broadcasted_results = tuple(
-            torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
-            for metric in results
+            torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(0, -1)
+            for attr_tensor in results
         )
 
         return (
             broadcasted_results
-            if isinstance(metric_names, tuple)
+            if isinstance(attr_names, tuple)
             else broadcasted_results[0]
         )
 
