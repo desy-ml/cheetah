@@ -12,6 +12,8 @@
 
 ### 🐛 Bug fixes
 
+- Parsing of element names containing `-` is now possible, though `-` will be converted to `_` for variable access (see #386) (@amylizzle)
+
 ### 🐆 Other
 
 - Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
