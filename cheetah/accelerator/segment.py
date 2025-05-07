@@ -616,10 +616,7 @@ class Segment(Element):
         )
 
         ss, x_means, x_stds, y_means, y_stds = torch.broadcast_tensors(
-            *(
-                torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
-                for metric in (ss, x_means, x_stds, y_means, y_stds)
-            )
+            ss, x_means, x_stds, y_means, y_stds
         )
 
         plot_ss, plot_x_means, plot_x_stds, plot_y_means, plot_y_stds = (
@@ -688,10 +685,7 @@ class Segment(Element):
             ("s", "beta_x", "beta_y"), incoming
         )
         s_positions, beta_x, beta_y = torch.broadcast_tensors(
-            *(
-                torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
-                for metric in (s_positions, beta_x, beta_y)
-            )
+            s_positions, beta_x, beta_y
         )
         plot_s_positions, plot_beta_x, plot_beta_y = (
             (metric[vector_idx] if metric.dim() > 1 else metric).detach()
