@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import scipy.stats
 import torch
 
 import cheetah
@@ -235,7 +236,7 @@ def test_indexing_fails_for_invalid_index():
         _ = beam[6]
 
 
-def test_random_subsample():
+def test_random_subsample_gaussian_properties():
     """
     Test that a random subsample of a beam has the correct number of particles and
     similar parameters as the original.
@@ -284,3 +285,35 @@ def test_random_subsample():
     assert torch.isclose(
         subsampled_beam.sigma_tau, original_beam.sigma_tau, rtol=1e-5, atol=1e-5
     )
+
+
+def test_random_subsample_energy_distance_better_than_gaussian():
+    """
+    Test that on a non-Gaussian beam, the energy distance from the random subsample to
+    the original beam is much (5x) lower than the energy distance from a Gaussian
+    subsample (via conversion to `ParameterBeam` and back) to the original beam.
+    """
+    original_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    randomly_subsampled_beam = original_beam.randomly_subsampled(50_000)
+    gaussian_subsampled_beam = original_beam.as_parameter_beam().as_particle_beam(
+        num_particles=50_000
+    )
+
+    for dim_name in ["x", "px", "y", "py", "tau", "p"]:
+        original_dim = getattr(original_beam, dim_name)
+        randomly_subsampled_dim = getattr(randomly_subsampled_beam, dim_name)
+        gaussian_subsampled_dim = getattr(gaussian_subsampled_beam, dim_name)
+
+        energy_distance_to_random_subsample = scipy.stats.energy_distance(
+            original_dim, randomly_subsampled_dim
+        )
+        energy_distance_to_gaussian_subsample = scipy.stats.energy_distance(
+            original_dim, gaussian_subsampled_dim
+        )
+
+        assert (
+            5 * energy_distance_to_random_subsample
+            < energy_distance_to_gaussian_subsample
+        )
