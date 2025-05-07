@@ -2,24 +2,15 @@ import pytest
 import torch
 
 import cheetah
-from cheetah import (
-    Dipole,
-    Drift,
-    ParameterBeam,
-    ParticleBeam,
-    Quadrupole,
-    RBend,
-    Segment,
-)
 
 
 def test_dipole_off():
     """
     Test that a dipole with angle=0 behaves still like a drift.
     """
-    dipole = Dipole(length=torch.tensor(1.0), angle=torch.tensor(0.0))
-    drift = Drift(length=torch.tensor(1.0))
-    incoming_beam = ParameterBeam.from_parameters(
+    dipole = cheetah.Dipole(length=torch.tensor(1.0), angle=torch.tensor(0.0))
+    drift = cheetah.Drift(length=torch.tensor(1.0))
+    incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
     outbeam_dipole_off = dipole(incoming_beam)
@@ -37,9 +28,9 @@ def test_dipole_focussing():
     """
     Test that a dipole with focussing moment behaves like a quadrupole.
     """
-    dipole = Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
-    quadrupole = Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
-    incoming_beam = ParameterBeam.from_parameters(
+    dipole = cheetah.Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
+    quadrupole = cheetah.Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
+    incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
     )
     outbeam_dipole_on = dipole.track(incoming_beam)
@@ -53,25 +44,25 @@ def test_dipole_focussing():
     assert not torch.allclose(outbeam_dipole_off.sigma_x, outbeam_quadrupole.sigma_x)
 
 
-@pytest.mark.parametrize("DipoleType", [Dipole, RBend])
+@pytest.mark.parametrize("DipoleType", [cheetah.Dipole, cheetah.RBend])
 def test_dipole_vectorized_execution(DipoleType):
     """
     Test that a dipole with vector dimensions behaves as expected.
     """
-    incoming = ParticleBeam.from_parameters(
+    incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(100),
         energy=torch.tensor(1e9),
         mu_x=torch.tensor(1e-5),
     )
 
     # Test vectorisation to generate 3 beam lines
-    segment = Segment(
+    segment = cheetah.Segment(
         [
             DipoleType(
                 length=torch.tensor([0.5, 0.5, 0.5]),
                 angle=torch.tensor([0.1, 0.2, 0.1]),
             ),
-            Drift(length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
     outgoing = segment(incoming)
@@ -86,26 +77,26 @@ def test_dipole_vectorized_execution(DipoleType):
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
     # Test vectorisation to generate 18 beamlines
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Dipole(
+            cheetah.Dipole(
                 length=torch.tensor([0.5, 0.5, 0.5]).reshape(3, 1),
                 angle=torch.tensor([0.1, 0.2, 0.1]).reshape(1, 3),
             ),
-            Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1, 1)),
+            cheetah.Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1, 1)),
         ]
     )
     outgoing = segment(incoming)
     assert outgoing.particles.shape == torch.Size([2, 3, 3, 100, 7])
 
     # Test improper vectorisation -- this does not obey torch broadcasting rules
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Dipole(
+            cheetah.Dipole(
                 length=torch.tensor([0.5, 0.5, 0.5]).reshape(3, 1),
                 angle=torch.tensor([0.1, 0.2, 0.1]).reshape(1, 3),
             ),
-            Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1)),
+            cheetah.Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1)),
         ]
     )
     with pytest.raises(RuntimeError):
@@ -126,7 +117,7 @@ def test_dipole_bmadx_tracking(dtype):
     angle = torch.tensor(20 * torch.pi / 180, dtype=dtype)
     e1 = angle / 2
     e2 = angle - e1
-    dipole_cheetah_bmadx = Dipole(
+    dipole_cheetah_bmadx = cheetah.Dipole(
         length=torch.tensor(0.5),
         angle=angle,
         dipole_e1=e1,
@@ -141,7 +132,7 @@ def test_dipole_bmadx_tracking(dtype):
         tracking_method="bmadx",
         dtype=dtype,
     )
-    segment_cheetah_bmadx = Segment(elements=[dipole_cheetah_bmadx])
+    segment_cheetah_bmadx = cheetah.Segment(elements=[dipole_cheetah_bmadx])
 
     outgoing_cheetah_bmadx = segment_cheetah_bmadx.track(incoming)
 
@@ -175,7 +166,7 @@ def test_buffer_registration():
     tracking_method = "cheetah"
     name = "some_dipole"
 
-    dipole = Dipole(
+    dipole = cheetah.Dipole(
         length=length,
         angle=angle,
         k1=k1,
