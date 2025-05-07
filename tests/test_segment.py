@@ -101,7 +101,7 @@ def test_elementwise_longitudinal_beam_generator():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    longitudinal_beam_generator = segment.longitudinal_beam_generator(
+    longitudinal_beam_generator = segment.beam_along_segment_generator(
         incoming=incoming_beam
     )
     longitudinal_beam_list = list(longitudinal_beam_generator)
@@ -127,7 +127,7 @@ def test_resolution_longitudinal_beam_generator():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    longitudinal_beam_generator = segment.longitudinal_beam_generator(
+    longitudinal_beam_generator = segment.beam_along_segment_generator(
         incoming=incoming_beam, resolution=0.1
     )
     longitudinal_beam_list = list(longitudinal_beam_generator)
@@ -156,7 +156,7 @@ def test_longitudinal_beam_metric(metric_names):
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    result = segment.get_longitudinal_metrics(metric_names, incoming_beam)
+    result = segment.get_metrics_along_segment(metric_names, incoming_beam)
 
     if isinstance(metric_names, str):
         assert isinstance(result, torch.Tensor)

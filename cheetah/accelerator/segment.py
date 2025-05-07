@@ -454,7 +454,7 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def longitudinal_beam_generator(
+    def beam_along_segment_generator(
         self, incoming: Beam, resolution: float | None = None
     ) -> Iterator[Beam]:
         """
@@ -473,7 +473,7 @@ class Segment(Element):
         if resolution is not None:
             yield from self.__class__(
                 elements=self.split(resolution), name=f"{self.name}_split"
-            ).longitudinal_beam_generator(incoming)
+            ).beam_along_segment_generator(incoming)
         else:
             yield incoming
             for element in self.elements:
@@ -481,7 +481,7 @@ class Segment(Element):
                 yield outgoing
                 incoming = outgoing
 
-    def get_longitudinal_metrics(
+    def get_metrics_along_segment(
         self,
         metric_names: tuple[str, ...] | str,
         incoming: Beam,
@@ -508,7 +508,7 @@ class Segment(Element):
         results = zip(
             *(
                 (getattr(beam, metric_name) for metric_name in metric_name_tuple)
-                for beam in self.longitudinal_beam_generator(
+                for beam in self.beam_along_segment_generator(
                     incoming, resolution=resolution
                 )
             )
@@ -602,7 +602,7 @@ class Segment(Element):
         reference_segment = self.clone()  # Prevent side effects when plotting
 
         ss, x_means, x_stds, y_means, y_stds = (
-            reference_segment.get_longitudinal_metrics(
+            reference_segment.get_metrics_along_segment(
                 ("s", "mu_x", "sigma_x", "mu_y", "sigma_y"),
                 incoming,
                 resolution=resolution,
@@ -678,7 +678,7 @@ class Segment(Element):
         self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
     ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
-        s_positions, beta_x, beta_y = self.get_longitudinal_metrics(
+        s_positions, beta_x, beta_y = self.get_metrics_along_segment(
             ("s", "beta_x", "beta_y"), incoming
         )
         s_positions, beta_x, beta_y = torch.broadcast_tensors(
