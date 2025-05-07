@@ -481,6 +481,48 @@ class Segment(Element):
                 yield outgoing
                 incoming = outgoing
 
+    def get_longitudinal_metrics(
+        self,
+        metric_names: tuple[str, ...] | str,
+        incoming: Beam,
+        resolution: float | None = None,
+    ) -> tuple[torch.Tensor, ...]:
+        """
+        Get metrics along the segment either at the end of each element or at a given
+        resolution.
+
+        :param metric_names: Metrics to compute. Can be a single metric or a tuple of
+            metrics. Supported metrics are any property of beam class of `incoming`.
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :return: Tuple of tensors containing the requested metrics along the segment.
+        """
+        if isinstance(metric_names, str):
+            metric_names = (metric_names,)
+
+        results = zip(
+            *(
+                (getattr(beam, metric_name) for metric_name in metric_names)
+                for beam in self.longitudinal_beam_generator(
+                    incoming, resolution=resolution
+                )
+            )
+        )
+        broadcasted_results = tuple(
+            torch.stack(torch.broadcast_tensors(*metric)).movedim(0, -1)
+            for metric in results
+        )
+
+        return (
+            broadcasted_results
+            if len(broadcasted_results) > 1
+            else broadcasted_results[0]
+        )
+
     def set_attrs_on_every_element_of_type(
         self,
         element_type: type[Element] | tuple[type[Element]],
@@ -558,12 +600,11 @@ class Segment(Element):
         """
         reference_segment = self.clone()  # Prevent side effects when plotting
 
-        ss, x_means, x_stds, y_means, y_stds = zip(
-            *(
-                (beam.s, beam.mu_x, beam.sigma_x, beam.mu_y, beam.sigma_y)
-                for beam in reference_segment.longitudinal_beam_generator(
-                    incoming, resolution=resolution
-                )
+        ss, x_means, x_stds, y_means, y_stds = (
+            reference_segment.get_longitudinal_metrics(
+                ("s", "mu_x", "sigma_x", "mu_y", "sigma_y"),
+                incoming,
+                resolution=resolution,
             )
         )
 
@@ -636,11 +677,8 @@ class Segment(Element):
         self, incoming: Beam, ax: Any | None = None, vector_idx: tuple | None = None
     ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
-        s_positions, beta_x, beta_y = zip(
-            *(
-                (beam.s, beam.beta_x, beam.beta_y)
-                for beam in self.longitudinal_beam_generator(incoming)
-            )
+        s_positions, beta_x, beta_y = self.get_longitudinal_metrics(
+            ("s", "beta_x", "beta_y"), incoming
         )
         s_positions, beta_x, beta_y = torch.broadcast_tensors(
             *(
