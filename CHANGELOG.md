@@ -31,6 +31,7 @@
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
 - Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
 - Add a `Sextupole` element (see #406) (@jank324, @Hespe)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 
 ### 🐛 Bug fixes
 
