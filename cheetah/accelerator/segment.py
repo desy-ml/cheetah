@@ -501,12 +501,13 @@ class Segment(Element):
             end of each element.
         :return: Tuple of tensors containing the requested metrics along the segment.
         """
-        if isinstance(metric_names, str):
-            metric_names = (metric_names,)
+        metric_name_tuple = (
+            metric_names if isinstance(metric_names, tuple) else (metric_names,)
+        )
 
         results = zip(
             *(
-                (getattr(beam, metric_name) for metric_name in metric_names)
+                (getattr(beam, metric_name) for metric_name in metric_name_tuple)
                 for beam in self.longitudinal_beam_generator(
                     incoming, resolution=resolution
                 )
@@ -519,7 +520,7 @@ class Segment(Element):
 
         return (
             broadcasted_results
-            if len(broadcasted_results) > 1
+            if isinstance(metric_names, tuple)
             else broadcasted_results[0]
         )
 
