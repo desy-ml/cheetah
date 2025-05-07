@@ -126,7 +126,9 @@ class Sextupole(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         raise NotImplementedError
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
         raise NotImplementedError
 
     @property

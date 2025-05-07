@@ -40,10 +40,13 @@ class Marker(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
         # Do nothing on purpose. Maybe later we decide markers should be shown, but for
         # now they are invisible.
-        pass
+        return ax
 
     @property
     def defining_features(self) -> list[str]:
