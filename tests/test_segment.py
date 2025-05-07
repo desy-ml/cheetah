@@ -160,7 +160,7 @@ def test_longitudinal_beam_metric(metric_names):
 
     if isinstance(metric_names, str):
         assert isinstance(result, torch.Tensor)
-        len(result) == 4
+        assert len(result) == 4
     else:
         assert isinstance(result, tuple)
         assert len(result) == len(metric_names)
