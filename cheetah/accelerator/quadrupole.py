@@ -210,7 +210,11 @@ class Quadrupole(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_k1 = (
             self.k1[squash_index_for_unavailable_dims(vector_idx, self.k1.shape)]
             if len(self.k1.shape) > 0

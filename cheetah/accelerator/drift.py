@@ -140,8 +140,12 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
-        pass
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+        # Yes, this does nothing on purpose
+        return ax
 
     @property
     def defining_features(self) -> list[str]:
