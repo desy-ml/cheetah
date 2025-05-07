@@ -1763,5 +1763,6 @@ class ParticleBeam(Beam):
             + f"energy={self.energy}, "
             + f"particle_charges={self.particle_charges}, "
             + f"survival_probabilities={self.survival_probabilities}, "
+            + f"s={self.s}, "
             + f"species={repr(self.species)})"
         )
