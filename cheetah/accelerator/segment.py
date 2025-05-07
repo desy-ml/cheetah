@@ -548,7 +548,11 @@ class Segment(Element):
                     element_type, is_recursive=True, **kwargs
                 )
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         element_lengths = [element.length for element in self.elements]
         broadcast_element_lengths = torch.broadcast_tensors(*element_lengths)
         stacked_element_lengths = torch.stack(broadcast_element_lengths)
@@ -576,6 +580,8 @@ class Segment(Element):
         ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
         ax.set_yticks([])
+
+        return ax
 
     def plot_mean_and_std(
         self,
