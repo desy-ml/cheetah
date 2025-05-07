@@ -10,7 +10,7 @@
 - Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
 - Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
 - Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
-- `Segment` now has a `longitudinal_beam_generator` function that generates `Beam` objects along the beamline for easy computation of the longitudinal parameter trajectories. Plot functions have been refactored to make use of this function. (see #436) (@jank324)
+- `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436) (@jank324)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 
 ### 🐛 Bug fixes
