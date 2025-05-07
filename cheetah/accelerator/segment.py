@@ -511,9 +511,11 @@ class Segment(Element):
                 )
             ]
         )
-        broadcasted_results = tuple(
-            torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(0, -1)
-            for attr_tensor in results
+        broadcasted_results = torch.broadcast_tensors(
+            *[
+                torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(0, -1)
+                for attr_tensor in results
+            ]
         )
 
         return (
@@ -622,10 +624,6 @@ class Segment(Element):
                 incoming,
                 resolution=resolution,
             )
-        )
-
-        ss, x_means, x_stds, y_means, y_stds = torch.broadcast_tensors(
-            ss, x_means, x_stds, y_means, y_stds
         )
 
         plot_ss, plot_x_means, plot_x_stds, plot_y_means, plot_y_stds = (
