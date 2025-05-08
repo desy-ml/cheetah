@@ -22,6 +22,11 @@ class ParameterBeam(Beam):
     :param dtype: Data type of the beam.
     """
 
+    UNVECTORIZED_NUM_ATTR_DIMS = Beam.UNVECTORIZED_NUM_ATTR_DIMS | {
+        "mu": 1,
+        "cov": 2,
+    }
+
     def __init__(
         self,
         mu: torch.Tensor,

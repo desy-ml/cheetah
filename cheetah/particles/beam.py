@@ -31,6 +31,38 @@ class Beam(ABC, nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
+    UNVECTORIZED_NUM_ATTR_DIMS = {
+        "energy": 0,
+        "total_charge": 0,
+        "s": 0,
+        "mu_x": 0,
+        "sigma_x": 0,
+        "mu_px": 0,
+        "sigma_px": 0,
+        "mu_y": 0,
+        "sigma_y": 0,
+        "mu_py": 0,
+        "sigma_py": 0,
+        "mu_tau": 0,
+        "sigma_tau": 0,
+        "mu_p": 0,
+        "sigma_p": 0,
+        "relativistic_gamma": 0,
+        "relativistic_beta": 0,
+        "p0c": 0,
+        "cov_xpx": 0,
+        "cov_ypy": 0,
+        "cov_taup": 0,
+        "emittance_x": 0,
+        "normalized_emittance_x": 0,
+        "beta_x": 0,
+        "alpha_x": 0,
+        "emittance_y": 0,
+        "normalized_emittance_y": 0,
+        "beta_y": 0,
+        "alpha_y": 0,
+    }
+
     @classmethod
     @abstractmethod
     def from_parameters(

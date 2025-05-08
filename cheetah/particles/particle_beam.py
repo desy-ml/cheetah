@@ -44,6 +44,17 @@ class ParticleBeam(Beam):
         "tau": r"$\tau$",
         "p": r"$\delta$",
     }
+    UNVECTORIZED_NUM_ATTR_DIMS = Beam.UNVECTORIZED_NUM_ATTR_DIMS | {
+        "particles": 2,
+        "particle_charges": 1,
+        "survival_probabilities": 1,
+        "x": 1,
+        "px": 1,
+        "y": 1,
+        "py": 1,
+        "tau": 1,
+        "p": 1,
+    }
 
     def __init__(
         self,
