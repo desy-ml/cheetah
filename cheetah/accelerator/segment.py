@@ -13,7 +13,7 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
