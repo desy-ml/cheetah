@@ -512,8 +512,9 @@ class Segment(Element):
             )
         )
         broadcasted_results = tuple(
-            torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(
-                0, -(incoming.UNVECTORIZED_NUM_ATTR_DIMS[attr_name] + 1)
+            torch.stack(
+                torch.broadcast_tensors(*attr_tensor),
+                dim=-(incoming.UNVECTORIZED_NUM_ATTR_DIMS[attr_name] + 1),
             )
             for attr_tensor, attr_name in zip(results, attr_name_tuple)
         )
@@ -555,13 +556,8 @@ class Segment(Element):
 
         element_lengths = [element.length for element in self.elements]
         broadcast_element_lengths = torch.broadcast_tensors(*element_lengths)
-        stacked_element_lengths = torch.stack(broadcast_element_lengths)
-        dimension_reordered_element_lengths = stacked_element_lengths.movedim(
-            0, -1
-        )  # Place vector dims first
-        element_end_s_positions = torch.cumsum(
-            dimension_reordered_element_lengths, dim=-1
-        )
+        stacked_element_lengths = torch.stack(broadcast_element_lengths, dim=-1)
+        element_end_s_positions = torch.cumsum(stacked_element_lengths, dim=-1)
         s_positions = torch.cat(
             (
                 torch.zeros_like(element_end_s_positions[..., :1]),
