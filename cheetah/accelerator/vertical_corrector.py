@@ -16,8 +16,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the vertical plane.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
