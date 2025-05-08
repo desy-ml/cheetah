@@ -504,12 +504,12 @@ class Segment(Element):
         attr_name_tuple = attr_names if isinstance(attr_names, tuple) else (attr_names,)
 
         results = zip(
-            *[
+            *(
                 tuple(getattr(beam, attr_name) for attr_name in attr_name_tuple)
                 for beam in self.beam_along_segment_generator(
                     incoming, resolution=resolution
                 )
-            ]
+            )
         )
         broadcasted_results = torch.broadcast_tensors(
             *[

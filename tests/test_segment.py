@@ -137,13 +137,13 @@ def test_resolution_longitudinal_beam_generator():
         assert isinstance(longitudinal_beam, incoming_beam.__class__)
 
 
-@pytest.mark.parametrize("metric_names", ["beta_x", ("beta_x",), ("s", "beta_x")])
-def test_longitudinal_beam_metric(metric_names):
+@pytest.mark.parametrize("attr_names", ["beta_x", ("beta_x",), ("s", "beta_x")])
+def test_longitudinal_beam_metric(attr_names):
     """
-    Test that the convenience method for computing a metric along the lattice works as
-    expected. Focus is put on the return being a single tensor when a metric string is
-    passed, and a tuple of tensors when a tuple of metric strings is passed (regardless
-    of the length of the tuple).
+    Test that the convenience method for computing a attributes along the lattice works
+    as expected. Focus is put on the return being a single tensor when an attribute
+    string is passed, and a tuple of tensors when a tuple of metric strings is passed
+    (regardless of the length of the tuple).
     """
     segment = cheetah.Segment(
         elements=[
@@ -156,14 +156,14 @@ def test_longitudinal_beam_metric(metric_names):
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    result = segment.get_beam_attrs_along_segment(metric_names, incoming_beam)
+    result = segment.get_beam_attrs_along_segment(attr_names, incoming_beam)
 
-    if isinstance(metric_names, str):
+    if isinstance(attr_names, str):
         assert isinstance(result, torch.Tensor)
         assert len(result) == 4
     else:
         assert isinstance(result, tuple)
-        assert len(result) == len(metric_names)
-        for metric_result in result:
-            assert isinstance(metric_result, torch.Tensor)
-            assert len(metric_result) == 4
+        assert len(result) == len(attr_names)
+        for attr_result in result:
+            assert isinstance(attr_result, torch.Tensor)
+            assert len(attr_result) == 4

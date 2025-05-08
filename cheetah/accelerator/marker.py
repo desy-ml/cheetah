@@ -44,8 +44,8 @@ class Marker(Element):
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
-        # Do nothing on purpose. Maybe later we decide markers should be shown, but for
-        # now they are invisible.
+        # TODO: Implement a better visualisation for markers. At the moment they are
+        # invisible.
         return ax
 
     @property
