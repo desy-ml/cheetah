@@ -137,7 +137,9 @@ def test_resolution_longitudinal_beam_generator():
         assert isinstance(longitudinal_beam, incoming_beam.__class__)
 
 
-@pytest.mark.parametrize("attr_names", ["beta_x", ("beta_x",), ("s", "beta_x")])
+@pytest.mark.parametrize(
+    "attr_names", ["beta_x", ("beta_x",), ("s", "beta_x"), ("x", "mu_x")]
+)
 def test_longitudinal_beam_metric(attr_names):
     """
     Test that the convenience method for computing a attributes along the lattice works
@@ -152,7 +154,7 @@ def test_longitudinal_beam_metric(attr_names):
             cheetah.Drift(length=torch.tensor(0.2)),
         ]
     )
-    incoming_beam = cheetah.ParameterBeam.from_astra(
+    incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
@@ -164,6 +166,8 @@ def test_longitudinal_beam_metric(attr_names):
     else:
         assert isinstance(result, tuple)
         assert len(result) == len(attr_names)
-        for attr_result in result:
+        for attr_result, attr_name in zip(result, attr_names):
             assert isinstance(attr_result, torch.Tensor)
-            assert len(attr_result) == 4
+            assert attr_result.shape == (
+                (4, incoming_beam.num_particles) if attr_name == "x" else (4,)
+            )
