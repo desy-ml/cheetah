@@ -595,5 +595,6 @@ class ParameterBeam(Beam):
             + f"cov={repr(self.cov)}, "
             + f"energy={repr(self.energy)}, "
             + f"total_charge={repr(self.total_charge)}, "
+            + f"s={repr(self.s)}, "
             + f"species={repr(self.species)})"
         )

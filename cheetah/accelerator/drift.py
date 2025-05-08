@@ -144,7 +144,7 @@ class Drift(Element):
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
-        # Yes, this does nothing on purpose
+        # This does nothing on purpose, because drift sections are visualised as gaps.
         return ax
 
     @property
