@@ -1033,6 +1033,59 @@ class ParticleBeam(Beam):
             dtype=self.particles.dtype,
         )
 
+    def randomly_subsampled(
+        self,
+        num_particles: int,
+        adjust_particle_charges: bool = True,
+        random_state: torch.Generator | None = None,
+    ) -> "ParticleBeam":
+        """
+        Create a new beam with the same parameters as this beam, but with
+        `num_particles` particles randomly sampled from the original beam.
+
+        :param num_particles: Number of particles to sample.
+        :param adjust_particle_charges: If True, the particle charges are adjusted
+            to match the total charge of the old beam.
+        :param random_state: Random state to use for thinning. If None, a new random
+            state is created.
+        :return: New beam with `num_particles` particles.
+        """
+        assert num_particles <= self.num_particles, (
+            "Number of particles to sample must be less than or equal to the number of "
+            "particles in the original beam."
+        )
+
+        if random_state is None:
+            random_state = torch.Generator(device=self.particles.device)
+
+        randomly_permuted_particle_indices = torch.randperm(
+            self.num_particles, generator=random_state
+        )
+        subsampled_particle_indices = randomly_permuted_particle_indices[:num_particles]
+
+        subsampled_particles = self.particles[subsampled_particle_indices]
+        subsampled_particle_charges = self.particle_charges[subsampled_particle_indices]
+        subsampled_survival_probabilities = self.survival_probabilities[
+            subsampled_particle_indices
+        ]
+
+        subsampled_beam = self.__class__(
+            particles=subsampled_particles,
+            energy=self.energy,
+            particle_charges=subsampled_particle_charges,
+            survival_probabilities=subsampled_survival_probabilities,
+            species=self.species,
+            device=self.particles.device,
+            dtype=self.particles.dtype,
+        )
+
+        if adjust_particle_charges:
+            subsampled_beam.particle_charges *= (
+                self.total_charge / subsampled_beam.total_charge
+            )
+
+        return subsampled_beam
+
     @classmethod
     def from_xyz_pxpypz(
         cls,

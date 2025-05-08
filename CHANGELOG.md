@@ -14,6 +14,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
+
 ### 🐆 Other
 
 - Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
@@ -34,6 +36,7 @@
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
 - Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
 - Add a `Sextupole` element (see #406) (@jank324, @Hespe)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 
 ### 🐛 Bug fixes
 
