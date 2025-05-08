@@ -13,8 +13,12 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
+from cheetah.particles import Beam, Species
+from cheetah.utils import (
+    UniqueNameGenerator,
+    squash_index_for_unavailable_dims,
+    unvectorized_num_attr_dims,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -503,16 +507,6 @@ class Segment(Element):
         """
         attr_name_tuple = attr_names if isinstance(attr_names, tuple) else (attr_names,)
 
-        dummy_beam = (
-            ParticleBeam.from_parameters(num_particles=10)
-            if isinstance(incoming, ParticleBeam)
-            else ParameterBeam.from_parameters()
-        )
-        unvectorized_num_attr_dims = {
-            attr_name: getattr(dummy_beam, attr_name).dim()
-            for attr_name in attr_name_tuple
-        }
-
         results = zip(
             *(
                 tuple(getattr(beam, attr_name) for attr_name in attr_name_tuple)
@@ -523,7 +517,7 @@ class Segment(Element):
         )
         broadcasted_results = tuple(
             torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(
-                0, -(unvectorized_num_attr_dims[attr_name] + 1)
+                0, -(unvectorized_num_attr_dims(attr_name, incoming.__class__) + 1)
             )
             for attr_tensor, attr_name in zip(results, attr_name_tuple)
         )
