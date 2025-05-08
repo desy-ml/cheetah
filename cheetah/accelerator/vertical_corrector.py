@@ -16,8 +16,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the vertical plane.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
@@ -81,7 +81,11 @@ class VerticalCorrector(Element):
             for _ in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
