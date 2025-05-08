@@ -1,3 +1,6 @@
+from typing import Type
+
+
 def squash_index_for_unavailable_dims(index: tuple, shape: tuple) -> tuple:
     """
     Helper function to create an index that works on only partially broadcasted tensors.
@@ -30,3 +33,30 @@ def squash_index_for_unavailable_dims(index: tuple, shape: tuple) -> tuple:
     )
 
     return unavailable_dims_squashed
+
+
+def unvectorized_num_attr_dims(attr_name: str, beam_cls: Type["Beam"]) -> int:
+    """
+    Hacky helper function to determine the number of dimensions of an attribute in a
+    beam class. This is useful for determining the number of dimensions of an attribute
+    in a beam class when the attribute is not vectorised.
+
+    NOTE: Do not use this function in code that needs to be fast. It is quite
+    inefficient, as it creates a non-vectorised dummy beam object every time it is
+    called.
+
+    :param attr_name: The name of the attribute.
+    :param beam_cls: The beam class.
+    :return: The number of dimensions of the attribute.
+    """
+    # Check if num_particles is in the signature of the from_parameters method of the
+    # beam class ... uses inspect if needed
+    is_num_particles_in_signature = (
+        "num_particles" in beam_cls.from_parameters.__code__.co_varnames
+    )
+    dummy_beam = (
+        beam_cls.from_parameters(num_particles=10)
+        if is_num_particles_in_signature
+        else beam_cls.from_parameters()
+    )
+    return getattr(dummy_beam, attr_name).dim()
