@@ -503,16 +503,6 @@ class Segment(Element):
         """
         attr_name_tuple = attr_names if isinstance(attr_names, tuple) else (attr_names,)
 
-        dummy_beam = (
-            ParticleBeam.from_parameters(num_particles=10)
-            if isinstance(incoming, ParticleBeam)
-            else ParameterBeam.from_parameters()
-        )
-        unvectorized_num_attr_dims = {
-            attr_name: getattr(dummy_beam, attr_name).dim()
-            for attr_name in attr_name_tuple
-        }
-
         results = zip(
             *(
                 tuple(getattr(beam, attr_name) for attr_name in attr_name_tuple)
@@ -523,7 +513,7 @@ class Segment(Element):
         )
         broadcasted_results = tuple(
             torch.stack(torch.broadcast_tensors(*attr_tensor)).movedim(
-                0, -(unvectorized_num_attr_dims[attr_name] + 1)
+                0, -(incoming.UNVECTORIZED_NUM_ATTR_DIMS[attr_name] + 1)
             )
             for attr_tensor, attr_name in zip(results, attr_name_tuple)
         )
