@@ -14,6 +14,7 @@
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 
 ### 🐛 Bug fixes
+- Unrecognised element properties now print a warning instead of exiting with an assertation error (see #425) (@amylizzle)
 
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
 
