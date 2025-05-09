@@ -93,7 +93,9 @@ class ParticleBeam(Beam):
                 torch.as_tensor(particle_charges, **factory_kwargs)
                 if particle_charges is not None
                 else torch.full(
-                    (particles.shape[-2],), species.charge_coulomb, **factory_kwargs
+                    (particles.shape[-2],),
+                    self.species.charge_coulomb,
+                    **factory_kwargs,
                 )
             ),
         )
