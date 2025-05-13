@@ -71,23 +71,27 @@ class Element(ABC, nn.Module):
         """
         if isinstance(incoming, ParameterBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
-            mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_s = incoming.s + self.length
             return ParameterBeam(
-                mu,
-                cov,
+                new_mu,
+                new_cov,
                 incoming.energy,
                 total_charge=incoming.total_charge,
+                s=new_s,
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.transfer_map(incoming.energy, incoming.species)
             new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
                 incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=new_s,
                 species=incoming.species.clone(),
             )
         else:
@@ -162,16 +166,18 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
 
-        :param ax: Axes to plot the representation into.
         :param s: Position of the object along s in meters.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param ax: Axes to plot the representation into.
         """
         raise NotImplementedError
 
