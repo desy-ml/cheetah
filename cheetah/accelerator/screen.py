@@ -200,6 +200,8 @@ class Screen(Element):
                     cov=incoming.cov,
                     energy=incoming.energy,
                     total_charge=torch.zeros_like(incoming.total_charge),
+                    s=incoming.s,
+                    species=incoming.species.clone(),
                 )
             elif isinstance(incoming, ParticleBeam):
                 return ParticleBeam(
@@ -209,6 +211,8 @@ class Screen(Element):
                     survival_probabilities=torch.zeros_like(
                         incoming.survival_probabilities
                     ),
+                    s=incoming.s,
+                    species=incoming.species.clone(),
                 )
         else:
             return incoming.clone()
@@ -325,7 +329,11 @@ class Screen(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2
