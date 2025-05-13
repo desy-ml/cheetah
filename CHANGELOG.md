@@ -9,14 +9,20 @@
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
 - Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
 - Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
+- `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
+- `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 
 ### 🐛 Bug fixes
 - Unrecognised element properties now print a warning instead of exiting with an assertation error (see #425) (@amylizzle)
+
+- Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
 
 ### 🐆 Other
 
 - Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
 - The PyTorch pin to `<=2.6` was removed, as the issue with `abort trap: 6` was caused by Bmad is no longer actively used in the test workflow (see #429, #431) (@jank324)
+- There was a temporary pin `snowballstemmer<3.0` for the docs build because of an issue with the latest release. It has since been unpinned again because the release was yanked. Refer to https://github.com/sphinx-doc/sphinx/issues/13533 and https://github.com/snowballstem/snowball/issues/229. (see #436, #438) (@jank324)
 
 ### 🌟 First Time Contributors
 
@@ -32,7 +38,6 @@
 - Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
 - Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
 - Add a `Sextupole` element (see #406) (@jank324, @Hespe)
-- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 
 ### 🐛 Bug fixes
 
