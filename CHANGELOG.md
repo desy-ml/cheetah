@@ -15,6 +15,7 @@
 
 ### 🐛 Bug fixes
 
+- Parsing of element names containing `-` is now possible, though `-` will be converted to `_` for variable access (see #386) (@amylizzle)
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
 
 ### 🐆 Other
