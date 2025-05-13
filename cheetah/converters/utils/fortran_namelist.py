@@ -426,7 +426,9 @@ def parse_lines(lines: str, warnings: bool = True) -> dict:
     return context
 
 
-def validate_understood_properties(understood: list[str], properties: dict) -> None:
+def validate_understood_properties(
+    understood: list[str], properties: dict, warnings: bool = True
+) -> None:
     """
     Validate that all properties are understood. This function primarily ensures that
     properties not understood by Cheetah are not ignored silently.
@@ -442,8 +444,9 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
         if any([re.fullmatch(pattern, property) for pattern in understood]):
             continue
         else:
-            print(
-                f"WARNING: Property {property} with value {properties[property]}"
-                f" for element type {properties['element_type']} is currently"
-                f" not understood."
-            )
+            if warnings:
+                print(
+                    f"WARNING: Property {property} with value {properties[property]}"
+                    f" for element type {properties['element_type']} is currently"
+                    f" not understood."
+                )
