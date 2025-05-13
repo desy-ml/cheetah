@@ -361,6 +361,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
+        warnings: bool = True,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -376,7 +377,7 @@ class Segment(Element):
 
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice_to_cheetah(
-            elegant_lattice_file_path, name, device, dtype
+            elegant_lattice_file_path, name, warnings, device, dtype
         )
 
     @classmethod
