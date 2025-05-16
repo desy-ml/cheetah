@@ -16,6 +16,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
+- Fix issue where elements without `l` length will break the elegant converter, provide more defualt values for parameters in conversion (see #442) (@cr-xu)
 
 ### 🐆 Other
 
