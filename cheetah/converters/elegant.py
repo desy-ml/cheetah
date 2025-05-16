@@ -47,7 +47,7 @@ def convert_element(
             # The group property does not have an analoge in Cheetah, so it is neglected
             validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Solenoid(
-                length=torch.tensor(parsed["l"], **factory_kwargs), name=name
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs), name=name
             )
         elif parsed["element_type"] in ["hkick", "hkic"]:
             validate_understood_properties(
@@ -163,8 +163,8 @@ def convert_element(
                 parsed,
             )
             return cheetah.Quadrupole(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
-                k1=torch.tensor(parsed["k1"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                k1=torch.tensor(parsed.get("k1", 0.0), **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
             )
@@ -174,8 +174,8 @@ def convert_element(
                 parsed,
             )
             return cheetah.Sextupole(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
-                k2=torch.tensor(parsed["k2"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                k2=torch.tensor(parsed.get("k2", 0.0), **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
             )
@@ -185,12 +185,16 @@ def convert_element(
                 return cheetah.Segment(
                     elements=[
                         cheetah.Drift(
-                            length=torch.tensor(parsed["l"] / 2, **factory_kwargs),
+                            length=torch.tensor(
+                                parsed.get("l", 0.0) / 2, **factory_kwargs
+                            ),
                             name=name + "_predrift",
                         ),
                         cheetah.BPM(name=name),
                         cheetah.Drift(
-                            length=torch.tensor(parsed["l"] / 2, **factory_kwargs),
+                            length=torch.tensor(
+                                parsed.get("l", 0.0) / 2, **factory_kwargs
+                            ),
                             name=name + "_postdrift",
                         ),
                     ],
@@ -224,7 +228,7 @@ def convert_element(
             )
 
             return cheetah.CustomTransferMap(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 predefined_transfer_map=R,
                 name=name,
             )
@@ -247,12 +251,12 @@ def convert_element(
 
             # TODO Properly handle all parameters
             return cheetah.Cavity(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
-                phase=torch.tensor(parsed["phase"] - 90, **factory_kwargs),
-                voltage=torch.tensor(parsed["volt"], **factory_kwargs),
-                frequency=torch.tensor(parsed["freq"], **factory_kwargs),
+                phase=torch.tensor(parsed.get("phase", 0.0) - 90, **factory_kwargs),
+                voltage=torch.tensor(parsed.get("volt", 0.0), **factory_kwargs),
+                frequency=torch.tensor(parsed.get("freq", 0.0), **factory_kwargs),
                 name=name,
             )
         elif parsed["element_type"] == "rfcw":
@@ -289,12 +293,12 @@ def convert_element(
 
             # TODO Properly handle all parameters
             return cheetah.Cavity(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
-                phase=torch.tensor(parsed["phase"] - 90, **factory_kwargs),
-                voltage=torch.tensor(parsed["volt"], **factory_kwargs),
-                frequency=torch.tensor(parsed["freq"], **factory_kwargs),
+                phase=torch.tensor(parsed.get("phase", 0.0) - 90, **factory_kwargs),
+                voltage=torch.tensor(parsed.get("volt", 0.0), **factory_kwargs),
+                frequency=torch.tensor(parsed.get("freq", 0.0), **factory_kwargs),
                 name=name,
             )
         elif parsed["element_type"] == "rfdf":
@@ -312,12 +316,12 @@ def convert_element(
 
             # TODO Properly handle all parameters
             return cheetah.TransverseDeflectingCavity(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
-                phase=torch.tensor(parsed["phase"] - 90, **factory_kwargs),
-                voltage=torch.tensor(parsed["voltage"], **factory_kwargs),
-                frequency=torch.tensor(parsed["frequency"], **factory_kwargs),
+                phase=torch.tensor(parsed.get("phase", 0.0) - 90, **factory_kwargs),
+                voltage=torch.tensor(parsed.get("voltage", 0.0), **factory_kwargs),
+                frequency=torch.tensor(parsed.get("frequency", 0.0), **factory_kwargs),
                 name=name,
             )
         elif parsed["element_type"] in ["sben", "csbend"]:
@@ -326,7 +330,7 @@ def convert_element(
                 parsed,
             )
             return cheetah.Dipole(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(parsed.get("angle", 0.0), **factory_kwargs),
                 k1=torch.tensor(parsed.get("k1", 0.0), **factory_kwargs),
                 dipole_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
@@ -340,7 +344,7 @@ def convert_element(
                 parsed,
             )
             return cheetah.RBend(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(parsed.get("angle", 0.0), **factory_kwargs),
                 rbend_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
                 rbend_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
@@ -380,7 +384,7 @@ def convert_element(
                 parsed,
             )
             return cheetah.Dipole(
-                length=torch.tensor(parsed["l"], **factory_kwargs),
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(parsed.get("angle", 0.0), **factory_kwargs),
                 k1=torch.tensor(parsed.get("k1", 0.0), **factory_kwargs),
                 dipole_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
