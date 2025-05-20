@@ -343,7 +343,7 @@ class ParticleBeam(Beam):
             for sample_mu, sample_cov in zip(mu.view(-1, 6), cov.view(-1, 6, 6))
         ]
         particles[..., :6] = torch.stack(
-            [distribution.sample((num_particles,)) for distribution in distributions],
+            [distribution.rsample((num_particles,)) for distribution in distributions],
             dim=0,
         ).view(*vector_shape, num_particles, 6)
 
