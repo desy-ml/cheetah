@@ -3,12 +3,14 @@ import torch.autograd.forward_ad as fwAD
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
+import pytest
 
 import cheetah
 from cheetah.utils import compute_relativistic_factors
 
-
-def test_cold_uniform_beam_expansion():
+# Run the test below for both the ultra-relativistic case (250 MeV) and the non-relativistic case (1 MeV).
+@pytest.mark.parametrize("energy", [torch.tensor(2.5e8), torch.tensor(1e6)])
+def test_cold_uniform_beam_expansion(energy):
     """
     Tests that that a cold uniform beam doubles in size in both dimensions when
     travelling through a drift section with space_charge. (cf ImpactX test:
@@ -18,7 +20,6 @@ def test_cold_uniform_beam_expansion():
     """
     # Simulation parameters
     R0 = torch.tensor(0.001)
-    energy = torch.tensor(2.5e8)
     rest_energy = torch.tensor(
         constants.electron_mass
         * constants.speed_of_light**2
