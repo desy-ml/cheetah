@@ -1,9 +1,9 @@
+import pytest
 import torch
 import torch.autograd.forward_ad as fwAD
 from scipy import constants
 from scipy.constants import physical_constants
 from torch import nn
-import pytest
 
 import cheetah
 from cheetah.utils import compute_relativistic_factors
