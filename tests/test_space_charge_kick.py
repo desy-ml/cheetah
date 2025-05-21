@@ -9,7 +9,8 @@ import cheetah
 from cheetah.utils import compute_relativistic_factors
 
 
-# Run the test below for both the ultra-relativistic case (250 MeV) and the non-relativistic case (1 MeV).
+# Run the test below for both the ultra-relativistic case
+# (250 MeV) and the non-relativistic case (1 MeV).
 @pytest.mark.parametrize("energy", [torch.tensor(2.5e8), torch.tensor(1e6)])
 def test_cold_uniform_beam_expansion(energy):
     """
