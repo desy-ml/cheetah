@@ -217,9 +217,7 @@ def test_gradient_value_backward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0
-        / gamma
-        / beta,  # Duration of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -283,9 +281,7 @@ def test_gradient_value_forward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0
-        / gamma
-        / beta,  # Duration of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
