@@ -8,6 +8,7 @@ import pytest
 import cheetah
 from cheetah.utils import compute_relativistic_factors
 
+
 # Run the test below for both the ultra-relativistic case (250 MeV) and the non-relativistic case (1 MeV).
 @pytest.mark.parametrize("energy", [torch.tensor(2.5e8), torch.tensor(1e6)])
 def test_cold_uniform_beam_expansion(energy):
@@ -216,7 +217,9 @@ def test_gradient_value_backward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma / beta,  # Duration of the beam in s direction in the lab frame
+        radius_tau=R0
+        / gamma
+        / beta,  # Duration of the beam in s direction in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -280,7 +283,9 @@ def test_gradient_value_forward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma / beta,  # Duration of the beam in s direction in the lab frame
+        radius_tau=R0
+        / gamma
+        / beta,  # Duration of the beam in s direction in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
