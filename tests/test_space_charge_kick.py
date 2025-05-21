@@ -35,7 +35,7 @@ def test_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -90,7 +90,7 @@ def test_vectorized_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -133,6 +133,7 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(10_000),
@@ -140,8 +141,8 @@ def test_vectorized():
         energy=energy.expand([3, 2]),
         radius_x=R0.expand([3, 2]),
         radius_y=R0.expand([3, 2]),
-        radius_tau=R0.expand([3, 2]) / gamma,
-        # Radius of the beam in s direction in the lab frame
+        radius_tau=R0.expand([3, 2]) / gamma / beta,
+        # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15).expand([3, 2]),
         sigma_py=torch.tensor(1e-15).expand([3, 2]),
         sigma_p=torch.tensor(1e-15).expand([3, 2]),
@@ -214,7 +215,7 @@ def test_gradient_value_backward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in s direction in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -278,7 +279,7 @@ def test_gradient_value_forward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in s direction in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
