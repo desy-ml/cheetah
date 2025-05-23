@@ -16,6 +16,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
+- Fix issue in CI space-charge tests (incorrect beam duration in non-relativistic case) (see #446) (@RemiLehe)
 
 ### 🐆 Other
 
