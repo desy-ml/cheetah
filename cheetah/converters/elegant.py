@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import torch
@@ -9,6 +10,8 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
+
+log = logging.getLogger(__name__)
 
 
 def convert_element(
@@ -394,16 +397,16 @@ def convert_element(
             )
             return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] in ["charge", "wake"]:
-            print(
-                f"WARNING: Information provided in element {name} of type"
+            log.warning(
+                f"Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"
                 " manually providing the correct information."
             )
             return cheetah.Marker(name=name, **factory_kwargs)
         else:
-            print(
-                f"WARNING: Element {name} of type {parsed['element_type']} cannot"
-                " be converted correctly. Using drift section instead."
+            log.warning(
+                f"Element {name} of type {parsed['element_type']} cannot be"
+                " converted correctly. Using drift section instead."
             )
             # TODO: Remove the length if by adding markers to Cheetah
             return cheetah.Drift(
