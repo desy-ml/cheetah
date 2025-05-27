@@ -15,6 +15,7 @@ from cheetah.converters.utils.fortran_namelist import (
 def convert_element(
     name: str,
     context: dict,
+    warnings: bool = True,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -38,7 +39,7 @@ def convert_element(
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
             elements=[
-                convert_element(element_name, context, device, dtype)
+                convert_element(element_name, context, warnings, device, dtype)
                 for element_name in bmad_parsed
             ],
             name=name,
@@ -55,11 +56,12 @@ def convert_element(
                     r"sr_wake%amp_scale",
                 ],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Marker(name=name)
         elif bmad_parsed["element_type"] == "monitor":
             validate_understood_properties(
-                ["element_type", "alias", "type", "l"], bmad_parsed
+                ["element_type", "alias", "type", "l"], bmad_parsed, warnings
             )
             if "l" in bmad_parsed:
                 return cheetah.Drift(
@@ -69,7 +71,7 @@ def convert_element(
                 return cheetah.Marker(name=name)
         elif bmad_parsed["element_type"] == "instrument":
             validate_understood_properties(
-                ["element_type", "alias", "type", "l"], bmad_parsed
+                ["element_type", "alias", "type", "l"], bmad_parsed, warnings
             )
             if "l" in bmad_parsed:
                 return cheetah.Drift(
@@ -79,21 +81,21 @@ def convert_element(
                 return cheetah.Marker(name=name)
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
-                ["element_type", "alias", "type", "l", "descrip"], bmad_parsed
+                ["element_type", "alias", "type", "l", "descrip"], bmad_parsed, warnings
             )
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
             )
         elif bmad_parsed["element_type"] == "drift":
             validate_understood_properties(
-                ["element_type", "l", "type", "descrip"], bmad_parsed
+                ["element_type", "l", "type", "descrip"], bmad_parsed, warnings
             )
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(
-                ["element_type", "type", "alias"], bmad_parsed
+                ["element_type", "type", "alias"], bmad_parsed, warnings
             )
             return cheetah.HorizontalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
@@ -102,7 +104,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
-                ["element_type", "type", "alias"], bmad_parsed
+                ["element_type", "type", "alias"], bmad_parsed, warnings
             )
             return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
@@ -128,6 +130,7 @@ def convert_element(
                     "dg",
                 ],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Dipole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -151,6 +154,7 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "k1", "type", "aperture", "alias", "tilt"],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Quadrupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -163,6 +167,7 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "k2", "type", "aperture", "tilt"],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Sextupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -172,7 +177,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(
-                ["element_type", "l", "ks", "alias"], bmad_parsed
+                ["element_type", "l", "ks", "alias"], bmad_parsed, warnings
             )
             return cheetah.Solenoid(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -193,6 +198,7 @@ def convert_element(
                     "alias",
                 ],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Cavity(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -209,6 +215,7 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Segment(
                 elements=[
@@ -235,6 +242,7 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "alias", "type", "x_limit", "y_limit"],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Segment(
                 elements=[
@@ -270,13 +278,16 @@ def convert_element(
                     "ds_step",
                 ],
                 bmad_parsed,
+                warnings,
             )
             return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
             )
         elif bmad_parsed["element_type"] == "patch":
             # TODO: Does this need to be implemented in Cheetah in a more proper way?
-            validate_understood_properties(["element_type", "tilt"], bmad_parsed)
+            validate_understood_properties(
+                ["element_type", "tilt"], bmad_parsed, warnings
+            )
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
@@ -356,4 +367,4 @@ def convert_lattice_to_cheetah(
     context = parse_lines(merged_lines, warnings)
 
     # Convert the parsed lattice info to Cheetah elements
-    return convert_element(context["__use__"], context, device, dtype)
+    return convert_element(context["__use__"], context, warnings, device, dtype)
