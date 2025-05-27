@@ -1,6 +1,10 @@
+import logging
+
 import torch
 
 import cheetah
+
+log = logging.getLogger(__name__)
 
 
 def convert_element_to_cheetah(
@@ -129,9 +133,8 @@ def convert_element_to_cheetah(
         # NOTE This pattern is very specific to ARES and will need a more complex
         # solution for other accelerators
         if warnings:
-            print(
-                "WARNING: Diagnostic screen was converted with default screen"
-                " properties."
+            log.warning(
+                "Diagnostic screen was converted with default screen properties."
             )
         return cheetah.Screen(
             resolution=(2448, 2040),
@@ -159,9 +162,9 @@ def convert_element_to_cheetah(
         )
     else:
         if warnings:
-            print(
-                f"WARNING: Unknown element {element.id} of type {type(element)},"
-                " replacing with drift section."
+            log.warning(
+                f"Unknown element {element.id} of type {type(element)}, replacing"
+                " with drift section."
             )
         return cheetah.Drift(
             length=torch.tensor(element.l, **factory_kwargs), name=element.id
