@@ -48,6 +48,12 @@ def convert_element_to_cheetah(
             k1=torch.tensor(element.k1, **factory_kwargs),
             name=element.id,
         )
+    elif isinstance(element, ocelot.Sextupole):
+        return cheetah.Sextupole(
+            length=torch.tensor(element.l, **factory_kwargs),
+            k2=torch.tensor(element.k2, **factory_kwargs),
+            name=element.id,
+        )
     elif isinstance(element, ocelot.Solenoid):
         return cheetah.Solenoid(
             length=torch.tensor(element.l, **factory_kwargs),

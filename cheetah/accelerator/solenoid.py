@@ -111,10 +111,26 @@ class Solenoid(Element):
         return True
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for solenoid properly, for now just return self
-        return [self]
+        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        split_length = self.length / num_splits
+        device = self.length.device
+        dtype = self.length.dtype
+        return [
+            Solenoid(
+                length=split_length,
+                k=self.k,
+                misalignment=self.misalignment,
+                device=device,
+                dtype=dtype,
+            )
+            for _ in range(num_splits)
+        ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 

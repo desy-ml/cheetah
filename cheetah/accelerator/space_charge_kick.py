@@ -635,6 +635,7 @@ class SpaceChargeKick(Element):
                 energy=incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=incoming.s,
                 species=incoming.species,
             )
 
@@ -651,7 +652,11 @@ class SpaceChargeKick(Element):
     def is_skippable(self) -> bool:
         return False
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")

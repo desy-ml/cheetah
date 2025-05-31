@@ -138,11 +138,15 @@ class Screen(Element):
                 -self.resolution[0] * self.pixel_size[0] / 2,
                 self.resolution[0] * self.pixel_size[0] / 2,
                 int(self.effective_resolution[0]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
             torch.linspace(
                 -self.resolution[1] * self.pixel_size[1] / 2,
                 self.resolution[1] * self.pixel_size[1] / 2,
                 int(self.effective_resolution[1]) + 1,
+                device=self.pixel_size.device,
+                dtype=self.pixel_size.dtype,
             ),
         )
 
@@ -182,7 +186,7 @@ class Screen(Element):
                 copy_of_incoming.particles[..., 0] -= self.misalignment[
                     ..., 0
                 ].unsqueeze(-1)
-                copy_of_incoming.particles[..., 1] -= self.misalignment[
+                copy_of_incoming.particles[..., 2] -= self.misalignment[
                     ..., 1
                 ].unsqueeze(-1)
 
@@ -196,6 +200,8 @@ class Screen(Element):
                     cov=incoming.cov,
                     energy=incoming.energy,
                     total_charge=torch.zeros_like(incoming.total_charge),
+                    s=incoming.s,
+                    species=incoming.species.clone(),
                 )
             elif isinstance(incoming, ParticleBeam):
                 return ParticleBeam(
@@ -205,6 +211,8 @@ class Screen(Element):
                     survival_probabilities=torch.zeros_like(
                         incoming.survival_probabilities
                     ),
+                    s=incoming.s,
+                    species=incoming.species.clone(),
                 )
         else:
             return incoming.clone()
@@ -260,7 +268,7 @@ class Screen(Element):
             )
             pos = torch.dstack((x, y))
             image = dist.log_prob(pos).exp()
-            image = torch.flip(image, dims=[1])
+            image = torch.transpose(image, -2, -1)
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
                 # Catch vectorisation, which is currently not supported by "histogram"
@@ -278,12 +286,14 @@ class Screen(Element):
                 image, _ = torch.histogramdd(
                     torch.stack((read_beam.x, read_beam.y)).T,
                     bins=self.pixel_bin_edges,
-                    weight=read_beam.particle_charges
+                    weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
                 )
-                image = torch.flipud(image.T)
+                image = torch.transpose(image, -2, -1)
             elif self.method == "kde":
-                weights = read_beam.particle_charges * read_beam.survival_probabilities
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
+                )
                 broadcasted_x, broadcasted_y, broadcasted_weights = (
                     torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
                 )
@@ -297,8 +307,6 @@ class Screen(Element):
                 )
                 # Change the x, y positions
                 image = torch.transpose(image, -2, -1)
-                # Flip up and down, now row 0 corresponds to the top
-                image = torch.flip(image, dims=[-2])
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
@@ -321,7 +329,11 @@ class Screen(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2

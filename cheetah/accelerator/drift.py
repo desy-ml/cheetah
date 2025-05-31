@@ -5,7 +5,12 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -30,6 +35,7 @@ class Drift(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, **factory_kwargs)
 
@@ -113,6 +119,7 @@ class Drift(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
             species=incoming.species,
         )
         return outgoing_beam
@@ -133,8 +140,12 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
-        pass
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+        # This does nothing on purpose, because drift sections are visualised as gaps.
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

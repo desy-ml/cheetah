@@ -82,15 +82,15 @@ ocelot_beam = ParticleBeam.from_ocelot(parray)
 astra_beam = ParticleBeam.from_astra(filepath)
 ```
 
-You may plot a segment with reference particle traces bay calling
+You may plot a segment with the beam position and size by calling
 
 ```python
 segment.plot_overview(incoming=beam)
 ```
 
-![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/misalignment.png)
+![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/readme_overview_plot.png)
 
-where the keyword argument `beam` is the incoming beam represented by the reference particles.
+where the keyword argument `incoming` is the incoming beam represented in the plot.
 
 To generate and view 3D visualizations of lattice segments, simply run the following command:
 

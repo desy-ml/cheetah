@@ -7,7 +7,12 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    squash_index_for_unavailable_dims,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -19,7 +24,7 @@ class Quadrupole(Element):
     :param length: Length in meters.
     :param k1: Strength of the quadrupole in 1/m^-2.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
-    :param tilt: Tilt angle of the quadrupole in x-y plane [rad]. pi/4 for
+    :param tilt: Tilt angle of the quadrupole in x-y plane in radians. pi/4 for
         skew-quadrupole.
     :param num_steps: Number of drift-kick-drift steps to use for tracking through the
         element when tracking method is set to `"bmadx"`.
@@ -176,6 +181,7 @@ class Quadrupole(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
             species=incoming.species,
         )
         return outgoing_beam
@@ -204,10 +210,27 @@ class Quadrupole(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
-        plot_k1 = self.k1[vector_idx] if self.k1.dim() > 0 else self.k1
-        plot_s = s[vector_idx] if s.dim() > 0 else s
-        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
+        plot_k1 = (
+            self.k1[squash_index_for_unavailable_dims(vector_idx, self.k1.shape)]
+            if len(self.k1.shape) > 0
+            else self.k1
+        )
+
+        plot_s = (
+            s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            if len(s.shape) > 0
+            else s
+        )
+        plot_length = (
+            self.length[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            if len(self.length.shape) > 0
+            else self.length
+        )
 
         alpha = 1 if self.is_active else 0.2
         height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
@@ -218,7 +241,13 @@ class Quadrupole(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "k1", "misalignment", "tilt"]
+        return super().defining_features + [
+            "length",
+            "k1",
+            "misalignment",
+            "tilt",
+            "tracking_method",
+        ]
 
     def __repr__(self) -> str:
         return (

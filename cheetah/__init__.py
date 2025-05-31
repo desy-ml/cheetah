@@ -13,6 +13,7 @@ from .accelerator import (  # noqa: F401
     RBend,
     Screen,
     Segment,
+    Sextupole,
     Solenoid,
     SpaceChargeKick,
     TransverseDeflectingCavity,

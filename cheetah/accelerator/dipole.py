@@ -248,6 +248,7 @@ class Dipole(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
             species=incoming.species,
         )
         return outgoing_beam
@@ -280,6 +281,9 @@ class Dipole(Element):
         phi1 = torch.arcsin(px / px_norm)
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
+        gp_safe = torch.where(
+            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
+        )
 
         alpha = (
             2
@@ -306,7 +310,7 @@ class Dipole(Element):
         x2_t3 = torch.cos(self.angle.unsqueeze(-1) + phi1)
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
-        c2 = x2_t1 + (x2_t2 - x2_t3) / gp
+        c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
         temp = torch.abs(self.angle.unsqueeze(-1) + phi1)
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
@@ -407,11 +411,11 @@ class Dipole(Element):
             R[..., 2, 3] = self.length
 
         # Apply fringe fields
-        R = torch.matmul(R_exit, torch.matmul(R, R_enter))
+        R = R_exit @ R @ R_enter
+
         # Apply rotation for tilted magnets
-        R = torch.matmul(
-            rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
-        )
+        R = rotation_matrix(-self.tilt) @ R @ rotation_matrix(self.tilt)
+
         return R
 
     def _transfer_map_enter(self) -> torch.Tensor:
@@ -495,7 +499,11 @@ class Dipole(Element):
             "tracking_method",
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle

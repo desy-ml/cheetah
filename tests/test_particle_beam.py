@@ -1,16 +1,16 @@
 import numpy as np
 import pytest
+import scipy.stats
 import torch
 
 import cheetah
-from cheetah import ParticleBeam
 
 
 def test_create_from_parameters():
     """
     Test that a `ParticleBeam` created from parameters actually has those parameters.
     """
-    beam = ParticleBeam.from_parameters(
+    beam = cheetah.ParticleBeam.from_parameters(
         num_particles=torch.tensor(1_000_000),
         mu_x=torch.tensor(1e-5),
         mu_px=torch.tensor(1e-7),
@@ -49,7 +49,7 @@ def test_transform_to():
     Test that a `ParticleBeam` transformed to new parameters actually has those new
     parameters.
     """
-    original_beam = ParticleBeam.from_parameters()
+    original_beam = cheetah.ParticleBeam.from_parameters()
     transformed_beam = original_beam.transformed_to(
         mu_x=torch.tensor(1e-5),
         mu_px=torch.tensor(1e-7),
@@ -65,7 +65,7 @@ def test_transform_to():
         total_charge=torch.tensor(1e-9),
     )
 
-    assert isinstance(transformed_beam, ParticleBeam)
+    assert isinstance(transformed_beam, cheetah.ParticleBeam)
     assert original_beam.num_particles == transformed_beam.num_particles
 
     assert np.isclose(transformed_beam.mu_x.cpu().numpy(), 1e-5)
@@ -87,7 +87,7 @@ def test_from_twiss_to_twiss():
     Test that a `ParameterBeam` created from twiss parameters actually has those
     parameters.
     """
-    beam = ParticleBeam.from_twiss(
+    beam = cheetah.ParticleBeam.from_twiss(
         num_particles=torch.tensor(10_000_000),
         beta_x=torch.tensor(5.91253676811640894),
         alpha_x=torch.tensor(3.55631307633660354),
@@ -125,7 +125,7 @@ def test_generate_uniform_ellipsoid_vectorized():
     total_charge = torch.tensor([1e-9, 3e-9])
 
     num_particles = torch.tensor(1_000_000)
-    beam = ParticleBeam.uniform_3d_ellipsoid(
+    beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=num_particles,
         radius_x=radius_x,
         radius_y=radius_y,
@@ -153,7 +153,7 @@ def test_only_sigma_vectorized():
     Test that particle beam works correctly when only a vectorised sigma is given and
     all else is scalar.
     """
-    beam = ParticleBeam.from_parameters(
+    beam = cheetah.ParticleBeam.from_parameters(
         num_particles=10_000,
         mu_x=torch.tensor(1e-5),
         sigma_x=torch.tensor([1.75e-7, 2.75e-7]),
@@ -234,3 +234,86 @@ def test_indexing_fails_for_invalid_index():
 
     with pytest.raises(IndexError):
         _ = beam[6]
+
+
+def test_random_subsample_gaussian_properties():
+    """
+    Test that a random subsample of a beam has the correct number of particles and
+    similar parameters as the original.
+    """
+    original_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    subsampled_beam = original_beam.randomly_subsampled(50_000)
+
+    assert subsampled_beam.num_particles == 50_000
+
+    assert torch.isclose(subsampled_beam.energy, original_beam.energy)
+    assert torch.isclose(
+        subsampled_beam.total_charge, original_beam.total_charge, rtol=1e-5
+    )
+    assert subsampled_beam.species.name == original_beam.species.name
+    assert torch.isclose(
+        subsampled_beam.species.charge_coulomb, original_beam.species.charge_coulomb
+    )
+    assert torch.isclose(subsampled_beam.species.mass_kg, original_beam.species.mass_kg)
+
+    assert torch.isclose(subsampled_beam.mu_x, original_beam.mu_x, rtol=1e-5, atol=1e-5)
+    assert torch.isclose(
+        subsampled_beam.mu_px, original_beam.mu_px, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(subsampled_beam.mu_y, original_beam.mu_y, rtol=1e-5, atol=1e-5)
+    assert torch.isclose(
+        subsampled_beam.mu_py, original_beam.mu_py, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(
+        subsampled_beam.mu_tau, original_beam.mu_tau, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(subsampled_beam.mu_p, original_beam.mu_p, rtol=1e-5, atol=1e-5)
+    assert torch.isclose(
+        subsampled_beam.sigma_x, original_beam.sigma_x, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(
+        subsampled_beam.sigma_px, original_beam.sigma_px, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(
+        subsampled_beam.sigma_y, original_beam.sigma_y, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(
+        subsampled_beam.sigma_py, original_beam.sigma_py, rtol=1e-5, atol=1e-5
+    )
+    assert torch.isclose(
+        subsampled_beam.sigma_tau, original_beam.sigma_tau, rtol=1e-5, atol=1e-5
+    )
+
+
+def test_random_subsample_energy_distance_better_than_gaussian():
+    """
+    Test that on a non-Gaussian beam, the energy distance from the random subsample to
+    the original beam is much (5x) lower than the energy distance from a Gaussian
+    subsample (via conversion to `ParameterBeam` and back) to the original beam.
+    """
+    original_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    randomly_subsampled_beam = original_beam.randomly_subsampled(50_000)
+    gaussian_subsampled_beam = original_beam.as_parameter_beam().as_particle_beam(
+        num_particles=50_000
+    )
+
+    for dim_name in ["x", "px", "y", "py", "tau", "p"]:
+        original_dim = getattr(original_beam, dim_name)
+        randomly_subsampled_dim = getattr(randomly_subsampled_beam, dim_name)
+        gaussian_subsampled_dim = getattr(gaussian_subsampled_beam, dim_name)
+
+        energy_distance_to_random_subsample = scipy.stats.energy_distance(
+            original_dim, randomly_subsampled_dim
+        )
+        energy_distance_to_gaussian_subsample = scipy.stats.energy_distance(
+            original_dim, gaussian_subsampled_dim
+        )
+
+        assert (
+            5 * energy_distance_to_random_subsample
+            < energy_distance_to_gaussian_subsample
+        )
