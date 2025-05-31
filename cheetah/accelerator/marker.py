@@ -15,8 +15,13 @@ class Marker(Element):
     :param name: Unique identifier of the element.
     """
 
-    def __init__(self, name: str | None = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        name: str | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__(name=name, device=device, dtype=dtype)
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
@@ -35,10 +40,13 @@ class Marker(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
-        # Do nothing on purpose. Maybe later we decide markers should be shown, but for
-        # now they are invisible.
-        pass
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+        # TODO: Implement a better visualisation for markers. At the moment they are
+        # invisible.
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

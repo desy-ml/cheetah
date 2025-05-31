@@ -13,6 +13,7 @@ import cheetah
         cheetah.HorizontalCorrector,
         cheetah.Quadrupole,
         cheetah.RBend,
+        cheetah.Sextupole,
         cheetah.Solenoid,
         cheetah.TransverseDeflectingCavity,
         cheetah.Undulator,

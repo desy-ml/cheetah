@@ -69,10 +69,7 @@ class CustomTransferMap(Element):
             (*incoming_beam.energy.shape, 1, 1)
         )
         for element in elements:
-            tm = torch.matmul(
-                element.transfer_map(incoming_beam.energy, incoming_beam.species),
-                tm,
-            )
+            tm = element.transfer_map(incoming_beam.energy, incoming_beam.species) @ tm
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
@@ -105,7 +102,11 @@ class CustomTransferMap(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 

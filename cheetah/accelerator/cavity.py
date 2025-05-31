@@ -111,12 +111,10 @@ class Cavity(Element):
 
         tm = self.transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
-            outgoing_mu = torch.matmul(tm, incoming.mu.unsqueeze(-1)).squeeze(-1)
-            outgoing_cov = torch.matmul(
-                tm, torch.matmul(incoming.cov, tm.transpose(-2, -1))
-            )
+            outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
         else:  # ParticleBeam
-            outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
+            outgoing_particles = incoming.particles @ tm.transpose(-2, -1)
         delta_energy = (
             self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )
@@ -232,6 +230,7 @@ class Cavity(Element):
                 cov=outgoing_cov,
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
+                s=incoming.s + self.length,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
             )
@@ -242,6 +241,7 @@ class Cavity(Element):
                 energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=incoming.s + self.length,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )
@@ -343,7 +343,11 @@ class Cavity(Element):
         # element itself
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
