@@ -1,3 +1,4 @@
+import pytest
 import torch
 import torch.autograd.forward_ad as fwAD
 from scipy import constants
@@ -8,7 +9,10 @@ import cheetah
 from cheetah.utils import compute_relativistic_factors
 
 
-def test_cold_uniform_beam_expansion():
+# Run the test below for both the ultra-relativistic case
+# (250 MeV) and the non-relativistic case (1 MeV).
+@pytest.mark.parametrize("energy", [torch.tensor(2.5e8), torch.tensor(1e6)])
+def test_cold_uniform_beam_expansion(energy):
     """
     Tests that that a cold uniform beam doubles in size in both dimensions when
     travelling through a drift section with space_charge. (cf ImpactX test:
@@ -18,7 +22,6 @@ def test_cold_uniform_beam_expansion():
     """
     # Simulation parameters
     R0 = torch.tensor(0.001)
-    energy = torch.tensor(2.5e8)
     rest_energy = torch.tensor(
         constants.electron_mass
         * constants.speed_of_light**2
@@ -35,7 +38,7 @@ def test_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -90,7 +93,7 @@ def test_vectorized_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -133,6 +136,7 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=torch.tensor(10_000),
@@ -140,8 +144,8 @@ def test_vectorized():
         energy=energy.expand([3, 2]),
         radius_x=R0.expand([3, 2]),
         radius_y=R0.expand([3, 2]),
-        radius_tau=R0.expand([3, 2]) / gamma,
-        # Radius of the beam in s direction in the lab frame
+        radius_tau=R0.expand([3, 2]) / gamma / beta,
+        # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15).expand([3, 2]),
         sigma_py=torch.tensor(1e-15).expand([3, 2]),
         sigma_p=torch.tensor(1e-15).expand([3, 2]),
@@ -214,7 +218,7 @@ def test_gradient_value_backward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -278,7 +282,7 @@ def test_gradient_value_forward_ad():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
