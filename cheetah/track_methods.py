@@ -73,7 +73,11 @@ def base_rmatrix(
 
     # Rotate the R matrix for skew / vertical magnets
     if torch.any(tilt != 0):
-        R = rotation_matrix(-tilt) @ R @ rotation_matrix(tilt)
+        rotation = rotation_matrix(tilt)
+
+        # Rotation matrices are orthogonal. We can therefore transpose the matrix to
+        # rotate in the other direction.
+        R = rotation.transpose(-1, -2) @ R @ rotation
 
     return R
 
@@ -273,12 +277,15 @@ def base_ttensor(
 
     # Rotate the R matrix for skew / vertical magnets
     if torch.any(tilt != 0):
+        rotation = rotation_matrix(tilt)
         T = torch.einsum(
             "...ij,...jkl,...kn,...lm->...inm",
-            rotation_matrix(-tilt),
+            # Rotation matrices are orthogonal. We can therefore transpose the matrix to
+            # rotate in the other direction.
+            rotation.transpose(-1, -2),
             T,
-            rotation_matrix(tilt),
-            rotation_matrix(tilt),
+            rotation,
+            rotation,
         )
     return T
 
