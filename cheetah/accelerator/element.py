@@ -27,6 +27,9 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
+        self.name = self.name.replace(
+            "-", "_"
+        )  # - is a valid char in names, but not python vars
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
