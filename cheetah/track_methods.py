@@ -280,7 +280,7 @@ def base_ttensor(
             rotation.transpose(-1, -2),
             T,
             rotation,
-            rotation
+            rotation,
         )
     return T
 
