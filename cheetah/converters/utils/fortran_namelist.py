@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import re
@@ -9,6 +10,8 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import rpn
+
+logger = logging.getLogger(__name__)
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -150,14 +153,11 @@ def evaluate_expression(expression: str, context: dict, warnings: bool = True) -
             return eval(expression, context)
         except SyntaxError:
             if warnings:
-                print(
-                    f"WARNING: Could not evaluate expression {expression}. It will now "
-                    "be treated as a string. This may lead to unexpected behaviour."
+                logger.warning(
+                    f"Could not evaluate expression '{expression}'. It will now be"
+                    " treated as a string. This may lead to unexpected behaviour."
                 )
             return expression
-        except Exception as e:
-            print(expression)
-            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:

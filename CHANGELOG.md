@@ -12,6 +12,7 @@
 - Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 - `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
+- Warning messages are now produced using the `logging` module of Python. Downstream users can therefore now filter and redirect the issues log entries. (see #450) (@Hespe)
 
 ### 🐛 Bug fixes
 
