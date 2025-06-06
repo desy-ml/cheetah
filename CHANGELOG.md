@@ -18,7 +18,7 @@
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
 - Fix issue in CI space-charge tests (incorrect beam duration in non-relativistic case) (see #446) (@RemiLehe)
 - Fix issue that passing tensors with `requires_grad=True` does not result in gradient tracked particles when using `ParticleBeam.from_parameters` initialization (see #445) (@cr-xu)
-- Fix import of `CustomTransferMap` from Elegant. The affine phase-space component was previously not carried through (#455) (@Hespe)
+- Fix import of `CustomTransferMap` from Elegant. The affine phase-space component was previously not carried through (see #455) (@Hespe)
 
 ### 🐆 Other
 
