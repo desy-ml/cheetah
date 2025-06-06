@@ -158,9 +158,6 @@ def evaluate_expression(expression: str, context: dict, warnings: bool = True) -
                     " treated as a string. This may lead to unexpected behaviour."
                 )
             return expression
-        except Exception as e:
-            logger.exception(f"Failed to evaluate expression '{expression}'")
-            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
