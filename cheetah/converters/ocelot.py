@@ -4,7 +4,7 @@ import torch
 
 import cheetah
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def convert_element_to_cheetah(
@@ -133,7 +133,7 @@ def convert_element_to_cheetah(
         # NOTE This pattern is very specific to ARES and will need a more complex
         # solution for other accelerators
         if warnings:
-            log.warning(
+            logger.warning(
                 "Diagnostic screen was converted with default screen properties."
             )
         return cheetah.Screen(
@@ -162,7 +162,7 @@ def convert_element_to_cheetah(
         )
     else:
         if warnings:
-            log.warning(
+            logger.warning(
                 f"Unknown element {element.id} of type {type(element)}, replacing"
                 " with drift section."
             )
