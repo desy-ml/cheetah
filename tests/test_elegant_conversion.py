@@ -38,6 +38,9 @@ def test_fodo():
                 dipole_e2=torch.tensor(0.113612175128842),
                 k1=torch.tensor(0.0),
             ),
+            # Two elements where no length `l` is provided
+            cheetah.Drift(name="d3", length=torch.tensor(0.0)),
+            cheetah.Marker(name="m1"),
         ],
         name="fodo",
     )
