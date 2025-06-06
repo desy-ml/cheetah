@@ -11,7 +11,7 @@ from cheetah.converters.utils.fortran_namelist import (
     validate_understood_properties,
 )
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def convert_element(
@@ -397,14 +397,14 @@ def convert_element(
             )
             return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] in ["charge", "wake"]:
-            log.warning(
+            logger.warning(
                 f"Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"
                 " manually providing the correct information."
             )
             return cheetah.Marker(name=name, **factory_kwargs)
         else:
-            log.warning(
+            logger.warning(
                 f"Element {name} of type {parsed['element_type']} cannot be"
                 " converted correctly. Using drift section instead."
             )

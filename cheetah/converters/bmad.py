@@ -12,7 +12,7 @@ from cheetah.converters.utils.fortran_namelist import (
     validate_understood_properties,
 )
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def convert_element(
@@ -285,7 +285,7 @@ def convert_element(
                 name=name,
             )
         else:
-            log.warning(
+            logger.warning(
                 f"Element {name} of type {bmad_parsed['element_type']} cannot be"
                 " converted correctly. Using drift section instead."
             )
