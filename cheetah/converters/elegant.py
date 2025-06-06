@@ -222,6 +222,8 @@ def convert_element(
                 [parsed.get(f"c{i + 1}", 0.0) for i in range(6)],
                 **factory_kwargs,
             )
+            # Ensure the affine component is passed along
+            R[6, 6] = 1.0
 
             return cheetah.CustomTransferMap(
                 length=torch.tensor(parsed["l"], **factory_kwargs),
