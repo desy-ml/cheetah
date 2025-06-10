@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking Changes
 
+- The default resolution of all plotting functions on `Segment` is now `None`, i.e. element-wise. For most lattices this will only result in faster plotting, but note that it is possible that your plots look slightly different, especially if your lattice is short or has few elements. (see #459) (@jank324, @Hespe)
+
 ### 🚀 Features
 
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
