@@ -285,7 +285,8 @@ def convert_element(
         else:
             warnings.warn(
                 f"Element {name} of type {bmad_parsed['element_type']} cannot be"
-                " converted correctly. Using drift section instead."
+                " converted correctly. Using drift section instead.",
+                stacklevel=2,
             )
             # TODO: Remove the length if by adding markers to Cheeath
             return cheetah.Drift(

@@ -404,13 +404,15 @@ def convert_element(
             warnings.warn(
                 f"Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"
-                " manually providing the correct information."
+                " manually providing the correct information.",
+                stacklevel=2,
             )
             return cheetah.Marker(name=name, **factory_kwargs)
         else:
             warnings.warn(
                 f"Element {name} of type {parsed['element_type']} cannot be converted "
-                "correctly. Using drift section instead."
+                "correctly. Using drift section instead.",
+                stacklevel=2,
             )
             # TODO: Remove the length if by adding markers to Cheetah
             return cheetah.Drift(

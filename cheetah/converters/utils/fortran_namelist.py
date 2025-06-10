@@ -155,7 +155,8 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         except SyntaxError:
             warnings.warn(
                 f"Could not evaluate expression '{expression}'. It will now be treated "
-                "as a string. This may lead to unexpected behaviour."
+                "as a string. This may lead to unexpected behaviour.",
+                stacklevel=2,
             )
             return expression
 
