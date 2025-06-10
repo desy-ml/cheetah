@@ -55,7 +55,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
     arg_name = (
         for_every_mwe_element_marker.args[0]
-        if for_every_mwe_element_marker.args[0] is not None  # TODO
+        if for_every_mwe_element_marker.args[0] is not None
         else for_every_mwe_element_marker.kwargs["arg_name"]
     )
     except_for = (
@@ -107,6 +107,16 @@ def seed_random_generators(request):
         torch.mps.manual_seed(seed)
 
 
+@pytest.fixture(autouse=True)
+def fail_because_no_mwe_args_defined(request):
+    """
+    Mark a test to fail because no MWE args are defined for the given `Element`
+    subclass.
+    """
+    if request.node.get_closest_marker("no_mwe") is not None:
+        pytest.fail("No MWE args are defined for this Element subclass.")
+
+
 @pytest.fixture
 def default_torch_dtype(request):
     """Temporarily set the default torch dtype for the test to a requested value."""
@@ -119,13 +129,3 @@ def default_torch_dtype(request):
     yield tmp_dtype_for_test
 
     torch.set_default_dtype(previous_dtype)
-
-
-@pytest.fixture(autouse=True)
-def fail_because_no_mwe_args_defined(request):
-    """
-    Mark a test to fail because no MWE args are defined for the given `Element`
-    subclass.
-    """
-    if request.node.get_closest_marker("no_mwe") is not None:
-        pytest.fail("No MWE args are defined for this Element subclass.")
