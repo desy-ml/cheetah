@@ -265,7 +265,7 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
             " It can therefore not be used with the `segment.element_name` syntax. You"
             " can still use it with the `getattr(segment, 'element_name']` syntax. "
             "Alternatively, element names can be sanitised using the "
-            "`Segment.sanistize_names` method."
+            "`Segment.sanitize_names` method."
         )
     element_type = match.group(2).strip()
 
