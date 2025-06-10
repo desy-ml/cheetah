@@ -1,17 +1,12 @@
-import logging
+import warnings
 
 import torch
 
 import cheetah
 
-logger = logging.getLogger(__name__)
-
 
 def convert_element_to_cheetah(
-    element,
-    warnings: bool = True,
-    device: torch.device | None = None,
-    dtype: torch.dtype | None = None,
+    element, device: torch.device | None = None, dtype: torch.dtype | None = None
 ) -> "cheetah.Element":
     """
     Translate an Ocelot element to a Cheetah element.
@@ -24,8 +19,6 @@ def convert_element_to_cheetah(
 
     :param element: Ocelot element object representing an element of particle
         accelerator.
-    :param warnings: Whether to print warnings when elements might not be converted as
-        expected.
     :return: Cheetah element object representing an element of particle accelerator.
     """
     try:
@@ -132,10 +125,7 @@ def convert_element_to_cheetah(
     elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
         # NOTE This pattern is very specific to ARES and will need a more complex
         # solution for other accelerators
-        if warnings:
-            logger.warning(
-                "Diagnostic screen was converted with default screen properties."
-            )
+        warnings.warn("Diagnostic screen was converted with default screen properties.")
         return cheetah.Screen(
             resolution=(2448, 2040),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6], **factory_kwargs),
@@ -161,11 +151,10 @@ def convert_element_to_cheetah(
             name=element.id,
         )
     else:
-        if warnings:
-            logger.warning(
-                f"Unknown element {element.id} of type {type(element)}, replacing"
-                " with drift section."
-            )
+        warnings.warn(
+            f"Unknown element {element.id} of type {type(element)}, replacing with "
+            "drift section."
+        )
         return cheetah.Drift(
             length=torch.tensor(element.l, **factory_kwargs), name=element.id
         )
