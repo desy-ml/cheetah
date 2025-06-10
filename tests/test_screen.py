@@ -105,7 +105,7 @@ def test_reading_shows_beam_ares(screen_method):
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
     """
-    segment = cheetah.Segment.from_ocelot(ocelot_lattice.cell, warnings=False).subcell(
+    segment = cheetah.Segment.from_ocelot(ocelot_lattice.cell).subcell(
         "AREASOLA1", "AREABSCR1"
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
