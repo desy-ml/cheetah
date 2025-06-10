@@ -550,6 +550,22 @@ class Segment(Element):
                     element_type, is_recursive=True, **kwargs
                 )
 
+    def sanitize_names(self) -> None:
+        """
+        Sanitize the names of the elements in the segment to be valid Python variable
+        names. This is may be necessary when element names contain characters like '.'
+        or '-' that are not valid in Python variable names, but you want to use the
+        `segment.element_name` syntax to access the elements. All invalid characters
+        are replaced by `_`.
+        """
+        INVALID_CHARS = ".-"
+
+        for element in self.elements:
+            element.name = element.name.replace(INVALID_CHARS, "_")
+
+            if isinstance(element, Segment):
+                element.sanitize_names()
+
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
@@ -596,7 +612,7 @@ class Segment(Element):
         axx: plt.Axes,
         axy: plt.Axes,
         incoming: Beam,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
@@ -650,7 +666,7 @@ class Segment(Element):
         self,
         incoming: Beam,
         fig: matplotlib.figure.Figure | None = None,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
