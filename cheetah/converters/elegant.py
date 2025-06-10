@@ -258,7 +258,7 @@ def convert_element(
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
                 phase=torch.tensor(parsed.get("phase", 0.0) - 90, **factory_kwargs),
                 voltage=torch.tensor(parsed.get("volt", 0.0), **factory_kwargs),
-                frequency=torch.tensor(parsed.get("freq", 0.0), **factory_kwargs),
+                frequency=torch.tensor(parsed.get("freq", 500e6), **factory_kwargs),
                 name=name,
             )
         elif parsed["element_type"] == "rfcw":
@@ -300,7 +300,7 @@ def convert_element(
                 # while Cheetah uses 0°. We therefore add a phase offset to compensate.
                 phase=torch.tensor(parsed.get("phase", 0.0) - 90, **factory_kwargs),
                 voltage=torch.tensor(parsed.get("volt", 0.0), **factory_kwargs),
-                frequency=torch.tensor(parsed.get("freq", 0.0), **factory_kwargs),
+                frequency=torch.tensor(parsed.get("freq", 500e6), **factory_kwargs),
                 name=name,
             )
         elif parsed["element_type"] == "rfdf":
