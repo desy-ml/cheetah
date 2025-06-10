@@ -12,10 +12,10 @@
 - Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
 - `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
+- There is a warning now when converting elements from Elegant or Bmad that have names which are invalid for use with the `segment.element_name` syntax, and add a convience method for explicitly converting these names to valid Python variable names (see #386) (@amylizzle, @jank324)
 
 ### 🐛 Bug fixes
 
-- Parsing of element names containing `-` is now possible, though `-` will be converted to `_` for variable access (see #386) (@amylizzle)
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
 
 ### 🐆 Other
