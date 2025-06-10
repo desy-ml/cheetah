@@ -263,7 +263,7 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
         print(
             f"WARNING: Element name {element_name} is not a valid Python variable name."
             " It can therefore not be used with the `segment.element_name` syntax. You"
-            " can still use it with the `segment['element_name']` syntax. "
+            " can still use it with the `getattr(segment, 'element_name']` syntax. "
             "Alternatively, element names can be sanitised using the "
             "`Segment.sanistize_names` method."
         )
