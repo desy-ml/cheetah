@@ -414,7 +414,9 @@ class Dipole(Element):
         R = R_exit @ R @ R_enter
 
         # Apply rotation for tilted magnets
-        R = rotation_matrix(-self.tilt) @ R @ rotation_matrix(self.tilt)
+        if torch.any(self.tilt != 0):
+            rotation = rotation_matrix(self.tilt)
+            R = rotation.transpose(-1, -2) @ R @ rotation
 
         return R
 
