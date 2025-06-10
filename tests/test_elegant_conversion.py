@@ -55,9 +55,13 @@ def test_fodo():
     assert torch.isclose(converted.q2.length, correct_lattice.q2.length)
     assert torch.isclose(converted.q2.k1, correct_lattice.q2.k1)
     assert torch.isclose(
-        converted.long_name_quad.length, correct_lattice.long_name_quad.length
+        getattr(converted, "long-name-quad").length,
+        getattr(correct_lattice, "long-name-quad").length,
     )
-    assert torch.isclose(converted.long_name_quad.k1, correct_lattice.long_name_quad.k1)
+    assert torch.isclose(
+        getattr(converted, "long-name-quad").k1,
+        getattr(correct_lattice, "long-name-quad").k1,
+    )
 
     for i in range(2):
         assert torch.isclose(converted.d1[i].length, correct_lattice.d1[i].length)
@@ -137,8 +141,8 @@ def test_device_passing(device: torch.device):
     assert converted.q1.k1.device.type == device.type
     assert converted.q2.length.device.type == device.type
     assert converted.q2.k1.device.type == device.type
-    assert converted.long_name_quad.length.device.type == device.type
-    assert converted.long_name_quad.k1.device.type == device.type
+    assert getattr(converted, "long-name-quad").length.device.type == device.type
+    assert getattr(converted, "long-name-quad").k1.device.type == device.type
 
     assert [d.length.device.type for d in converted.d1] == [device.type, device.type]
     assert converted.d2.length.device.type == device.type
@@ -167,8 +171,8 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.q1.k1.dtype == dtype
     assert converted.q2.length.dtype == dtype
     assert converted.q2.k1.dtype == dtype
-    assert converted.long_name_quad.length.dtype == dtype
-    assert converted.long_name_quad.k1.dtype == dtype
+    assert getattr(converted, "long-name-quad").length.dtype == dtype
+    assert getattr(converted, "long-name-quad").k1.dtype == dtype
 
     assert [d.length.dtype for d in converted.d1] == [dtype, dtype]
     assert converted.d2.length.dtype == dtype
@@ -199,8 +203,8 @@ def test_default_dtype(default_torch_dtype):
     assert converted.q1.k1.dtype == default_torch_dtype
     assert converted.q2.length.dtype == default_torch_dtype
     assert converted.q2.k1.dtype == default_torch_dtype
-    assert converted.long_name_quad.length.dtype == default_torch_dtype
-    assert converted.long_name_quad.k1.dtype == default_torch_dtype
+    assert getattr(converted, "long-name-quad").length.dtype == default_torch_dtype
+    assert getattr(converted, "long-name-quad").k1.dtype == default_torch_dtype
 
     assert [d.length.dtype for d in converted.d1] == [default_torch_dtype] * 2
     assert converted.d2.length.dtype == default_torch_dtype
