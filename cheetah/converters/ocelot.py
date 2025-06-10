@@ -125,7 +125,10 @@ def convert_element_to_cheetah(
     elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
         # NOTE This pattern is very specific to ARES and will need a more complex
         # solution for other accelerators
-        warnings.warn("Diagnostic screen was converted with default screen properties.")
+        warnings.warn(
+            "Diagnostic screen was converted with default screen properties.",
+            stacklevel=2,
+        )
         return cheetah.Screen(
             resolution=(2448, 2040),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6], **factory_kwargs),
@@ -153,7 +156,8 @@ def convert_element_to_cheetah(
     else:
         warnings.warn(
             f"Unknown element {element.id} of type {type(element)}, replacing with "
-            "drift section."
+            "drift section.",
+            stacklevel=2,
         )
         return cheetah.Drift(
             length=torch.tensor(element.l, **factory_kwargs), name=element.id
