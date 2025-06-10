@@ -8,7 +8,7 @@ from typing import Any
 import scipy
 from scipy.constants import physical_constants
 
-from cheetah.converters.utils import rpn
+from cheetah.converters.utils import infix, rpn
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
@@ -133,26 +133,12 @@ def evaluate_expression(expression: str, context: dict, warnings: bool = True) -
         return context[expression]
 
     # Evaluate as a mathematical expression
-    # TODO I would prefer if it tried to do normal parsing first and RPN second.
-    #   Implement when normal parsing was made safe.
+
     try:
-        return rpn.evaluate_expression(expression, context)
+        return infix.evaluate_expression(expression, context)
     except SyntaxError:
         try:
-            # TODO This is currently an unsafe eval and should be replaced with a safer
-            # implementation.
-
-            # Surround expressions in brackets with quotes
-            expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
-            # Replace power operator with python equivalent
-            expression = re.sub(r"\^", r"**", expression)
-            # Replace abs with abs_func when it is followed by a (
-            # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
-            # lattice file. I'm not sure this replacement will lead to the intended
-            # behaviour.
-            expression = re.sub(r"abs\(", r"abs_func(", expression)
-
-            return eval(expression, context)
+            return rpn.evaluate_expression(expression, context)
         except SyntaxError:
             if warnings:
                 print(
