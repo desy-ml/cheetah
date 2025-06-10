@@ -10,10 +10,10 @@ from scipy.constants import physical_constants
 
 from cheetah.converters.utils import rpn
 
-# Define regex patterns for parsing Bmad and Elegant lattice files
-fortran_element_name_pattern = r"[a-z0-9_\-\.]+"
-fortran_property_name_pattern = r"[a-z0-9_\*:]+"
-fortran_variable_name_pattern = r"[a-z0-9_]+"
+# Regex patterns
+ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
+PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
+VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -200,7 +200,7 @@ def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
         lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = f"({fortran_property_name_pattern})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
+    pattern = f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
     match = re.fullmatch(pattern, line)
 
     object_name = match.group(1).strip()
@@ -255,7 +255,7 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
         lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = f"({fortran_element_name_pattern})" + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
+    pattern = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
@@ -391,23 +391,14 @@ def parse_lines(lines: str, warnings: bool = True) -> dict:
         lead to unexpected behaviour when parsed as strings.
     :return: Dictionary of variables defined in the lattice file.
     """
-    property_assignment_pattern = (
-        fortran_property_name_pattern + r"\[[a-z0-9_%]+\]\s*=.*"
-    )
-    variable_assignment_pattern = fortran_variable_name_pattern + r"\s*=.*"
+    property_assignment_pattern = PROPERTY_NAME_PATTERN + r"\[[a-z0-9_%]+\]\s*=.*"
+    variable_assignment_pattern = VARIABLE_NAME_PATTERN + r"\s*=.*"
     element_definition_pattern = (
-        fortran_element_name_pattern
-        + r"\s*\:\s*"
-        + fortran_variable_name_pattern
-        + r".*"
+        ELEMENT_NAME_PATTERN + r"\s*\:\s*" + VARIABLE_NAME_PATTERN + r".*"
     )
-    line_definition_pattern = (
-        fortran_variable_name_pattern + r"\s*\:\s*line\s*=\s*\(.*\)"
-    )
-    overlay_definition_pattern = (
-        fortran_variable_name_pattern + r"\s*\:\s*overlay\s*=\s*\{.*"
-    )
-    use_line_pattern = r"use\s*\,\s*" + fortran_variable_name_pattern
+    line_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*line\s*=\s*\(.*\)"
+    overlay_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*overlay\s*=\s*\{.*"
+    use_line_pattern = r"use\s*\,\s*" + VARIABLE_NAME_PATTERN
 
     context = {
         "pi": scipy.constants.pi,
