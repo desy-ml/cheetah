@@ -85,7 +85,7 @@ def test_infix_single_bracket_expression():
     Test that an infix expression with a single value in a
     bracket is correctly evaluated.
     """
-    expression = "(5)"
+    expression = "((((5))))"
 
     assert infix.evaluate_expression(expression) == 5
 
@@ -109,3 +109,12 @@ def test_infix_expression_with_var_conflict():
     context = {"abs": -10}
 
     assert infix.evaluate_expression(expression, context) == 13  # 10 + 3 = 13
+
+
+def test_infix_expression_deeply_nested():
+    """
+    Test that a deeply nested infix expression is correctly evaluated.
+    """
+    expression = "((2 + 3) * (4 - 1)) ^ 2"  # ((5 * 3) ^ 2) = 225
+
+    assert infix.evaluate_expression(expression) == 225

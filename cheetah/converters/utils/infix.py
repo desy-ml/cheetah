@@ -52,22 +52,18 @@ def _evaluate_ast(node: dict) -> Any:
     Evaluates an Abstract Syntax Tree (AST) node.
     """
     # depth first traversal of the AST
-    curnode = node
+    if node["left"] is not None:
+        node["left"] = _evaluate_ast(node["left"])
+    if node["right"] is not None:
+        node["right"] = _evaluate_ast(node["right"])
 
-    if curnode["left"] is not None:
-        curnode["left"] = _evaluate_ast(curnode["left"])
-    if curnode["right"] is not None:
-        curnode["right"] = _evaluate_ast(curnode["right"])
-
-    if curnode["value"] in operators:
-        if operators[curnode["value"]]["inputs"] == 1:
-            return operators[curnode["value"]]["func"](curnode["left"])
+    if node["value"] in operators:
+        if operators[node["value"]]["inputs"] == 1:
+            return operators[node["value"]]["func"](node["left"])
         else:
-            return operators[curnode["value"]]["func"](
-                curnode["left"], curnode["right"]
-            )
+            return operators[node["value"]]["func"](node["left"], node["right"])
     else:
-        return curnode["value"]
+        return node["value"]
 
 
 def _parse_expression(tokens: list[str]) -> dict:
