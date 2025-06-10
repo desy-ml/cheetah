@@ -20,6 +20,7 @@
 - Fix issue in CI space-charge tests (incorrect beam duration in non-relativistic case) (see #446) (@RemiLehe)
 - Fix issue that passing tensors with `requires_grad=True` does not result in gradient tracked particles when using `ParticleBeam.from_parameters` initialization (see #445) (@cr-xu)
 - Fix import of `CustomTransferMap` from Elegant. The affine phase-space component was previously not carried through (see #455) (@Hespe)
+- Provide more default values for parameters in the Elegant conversion, where elements without length `l` for example broke the converter. (see #442) (@cr-xu)
 
 ### 🐆 Other
 
