@@ -13,6 +13,7 @@
 - `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 - There is a warning now when converting elements from Elegant or Bmad that have names which are invalid for use with the `segment.element_name` syntax, and add a convenience method for explicitly converting these names to valid Python variable names. (see #411) (@amylizzle, @jank324)
+- Rotation matrices are no longer computed twice for forward and backward phase space rotations (see #452) (@Hespe)
 - Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
 
 ### 🐛 Bug fixes
@@ -21,6 +22,8 @@
 - Fix issue in CI space-charge tests (incorrect beam duration in non-relativistic case) (see #446) (@RemiLehe)
 - Fix issue that passing tensors with `requires_grad=True` does not result in gradient tracked particles when using `ParticleBeam.from_parameters` initialization (see #445) (@cr-xu)
 - Fix import of `CustomTransferMap` from Elegant. The affine phase-space component was previously not carried through (see #455) (@Hespe)
+- Provide more default values for parameters in the Elegant conversion, where elements without length `l` for example broke the converter. (see #442) (@cr-xu)
+- Functions using `Sextupole.split` and `Sextupole.plot` no longer raise an error (see #453) (@Hespe)
 
 ### 🐆 Other
 
