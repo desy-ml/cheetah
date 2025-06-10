@@ -259,6 +259,14 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
+    if any(c in element_name for c in ".-"):
+        print(
+            f"WARNING: Element name {element_name} is not a valid Python variable name."
+            " It can therefore not be used with the `segment.element_name` syntax. You"
+            " can still use it with the `segment['element_name']` syntax. "
+            "Alternatively, element names can be sanitised using the "
+            "`Segment.sanistize_names` method."
+        )
     element_type = match.group(2).strip()
 
     if element_type in context:
