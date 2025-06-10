@@ -13,6 +13,7 @@
 - `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 - There is a warning now when converting elements from Elegant or Bmad that have names which are invalid for use with the `segment.element_name` syntax, and add a convenience method for explicitly converting these names to valid Python variable names. (see #411) (@amylizzle, @jank324)
+- Rotation matrices are no longer computed twice for forward and backward phase space rotations (see #452) (@Hespe)
 - Warning messages, which were previously just printed are now produced using the `warnings` module, brining with it all the features of the latter. (see #450) (@Hespe, @jank324)
 
 ### 🐛 Bug fixes
