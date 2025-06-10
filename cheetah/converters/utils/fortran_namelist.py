@@ -13,6 +13,11 @@ from cheetah.converters.utils import rpn
 
 logger = logging.getLogger(__name__)
 
+# Regex patterns
+ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
+PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
+VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
+
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
     """
@@ -195,7 +200,7 @@ def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
         lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
+    pattern = f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
     match = re.fullmatch(pattern, line)
 
     object_name = match.group(1).strip()
@@ -250,10 +255,18 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
         lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
+    pattern = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
+    if any(c in element_name for c in ".-"):
+        print(
+            f"WARNING: Element name {element_name} is not a valid Python variable name."
+            " It can therefore not be used with the `segment.element_name` syntax. You"
+            " can still use it with the `getattr(segment, 'element_name']` syntax. "
+            "Alternatively, element names can be sanitised using the "
+            "`Segment.sanitize_names` method."
+        )
     element_type = match.group(2).strip()
 
     if element_type in context:
@@ -386,12 +399,14 @@ def parse_lines(lines: str, warnings: bool = True) -> dict:
         lead to unexpected behaviour when parsed as strings.
     :return: Dictionary of variables defined in the lattice file.
     """
-    property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
-    variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
-    element_definition_pattern = r"[a-z0-9_\.]+\s*\:\s*[a-z0-9_]+.*"
-    line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
-    overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
-    use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
+    property_assignment_pattern = PROPERTY_NAME_PATTERN + r"\[[a-z0-9_%]+\]\s*=.*"
+    variable_assignment_pattern = VARIABLE_NAME_PATTERN + r"\s*=.*"
+    element_definition_pattern = (
+        ELEMENT_NAME_PATTERN + r"\s*\:\s*" + VARIABLE_NAME_PATTERN + r".*"
+    )
+    line_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*line\s*=\s*\(.*\)"
+    overlay_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*overlay\s*=\s*\{.*"
+    use_line_pattern = r"use\s*\,\s*" + VARIABLE_NAME_PATTERN
 
     context = {
         "pi": scipy.constants.pi,

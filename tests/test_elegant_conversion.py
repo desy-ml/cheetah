@@ -38,6 +38,12 @@ def test_fodo():
                 dipole_e2=torch.tensor(0.113612175128842),
                 k1=torch.tensor(0.0),
             ),
+            cheetah.Quadrupole(
+                name="long-name-quad", length=torch.tensor(0.3), k1=torch.tensor(2.0)
+            ),
+            cheetah.Drift(
+                name="d3", length=torch.tensor(0.0)
+            ),  # No length `l` provided
         ],
         name="fodo",
     )
@@ -46,21 +52,33 @@ def test_fodo():
     assert [element.name for element in converted.elements] == [
         element.name for element in correct_lattice.elements
     ]
+
     assert torch.isclose(converted.q1.length, correct_lattice.q1.length)
     assert torch.isclose(converted.q1.k1, correct_lattice.q1.k1)
     assert torch.isclose(converted.q2.length, correct_lattice.q2.length)
     assert torch.isclose(converted.q2.k1, correct_lattice.q2.k1)
+    assert torch.isclose(
+        getattr(converted, "long-name-quad").length,
+        getattr(correct_lattice, "long-name-quad").length,
+    )
+    assert torch.isclose(
+        getattr(converted, "long-name-quad").k1,
+        getattr(correct_lattice, "long-name-quad").k1,
+    )
+
     for i in range(2):
         assert torch.isclose(converted.d1[i].length, correct_lattice.d1[i].length)
     assert torch.isclose(converted.d2.length, correct_lattice.d2.length)
+
     assert torch.isclose(converted.b1.length, correct_lattice.b1.length)
     assert torch.isclose(converted.b1.dipole_e1, correct_lattice.b1.dipole_e1)
-    assert torch.isclose(converted.s1.length, correct_lattice.s1.length)
-    assert torch.isclose(converted.s1.k2, correct_lattice.s1.k2)
     assert torch.isclose(converted.csrbend.length, correct_lattice.csrbend.length)
     assert torch.isclose(converted.csrbend.angle, correct_lattice.csrbend.angle)
     assert torch.isclose(converted.csrbend.dipole_e2, correct_lattice.csrbend.dipole_e2)
     assert torch.isclose(converted.csrbend.k1, correct_lattice.csrbend.k1)
+
+    assert torch.isclose(converted.s1.length, correct_lattice.s1.length)
+    assert torch.isclose(converted.s1.k2, correct_lattice.s1.k2)
 
 
 def test_cavity_import():
@@ -89,7 +107,7 @@ def test_custom_transfer_map_import():
             [0.003, 0.0, -0.04, 1.0, 0.0, 0.0, -0.15],
             [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
         ]
     )
 
@@ -126,16 +144,21 @@ def test_device_passing(device: torch.device):
     assert converted.q1.k1.device.type == device.type
     assert converted.q2.length.device.type == device.type
     assert converted.q2.k1.device.type == device.type
+    assert getattr(converted, "long-name-quad").length.device.type == device.type
+    assert getattr(converted, "long-name-quad").k1.device.type == device.type
+
     assert [d.length.device.type for d in converted.d1] == [device.type, device.type]
     assert converted.d2.length.device.type == device.type
+
     assert converted.b1.length.device.type == device.type
     assert converted.b1.dipole_e1.device.type == device.type
-    assert converted.s1.length.device.type == device.type
-    assert converted.s1.k2.device.type == device.type
     assert converted.csrbend.length.device.type == device.type
     assert converted.csrbend.angle.device.type == device.type
     assert converted.csrbend.dipole_e2.device.type == device.type
     assert converted.csrbend.k1.device.type == device.type
+
+    assert converted.s1.length.device.type == device.type
+    assert converted.s1.k2.device.type == device.type
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -151,16 +174,21 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.q1.k1.dtype == dtype
     assert converted.q2.length.dtype == dtype
     assert converted.q2.k1.dtype == dtype
+    assert getattr(converted, "long-name-quad").length.dtype == dtype
+    assert getattr(converted, "long-name-quad").k1.dtype == dtype
+
     assert [d.length.dtype for d in converted.d1] == [dtype, dtype]
     assert converted.d2.length.dtype == dtype
+
     assert converted.b1.length.dtype == dtype
     assert converted.b1.dipole_e1.dtype == dtype
-    assert converted.s1.length.dtype == dtype
-    assert converted.s1.k2.dtype == dtype
     assert converted.csrbend.length.dtype == dtype
     assert converted.csrbend.angle.dtype == dtype
     assert converted.csrbend.dipole_e2.dtype == dtype
     assert converted.csrbend.k1.dtype == dtype
+
+    assert converted.s1.length.dtype == dtype
+    assert converted.s1.k2.dtype == dtype
 
 
 @pytest.mark.parametrize(
@@ -178,13 +206,18 @@ def test_default_dtype(default_torch_dtype):
     assert converted.q1.k1.dtype == default_torch_dtype
     assert converted.q2.length.dtype == default_torch_dtype
     assert converted.q2.k1.dtype == default_torch_dtype
+    assert getattr(converted, "long-name-quad").length.dtype == default_torch_dtype
+    assert getattr(converted, "long-name-quad").k1.dtype == default_torch_dtype
+
     assert [d.length.dtype for d in converted.d1] == [default_torch_dtype] * 2
     assert converted.d2.length.dtype == default_torch_dtype
+
     assert converted.b1.length.dtype == default_torch_dtype
     assert converted.b1.dipole_e1.dtype == default_torch_dtype
-    assert converted.s1.length.dtype == default_torch_dtype
-    assert converted.s1.k2.dtype == default_torch_dtype
     assert converted.csrbend.length.dtype == default_torch_dtype
     assert converted.csrbend.angle.dtype == default_torch_dtype
     assert converted.csrbend.dipole_e2.dtype == default_torch_dtype
     assert converted.csrbend.k1.dtype == default_torch_dtype
+
+    assert converted.s1.length.dtype == default_torch_dtype
+    assert converted.s1.k2.dtype == default_torch_dtype
