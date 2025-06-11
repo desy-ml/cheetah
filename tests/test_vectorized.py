@@ -345,7 +345,7 @@ def test_vectorized_screen_2d(BeamClass, method):
         cheetah.SpaceChargeKick,
     ],
 )
-def test_drift_broadcasting_two_different_inputs(mwe_element):
+def test_broadcasting_two_different_inputs(mwe_element):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
@@ -373,7 +373,7 @@ def test_drift_broadcasting_two_different_inputs(mwe_element):
         cheetah.TransverseDeflectingCavity,
     ],
 )
-def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
+def test_broadcasting_two_different_inputs_bmadx(ElementClass):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `"bmadx"` tracking method.
