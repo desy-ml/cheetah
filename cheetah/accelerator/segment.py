@@ -603,7 +603,7 @@ class Segment(Element):
         axx: plt.Axes,
         axy: plt.Axes,
         incoming: Beam,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
@@ -657,7 +657,7 @@ class Segment(Element):
         self,
         incoming: Beam,
         fig: matplotlib.figure.Figure | None = None,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
