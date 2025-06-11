@@ -23,7 +23,7 @@ setup(
         "matplotlib>=3.5",
         "numpy>=1.21.3",
         "scipy>=1.7.2",
-        "torch[opt-einsum]>=2.3",
+        "torch[opt-einsum]>=2.2",
     ],
     extras_require={"openpmd": ["openpmd-beamphysics"]},
 )
