@@ -3,50 +3,80 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import is_mps_available_and_functional
+from cheetah.utils import (
+    DirtyNameWarning,
+    PhysicsWarning,
+    is_mps_available_and_functional,
+)
 
 
 def test_fodo():
     """Test importing a FODO lattice defined in the Elegant file format."""
     file_path = "tests/resources/fodo.lte"
 
-    converted = cheetah.Segment.from_elegant(file_path, "fodo")
+    with pytest.warns(
+        PhysicsWarning,
+        match=(
+            "Information provided in element c of type charge cannot be imported "
+            "automatically. Consider manually providing the correct information."
+        ),
+    ), pytest.warns(
+        DirtyNameWarning,
+        match=(
+            "Dirty element name long-name-quad is not a valid Python variable name. "
+            "You will not be able to use the `segment.element_name` syntax to access "
+            "this element. Set `sanitize_name=True` to change the name to a valid one, "
+            "if you want to use this syntax."
+        ),
+    ):
+        converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
-    correct_lattice = cheetah.Segment(
-        [
-            cheetah.Marker(name="c"),
-            cheetah.Quadrupole(
-                name="q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
-            ),
-            cheetah.Drift(name="d1", length=torch.tensor(1.0)),
-            cheetah.Marker(name="m1"),
-            cheetah.Dipole(
-                name="b1", length=torch.tensor(0.3), dipole_e1=torch.tensor(0.25)
-            ),
-            cheetah.Drift(name="d1", length=torch.tensor(1.0)),
-            cheetah.Quadrupole(
-                name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
-            ),
-            cheetah.Drift(name="d2", length=torch.tensor(2.0)),
-            cheetah.Sextupole(
-                name="s1", length=torch.tensor(0.2), k2=torch.tensor(-87.1)
-            ),
-            cheetah.Dipole(
-                name="csrbend",
-                length=torch.tensor(0.200981),
-                angle=torch.tensor(0.113612175128842),
-                dipole_e2=torch.tensor(0.113612175128842),
-                k1=torch.tensor(0.0),
-            ),
-            cheetah.Quadrupole(
-                name="long-name-quad", length=torch.tensor(0.3), k1=torch.tensor(2.0)
-            ),
-            cheetah.Drift(
-                name="d3", length=torch.tensor(0.0)
-            ),  # No length `l` provided
-        ],
-        name="fodo",
-    )
+    with pytest.warns(
+        DirtyNameWarning,
+        match=(
+            "Dirty element name long-name-quad is not a valid Python variable name. "
+            "You will not be able to use the `segment.element_name` syntax to access "
+            "this element. Set `sanitize_name=True` to change the name to a valid one, "
+            "if you want to use this syntax."
+        ),
+    ):
+        correct_lattice = cheetah.Segment(
+            [
+                cheetah.Marker(name="c"),
+                cheetah.Quadrupole(
+                    name="q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+                ),
+                cheetah.Drift(name="d1", length=torch.tensor(1.0)),
+                cheetah.Marker(name="m1"),
+                cheetah.Dipole(
+                    name="b1", length=torch.tensor(0.3), dipole_e1=torch.tensor(0.25)
+                ),
+                cheetah.Drift(name="d1", length=torch.tensor(1.0)),
+                cheetah.Quadrupole(
+                    name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
+                ),
+                cheetah.Drift(name="d2", length=torch.tensor(2.0)),
+                cheetah.Sextupole(
+                    name="s1", length=torch.tensor(0.2), k2=torch.tensor(-87.1)
+                ),
+                cheetah.Dipole(
+                    name="csrbend",
+                    length=torch.tensor(0.200981),
+                    angle=torch.tensor(0.113612175128842),
+                    dipole_e2=torch.tensor(0.113612175128842),
+                    k1=torch.tensor(0.0),
+                ),
+                cheetah.Quadrupole(
+                    name="long-name-quad",
+                    length=torch.tensor(0.3),
+                    k1=torch.tensor(2.0),
+                ),
+                cheetah.Drift(
+                    name="d3", length=torch.tensor(0.0)
+                ),  # No length `l` provided
+            ],
+            name="fodo",
+        )
 
     assert converted.name == correct_lattice.name
     assert [element.name for element in converted.elements] == [
@@ -114,6 +144,20 @@ def test_custom_transfer_map_import():
     assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Dirty element name long-name-quad is not a valid Python variable name. You will "
+    "not be able to use the `segment.element_name` syntax to access this element. Set "
+    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
+    "syntax.:"
+    "cheetah.utils.DirtyNameWarning"
+)
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Information provided in element c of type charge cannot be imported automatically."
+    " Consider manually providing the correct information.:"
+    "cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize(
     "device",
     [
@@ -161,6 +205,20 @@ def test_device_passing(device: torch.device):
     assert converted.s1.k2.device.type == device.type
 
 
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Dirty element name long-name-quad is not a valid Python variable name. You will "
+    "not be able to use the `segment.element_name` syntax to access this element. Set "
+    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
+    "syntax.:"
+    "cheetah.utils.DirtyNameWarning"
+)
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Information provided in element c of type charge cannot be imported automatically."
+    " Consider manually providing the correct information.:"
+    "cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
@@ -191,6 +249,20 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.s1.k2.dtype == dtype
 
 
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Dirty element name long-name-quad is not a valid Python variable name. You will "
+    "not be able to use the `segment.element_name` syntax to access this element. Set "
+    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
+    "syntax.:"
+    "cheetah.utils.DirtyNameWarning"
+)
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Information provided in element c of type charge cannot be imported automatically."
+    " Consider manually providing the correct information.:"
+    "cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
 )

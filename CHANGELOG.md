@@ -6,6 +6,8 @@
 
 - The default resolution of all plotting functions on `Segment` is now `None`, i.e. element-wise. For most lattices this will only result in faster plotting, but note that it is possible that your plots look slightly different, especially if your lattice is short or has few elements. (see #459) (@jank324, @Hespe)
 - Cheetah now requires `torch>=2.3` (see #461) (@jank324)
+- Combine the `num_grid_points_{x,y,tau}` arguments of `SpaceChargeKick` into the `grid_shape` tuple. Fixes the cloning of `SpaceChargeKick`. In addition, the `grid_extend_*` properties were renamed to `grid_extent_*` (see #418) (@Hespe, @jank324)
+- Warning messages, which were previously just printed are now produced using the `warnings` module, brining with it all the features of the latter. (see #450) (@Hespe, @jank324)
 
 ### 🚀 Features
 
@@ -32,6 +34,9 @@
 - Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
 - The PyTorch pin to `<=2.6` was removed, as the issue with `abort trap: 6` was caused by Bmad is no longer actively used in the test workflow (see #429, #431) (@jank324)
 - There was a temporary pin `snowballstemmer<3.0` for the docs build because of an issue with the latest release. It has since been unpinned again because the release was yanked. Refer to https://github.com/sphinx-doc/sphinx/issues/13533 and https://github.com/snowballstem/snowball/issues/229. (see #436, #438) (@jank324)
+- Assert that the last row of a predefined transfer map is always correct when creating a `CustomTransferMap` element (see #462) (@jank324, @Hespe)
+- Minimum compatible versions were defined for all dependencies, and tests were added to ensure that the minimum versions are compatible with Cheetah. (see #463) (@Hespe, @jank324)
+- Add a `pytest` marker for running tests on all subclasses of `Element`. The marker automatically detects if an MWE has not yet been defined for a subclass and alerts the developer through a test failure. (see #418) (@Hespe, @jank324)
 
 ### 🌟 First Time Contributors
 
