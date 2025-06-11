@@ -286,7 +286,6 @@ def convert_element(
                 f"WARNING: Element {name} of type {bmad_parsed['element_type']} cannot"
                 " be converted correctly. Using drift section instead."
             )
-            # TODO: Remove the length if by adding markers to Cheeath
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
