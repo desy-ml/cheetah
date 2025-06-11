@@ -250,7 +250,7 @@ def define_element(line: str, context: dict) -> dict:
 
     element_name = match.group(1).strip()
     if any(c in element_name for c in ".-"):
-        print(
+        warnings.warn(
             f"WARNING: Element name {element_name} is not a valid Python variable name."
             " It can therefore not be used with the `segment.element_name` syntax. You"
             " can still use it with the `getattr(segment, 'element_name']` syntax. "
