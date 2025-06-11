@@ -6,6 +6,9 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+)
 def test_twiss_plot():
     """
     Test that the Twiss plot does not raise an exception using the ARES EA as an
@@ -60,6 +63,9 @@ def test_mean_and_std_particle_plot():
     segment.plot_overview(incoming=incoming)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+)
 def test_twiss_plot_vectorized_2d():
     """
     Test that the Twiss plot does not raise an exception using the ARES EA as an example
@@ -83,6 +89,9 @@ def test_twiss_plot_vectorized_2d():
     segment.plot_twiss(incoming=incoming, vector_idx=(0, 2))
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+)
 def test_reference_particle_plot_vectorized_2d():
     """
     Test that the Twiss plot does not raise an exception using the ARES EA as an example
