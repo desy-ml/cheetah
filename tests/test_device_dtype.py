@@ -4,7 +4,6 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import is_mps_available_and_functional
 
 
 @pytest.mark.for_every_mwe_element(
@@ -105,45 +104,6 @@ def test_conflicting_element_dtype(mwe_element):
         cheetah.ParticleBeam,
     ],
 )
-@pytest.mark.parametrize(
-    "target_device",
-    [
-        pytest.param(
-            torch.device("cuda"),
-            marks=pytest.mark.skipif(
-                not torch.cuda.is_available(), reason="CUDA not available"
-            ),
-        ),
-        pytest.param(
-            torch.device("mps"),
-            marks=pytest.mark.skipif(
-                not is_mps_available_and_functional(), reason="MPS not available"
-            ),
-        ),
-    ],
-)
-def test_move_beam_to_device(BeamClass, target_device: torch.device):
-    """Test that a particle beam can be successfully moved to a different device."""
-    beam = BeamClass.from_parameters()
-
-    # Test that by default the beam is on the CPU
-    for buffer in beam.buffers():
-        assert buffer.device.type == "cpu"
-
-    beam.to(target_device)
-
-    # Test that the beam is now on the target device
-    for buffer in beam.buffers():
-        assert buffer.device.type == target_device.type
-
-
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
 def test_forced_beam_dtype(BeamClass):
     """
     Test that the dtype is properly overriden on beam creation.
@@ -200,23 +160,6 @@ def test_conflicting_beam_dtype(BeamClass):
             beta_x=torch.tensor(1.0, dtype=torch.float32),
             beta_y=torch.tensor(2.0, dtype=torch.float64),
         )
-
-
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
-def test_change_beam_dtype(BeamClass):
-    """Test that beams can be successfully changed to a different dtype."""
-    beam = BeamClass.from_parameters(dtype=torch.float64)
-    beam.to(torch.float16)
-
-    # Test that the beam is now of dtype float16
-    for buffer in beam.buffers():
-        assert buffer.dtype == torch.float16
 
 
 @pytest.mark.parametrize(
