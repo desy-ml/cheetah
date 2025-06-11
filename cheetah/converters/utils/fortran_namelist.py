@@ -10,6 +10,7 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import rpn
+from cheetah.utils import DirtyNameWarning, PhysicsWarning
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
@@ -156,6 +157,7 @@ def evaluate_expression(expression: str, context: dict) -> Any:
             warnings.warn(
                 f"Could not evaluate expression '{expression}'. It will now be treated "
                 "as a string. This may lead to unexpected behaviour.",
+                category=PhysicsWarning,
                 stacklevel=2,
             )
             return expression
@@ -251,11 +253,13 @@ def define_element(line: str, context: dict) -> dict:
     element_name = match.group(1).strip()
     if any(c in element_name for c in ".-"):
         warnings.warn(
-            f"WARNING: Element name {element_name} is not a valid Python variable name."
-            " It can therefore not be used with the `segment.element_name` syntax. You"
-            " can still use it with the `getattr(segment, 'element_name']` syntax. "
+            f"Element name {element_name} is not a valid Python variable name. It can "
+            "therefore not be used with the `segment.element_name` syntax. You can "
+            "still use it with the `getattr(segment, 'element_name']` syntax. "
             "Alternatively, element names can be sanitised using the "
-            "`Segment.sanitize_names` method."
+            "`Segment.sanitize_names` method.",
+            category=DirtyNameWarning,
+            stacklevel=2,
         )
     element_type = match.group(2).strip()
 

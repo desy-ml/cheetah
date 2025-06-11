@@ -10,6 +10,7 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
+from cheetah.utils import PhysicsWarning
 
 
 def convert_element(
@@ -405,6 +406,7 @@ def convert_element(
                 f"Information provided in element {name} of type"
                 f" {parsed['element_type']} cannot be imported automatically. Consider"
                 " manually providing the correct information.",
+                category=PhysicsWarning,
                 stacklevel=2,
             )
             return cheetah.Marker(name=name, **factory_kwargs)
@@ -412,6 +414,7 @@ def convert_element(
             warnings.warn(
                 f"Element {name} of type {parsed['element_type']} cannot be converted "
                 "correctly. Using drift section instead.",
+                category=PhysicsWarning,
                 stacklevel=2,
             )
             # TODO: Remove the length if by adding markers to Cheetah

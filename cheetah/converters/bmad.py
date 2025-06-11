@@ -11,6 +11,7 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
+from cheetah.utils import PhysicsWarning
 
 
 def convert_element(
@@ -286,6 +287,7 @@ def convert_element(
             warnings.warn(
                 f"Element {name} of type {bmad_parsed['element_type']} cannot be"
                 " converted correctly. Using drift section instead.",
+                category=PhysicsWarning,
                 stacklevel=2,
             )
             # TODO: Remove the length if by adding markers to Cheeath

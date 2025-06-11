@@ -3,6 +3,7 @@ import warnings
 import torch
 
 import cheetah
+from cheetah.utils import PhysicsWarning
 
 
 def convert_element_to_cheetah(
@@ -127,6 +128,7 @@ def convert_element_to_cheetah(
         # solution for other accelerators
         warnings.warn(
             "Diagnostic screen was converted with default screen properties.",
+            category=PhysicsWarning,
             stacklevel=2,
         )
         return cheetah.Screen(
@@ -157,6 +159,7 @@ def convert_element_to_cheetah(
         warnings.warn(
             f"Unknown element {element.id} of type {type(element)}, replacing with "
             "drift section.",
+            category=PhysicsWarning,
             stacklevel=2,
         )
         return cheetah.Drift(
