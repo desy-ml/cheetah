@@ -21,14 +21,10 @@ def test_change_beam_attribute_dtype(BeamClass):
 
     # Ensure all attributes have the same dtype initially
     for attribute in beam_attributes:
-        value = getattr(beam, attribute)
-        if isinstance(value, torch.Tensor):
-            assert value.dtype == torch.float32
+        assert getattr(beam, attribute).dtype == torch.float32
 
     beam.to(torch.float64)
 
     # Ensure all attributes have been converted to float64
     for attribute in beam_attributes:
-        value = getattr(beam, attribute)
-        if isinstance(value, torch.Tensor):
-            assert value.dtype == torch.float64
+        assert getattr(beam, attribute).dtype == torch.float64

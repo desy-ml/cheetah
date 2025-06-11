@@ -30,15 +30,11 @@ def test_defining_features_dtype(mwe_element):
     """
 
     # Ensure all features have the same dtype initially
-    for feature in mwe_element.defining_features:
-        value = getattr(mwe_element, feature)
-        if isinstance(value, torch.Tensor):
-            assert value.dtype == torch.float32
+    for feature in mwe_element.defining_tensors:
+        assert getattr(mwe_element, feature).dtype == torch.float32
 
     mwe_element.to(torch.float64)
 
     # Ensure all features have been converted to float64
-    for feature in mwe_element.defining_features:
-        value = getattr(mwe_element, feature)
-        if isinstance(value, torch.Tensor):
-            assert value.dtype == torch.float64
+    for feature in mwe_element.defining_tensors:
+        assert getattr(mwe_element, feature).dtype == torch.float64

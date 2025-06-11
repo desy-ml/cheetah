@@ -104,7 +104,7 @@ def test_length_as_parameter():
     outgoing_parameter = drift_parameter.track(incoming)
 
     # Check that all properties of the two outgoing beams are same
-    for buffer, buffer_parameter in zip(
-        outgoing.buffers(), outgoing_parameter.buffers()
-    ):
-        assert torch.allclose(buffer, buffer_parameter)
+    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+        assert torch.allclose(
+            getattr(outgoing, attribute), getattr(outgoing_parameter, attribute)
+        )
