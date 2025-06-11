@@ -11,7 +11,9 @@ from .resources import ARESlatticeStage3v1_9 as ares
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_tracking_speed():
     """Really only tests that Cheetah isn't super slow."""

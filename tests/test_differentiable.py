@@ -33,7 +33,9 @@ def test_simple_quadrupole():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_ea_magnets():
     """
@@ -57,7 +59,9 @@ def test_ea_magnets():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_ea_incoming_parameter_beam():
     """
@@ -79,7 +83,9 @@ def test_ea_incoming_parameter_beam():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_ea_incoming_particle_beam():
     """
