@@ -319,7 +319,6 @@ def convert_element(
                 category=PhysicsWarning,
                 stacklevel=2,
             )
-            # TODO: Remove the length if by adding markers to Cheeath
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
