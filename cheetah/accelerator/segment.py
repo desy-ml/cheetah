@@ -300,9 +300,8 @@ class Segment(Element):
     def from_ocelot(
         cls,
         cell,
-        sanitize_element_names: bool = False,
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
         **kwargs,
@@ -317,13 +316,10 @@ class Segment(Element):
         created from `ocelot.Monitor` objects when their id has a substring "BPM".
 
         :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
-        :param sanitize_element_names: Whether to sanitise the names of the elements
-            to be valid Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
         :param name: Unique identifier for the entire segment.
-        :param sanitize_name: Whether to sanitise the segment's name to be a valid
-            Python variable name. This is needed if you want to access this segment
-            via `segment.name` syntax.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
@@ -333,20 +329,20 @@ class Segment(Element):
         converted = [
             ocelot.convert_element_to_cheetah(
                 element,
-                sanitize_name=sanitize_element_names,
+                sanitize_name=sanitize_names,
                 device=device,
                 dtype=dtype,
             )
             for element in cell
         ]
-        return cls(converted, name=name, sanitize_name=sanitize_name, **kwargs)
+        return cls(converted, name=name, sanitize_name=sanitize_names, **kwargs)
 
     @classmethod
     def from_bmad(
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
-        sanitize_element_names: bool = False,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -361,8 +357,8 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
-        :param sanitize_element_names: Whether to sanitise the names of the elements
-            to be valid Python variable names. This is needed if you want to use the
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
             `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
@@ -370,11 +366,7 @@ class Segment(Element):
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return bmad.convert_lattice_to_cheetah(
-            bmad_lattice_file_path,
-            environment_variables,
-            sanitize_element_names,
-            device,
-            dtype,
+            bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -391,10 +383,9 @@ class Segment(Element):
 
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param name: Name of the root element
-        :param sanitize_names: Whether to sanitise the names of the elements as well as
-            the name of the segment to be valid Python variable names. This is needed if
-            you want to use the `segment.element_name` syntax to access the element in a
-            segment.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the elegant lattice.

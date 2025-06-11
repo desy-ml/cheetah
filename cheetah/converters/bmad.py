@@ -332,7 +332,7 @@ def convert_element(
 def convert_lattice_to_cheetah(
     bmad_lattice_file_path: Path,
     environment_variables: dict | None = None,
-    sanitize_element_names: bool = False,
+    sanitize_names: bool = False,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -347,8 +347,8 @@ def convert_lattice_to_cheetah(
     :param bmad_lattice_file_path: Path to the Bmad lattice file.
     :param environment_variables: Dictionary of environment variables to use when
         parsing the lattice file.
-    :param sanitize_element_names: Whether to sanitise the names of the elements to be
-        valid Python variable names. This is needed if you want to use the
+    :param sanitize_names: Whether to sanitise the names of the elements to be valid
+        Python variable names. This is needed if you want to use the
         `segment.element_name` syntax to access the element in a segment.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
@@ -393,7 +393,7 @@ def convert_lattice_to_cheetah(
     return convert_element(
         name=context["__use__"],
         context=context,
-        sanitze_name=sanitize_element_names,
+        sanitze_name=sanitize_names,
         device=device,
         dtype=dtype,
     )
