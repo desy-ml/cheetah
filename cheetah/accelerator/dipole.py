@@ -38,6 +38,9 @@ class Dipole(Element):
     :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
         supports `"linear_edge"`.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -56,6 +59,7 @@ class Dipole(Element):
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
@@ -76,7 +80,7 @@ class Dipole(Element):
             dtype,
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 

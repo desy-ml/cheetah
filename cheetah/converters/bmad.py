@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 
 import torch
@@ -10,11 +11,13 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
+from cheetah.utils import PhysicsWarning
 
 
 def convert_element(
     name: str,
     context: dict,
+    sanitize_name: bool = False,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -22,6 +25,8 @@ def convert_element(
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name.
     :param device: Device to put the element on. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the element. If `None`, the current default dtype
@@ -38,10 +43,11 @@ def convert_element(
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
             elements=[
-                convert_element(element_name, context, device, dtype)
+                convert_element(element_name, context, sanitize_name, device, dtype)
                 for element_name in bmad_parsed
             ],
             name=name,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
         if bmad_parsed["element_type"] == "marker":
@@ -56,40 +62,48 @@ def convert_element(
                 ],
                 bmad_parsed,
             )
-            return cheetah.Marker(name=name)
+            return cheetah.Marker(name=name, sanitize_name=sanitize_name)
         elif bmad_parsed["element_type"] == "monitor":
             validate_understood_properties(
                 ["element_type", "alias", "type", "l"], bmad_parsed
             )
             if "l" in bmad_parsed:
                 return cheetah.Drift(
-                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
+                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                    name=name,
+                    sanitize_name=sanitize_name,
                 )
             else:
-                return cheetah.Marker(name=name)
+                return cheetah.Marker(name=name, sanitize_name=sanitize_name)
         elif bmad_parsed["element_type"] == "instrument":
             validate_understood_properties(
                 ["element_type", "alias", "type", "l"], bmad_parsed
             )
             if "l" in bmad_parsed:
                 return cheetah.Drift(
-                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
+                    length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                    name=name,
+                    sanitize_name=sanitize_name,
                 )
             else:
-                return cheetah.Marker(name=name)
+                return cheetah.Marker(name=name, sanitize_name=sanitize_name)
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
                 ["element_type", "alias", "type", "l", "descrip"], bmad_parsed
             )
             return cheetah.Drift(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "drift":
             validate_understood_properties(
                 ["element_type", "l", "type", "descrip"], bmad_parsed
             )
             return cheetah.Drift(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(
@@ -99,6 +113,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
@@ -108,6 +123,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "sbend":
             validate_understood_properties(
@@ -145,6 +161,7 @@ def convert_element(
                     else None
                 ),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
             # TODO: Aperture for quadrupoles?
@@ -157,6 +174,7 @@ def convert_element(
                 k1=torch.tensor(bmad_parsed["k1"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "sextupole":
             # TODO: Aperture for sextupoles?
@@ -169,6 +187,7 @@ def convert_element(
                 k2=torch.tensor(bmad_parsed["k2"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(
@@ -178,6 +197,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k=torch.tensor(bmad_parsed["ks"], **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "lcavity":
             validate_understood_properties(
@@ -204,6 +224,7 @@ def convert_element(
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
@@ -217,6 +238,7 @@ def convert_element(
                             bmad_parsed.get("l", 0.0), **factory_kwargs
                         ),
                         name=name + "_drift",
+                        sanitize_name=sanitize_name,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -227,9 +249,11 @@ def convert_element(
                         ),
                         shape="rectangular",
                         name=name + "_aperture",
+                        sanitize_name=sanitize_name,
                     ),
                 ],
                 name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "ecollimator":
             validate_understood_properties(
@@ -243,6 +267,7 @@ def convert_element(
                             bmad_parsed.get("l", 0.0), **factory_kwargs
                         ),
                         name=name + "_drift",
+                        sanitize_name=sanitize_name,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -253,8 +278,11 @@ def convert_element(
                         ),
                         shape="elliptical",
                         name=name + "_aperture",
+                        sanitize_name=sanitize_name,
                     ),
                 ],
+                name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "wiggler":
             validate_understood_properties(
@@ -272,7 +300,9 @@ def convert_element(
                 bmad_parsed,
             )
             return cheetah.Undulator(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs), name=name
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "patch":
             # TODO: Does this need to be implemented in Cheetah in a more proper way?
@@ -280,15 +310,19 @@ def convert_element(
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
         else:
-            print(
-                f"WARNING: Element {name} of type {bmad_parsed['element_type']} cannot"
-                " be converted correctly. Using drift section instead."
+            warnings.warn(
+                f"Element {name} of type {bmad_parsed['element_type']} cannot be"
+                " converted correctly. Using drift section instead.",
+                category=PhysicsWarning,
+                stacklevel=2,
             )
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
+                sanitize_name=sanitize_name,
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
@@ -297,7 +331,7 @@ def convert_element(
 def convert_lattice_to_cheetah(
     bmad_lattice_file_path: Path,
     environment_variables: dict | None = None,
-    warnings: bool = True,
+    sanitize_names: bool = False,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -312,15 +346,15 @@ def convert_lattice_to_cheetah(
     :param bmad_lattice_file_path: Path to the Bmad lattice file.
     :param environment_variables: Dictionary of environment variables to use when
         parsing the lattice file.
-    :param warnings: Whether to print warnings when elements or expressions are not
-            supported by Cheetah or converted with potentially unexpected behaviour.
+    :param sanitize_names: Whether to sanitise the names of the elements to be valid
+        Python variable names. This is needed if you want to use the
+        `segment.element_name` syntax to access the element in a segment.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
         of PyTorch is used.
     :return: Cheetah `Segment` representing the Bmad lattice.
     """
-
     # If provided, set environment variables
     if environment_variables is not None:
         for key, value in environment_variables.items():
@@ -352,7 +386,13 @@ def convert_lattice_to_cheetah(
     ), "Merging lines should never produce more lines than there were before."
 
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(merged_lines, warnings)
+    context = parse_lines(merged_lines)
 
     # Convert the parsed lattice info to Cheetah elements
-    return convert_element(context["__use__"], context, device, dtype)
+    return convert_element(
+        name=context["__use__"],
+        context=context,
+        sanitize_name=sanitize_names,
+        device=device,
+        dtype=dtype,
+    )
