@@ -4,6 +4,7 @@ import pytest
 import torch
 
 import cheetah
+from cheetah.utils import PhysicsWarning
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -31,7 +32,11 @@ def test_screen_conversion(name: str):
     Test on the example of the ARES lattice that all screens are correctly converted to
     `cheetah.Screen`.
     """
-    segment = cheetah.Segment.from_ocelot(ares.cell)
+    with pytest.warns(
+        PhysicsWarning,
+        match="Diagnostic screen was converted with default screen properties.",
+    ):
+        segment = cheetah.Segment.from_ocelot(ares.cell)
     screen = getattr(segment, name)
     assert isinstance(screen, cheetah.Screen)
 

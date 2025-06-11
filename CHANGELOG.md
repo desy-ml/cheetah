@@ -1,19 +1,32 @@
 # Changelog
 
-## v0.7.3 [🚧 Work in Progress]
+## v0.7.4 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.3](https://github.com/desy-ml/cheetah/releases/tag/v0.7.3) (2025-06-11)
 
 ### 🚨 Breaking Changes
 
 - The default resolution of all plotting functions on `Segment` is now `None`, i.e. element-wise. For most lattices this will only result in faster plotting, but note that it is possible that your plots look slightly different, especially if your lattice is short or has few elements. (see #459) (@jank324, @Hespe)
 - Cheetah now requires `torch>=2.3` (see #461) (@jank324)
 - Combine the `num_grid_points_{x,y,tau}` arguments of `SpaceChargeKick` into the `grid_shape` tuple. Fixes the cloning of `SpaceChargeKick`. In addition, the `grid_extend_*` properties were renamed to `grid_extent_*` (see #418) (@Hespe, @jank324)
+- Warning messages, which were previously just printed are now produced using the `warnings` module, brining with it all the features of the latter. (see #450) (@Hespe, @jank324)
 
 ### 🚀 Features
 
 - Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
 - Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
 - Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
-- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432) (@jank324)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432, #465) (@jank324)
 - `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 - There is a warning now when converting elements from Elegant or Bmad that have names which are invalid for use with the `segment.element_name` syntax, and add a convenience method for explicitly converting these names to valid Python variable names. (see #411) (@amylizzle, @jank324)
@@ -39,6 +52,8 @@
 - Add a `pytest` marker for running tests on all subclasses of `Element`. The marker automatically detects if an MWE has not yet been defined for a subclass and alerts the developer through a test failure. (see #418) (@Hespe, @jank324)
 
 ### 🌟 First Time Contributors
+
+- Copilot 🤖
 
 ## [v0.7.2](https://github.com/desy-ml/cheetah/releases/tag/v0.7.2) (2025-04-28)
 

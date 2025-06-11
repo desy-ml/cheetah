@@ -4,6 +4,7 @@ import scipy.stats
 import torch
 
 import cheetah
+from cheetah.utils import is_mps_available_and_functional
 
 
 def test_create_from_parameters():
@@ -236,13 +237,31 @@ def test_indexing_fails_for_invalid_index():
         _ = beam[6]
 
 
-def test_random_subsample_gaussian_properties():
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_random_subsample_gaussian_properties(device: torch.device):
     """
     Test that a random subsample of a beam has the correct number of particles and
     similar parameters as the original.
     """
     original_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001", device=device, dtype=torch.float32
     )
     subsampled_beam = original_beam.randomly_subsampled(50_000)
 
@@ -287,14 +306,32 @@ def test_random_subsample_gaussian_properties():
     )
 
 
-def test_random_subsample_energy_distance_better_than_gaussian():
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_random_subsample_energy_distance_better_than_gaussian(device: torch.device):
     """
     Test that on a non-Gaussian beam, the energy distance from the random subsample to
     the original beam is much (5x) lower than the energy distance from a Gaussian
     subsample (via conversion to `ParameterBeam` and back) to the original beam.
     """
     original_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001", device=device, dtype=torch.float32
     )
     randomly_subsampled_beam = original_beam.randomly_subsampled(50_000)
     gaussian_subsampled_beam = original_beam.as_parameter_beam().as_particle_beam(
@@ -307,10 +344,10 @@ def test_random_subsample_energy_distance_better_than_gaussian():
         gaussian_subsampled_dim = getattr(gaussian_subsampled_beam, dim_name)
 
         energy_distance_to_random_subsample = scipy.stats.energy_distance(
-            original_dim, randomly_subsampled_dim
+            original_dim.cpu(), randomly_subsampled_dim.cpu()
         )
         energy_distance_to_gaussian_subsample = scipy.stats.energy_distance(
-            original_dim, gaussian_subsampled_dim
+            original_dim.cpu(), gaussian_subsampled_dim.cpu()
         )
 
         assert (
