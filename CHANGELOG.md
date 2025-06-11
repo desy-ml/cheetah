@@ -6,7 +6,7 @@
 
 - The default resolution of all plotting functions on `Segment` is now `None`, i.e. element-wise. For most lattices this will only result in faster plotting, but note that it is possible that your plots look slightly different, especially if your lattice is short or has few elements. (see #459) (@jank324, @Hespe)
 - Cheetah now requires `torch>=2.3` (see #461) (@jank324)
-- Combine the `num_grid_points_{x,y,tau}` arguments of `SpaceChargeKick` into the `grid_shape` tuple. Fixes the cloning of `SpaceChargeKick`. (see #418) (@Hespe)
+- Combine the `num_grid_points_{x,y,tau}` arguments of `SpaceChargeKick` into the `grid_shape` tuple. Fixes the cloning of `SpaceChargeKick`. In addition, the `grid_extend_*` properties were renamed to `grid_extent_*` (see #418) (@Hespe, @jank324)
 
 ### 🚀 Features
 

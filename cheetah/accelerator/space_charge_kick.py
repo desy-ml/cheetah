@@ -32,11 +32,11 @@ class SpaceChargeKick(Element):
 
     :param effect_length: Length over which the effect is applied in meters.
     :param grid_shape: Number of grid points in (x, y, tau) directions.
-    :param grid_extend_x: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_x: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the x direction (dimensionless).
-    :param grid_extend_y: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_y: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the y direction (dimensionless).
-    :param grid_extend_tau: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_tau: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the tau direction (dimensionless).
     :param name: Unique identifier of the element.
     """
@@ -46,15 +46,15 @@ class SpaceChargeKick(Element):
         effect_length: torch.Tensor,
         grid_shape: tuple[int, int, int] = (32, 32, 32),
         # TODO: Simplify these to a single tensor?
-        grid_extend_x: torch.Tensor | None = None,
-        grid_extend_y: torch.Tensor | None = None,
-        grid_extend_tau: torch.Tensor | None = None,
+        grid_extent_x: torch.Tensor | None = None,
+        grid_extent_y: torch.Tensor | None = None,
+        grid_extent_tau: torch.Tensor | None = None,
         name: str | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [effect_length, grid_extend_x, grid_extend_y, grid_extend_tau],
+            [effect_length, grid_extent_x, grid_extent_y, grid_extent_tau],
             device,
             dtype,
         )
@@ -69,23 +69,23 @@ class SpaceChargeKick(Element):
         )
         # In multiples of sigma
         self.register_buffer_or_parameter(
-            "grid_extend_x",
+            "grid_extent_x",
             torch.as_tensor(
-                grid_extend_x if grid_extend_x is not None else 3.0,
+                grid_extent_x if grid_extent_x is not None else 3.0,
                 **self.factory_kwargs,
             ),
         )
         self.register_buffer_or_parameter(
-            "grid_extend_y",
+            "grid_extent_y",
             torch.as_tensor(
-                grid_extend_y if grid_extend_y is not None else 3.0,
+                grid_extent_y if grid_extent_y is not None else 3.0,
                 **self.factory_kwargs,
             ),
         )
         self.register_buffer_or_parameter(
-            "grid_extend_tau",
+            "grid_extent_tau",
             torch.as_tensor(
-                grid_extend_tau if grid_extend_tau is not None else 3.0,
+                grid_extent_tau if grid_extent_tau is not None else 3.0,
                 **self.factory_kwargs,
             ),
         )
@@ -603,9 +603,9 @@ class SpaceChargeKick(Element):
             # Compute useful quantities
             grid_dimensions = torch.stack(
                 [
-                    self.grid_extend_x * flattened_incoming.sigma_x,
-                    self.grid_extend_y * flattened_incoming.sigma_y,
-                    self.grid_extend_tau * flattened_incoming.sigma_tau,
+                    self.grid_extent_x * flattened_incoming.sigma_x,
+                    self.grid_extent_y * flattened_incoming.sigma_y,
+                    self.grid_extent_tau * flattened_incoming.sigma_tau,
                 ],
                 dim=-1,
             )
@@ -679,17 +679,17 @@ class SpaceChargeKick(Element):
         return super().defining_features + [
             "effect_length",
             "grid_shape",
-            "grid_extend_x",
-            "grid_extend_y",
-            "grid_extend_tau",
+            "grid_extent_x",
+            "grid_extent_y",
+            "grid_extent_tau",
         ]
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(effect_length={repr(self.effect_length)}, "
             + f"grid_shape={repr(self.grid_shape)}, "
-            + f"grid_extend_x={repr(self.grid_extend_x)}, "
-            + f"grid_extend_y={repr(self.grid_extend_y)}, "
-            + f"grid_extend_tau={repr(self.grid_extend_tau)}, "
+            + f"grid_extent_x={repr(self.grid_extent_x)}, "
+            + f"grid_extent_y={repr(self.grid_extent_y)}, "
+            + f"grid_extent_tau={repr(self.grid_extent_tau)}, "
             + f"name={repr(self.name)})"
         )
