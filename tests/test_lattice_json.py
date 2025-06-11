@@ -6,6 +6,11 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
+)
 def test_save_and_reload_ares_example(tmp_path):
     """
     Test that saving Cheetah `Segment` to LatticeJSON works and that it can be reloaded
@@ -90,7 +95,7 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     )
 
     assert all(
-        buffer.dtype == desired_dtype
+        getattr(element, feature).dtype == desired_dtype
         for element in reloaded_segment.elements
-        for buffer in element.buffers()
+        for feature in element.defining_tensors
     )
