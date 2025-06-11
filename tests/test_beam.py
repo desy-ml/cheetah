@@ -4,7 +4,7 @@ import torch
 import cheetah
 
 
-@pytest.mark.parametrize("BeamClass",  [cheetah.ParameterBeam, cheetah.ParticleBeam])
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_change_beam_attribute_dtype(BeamClass):
     """
     Test that all beam attributes are properly converted between different dtypes. This
