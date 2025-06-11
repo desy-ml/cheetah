@@ -131,3 +131,20 @@ def test_parameters_at_initialization():
     assert list(dipole_initial.parameters()) == list(dipole_assigned.parameters())
     assert len(list(dipole_initial.parameters())) == 1
     assert parameter in dipole_initial.parameters()
+
+
+def test_requiregrad_at_particlebeam_initialization():
+    """
+    Test that passing a torch.tensor with requires_grad=True at
+    ParticleBeam.from_parameters initialization creates a beam with proper
+    gradient tracking.
+    """
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100,
+        mu_x=torch.tensor(0.0, requires_grad=True),
+        mu_y=torch.tensor(0.0, requires_grad=True),
+        energy=torch.tensor(1e6),
+    )
+
+    assert beam.x.requires_grad
+    assert beam.y.requires_grad
