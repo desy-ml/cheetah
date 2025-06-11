@@ -86,7 +86,7 @@ def convert_element(
                     sanitize_name=sanitze_name,
                 )
             else:
-                return cheetah.Marker(name=name)
+                return cheetah.Marker(name=name, sanitize_name=sanitze_name)
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
                 ["element_type", "alias", "type", "l", "descrip"], bmad_parsed
