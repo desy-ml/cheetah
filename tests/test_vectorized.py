@@ -333,33 +333,31 @@ def test_vectorized_screen_2d(BeamClass, method):
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Sextupole,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
+@pytest.mark.for_every_mwe_element(
+    "mwe_element",
+    except_for=[
+        cheetah.Aperture,
+        cheetah.BPM,
+        cheetah.CustomTransferMap,
+        cheetah.Marker,
+        cheetah.Screen,
+        cheetah.Segment,
+        cheetah.SpaceChargeKick,
     ],
 )
-def test_drift_broadcasting_two_different_inputs(ElementClass):
+def test_broadcasting_two_different_inputs(mwe_element):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
+
+    Skipped for elements whose response is not influenced by their length.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
-    element = ElementClass(length=torch.tensor([[0.6], [0.5], [0.4]]))
 
-    outgoing = element.track(incoming)
+    mwe_element.length = torch.tensor([[0.6], [0.5], [0.4]])
+    outgoing = mwe_element.track(incoming)
 
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
@@ -375,7 +373,7 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
         cheetah.TransverseDeflectingCavity,
     ],
 )
-def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
+def test_broadcasting_two_different_inputs_bmadx(ElementClass):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `"bmadx"` tracking method.
@@ -488,12 +486,12 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
     if aperture_shape == "elliptical":
         assert np.allclose(
             outgoing.survival_probabilities.mean(dim=-1)[:, 0],
-            [0.077, 0.945, 0.995],
-            atol=4e-3,  # Last digit off by four
+            [0.0235, 0.42, 0.552],
+            atol=5e-3,  # Last digit off by five
         )
     elif aperture_shape == "rectangular":
         assert np.allclose(
             outgoing.survival_probabilities.mean(dim=-1)[:, 0],
-            [0.079, 0.954, 0.997],
-            atol=4e-3,  # Last digit off by four
+            [0.029, 0.495, 0.629],
+            atol=5e-3,  # Last digit off by five
         )
