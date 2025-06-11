@@ -7,7 +7,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
-# TODO: Test that Cheeath tracks faster than Ocelot
+# TODO: Test that Cheetah tracks faster than Ocelot
 def test_tracking_speed():
     """Really only tests that Cheetah isn't super slow."""
     cell = cheetah.converters.ocelot.subcell_of_ocelot(
