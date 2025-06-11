@@ -7,7 +7,10 @@ from cheetah.utils import PhysicsWarning
 
 
 def convert_element_to_cheetah(
-    element, device: torch.device | None = None, dtype: torch.dtype | None = None
+    element,
+    sanitize_name: bool = False,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
     """
     Translate an Ocelot element to a Cheetah element.
@@ -20,6 +23,9 @@ def convert_element_to_cheetah(
 
     :param element: Ocelot element object representing an element of particle
         accelerator.
+    :param sanitize_name: Whether to sanitisze the name to be a valid Python variable "
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     :return: Cheetah element object representing an element of particle accelerator.
     """
     try:
@@ -39,36 +45,42 @@ def convert_element_to_cheetah(
         return cheetah.Drift(
             length=torch.tensor(element.l, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Quadrupole):
         return cheetah.Quadrupole(
             length=torch.tensor(element.l, **factory_kwargs),
             k1=torch.tensor(element.k1, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Sextupole):
         return cheetah.Sextupole(
             length=torch.tensor(element.l, **factory_kwargs),
             k2=torch.tensor(element.k2, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Solenoid):
         return cheetah.Solenoid(
             length=torch.tensor(element.l, **factory_kwargs),
             k=torch.tensor(element.k, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Hcor):
         return cheetah.HorizontalCorrector(
             length=torch.tensor(element.l, **factory_kwargs),
             angle=torch.tensor(element.angle, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Vcor):
         return cheetah.VerticalCorrector(
             length=torch.tensor(element.l, **factory_kwargs),
             angle=torch.tensor(element.angle, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Bend):
         return cheetah.Dipole(
@@ -81,6 +93,7 @@ def convert_element_to_cheetah(
             fringe_integral_exit=torch.tensor(element.fintx, **factory_kwargs),
             gap=torch.tensor(element.gap, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.SBend):
         return cheetah.Dipole(
@@ -93,6 +106,7 @@ def convert_element_to_cheetah(
             fringe_integral_exit=torch.tensor(element.fintx, **factory_kwargs),
             gap=torch.tensor(element.gap, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.RBend):
         return cheetah.RBend(
@@ -105,6 +119,7 @@ def convert_element_to_cheetah(
             fringe_integral_exit=torch.tensor(element.fintx, **factory_kwargs),
             gap=torch.tensor(element.gap, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Cavity):
         return cheetah.Cavity(
@@ -113,6 +128,7 @@ def convert_element_to_cheetah(
             frequency=torch.tensor(element.freq, **factory_kwargs),
             phase=torch.tensor(element.phi, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.TDCavity):
         # TODO: Better replacement at some point?
@@ -122,6 +138,7 @@ def convert_element_to_cheetah(
             frequency=torch.tensor(element.freq, **factory_kwargs),
             phase=torch.tensor(element.phi, **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Monitor) and ("BSC" in element.id):
         # NOTE This pattern is very specific to ARES and will need a more complex
@@ -135,16 +152,19 @@ def convert_element_to_cheetah(
             resolution=(2448, 2040),
             pixel_size=torch.tensor([3.5488e-6, 2.5003e-6], **factory_kwargs),
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Monitor) and "BPM" in element.id:
-        return cheetah.BPM(name=element.id)
+        return cheetah.BPM(name=element.id, sanitize_name=sanitize_name)
     elif isinstance(element, ocelot.Marker):
-        return cheetah.Marker(name=element.id)
+        return cheetah.Marker(name=element.id, sanitize_name=sanitize_name)
     elif isinstance(element, ocelot.Monitor):
-        return cheetah.Marker(name=element.id)
+        return cheetah.Marker(name=element.id, sanitize_name=sanitize_name)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
-            torch.tensor(element.l, **factory_kwargs), name=element.id
+            torch.tensor(element.l, **factory_kwargs),
+            name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Aperture):
         shape_translation = {"rect": "rectangular", "elip": "elliptical"}
@@ -154,6 +174,7 @@ def convert_element_to_cheetah(
             shape=shape_translation[element.type],
             is_active=True,
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     else:
         warnings.warn(
@@ -163,7 +184,9 @@ def convert_element_to_cheetah(
             stacklevel=2,
         )
         return cheetah.Drift(
-            length=torch.tensor(element.l, **factory_kwargs), name=element.id
+            length=torch.tensor(element.l, **factory_kwargs),
+            name=element.id,
+            sanitize_name=sanitize_name,
         )
 
 

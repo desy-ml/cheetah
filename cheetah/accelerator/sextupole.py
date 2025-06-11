@@ -17,6 +17,9 @@ class Sextupole(Element):
     :param misalignment: Transverse misalignment in x and y directions in meters.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitisze the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -26,6 +29,7 @@ class Sextupole(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -33,7 +37,7 @@ class Sextupole(Element):
             [length, k2, misalignment, tilt], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
