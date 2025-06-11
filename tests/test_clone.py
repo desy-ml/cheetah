@@ -26,7 +26,7 @@ def test_beam_buffer_contents_and_location(BeamClass):
     Test that the buffers of cloned beams have the same content while not sharing the
     same memory location.
     """
-    beam = BeamClass.from_parameters(species=cheetah.Species("proton"))
+    beam = BeamClass.from_parameters(species=cheetah.Species("positron"))
     clone = beam.clone()
 
     for attribute in beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
