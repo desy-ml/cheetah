@@ -396,5 +396,5 @@ def convert_lattice_to_cheetah(
         context=context,
         sanitze_name=sanitize_element_names,
         device=device,
-        device=dtype,
+        dtype=dtype,
     )
