@@ -100,6 +100,9 @@ def test_reading_shows_beam_parameter(screen_method):
     assert torch.any(segment.my_screen.reading > 0.0)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize("screen_method", ["histogram", "kde"])
 def test_reading_shows_beam_ares(screen_method):
     """

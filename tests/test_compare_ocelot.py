@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import ocelot
+import pytest
 import torch
 
 import cheetah
@@ -254,6 +255,9 @@ def test_solenoid():
     )
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+)
 def test_ares_ea():
     """
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES
