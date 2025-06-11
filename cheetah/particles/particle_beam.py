@@ -1101,7 +1101,7 @@ class ParticleBeam(Beam):
             random_state = torch.Generator(device=self.particles.device)
 
         randomly_permuted_particle_indices = torch.randperm(
-            self.num_particles, generator=random_state
+            self.num_particles, generator=random_state, device=random_state.device
         )
         subsampled_particle_indices = randomly_permuted_particle_indices[:num_particles]
 
