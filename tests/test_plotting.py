@@ -7,7 +7,9 @@ from .resources import ARESlatticeStage3v1_9 as ares
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_twiss_plot():
     """
@@ -64,7 +66,9 @@ def test_mean_and_std_particle_plot():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_twiss_plot_vectorized_2d():
     """
@@ -90,7 +94,9 @@ def test_twiss_plot_vectorized_2d():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_reference_particle_plot_vectorized_2d():
     """

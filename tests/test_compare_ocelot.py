@@ -256,7 +256,9 @@ def test_solenoid():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_ares_ea():
     """

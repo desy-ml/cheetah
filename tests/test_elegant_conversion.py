@@ -16,16 +16,29 @@ def test_fodo():
 
     with pytest.warns(
         PhysicsWarning,
-        match="Information provided in element c of type charge cannot be imported automatically. Consider manually providing the correct information.",
+        match=(
+            "Information provided in element c of type charge cannot be imported "
+            "automatically. Consider manually providing the correct information."
+        ),
     ), pytest.warns(
         DirtyNameWarning,
-        match="Dirty element name long-name-quad is not a valid Python variable name. You will not be able to use the `segment.element_name` syntax to access this element. Set `sanitize_name=True` to change the name to a valid one, if you want to use this syntax.",
+        match=(
+            "Dirty element name long-name-quad is not a valid Python variable name. "
+            "You will not be able to use the `segment.element_name` syntax to access "
+            "this element. Set `sanitize_name=True` to change the name to a valid one, "
+            "if you want to use this syntax."
+        ),
     ):
         converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
     with pytest.warns(
         DirtyNameWarning,
-        match="Dirty element name long-name-quad is not a valid Python variable name. You will not be able to use the `segment.element_name` syntax to access this element. Set `sanitize_name=True` to change the name to a valid one, if you want to use this syntax.",
+        match=(
+            "Dirty element name long-name-quad is not a valid Python variable name. "
+            "You will not be able to use the `segment.element_name` syntax to access "
+            "this element. Set `sanitize_name=True` to change the name to a valid one, "
+            "if you want to use this syntax."
+        ),
     ):
         correct_lattice = cheetah.Segment(
             [
@@ -132,10 +145,18 @@ def test_custom_transfer_map_import():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Dirty element name long-name-quad is not a valid Python variable name. You will not be able to use the `segment.element_name` syntax to access this element. Set `sanitize_name=True` to change the name to a valid one, if you want to use this syntax.:cheetah.utils.DirtyNameWarning"
+    "ignore:"
+    "Dirty element name long-name-quad is not a valid Python variable name. You will "
+    "not be able to use the `segment.element_name` syntax to access this element. Set "
+    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
+    "syntax.:"
+    "cheetah.utils.DirtyNameWarning"
 )
 @pytest.mark.filterwarnings(
-    "ignore:Information provided in element c of type charge cannot be imported automatically. Consider manually providing the correct information.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Information provided in element c of type charge cannot be imported automatically."
+    " Consider manually providing the correct information.:"
+    "cheetah.utils.PhysicsWarning"
 )
 @pytest.mark.parametrize(
     "device",
@@ -185,10 +206,18 @@ def test_device_passing(device: torch.device):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Dirty element name long-name-quad is not a valid Python variable name. You will not be able to use the `segment.element_name` syntax to access this element. Set `sanitize_name=True` to change the name to a valid one, if you want to use this syntax.:cheetah.utils.DirtyNameWarning"
+    "ignore:"
+    "Dirty element name long-name-quad is not a valid Python variable name. You will "
+    "not be able to use the `segment.element_name` syntax to access this element. Set "
+    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
+    "syntax.:"
+    "cheetah.utils.DirtyNameWarning"
 )
 @pytest.mark.filterwarnings(
-    "ignore:Information provided in element c of type charge cannot be imported automatically. Consider manually providing the correct information.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Information provided in element c of type charge cannot be imported automatically."
+    " Consider manually providing the correct information.:"
+    "cheetah.utils.PhysicsWarning"
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
@@ -221,10 +250,18 @@ def test_dtype_passing(dtype: torch.dtype):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Dirty element name long-name-quad is not a valid Python variable name. You will not be able to use the `segment.element_name` syntax to access this element. Set `sanitize_name=True` to change the name to a valid one, if you want to use this syntax.:cheetah.utils.DirtyNameWarning"
+    "ignore:"
+    "Dirty element name long-name-quad is not a valid Python variable name. You will "
+    "not be able to use the `segment.element_name` syntax to access this element. Set "
+    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
+    "syntax.:"
+    "cheetah.utils.DirtyNameWarning"
 )
 @pytest.mark.filterwarnings(
-    "ignore:Information provided in element c of type charge cannot be imported automatically. Consider manually providing the correct information.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Information provided in element c of type charge cannot be imported automatically."
+    " Consider manually providing the correct information.:"
+    "cheetah.utils.PhysicsWarning"
 )
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True

@@ -183,7 +183,9 @@ def test_track_particle_segment_shape_2d(BeamClass):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:Diagnostic screen was converted with default screen properties.:cheetah.utils.PhysicsWarning"
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
 )
 def test_enormous_through_ares_ea():
     """
