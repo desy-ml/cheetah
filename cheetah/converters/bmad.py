@@ -43,7 +43,7 @@ def convert_element(
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
             elements=[
-                convert_element(element_name, context, device, dtype)
+                convert_element(element_name, context, sanitze_name, device, dtype)
                 for element_name in bmad_parsed
             ],
             name=name,
@@ -356,7 +356,6 @@ def convert_lattice_to_cheetah(
         of PyTorch is used.
     :return: Cheetah `Segment` representing the Bmad lattice.
     """
-
     # If provided, set environment variables
     if environment_variables is not None:
         for key, value in environment_variables.items():
