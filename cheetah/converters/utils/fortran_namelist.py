@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import infix, rpn
+from cheetah.utils import PhysicsWarning
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
@@ -100,15 +102,13 @@ def merge_delimiter_continued_lines(
     return merged_lines
 
 
-def evaluate_expression(expression: str, context: dict, warnings: bool = True) -> Any:
+def evaluate_expression(expression: str, context: dict) -> Any:
     """
     Evaluate an expression in the context of a dictionary of variables.
 
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Result of evaluating the expression.
     """
 
@@ -140,15 +140,13 @@ def evaluate_expression(expression: str, context: dict, warnings: bool = True) -
         try:
             return rpn.evaluate_expression(expression, context)
         except SyntaxError:
-            if warnings:
-                print(
-                    f"WARNING: Could not evaluate expression {expression}. It will now "
-                    "be treated as a string. This may lead to unexpected behaviour."
-                )
+            warnings.warn(
+                f"Could not evaluate expression '{expression}'. It will now be treated "
+                "as a string. This may lead to unexpected behaviour.",
+                category=PhysicsWarning,
+                stacklevel=2,
+            )
             return expression
-        except Exception as e:
-            print(expression)
-            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
@@ -175,15 +173,13 @@ def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
     return type_matching_keys
 
 
-def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
+def assign_property(line: str, context: dict) -> dict:
     """
     Assign a property of an element to the context.
 
     :param line: Line of a property assignment to be parsed.
     :param context: Dictionary of variables to assign the property to and from which to
         read variables.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
     pattern = f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
@@ -198,7 +194,7 @@ def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
     else:
         object_names = [object_name]
 
-    expression_result = evaluate_expression(property_expression, context, warnings)
+    expression_result = evaluate_expression(property_expression, context)
 
     for name in object_names:
         if name not in context:
@@ -208,15 +204,13 @@ def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
     return context
 
 
-def assign_variable(line: str, context: dict, warnings: bool = True) -> dict:
+def assign_variable(line: str, context: dict) -> dict:
     """
     Assign a variable to the context.
 
     :param line: Line of a variable assignment to be parsed.
     :param context: Dictionary of variables to assign the variable to and from which to
         read variables.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*=(.*)"
@@ -225,34 +219,24 @@ def assign_variable(line: str, context: dict, warnings: bool = True) -> dict:
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
 
-    context[variable_name] = evaluate_expression(variable_expression, context, warnings)
+    context[variable_name] = evaluate_expression(variable_expression, context)
 
     return context
 
 
-def define_element(line: str, context: dict, warnings: bool = True) -> dict:
+def define_element(line: str, context: dict) -> dict:
     """
     Define an element in the context.
 
     :param line: Line of an element definition to be parsed.
     :param context: Dictionary of variables to define the element in and from which to
         read variables.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
     pattern = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
-    if any(c in element_name for c in ".-"):
-        print(
-            f"WARNING: Element name {element_name} is not a valid Python variable name."
-            " It can therefore not be used with the `segment.element_name` syntax. You"
-            " can still use it with the `getattr(segment, 'element_name']` syntax. "
-            "Alternatively, element names can be sanitised using the "
-            "`Segment.sanitize_names` method."
-        )
     element_type = match.group(2).strip()
 
     if element_type in context:
@@ -276,7 +260,7 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
             property_expression = property_expression.strip()
 
             element_properties[property_name] = evaluate_expression(
-                property_expression, context, warnings
+                property_expression, context
             )
 
     context[element_name] = element_properties
@@ -375,14 +359,12 @@ def parse_use_line(line: str, context: dict) -> dict:
     return context
 
 
-def parse_lines(lines: str, warnings: bool = True) -> dict:
+def parse_lines(lines: str) -> dict:
     """
     Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
     and merged before being passed to this function.
 
     :param lines: List of lines to parse.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Dictionary of variables defined in the lattice file.
     """
     property_assignment_pattern = PROPERTY_NAME_PATTERN + r"\[[a-z0-9_%]+\]\s*=.*"
@@ -412,15 +394,15 @@ def parse_lines(lines: str, warnings: bool = True) -> dict:
 
     for line in lines:
         if re.fullmatch(property_assignment_pattern, line):
-            context = assign_property(line, context, warnings)
+            context = assign_property(line, context)
         elif re.fullmatch(variable_assignment_pattern, line):
-            context = assign_variable(line, context, warnings)
+            context = assign_variable(line, context)
         elif re.fullmatch(line_definition_pattern, line):
             context = define_line(line, context)
         elif re.fullmatch(overlay_definition_pattern, line):
             context = define_overlay(line, context)
         elif re.fullmatch(element_definition_pattern, line):
-            context = define_element(line, context, warnings)
+            context = define_element(line, context)
         elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
 
