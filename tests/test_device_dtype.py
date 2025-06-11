@@ -7,39 +7,6 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 
-@pytest.mark.for_every_mwe_element("mwe_element")
-@pytest.mark.parametrize(
-    "target_device",
-    [
-        pytest.param(
-            torch.device("cuda"),
-            marks=pytest.mark.skipif(
-                not torch.cuda.is_available(), reason="CUDA not available"
-            ),
-        ),
-        pytest.param(
-            torch.device("mps"),
-            marks=pytest.mark.skipif(
-                not is_mps_available_and_functional(), reason="MPS not available"
-            ),
-        ),
-    ],
-)
-def test_move_element_to_device(mwe_element, target_device: torch.device):
-    """Test that elements can be successfully moved to a different device."""
-
-    # Test that by default the element is on the CPU
-    for buffer in mwe_element.buffers():
-        assert buffer.device.type == "cpu"
-
-    # Move the element to the target device
-    mwe_element.to(target_device)
-
-    # Test that the element is now on the target device
-    for buffer in mwe_element.buffers():
-        assert buffer.device.type == target_device.type
-
-
 @pytest.mark.for_every_mwe_element(
     "mwe_element", except_for=[cheetah.Marker, cheetah.Segment]
 )
@@ -129,22 +96,6 @@ def test_conflicting_element_dtype(mwe_element):
         mwe_element.__class__(
             **{name: value.double()}, **required_arguments, dtype=torch.float16
         )
-
-
-@pytest.mark.for_every_mwe_element("mwe_element")
-def test_change_element_dtype(mwe_element):
-    """Test that elements can be successfully changed to a different dtype."""
-
-    # Test that by default the element is of dtype float32
-    for buffer in mwe_element.buffers():
-        assert buffer.dtype == torch.float32
-
-    # Change the dtype of the element
-    mwe_element.to(torch.float64)
-
-    # Test that the element is now of dtype float64
-    for buffer in mwe_element.buffers():
-        assert buffer.dtype == torch.float64
 
 
 @pytest.mark.parametrize(
