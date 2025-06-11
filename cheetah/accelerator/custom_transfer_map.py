@@ -39,6 +39,9 @@ class CustomTransferMap(Element):
         if length is not None:
             self.length = torch.as_tensor(length, **factory_kwargs)
 
+        assert (predefined_transfer_map[..., -1, :-2] == 0.0).all() and (
+            predefined_transfer_map[..., -1, -1] == 1.0
+        ).all(), "The seventh row of the transfer map must be [0, 0, 0, 0, 0, 0, 1]."
         self.register_buffer_or_parameter(
             "predefined_transfer_map",
             torch.as_tensor(predefined_transfer_map, **factory_kwargs),
