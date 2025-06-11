@@ -27,7 +27,7 @@ class Cavity(Element):
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitisze the name to be a valid Python
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """
