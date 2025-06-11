@@ -93,7 +93,9 @@ class ParticleBeam(Beam):
                 torch.as_tensor(particle_charges, **factory_kwargs)
                 if particle_charges is not None
                 else torch.full(
-                    (particles.shape[-2],), species.charge_coulomb, **factory_kwargs
+                    (particles.shape[-2],),
+                    self.species.charge_coulomb,
+                    **factory_kwargs,
                 )
             ),
         )
@@ -341,7 +343,7 @@ class ParticleBeam(Beam):
             for sample_mu, sample_cov in zip(mu.view(-1, 6), cov.view(-1, 6, 6))
         ]
         particles[..., :6] = torch.stack(
-            [distribution.sample((num_particles,)) for distribution in distributions],
+            [distribution.rsample((num_particles,)) for distribution in distributions],
             dim=0,
         ).view(*vector_shape, num_particles, 6)
 
