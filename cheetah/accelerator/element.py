@@ -139,9 +139,7 @@ class Element(ABC, nn.Module):
 
     @property
     def defining_tensors(self) -> list[str]:
-        """
-        Subset of defining features that are of type `torch.Tensor`.
-        """
+        """Subset of defining features that are of type `torch.Tensor`."""
         return [
             feature
             for feature in self.defining_features
