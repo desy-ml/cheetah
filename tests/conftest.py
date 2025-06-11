@@ -16,6 +16,7 @@ ELEMENT_SUBCLASSES_MWE_ARGS = {
     cheetah.HorizontalCorrector: {"length": torch.tensor(1.0)},
     cheetah.Marker: {},
     cheetah.Quadrupole: {"length": torch.tensor(1.0)},
+    cheetah.RBend: {"length": torch.tensor(1.0)},
     cheetah.Screen: {},
     cheetah.Segment: {"elements": [cheetah.Drift(length=torch.tensor(1.0))]},
     cheetah.Sextupole: {"length": torch.tensor(1.0)},
@@ -64,7 +65,15 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         else for_every_mwe_element_marker.kwargs.get("except_for", [])
     )
 
-    all_element_subclasses = cheetah.Element.__subclasses__()
+    # Recursively discover all subclasses of `Element`
+    def get_all_subclasses(cls):
+        for subclass in cls.__subclasses__():
+            yield from get_all_subclasses(subclass)
+            yield subclass
+
+    all_element_subclasses = get_all_subclasses(cheetah.Element)
+
+    # Remove subclasses according to `except_for`
     element_subclasses_to_test = [
         subclass for subclass in all_element_subclasses if subclass not in except_for
     ]
