@@ -1,13 +1,20 @@
 import time
 
+import pytest
 import torch
 
 import cheetah
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
-
 # TODO: Test that Cheeath tracks faster than Ocelot
+
+
+@pytest.mark.filterwarnings(
+    "ignore:"
+    "Diagnostic screen was converted with default screen properties.:"
+    "cheetah.utils.PhysicsWarning"
+)
 def test_tracking_speed():
     """Really only tests that Cheetah isn't super slow."""
     cell = cheetah.converters.ocelot.subcell_of_ocelot(
