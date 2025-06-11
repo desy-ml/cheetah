@@ -25,7 +25,7 @@ class Drift(Element):
     :param length: Length in meters.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitisze the name to be a valid Python
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """

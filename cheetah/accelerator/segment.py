@@ -25,7 +25,7 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitisze the name to be a valid Python
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """
@@ -317,7 +317,7 @@ class Segment(Element):
         created from `ocelot.Monitor` objects when their id has a substring "BPM".
 
         :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
-        :param sanitize_element_names: Whether to sanitisze the names of the elements
+        :param sanitize_element_names: Whether to sanitise the names of the elements
             to be valid Python variable names. This is needed if you want to use the
             `segment.element_name` syntax to access the element in a segment.
         :param name: Unique identifier for the entire segment.

@@ -17,7 +17,7 @@ class Sextupole(Element):
     :param misalignment: Transverse misalignment in x and y directions in meters.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitisze the name to be a valid Python
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """
