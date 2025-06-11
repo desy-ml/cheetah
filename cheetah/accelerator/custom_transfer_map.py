@@ -12,6 +12,13 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class CustomTransferMap(Element):
     """
     This element can represent any custom transfer map.
+
+    :param predefined_transfer_map: The transfer map to use for this element.
+    :param length: Length of the element in meters. If `None`, the length is set to 0.
+    :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitisze the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -19,6 +26,7 @@ class CustomTransferMap(Element):
         predefined_transfer_map: torch.Tensor,
         length: torch.Tensor | None = None,
         name: torch.Tensor | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -26,7 +34,7 @@ class CustomTransferMap(Element):
             [predefined_transfer_map, length], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         if length is not None:
             self.length = torch.as_tensor(length, **factory_kwargs)

@@ -10,7 +10,7 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import rpn
-from cheetah.utils import DirtyNameWarning, PhysicsWarning
+from cheetah.utils import PhysicsWarning
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
@@ -251,16 +251,6 @@ def define_element(line: str, context: dict) -> dict:
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
-    if any(c in element_name for c in ".-"):
-        warnings.warn(
-            f"Element name {element_name} is not a valid Python variable name. It can "
-            "therefore not be used with the `segment.element_name` syntax. You can "
-            "still use it with the `getattr(segment, 'element_name']` syntax. "
-            "Alternatively, element names can be sanitised using the "
-            "`Segment.sanitize_names` method.",
-            category=DirtyNameWarning,
-            stacklevel=2,
-        )
     element_type = match.group(2).strip()
 
     if element_type in context:
