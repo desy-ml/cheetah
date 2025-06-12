@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+import cheetah
 from cheetah import Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
 
 
@@ -254,3 +255,33 @@ def test_quadrupole_clone_tracking_method(tracking_method):
     # Verify that tracking_method is preserved
     assert cloned.tracking_method == quadrupole.tracking_method
     assert cloned.tracking_method == tracking_method
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_tilted_quad_transfer_matrix_precision(dtype):
+    """
+    Test that the transfer matrix for a tilted quadrupole element with k1=0 matches the
+    transfer matrices of a normal quadrupole and a drift element to the precision of the
+    used dtype.
+    """
+    # Create three elements that should have the same transfer matrix
+    length = torch.tensor(0.5, dtype=dtype)
+    k1 = torch.tensor(0.0, dtype=dtype)
+    tilt = torch.tensor(torch.pi / 4, dtype=dtype)
+
+    quad = cheetah.Quadrupole(length=length, k1=k1)
+    skew_quad = cheetah.Quadrupole(length=length, k1=k1, tilt=tilt)
+    drift = cheetah.Drift(length=length)
+
+    # Compute the transfer matrices
+    energy = torch.tensor(1e9, dtype=dtype)
+    spiecies = cheetah.Species("electron")
+
+    tm_quad = quad.transfer_map(energy, spiecies)
+    tm_skew_quad = skew_quad.transfer_map(energy, spiecies)
+    tm_drift = drift.transfer_map(energy, spiecies)
+
+    # Check that the transfer matrices are equal to the precision of the dtype
+    assert torch.allclose(tm_quad, tm_skew_quad, atol=torch.finfo(dtype).eps)
+    assert torch.allclose(tm_quad, tm_drift, atol=torch.finfo(dtype).eps)
+    assert torch.allclose(tm_skew_quad, tm_drift, atol=torch.finfo(dtype).eps)
