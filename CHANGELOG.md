@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix an issue that batched Particlebeam cannot be converted using `as_parameter_beam`, rework the covariance calculation (see #471) (@cr-xu)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
