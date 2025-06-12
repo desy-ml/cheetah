@@ -1038,7 +1038,8 @@ class ParticleBeam(Beam):
         from cheetah.particles.parameter_beam import ParameterBeam  # No circular import
 
         return ParameterBeam(
-            mu=self.particles.mean(dim=-2),
+            mu=(self.particles * self.survival_probabilities.unsqueeze(-1)).sum(dim=-2)
+            / self.survival_probabilities.sum(),
             cov=unbiased_weighted_covariance_matrix(
                 self.particles, weights=self.survival_probabilities, dim=-2
             ),
