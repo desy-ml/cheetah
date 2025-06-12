@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
