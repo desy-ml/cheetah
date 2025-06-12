@@ -5,6 +5,8 @@ import torch
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
 
+double_precision_epsilon = torch.finfo(torch.float64).eps
+
 
 def base_rmatrix(
     length: torch.Tensor,
@@ -37,7 +39,7 @@ def base_rmatrix(
 
     # Avoid division by zero
     k1 = k1.clone()
-    k1[k1 == 0] = 1e-12
+    k1[k1 == 0] = double_precision_epsilon
 
     kx2 = k1 + hx**2
     ky2 = -k1
