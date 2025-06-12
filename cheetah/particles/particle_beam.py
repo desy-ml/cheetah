@@ -14,6 +14,7 @@ from cheetah.utils import (
     elementwise_linspace,
     format_axis_with_prefixed_unit,
     unbiased_weighted_covariance,
+    unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
     verify_device_and_dtype,
 )
@@ -1036,7 +1037,7 @@ class ParticleBeam(Beam):
 
         return ParameterBeam(
             mu=self.particles.mean(dim=-2),
-            cov=torch.cov(self.particles.transpose(-2, -1)),
+            cov=self.cov_matrix,
             energy=self.energy,
             total_charge=self.total_charge,
             device=self.particles.device,
@@ -1721,6 +1722,17 @@ class ParticleBeam(Beam):
         """
         return unbiased_weighted_covariance(
             self.tau, self.p, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_matrix(self) -> torch.Tensor:
+        """
+        Returns the whole covariance matrix of the beam,
+        weighted by the survival probability of the particles.
+        The covariance matrix is of shape (..., 7, 7)
+        """
+        return unbiased_weighted_covariance_matrix(
+            self.particles, weights=self.survival_probabilities, dim=-2
         )
 
     @property

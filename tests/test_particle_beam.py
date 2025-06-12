@@ -354,3 +354,30 @@ def test_random_subsample_energy_distance_better_than_gaussian(device: torch.dev
             5 * energy_distance_to_random_subsample
             < energy_distance_to_gaussian_subsample
         )
+
+
+def test_batched_conversion_to_and_from_parameter_beam():
+    """
+    Test that converting a batched `ParticleBeam` to a `ParameterBeam` and back
+    works correctly.
+    """
+    num_particles = 10_000_000
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=num_particles,
+        mu_x=torch.tensor((2e-4, 3e-4)),
+        sigma_x=torch.tensor((2e-5, 3e-5)),
+        energy=torch.tensor((1e7, 2e7)),
+        dtype=torch.float64,
+    )
+
+    parameter_beam = beam.as_parameter_beam()
+    assert isinstance(parameter_beam, cheetah.ParameterBeam)
+
+    # Convert back to ParticleBeam
+    reconstructed_beam = parameter_beam.as_particle_beam(num_particles=num_particles)
+    assert isinstance(reconstructed_beam, cheetah.ParticleBeam)
+
+    # Check that the reconstructed beam has the same parameters as the original
+    assert torch.allclose(beam.sigma_x, reconstructed_beam.sigma_x, rtol=1e-3)
+    assert torch.allclose(beam.mu_x, reconstructed_beam.mu_x, rtol=1e-3)
+    assert torch.allclose(beam.energy, reconstructed_beam.energy)
