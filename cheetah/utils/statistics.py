@@ -48,6 +48,20 @@ def unbiased_weighted_variance(
     return variance
 
 
+def unbiased_weighted_std(
+    input: torch.Tensor, weights: torch.Tensor, dim: int = None
+) -> torch.Tensor:
+    """
+    Compute the unbiased weighted standard deviation of a tensor.
+
+    :param input: Input tensor.
+    :param weights: Weights tensor.
+    :param dim: Dimension along which to compute the standard deviation.
+    :return: Unbiased weighted standard deviation.
+    """
+    return torch.sqrt(unbiased_weighted_variance(input, weights, dim=dim))
+
+
 def unbiased_weighted_covariance_matrix(
     inputs: torch.Tensor, weights: torch.Tensor, dim: int = -2
 ) -> torch.Tensor:
@@ -81,17 +95,3 @@ def unbiased_weighted_covariance_matrix(
     ) / correction.unsqueeze(-1)
 
     return cov
-
-
-def unbiased_weighted_std(
-    input: torch.Tensor, weights: torch.Tensor, dim: int = None
-) -> torch.Tensor:
-    """
-    Compute the unbiased weighted standard deviation of a tensor.
-
-    :param input: Input tensor.
-    :param weights: Weights tensor.
-    :param dim: Dimension along which to compute the standard deviation.
-    :return: Unbiased weighted standard deviation.
-    """
-    return torch.sqrt(unbiased_weighted_variance(input, weights, dim=dim))
