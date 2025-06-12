@@ -356,10 +356,10 @@ def test_random_subsample_energy_distance_better_than_gaussian(device: torch.dev
         )
 
 
-def test_batched_conversion_to_and_from_parameter_beam():
+def test_vectorized_conversion_to_and_from_parameter_beam():
     """
-    Test that converting a batched `ParticleBeam` to a `ParameterBeam` and back
-    works correctly.
+    Test that converting a vectorised `ParticleBeam` to a `ParameterBeam` and back works
+    correctly.
     """
     num_particles = 10_000_000
     beam = cheetah.ParticleBeam.from_parameters(
