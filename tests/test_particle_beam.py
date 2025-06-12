@@ -362,14 +362,14 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     not throw errors and results in a beam with the same parameters.
     """
     original_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=100_000,
+        num_particles=1_000_000,
         mu_x=torch.tensor((2e-4, 3e-4)),
         sigma_x=torch.tensor((2e-5, 3e-5)),
         energy=torch.tensor((1e7, 2e7)),
     )
 
     roundtrip_converted_beam = original_beam.as_parameter_beam().as_particle_beam(
-        num_particles=100_000
+        num_particles=1_000_000
     )
 
     assert isinstance(roundtrip_converted_beam, cheetah.ParticleBeam)
