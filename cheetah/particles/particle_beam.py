@@ -555,7 +555,7 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
-        # Extract the batch dimension of the beam
+        # Extract the vector dimension of the beam
         vector_shape = beam.sigma_x.shape
 
         # Generate random particles in unit sphere in polar coodinates
@@ -858,7 +858,7 @@ class ParticleBeam(Beam):
         NOTE: openPMD uses boolean particle status flags, i.e. alive or dead. Cheetah's
             survival probabilities are converted to status flags by thresholding at 0.5.
 
-        NOTE: At the moment this method only supports non-batched particles
+        NOTE: At the moment this method only supports non-vectorised particle
             distributions.
 
         :return: openPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
@@ -871,9 +871,11 @@ class ParticleBeam(Beam):
                 installed."""
             )
 
-        # For now only support non-batched particles
+        # For now only support non-vectorised particle distributions
         if len(self.particles.shape) != 2:
-            raise ValueError("Only non-batched particles are supported.")
+            raise ValueError(
+                "Only non-vectorised particle distributions are supported."
+            )
 
         px = self.px * self.p0c
         py = self.py * self.p0c
