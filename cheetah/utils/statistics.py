@@ -73,25 +73,22 @@ def unbiased_weighted_covariance_matrix(
     :param dim: Dimension along which to compute the covariance.
     :return: Unbiased weighted covariance matrix.
     """
-    w = weights.unsqueeze(-1)  # (..., sample_size, 1)
-    # Normalize the weights
-    w_sum = torch.sum(w, dim=dim, keepdim=True)
-    w_normalized = w / w_sum  # (..., sample_size, 1)
+    unsqueezed_weights = weights.unsqueeze(-1)  # (..., sample_size, 1)
+    sum_of_weights = torch.sum(unsqueezed_weights, dim=dim, keepdim=True)
+    normalized_weights = unsqueezed_weights / sum_of_weights  # (..., sample_size, 1)
 
-    # Weighted means
     weighted_means = torch.sum(
-        inputs * w_normalized, dim=dim, keepdim=True
+        inputs * normalized_weights, dim=dim, keepdim=True
     )  # (..., 1, n_features)
 
-    # Compute the weighted means
-    centered = inputs - weighted_means  # (..., sample_size, n_features)
+    centered_inputs = inputs - weighted_means  # (..., sample_size, n_features)
 
-    # Compute the correction factor for unbiased covariance
-    correction = 1 - (torch.sum(w_normalized**2, dim=dim) / w_sum.squeeze(dim))
+    correction_factor = 1 - (
+        torch.sum(normalized_weights**2, dim=dim) / sum_of_weights.squeeze(dim)
+    )
 
-    # Compute the weighted covariance
-    cov = torch.matmul(
-        (w_normalized * centered).transpose(-1, -2), centered
-    ) / correction.unsqueeze(-1)
+    covariance = torch.matmul(
+        (normalized_weights * centered_inputs).transpose(-1, -2), centered_inputs
+    ) / correction_factor.unsqueeze(-1)
 
-    return cov
+    return covariance
