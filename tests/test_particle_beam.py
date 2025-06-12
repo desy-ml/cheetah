@@ -356,28 +356,25 @@ def test_random_subsample_energy_distance_better_than_gaussian(device: torch.dev
         )
 
 
-def test_vectorized_conversion_to_and_from_parameter_beam():
+def test_vectorized_conversion_to_parameter_beam_and_back():
     """
-    Test that converting a vectorised `ParticleBeam` to a `ParameterBeam` and back works
-    correctly.
+    Test that converting a vectorised `ParticleBeam` to a `ParameterBeam` and back does
+    not throw errors and results in a beam with the same parameters.
     """
-    num_particles = 10_000_000
-    beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=num_particles,
+    original_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000,
         mu_x=torch.tensor((2e-4, 3e-4)),
         sigma_x=torch.tensor((2e-5, 3e-5)),
         energy=torch.tensor((1e7, 2e7)),
-        dtype=torch.float64,
     )
 
-    parameter_beam = beam.as_parameter_beam()
-    assert isinstance(parameter_beam, cheetah.ParameterBeam)
+    roundtrip_converted_beam = original_beam.as_parameter_beam().as_particle_beam(
+        num_particles=100_000
+    )
 
-    # Convert back to ParticleBeam
-    reconstructed_beam = parameter_beam.as_particle_beam(num_particles=num_particles)
-    assert isinstance(reconstructed_beam, cheetah.ParticleBeam)
-
-    # Check that the reconstructed beam has the same parameters as the original
-    assert torch.allclose(beam.sigma_x, reconstructed_beam.sigma_x, rtol=1e-3)
-    assert torch.allclose(beam.mu_x, reconstructed_beam.mu_x, rtol=1e-3)
-    assert torch.allclose(beam.energy, reconstructed_beam.energy)
+    assert isinstance(roundtrip_converted_beam, cheetah.ParticleBeam)
+    assert torch.allclose(
+        original_beam.sigma_x, roundtrip_converted_beam.sigma_x, rtol=1e-3
+    )
+    assert torch.allclose(original_beam.mu_x, roundtrip_converted_beam.mu_x, rtol=1e-3)
+    assert torch.allclose(original_beam.energy, roundtrip_converted_beam.energy)
