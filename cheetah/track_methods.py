@@ -37,7 +37,7 @@ def base_rmatrix(
 
     # Avoid division by zero
     k1 = k1.clone()
-    k1[k1 == 0] = 1e-12
+    k1[k1 == 0] = torch.finfo(k1.dtype).eps
 
     kx2 = k1 + hx**2
     ky2 = -k1
