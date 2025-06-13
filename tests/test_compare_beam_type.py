@@ -21,9 +21,7 @@ def test_from_twiss():
         energy=torch.tensor(6e6),
     )
     particle_beam = cheetah.ParticleBeam.from_twiss(
-        num_particles=torch.tensor(
-            [10_000_000]
-        ),  # Large number of particles reduces noise
+        num_particles=10_000_000,  # Large number of particles reduces noise
         beta_x=torch.tensor(5.91253676811640894),
         alpha_x=torch.tensor(3.55631307633660354),
         emittance_x=torch.tensor(3.494768647122823e-09),
