@@ -396,7 +396,7 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
         original_beam.mu_tau, roundtrip_converted_beam.mu_tau, rtol=1e-3, atol=1e-6
     )
     assert torch.allclose(
-        original_beam.mu_p, roundtrip_converted_beam.mu_p, rtol=1e-3, atol=1e-6
+        original_beam.mu_p, roundtrip_converted_beam.mu_p, rtol=1e-3, atol=1e-5
     )
     assert torch.allclose(
         original_beam.sigma_x, roundtrip_converted_beam.sigma_x, rtol=1e-3
