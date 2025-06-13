@@ -26,6 +26,15 @@ class NoBeamPropertiesInLatticeWarning(PhysicsWarning):
     ...
 
 
+class DefaultScreenParametersWarning(PhysicsWarning):
+    """
+    Warning raised when a diagnostic screen is converted to a `cheetah.Screen` with
+    default screen parameters.
+    """
+
+    ...
+
+
 class DirtyNameWarning(Warning):
     """
     Warning raised when an element's name is not clean, i.e. it contains characters

@@ -6,6 +6,7 @@ import cheetah
 from cheetah.utils import (
     DirtyNameWarning,
     NoBeamPropertiesInLatticeWarning,
+    NotUnderstoodPropertyWarning,
     is_mps_available_and_functional,
 )
 
@@ -16,7 +17,9 @@ def test_fodo():
 
     with pytest.warns(
         NoBeamPropertiesInLatticeWarning, match=("c.*charge")
-    ), pytest.warns(DirtyNameWarning, match="long-name-quad"):
+    ), pytest.warns(DirtyNameWarning, match="long-name-quad"), pytest.warns(
+        NotUnderstoodPropertyWarning, match="nonsense"
+    ):
         converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
     with pytest.warns(DirtyNameWarning, match="long-name-quad"):

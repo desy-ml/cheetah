@@ -17,6 +17,7 @@ from .statistics import (  # noqa: F401
 from .unique_name_generator import UniqueNameGenerator  # noqa: F401
 from .vector import squash_index_for_unavailable_dims  # noqa: F401
 from .warnings import (  # noqa: F401
+    DefaultScreenParametersWarning,
     DirtyNameWarning,
     NoBeamPropertiesInLatticeWarning,
     NotUnderstoodPropertyWarning,
