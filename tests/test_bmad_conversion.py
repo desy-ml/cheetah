@@ -2,13 +2,26 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import is_mps_available_and_functional
+from cheetah.utils import PhysicsWarning, is_mps_available_and_functional
 
 
 def test_bmad_tutorial():
     """Test importing the lattice example file from the Bmad and Tao tutorial."""
     file_path = "tests/resources/bmad_tutorial_lattice.bmad"
-    converted = cheetah.Segment.from_bmad(file_path)
+    with pytest.warns(
+        PhysicsWarning,
+        match=(
+            "Property g with value 1 for element type sbend is currently not "
+            "understood."
+        ),
+    ), pytest.warns(
+        PhysicsWarning,
+        match=(
+            "Property dg with value 0.001 for element type sbend is currently not "
+            "understood."
+        ),
+    ):
+        converted = cheetah.Segment.from_bmad(file_path)
     converted.name = "bmad_tutorial"
 
     correct = cheetah.Segment(
@@ -45,6 +58,9 @@ def test_bmad_tutorial():
     assert converted.s.tilt == correct.s.tilt
 
 
+@pytest.mark.filterwarnings(
+    r"ignore:Property (g|dg) with value -?[0-9]+(\.[0-9]*)? for element type sbend is currently not understood.:cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize(
     "device",
     [
@@ -80,6 +96,9 @@ def test_device_passing(device: torch.device):
     assert converted.s.k2.device.type == device.type
 
 
+@pytest.mark.filterwarnings(
+    r"ignore:Property (g|dg) with value -?[0-9]+(\.[0-9]*)? for element type sbend is currently not understood.:cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
@@ -98,6 +117,9 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.s.k2.dtype == dtype
 
 
+@pytest.mark.filterwarnings(
+    r"ignore:Property (g|dg) with value -?[0-9]+(\.[0-9]*)? for element type sbend is currently not understood.:cheetah.utils.PhysicsWarning"
+)
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
 )
