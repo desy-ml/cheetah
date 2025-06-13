@@ -25,25 +25,27 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
     context = context or {}
 
     # Tokenize the expression
-    try:
-        tokens = _tokenize_expression(expression, context)
-    except Exception as e:
-        raise SyntaxError(
-            f"Invalid expression: {expression} Unable to tokenize- {str(e)}"
-        )
+    # No try because this should never error
+    tokens = _tokenize_expression(expression, context)
 
     # Parse tokens into AST
+    # Syntax errors manually raised
+    # IndexErrors from unexpectedly empty stacks
+    # ValueError for things not being numbers
     try:
         ast = _parse_expression(tokens)
-    except Exception as e:
+    except (SyntaxError, IndexError, ValueError) as e:
         raise SyntaxError(
             f"Invalid expression: {expression}. Unable to parse- {str(e)}."
         )
 
     # Evaluate the AST
+    # TypeError for invalid function input (ie, abs("abc"))
+    # ValueError for invalid function input (ie sqrt(-1))
+    # IndexError for malformed AST node (in case something gets through the parser)
     try:
         return _evaluate_ast(ast)
-    except Exception as e:
+    except (TypeError, ValueError, IndexError) as e:
         raise SyntaxError(
             f"Invalid expression: {expression}. Unable to evaluate- {str(e)}."
         )
@@ -126,6 +128,7 @@ def _parse_expression(tokens: list[str]) -> dict:
         operator = operator_stack.pop()
         output = {"value": operator, "left": left, "right": right}
         stack.append(output)
+
     if len(stack) != 1:
         raise SyntaxError("Invalid expression: too many values left in stack")
     output = stack.pop()

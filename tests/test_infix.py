@@ -111,3 +111,19 @@ def test_infix_expression_deeply_nested():
     expression = "((2 + 3) * (4 - 1)) ^ 2"  # ((5 * 3) ^ 2) = 225
 
     assert infix.evaluate_expression(expression) == 225
+
+
+def test_infix_error_handling():
+    """Test that appropriate errors are raised and caught"""
+    expression = "sqrt(-1)"
+
+    with pytest.raises(SyntaxError):
+        infix.evaluate_expression(expression)
+
+
+def test_infix_error_handling_2():
+    """Test that appropriate errors are raised and caught"""
+    expression = "sin(abc)"
+
+    with pytest.raises(SyntaxError):
+        infix.evaluate_expression(expression)
