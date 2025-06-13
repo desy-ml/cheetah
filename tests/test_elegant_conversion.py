@@ -129,10 +129,7 @@ def test_custom_transfer_map_import():
 
 @pytest.mark.filterwarnings("ignore:long-name-quad:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Information provided in element c of type charge cannot be imported automatically."
-    " Consider manually providing the correct information.:"
-    "cheetah.utils.PhysicsWarning"
+    "ignore:c.*charge:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.parametrize(
     "device",
@@ -183,10 +180,7 @@ def test_device_passing(device: torch.device):
 
 @pytest.mark.filterwarnings("ignore:long-name-quad:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Information provided in element c of type charge cannot be imported automatically."
-    " Consider manually providing the correct information.:"
-    "cheetah.utils.PhysicsWarning"
+    "ignore:c.*charge:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
@@ -220,10 +214,7 @@ def test_dtype_passing(dtype: torch.dtype):
 
 @pytest.mark.filterwarnings("ignore:long-name-quad:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Information provided in element c of type charge cannot be imported automatically."
-    " Consider manually providing the correct information.:"
-    "cheetah.utils.PhysicsWarning"
+    "ignore:c.*charge:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
