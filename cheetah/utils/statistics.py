@@ -63,22 +63,27 @@ def unbiased_weighted_std(
 
 
 def unbiased_weighted_covariance_matrix(
-    inputs: torch.Tensor, weights: torch.Tensor, dim: int = -2
+    inputs: torch.Tensor, weights: torch.Tensor
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted covariance matrix of a tensor.
 
     :param inputs: Input tensor of shape (..., sample_size, n_features).
     :param weights: Weights tensor of shape (..., sample_size).
-    :param dim: Dimension along which to compute the covariance.
     :return: Unbiased weighted covariance matrix.
     """
-    normalized_weights = weights / weights.unsqueeze(-1).sum(dim)
-    weighted_means = torch.sum(inputs * normalized_weights.unsqueeze(-1), dim)
-    centered_inputs = inputs - weighted_means.unsqueeze(dim)
-    correction_factor = 1 - torch.sum(normalized_weights**2)
-    covariance = torch.matmul(
-        (normalized_weights.unsqueeze(-1) * centered_inputs).transpose(-1, -2),
-        centered_inputs,
-    ) / correction_factor.unsqueeze(-1)
+    normalized_weights = weights / weights.sum(dim=-1, keepdim=True)
+    unsqueezed_weights = normalized_weights.unsqueeze(-1)
+    correction_factor = 1 - torch.sum(unsqueezed_weights**2, dim=-2, keepdim=True)
+
+    weighted_means = torch.sum(inputs * unsqueezed_weights, dim=-2, keepdim=True)
+    centered_inputs = inputs - weighted_means
+
+    covariance = (
+        torch.matmul(
+            (unsqueezed_weights * centered_inputs).transpose(-1, -2),
+            centered_inputs,
+        )
+        / correction_factor
+    )
     return covariance
