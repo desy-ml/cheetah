@@ -139,6 +139,9 @@ def test_custom_transfer_map_import():
 @pytest.mark.filterwarnings(
     "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
+@pytest.mark.filterwarnings(
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
+)
 @pytest.mark.parametrize(
     "device",
     [
@@ -190,6 +193,9 @@ def test_device_passing(device: torch.device):
 @pytest.mark.filterwarnings(
     "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
+@pytest.mark.filterwarnings(
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
+)
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
@@ -223,6 +229,9 @@ def test_dtype_passing(dtype: torch.dtype):
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
     "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
+)
+@pytest.mark.filterwarnings(
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
 )
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
