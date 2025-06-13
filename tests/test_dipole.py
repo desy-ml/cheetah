@@ -50,9 +50,7 @@ def test_dipole_vectorized_execution(DipoleType):
     Test that a dipole with vector dimensions behaves as expected.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(100),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+        num_particles=100, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
     # Test vectorisation to generate 3 beam lines

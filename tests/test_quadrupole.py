@@ -83,9 +83,7 @@ def test_tilted_quadrupole_vectorized():
     Test that a quadrupole with a tilt behaves as expected in vectorised mode.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+        num_particles=1_000_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
     segment = cheetah.Segment(
         [
@@ -128,9 +126,7 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
     )
 
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+        num_particles=10_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
     outgoing = segment(incoming)
@@ -158,9 +154,7 @@ def test_quadrupole_length_multiple_vector_dimensions():
     )
 
     incoming = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+        num_particles=10_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
     outgoing = segment(incoming)
