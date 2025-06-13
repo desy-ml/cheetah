@@ -9,6 +9,7 @@
 ### 🐛 Bug fixes
 
 - Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
+- Rework the covariance computation in `ParticleBeam.as_parameter_beam` to fix an issue that caused the covariance to be computed incorrectly for vectorised beams (see #471) (@cr-xu, @jank324, @Hespe)
 
 ### 🐆 Other
 

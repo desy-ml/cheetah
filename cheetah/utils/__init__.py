@@ -10,6 +10,7 @@ from .plot import (  # noqa: F401
 )
 from .statistics import (  # noqa: F401
     unbiased_weighted_covariance,
+    unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
     unbiased_weighted_variance,
 )
