@@ -118,7 +118,7 @@ def convert_element(
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
                 ["element_type", "type", "alias"], bmad_parsed
-            )
+            )  # bnijnijn
             return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
@@ -138,10 +138,7 @@ def convert_element(
                     "e2",
                     "fint",
                     "fintx",
-                    "fringe_type",
                     "ref_tilt",
-                    "g",
-                    "dg",
                 ],
                 bmad_parsed,
             )
@@ -164,10 +161,8 @@ def convert_element(
                 sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
-            # TODO: Aperture for quadrupoles?
             validate_understood_properties(
-                ["element_type", "l", "k1", "type", "aperture", "alias", "tilt"],
-                bmad_parsed,
+                ["element_type", "l", "k1", "type", "alias", "tilt"], bmad_parsed
             )
             return cheetah.Quadrupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -177,10 +172,8 @@ def convert_element(
                 sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "sextupole":
-            # TODO: Aperture for sextupoles?
             validate_understood_properties(
-                ["element_type", "l", "k2", "type", "aperture", "tilt"],
-                bmad_parsed,
+                ["element_type", "l", "k2", "type", "tilt"], bmad_parsed
             )
             return cheetah.Sextupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
@@ -208,8 +201,6 @@ def convert_element(
                     "rf_frequency",
                     "voltage",
                     "phi0",
-                    "sr_wake",
-                    "cavity_type",
                     "alias",
                 ],
                 bmad_parsed,
@@ -286,18 +277,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "wiggler":
             validate_understood_properties(
-                [
-                    "element_type",
-                    "type",
-                    "l_period",
-                    "n_period",
-                    "b_max",
-                    "l",
-                    "alias",
-                    "tilt",
-                    "ds_step",
-                ],
-                bmad_parsed,
+                ["element_type", "type", "l", "alias"], bmad_parsed
             )
             return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
