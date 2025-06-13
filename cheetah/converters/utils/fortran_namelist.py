@@ -10,7 +10,7 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import rpn
-from cheetah.utils import PhysicsWarning
+from cheetah.utils import NotUnderstoodPropertyWarning
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
@@ -440,6 +440,6 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
             warnings.warn(
                 f"Property {property} with value {properties[property]} for element "
                 f"type {properties['element_type']} is currently not understood.",
-                category=PhysicsWarning,
+                category=NotUnderstoodPropertyWarning,
                 stacklevel=2,
             )

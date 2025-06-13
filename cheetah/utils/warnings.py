@@ -7,6 +7,25 @@ class PhysicsWarning(Warning):
     ...
 
 
+class NotUnderstoodPropertyWarning(PhysicsWarning):
+    """
+    Warning raised when a property not understood by Cheetah is encountered during
+    reading of a Fortran Namelist file, like it is done in the Bmad and Elegant
+    importers.
+    """
+
+    ...
+
+
+class NoBeamPropertiesInLatticeWarning(PhysicsWarning):
+    """
+    Warning raised when a beam property is encountered in a Bamd or Elegant lattice. In
+    Cheetah, beam properties are not stored in the lattice, but in the `Beam` class.
+    """
+
+    ...
+
+
 class DirtyNameWarning(Warning):
     """
     Warning raised when an element's name is not clean, i.e. it contains characters
