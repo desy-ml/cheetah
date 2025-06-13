@@ -25,7 +25,7 @@ def test_unbiased_weighted_variance_with_same_weights():
     data = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
     weights = torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0])
 
-    expected_variance = torch.var(data, unbiased=True)
+    expected_variance = torch.var(data)
     computed_variance = unbiased_weighted_variance(data, weights)
 
     assert torch.allclose(computed_variance, expected_variance)
@@ -36,7 +36,7 @@ def test_unbiased_weighted_variance_with_different_weights():
     data = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
     weights = torch.tensor([0.5, 0.5, 0.5, 0, 0])
 
-    expected_variance = torch.var(torch.tensor([1.0, 2.0, 3.0]), unbiased=True)
+    expected_variance = torch.var(torch.tensor([1.0, 2.0, 3.0]))
     computed_variance = unbiased_weighted_variance(data, weights)
 
     assert torch.allclose(computed_variance, expected_variance)
@@ -57,7 +57,7 @@ def test_unbiased_weighted_variance_with_small_numbers():
     data = torch.tensor([1e-10, 2e-10, 3e-10, 4e-10, 5e-10], dtype=torch.float32)
     weights = torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0], dtype=torch.float32)
 
-    expected_variance = torch.var(data, unbiased=True)
+    expected_variance = torch.var(data)
     computed_variance = unbiased_weighted_variance(data, weights)
 
     assert torch.allclose(computed_variance, expected_variance)
