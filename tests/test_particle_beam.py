@@ -362,7 +362,7 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     not throw errors and results in a beam with the same parameters.
     """
     original_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=1_000_000,
+        num_particles=10_000,  # Does not need as many particles as reconstructed beam
         mu_x=torch.tensor((2e-4, 3e-4)),
         sigma_x=torch.tensor((2e-5, 3e-5)),
         energy=torch.tensor((1e7, 2e7)),
@@ -372,11 +372,11 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     original_beam.survival_probabilities = original_beam.survival_probabilities.repeat(
         3, 1, 1
     )
-    original_beam.survival_probabilities[0, 0, : int(1_000_000 / 3)] = 0.3
-    original_beam.survival_probabilities[1, 0, : int(1_000_000 / 3)] = 0.6
+    original_beam.survival_probabilities[0, 0, : int(10_000 / 3)] = 0.3
+    original_beam.survival_probabilities[1, 0, : int(10_000 / 3)] = 0.6
 
     roundtrip_converted_beam = original_beam.as_parameter_beam().as_particle_beam(
-        num_particles=1_000_000
+        num_particles=10_000_000
     )
 
     assert isinstance(roundtrip_converted_beam, cheetah.ParticleBeam)
