@@ -255,7 +255,7 @@ def test_solenoid():
     )
 
 
-@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ares_ea():
     """
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES

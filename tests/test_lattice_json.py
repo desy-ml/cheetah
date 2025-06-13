@@ -6,7 +6,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
-@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_save_and_reload_ares_example(tmp_path):
     """
     Test that saving Cheetah `Segment` to LatticeJSON works and that it can be reloaded
