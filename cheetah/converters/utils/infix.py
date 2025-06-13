@@ -36,7 +36,9 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
     try:
         ast = _parse_expression(tokens)
     except Exception as e:
-        raise SyntaxError(f"Invalid expression: {expression}. Unable to parse- {str(e)}.")
+        raise SyntaxError(
+            f"Invalid expression: {expression}. Unable to parse- {str(e)}."
+        )
 
     # Evaluate the AST
     try:
@@ -65,7 +67,7 @@ def _evaluate_ast(node: dict) -> Any:
 
 
 def _parse_expression(tokens: list[str]) -> dict:
-    """Parses a list of tokens into an Abstract Syntax Tree (AST). """
+    """Parses a list of tokens into an Abstract Syntax Tree (AST)."""
     output = None
     stack = []
     operator_stack = []
@@ -133,8 +135,8 @@ def _parse_expression(tokens: list[str]) -> dict:
 
 def _tokenise_expression(expression: str, context: dict) -> list[str]:
     """
-    Tokenizes an infix expression into a list of tokens. Lookup in context 
-    for variable names.
+    Tokenizes an infix expression into a list of tokens. Lookup in context for variable
+    names.
     """
     tokens = []
     current_token = ""
@@ -148,8 +150,8 @@ def _tokenise_expression(expression: str, context: dict) -> list[str]:
                 current_token = ""
         elif char in "+-*/^()":
             if current_token:
-                # Workaround for conflicts between function and var names (i.e.
-                # abs and abs())
+                # Workaround for conflicts between function and var names (i.e. abs and
+                # abs())
                 if char != "(" and current_token in context:
                     tokens.append(context[current_token])
                 else:
