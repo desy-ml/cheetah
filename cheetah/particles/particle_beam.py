@@ -1039,7 +1039,7 @@ class ParticleBeam(Beam):
 
         return ParameterBeam(
             mu=(self.particles * self.survival_probabilities.unsqueeze(-1)).sum(dim=-2)
-            / self.survival_probabilities.sum(),
+            / self.survival_probabilities.sum(dim=-1, keepdim=True),
             cov=unbiased_weighted_covariance_matrix(
                 self.particles, weights=self.survival_probabilities
             ),
