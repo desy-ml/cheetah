@@ -182,11 +182,7 @@ def test_track_particle_segment_shape_2d(BeamClass):
         assert outgoing.particle_charges.shape == (100_000,)
 
 
-@pytest.mark.filterwarnings(
-    "ignore:"
-    "Diagnostic screen was converted with default screen properties.:"
-    "cheetah.utils.PhysicsWarning"
-)
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
 def test_enormous_through_ares_ea():
     """
     Test ARES EA with a huge number of settings. This is a stress test and only run
