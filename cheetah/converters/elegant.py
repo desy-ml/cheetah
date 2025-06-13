@@ -405,11 +405,8 @@ def convert_lattice_to_cheetah(
         lines
     ), "Merging lines should never produce more lines than there were before."
 
-    # Strip EOL char (;) from final merged lines
-    stripped_lines = [line.strip(";") for line in merged_lines]
-
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(stripped_lines)
+    context = parse_lines(merged_lines)
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(name, context, sanitize_names, device, dtype)

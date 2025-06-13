@@ -406,7 +406,15 @@ def parse_lines(lines: str) -> dict:
         "raddeg": scipy.constants.degree,
     }
 
-    for line in lines:
+    lines_without_comments = [line.split("#")[0] for line in lines]
+    semicolon_split_lines = [
+        subline.strip()
+        for line in lines_without_comments
+        for subline in line.split(";")
+    ]
+
+    for line in semicolon_split_lines:
+
         if re.fullmatch(property_assignment_pattern, line):
             context = assign_property(line, context)
         elif re.fullmatch(variable_assignment_pattern, line):
