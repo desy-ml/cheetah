@@ -10,6 +10,7 @@
 
 - Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
 - Rework the covariance computation in `ParticleBeam.as_parameter_beam` to fix an issue that caused the covariance to be computed incorrectly for vectorised beams (see #471) (@cr-xu, @jank324, @Hespe)
+- Unrecognised element properties now print a warning instead of exiting with an assertation error (see #425) (@amylizzle)
 
 ### 🐆 Other
 
@@ -36,7 +37,6 @@
 - Rotation matrices are no longer computed twice for forward and backward phase space rotations (see #452) (@Hespe)
 
 ### 🐛 Bug fixes
-- Unrecognised element properties now print a warning instead of exiting with an assertation error (see #425) (@amylizzle)
 
 - Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
 - Fix issue in CI space-charge tests (incorrect beam duration in non-relativistic case) (see #446) (@RemiLehe)
