@@ -26,10 +26,10 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
 
     # Tokenize the expression
     try:
-        tokens = _tokenise_expression(expression, context)
+        tokens = _tokenize_expression(expression, context)
     except Exception as e:
         raise SyntaxError(
-            f"Invalid expression: {expression}. Unable to tokenise- {str(e)}."
+            f"Invalid expression: {expression} Unable to tokenize- {str(e)}"
         )
 
     # Parse tokens into AST
@@ -133,7 +133,7 @@ def _parse_expression(tokens: list[str]) -> dict:
     return output
 
 
-def _tokenise_expression(expression: str, context: dict) -> list[str]:
+def _tokenize_expression(expression: str, context: dict) -> list[str]:
     """
     Tokenizes an infix expression into a list of tokens. Lookup in context for variable
     names.
