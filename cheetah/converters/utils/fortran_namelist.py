@@ -439,8 +439,10 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
         if any([re.fullmatch(pattern, property) for pattern in understood]):
             continue
         else:
-            print(
-                f"WARNING: Property {property} with value {properties[property]}"
+            warnings.warn(
+                f"Property {property} with value {properties[property]}"
                 f" for element type {properties['element_type']} is currently"
-                f" not understood."
+                f" not understood.",
+                category=PhysicsWarning,
+                stacklevel=2,
             )
