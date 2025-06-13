@@ -18,40 +18,38 @@ operators = {
 
 def evaluate_expression(expression: str, context: dict | None = None) -> Any:
     """
-    Evaluates an expression in Infix Notation.
+    Evaluates an expression in Infix notation.
 
     Throws a `SyntaxError` if the expression is invalid.
     """
     context = context or {}
 
-    # tokenize the expression
+    # Tokenize the expression
     try:
         tokens = _tokenise_expression(expression, context)
     except Exception as e:
         raise SyntaxError(
-            f"Invalid expression: {expression} Unable to tokenise- {str(e)}"
+            f"Invalid expression: {expression}. Unable to tokenise- {str(e)}."
         )
 
-    # parse tokens into AST
+    # Parse tokens into AST
     try:
         ast = _parse_expression(tokens)
     except Exception as e:
-        raise SyntaxError(f"Invalid expression: {expression} Unable to parse- {str(e)}")
+        raise SyntaxError(f"Invalid expression: {expression}. Unable to parse- {str(e)}.")
 
-    # evaluate the AST
+    # Evaluate the AST
     try:
         return _evaluate_ast(ast)
     except Exception as e:
         raise SyntaxError(
-            f"Invalid expression: {expression} Unable to evaluate- {str(e)}"
+            f"Invalid expression: {expression}. Unable to evaluate- {str(e)}."
         )
 
 
 def _evaluate_ast(node: dict) -> Any:
-    """
-    Evaluates an Abstract Syntax Tree (AST) node.
-    """
-    # depth first traversal of the AST
+    """Evaluates an Abstract Syntax Tree (AST) node."""
+    # Depth first traversal of the AST
     if node["left"] is not None:
         node["left"] = _evaluate_ast(node["left"])
     if node["right"] is not None:
@@ -67,9 +65,7 @@ def _evaluate_ast(node: dict) -> Any:
 
 
 def _parse_expression(tokens: list[str]) -> dict:
-    """
-    Parses a list of tokens into an Abstract Syntax Tree (AST)
-    """
+    """Parses a list of tokens into an Abstract Syntax Tree (AST). """
     output = None
     stack = []
     operator_stack = []
@@ -77,7 +73,7 @@ def _parse_expression(tokens: list[str]) -> dict:
     while len(tokens) > 0:
         token = tokens.pop(0)
         if token == "(":
-            # extract nested expression and parse it
+            # Extract nested expression and parse it
             nested_tokens = []
             nested_level = 1
             while nested_level > 0:
@@ -137,8 +133,8 @@ def _parse_expression(tokens: list[str]) -> dict:
 
 def _tokenise_expression(expression: str, context: dict) -> list[str]:
     """
-    Tokenizes an infix expression into a list of tokens. Lookup in
-    context for variable names.
+    Tokenizes an infix expression into a list of tokens. Lookup in context 
+    for variable names.
     """
     tokens = []
     current_token = ""
@@ -152,8 +148,8 @@ def _tokenise_expression(expression: str, context: dict) -> list[str]:
                 current_token = ""
         elif char in "+-*/^()":
             if current_token:
-                # workaround for conflicts between function and
-                # var names (ie, abs and abs())
+                # Workaround for conflicts between function and var names (i.e.
+                # abs and abs())
                 if char != "(" and current_token in context:
                     tokens.append(context[current_token])
                 else:
