@@ -10,7 +10,7 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import rpn
-from cheetah.utils import NotUnderstoodPropertyWarning
+from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
