@@ -440,9 +440,8 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
             continue
         else:
             warnings.warn(
-                f"Property {property} with value {properties[property]}"
-                f" for element type {properties['element_type']} is currently"
-                f" not understood.",
+                f"Property {property} with value {properties[property]} for element "
+                f"type {properties['element_type']} is currently not understood.",
                 category=PhysicsWarning,
                 stacklevel=2,
             )
