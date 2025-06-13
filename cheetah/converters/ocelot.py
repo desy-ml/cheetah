@@ -3,7 +3,7 @@ import warnings
 import torch
 
 import cheetah
-from cheetah.utils import PhysicsWarning
+from cheetah.utils import DefaultScreenParametersWarning, PhysicsWarning
 
 
 def convert_element_to_cheetah(
@@ -145,7 +145,7 @@ def convert_element_to_cheetah(
         # solution for other accelerators
         warnings.warn(
             "Diagnostic screen was converted with default screen properties.",
-            category=PhysicsWarning,
+            category=DefaultScreenParametersWarning,
             stacklevel=2,
         )
         return cheetah.Screen(

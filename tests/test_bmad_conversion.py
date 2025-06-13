@@ -46,7 +46,9 @@ def test_bmad_tutorial():
     assert converted.s.tilt == correct.s.tilt
 
 
-@pytest.mark.filterwarnings(r"ignore:(d|dg):cheetah.utils.NotUnderstoodPropertyWarning")
+@pytest.mark.filterwarnings(
+    r"ignore:.*( d | g | dg ).*:cheetah.utils.NotUnderstoodPropertyWarning"
+)
 @pytest.mark.parametrize(
     "device",
     [
@@ -82,7 +84,9 @@ def test_device_passing(device: torch.device):
     assert converted.s.k2.device.type == device.type
 
 
-@pytest.mark.filterwarnings(r"ignore:(d|dg):cheetah.utils.NotUnderstoodPropertyWarning")
+@pytest.mark.filterwarnings(
+    r"ignore:.*( d | g | dg ).*:cheetah.utils.NotUnderstoodPropertyWarning"
+)
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
@@ -101,7 +105,9 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.s.k2.dtype == dtype
 
 
-@pytest.mark.filterwarnings(r"ignore:(d|dg):cheetah.utils.NotUnderstoodPropertyWarning")
+@pytest.mark.filterwarnings(
+    r"ignore:.*( d | g | dg ).*:cheetah.utils.NotUnderstoodPropertyWarning"
+)
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
 )

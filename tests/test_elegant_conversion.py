@@ -97,7 +97,10 @@ def test_fodo():
 def test_cavity_import():
     """Test importing an accelerating cavity defined in the Elegant file format."""
     file_path = "tests/resources/cavity.lte"
-    converted = cheetah.Segment.from_elegant(file_path, "cavity")
+    with pytest.warns(
+        NotUnderstoodPropertyWarning, match="(end[12]_focus|body_focus_model|change_p0)"
+    ):
+        converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
     assert np.isclose(converted.c1.length, 0.7)
     assert np.isclose(converted.c1.frequency, 1.2e9)
@@ -107,6 +110,11 @@ def test_cavity_import():
     assert np.isclose(converted.c1.phase, 0.0)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:"
+    ".*(end[12]_focus|body_focus_model|change_p0).*:"
+    "cheetah.utils.NotUnderstoodPropertyWarning"
+)
 def test_custom_transfer_map_import():
     """Test importing an Elegant EMATRIX into a Cheetah CustomTransferMap."""
     file_path = "tests/resources/cavity.lte"
@@ -127,9 +135,9 @@ def test_custom_transfer_map_import():
     assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
 
 
-@pytest.mark.filterwarnings("ignore:long-name-quad:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:c.*charge:cheetah.utils.NoBeamPropertiesInLatticeWarning"
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.parametrize(
     "device",
@@ -178,9 +186,9 @@ def test_device_passing(device: torch.device):
     assert converted.s1.k2.device.type == device.type
 
 
-@pytest.mark.filterwarnings("ignore:long-name-quad:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:c.*charge:cheetah.utils.NoBeamPropertiesInLatticeWarning"
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
@@ -212,9 +220,9 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.s1.k2.dtype == dtype
 
 
-@pytest.mark.filterwarnings("ignore:long-name-quad:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:c.*charge:cheetah.utils.NoBeamPropertiesInLatticeWarning"
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
