@@ -1,6 +1,10 @@
 import torch
 
-from cheetah.utils import unbiased_weighted_covariance, unbiased_weighted_variance
+from cheetah.utils import (
+    unbiased_weighted_covariance,
+    unbiased_weighted_covariance_matrix,
+    unbiased_weighted_variance,
+)
 
 
 def test_unbiased_weighted_variance_with_single_element():
@@ -71,3 +75,52 @@ def test_unbiased_weighted_covariance_reduced_to_variance():
     covariance = unbiased_weighted_covariance(data, data, weights)
 
     assert torch.allclose(covariance, variance)
+
+
+def test_unbiased_weighted_covariance_matrix_reduced_to_scalar():
+    """
+    Test that the unbiased weighted covariance matrix calculation reduces to the
+    variance for scalar variables.
+    """
+    data = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
+    weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
+
+    matrix = unbiased_weighted_covariance_matrix(data.unsqueeze(-1), weights)
+    variance = unbiased_weighted_variance(data, weights)
+
+    assert torch.allclose(matrix.squeeze(), variance)
+
+
+def test_unbiased_weighted_covariance_matrix_elementwise_reduction():
+    """
+    Test that the unbiased weighted covariance matrix agrees with the covariance if
+    calculated elementwise.
+    """
+
+    series = torch.arange(5.0)
+    data = torch.stack([series, series**2, series**3], dim=-1)
+    weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
+
+    matrix = unbiased_weighted_covariance_matrix(data, weights)
+    # matrix = torch.cov(data.T, aweights=weights)
+
+    for i in range(3):
+        for j in range(3):
+            covariance = unbiased_weighted_covariance(data[:, i], data[:, j], weights)
+            assert torch.allclose(matrix[i, j], covariance)
+
+
+def test_unbiased_weighted_covariance_matrix_torch():
+    """
+    Test that the unbiased weighted covariance matrix is equal to the result computed
+    by torch for the unvectorized case.
+    """
+
+    series = torch.arange(5.0)
+    data = torch.stack([series, series**2, series**3], dim=-1)
+    weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
+
+    expected_covariance_matrix = torch.cov(data.T, aweights=weights)
+    computed_covariance_matrix = unbiased_weighted_covariance_matrix(data, weights)
+
+    assert torch.allclose(computed_covariance_matrix, expected_covariance_matrix)
