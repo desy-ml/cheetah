@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
+
 ### 🐛 Bug fixes
 
 - Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
@@ -34,7 +36,6 @@
 - `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
 - There is a warning now when converting elements from Elegant or Bmad that have names which are invalid for use with the `segment.element_name` syntax, and add a convenience method for explicitly converting these names to valid Python variable names. (see #411) (@amylizzle, @jank324)
 - Rotation matrices are no longer computed twice for forward and backward phase space rotations (see #452) (@Hespe)
-- Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
 
 ### 🐛 Bug fixes
 

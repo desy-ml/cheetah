@@ -6,7 +6,7 @@ from cheetah.converters.utils import infix
 def test_valid_infix_expression():
     """
     Test that a valid infix expression without nesting is correctly
-    recognised as a valid RPN expression, meaning it is evaluated to
+    recognised as a valid expression, meaning it is evaluated to
     the correct number without throwing an exception.
     """
     expression = "2 + 3"
