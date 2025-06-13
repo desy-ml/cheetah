@@ -107,7 +107,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(
-                ["element_type", "type", "alias"], bmad_parsed
+                ["element_type", "type", "alias", "kick"], bmad_parsed
             )
             return cheetah.HorizontalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
@@ -117,7 +117,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
-                ["element_type", "type", "alias"], bmad_parsed
+                ["element_type", "type", "alias", "kick"], bmad_parsed
             )
             return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
