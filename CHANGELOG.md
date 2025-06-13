@@ -1,6 +1,21 @@
 # Changelog
 
-## v0.7.3 [🚧 Work in Progress]
+## v0.7.4 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+- Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
+- Rework the covariance computation in `ParticleBeam.as_parameter_beam` to fix an issue that caused the covariance to be computed incorrectly for vectorised beams (see #471) (@cr-xu, @jank324, @Hespe)
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.3](https://github.com/desy-ml/cheetah/releases/tag/v0.7.3) (2025-06-11)
 
 ### 🚨 Breaking Changes
 
@@ -40,6 +55,8 @@
 - Add a `pytest` marker for running tests on all subclasses of `Element`. The marker automatically detects if an MWE has not yet been defined for a subclass and alerts the developer through a test failure. (see #418) (@Hespe, @jank324)
 
 ### 🌟 First Time Contributors
+
+- Copilot 🤖
 
 ## [v0.7.2](https://github.com/desy-ml/cheetah/releases/tag/v0.7.2) (2025-04-28)
 
