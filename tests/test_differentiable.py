@@ -32,7 +32,7 @@ def test_simple_quadrupole():
     assert outgoing_beam.particles.grad_fn is not None
 
 
-@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ea_magnets():
     """
     Test that gradients are tracking when the magnet settings in the ARES experimental
@@ -54,7 +54,7 @@ def test_ea_magnets():
     assert outgoing_beam.particles.grad_fn is not None
 
 
-@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ea_incoming_parameter_beam():
     """
     Test that gradients are tracking when incoming beam (being a `ParameterBeam`)
@@ -74,7 +74,7 @@ def test_ea_incoming_parameter_beam():
     assert outgoing_beam.cov.grad_fn is not None
 
 
-@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ea_incoming_particle_beam():
     """
     Test that gradients are tracking when incoming beam (being a `ParticleBeam`)

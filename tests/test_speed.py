@@ -10,7 +10,7 @@ from .resources import ARESlatticeStage3v1_9 as ares
 # TODO: Test that Cheeath tracks faster than Ocelot
 
 
-@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultScreenParametersWarning")
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_tracking_speed():
     """Really only tests that Cheetah isn't super slow."""
     cell = cheetah.converters.ocelot.subcell_of_ocelot(
