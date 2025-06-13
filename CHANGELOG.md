@@ -10,7 +10,7 @@
 
 - Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
 - Rework the covariance computation in `ParticleBeam.as_parameter_beam` to fix an issue that caused the covariance to be computed incorrectly for vectorised beams (see #471) (@cr-xu, @jank324, @Hespe)
-- Unrecognised element properties in Bmad and Elegant lattice files now print a warning instead of exiting with an `AssertionError` (see #425) (@amylizzle)
+- Unrecognised element properties in Bmad and Elegant lattice files now print a warning instead of exiting with an `AssertionError` (see #425) (@amylizzle, @jank324)
 
 ### 🐆 Other
 

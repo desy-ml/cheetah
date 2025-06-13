@@ -101,9 +101,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["csrdrift", "csrdrif"]:
             # Drift that includes effects from coherent synchrotron radiation
-            validate_understood_properties(
-                ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"], parsed
-            )
+            validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
@@ -111,20 +109,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["lscdrift", "lscdrif"]:
             # Drift that includes space charge effects
-            validate_understood_properties(
-                [
-                    "element_type",
-                    "l",
-                    "group",
-                    "interpolate",
-                    "smoothing",
-                    "bins",
-                    "high_frequency_cutoff0",
-                    "high_frequency_cutoff1",
-                    "lsc",
-                ],
-                parsed,
-            )
+            validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
@@ -132,8 +117,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "ecol":
             validate_understood_properties(
-                ["element_type", "l", "x_max", "y_max"],
-                parsed,
+                ["element_type", "l", "x_max", "y_max"], parsed
             )
             return cheetah.Segment(
                 elements=[
@@ -159,8 +143,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "rcol":
             validate_understood_properties(
-                ["element_type", "l", "x_max", "y_max"],
-                parsed,
+                ["element_type", "l", "x_max", "y_max"], parsed
             )
             return cheetah.Segment(
                 elements=[
@@ -255,8 +238,7 @@ def convert_element(
             )
             # Add affine component (constant offset)
             R[:6, 6] = torch.tensor(
-                [parsed.get(f"c{i + 1}", 0.0) for i in range(6)],
-                **factory_kwargs,
+                [parsed.get(f"c{i + 1}", 0.0) for i in range(6)], **factory_kwargs
             )
             # Ensure the affine component is passed along
             R[6, 6] = 1.0
@@ -269,19 +251,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "rfca":
             validate_understood_properties(
-                [
-                    "element_type",
-                    "l",
-                    "phase",
-                    "volt",
-                    "freq",
-                    "change_p0",
-                    "end1_focus",
-                    "end2_focus",
-                    "body_focus_model",
-                    "group",
-                ],
-                parsed,
+                ["element_type", "l", "phase", "volt", "freq", "group"], parsed
             )
 
             # TODO Properly handle all parameters
@@ -297,34 +267,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "rfcw":
             validate_understood_properties(
-                [
-                    "element_type",
-                    "l",
-                    "phase",
-                    "volt",
-                    "freq",
-                    "change_p0",
-                    "end1_focus",
-                    "end2_focus",
-                    "cell_length",
-                    "zwakefile",
-                    "trwakefile",
-                    "tcolumn",
-                    "wxcolumn",
-                    "wycolumn",
-                    "wzcolumn",
-                    "interpolate",
-                    "n_kicks",
-                    "smoothing",
-                    "zwake",
-                    "trwake",
-                    "lsc",
-                    "lsc_bins",
-                    "lsc_high_frequency_cutoff0",
-                    "lsc_high_frequency_cutoff1",
-                    "group",
-                ],
-                parsed,
+                ["element_type", "l", "phase", "volt", "freq", "group"], parsed
             )
 
             # TODO Properly handle all parameters
@@ -340,15 +283,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "rfdf":
             validate_understood_properties(
-                [
-                    "element_type",
-                    "l",
-                    "phase",
-                    "voltage",
-                    "frequency",
-                    "group",
-                ],
-                parsed,
+                ["element_type", "l", "phase", "voltage", "frequency", "group"], parsed
             )
 
             # TODO Properly handle all parameters
@@ -393,34 +328,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["csrcsben", "csrcsbend"]:
             validate_understood_properties(
-                [
-                    "element_type",
-                    "l",
-                    "angle",
-                    "k1",
-                    "e1",
-                    "e2",
-                    "edge1_effects",
-                    "edge2_effects",
-                    "edge_order",
-                    "tilt",
-                    "hgap",
-                    "fint",
-                    "sg_halfwidth",
-                    "sg_order",
-                    "high_frequency_cutoff0",
-                    "high_frequency_cutoff1",
-                    "steady_state",
-                    "bins",
-                    "n_kicks",
-                    "n_slices",
-                    "integration_order",
-                    "isr",
-                    "csr",
-                    "synch_rad",
-                    "nonlinear",
-                    "group",
-                ],
+                ["element_type", "l", "angle", "k1", "e1", "e2", "tilt", "group"],
                 parsed,
             )
             return cheetah.Dipole(
