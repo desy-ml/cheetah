@@ -102,7 +102,6 @@ def test_unbiased_weighted_covariance_matrix_elementwise_reduction():
     weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
 
     matrix = unbiased_weighted_covariance_matrix(data, weights)
-    # matrix = torch.cov(data.T, aweights=weights)
 
     for i in range(3):
         for j in range(3):
