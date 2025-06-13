@@ -52,9 +52,7 @@ def convert_element(
     elif isinstance(parsed, dict) and "element_type" in parsed:
         if parsed["element_type"] == "sole":
             # The group property does not have an analoge in Cheetah, so it is neglected
-            validate_understood_properties(
-                ["element_type", "l", "group"], parsed, warnings
-            )
+            validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Solenoid(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
@@ -62,7 +60,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["hkick", "hkic"]:
             validate_understood_properties(
-                ["element_type", "l", "kick", "group"], parsed, warnings
+                ["element_type", "l", "kick", "group"], parsed
             )
             return cheetah.HorizontalCorrector(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -72,7 +70,7 @@ def convert_element(
             )
         elif parsed["element_type"] in ["vkick", "vkic"]:
             validate_understood_properties(
-                ["element_type", "l", "kick", "group"], parsed, warnings
+                ["element_type", "l", "kick", "group"], parsed
             )
             return cheetah.VerticalCorrector(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -86,9 +84,7 @@ def convert_element(
                 name=name, sanitize_name=sanitize_name, **factory_kwargs
             )
         elif parsed["element_type"] == "kick":
-            validate_understood_properties(
-                ["element_type", "l", "group"], parsed, warnings
-            )
+            validate_understood_properties(["element_type", "l", "group"], parsed)
 
             # TODO Find proper element class
             return cheetah.Drift(
@@ -97,9 +93,7 @@ def convert_element(
                 sanitize_name=sanitize_name,
             )
         elif parsed["element_type"] in ["drift", "drif"]:
-            validate_understood_properties(
-                ["element_type", "l", "group"], parsed, warnings
-            )
+            validate_understood_properties(["element_type", "l", "group"], parsed)
             return cheetah.Drift(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
@@ -108,9 +102,7 @@ def convert_element(
         elif parsed["element_type"] in ["csrdrift", "csrdrif"]:
             # Drift that includes effects from coherent synchrotron radiation
             validate_understood_properties(
-                ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"],
-                parsed,
-                warnings,
+                ["element_type", "l", "group", "use_stupakov", "n_kicks", "csr"], parsed
             )
             return cheetah.Drift(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -132,7 +124,6 @@ def convert_element(
                     "lsc",
                 ],
                 parsed,
-                warnings,
             )
             return cheetah.Drift(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -143,7 +134,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "x_max", "y_max"],
                 parsed,
-                warnings,
             )
             return cheetah.Segment(
                 elements=[
@@ -171,7 +161,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "x_max", "y_max"],
                 parsed,
-                warnings,
             )
             return cheetah.Segment(
                 elements=[
@@ -199,7 +188,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "k1", "tilt", "group"],
                 parsed,
-                warnings,
             )
             return cheetah.Quadrupole(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -212,7 +200,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "k2", "tilt", "group"],
                 parsed,
-                warnings,
             )
             return cheetah.Sextupole(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -222,9 +209,7 @@ def convert_element(
                 sanitize_name=sanitize_name,
             )
         elif parsed["element_type"] == "moni":
-            validate_understood_properties(
-                ["element_type", "group", "l"], parsed, warnings
-            )
+            validate_understood_properties(["element_type", "group", "l"], parsed)
             if "l" in parsed:
                 return cheetah.Segment(
                     elements=[
@@ -253,7 +238,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "order", "c[1-6]", "r[1-6][1-6]", "group"],
                 parsed,
-                warnings,
             )
 
             if parsed.get("order", 1) != 1:
@@ -298,7 +282,6 @@ def convert_element(
                     "group",
                 ],
                 parsed,
-                warnings,
             )
 
             # TODO Properly handle all parameters
@@ -342,7 +325,6 @@ def convert_element(
                     "group",
                 ],
                 parsed,
-                warnings,
             )
 
             # TODO Properly handle all parameters
@@ -367,7 +349,6 @@ def convert_element(
                     "group",
                 ],
                 parsed,
-                warnings,
             )
 
             # TODO Properly handle all parameters
@@ -385,7 +366,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "angle", "k1", "e1", "e2", "tilt", "group"],
                 parsed,
-                warnings,
             )
             return cheetah.Dipole(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -401,7 +381,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "angle", "e1", "e2", "tilt", "group"],
                 parsed,
-                warnings,
             )
             return cheetah.RBend(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -443,7 +422,6 @@ def convert_element(
                     "group",
                 ],
                 parsed,
-                warnings,
             )
             return cheetah.Dipole(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
@@ -457,7 +435,7 @@ def convert_element(
             )
         elif parsed["element_type"] == "watch":
             validate_understood_properties(
-                ["element_type", "group", "filename"], parsed, warnings
+                ["element_type", "group", "filename"], parsed
             )
             return cheetah.Marker(name=name, **factory_kwargs)
         elif parsed["element_type"] in ["charge", "wake"]:
