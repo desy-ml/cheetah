@@ -12,7 +12,7 @@ def test_create_from_parameters():
     Test that a `ParticleBeam` created from parameters actually has those parameters.
     """
     beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000_000),
+        num_particles=1_000_000,
         mu_x=torch.tensor(1e-5),
         mu_px=torch.tensor(1e-7),
         mu_y=torch.tensor(2e-5),
@@ -89,7 +89,7 @@ def test_from_twiss_to_twiss():
     parameters.
     """
     beam = cheetah.ParticleBeam.from_twiss(
-        num_particles=torch.tensor(10_000_000),
+        num_particles=10_000_000,
         beta_x=torch.tensor(5.91253676811640894),
         alpha_x=torch.tensor(3.55631307633660354),
         emittance_x=torch.tensor(3.494768647122823e-09),
@@ -125,7 +125,7 @@ def test_generate_uniform_ellipsoid_vectorized():
     energy = torch.tensor([1e7, 2e7])
     total_charge = torch.tensor([1e-9, 3e-9])
 
-    num_particles = torch.tensor(1_000_000)
+    num_particles = 1_000_000
     beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=num_particles,
         radius_x=radius_x,
