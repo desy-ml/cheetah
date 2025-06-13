@@ -36,10 +36,10 @@ class NoBeamPropertiesInLatticeWarning(PhysicsWarning):
     ...
 
 
-class DefaultScreenParametersWarning(PhysicsWarning):
+class DefaultParameterWarning(PhysicsWarning):
     """
-    Warning raised when a diagnostic screen is converted to a `cheetah.Screen` with
-    default screen parameters.
+    Warning raised when a default parameters are assumed for an element that does not
+    have certain parameters known to Cheetah in its original lattice format.
     """
 
     ...

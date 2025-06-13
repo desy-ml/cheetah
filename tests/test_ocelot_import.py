@@ -4,7 +4,7 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import DefaultScreenParametersWarning
+from cheetah.utils import DefaultParameterWarning
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -32,7 +32,7 @@ def test_screen_conversion(name: str):
     Test on the example of the ARES lattice that all screens are correctly converted to
     `cheetah.Screen`.
     """
-    with pytest.warns(DefaultScreenParametersWarning):
+    with pytest.warns(DefaultParameterWarning):
         segment = cheetah.Segment.from_ocelot(ares.cell)
     screen = getattr(segment, name)
     assert isinstance(screen, cheetah.Screen)
