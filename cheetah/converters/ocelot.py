@@ -3,7 +3,7 @@ import warnings
 import torch
 
 import cheetah
-from cheetah.utils import DefaultScreenParametersWarning, PhysicsWarning
+from cheetah.utils import DefaultScreenParametersWarning, UnknownElementWarning
 
 
 def convert_element_to_cheetah(
@@ -180,7 +180,7 @@ def convert_element_to_cheetah(
         warnings.warn(
             f"Unknown element {element.id} of type {type(element)}, replacing with "
             "drift section.",
-            category=PhysicsWarning,
+            category=UnknownElementWarning,
             stacklevel=2,
         )
         return cheetah.Drift(

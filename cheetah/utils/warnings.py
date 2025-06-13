@@ -7,6 +7,16 @@ class PhysicsWarning(Warning):
     ...
 
 
+class UnknownElementWarning(PhysicsWarning):
+    """
+    Warning raised when an element is encountered that is not understood by Cheetah.
+    This can happen when importing a lattice from another code, like Bmad or Elegant,
+    and the element is not supported by Cheetah.
+    """
+
+    ...
+
+
 class NotUnderstoodPropertyWarning(PhysicsWarning):
     """
     Warning raised when a property not understood by Cheetah is encountered during
