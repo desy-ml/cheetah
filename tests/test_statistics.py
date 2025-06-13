@@ -99,14 +99,16 @@ def test_unbiased_weighted_covariance_matrix_elementwise_reduction():
 
     series = torch.arange(5.0)
     data = torch.stack([series, series**2, series**3], dim=-1)
-    weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
+    weights = torch.tensor([[0.5, 1.0, 1.0, 0.9, 0.9], [0.4, 1.2, 1.4, 0.6, 0.7]])
 
     matrix = unbiased_weighted_covariance_matrix(data, weights)
 
     for i in range(3):
         for j in range(3):
-            covariance = unbiased_weighted_covariance(data[:, i], data[:, j], weights)
-            assert torch.allclose(matrix[i, j], covariance)
+            covariance = unbiased_weighted_covariance(
+                data[:, i], data[:, j], weights, dim=-1
+            )
+            assert torch.allclose(matrix[:, i, j], covariance)
 
 
 def test_unbiased_weighted_covariance_matrix_torch():
