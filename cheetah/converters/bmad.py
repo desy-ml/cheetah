@@ -11,7 +11,7 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
-from cheetah.utils import PhysicsWarning
+from cheetah.utils import UnknownElementWarning
 
 SHARED_PROPERTIES = ["element_type", "alias", "type"]
 
@@ -257,7 +257,7 @@ def convert_element(
             warnings.warn(
                 f"Element {name} of type {bmad_parsed['element_type']} cannot be"
                 " converted correctly. Using drift section instead.",
-                category=PhysicsWarning,
+                category=UnknownElementWarning,
                 stacklevel=2,
             )
             return cheetah.Drift(

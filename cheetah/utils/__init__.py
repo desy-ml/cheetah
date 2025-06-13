@@ -22,4 +22,5 @@ from .warnings import (  # noqa: F401
     NoBeamPropertiesInLatticeWarning,
     NotUnderstoodPropertyWarning,
     PhysicsWarning,
+    UnknownElementWarning,
 )

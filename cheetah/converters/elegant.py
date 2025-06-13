@@ -10,7 +10,7 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
-from cheetah.utils import NoBeamPropertiesInLatticeWarning
+from cheetah.utils import NoBeamPropertiesInLatticeWarning, UnknownElementWarning
 
 SHARED_PROPERTIES = ["element_type", "group"]
 
@@ -351,7 +351,7 @@ def convert_element(
             warnings.warn(
                 f"Element {name} of type {parsed['element_type']} cannot be converted "
                 "correctly. Using drift section instead.",
-                category=NoBeamPropertiesInLatticeWarning,
+                category=UnknownElementWarning,
                 stacklevel=2,
             )
             return cheetah.Drift(
