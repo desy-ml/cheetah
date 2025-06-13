@@ -253,8 +253,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "phase", "volt", "freq", "group"], parsed
             )
-
-            # TODO Properly handle all parameters
             return cheetah.Cavity(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
@@ -269,8 +267,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "phase", "volt", "freq", "group"], parsed
             )
-
-            # TODO Properly handle all parameters
             return cheetah.Cavity(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
@@ -285,8 +281,6 @@ def convert_element(
             validate_understood_properties(
                 ["element_type", "l", "phase", "voltage", "frequency", "group"], parsed
             )
-
-            # TODO Properly handle all parameters
             return cheetah.TransverseDeflectingCavity(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 # Elegant defines 90° as the phase of maximum acceleration,
