@@ -414,7 +414,6 @@ def parse_lines(lines: str) -> dict:
     ]
 
     for line in semicolon_split_lines:
-
         if re.fullmatch(property_assignment_pattern, line):
             context = assign_property(line, context)
         elif re.fullmatch(variable_assignment_pattern, line):
