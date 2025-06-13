@@ -6,10 +6,14 @@
 
 ### 🚀 Features
 
+- The new warning system was extended to have more specific subclasses of `PhysicsWarning` to allow for better and easier filtering of warnings (see #415) (@Hespe, @jank324)
+
 ### 🐛 Bug fixes
 
 - Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
 - Rework the covariance computation in `ParticleBeam.as_parameter_beam` to fix an issue that caused the covariance to be computed incorrectly for vectorised beams (see #471) (@cr-xu, @jank324, @Hespe)
+- Unrecognised element properties in Bmad and Elegant lattice files now print a warning instead of exiting with an `AssertionError` (see #415) (@amylizzle, @jank324)
+- A bug was fixed that caused the Bmad and Elegant importers to incorrectly parse `;` line endings and comments starting with `#` (see #415) (@Hespe, @jank324)
 
 ### 🐆 Other
 

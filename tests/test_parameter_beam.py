@@ -179,7 +179,7 @@ def test_conversion_to_and_from_particle_beam():
         rtol=1e-3,
     )
     assert torch.isclose(
-        original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-6
+        original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-5
     )
     assert torch.isclose(
         original_parameter_beam.sigma_p, reconstructed_parameter_beam.sigma_p, rtol=1e-3
