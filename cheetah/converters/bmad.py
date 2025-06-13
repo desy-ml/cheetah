@@ -118,7 +118,7 @@ def convert_element(
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
                 ["element_type", "type", "alias"], bmad_parsed
-            )  # bnijnijn
+            )
             return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
