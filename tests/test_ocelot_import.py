@@ -94,9 +94,7 @@ def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype)
 
 
 def test_ocelot_lattice_import():
-    """
-    Tests if a lattice is importet correctly (and to the device requested).
-    """
+    """Tests if a lattice is importet correctly (and to the device requested)."""
     cell = [
         ocelot.Drift(l=0.3),
         ocelot.Quadrupole(l=0.2),
