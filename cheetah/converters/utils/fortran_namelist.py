@@ -436,9 +436,7 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
     :return: None
     """
     for property in properties:
-        if any([re.fullmatch(pattern, property) for pattern in understood]):
-            continue
-        else:
+        if not any([re.fullmatch(pattern, property) for pattern in understood]):
             warnings.warn(
                 f"Property {property} with value {properties[property]} for element "
                 f"type {properties['element_type']} is currently not understood.",
