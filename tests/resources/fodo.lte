@@ -4,7 +4,7 @@ q1: quad,l=0.1,k1=1.5;
 q2: kquad,l=0.2,k1=-3
 long-name-quad: quad,l=0.3,k1=2
 
-d1: drift, l=1, nonsense=1; # gap: 42.0
+d1: drift,l=1, nonsense=1; # gap: 42.0
 d2: drift ,l=2.0 # gap: 10.0
 d3: drift
 
