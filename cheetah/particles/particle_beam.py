@@ -14,6 +14,7 @@ from cheetah.utils import (
     elementwise_linspace,
     format_axis_with_prefixed_unit,
     unbiased_weighted_covariance,
+    unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
     verify_device_and_dtype,
 )
@@ -554,7 +555,7 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
-        # Extract the batch dimension of the beam
+        # Extract the vector dimension of the beam
         vector_shape = beam.sigma_x.shape
 
         # Generate random particles in unit sphere in polar coodinates
@@ -857,7 +858,7 @@ class ParticleBeam(Beam):
         NOTE: openPMD uses boolean particle status flags, i.e. alive or dead. Cheetah's
             survival probabilities are converted to status flags by thresholding at 0.5.
 
-        NOTE: At the moment this method only supports non-batched particles
+        NOTE: At the moment this method only supports non-vectorised particle
             distributions.
 
         :return: openPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
@@ -870,9 +871,11 @@ class ParticleBeam(Beam):
                 installed."""
             )
 
-        # For now only support non-batched particles
+        # For now only support non-vectorised particle distributions
         if len(self.particles.shape) != 2:
-            raise ValueError("Only non-batched particles are supported.")
+            raise ValueError(
+                "Only non-vectorised particle distributions are supported."
+            )
 
         px = self.px * self.p0c
         py = self.py * self.p0c
@@ -1035,8 +1038,11 @@ class ParticleBeam(Beam):
         from cheetah.particles.parameter_beam import ParameterBeam  # No circular import
 
         return ParameterBeam(
-            mu=self.particles.mean(dim=-2),
-            cov=torch.cov(self.particles.transpose(-2, -1)),
+            mu=(self.particles * self.survival_probabilities.unsqueeze(-1)).sum(dim=-2)
+            / self.survival_probabilities.sum(dim=-1, keepdim=True),
+            cov=unbiased_weighted_covariance_matrix(
+                self.particles, weights=self.survival_probabilities
+            ),
             energy=self.energy,
             total_charge=self.total_charge,
             device=self.particles.device,
