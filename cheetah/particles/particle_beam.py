@@ -1041,7 +1041,7 @@ class ParticleBeam(Beam):
             mu=(self.particles * self.survival_probabilities.unsqueeze(-1)).sum(dim=-2)
             / self.survival_probabilities.sum(),
             cov=unbiased_weighted_covariance_matrix(
-                self.particles, weights=self.survival_probabilities, dim=-2
+                self.particles, weights=self.survival_probabilities
             ),
             energy=self.energy,
             total_charge=self.total_charge,
