@@ -35,20 +35,22 @@ def base_rmatrix(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    # Avoid division by zero
-    k1 = k1.clone()
-    k1[k1 == 0] = torch.finfo(k1.dtype).eps
-
     kx2 = k1 + hx**2
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0, device=device, dtype=dtype)))
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = (torch.sin(ky * length) / ky).real
-    sx = (torch.sin(kx * length) / kx).real
-    dx = hx / kx2 * (1.0 - cx)
-    r56 = hx**2 * (length - sx) / kx2 / beta**2
+    sy = (torch.sinc(ky * length / torch.pi) * length).real
+    sx = (torch.sinc(kx * length / torch.pi) * length).real
+    dx = torch.where(
+        kx2 != 0, hx / kx2 * (1.0 - cx), torch.tensor(0.0, device=device, dtype=dtype)
+    )
+    r56 = torch.where(
+        kx2 != 0,
+        hx**2 * (length - sx) / kx2 / beta**2,
+        torch.tensor(0.0, device=device, dtype=dtype),
+    )
 
     r56 = r56 - length / beta**2 * igamma2
 
