@@ -5,7 +5,8 @@ import torch
 import cheetah
 from cheetah.utils import (
     DirtyNameWarning,
-    PhysicsWarning,
+    NoBeamPropertiesInLatticeWarning,
+    NotUnderstoodPropertyWarning,
     is_mps_available_and_functional,
 )
 
@@ -15,31 +16,13 @@ def test_fodo():
     file_path = "tests/resources/fodo.lte"
 
     with pytest.warns(
-        PhysicsWarning,
-        match=(
-            "Information provided in element c of type charge cannot be imported "
-            "automatically. Consider manually providing the correct information."
-        ),
-    ), pytest.warns(
-        DirtyNameWarning,
-        match=(
-            "Dirty element name long-name-quad is not a valid Python variable name. "
-            "You will not be able to use the `segment.element_name` syntax to access "
-            "this element. Set `sanitize_name=True` to change the name to a valid one, "
-            "if you want to use this syntax."
-        ),
+        NoBeamPropertiesInLatticeWarning, match=("c.*charge")
+    ), pytest.warns(DirtyNameWarning, match="long-name-quad"), pytest.warns(
+        NotUnderstoodPropertyWarning, match="nonsense"
     ):
         converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
-    with pytest.warns(
-        DirtyNameWarning,
-        match=(
-            "Dirty element name long-name-quad is not a valid Python variable name. "
-            "You will not be able to use the `segment.element_name` syntax to access "
-            "this element. Set `sanitize_name=True` to change the name to a valid one, "
-            "if you want to use this syntax."
-        ),
-    ):
+    with pytest.warns(DirtyNameWarning, match="long-name-quad"):
         correct_lattice = cheetah.Segment(
             [
                 cheetah.Marker(name="c"),
@@ -114,7 +97,10 @@ def test_fodo():
 def test_cavity_import():
     """Test importing an accelerating cavity defined in the Elegant file format."""
     file_path = "tests/resources/cavity.lte"
-    converted = cheetah.Segment.from_elegant(file_path, "cavity")
+    with pytest.warns(
+        NotUnderstoodPropertyWarning, match="(end[12]_focus|body_focus_model|change_p0)"
+    ):
+        converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
     assert np.isclose(converted.c1.length, 0.7)
     assert np.isclose(converted.c1.frequency, 1.2e9)
@@ -124,6 +110,11 @@ def test_cavity_import():
     assert np.isclose(converted.c1.phase, 0.0)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:"
+    ".*(end[12]_focus|body_focus_model|change_p0).*:"
+    "cheetah.utils.NotUnderstoodPropertyWarning"
+)
 def test_custom_transfer_map_import():
     """Test importing an Elegant EMATRIX into a Cheetah CustomTransferMap."""
     file_path = "tests/resources/cavity.lte"
@@ -144,19 +135,12 @@ def test_custom_transfer_map_import():
     assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
 
 
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Dirty element name long-name-quad is not a valid Python variable name. You will "
-    "not be able to use the `segment.element_name` syntax to access this element. Set "
-    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
-    "syntax.:"
-    "cheetah.utils.DirtyNameWarning"
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Information provided in element c of type charge cannot be imported automatically."
-    " Consider manually providing the correct information.:"
-    "cheetah.utils.PhysicsWarning"
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
 )
 @pytest.mark.parametrize(
     "device",
@@ -205,19 +189,12 @@ def test_device_passing(device: torch.device):
     assert converted.s1.k2.device.type == device.type
 
 
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Dirty element name long-name-quad is not a valid Python variable name. You will "
-    "not be able to use the `segment.element_name` syntax to access this element. Set "
-    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
-    "syntax.:"
-    "cheetah.utils.DirtyNameWarning"
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Information provided in element c of type charge cannot be imported automatically."
-    " Consider manually providing the correct information.:"
-    "cheetah.utils.PhysicsWarning"
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_dtype_passing(dtype: torch.dtype):
@@ -249,19 +226,12 @@ def test_dtype_passing(dtype: torch.dtype):
     assert converted.s1.k2.dtype == dtype
 
 
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Dirty element name long-name-quad is not a valid Python variable name. You will "
-    "not be able to use the `segment.element_name` syntax to access this element. Set "
-    "`sanitize_name=True` to change the name to a valid one, if you want to use this "
-    "syntax.:"
-    "cheetah.utils.DirtyNameWarning"
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
 @pytest.mark.filterwarnings(
-    "ignore:"
-    "Information provided in element c of type charge cannot be imported automatically."
-    " Consider manually providing the correct information.:"
-    "cheetah.utils.PhysicsWarning"
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
 )
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float32, torch.float64], indirect=True
