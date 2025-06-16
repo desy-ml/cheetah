@@ -10,7 +10,7 @@ import scipy
 from scipy.constants import physical_constants
 
 from cheetah.converters.utils import infix, rpn
-from cheetah.utils import PhysicsWarning
+from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
 
 # Regex patterns
 ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
@@ -392,7 +392,14 @@ def parse_lines(lines: str) -> dict:
         "raddeg": scipy.constants.degree,
     }
 
-    for line in lines:
+    lines_without_comments = [line.split("#")[0] for line in lines]
+    semicolon_split_lines = [
+        subline.strip()
+        for line in lines_without_comments
+        for subline in line.split(";")
+    ]
+
+    for line in semicolon_split_lines:
         if re.fullmatch(property_assignment_pattern, line):
             context = assign_property(line, context)
         elif re.fullmatch(variable_assignment_pattern, line):
@@ -422,8 +429,10 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
     :return: None
     """
     for property in properties:
-        assert any([re.fullmatch(pattern, property) for pattern in understood]), (
-            f"Property {property} with value {properties[property]} for element type"
-            f" {properties['element_type']} is currently not understood. Other values"
-            f" in properties are {properties.keys()}."  # noqa: B038
-        )
+        if not any([re.fullmatch(pattern, property) for pattern in understood]):
+            warnings.warn(
+                f"Property {property} with value {properties[property]} for element "
+                f"type {properties['element_type']} is currently not understood.",
+                category=NotUnderstoodPropertyWarning,
+                stacklevel=2,
+            )
