@@ -9,7 +9,7 @@
 - The new warning system was extended to have more specific subclasses of `PhysicsWarning` to allow for better and easier filtering of warnings (see #415) (@Hespe, @jank324)
 - Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
 - Improve numerical stability of the `base_rmatrix` and `base_ttensor` functions (related to #469) (see #474) (@Hespe, @jank324)
-- Minor speed improvements in `base_rmatrix` and `base_ttensor` by reducing memory allocations for constants (see #474) (@Hespe, @jank324)
+- Minor speed improvements in `base_rmatrix` and `base_ttensor` by reducing memory allocations for constants, and skipping rotation computations when the present tilt has now effect. (see #474) (@Hespe, @jank324)
 
 ### 🐛 Bug fixes
 
