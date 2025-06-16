@@ -41,8 +41,8 @@ def base_rmatrix(
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
     sx = (torch.sinc(kx * length / torch.pi) * length).real
+    sy = (torch.sinc(ky * length / torch.pi) * length).real
     dx = torch.where(
         kx2 != 0, hx / kx2 * (1.0 - cx), torch.tensor(0.0, device=device, dtype=dtype)
     )
@@ -74,14 +74,14 @@ def base_rmatrix(
     R[..., 4, 5] = r56
 
     # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
-    # if k1 != 0 or hx != 0. Note that the first if is here to improve speed when no
+    # if hx != 0 or k1 != 0. Note that the first if is here to improve speed when no
     # rotation needs to be applied accross all vector dimensions. The torch.where is
     # here to improve numerical stability for the vector elements where no rotation
     # needs to be applied.
-    if torch.any((tilt != 0) & (kx2 != 0)):
+    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0))):
         rotation = rotation_matrix(tilt)
         R = torch.where(
-            ((tilt != 0) & (kx2 != 0)).unsqueeze(-1).unsqueeze(-1),
+            ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
             rotation.transpose(-1, -2) @ R @ rotation,
             R,
         )
@@ -127,8 +127,8 @@ def base_ttensor(
     ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
     cx = torch.cos(kx * length).real
     cy = torch.cos(ky * length).real
-    sx = torch.where(kx != 0, (torch.sin(kx * length) / kx).real, length)
-    sy = torch.where(ky != 0, (torch.sin(ky * length) / ky).real, length)
+    sx = (torch.sinc(kx * length / torch.pi) * length).real
+    sy = (torch.sinc(ky * length / torch.pi) * length).real
     dx = torch.where(kx != 0, (1.0 - cx) / kx2, length**2 / 2.0)
 
     d2y = 0.5 * sy**2
@@ -282,15 +282,26 @@ def base_ttensor(
     )
     T[..., 6, 6, 6] = 0.0  # Constant term currently handled by first order transfer map
 
-    # Rotate the R matrix for skew / vertical magnets
-    if torch.any(tilt != 0):
+    # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
+    # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
+    # when no rotation needs to be applied accross all vector dimensions. The
+    # torch.where is here to improve numerical stability for the vector elements where
+    # no rotation needs to be applied.
+    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))):
         rotation = rotation_matrix(tilt)
-        T = torch.einsum(
-            "...ij,...jkl,...kn,...lm->...inm",
-            rotation.transpose(-1, -2),
+        T = torch.where(
+            ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0)))
+            .unsqueeze(-1)
+            .unsqueeze(-1)
+            .unsqueeze(-1),
+            torch.einsum(
+                "...ij,...jkl,...kn,...lm->...inm",
+                rotation.transpose(-1, -2),
+                T,
+                rotation,
+                rotation,
+            ),
             T,
-            rotation,
-            rotation,
         )
     return T
 
