@@ -74,9 +74,91 @@ def base_rmatrix(
     R[..., 4, 5] = r56
 
     # Rotate the R matrix for skew / vertical magnets
-    if torch.any(tilt != 0):
+    if torch.any((tilt != 0) & (kx2 != 0)):
         rotation = rotation_matrix(tilt)
-        R = rotation.transpose(-1, -2) @ R @ rotation
+        R = torch.where(
+            ((tilt != 0) & (kx2 != 0)).unsqueeze(-1).unsqueeze(-1),
+            rotation.transpose(-1, -2) @ R @ rotation,
+            R,
+        )
+
+    return R
+
+
+def base_rmatrix2(
+    length: torch.Tensor,
+    k1: torch.Tensor,
+    hx: torch.Tensor,
+    species: Species,
+    tilt: torch.Tensor | None = None,
+    energy: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """
+    Create a first order universal transfer map for a beamline element.
+
+    :param length: Length of the element in m.
+    :param k1: Quadrupole strength in 1/m**2.
+    :param hx: Curvature (1/radius) of the element in 1/m.
+    :param species: Particle species of the beam.
+    :param tilt: Roation of the element relative to the longitudinal axis in rad.
+    :param energy: Beam energy in eV.
+    :return: First order transfer map for the element.
+    """
+    device = length.device
+    dtype = length.dtype
+
+    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    energy = (
+        energy if energy is not None else torch.tensor(0.0, device=device, dtype=dtype)
+    )
+
+    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+
+    kx2 = k1 + hx**2
+    ky2 = -k1
+    kx = torch.sqrt(torch.complex(kx2, torch.tensor(0.0, device=device, dtype=dtype)))
+    ky = torch.sqrt(torch.complex(ky2, torch.tensor(0.0, device=device, dtype=dtype)))
+    cx = torch.cos(kx * length).real
+    cy = torch.cos(ky * length).real
+    sy = (torch.sinc(ky * length / torch.pi) * length).real
+    sx = (torch.sinc(kx * length / torch.pi) * length).real
+    dx = torch.where(
+        kx2 != 0, hx / kx2 * (1.0 - cx), torch.tensor(0.0, device=device, dtype=dtype)
+    )
+    r56 = torch.where(
+        kx2 != 0,
+        hx**2 * (length - sx) / kx2 / beta**2,
+        torch.tensor(0.0, device=device, dtype=dtype),
+    )
+
+    r56 = r56 - length / beta**2 * igamma2
+
+    vector_shape = torch.broadcast_shapes(
+        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
+    )
+
+    R = torch.eye(7, dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
+    R[..., 0, 0] = cx
+    R[..., 0, 1] = sx
+    R[..., 0, 5] = dx / beta
+    R[..., 1, 0] = -kx2 * sx
+    R[..., 1, 1] = cx
+    R[..., 1, 5] = sx * hx / beta
+    R[..., 2, 2] = cy
+    R[..., 2, 3] = sy
+    R[..., 3, 2] = -ky2 * sy
+    R[..., 3, 3] = cy
+    R[..., 4, 0] = sx * hx / beta
+    R[..., 4, 1] = dx / beta
+    R[..., 4, 5] = r56
+
+    # Rotate the R matrix for skew / vertical magnets
+    rotation = rotation_matrix(tilt)
+    R = torch.where(
+        ((tilt != 0) & (kx2 != 0)).unsqueeze(-1).unsqueeze(-1),
+        rotation.transpose(-1, -2) @ R @ rotation,
+        R,
+    )
 
     return R
 
