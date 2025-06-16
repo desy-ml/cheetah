@@ -73,7 +73,11 @@ def base_rmatrix(
     R[..., 4, 1] = dx / beta
     R[..., 4, 5] = r56
 
-    # Rotate the R matrix for skew / vertical magnets
+    # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
+    # if k1 != 0 or hx != 0. Note that the first if is here to improve speed when no
+    # rotation needs to be applied accross all vector dimensions. The torch.where is
+    # here to improve numerical stability for the vector elements where no rotation
+    # needs to be applied.
     if torch.any((tilt != 0) & (kx2 != 0)):
         rotation = rotation_matrix(tilt)
         R = torch.where(
