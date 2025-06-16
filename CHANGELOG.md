@@ -7,6 +7,7 @@
 ### 🚀 Features
 
 - The new warning system was extended to have more specific subclasses of `PhysicsWarning` to allow for better and easier filtering of warnings (see #415) (@Hespe, @jank324)
+- Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
 
 ### 🐛 Bug fixes
 
