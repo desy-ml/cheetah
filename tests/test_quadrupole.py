@@ -274,7 +274,7 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     tm_skew_quad = skew_quad.transfer_map(energy, spiecies)
     tm_drift = drift.transfer_map(energy, spiecies)
 
-    # Check that the transfer matrices are equal to the precision of the dtype
-    assert torch.allclose(tm_quad, tm_skew_quad, atol=torch.finfo(dtype).eps)
-    assert torch.allclose(tm_quad, tm_drift, atol=torch.finfo(dtype).eps)
-    assert torch.allclose(tm_skew_quad, tm_drift, atol=torch.finfo(dtype).eps)
+    # Check that the transfer matrices are equal of the dtype
+    # NOTE: The `==` is used here over `torch.allclose` on purpose
+    assert (tm_quad == tm_drift).all()
+    assert (tm_skew_quad == tm_drift).all()
