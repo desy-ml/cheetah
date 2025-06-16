@@ -32,7 +32,7 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        if not self.is_name_sanitised():
+        if not self.is_name_sanitized():
             if sanitize_name:
                 self.sanitize_name()
             else:
@@ -189,7 +189,7 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def is_name_sanitised(self) -> bool:
+    def is_name_sanitized(self) -> bool:
         """
         Check if a name is sanitised, i.e. it contains only alphanumeric characters and
         underscores.
