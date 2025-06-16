@@ -201,7 +201,7 @@ def convert_element(
                             name=name + "_predrift",
                             sanitize_name=sanitize_name,
                         ),
-                        cheetah.BPM(name=name),
+                        cheetah.BPM(name=name, sanitize_name=sanitize_name),
                         cheetah.Drift(
                             length=torch.tensor(
                                 parsed.get("l", 0.0) / 2, **factory_kwargs
@@ -214,7 +214,7 @@ def convert_element(
                     sanitize_name=sanitize_name,
                 )
             else:
-                return cheetah.BPM(name=name)
+                return cheetah.BPM(name=name, sanitize_name=sanitize_name)
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
                 shared_properties + ["l", "order", "c[1-6]", "r[1-6][1-6]"],
@@ -335,7 +335,9 @@ def convert_element(
             )
         elif parsed["element_type"] == "watch":
             validate_understood_properties(shared_properties + ["filename"], parsed)
-            return cheetah.Marker(name=name, **factory_kwargs)
+            return cheetah.Marker(
+                name=name, sanitize_name=sanitize_name, **factory_kwargs
+            )
         elif parsed["element_type"] in ["charge", "wake"]:
             warnings.warn(
                 f"Information provided in element {name} of type"
