@@ -100,6 +100,12 @@ class Quadrupole(Element):
             energy=energy,
             species=species,
         )
+
+        if not torch.all(self.misalignment == 0):
+            R_entry, R_exit = misalignment_matrix(self.misalignment)
+            T = torch.einsum(
+                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+            )
         return T
 
     def track(self, incoming: Beam) -> Beam:

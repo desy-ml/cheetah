@@ -136,3 +136,33 @@ def test_sextupole_as_drift():
     assert torch.allclose(
         sextupole_outgoing.particles, drift_outgoing.particles, atol=1e-5, rtol=1e-6
     )
+
+
+def test_sextupole_with_misalignments():
+    """
+    Test that a sextupole with misalignments behaves as expected.
+    """
+    sextupole_with_misalignment = cheetah.Sextupole(
+        length=torch.tensor(1.0),
+        k2=torch.tensor(0.5),
+        misalignment=torch.tensor([1e-3, 0.0]),
+    )
+
+    sextupole_without_misalignment = cheetah.Sextupole(
+        length=torch.tensor(1.0), k2=torch.tensor(0.5)
+    )
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        mu_x=torch.tensor(1e-3),
+        sigma_px=torch.tensor(2e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_p=torch.tensor(1e-2),
+    )
+    outbeam_sextupole_with_misalignment = sextupole_with_misalignment(incoming_beam)
+    outbeam_sextupole_without_misalignment = sextupole_without_misalignment(
+        incoming_beam
+    )
+
+    assert not torch.allclose(
+        outbeam_sextupole_with_misalignment.mu_x,
+        outbeam_sextupole_without_misalignment.mu_x,
+    )
