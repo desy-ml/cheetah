@@ -1,17 +1,11 @@
-import warnings
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, Species
+from cheetah.particles import Beam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
-from cheetah.utils import (
-    NotSupportedTrackingMethodWarning,
-    squash_index_for_unavailable_dims,
-    verify_device_and_dtype,
-)
+from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
 
 
 class Sextupole(Element):
@@ -97,16 +91,7 @@ class Sextupole(Element):
         return T
 
     def track(self, incoming: Beam) -> Beam:
-        if isinstance(incoming, ParameterBeam):
-            warnings.warn(
-                "Second order tracking is not supported for `ParameterBeam` "
-                "for now. Falling back to first-order tracking instead.",
-                category=NotSupportedTrackingMethodWarning,
-                stacklevel=2,
-            )
-            return super().track(incoming)
-        else:
-            return super().track_second_order(incoming)
+        return super().track_second_order(incoming)
 
     @property
     def is_skippable(self) -> bool:

@@ -144,7 +144,7 @@ class Element(ABC, nn.Module):
                 category=NotSupportedTrackingMethodWarning,
                 stacklevel=2,
             )
-            return self.track(incoming)
+            return Element.track(self, incoming)
 
         first_order_tm = self.transfer_map(incoming.energy, incoming.species)
         second_order_tm = self.second_order_map(incoming.energy, incoming.species)
