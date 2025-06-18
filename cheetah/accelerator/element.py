@@ -7,7 +7,11 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import DirtyNameWarning, UniqueNameGenerator
+from cheetah.utils import (
+    DirtyNameWarning,
+    NotSupportedTrackingMethodWarning,
+    UniqueNameGenerator,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -76,6 +80,19 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+        r"""
+        Generates the element's second-order transfer map that describes how the beam
+        and its particles are transformed when traveling through the element.
+
+        :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
+
+        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
+        :param species: Species of the particles in the beam
+        :return: A 7x7x7 Tensor T_ijk for further calculations.
+        """
+        raise NotImplementedError
+
     def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the element. The input can be a `ParameterBeam` or a
@@ -111,6 +128,45 @@ class Element(ABC, nn.Module):
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def track_second_order(self, incoming: Beam):
+        """
+        Track particles through the element with second-order transfer maps.
+        The input can be a `ParameterBeam` or a `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        if isinstance(incoming, ParameterBeam):
+            warnings.warn(
+                "Second order tracking is not supported for `ParameterBeam` "
+                "for now. Falling back to first-order tracking instead.",
+                category=NotSupportedTrackingMethodWarning,
+                stacklevel=2,
+            )
+            return self.track(incoming)
+
+        first_order_tm = self.transfer_map(incoming.energy, incoming.species)
+        second_order_tm = self.second_order_map(incoming.energy, incoming.species)
+
+        # Apply the transfer map to the incoming particles
+        first_order_particles = incoming.particles @ first_order_tm.transpose(-2, -1)
+        second_order_particles = torch.einsum(
+            "...ijk,...j,...k->...i",
+            second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
+            incoming.particles,
+            incoming.particles,
+        )
+        outgoing_particles = second_order_particles + first_order_particles
+
+        return ParticleBeam(
+            particles=outgoing_particles,
+            energy=incoming.energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
+            species=incoming.species,
+        )
 
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""

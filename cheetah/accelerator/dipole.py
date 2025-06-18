@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, rotation_matrix
+from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -57,7 +57,7 @@ class Dipole(Element):
         fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -176,6 +176,8 @@ class Dipole(Element):
         """
         if self.tracking_method == "cheetah":
             return super().track(incoming)
+        elif self.tracking_method == "second_order":
+            return super().track_second_order(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
@@ -423,6 +425,19 @@ class Dipole(Element):
             R = rotation.transpose(-1, -2) @ R @ rotation
 
         return R
+
+    def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+        T = base_ttensor(
+            length=self.length,
+            k1=torch.zeros_like(self.length),
+            k2=torch.zeros_like(self.length),
+            hx=self.hx,
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
+
+        return T
 
     def _transfer_map_enter(self) -> torch.Tensor:
         """Linear transfer map for the entrance face of the dipole magnet."""

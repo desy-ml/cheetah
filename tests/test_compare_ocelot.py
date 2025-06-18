@@ -10,16 +10,22 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
-def test_dipole():
+@pytest.mark.parametrize("tracking_method", ["cheetah", "second_order"])
+def test_dipole(tracking_method):
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element.
     """
+
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    cheetah_dipole = cheetah.Dipole(length=torch.tensor(0.1), angle=torch.tensor(0.1))
+    cheetah_dipole = cheetah.Dipole(
+        length=torch.tensor(0.1),
+        angle=torch.tensor(0.1),
+        tracking_method=tracking_method,
+    )
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
@@ -27,13 +33,19 @@ def test_dipole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
-    lattice = ocelot.MagneticLattice([ocelot_bend])
+    if tracking_method == "second_order":
+        ocelot_method = {"global": ocelot.SecondTM}
+    else:
+        ocelot_method = {"global": ocelot.TransferMap}
+
+    lattice = ocelot.MagneticLattice([ocelot_bend], method=ocelot_method)
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
     assert np.allclose(
         outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
+        atol=1e-6,
     )
 
 
@@ -394,7 +406,8 @@ def test_astra_import():
     assert np.isclose(beam.energy.cpu().numpy(), (p_array.E * 1e9))
 
 
-def test_quadrupole():
+@pytest.mark.parametrize("tracking_method", ["cheetah", "second_order"])
+def test_quadrupole(tracking_method):
     """
     Test if the tracking results through a Cheetah `Quadrupole` element match those
     through an Ocelot `Quadrupole` element.
@@ -404,13 +417,15 @@ def test_quadrupole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_quadrupole = cheetah.Quadrupole(
-        length=torch.tensor(0.23), k1=torch.tensor(5.0)
+        length=torch.tensor(0.23),
+        k1=torch.tensor(5.0),
+        tracking_method=tracking_method,
     )
     cheetah_segment = cheetah.Segment(
         [
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor(0.1), tracking_method=tracking_method),
             cheetah_quadrupole,
-            cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor(0.1), tracking_method=tracking_method),
         ]
     )
     outgoing_beam = cheetah_segment.track(incoming_beam)
@@ -420,8 +435,13 @@ def test_quadrupole():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5.0)
+    if tracking_method == "second_order":
+        ocelot_method = {"global": ocelot.SecondTM}
+    else:
+        ocelot_method = {"global": ocelot.TransferMap}
     lattice = ocelot.MagneticLattice(
-        [ocelot.Drift(l=0.1), ocelot_quadrupole, ocelot.Drift(l=0.1)]
+        [ocelot.Drift(l=0.1), ocelot_quadrupole, ocelot.Drift(l=0.1)],
+        method=ocelot_method,
     )
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)

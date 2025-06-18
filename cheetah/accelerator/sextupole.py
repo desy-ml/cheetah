@@ -3,7 +3,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
+from cheetah.particles import Beam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
 from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
 
@@ -72,53 +72,21 @@ class Sextupole(Element):
             R = R_exit @ R @ R_entry
             return R
 
-    def track(self, incoming: Beam) -> Beam:
-        """
-        Track the beam through the sextupole element.
-
-        :param incoming: Beam entering the element.
-        :return: Beam exiting the element.
-        """
-        first_order_tm = self.transfer_map(incoming.energy, incoming.species)
-        second_order_tm = base_ttensor(
+    def second_order_map(self, energy, species):
+        T = base_ttensor(
             length=self.length,
             k1=torch.zeros_like(self.length),
             k2=self.k2,
             hx=torch.zeros_like(self.length),
-            species=incoming.species,
+            species=species,
             tilt=self.tilt,
-            energy=incoming.energy,
+            energy=energy,
         )
 
-        if isinstance(incoming, ParameterBeam):
-            # For ParameterBeam, only first-order effects are applied
-            return super().track(incoming)
-        elif isinstance(incoming, ParticleBeam):
-            # Apply the transfer map to the incoming particles
-            first_order_particles = incoming.particles @ first_order_tm.transpose(
-                -2, -1
-            )
-            second_order_particles = torch.einsum(
-                "...ijk,...j,...k->...i",
-                second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
-                incoming.particles,
-                incoming.particles,
-            )
-            outgoing_particles = second_order_particles + first_order_particles
+        return T
 
-            return ParticleBeam(
-                particles=outgoing_particles,
-                energy=incoming.energy,
-                particle_charges=incoming.particle_charges,
-                survival_probabilities=incoming.survival_probabilities,
-                s=incoming.s + self.length,
-                species=incoming.species,
-            )
-        else:
-            raise TypeError(
-                f"Unsupported beam type: {type(incoming)}. Expected ParameterBeam or "
-                "ParticleBeam."
-            )
+    def track(self, incoming: Beam) -> Beam:
+        return super().track(incoming)
 
     @property
     def is_skippable(self) -> bool:
