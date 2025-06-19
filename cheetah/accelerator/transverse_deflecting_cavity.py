@@ -34,6 +34,8 @@ class TransverseDeflectingCavity(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["bmadx"]
+
     def __init__(
         self,
         length: torch.Tensor,

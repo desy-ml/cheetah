@@ -35,6 +35,8 @@ class Quadrupole(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["cheetah", "bmadx", "second_order"]
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -127,7 +129,7 @@ class Quadrupole(Element):
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah' and 'bmadx'."
+                + "Supported methods are 'cheetah', 'second_order', and 'bmadx'."
             )
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
