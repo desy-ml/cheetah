@@ -171,3 +171,28 @@ def test_longitudinal_beam_metric(attr_names):
             assert attr_result.shape == (
                 (4, incoming_beam.num_particles) if attr_name == "x" else (4,)
             )
+
+
+@pytest.mark.parametrize(
+    "tracking_method",
+    ["cheetah", "second_order", "bmadx"],
+)
+def test_segment_set_tracking_method(tracking_method):
+    """
+    Test that the segment can set the tracking method for all supporting elements.
+    """
+
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="d1"),
+            cheetah.Quadrupole(length=torch.tensor(0.3), name="q1"),
+            cheetah.Drift(length=torch.tensor(0.2), name="d2"),
+            cheetah.Dipole(length=torch.tensor(0.5), name="b1"),
+        ]
+    )
+
+    # Set tracking method
+    segment.set_tracking_method(tracking_method)
+
+    for element in segment.elements:
+        assert element.tracking_method == tracking_method
