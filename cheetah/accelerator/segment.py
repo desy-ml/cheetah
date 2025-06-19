@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -565,6 +565,15 @@ class Segment(Element):
                 element.set_attrs_on_every_element_of_type(
                     element_type, is_recursive=True, **kwargs
                 )
+
+    def set_tracking_method(
+        self,
+        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
+    ) -> None:
+        for element in self.elements:
+            if hasattr(element, "tracking_method"):
+                if tracking_method in element.supported_tracking_methods:
+                    element.tracking_method = tracking_method
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

@@ -52,7 +52,7 @@ class RBend(Dipole):
         fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,

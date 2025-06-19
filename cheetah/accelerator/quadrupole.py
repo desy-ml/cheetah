@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, misalignment_matrix
+from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
@@ -35,6 +35,8 @@ class Quadrupole(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["cheetah", "bmadx", "second_order"]
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -42,7 +44,7 @@ class Quadrupole(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -90,6 +92,24 @@ class Quadrupole(Element):
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
             return R
 
+    def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+        T = base_ttensor(
+            length=self.length,
+            k1=self.k1,
+            k2=torch.zeros_like(self.length),
+            hx=torch.zeros_like(self.length),
+            tilt=self.tilt,
+            energy=energy,
+            species=species,
+        )
+
+        if not torch.all(self.misalignment == 0):
+            R_entry, R_exit = misalignment_matrix(self.misalignment)
+            T = torch.einsum(
+                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+            )
+        return T
+
     def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the quadrupole element.
@@ -99,6 +119,8 @@ class Quadrupole(Element):
         """
         if self.tracking_method == "cheetah":
             return super().track(incoming)
+        elif self.tracking_method == "second_order":
+            return super().track_second_order(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
@@ -107,7 +129,7 @@ class Quadrupole(Element):
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah' and 'bmadx'."
+                + "Supported methods are 'cheetah', 'second_order', and 'bmadx'."
             )
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:

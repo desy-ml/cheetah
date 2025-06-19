@@ -5,6 +5,7 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
+from cheetah.track_methods import base_ttensor
 from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
@@ -30,10 +31,12 @@ class Drift(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["cheetah", "bmadx", "second_order"]
+
     def __init__(
         self,
         length: torch.Tensor,
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -62,6 +65,17 @@ class Drift(Element):
 
         return tm
 
+    def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+        T = base_ttensor(
+            self.length,
+            k1=torch.zeros_like(self.length),
+            k2=torch.zeros_like(self.length),
+            hx=torch.zeros_like(self.length),
+            energy=energy,
+            species=species,
+        )
+        return T
+
     def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the dipole element.
@@ -71,6 +85,8 @@ class Drift(Element):
         """
         if self.tracking_method == "cheetah":
             return super().track(incoming)
+        elif self.tracking_method == "second_order":
+            return super().track_second_order(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
@@ -79,7 +95,7 @@ class Drift(Element):
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah' and 'bmadx'."
+                + "Supported methods are 'cheetah', 'second_order', and 'bmadx'."
             )
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
