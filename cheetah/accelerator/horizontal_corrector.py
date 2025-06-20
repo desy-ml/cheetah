@@ -74,7 +74,7 @@ class HorizontalCorrector(Element):
         return torch.any(self.angle != 0).item()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         return [
             HorizontalCorrector(
                 self.length / num_splits,
