@@ -6,11 +6,15 @@
 
 ### 🚀 Features
 
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
+
+- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 

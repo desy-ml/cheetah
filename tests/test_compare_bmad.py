@@ -103,3 +103,36 @@ def test_different_species_in_different_elements(species, cheetah_element):
     )
 
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
+
+
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+@pytest.mark.parametrize("phase", [0.0, 30.0])
+def test_cavity(cavity_type, phase):
+    """
+    Test that tracking a particle through a cavity in Cheetah agrees with Bmad results.
+    """
+    incoming = cheetah.ParameterBeam.from_twiss(
+        beta_x=5.91253677,
+        beta_y=5.91253677,
+        alpha_x=3.55631308,
+        alpha_y=3.55631308,
+        energy=6e6,
+        species=cheetah.Species("electron"),
+    )
+
+    cavity = cheetah.Cavity(
+        length=torch.tensor(1.0377),
+        voltage=torch.tensor(0.01815975e9),
+        phase=torch.tensor(phase),
+        frequency=torch.tensor(1.3e9),
+        cavity_type=cavity_type,
+        dtype=torch.double,
+    )
+
+    outgoing = cavity.track(incoming)
+
+    assert torch.isclose(outgoing.beta_x, 42.0)
+    assert torch.isclose(outgoing.beta_y, 42.0)
+    assert torch.isclose(outgoing.alpha_x, 42.0)
+    assert torch.isclose(outgoing.alpha_y, 42.0)
+    assert torch.isclose(outgoing.energy, 42.0)

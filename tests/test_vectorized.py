@@ -212,16 +212,18 @@ def test_enormous_through_ares_ea():
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
-def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+def test_cavity_with_zero_and_non_zero_voltage(BeamClass, cavity_type):
     """
     Tests that if zero and non-zero voltages are passed to a cavity in a single batch,
     there are no errors. This test does NOT check physical correctness.
     """
     cavity = cheetah.Cavity(
         length=torch.tensor(3.0441),
-        voltage=torch.tensor([0.0, 48_198_468.0, 0.0]),
+        voltage=torch.tensor([0.0, 48198468.0, 0.0]),
         phase=torch.tensor(48198468.0),
         frequency=torch.tensor(2.8560e09),
+        cavity_type=cavity_type,
         name="my_test_cavity",
     )
     incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
