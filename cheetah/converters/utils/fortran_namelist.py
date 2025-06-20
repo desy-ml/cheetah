@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -8,7 +9,13 @@ from typing import Any
 import scipy
 from scipy.constants import physical_constants
 
-from cheetah.converters.utils import rpn
+from cheetah.converters.utils import infix, rpn
+from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
+
+# Regex patterns
+ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
+PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
+VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -126,33 +133,20 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         return context[expression]
 
     # Evaluate as a mathematical expression
-    try:
-        # Surround expressions in brackets with quotes
-        expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
-        # Replace power operator with python equivalent
-        expression = re.sub(r"\^", r"**", expression)
-        # Replace abs with abs_func when it is followed by a (
-        # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
-        # lattice file. I'm not sure this replacement will lead to the intended
-        # behaviour.
-        expression = re.sub(r"abs\(", r"abs_func(", expression)
 
-        return (
-            eval(expression, context)
-            if not rpn.is_valid_expression(expression)
-            else rpn.eval_expression(expression, context)
-        )
+    try:
+        return infix.evaluate_expression(expression, context)
     except SyntaxError:
-        if not (
-            len(expression.split(":")) == 3 or len(expression.split(":")) == 4
-        ):  # It's probably an alias
-            print(
-                f"DEBUG: Evaluating expression {expression}. Assuming it is a string."
+        try:
+            return rpn.evaluate_expression(expression, context)
+        except SyntaxError:
+            warnings.warn(
+                f"Could not evaluate expression '{expression}'. It will now be treated "
+                "as a string. This may lead to unexpected behaviour.",
+                category=PhysicsWarning,
+                stacklevel=2,
             )
-        return expression
-    except Exception as e:
-        print(expression)
-        raise e
+            return expression
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
@@ -188,7 +182,7 @@ def assign_property(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
+    pattern = f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
     match = re.fullmatch(pattern, line)
 
     object_name = match.group(1).strip()
@@ -239,7 +233,7 @@ def define_element(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
+    pattern = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
     match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip()
@@ -281,6 +275,7 @@ def define_line(line: str, context: dict) -> dict:
     :param line: Line of a beam line definition to be parsed.
     :param context: Dictionary of variables to define the beam line in and from which
         to read variables.
+
     :return: Updated context.
     """
     pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
@@ -366,18 +361,20 @@ def parse_use_line(line: str, context: dict) -> dict:
 
 def parse_lines(lines: str) -> dict:
     """
-    Parse a list of lines from a Bmad lattice file. They should be cleaned and merged
-    before being passed to this function.
+    Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
+    and merged before being passed to this function.
 
     :param lines: List of lines to parse.
     :return: Dictionary of variables defined in the lattice file.
     """
-    property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
-    variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
-    element_definition_pattern = r"[a-z0-9_\.]+\s*\:\s*[a-z0-9_]+.*"
-    line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
-    overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
-    use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
+    property_assignment_pattern = PROPERTY_NAME_PATTERN + r"\[[a-z0-9_%]+\]\s*=.*"
+    variable_assignment_pattern = VARIABLE_NAME_PATTERN + r"\s*=.*"
+    element_definition_pattern = (
+        ELEMENT_NAME_PATTERN + r"\s*\:\s*" + VARIABLE_NAME_PATTERN + r".*"
+    )
+    line_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*line\s*=\s*\(.*\)"
+    overlay_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*overlay\s*=\s*\{.*"
+    use_line_pattern = r"use\s*\,\s*" + VARIABLE_NAME_PATTERN
 
     context = {
         "pi": scipy.constants.pi,
@@ -395,7 +392,14 @@ def parse_lines(lines: str) -> dict:
         "raddeg": scipy.constants.degree,
     }
 
-    for line in lines:
+    lines_without_comments = [line.split("#")[0] for line in lines]
+    semicolon_split_lines = [
+        subline.strip()
+        for line in lines_without_comments
+        for subline in line.split(";")
+    ]
+
+    for line in semicolon_split_lines:
         if re.fullmatch(property_assignment_pattern, line):
             context = assign_property(line, context)
         elif re.fullmatch(variable_assignment_pattern, line):
@@ -425,8 +429,10 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
     :return: None
     """
     for property in properties:
-        assert any([re.fullmatch(pattern, property) for pattern in understood]), (
-            f"Property {property} with value {properties[property]} for element type"
-            f" {properties['element_type']} is currently not understood. Other values"
-            f" in properties are {properties.keys()}."  # noqa: B038
-        )
+        if not any([re.fullmatch(pattern, property) for pattern in understood]):
+            warnings.warn(
+                f"Property {property} with value {properties[property]} for element "
+                f"type {properties['element_type']} is currently not understood.",
+                category=NotUnderstoodPropertyWarning,
+                stacklevel=2,
+            )

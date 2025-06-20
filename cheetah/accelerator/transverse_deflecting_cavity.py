@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
@@ -29,45 +29,58 @@ class TransverseDeflectingCavity(Element):
         element when tracking method is set to `"bmadx"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
-        voltage: Optional[torch.Tensor] = None,
-        phase: Optional[torch.Tensor] = None,
-        frequency: Optional[torch.Tensor] = None,
-        misalignment: Optional[torch.Tensor] = None,
-        tilt: Optional[torch.Tensor] = None,
+        voltage: torch.Tensor | None = None,
+        phase: torch.Tensor | None = None,
+        frequency: torch.Tensor | None = None,
+        misalignment: torch.Tensor | None = None,
+        tilt: torch.Tensor | None = None,
         num_steps: int = 1,
         tracking_method: Literal["bmadx"] = "bmadx",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [length, voltage, phase, frequency, misalignment, tilt], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
-
-        self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("misalignment", torch.tensor((0.0, 0.0), **factory_kwargs))
-        self.register_buffer("tilt", torch.tensor(0.0, **factory_kwargs))
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if voltage is not None:
-            self.voltage = torch.as_tensor(voltage, **factory_kwargs)
-        if phase is not None:
-            self.phase = torch.as_tensor(phase, **factory_kwargs)
-        if frequency is not None:
-            self.frequency = torch.as_tensor(frequency, **factory_kwargs)
-        if misalignment is not None:
-            self.misalignment = torch.as_tensor(misalignment, **factory_kwargs)
-        if tilt is not None:
-            self.tilt = torch.as_tensor(tilt, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "voltage",
+            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+        )
+        self.register_buffer_or_parameter(
+            "phase",
+            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+        )
+        self.register_buffer_or_parameter(
+            "frequency",
+            torch.as_tensor(
+                frequency if frequency is not None else 0.0, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "misalignment",
+            torch.as_tensor(
+                misalignment if misalignment is not None else (0.0, 0.0),
+                **factory_kwargs,
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+        )
 
         self.num_steps = num_steps
         self.tracking_method = tracking_method
@@ -183,8 +196,7 @@ class TransverseDeflectingCavity(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
+            s=incoming.s + self.length,
             species=incoming.species,
         )
         return outgoing_beam
@@ -194,7 +206,11 @@ class TransverseDeflectingCavity(Element):
         # element itself
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 

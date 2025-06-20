@@ -27,9 +27,7 @@ def test_diverging_particle_beam():
     """
     drift = cheetah.Drift(length=torch.tensor(1.0))
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=1_000, sigma_px=torch.tensor(2e-4), sigma_py=torch.tensor(2e-4)
     )
     outgoing_beam = drift.track(incoming_beam)
 
@@ -104,7 +102,7 @@ def test_length_as_parameter():
     outgoing_parameter = drift_parameter.track(incoming)
 
     # Check that all properties of the two outgoing beams are same
-    for buffer, buffer_parameter in zip(
-        outgoing.buffers(), outgoing_parameter.buffers()
-    ):
-        assert torch.allclose(buffer, buffer_parameter)
+    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+        assert torch.allclose(
+            getattr(outgoing, attribute), getattr(outgoing_parameter, attribute)
+        )

@@ -1,16 +1,16 @@
 import pytest
 import torch
 
-from cheetah import Drift, ParameterBeam, ParticleBeam, Quadrupole, Segment
+import cheetah
 
 
 def test_quadrupole_off():
     """
     Test that a quadrupole with k1=0 behaves still like a drift.
     """
-    quadrupole = Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(0.0))
-    drift = Drift(length=torch.tensor(1.0))
-    incoming_beam = ParameterBeam.from_parameters(
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(0.0))
+    drift = cheetah.Drift(length=torch.tensor(1.0))
+    incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
     outbeam_quad = quadrupole(incoming_beam)
@@ -27,16 +27,16 @@ def test_quadrupole_with_misalignments_vectorized():
     """
     Test that a quadrupole with misalignments behaves as expected.
     """
-    quad_with_misalignment = Quadrupole(
+    quad_with_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
         misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0),
     )
 
-    quad_without_misalignment = Quadrupole(
+    quad_without_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
-    incoming_beam = ParameterBeam.from_parameters(
+    incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
     outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
@@ -53,16 +53,16 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
     Test that a quadrupole with misalignments that have multiple vector dimensions does
     not raise an error and behaves as expected.
     """
-    quad_with_misalignment = Quadrupole(
+    quad_with_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
         misalignment=torch.randn((4, 3, 2)) * 5e-4,
     )
-    quad_without_misalignment = Quadrupole(
+    quad_without_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
 
-    incoming = ParameterBeam.from_parameters(
+    incoming = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
 
@@ -82,19 +82,17 @@ def test_tilted_quadrupole_vectorized():
     """
     Test that a quadrupole with a tilt behaves as expected in vectorised mode.
     """
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=1_000_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Quadrupole(
+            cheetah.Quadrupole(
                 length=torch.tensor(0.5),
                 k1=torch.tensor(1.0),
                 tilt=torch.tensor([torch.pi / 4, torch.pi / 2, torch.pi * 5 / 4]),
             ),
-            Drift(length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
     outgoing = segment(incoming)
@@ -111,9 +109,9 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
     Test that a quadrupole with tilts that have multiple vectorisation dimensions does
     not raise an error and behaves as expected.
     """
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Quadrupole(
+            cheetah.Quadrupole(
                 length=torch.tensor(0.5),
                 k1=torch.tensor(1.0),
                 tilt=torch.tensor(
@@ -123,14 +121,12 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
                     ]
                 ),
             ),
-            Drift(length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
 
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=10_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
     outgoing = segment(incoming)
@@ -150,17 +146,15 @@ def test_quadrupole_length_multiple_vector_dimensions():
     not raise an error and behaves as expected.
     """
     lengths = torch.tensor([[0.2, 0.3, 0.4], [0.5, 0.4, 0.7]])
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Quadrupole(length=lengths, k1=torch.tensor(4.2)),
-            Drift(length=lengths * 2),
+            cheetah.Quadrupole(length=lengths, k1=torch.tensor(4.2)),
+            cheetah.Drift(length=lengths * 2),
         ]
     )
 
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=10_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
     outgoing = segment(incoming)
@@ -178,7 +172,7 @@ def test_quadrupole_bmadx_tracking(dtype):
     incoming = torch.load("tests/resources/bmadx/incoming.pt", weights_only=False).to(
         dtype
     )
-    quadrupole = Quadrupole(
+    quadrupole = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(10.0),
         misalignment=torch.tensor([0.01, -0.02], dtype=dtype),
@@ -187,7 +181,7 @@ def test_quadrupole_bmadx_tracking(dtype):
         tracking_method="bmadx",
         dtype=dtype,
     )
-    segment = Segment(elements=[quadrupole])
+    segment = cheetah.Segment(elements=[quadrupole])
 
     # Run tracking
     outgoing = segment.track(incoming)
@@ -211,14 +205,14 @@ def test_tracking_method_vectorization(tracking_method):
     Test that the quadruople vectorisation works correctly with both tracking methods.
     Only checks the shapes, not the physical correctness of the results.
     """
-    quadrupole = Quadrupole(
+    quadrupole = cheetah.Quadrupole(
         length=torch.tensor([[0.2, 0.25], [0.3, 0.35], [0.4, 0.45]]),
         k1=torch.tensor([[4.2, 4.2], [4.3, 4.3], [4.4, 4.4]]),
         misalignment=torch.zeros(2),
         tilt=torch.tensor(0.0),
         tracking_method=tracking_method,
     )
-    incoming = ParticleBeam.from_parameters(
+    incoming = cheetah.ParticleBeam.from_parameters(
         sigma_x=torch.tensor([[1e-5, 2e-5], [2e-5, 3e-5], [3e-5, 4e-5]])
     )
 
@@ -236,3 +230,51 @@ def test_tracking_method_vectorization(tracking_method):
     assert outgoing.sigma_p.shape == (3, 2)
     assert outgoing.energy.shape == torch.Size([])
     assert outgoing.total_charge.shape == torch.Size([])
+
+
+@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+def test_quadrupole_clone_tracking_method(tracking_method):
+    """
+    Test that the tracking_method is preserved when cloning a Quadrupole.
+    """
+    # Create a quadrupole with bmadx tracking method
+    quadrupole = cheetah.Quadrupole(
+        length=torch.tensor(1.0), k1=torch.tensor(1.0), tracking_method=tracking_method
+    )
+
+    # Clone the quadrupole
+    cloned = quadrupole.clone()
+
+    # Verify that tracking_method is preserved
+    assert cloned.tracking_method == quadrupole.tracking_method
+    assert cloned.tracking_method == tracking_method
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_tilted_quad_transfer_matrix_precision(dtype):
+    """
+    Test that the transfer matrix for a tilted quadrupole element with k1=0 matches the
+    transfer matrices of a normal quadrupole and a drift element to the precision of the
+    used dtype.
+    """
+    # Create three elements that should have the same transfer matrix
+    length = torch.tensor(0.5, dtype=dtype)
+    k1 = torch.tensor(0.0, dtype=dtype)
+    tilt = torch.tensor(torch.pi / 4, dtype=dtype)
+
+    quad = cheetah.Quadrupole(length=length, k1=k1)
+    skew_quad = cheetah.Quadrupole(length=length, k1=k1, tilt=tilt)
+    drift = cheetah.Drift(length=length)
+
+    # Compute the transfer matrices
+    energy = torch.tensor(1e9, dtype=dtype)
+    spiecies = cheetah.Species("electron")
+
+    tm_quad = quad.transfer_map(energy, spiecies)
+    tm_skew_quad = skew_quad.transfer_map(energy, spiecies)
+    tm_drift = drift.transfer_map(energy, spiecies)
+
+    # Check that the transfer matrices are equal of the dtype
+    # NOTE: The `==` is used here over `torch.allclose` on purpose
+    assert (tm_quad == tm_drift).all()
+    assert (tm_skew_quad == tm_drift).all()

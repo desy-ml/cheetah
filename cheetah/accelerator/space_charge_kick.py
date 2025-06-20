@@ -1,5 +1,3 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
@@ -33,48 +31,68 @@ class SpaceChargeKick(Element):
      - Interpolate the Lorentz force to the particles and update their momentum.
 
     :param effect_length: Length over which the effect is applied in meters.
-    :param num_grid_points_x: Number of grid points in the x direction.
-    :param num_grid_points_y: Number of grid points in the y direction.
-    :param num_grid_points_tau: Number of grid points in the tau direction.
-    :param grid_extend_x: Dimensions of the grid on which to compute space-charge, as
+    :param grid_shape: Number of grid points in (x, y, tau) directions.
+    :param grid_extent_x: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the x direction (dimensionless).
-    :param grid_extend_y: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_y: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the y direction (dimensionless).
-    :param grid_extend_tau: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_tau: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the tau direction (dimensionless).
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         effect_length: torch.Tensor,
-        num_grid_points_x: int = 32,  # TODO: Simplify these to a single tuple?
-        num_grid_points_y: int = 32,
-        num_grid_points_tau: int = 32,
-        grid_extend_x: torch.Tensor = 3,  # TODO: Simplify these to a single tensor?
-        grid_extend_y: torch.Tensor = 3,
-        grid_extend_tau: torch.Tensor = 3,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        grid_shape: tuple[int, int, int] = (32, 32, 32),
+        # TODO: Simplify these to a single tensor?
+        grid_extent_x: torch.Tensor | None = None,
+        grid_extent_y: torch.Tensor | None = None,
+        grid_extent_tau: torch.Tensor | None = None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([effect_length], device, dtype)
+        device, dtype = verify_device_and_dtype(
+            [effect_length, grid_extent_x, grid_extent_y, grid_extent_tau],
+            device,
+            dtype,
+        )
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name, **self.factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **self.factory_kwargs)
 
-        self.grid_shape = (num_grid_points_x, num_grid_points_y, num_grid_points_tau)
+        self.grid_shape = grid_shape
 
-        self.register_buffer("effect_length", None)
+        self.register_buffer_or_parameter(
+            "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
+        )
         # In multiples of sigma
-        self.register_buffer("grid_extend_x", None)
-        self.register_buffer("grid_extend_y", None)
-        self.register_buffer("grid_extend_tau", None)
-
-        self.effect_length = torch.as_tensor(effect_length, **self.factory_kwargs)
-        self.grid_extend_x = torch.as_tensor(grid_extend_x, **self.factory_kwargs)
-        self.grid_extend_y = torch.as_tensor(grid_extend_y, **self.factory_kwargs)
-        self.grid_extend_tau = torch.as_tensor(grid_extend_tau, **self.factory_kwargs)
+        self.register_buffer_or_parameter(
+            "grid_extent_x",
+            torch.as_tensor(
+                grid_extent_x if grid_extent_x is not None else 3.0,
+                **self.factory_kwargs,
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "grid_extent_y",
+            torch.as_tensor(
+                grid_extent_y if grid_extent_y is not None else 3.0,
+                **self.factory_kwargs,
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "grid_extent_tau",
+            torch.as_tensor(
+                grid_extent_tau if grid_extent_tau is not None else 3.0,
+                **self.factory_kwargs,
+            ),
+        )
 
     def _deposit_charge_on_grid(
         self,
@@ -589,9 +607,9 @@ class SpaceChargeKick(Element):
             # Compute useful quantities
             grid_dimensions = torch.stack(
                 [
-                    self.grid_extend_x * flattened_incoming.sigma_x,
-                    self.grid_extend_y * flattened_incoming.sigma_y,
-                    self.grid_extend_tau * flattened_incoming.sigma_tau,
+                    self.grid_extent_x * flattened_incoming.sigma_x,
+                    self.grid_extent_y * flattened_incoming.sigma_y,
+                    self.grid_extent_tau * flattened_incoming.sigma_tau,
                 ],
                 dim=-1,
             )
@@ -634,8 +652,8 @@ class SpaceChargeKick(Element):
                 energy=incoming.energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
-                device=incoming.particles.device,
-                dtype=incoming.particles.dtype,
+                s=incoming.s,
+                species=incoming.species,
             )
 
             return outgoing
@@ -651,7 +669,11 @@ class SpaceChargeKick(Element):
     def is_skippable(self) -> bool:
         return False
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
@@ -661,19 +683,17 @@ class SpaceChargeKick(Element):
         return super().defining_features + [
             "effect_length",
             "grid_shape",
-            "grid_extend_x",
-            "grid_extend_y",
-            "grid_extend_tau",
+            "grid_extent_x",
+            "grid_extent_y",
+            "grid_extent_tau",
         ]
 
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(effect_length={repr(self.effect_length)}, "
-            + f"num_grid_points_x={repr(self.grid_shape[0])}, "
-            + f"num_grid_points_y={repr(self.grid_shape[1])}, "
-            + f"num_grid_points_tau={repr(self.grid_shape[2])}, "
-            + f"grid_extend_x={repr(self.grid_extend_x)}, "
-            + f"grid_extend_y={repr(self.grid_extend_y)}, "
-            + f"grid_extend_tau={repr(self.grid_extend_tau)}, "
+            + f"grid_shape={repr(self.grid_shape)}, "
+            + f"grid_extent_x={repr(self.grid_extent_x)}, "
+            + f"grid_extent_y={repr(self.grid_extent_y)}, "
+            + f"grid_extent_tau={repr(self.grid_extent_tau)}, "
             + f"name={repr(self.name)})"
         )

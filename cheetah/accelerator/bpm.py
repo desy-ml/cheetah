@@ -1,5 +1,3 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -18,20 +16,29 @@ class BPM(Element):
     :param is_active: If `True` the BPM is active and will record the beam's position.
         If `False` the BPM is inactive and will not record the beam's position.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         is_active: bool = False,
-        name: Optional[str] = None,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
-        super().__init__(name=name, device=device, dtype=dtype)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
+        )
 
         self.is_active = is_active
+
         self.register_buffer(
-            "reading", torch.tensor(torch.nan, device=device, dtype=dtype)
+            "reading",
+            torch.as_tensor((torch.nan, torch.nan), device=device, dtype=dtype),
+            persistent=False,
         )
 
     @property
@@ -56,7 +63,11 @@ class BPM(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2

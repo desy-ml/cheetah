@@ -1,5 +1,4 @@
 import math
-from typing import Optional, Tuple, Union
 
 import torch
 
@@ -8,9 +7,9 @@ def _kde_marginal_pdf(
     values: torch.Tensor,
     bins: torch.Tensor,
     sigma: torch.Tensor,
-    weights: Optional[torch.Tensor] = None,
-    epsilon: Union[torch.Tensor, float] = 1e-10,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    weights: torch.Tensor | None = None,
+    epsilon: torch.Tensor | float = 1e-10,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Compute the 1D marginal probability distribution function of the input tensor based
     on the number of histogram bins.
@@ -77,7 +76,7 @@ def _kde_marginal_pdf(
 def _kde_joint_pdf_2d(
     kernel_values1: torch.Tensor,
     kernel_values2: torch.Tensor,
-    epsilon: Union[torch.Tensor, float] = 1e-10,
+    epsilon: torch.Tensor | float = 1e-10,
 ) -> torch.Tensor:
     """
     Compute the joint probability distribution function of the input tensors based on
@@ -102,7 +101,7 @@ def _kde_joint_pdf_2d(
             + f"Got {type(kernel_values2)}"
         )
 
-    joint_kernel_values = torch.matmul(kernel_values1.transpose(-2, -1), kernel_values2)
+    joint_kernel_values = kernel_values1.transpose(-2, -1) @ kernel_values2
     normalization = (
         torch.sum(joint_kernel_values, dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1)
         + epsilon
@@ -116,8 +115,8 @@ def kde_histogram_1d(
     x: torch.Tensor,
     bins: torch.Tensor,
     bandwidth: torch.Tensor,
-    weights: Optional[torch.Tensor] = None,
-    epsilon: Union[torch.Tensor, float] = 1e-10,
+    weights: torch.Tensor | None = None,
+    epsilon: torch.Tensor | float = 1e-10,
 ) -> torch.Tensor:
     """
     Estimate the histogram using KDE of the input tensor.
@@ -157,8 +156,8 @@ def kde_histogram_2d(
     bins1: torch.Tensor,
     bins2: torch.Tensor,
     bandwidth: torch.Tensor,
-    weights: Optional[torch.Tensor] = None,
-    epsilon: Union[float, torch.Tensor] = 1e-10,
+    weights: torch.Tensor | None = None,
+    epsilon: float | torch.Tensor = 1e-10,
 ) -> torch.Tensor:
     """
     Estimate the 2D histogram of the input tensor.

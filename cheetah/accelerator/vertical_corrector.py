@@ -1,5 +1,3 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -18,31 +16,36 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the vertical plane.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
-        angle: Optional[torch.Tensor] = None,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        angle: torch.Tensor | None = None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
-
-        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if angle is not None:
-            self.angle = torch.as_tensor(angle, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "angle",
+            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+        )
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
@@ -82,7 +85,11 @@ class VerticalCorrector(Element):
             for _ in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle

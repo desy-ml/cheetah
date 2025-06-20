@@ -1,5 +1,3 @@
-from typing import Literal, Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -28,38 +26,47 @@ class Cavity(Element):
         `n * voltage`.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
-    :param name: Unique identifier of the element.
     :param cavity_type: Type of the cavity.
+    :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
-        voltage: Optional[torch.Tensor] = None,
-        phase: Optional[torch.Tensor] = None,
-        frequency: Optional[torch.Tensor] = None,
+        voltage: torch.Tensor | None = None,
+        phase: torch.Tensor | None = None,
+        frequency: torch.Tensor | None = None,
         cavity_type: Literal["standing_wave", "traveling_wave"] = "standing_wave",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
             [length, voltage, phase, frequency], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
-
-        self.register_buffer("voltage", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("phase", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("frequency", torch.tensor(0.0, **factory_kwargs))
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if voltage is not None:
-            self.voltage = torch.as_tensor(voltage, **factory_kwargs)
-        if phase is not None:
-            self.phase = torch.as_tensor(phase, **factory_kwargs)
-        if frequency is not None:
-            self.frequency = torch.as_tensor(frequency, **factory_kwargs)
+
+        self.register_buffer_or_parameter(
+            "voltage",
+            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+        )
+        self.register_buffer_or_parameter(
+            "phase",
+            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+        )
+        self.register_buffer_or_parameter(
+            "frequency",
+            torch.as_tensor(
+                frequency if frequency is not None else 0.0, **factory_kwargs
+            ),
+        )
 
         self.cavity_type = cavity_type
 
@@ -112,12 +119,10 @@ class Cavity(Element):
 
         tm = self.transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
-            outgoing_mu = torch.matmul(tm, incoming._mu.unsqueeze(-1)).squeeze(-1)
-            outgoing_cov = torch.matmul(
-                tm, torch.matmul(incoming._cov, tm.transpose(-2, -1))
-            )
+            outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+            outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
         else:  # ParticleBeam
-            outgoing_particles = torch.matmul(incoming.particles, tm.transpose(-2, -1))
+            outgoing_particles = incoming.particles @ tm.transpose(-2, -1)
         delta_energy = (
             self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )
@@ -134,12 +139,12 @@ class Cavity(Element):
             )
 
             if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 5] = incoming._mu[..., 5] * incoming.energy * beta0 / (
+                outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
                     outgoing_energy * beta1
                 ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
-                    torch.cos(-incoming._mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
+                    torch.cos(-incoming.mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
                 )
-                outgoing_cov[..., 5, 5] = incoming._cov[..., 5, 5]
+                outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
             else:  # ParticleBeam
                 outgoing_particles[..., 5] = incoming.particles[
                     ..., 5
@@ -203,19 +208,19 @@ class Cavity(Element):
 
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
-                    T566 * incoming._mu[..., 5] ** 2
-                    + T556 * incoming._mu[..., 4] * incoming._mu[..., 5]
-                    + T555 * incoming._mu[..., 4] ** 2
+                    T566 * incoming.mu[..., 5] ** 2
+                    + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
+                    + T555 * incoming.mu[..., 4] ** 2
                 )
                 outgoing_cov[..., 4, 4] = (
-                    T566 * incoming._cov[..., 5, 5] ** 2
-                    + T556 * incoming._cov[..., 4, 5] * incoming._cov[..., 5, 5]
-                    + T555 * incoming._cov[..., 4, 4] ** 2
+                    T566 * incoming.cov[..., 5, 5] ** 2
+                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                    + T555 * incoming.cov[..., 4, 4] ** 2
                 )
                 outgoing_cov[..., 4, 5] = (
-                    T566 * incoming._cov[..., 5, 5] ** 2
-                    + T556 * incoming._cov[..., 4, 5] * incoming._cov[..., 5, 5]
-                    + T555 * incoming._cov[..., 4, 4] ** 2
+                    T566 * incoming.cov[..., 5, 5] ** 2
+                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                    + T555 * incoming.cov[..., 4, 4] ** 2
                 )
                 outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
             else:  # ParticleBeam
@@ -233,6 +238,7 @@ class Cavity(Element):
                 cov=outgoing_cov,
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
+                s=incoming.s + self.length,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
             )
@@ -243,6 +249,7 @@ class Cavity(Element):
                 energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
+                s=incoming.s + self.length,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )
@@ -374,7 +381,11 @@ class Cavity(Element):
         # element itself
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 

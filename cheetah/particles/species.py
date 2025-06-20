@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from scipy.constants import physical_constants
 
@@ -39,10 +37,10 @@ class Species:
     def __init__(
         self,
         name: str,
-        num_elementary_charges: Optional[torch.Tensor] = None,
-        charge_coulomb: Optional[torch.Tensor] = None,
-        mass_eV: Optional[torch.Tensor] = None,
-        mass_kg: Optional[torch.Tensor] = None,
+        num_elementary_charges: torch.Tensor | None = None,
+        charge_coulomb: torch.Tensor | None = None,
+        mass_eV: torch.Tensor | None = None,
+        mass_kg: torch.Tensor | None = None,
     ) -> None:
         if name in self.__class__.known:  # Known particle species
             assert all(
@@ -95,6 +93,17 @@ class Species:
     @charge_coulomb.setter
     def charge_coulomb(self, value: torch.Tensor) -> None:
         self.num_elementary_charges = value / elementary_charge
+
+    def clone(self) -> "Species":
+        """Return a copy of the species."""
+        if self.name in self.__class__.known:
+            return Species(name=self.name)
+        else:
+            return Species(
+                name=self.name,
+                num_elementary_charges=self.num_elementary_charges.clone(),
+                mass_eV=self.mass_eV.clone(),
+            )
 
     def __repr__(self) -> str:
         return (

@@ -121,8 +121,8 @@ def test_from_twiss_dtype():
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
-    assert beam._mu.dtype == torch.float64
-    assert beam._cov.dtype == torch.float64
+    assert beam.mu.dtype == torch.float64
+    assert beam.cov.dtype == torch.float64
 
 
 def test_conversion_to_and_from_particle_beam():
@@ -170,19 +170,17 @@ def test_conversion_to_and_from_particle_beam():
         reconstructed_parameter_beam.sigma_py,
         rtol=1e-3,
     )
-    # TODO: Fix after #332 has been clarified
-    # assert torch.isclose(
-    #     original_parameter_beam.mu_tau, reconstructed_parameter_beam.mu_tau, atol=1e-6
-    # )
+    assert torch.isclose(
+        original_parameter_beam.mu_tau, reconstructed_parameter_beam.mu_tau, atol=1e-6
+    )
     assert torch.isclose(
         original_parameter_beam.sigma_tau,
         reconstructed_parameter_beam.sigma_tau,
         rtol=1e-3,
     )
-    # TODO: Fix after #332 has been clarified
-    # assert torch.isclose(
-    #     original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-6
-    # )
+    assert torch.isclose(
+        original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-5
+    )
     assert torch.isclose(
         original_parameter_beam.sigma_p, reconstructed_parameter_beam.sigma_p, rtol=1e-3
     )

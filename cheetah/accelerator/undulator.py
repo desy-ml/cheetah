@@ -1,5 +1,3 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -21,20 +19,25 @@ class Undulator(Element):
     :param is_active: Indicates if the undulator is active or not. Currently has no
         effect.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
         is_active: bool = False,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
+
         self.is_active = is_active
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
@@ -60,7 +63,11 @@ class Undulator(Element):
         # TODO: Implement splitting for undulator properly, for now just return self
         return [self]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
