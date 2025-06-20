@@ -14,6 +14,8 @@
 
 ### 🌟 First Time Contributors
 
+- Zihan Zhu (@zihan-zh)
+
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
 ### 🚀 Features
@@ -126,6 +128,8 @@
 - Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
 - Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
 - Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
+- Add support for particle species through a new `Species` class (see #276, #376) (@cr-xu, @jank324, @Hespe)
+- Various optimisations for a roughly 2x speed improvement over `v0.7.0` (see #367) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
@@ -147,8 +151,6 @@
 - Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
 - Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
 - Add badge to the README for the number of downloads from PyPI (see #364) (@jank324)
-
-- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 
