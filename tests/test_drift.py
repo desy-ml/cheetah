@@ -106,3 +106,25 @@ def test_length_as_parameter():
         assert torch.allclose(
             getattr(outgoing, attribute), getattr(outgoing_parameter, attribute)
         )
+
+
+def test_inversion_with_negative_length():
+    """
+    Tests that tracking through a drift with negative lengths reverts the effect of
+    tracking through a positive length drift.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.7)),
+            cheetah.Drift(length=torch.tensor(-0.7)),
+        ]
+    )
+
+    incoming = cheetah.ParticleBeam.from_parameters()
+    outgoing = segment.track(incoming)
+
+    # Check that all properties of the two beams are same
+    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+        assert torch.allclose(
+            getattr(incoming, attribute), getattr(outgoing, attribute)
+        )
