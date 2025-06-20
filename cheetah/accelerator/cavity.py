@@ -1,3 +1,5 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
