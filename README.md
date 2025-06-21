@@ -92,6 +92,9 @@ segment.plot_overview(incoming=beam)
 
 where the keyword argument `incoming` is the incoming beam represented in the plot.
 
+Run this example in binder
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb)
+
 ## Cite Cheetah
 
 If you use Cheetah, please cite the following two papers:
