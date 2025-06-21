@@ -158,6 +158,7 @@ The following people have contributed to the development of Cheetah:
 - Juan Pablo Gonzalez-Aguilera (@jp-ga)
 - Ryan Roussel (@roussel-ryan)
 - Auralee Edelen (@lee-edelen)
+- Julian Gethmann (@smartsammler)
 
 ### Institutions
 
