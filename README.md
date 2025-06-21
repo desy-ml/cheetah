@@ -94,6 +94,7 @@ where the keyword argument `incoming` is the incoming beam represented in the pl
 
 Run this example in binder
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb)
+or have a look at further [demos](https://github.com/desy-ml/cheetah-demos).
 
 ## Cite Cheetah
 
