@@ -73,9 +73,6 @@ class VerticalCorrector(Element):
     def is_active(self) -> bool:
         return torch.any(self.angle != 0).item()
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
