@@ -186,6 +186,7 @@ class Dipole(Element):
                 "The 'cheetah' tracking method is deprecated and will be removed in a"
                 "future version. Please use 'linear' instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             return super().track(incoming)
         elif self.tracking_method == "second_order":
