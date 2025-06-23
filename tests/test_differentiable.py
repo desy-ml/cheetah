@@ -92,15 +92,15 @@ def test_ea_incoming_particle_beam():
     assert outgoing_beam.particles.grad_fn is not None
 
 
-@pytest.mark.for_every_mwe_element("mwe_element")
-def test_nonleaf_tracking(mwe_element):
+@pytest.mark.for_every_element("element")
+def test_nonleaf_tracking(element):
     """Test that a beam with non-leaf tensors as elements can be tracked."""
     beam = cheetah.ParticleBeam.from_parameters()
 
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
-            mwe_element,
+            element,
         ]
     )
     segment.track(beam)

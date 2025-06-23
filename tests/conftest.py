@@ -6,25 +6,34 @@ import torch
 import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
-ELEMENT_SUBCLASSES_MWE_ARGS = {
+ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Aperture: {},
     cheetah.BPM: {},
     cheetah.Cavity: {"length": torch.tensor(1.0)},
     cheetah.CustomTransferMap: {"predefined_transfer_map": torch.eye(7)},
-    cheetah.Dipole: {"length": torch.tensor(1.0)},
-    cheetah.Drift: {"length": torch.tensor(1.0)},
-    cheetah.HorizontalCorrector: {"length": torch.tensor(1.0)},
+    cheetah.Dipole: {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])},
+    cheetah.Drift: {"length": torch.tensor([1.0, -1.0])},
+    cheetah.HorizontalCorrector: {
+        "length": torch.tensor(1.0),
+        "angle": torch.tensor([1.0, -2.0]),
+    },
     cheetah.Marker: {},
-    cheetah.Quadrupole: {"length": torch.tensor(1.0)},
-    cheetah.RBend: {"length": torch.tensor(1.0)},
+    cheetah.Quadrupole: {
+        "length": torch.tensor(1.0),
+        "k1": torch.tensor([1.0, -2.0]),
+    },
+    cheetah.RBend: {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])},
     cheetah.Screen: {},
     cheetah.Segment: {"elements": [cheetah.Drift(length=torch.tensor(1.0))]},
-    cheetah.Sextupole: {"length": torch.tensor(1.0)},
-    cheetah.Solenoid: {"length": torch.tensor(1.0)},
+    cheetah.Sextupole: {"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])},
+    cheetah.Solenoid: {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])},
     cheetah.SpaceChargeKick: {"effect_length": torch.tensor(1.0)},
     cheetah.TransverseDeflectingCavity: {"length": torch.tensor(1.0)},
     cheetah.Undulator: {"length": torch.tensor(1.0)},
-    cheetah.VerticalCorrector: {"length": torch.tensor(1.0)},
+    cheetah.VerticalCorrector: {
+        "length": torch.tensor(1.0),
+        "angle": torch.tensor([1.0, -2.0]),
+    },
 }
 
 
@@ -40,14 +49,14 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     Add a `pytest.mark.parametrize`-like marker that runs a test with an MWE of each
     Cheetah `Element` subclass.
 
-    This marker can be used by adding the `@pytest.mark.for_every_mwe_element` marker to
+    This marker can be used by adding the `@pytest.mark.for_every_element` marker to
     a test function. The user must specify the argument name in the marker via the
     `arg_name` keyword argument, and define an argument of that name in the test
     function's signature. Element classes can be excluded from the test by using the
     `except_for` keyword argument, which takes a list of element classes.
     """
     for_every_mwe_element_marker = metafunc.definition.get_closest_marker(
-        "for_every_mwe_element"
+        "for_every_element"
     )
 
     if for_every_mwe_element_marker is None:
@@ -81,8 +90,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     # Generate minimal working examples
     element_mwe_dict = {
         subclass: (
-            subclass(**ELEMENT_SUBCLASSES_MWE_ARGS[subclass]).clone()
-            if subclass in ELEMENT_SUBCLASSES_MWE_ARGS
+            subclass(**ELEMENT_SUBCLASSES_ARGS[subclass]).clone()
+            if subclass in ELEMENT_SUBCLASSES_ARGS
             else pytest.param(None, marks=pytest.mark.fail_because_no_mwe_args_defined)
         )
         for subclass in element_subclasses_to_test

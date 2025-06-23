@@ -110,9 +110,6 @@ class CustomTransferMap(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "predefined_transfer_map"]
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:

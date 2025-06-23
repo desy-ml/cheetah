@@ -108,10 +108,6 @@ class Aperture(Element):
             species=incoming.species.clone(),
         )
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for aperture properly, for now just return self
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:

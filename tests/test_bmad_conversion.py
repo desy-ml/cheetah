@@ -18,6 +18,7 @@ def test_bmad_tutorial():
             cheetah.Dipole(
                 length=torch.tensor(0.5), dipole_e1=torch.tensor(0.1), name="b"
             ),  # TODO: What are g and dg?
+            cheetah.Drift(length=torch.tensor(-0.4), name="n"),
             cheetah.Quadrupole(
                 length=torch.tensor(0.6), k1=torch.tensor(0.23), name="q"
             ),
@@ -39,6 +40,7 @@ def test_bmad_tutorial():
     assert converted.d.length == correct.d.length
     assert converted.b.length == correct.b.length
     assert converted.b.dipole_e1 == correct.b.dipole_e1
+    assert converted.n.length == correct.n.length
     assert converted.q.length == correct.q.length
     assert converted.q.k1 == correct.q.k1
     assert converted.s.length == correct.s.length

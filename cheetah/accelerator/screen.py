@@ -330,9 +330,6 @@ class Screen(Element):
         self._read_beam = value
         self.cached_reading = None
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:

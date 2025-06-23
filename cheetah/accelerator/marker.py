@@ -43,9 +43,6 @@ class Marker(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
