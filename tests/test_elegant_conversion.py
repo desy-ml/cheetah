@@ -38,7 +38,7 @@ def test_fodo():
                 cheetah.Quadrupole(
                     name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
                 ),
-                cheetah.Drift(name="d2", length=torch.tensor(2.0)),
+                cheetah.Drift(name="d2", length=torch.tensor(-2.0)),
                 cheetah.Sextupole(
                     name="s1", length=torch.tensor(0.2), k2=torch.tensor(-87.1)
                 ),
