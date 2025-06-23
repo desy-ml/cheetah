@@ -192,25 +192,13 @@ def test_vertical_corrector_end():
     )
 
 
-@pytest.mark.parametrize(
-    "ElementType",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
-)
-def test_split_preserves_dtype(ElementType):
+@pytest.mark.for_every_mwe_element("original")
+def test_split_preserves_dtype(original):
     """
-    Test that the dtype of a drift section's splits is the same as the original drift.
+    Test that the dtype of an element's splits is the same as the original element's
+    dtype.
     """
-    original = ElementType(length=torch.tensor(2.0), dtype=torch.float64)
+    original.to(torch.float64)
     splits = original.split(resolution=torch.tensor(0.1))
 
     for split in splits:
