@@ -59,10 +59,6 @@ class Undulator(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for undulator properly, for now just return self
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
