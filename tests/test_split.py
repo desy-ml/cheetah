@@ -4,7 +4,7 @@ import torch
 import cheetah
 
 
-@pytest.mark.for_every_mwe_element("original")
+@pytest.mark.for_every_element("original")
 def test_element_end(original):
     """
     Test that at the end of a split element the result is the same as at the end of the
@@ -25,7 +25,7 @@ def test_element_end(original):
     )
 
 
-@pytest.mark.for_every_mwe_element("original")
+@pytest.mark.for_every_element("original")
 def test_split_preserves_dtype(original):
     """
     Test that the dtype of an element's splits is the same as the original element's
