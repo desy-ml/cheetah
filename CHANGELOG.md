@@ -10,7 +10,7 @@
 - Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
 - Improve numerical stability of the `base_rmatrix` and `base_ttensor` functions (related to #469) (see #474) (@Hespe, @jank324)
 - Minor speed improvements in `base_rmatrix` and `base_ttensor` by reducing memory allocations for constants, and skipping rotation computations when the present tilt has now effect. (see #474) (@Hespe, @jank324)
-- Allow second order tracking for dipole, drift, and quadrupole elements, and add a convenient method to set tracking method for all the segment. (see #476) (@cr-xu)
+- Allow second order tracking for dipole, drift, and quadrupole elements, and add a convenient method to set tracking method for all the segment. Rename the tracking method `cheetah` to `linear`. (see #476) (@cr-xu)
 
 ### 🐛 Bug fixes
 
