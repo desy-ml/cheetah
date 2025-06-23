@@ -568,7 +568,9 @@ class Segment(Element):
 
     def set_tracking_method(
         self,
-        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
+        tracking_method: Literal[
+            "linear", "cheetah", "bmadx", "second_order"
+        ] = "linear",
     ) -> None:
         for element in self.elements:
             if hasattr(element, "tracking_method"):

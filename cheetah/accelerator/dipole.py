@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -43,7 +44,7 @@ class Dipole(Element):
         syntax to access the element in a segment.
     """
 
-    supported_tracking_methods = ["cheetah", "bmadx", "second_order"]
+    supported_tracking_methods = ["linear", "cheetah", "bmadx", "second_order"]
 
     def __init__(
         self,
@@ -59,7 +60,9 @@ class Dipole(Element):
         fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
-        tracking_method: Literal["cheetah", "bmadx", "second_order"] = "cheetah",
+        tracking_method: Literal[
+            "linear", "cheetah", "bmadx", "second_order"
+        ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -163,7 +166,7 @@ class Dipole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method == "cheetah"
+        return self.tracking_method == "cheetah" or self.tracking_method == "linear"
 
     @property
     def is_active(self) -> bool:
@@ -176,7 +179,14 @@ class Dipole(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if self.tracking_method == "cheetah":
+        if self.tracking_method == "linear":
+            return super().track(incoming)
+        elif self.tracking_method == "cheetah":
+            warnings.warn(
+                "The 'cheetah' tracking method is deprecated and will be removed in a"
+                "future version. Please use 'linear' instead.",
+                DeprecationWarning,
+            )
             return super().track(incoming)
         elif self.tracking_method == "second_order":
             return super().track_second_order(incoming)
@@ -188,7 +198,7 @@ class Dipole(Element):
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah', 'second_order', and 'bmadx'."
+                + "Supported methods are 'linear', 'second_order', and 'bmadx'."
             )
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
