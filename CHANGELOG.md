@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Allow second order tracking for dipole, drift, and quadrupole elements, and add a convenient method to set tracking method for all the segment. Rename the tracking method `cheetah` to `linear`. (see #476) (@cr-xu)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
