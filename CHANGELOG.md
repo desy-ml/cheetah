@@ -1,8 +1,18 @@
 # Changelog
 
-## v0.7.4 [🚧 Work in Progress]
+## v0.7.5 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
 ### 🚀 Features
 
@@ -19,10 +29,6 @@
 - Unrecognised element properties in Bmad and Elegant lattice files now print a warning instead of exiting with an `AssertionError` (see #415) (@amylizzle, @jank324)
 - A bug was fixed that caused the Bmad and Elegant importers to incorrectly parse `;` line endings and comments starting with `#` (see #415) (@Hespe, @jank324)
 - The `santize_names` parameter is now correctly passed to `BPM` and `Marker` elements when converting from Elegant (see #473) (@amylizzle)
-
-### 🐆 Other
-
-### 🌟 First Time Contributors
 
 ## [v0.7.3](https://github.com/desy-ml/cheetah/releases/tag/v0.7.3) (2025-06-11)
 
