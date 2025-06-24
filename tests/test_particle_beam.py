@@ -115,10 +115,12 @@ def test_generate_uniform_ellipsoid_dtype():
     """
     beam_attributes = cheetah.ParticleBeam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
 
-    half_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float16)
+    # Check that the dtype is float32 by default
+    default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid()
     for attribute in beam_attributes:
-        assert getattr(half_beam, attribute).dtype == torch.float16
+        assert getattr(default_beam, attribute).dtype == torch.float32
 
+    # Verify that all attributes have been changed to float64
     double_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float64)
     for attribute in beam_attributes:
         assert getattr(double_beam, attribute).dtype == torch.float64
