@@ -108,6 +108,22 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
+def test_generate_uniform_ellipsoid_dtype():
+    """
+    Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the manually
+    specified dtype.
+    """
+    beam_attributes = cheetah.ParticleBeam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+
+    half_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float16)
+    for attribute in beam_attributes:
+        assert getattr(half_beam, attribute).dtype == torch.float16
+
+    double_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float64)
+    for attribute in beam_attributes:
+        assert getattr(double_beam, attribute).dtype == torch.float64
+
+
 def test_generate_uniform_ellipsoid_vectorized():
     """
     Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
