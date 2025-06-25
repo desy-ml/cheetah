@@ -1205,12 +1205,7 @@ class ParticleBeam(Beam):
             * constants.speed_of_light
         )  # Reference momentum in (kg m/s)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
-            torch.ones(
-                self.particles.shape[:-1],
-                device=self.particles.device,
-                dtype=self.particles.dtype,
-            )
-            + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+            1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
