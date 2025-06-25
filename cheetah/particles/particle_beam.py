@@ -772,11 +772,13 @@ class ParticleBeam(Beam):
 
         particles_7d = torch.ones((particles.shape[0], 7), device=device, dtype=dtype)
         particles_7d[:, :6] = torch.as_tensor(particles, device=device, dtype=dtype)
+
+        energy = torch.as_tensor(energy, device=device, dtype=dtype)
         particle_charges = torch.as_tensor(particle_charges, device=device, dtype=dtype)
 
         return cls(
             particles=particles_7d,
-            energy=torch.as_tensor(energy),
+            energy=energy,
             particle_charges=particle_charges,
             species=Species("electron"),
             device=device or torch.get_default_device(),
