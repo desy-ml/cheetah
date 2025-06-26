@@ -1,5 +1,6 @@
 import torch
 from scipy.constants import physical_constants
+from torch import nn
 
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 proton_mass_eV = physical_constants["proton mass energy equivalent in MeV"][0] * 1e6
@@ -8,7 +9,7 @@ elementary_charge = physical_constants["elementary charge"][0]
 eV_to_kg = physical_constants["electron volt-kilogram relationship"][0]
 
 
-class Species:
+class Species(nn.Module):
     """
     Named particle species defined by charge and mass.
 
@@ -41,7 +42,11 @@ class Species:
         charge_coulomb: torch.Tensor | None = None,
         mass_eV: torch.Tensor | None = None,
         mass_kg: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
+        super().__init__()
+
         if name in self.__class__.known:  # Known particle species
             assert all(
                 [
@@ -53,10 +58,14 @@ class Species:
             ), "Known particle species should not have charge and mass provided."
 
             self.name = name
-            self.num_elementary_charges = torch.tensor(
-                self.__class__.known[name]["num_elementary_charges"]
+            self.num_elementary_charges = torch.as_tensor(
+                self.__class__.known[name]["num_elementary_charges"],
+                device=device,
+                dtype=dtype,
             )
-            self.mass_eV = torch.tensor(self.__class__.known[name]["mass_eV"])
+            self.mass_eV = torch.as_tensor(
+                self.__class__.known[name]["mass_eV"], device=device, dtype=dtype
+            )
         else:  # Custom particle species
             assert any(
                 [num_elementary_charges is not None, charge_coulomb is not None]
@@ -71,10 +80,14 @@ class Species:
             ), "Only one of mass_eV and mass_kg should be provided."
 
             self.name = name
-            self.num_elementary_charges = (
-                num_elementary_charges or charge_coulomb / elementary_charge
+            self.num_elementary_charges = torch.as_tensor(
+                num_elementary_charges or charge_coulomb / elementary_charge,
+                device=device,
+                dtype=dtype,
             )
-            self.mass_eV = mass_eV or mass_kg * eV_to_kg
+            self.mass_eV = torch.as_tensor(
+                mass_eV or mass_kg * eV_to_kg, device=device, dtype=dtype
+            )
 
     @property
     def mass_kg(self) -> torch.Tensor:
