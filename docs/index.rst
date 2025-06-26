@@ -174,11 +174,11 @@ The development of Cheetah is a joint effort by members of the following institu
     :alt: Hamburg University of Technology
     :width: 5em
 
-.. image:: https://github.com/desy-ml/cheetah/raw/update-contributors/images/stfc_ukri.png
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png
     :alt: Science and Technology Facilities Council
     :width: 8em
 
-.. image:: https://github.com/desy-ml/cheetah/raw/update-contributors/images/argonne.png
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/argonne.png
     :alt: Argonne National Laboratory
     :width: 9em
 
