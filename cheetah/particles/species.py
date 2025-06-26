@@ -58,13 +58,19 @@ class Species(nn.Module):
             ), "Known particle species should not have charge and mass provided."
 
             self.name = name
-            self.num_elementary_charges = torch.as_tensor(
-                self.__class__.known[name]["num_elementary_charges"],
-                device=device,
-                dtype=dtype,
+            self.register_buffer_or_parameter(
+                "num_elementary_charges",
+                torch.as_tensor(
+                    self.__class__.known[name]["num_elementary_charges"],
+                    device=device,
+                    dtype=dtype,
+                ),
             )
-            self.mass_eV = torch.as_tensor(
-                self.__class__.known[name]["mass_eV"], device=device, dtype=dtype
+            self.register_buffer_or_parameter(
+                "mass_eV",
+                torch.as_tensor(
+                    self.__class__.known[name]["mass_eV"], device=device, dtype=dtype
+                ),
             )
         else:  # Custom particle species
             assert any(
@@ -80,13 +86,19 @@ class Species(nn.Module):
             ), "Only one of mass_eV and mass_kg should be provided."
 
             self.name = name
-            self.num_elementary_charges = torch.as_tensor(
-                num_elementary_charges or charge_coulomb / elementary_charge,
-                device=device,
-                dtype=dtype,
+            self.register_buffer_or_parameter(
+                "num_elementary_charges",
+                torch.as_tensor(
+                    num_elementary_charges or charge_coulomb / elementary_charge,
+                    device=device,
+                    dtype=dtype,
+                ),
             )
-            self.mass_eV = torch.as_tensor(
-                mass_eV or mass_kg * eV_to_kg, device=device, dtype=dtype
+            self.register_buffer_or_parameter(
+                "mass_eV",
+                torch.as_tensor(
+                    mass_eV or mass_kg * eV_to_kg, device=device, dtype=dtype
+                ),
             )
 
     @property
@@ -106,6 +118,23 @@ class Species(nn.Module):
     @charge_coulomb.setter
     def charge_coulomb(self, value: torch.Tensor) -> None:
         self.num_elementary_charges = value / elementary_charge
+
+    def register_buffer_or_parameter(
+        self, name: str, value: torch.Tensor | nn.Parameter
+    ) -> None:
+        """
+        Register a buffer or parameter with the given name and value. Automatically
+        selects the correct method from `register_buffer` or `register_parameter` based
+        on the type of `value`.
+
+        :param name: Name of the buffer or parameter.
+        :param value: Value of the buffer or parameter.
+        :param default: Default value of the buffer.
+        """
+        if isinstance(value, nn.Parameter):
+            self.register_parameter(name, value)
+        else:
+            self.register_buffer(name, value)
 
     def clone(self) -> "Species":
         """Return a copy of the species."""
