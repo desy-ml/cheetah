@@ -17,6 +17,7 @@ from cheetah.utils import (
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
     verify_device_and_dtype,
+    kde_histogram_1d,
 )
 
 
@@ -1219,6 +1220,41 @@ class ParticleBeam(Beam):
         xp_coords[..., 5] = p
 
         return xp_coords
+
+    def get_1d_histogram(
+        self,
+        dimension: Literal["x", "px", "y", "py", "tau", "p"],
+        bins: int = 100,
+        bin_range: tuple[float] | None = None,
+        method: Literal["histogram", "kde"] = "kde",
+        kde_bandwidth: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """
+        Get a 1D (differentiable) histogram of the given dimension of the particle distribution.
+
+        TODO: Add documentation
+        """
+        # Extract particle quantities
+        x_array = getattr(self, dimension)
+        weights = getattr(self, 'particle_charges').abs() * getattr(self, 'survival_probabilities')
+        bin_edges = torch.linspace(bin_range[0], bin_range[1], bins)
+
+        # Compute histogram
+        if method == "histogram":
+            histogram, _ = torch.histogramdd(
+                x_array,
+                weight=weights,
+                bins=bin_edges
+            )
+        elif method == "kde":
+            histogram = kde_histogram_1d(
+                x=x_array,
+                weights=weights,
+                bins=bin_edges,
+                bandwidth=kde_bandwidth,
+            )
+
+        return histogram
 
     def plot_1d_distribution(
         self,
