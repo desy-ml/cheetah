@@ -1233,6 +1233,7 @@ class ParticleBeam(Beam):
         Get a 1D (differentiable) histogram of the given dimension of the particle distribution.
 
         TODO: Add documentation
+        Mention that this returns the PDF (i.e. normalized to 1, when multiplied by bin size)
         """
         # Extract particle quantities
         x_array = getattr(self, dimension)
@@ -1241,12 +1242,19 @@ class ParticleBeam(Beam):
 
         # Compute histogram
         if method == "histogram":
-            histogram, _ = torch.histogramdd(
+            histogram, _ = torch.histogram(
                 x_array,
                 weight=weights,
-                bins=bin_edges
+                bins=bin_edges,
             )
         elif method == "kde":
+            kde_bandwidth = torch.as_tensor(
+                (
+                    kde_bandwidth
+                    if kde_bandwidth is not None
+                    else bin_edges[1] - bin_edges[0]
+                ),
+            )
             histogram = kde_histogram_1d(
                 x=x_array,
                 weights=weights,
@@ -1254,7 +1262,9 @@ class ParticleBeam(Beam):
                 bandwidth=kde_bandwidth,
             )
 
-        return histogram
+        # Normalize the histogram to get a pdf
+        pdf = histogram / histogram.sum() * (bin_edges[1] - bin_edges[0])
+        return pdf
 
     def plot_1d_distribution(
         self,
