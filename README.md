@@ -168,10 +168,11 @@ The development of Cheetah is a joint effort by members of the following institu
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png" alt="Hamburg University of Technology" style="width: 5em;" vspace="2em"/>
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png" alt="Science and Technology Facilities Council" style="width: 5em;" vspace="2em"/>
 
 ### Funding
 
 The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
 Further, we gratefully acknowledge funding by the EuXFEL R&D project "RP-513: Learning Based Methods".
 This work is also supported by the U.S. Department of Energy, Office of Science under Contract No. DE-AC02-76SF00515 and the Center for Bright Beams, NSF Award No. PHY-1549132.
-In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
+In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF as well as from the Science and Technology Facilities Council (UK).
