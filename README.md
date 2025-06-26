@@ -168,8 +168,8 @@ The development of Cheetah is a joint effort by members of the following institu
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png" alt="Hamburg University of Technology" style="width: 5em;" vspace="2em"/>
-<img src="https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png" alt="Science and Technology Facilities Council" style="width: 5em;" vspace="2em"/>
-<img src="https://github.com/desy-ml/cheetah/raw/master/images/argonne.png" alt="Argonne National Laboratory" style="width: 8em;" vspace="2em"/>
+<img src="https://github.com/desy-ml/cheetah/raw/update-contributors/images/stfc_ukri.png" alt="Science and Technology Facilities Council" style="width: 8em;" vspace="2em"/>
+<img src="https://github.com/desy-ml/cheetah/raw/update-contributors/images/argonne.png" alt="Argonne National Laboratory" style="width: 9em;" vspace="2em"/>
 
 ### Funding
 
