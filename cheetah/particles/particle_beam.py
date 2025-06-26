@@ -80,7 +80,9 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.species = species if species is not None else Species("electron")
+        self.species = (
+            species.to(**factory_kwargs) if species is not None else Species("electron")
+        )
 
         self.register_buffer_or_parameter(
             "particles", torch.as_tensor(particles, **factory_kwargs)
@@ -320,7 +322,11 @@ class ParticleBeam(Beam):
         )
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        species = species if species is not None else Species("electron")
+        species = (
+            species.to(**factory_kwargs)
+            if species is not None
+            else Species("electron", **factory_kwargs)
+        )
 
         # Set default values without function call in function signature
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
