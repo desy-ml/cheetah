@@ -108,6 +108,54 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
+def test_generate_uniform_ellipsoid_dtype():
+    """
+    Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the manually
+    specified dtype.
+    """
+    beam_attributes = cheetah.ParticleBeam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+
+    # Check that the dtype is float32 by default
+    default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid()
+    for attribute in beam_attributes:
+        assert getattr(default_beam, attribute).dtype == torch.float32
+
+    # Verify that all attributes have been changed to float64
+    double_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float64)
+    for attribute in beam_attributes:
+        assert getattr(double_beam, attribute).dtype == torch.float64
+
+
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_generate_uniform_ellipsoid_device(device):
+    """
+    Test that a `ParticleBeam` generated from a uniform 3D ellipsoid is created on the
+    correct device if manually specified.
+    """
+    beam_attributes = cheetah.ParticleBeam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+
+    default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(device=device)
+    for attribute in beam_attributes:
+        assert getattr(default_beam, attribute).device == device
+
+
 def test_generate_uniform_ellipsoid_vectorized():
     """
     Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
