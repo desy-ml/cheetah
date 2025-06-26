@@ -327,8 +327,7 @@ class ParticleBeam(Beam):
         total_charge = (
             total_charge
             if total_charge is not None
-            else torch.as_tensor(species.charge_coulomb, **factory_kwargs)
-            * num_particles
+            else species.charge_coulomb * num_particles
         )
         particle_charges = (
             torch.ones((*total_charge.shape, num_particles), **factory_kwargs)
