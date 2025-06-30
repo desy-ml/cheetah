@@ -117,6 +117,9 @@ def seed_random_generators(request):
     # Determine seed from command line option
     seed = request.config.getoption("--seed")
 
+    # Prevent torch from using non-deterministic algorithms
+    torch.use_deterministic_algorithms(True)
+
     # Manually seed all torch PRNGs
     torch.manual_seed(seed)
     if torch.cuda.is_available():
