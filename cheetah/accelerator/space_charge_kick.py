@@ -132,8 +132,7 @@ class SpaceChargeKick(Element):
                 [1, 0, 1],
                 [1, 1, 0],
                 [1, 1, 1],
-            ],
-            device=self.factory_kwargs["device"],
+            ]
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
         # Shape: (..., num_particles, 8, 3)
@@ -146,7 +145,7 @@ class SpaceChargeKick(Element):
         # Add the charge contributions to the cells
         # Shape: (..., 8 * num_particles)
         idx_vector = (
-            torch.arange(cell_indices.shape[0], device=self.factory_kwargs["device"])
+            torch.arange(cell_indices.shape[0])
             .repeat(8 * beam.particles.shape[-2], 1)
             .T
         )
@@ -486,8 +485,7 @@ class SpaceChargeKick(Element):
                 [1, 0, 1],
                 [1, 1, 0],
                 [1, 1, 1],
-            ],
-            device=self.factory_kwargs["device"],
+            ]
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
             -3
@@ -502,7 +500,7 @@ class SpaceChargeKick(Element):
             start_dim=-3, end_dim=-2
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
-            torch.arange(cell_indices.shape[0], device=self.factory_kwargs["device"])
+            torch.arange(cell_indices.shape[0])
             .repeat(8 * beam.particles.shape[-2], 1)
             .T
         )  # Shape: (..., num_particles * 8)
@@ -542,7 +540,7 @@ class SpaceChargeKick(Element):
         forces_to_add = torch.stack([values_x, values_y, values_z], dim=-1)
 
         index_tensor = (
-            torch.arange(beam.num_particles, device=self.factory_kwargs["device"])
+            torch.arange(beam.num_particles)
             .repeat_interleave(8)
             .unsqueeze(0)
             .unsqueeze(-1)
