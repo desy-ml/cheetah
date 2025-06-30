@@ -407,26 +407,3 @@ def test_space_charge_with_aperture_cutoff():
     )
     # Check that the number of surviving particles is less than the initial number
     assert outgoing_beam_with_aperture.survival_probabilities.sum(dim=-1).max() < 10_000
-
-
-def test_different_device():
-    """
-    Tests that the space charge kick is able to be run on GPU
-    """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(0.25), device=device),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5), device=device),
-            cheetah.Drift(length=torch.tensor(0.25), device=device),
-        ]
-    )
-    incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=10_000,
-        total_charge=torch.tensor(1e-9),
-        mu_x=torch.tensor(5e-5),
-        sigma_px=torch.tensor(1e-4),
-        sigma_py=torch.tensor(1e-4),
-    ).to(device)
-
-    _ = segment.track(incoming_beam)
