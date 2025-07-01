@@ -18,6 +18,7 @@
 ### 🌟 First Time Contributors
 
 - Julian Gethmann (@smartsammler)
+- Arjun Dhamrait (@adhamrait)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
