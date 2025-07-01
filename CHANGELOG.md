@@ -11,8 +11,11 @@
 ### 🐆 Other
 
 - Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
+- Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
 
 ### 🌟 First Time Contributors
+
+- Julian Gethmann (@smartsammler)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
