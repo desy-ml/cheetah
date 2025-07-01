@@ -10,6 +10,8 @@
 
 ### 🐆 Other
 
+- Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
+
 ### 🌟 First Time Contributors
 
 - Add binder link to documentation (@smartsammler)
