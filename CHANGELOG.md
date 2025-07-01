@@ -8,7 +8,7 @@
 
 ### 🐛 Bug fixes
 
-- Fix various `dtype` and `device` pertaining to `ParticleBeam` and `Species` (see #485) (@Hespe, @jank324)
+- Fix various `dtype` and `device` pertaining to `ParticleBeam`, `Species` and `SpaceChargeKick` (see #485, #486, #490, #491) (@Hespe, @jank324, @adhamrait)
 
 ### 🐆 Other
 
