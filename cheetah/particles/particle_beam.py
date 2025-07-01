@@ -829,19 +829,29 @@ class ParticleBeam(Beam):
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
         """
-        species = Species(particle_group.species)
+        device, dtype = verify_device_and_dtype([energy], device, dtype)
+        factory_kwargs = {"device": device, "dtype": dtype}
+
+        species = Species(particle_group.species, **factory_kwargs)
         p0c = torch.sqrt(energy**2 - species.mass_eV**2)
 
-        x = torch.from_numpy(particle_group.x)
-        y = torch.from_numpy(particle_group.y)
-        px = torch.from_numpy(particle_group.px) / p0c
-        py = torch.from_numpy(particle_group.py) / p0c
-        tau = torch.from_numpy(particle_group.t) * constants.speed_of_light
-        delta = (torch.from_numpy(particle_group.energy) - energy) / p0c
+        x = torch.as_tensor(particle_group.x, **factory_kwargs)
+        y = torch.as_tensor(particle_group.y, **factory_kwargs)
+        px = torch.as_tensor(particle_group.px, **factory_kwargs) / p0c
+        py = torch.as_tensor(particle_group.py, **factory_kwargs) / p0c
+        tau = (
+            torch.as_tensor(particle_group.t, **factory_kwargs)
+            * constants.speed_of_light
+        )
+        delta = (
+            torch.as_tensor(particle_group.energy, **factory_kwargs) - energy
+        ) / p0c
 
         particles = torch.stack([x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1)
-        particle_charges = torch.from_numpy(particle_group.weight)
-        survival_probabilities = torch.from_numpy(particle_group.status)
+        particle_charges = torch.as_tensor(particle_group.weight, **factory_kwargs)
+        survival_probabilities = torch.as_tensor(
+            particle_group.status, **factory_kwargs
+        )
 
         return cls(
             particles=particles,
