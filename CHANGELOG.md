@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix various `dtype` and `device` pertaining to `ParticleBeam` and `Species` (see #485) (@Hespe, @jank324)
+
 ### 🐆 Other
 
 - Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
