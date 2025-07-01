@@ -18,7 +18,7 @@ import logging
 import math
 import os
 from importlib.resources import files
-from typing import Any, cast
+from typing import Any
 
 import torch
 import trimesh
@@ -131,9 +131,9 @@ class Segment3DBuilder:
 
         # Handles scaling, rotation, and positioning of 3D models
         self.transformer = MeshTransformer(
-            scale_factor=cast(float, config["scale_factor"]),
-            rotation_angle=cast(float, config["rotation_angle"]),
-            rotation_axis=cast(list, config["rotation_axis"]),
+            scale_factor=config["scale_factor"],
+            rotation_angle=config["rotation_angle"],
+            rotation_axis=config["rotation_axis"],
         )
 
         # Track the current longitudinal position along the segment
@@ -296,10 +296,7 @@ class Segment3DBuilder:
             # Force loading 3D model as a scene to ensure multiple geometries are
             # handled properly. Additioanlly, try to coerce everything into a scene
             # instead of a single mesh
-            scene = cast(
-                trimesh.Scene,
-                trimesh.load(str(asset_path), file_type="glb", force="scene"),
-            )
+            scene = trimesh.load(str(asset_path), file_type="glb", force="scene")
 
             for mesh in scene.geometry.values():
                 # Translation vector [x, y, z] defining the model's position
