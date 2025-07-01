@@ -11,11 +11,13 @@
 ### 🐛 Bug fixes
 
 - Fix various `dtype` and `device` pertaining to `ParticleBeam`, `Species` and `SpaceChargeKick` (see #485, #486, #490, #491) (@Hespe, @jank324, @adhamrait)
+- Remove incorrect implementation of `split` from `HorizontalCorrector` and `VerticalCorrector` (see #480) (@Hespe)
 
 ### 🐆 Other
 
 - Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
 - Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
+- PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
 
 ### 🌟 First Time Contributors
 
