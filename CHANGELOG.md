@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
