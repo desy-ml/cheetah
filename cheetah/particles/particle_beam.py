@@ -81,7 +81,9 @@ class ParticleBeam(Beam):
         ), "Particle vectors must be 7-dimensional."
 
         self.species = (
-            species.to(**factory_kwargs) if species is not None else Species("electron")
+            species.to(**factory_kwargs)
+            if species is not None
+            else Species("electron", **factory_kwargs)
         )
 
         self.register_buffer_or_parameter(
