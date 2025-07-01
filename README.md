@@ -39,13 +39,13 @@ import torch
 segment = cheetah.Segment(
     elements=[
         cheetah.Drift(length=torch.tensor(0.175)),
-        cheetah.Quadruple(length=torch.tensor(0.122), name="AREAMQZM1"),
+        cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM1"),
         cheetah.Drift(length=torch.tensor(0.428)),
-        cheetah.Quadruple(length=torch.tensor(0.122), name="AREAMQZM2"),
+        cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM2"),
         cheetah.Drift(length=torch.tensor(0.204)),
         cheetah.VerticalCorrector(length=torch.tensor(0.02), name="AREAMCVM1"),
         cheetah.Drift(length=torch.tensor(0.204)),
-        cheetah.Quadruple(length=torch.tensor(0.122), name="AREAMQZM3"),
+        cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM3"),
         cheetah.Drift(length=torch.tensor(0.179)),
         cheetah.HorizontalCorrector(length=torch.tensor(0.02), name="AREAMCHM1"),
         cheetah.Drift(length=torch.tensor(0.45)),
