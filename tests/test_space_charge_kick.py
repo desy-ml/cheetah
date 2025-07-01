@@ -6,7 +6,7 @@ from scipy.constants import physical_constants
 from torch import nn
 
 import cheetah
-from cheetah.utils import compute_relativistic_factors
+from cheetah.utils import compute_relativistic_factors, is_mps_available_and_functional
 
 
 # Run the test below for both the ultra-relativistic case
@@ -409,24 +409,46 @@ def test_space_charge_with_aperture_cutoff():
     assert outgoing_beam_with_aperture.survival_probabilities.sum(dim=-1).max() < 10_000
 
 
-def test_different_device():
+@pytest.mark.parametrize(
+    "device, dtype",
+    [
+        (torch.device("cpu"), torch.float32),
+        (torch.device("cpu"), torch.float64),
+        pytest.param(
+            torch.device("cuda"),
+            torch.float32,
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            torch.float32,
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_device_and_dtype(device, dtype):
     """
-    Tests that the space charge kick is able to be run on GPU
+    Test that `SpaceChargeKick` works correctly on various devices and with various
+    dtypes.
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.25), device=device),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5), device=device),
-            cheetah.Drift(length=torch.tensor(0.25), device=device),
+            cheetah.Drift(length=torch.tensor(0.25)),
+            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.25)),
         ]
-    )
+    ).to(device=device, dtype=dtype)
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=10_000,
         total_charge=torch.tensor(1e-9),
         mu_x=torch.tensor(5e-5),
         sigma_px=torch.tensor(1e-4),
         sigma_py=torch.tensor(1e-4),
-    ).to(device)
+    ).to(device=device, dtype=dtype)
 
+    # Run to see if errors are raised
     _ = segment.track(incoming_beam)
