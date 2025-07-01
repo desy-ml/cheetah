@@ -823,6 +823,12 @@ class Segment(Element):
 
         plt.tight_layout()
 
+    def to_mesh(self, s: float = 0.0) -> trimesh.Scene:
+        # Override `Element.to_mesh` with a method that collects the meshes for all
+        # elements in the segment and returns them as a single mesh.
+        # Should probably follow `Segment3DBuilder.build_segment`.
+        pass
+
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
