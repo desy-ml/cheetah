@@ -135,6 +135,8 @@ The following people have contributed to the development of Cheetah:
 - Juan Pablo Gonzalez-Aguilera (@jp-ga)
 - Ryan Roussel (@roussel-ryan)
 - Auralee Edelen (@lee-edelen)
+- Amelia Pollard (@amylizzle)
+- Julian Gethmann (@smartsammler)
 
 Institutions
 ~~~~~~~~~~~~
@@ -173,13 +175,21 @@ The development of Cheetah is a joint effort by members of the following institu
     :alt: Hamburg University of Technology
     :width: 5em
 
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png
+    :alt: Science and Technology Facilities Council
+    :width: 8em
+
+.. image:: https://github.com/desy-ml/cheetah/raw/master/images/argonne.png
+    :alt: Argonne National Laboratory
+    :width: 9em
+
 Funding
 ~~~~~~~
 
 The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
 Further, we gratefully acknowledge funding by the EuXFEL R&D project "RP-513: Learning Based Methods".
-This work was also supported by the U.S. National Science Foundation under Award PHY-1549132, the Center for Bright Beams.
-In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
+This work is also supported by the U.S. Department of Energy, Office of Science under Contract No. DE-AC02-76SF00515, the Center for Bright Beams, NSF Award No. PHY-1549132, and the U.S. DOE Office of Science-Basic Energy Sciences, under Contract No. DE-AC02-06CH11357.
+In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF as well as from the Science and Technology Facilities Council (UK).
 
 
 Indices and tables
