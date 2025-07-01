@@ -4,6 +4,7 @@ import scipy.stats
 import torch
 
 import cheetah
+from cheetah.utils import is_mps_available_and_functional
 
 
 def test_create_from_parameters():
@@ -11,7 +12,7 @@ def test_create_from_parameters():
     Test that a `ParticleBeam` created from parameters actually has those parameters.
     """
     beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(1_000_000),
+        num_particles=1_000_000,
         mu_x=torch.tensor(1e-5),
         mu_px=torch.tensor(1e-7),
         mu_y=torch.tensor(2e-5),
@@ -88,7 +89,7 @@ def test_from_twiss_to_twiss():
     parameters.
     """
     beam = cheetah.ParticleBeam.from_twiss(
-        num_particles=torch.tensor(10_000_000),
+        num_particles=10_000_000,
         beta_x=torch.tensor(5.91253676811640894),
         alpha_x=torch.tensor(3.55631307633660354),
         emittance_x=torch.tensor(3.494768647122823e-09),
@@ -107,11 +108,59 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
+def test_generate_uniform_ellipsoid_dtype():
+    """
+    Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the manually
+    specified dtype.
+    """
+    beam_attributes = cheetah.ParticleBeam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+
+    # Check that the dtype is float32 by default
+    default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid()
+    for attribute in beam_attributes:
+        assert getattr(default_beam, attribute).dtype == torch.float32
+
+    # Verify that all attributes have been changed to float64
+    double_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float64)
+    for attribute in beam_attributes:
+        assert getattr(double_beam, attribute).dtype == torch.float64
+
+
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_generate_uniform_ellipsoid_device(device):
+    """
+    Test that a `ParticleBeam` generated from a uniform 3D ellipsoid is created on the
+    correct device if manually specified.
+    """
+    beam_attributes = cheetah.ParticleBeam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+
+    default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(device=device)
+    for attribute in beam_attributes:
+        assert getattr(default_beam, attribute).device.type == device.type
+
+
 def test_generate_uniform_ellipsoid_vectorized():
     """
     Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
-    parameters, i.e. the all particles are within the ellipsoid, and that the other
-    beam parameters are as they would be for a Gaussian beam.
+    parameters, i.e. the all particles are within the ellipsoid, and that the other beam
+    parameters are as they would be for a Gaussian beam.
     """
     radius_x = torch.tensor([1e-3, 2e-3])
     radius_y = torch.tensor([1e-4, 2e-4])
@@ -124,7 +173,7 @@ def test_generate_uniform_ellipsoid_vectorized():
     energy = torch.tensor([1e7, 2e7])
     total_charge = torch.tensor([1e-9, 3e-9])
 
-    num_particles = torch.tensor(1_000_000)
+    num_particles = 1_000_000
     beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=num_particles,
         radius_x=radius_x,
@@ -236,13 +285,31 @@ def test_indexing_fails_for_invalid_index():
         _ = beam[6]
 
 
-def test_random_subsample_gaussian_properties():
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_random_subsample_gaussian_properties(device: torch.device):
     """
     Test that a random subsample of a beam has the correct number of particles and
     similar parameters as the original.
     """
     original_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001", device=device, dtype=torch.float32
     )
     subsampled_beam = original_beam.randomly_subsampled(50_000)
 
@@ -287,14 +354,32 @@ def test_random_subsample_gaussian_properties():
     )
 
 
-def test_random_subsample_energy_distance_better_than_gaussian():
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+)
+def test_random_subsample_energy_distance_better_than_gaussian(device: torch.device):
     """
     Test that on a non-Gaussian beam, the energy distance from the random subsample to
     the original beam is much (5x) lower than the energy distance from a Gaussian
     subsample (via conversion to `ParameterBeam` and back) to the original beam.
     """
     original_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001", device=device, dtype=torch.float32
     )
     randomly_subsampled_beam = original_beam.randomly_subsampled(50_000)
     gaussian_subsampled_beam = original_beam.as_parameter_beam().as_particle_beam(
@@ -307,13 +392,82 @@ def test_random_subsample_energy_distance_better_than_gaussian():
         gaussian_subsampled_dim = getattr(gaussian_subsampled_beam, dim_name)
 
         energy_distance_to_random_subsample = scipy.stats.energy_distance(
-            original_dim, randomly_subsampled_dim
+            original_dim.cpu(), randomly_subsampled_dim.cpu()
         )
         energy_distance_to_gaussian_subsample = scipy.stats.energy_distance(
-            original_dim, gaussian_subsampled_dim
+            original_dim.cpu(), gaussian_subsampled_dim.cpu()
         )
 
         assert (
             5 * energy_distance_to_random_subsample
             < energy_distance_to_gaussian_subsample
         )
+
+
+def test_vectorized_conversion_to_parameter_beam_and_back():
+    """
+    Test that converting a vectorised `ParticleBeam` to a `ParameterBeam` and back does
+    not throw errors and results in a beam with the same parameters.
+    """
+    original_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=10_000,  # Does not need as many particles as reconstructed beam
+        mu_x=torch.tensor((2e-4, 3e-4)),
+        sigma_x=torch.tensor((2e-5, 3e-5)),
+        energy=torch.tensor((1e7, 2e7)),
+    )
+
+    # Vectorise survival probabilities make make them slightly different
+    original_beam.survival_probabilities = original_beam.survival_probabilities.repeat(
+        3, 1, 1
+    )
+    original_beam.survival_probabilities[0, 0, : int(10_000 / 3)] = 0.3
+    original_beam.survival_probabilities[1, 0, : int(10_000 / 3)] = 0.6
+
+    roundtrip_converted_beam = original_beam.as_parameter_beam().as_particle_beam(
+        num_particles=10_000_000
+    )
+
+    assert isinstance(roundtrip_converted_beam, cheetah.ParticleBeam)
+    assert torch.allclose(
+        original_beam.mu_x, roundtrip_converted_beam.mu_x, rtol=1e-3, atol=1e-6
+    )
+    assert torch.allclose(
+        original_beam.mu_px, roundtrip_converted_beam.mu_px, rtol=1e-3, atol=1e-6
+    )
+    assert torch.allclose(
+        original_beam.mu_y, roundtrip_converted_beam.mu_y, rtol=1e-3, atol=1e-6
+    )
+    assert torch.allclose(
+        original_beam.mu_py, roundtrip_converted_beam.mu_py, rtol=1e-3, atol=1e-6
+    )
+    assert torch.allclose(
+        original_beam.mu_tau, roundtrip_converted_beam.mu_tau, rtol=1e-3, atol=1e-6
+    )
+    assert torch.allclose(
+        original_beam.mu_p, roundtrip_converted_beam.mu_p, rtol=1e-3, atol=1e-5
+    )
+    assert torch.allclose(
+        original_beam.sigma_x, roundtrip_converted_beam.sigma_x, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.sigma_px, roundtrip_converted_beam.sigma_px, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.sigma_y, roundtrip_converted_beam.sigma_y, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.sigma_py, roundtrip_converted_beam.sigma_py, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.sigma_tau, roundtrip_converted_beam.sigma_tau, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.sigma_p, roundtrip_converted_beam.sigma_p, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.energy, roundtrip_converted_beam.energy, rtol=1e-3
+    )
+    assert torch.allclose(
+        original_beam.total_charge, roundtrip_converted_beam.total_charge, rtol=1e-3
+    )
+    assert torch.allclose(original_beam.s, roundtrip_converted_beam.s, rtol=1e-3)

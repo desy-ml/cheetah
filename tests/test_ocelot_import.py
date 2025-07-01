@@ -4,6 +4,7 @@ import pytest
 import torch
 
 import cheetah
+from cheetah.utils import DefaultParameterWarning
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -31,7 +32,8 @@ def test_screen_conversion(name: str):
     Test on the example of the ARES lattice that all screens are correctly converted to
     `cheetah.Screen`.
     """
-    segment = cheetah.Segment.from_ocelot(ares.cell)
+    with pytest.warns(DefaultParameterWarning):
+        segment = cheetah.Segment.from_ocelot(ares.cell)
     screen = getattr(segment, name)
     assert isinstance(screen, cheetah.Screen)
 
@@ -92,9 +94,7 @@ def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype)
 
 
 def test_ocelot_lattice_import():
-    """
-    Tests if a lattice is importet correctly (and to the device requested).
-    """
+    """Tests if a lattice is importet correctly (and to the device requested)."""
     cell = [
         ocelot.Drift(l=0.3),
         ocelot.Quadrupole(l=0.2),

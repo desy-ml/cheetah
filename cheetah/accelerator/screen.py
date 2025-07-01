@@ -33,6 +33,9 @@ class Screen(Element):
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
 
     NOTE: `method='histogram'` currently does not support vectorisation. Please use
         `method=`kde` instead. Similarly, `ParameterBeam` can also not be vectorised.
@@ -50,6 +53,7 @@ class Screen(Element):
         is_blocking: bool = False,
         is_active: bool = False,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -57,7 +61,7 @@ class Screen(Element):
             [pixel_size, misalignment, kde_bandwidth], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         assert (
             isinstance(resolution, (tuple, list)) and len(resolution) == 2
@@ -325,9 +329,6 @@ class Screen(Element):
         # `nn.Module`, and registering it as a submodule of the screen.
         self._read_beam = value
         self.cached_reading = None
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

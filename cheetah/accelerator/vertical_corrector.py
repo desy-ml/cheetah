@@ -22,6 +22,9 @@ class VerticalCorrector(Element):
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -29,12 +32,13 @@ class VerticalCorrector(Element):
         length: torch.Tensor,
         angle: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -68,18 +72,6 @@ class VerticalCorrector(Element):
     @property
     def is_active(self) -> bool:
         return torch.any(self.angle != 0).item()
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
-        return [
-            VerticalCorrector(
-                self.length / num_splits,
-                self.angle / num_splits,
-                dtype=self.length.dtype,
-                device=self.length.device,
-            )
-            for _ in range(num_splits)
-        ]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

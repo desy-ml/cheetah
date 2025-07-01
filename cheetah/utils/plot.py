@@ -1,4 +1,4 @@
-import matplotlib
+import matplotlib.axis
 import numpy as np
 
 

@@ -1,3 +1,9 @@
 [build-system]
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+    "for_every_element: Runs a test with an example of each Cheetah `Element` subclass.",
+    "fail_because_no_mwe_args_defined: Mark a test to fail because no MWE args are defined for the given `Element` subclass.",
+]

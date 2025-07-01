@@ -27,6 +27,9 @@ class Cavity(Element):
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -36,6 +39,7 @@ class Cavity(Element):
         phase: torch.Tensor | None = None,
         frequency: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -43,7 +47,7 @@ class Cavity(Element):
             [length, voltage, phase, frequency], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -337,11 +341,6 @@ class Cavity(Element):
         R[..., 5, 5] = r66
 
         return R
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for cavity properly, for now just returns the
-        # element itself
-        return [self]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

@@ -23,6 +23,9 @@ class Aperture(Element):
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param is_active: If the aperture actually blocks particles.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -32,12 +35,13 @@ class Aperture(Element):
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.register_buffer_or_parameter(
             "x_max",
@@ -103,10 +107,6 @@ class Aperture(Element):
             s=incoming.s,
             species=incoming.species.clone(),
         )
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for aperture properly, for now just return self
-        return [self]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

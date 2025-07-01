@@ -16,16 +16,22 @@ class BPM(Element):
     :param is_active: If `True` the BPM is active and will record the beam's position.
         If `False` the BPM is inactive and will not record the beam's position.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         is_active: bool = False,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        super().__init__(name=name, device=device, dtype=dtype)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
+        )
 
         self.is_active = is_active
 
@@ -53,9 +59,6 @@ class BPM(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
         return incoming.clone()
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

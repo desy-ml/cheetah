@@ -25,10 +25,18 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
-    def __init__(self, elements: list[Element], name: str | None = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        elements: list[Element],
+        name: str | None = None,
+        sanitize_name: bool = False,
+    ) -> None:
+        super().__init__(name=name, sanitize_name=sanitize_name)
 
         # Segment inherits `length` as a buffer from `Element`. Since `length` is
         # overwritten as a standard Python property, this is misleading when calling
@@ -293,7 +301,7 @@ class Segment(Element):
         cls,
         cell,
         name: str | None = None,
-        warnings: bool = True,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
         **kwargs,
@@ -309,8 +317,9 @@ class Segment(Element):
 
         :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
         :param name: Unique identifier for the entire segment.
-        :param warnings: Whether to print warnings when objects are not supported by
-            Cheetah or converted with potentially unexpected behaviour.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
@@ -319,18 +328,21 @@ class Segment(Element):
 
         converted = [
             ocelot.convert_element_to_cheetah(
-                element, warnings=warnings, device=device, dtype=dtype
+                element,
+                sanitize_name=sanitize_names,
+                device=device,
+                dtype=dtype,
             )
             for element in cell
         ]
-        return cls(converted, name=name, **kwargs)
+        return cls(converted, name=name, sanitize_name=sanitize_names, **kwargs)
 
     @classmethod
     def from_bmad(
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
-        warnings: bool = True,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -345,15 +357,16 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
-        :param warnings: Whether to print warnings when elements or expressions are not
-            supported by Cheetah or converted with potentially unexpected behaviour.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return bmad.convert_lattice_to_cheetah(
-            bmad_lattice_file_path, environment_variables, warnings, device, dtype
+            bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -361,6 +374,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -369,6 +383,9 @@ class Segment(Element):
 
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param name: Name of the root element
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the elegant lattice.
@@ -376,7 +393,7 @@ class Segment(Element):
 
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice_to_cheetah(
-            elegant_lattice_file_path, name, device, dtype
+            elegant_lattice_file_path, name, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -595,7 +612,7 @@ class Segment(Element):
         axx: plt.Axes,
         axy: plt.Axes,
         incoming: Beam,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
@@ -649,7 +666,7 @@ class Segment(Element):
         self,
         incoming: Beam,
         fig: matplotlib.figure.Figure | None = None,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """

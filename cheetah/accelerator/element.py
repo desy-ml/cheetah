@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
@@ -6,7 +7,7 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import DirtyNameWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -16,17 +17,34 @@ class Element(ABC, nn.Module):
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
+        if not self.is_name_sanitized():
+            if sanitize_name:
+                self.sanitize_name()
+            else:
+                warnings.warn(
+                    f"Dirty element name {self.name} is not a valid Python variable "
+                    "name. You will not be able to use the `segment.element_name` "
+                    "syntax to access this element. Set `sanitize_name=True` to change "
+                    "the name to a valid one, if you want to use this syntax.",
+                    category=DirtyNameWarning,
+                    stacklevel=2,
+                )
+
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
@@ -137,6 +155,15 @@ class Element(ABC, nn.Module):
         """
         return ["name"]
 
+    @property
+    def defining_tensors(self) -> list[str]:
+        """Subset of defining features that are of type `torch.Tensor`."""
+        return [
+            feature
+            for feature in self.defining_features
+            if isinstance(getattr(self, feature), torch.Tensor)
+        ]
+
     def clone(self) -> "Element":
         """Create a copy of the element which does not share the underlying memory."""
         return self.__class__(
@@ -150,7 +177,6 @@ class Element(ABC, nn.Module):
             }
         )
 
-    @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`. Some elements may not
@@ -160,7 +186,27 @@ class Element(ABC, nn.Module):
         :param resolution: Length of the longest allowed split in meters.
         :return: Ordered sequence of sliced elements.
         """
-        raise NotImplementedError
+        return [self]
+
+    def is_name_sanitized(self) -> bool:
+        """
+        Check if a name is sanitised, i.e. it contains only alphanumeric characters and
+        underscores.
+
+        A clean name can be used as a Python variable name, which is a requirement
+        when using the `segment.element_name` syntax to access the element in a segment.
+        """
+        return all(c.isalnum() or c == "_" for c in self.name)
+
+    def sanitize_name(self) -> None:
+        """
+        Sanitise the element's name to be a valid Python variable name.
+
+        Replaces characters that are not alphanumeric or underscores with underscores.
+        """
+        self.name = "".join(
+            c if c.isalnum() or c == "_" else "_" for c in self.name
+        ).strip("_")
 
     @abstractmethod
     def plot(
