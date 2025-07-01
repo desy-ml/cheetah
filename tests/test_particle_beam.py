@@ -153,7 +153,7 @@ def test_generate_uniform_ellipsoid_device(device):
 
     default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(device=device)
     for attribute in beam_attributes:
-        assert getattr(default_beam, attribute).device == device
+        assert getattr(default_beam, attribute).device.type == device.type
 
 
 def test_generate_uniform_ellipsoid_vectorized():
