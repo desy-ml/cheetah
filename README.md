@@ -97,16 +97,6 @@ where the keyword argument `incoming` is the incoming beam represented in the pl
 
 **For more demos check out the [`cheetah-demos`](https://github.com/desy-ml/cheetah-demos) repository.**
 
-To generate and view 3D visualizations of lattice segments, simply run the following command:
-
-```bash
-view-lattice --config config.json
-```
-
-This will process the lattice segment defined in your config.json file and generate the corresponding 3D visualization. You can visualize and explore the geometry of the segments natively in the tool.
-
-![3D Lattice View](https://github.com/desy-ml/cheetah/raw/master/images/3d_lattice_segment.png)
-
 ## Cite Cheetah
 
 If you use Cheetah, please cite the following two papers:
