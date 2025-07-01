@@ -136,6 +136,7 @@ The following people have contributed to the development of Cheetah:
 - Ryan Roussel (@roussel-ryan)
 - Auralee Edelen (@lee-edelen)
 - Amelia Pollard (@amylizzle)
+- Julian Gethmann (@smartsammler)
 
 Institutions
 ~~~~~~~~~~~~
