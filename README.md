@@ -4,6 +4,7 @@
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/cheetah-accelerator)](https://pypi.org/project/cheetah-accelerator)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb)
 
 <!-- [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
 
@@ -26,6 +27,8 @@ pip install cheetah-accelerator
 ```
 
 ## How To Use
+
+**You can run the following example in Binder by clicking [here](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb) or on the badge above.**
 
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
@@ -92,9 +95,7 @@ segment.plot_overview(incoming=beam)
 
 where the keyword argument `incoming` is the incoming beam represented in the plot.
 
-Run this example in binder
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb)
-or have a look at further [demos](https://github.com/desy-ml/cheetah-demos).
+**For more demos check out the [`cheetah-demos`](https://github.com/desy-ml/cheetah-demos) repository.**
 
 ## Cite Cheetah
 
