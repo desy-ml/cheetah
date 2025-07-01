@@ -1167,7 +1167,7 @@ class ParticleBeam(Beam):
         s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
-        dtype=torch.float32,
+        dtype: torch.dtype | None = None,
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.

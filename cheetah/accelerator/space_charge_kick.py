@@ -62,35 +62,33 @@ class SpaceChargeKick(Element):
             device,
             dtype,
         )
-        self.factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name, sanitize_name=sanitize_name, **self.factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.grid_shape = grid_shape
 
         self.register_buffer_or_parameter(
-            "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
+            "effect_length", torch.as_tensor(effect_length, **factory_kwargs)
         )
         # In multiples of sigma
         self.register_buffer_or_parameter(
             "grid_extent_x",
             torch.as_tensor(
-                grid_extent_x if grid_extent_x is not None else 3.0,
-                **self.factory_kwargs,
+                grid_extent_x if grid_extent_x is not None else 3.0, **factory_kwargs
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_y",
             torch.as_tensor(
-                grid_extent_y if grid_extent_y is not None else 3.0,
-                **self.factory_kwargs,
+                grid_extent_y if grid_extent_y is not None else 3.0, **factory_kwargs
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_tau",
             torch.as_tensor(
                 grid_extent_tau if grid_extent_tau is not None else 3.0,
-                **self.factory_kwargs,
+                **factory_kwargs,
             ),
         )
 
@@ -106,7 +104,9 @@ class SpaceChargeKick(Element):
         Cloud-In-Cell (CIC) method. Returns a grid of charge density in C/m^3.
         """
         charge = torch.zeros(
-            beam.particles.shape[:-2] + self.grid_shape, **self.factory_kwargs
+            beam.particles.shape[:-2] + self.grid_shape,
+            device=beam.particles.device,
+            dtype=beam.particles.dtype,
         )
 
         # Compute inverse cell size (to avoid multiple divisions later on)
@@ -132,7 +132,8 @@ class SpaceChargeKick(Element):
                 [1, 0, 1],
                 [1, 1, 0],
                 [1, 1, 1],
-            ]
+            ],
+            device=cell_indices.device,
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
         # Shape: (..., num_particles, 8, 3)
@@ -145,7 +146,7 @@ class SpaceChargeKick(Element):
         # Add the charge contributions to the cells
         # Shape: (..., 8 * num_particles)
         idx_vector = (
-            torch.arange(cell_indices.shape[0])
+            torch.arange(cell_indices.shape[0], device=cell_indices.device)
             .repeat(8 * beam.particles.shape[-2], 1)
             .T
         )
@@ -227,7 +228,9 @@ class SpaceChargeKick(Element):
 
         # Create a new tensor with the doubled dimensions, filled with zeros
         new_charge_density = torch.zeros(
-            beam.particles.shape[:-2] + new_dims, **self.factory_kwargs
+            beam.particles.shape[:-2] + new_dims,
+            device=beam.particles.device,
+            dtype=beam.particles.dtype,
         )
 
         # Copy the original charge_density values to the beginning of the new tensor
@@ -257,9 +260,9 @@ class SpaceChargeKick(Element):
         num_grid_points_x, num_grid_points_y, num_grid_points_tau = self.grid_shape
 
         # Create coordinate grids
-        x = torch.arange(num_grid_points_x, **self.factory_kwargs)
-        y = torch.arange(num_grid_points_y, **self.factory_kwargs)
-        tau = torch.arange(num_grid_points_tau, **self.factory_kwargs)
+        x = torch.arange(num_grid_points_x, device=beam.particles.device)
+        y = torch.arange(num_grid_points_y, device=beam.particles.device)
+        tau = torch.arange(num_grid_points_tau, device=beam.particles.device)
         ix_grid, iy_grid, itau_grid = torch.meshgrid(x, y, tau, indexing="ij")
         x_grid = (
             ix_grid[None, :, :, :] * dx[..., None, None, None]
@@ -323,7 +326,8 @@ class SpaceChargeKick(Element):
                 2 * num_grid_points_y,
                 2 * num_grid_points_tau,
             ),
-            **self.factory_kwargs,
+            device=beam.particles.device,
+            dtype=beam.particles.dtype,
         )
 
         # Fill the grid with G_values and its periodic copies
@@ -462,7 +466,9 @@ class SpaceChargeKick(Element):
         )
         grid_shape = self.grid_shape
         interpolated_forces = torch.zeros(
-            (*beam.particles.shape[:-1], 3), **self.factory_kwargs
+            (*beam.particles.shape[:-1], 3),
+            device=beam.particles.device,
+            dtype=beam.particles.dtype,
         )  # (..., num_particles, 3)
 
         # Get particle positions
@@ -485,7 +491,8 @@ class SpaceChargeKick(Element):
                 [1, 0, 1],
                 [1, 1, 0],
                 [1, 1, 1],
-            ]
+            ],
+            device=cell_indices.device,
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
             -3
@@ -500,7 +507,7 @@ class SpaceChargeKick(Element):
             start_dim=-3, end_dim=-2
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
-            torch.arange(cell_indices.shape[0])
+            torch.arange(cell_indices.shape[0], device=cell_indices.device)
             .repeat(8 * beam.particles.shape[-2], 1)
             .T
         )  # Shape: (..., num_particles * 8)
@@ -540,7 +547,7 @@ class SpaceChargeKick(Element):
         forces_to_add = torch.stack([values_x, values_y, values_z], dim=-1)
 
         index_tensor = (
-            torch.arange(beam.num_particles)
+            torch.arange(beam.num_particles, device=beam.particles.device)
             .repeat_interleave(8)
             .unsqueeze(0)
             .unsqueeze(-1)
@@ -616,7 +623,11 @@ class SpaceChargeKick(Element):
             cell_size = (
                 2
                 * grid_dimensions
-                / torch.tensor(self.grid_shape, **self.factory_kwargs)
+                / torch.tensor(
+                    self.grid_shape,
+                    device=grid_dimensions.device,
+                    dtype=grid_dimensions.dtype,
+                )
             )
             dt = flattened_length_effect / (
                 speed_of_light * flattened_incoming.relativistic_beta
