@@ -224,5 +224,11 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def to_mesh(self, s: float = 0.0) -> trimesh.Scene:
+        # Load the model scene ... see `Segment3DBuilder._load_and_transform_mesh`
+        # Can probably assume that `asset_path` is "asset_directory/class_name.glb"
+        # This way all elements will automatically find their 3D model.
+        pass
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={repr(self.name)})"
