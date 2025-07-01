@@ -18,11 +18,10 @@ import logging
 import math
 import os
 from importlib.resources import files
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, cast
 
 import torch
 import trimesh
-from trimesh import Scene, Trimesh
 
 from cheetah import (
     Cavity,
@@ -45,19 +44,16 @@ logger = logging.getLogger(__name__)
 
 
 # Constants
-DEFAULT_SCALE_FACTOR: float = 0.20
-DEFAULT_ROTATION_ANGLE: float = 2 * math.pi
-DEFAULT_ROTATION_AXIS: List[int] = [0, 1, 0]
+DEFAULT_SCALE_FACTOR = 0.20
+DEFAULT_ROTATION_ANGLE = 2 * math.pi
+DEFAULT_ROTATION_AXIS = [0, 1, 0]
 
 
 class MeshTransformer:
     """Helper class for 3D mesh transformations."""
 
     def __init__(
-        self,
-        scale_factor: float,
-        rotation_angle: float,
-        rotation_axis: List[float],
+        self, scale_factor: float, rotation_angle: float, rotation_axis: list[float]
     ):
         """
         Initializes the object with scaling and rotation parameters.
@@ -71,7 +67,9 @@ class MeshTransformer:
         self.rotation_angle = rotation_angle
         self.rotation_axis = rotation_axis
 
-    def transform_mesh(self, mesh: Trimesh, translation_vector: List[float]) -> None:
+    def transform_mesh(
+        self, mesh: trimesh.Trimesh, translation_vector: list[float]
+    ) -> None:
         """Apply transformations to mesh."""
         rotation_matrix = trimesh.transformations.rotation_matrix(
             self.rotation_angle, self.rotation_axis
@@ -115,7 +113,7 @@ class Segment3DBuilder:
         # asset file (.glb).
         # This dictionary allows dynamic lookup of the appropriate 3D model for
         # each element in the scene.
-        self.asset_map: dict[type, str] = {
+        self.asset_map = {
             VerticalCorrector: "vertical_corrector.glb",
             HorizontalCorrector: "horizontal_corrector.glb",
             Quadrupole: "quadrupole.glb",
@@ -125,7 +123,7 @@ class Segment3DBuilder:
         }
 
         # Default transformation settings for scaling and rotation of 3D models
-        config: Dict[str, Union[float, List[int]]] = {
+        config = {
             "scale_factor": DEFAULT_SCALE_FACTOR,
             "rotation_angle": DEFAULT_ROTATION_ANGLE,
             "rotation_axis": DEFAULT_ROTATION_AXIS,
@@ -146,7 +144,7 @@ class Segment3DBuilder:
 
         # Creates a visualization scene using triangular meshes with an
         # automatically generated camera and lighting
-        self.scene: Scene = Scene()
+        self.scene = trimesh.Scene()
 
         # Track lattice component positions
         self._component_positions: dict[str, float] = {}
@@ -181,9 +179,7 @@ class Segment3DBuilder:
         self._component_positions = positions
 
     def build_segment(
-        self,
-        output_filename: Optional[str] = None,
-        is_export_enabled: bool = True,
+        self, output_filename: str | None = None, is_export_enabled: bool = True
     ) -> None:
         """
         Build a complete 3D segment scene by iterating through the segment
@@ -218,15 +214,15 @@ class Segment3DBuilder:
 
     def add_element_to_scene(
         self,
-        element: Union[
-            Cavity,
-            Dipole,
-            HorizontalCorrector,
-            Quadrupole,
-            Screen,
-            Undulator,
-            VerticalCorrector,
-        ],
+        element: (
+            Cavity
+            | Dipole
+            | HorizontalCorrector
+            | Quadrupole
+            | Screen
+            | Undulator
+            | VerticalCorrector
+        ),
     ) -> None:
         """
         Add an element to the scene by loading its mesh, transforming it,
@@ -250,7 +246,7 @@ class Segment3DBuilder:
         else:
             logger.warning("Element type %s not recognized.", type(element).__name__)
 
-    def export(self, output_file: Optional[str] = None) -> None:
+    def export(self, output_file: str | None = None) -> None:
         """
         Export the 3D scene to a file in the GLB format.
 
@@ -301,7 +297,8 @@ class Segment3DBuilder:
             # handled properly. Additioanlly, try to coerce everything into a scene
             # instead of a single mesh
             scene = cast(
-                Scene, trimesh.load(str(asset_path), file_type="glb", force="scene")
+                trimesh.Scene,
+                trimesh.load(str(asset_path), file_type="glb", force="scene"),
             )
 
             for mesh in scene.geometry.values():
