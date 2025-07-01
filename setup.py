@@ -24,6 +24,7 @@ setup(
         "numpy>=1.21.3",
         "scipy>=1.7.2",
         "torch[opt-einsum]>=2.3",
+        "trimesh==4.6.13",
     ],
     extras_require={"openpmd": ["openpmd-beamphysics"]},
 )
