@@ -159,8 +159,8 @@ def test_generate_uniform_ellipsoid_device(device):
 def test_generate_uniform_ellipsoid_vectorized():
     """
     Test that a `ParticleBeam` generated from a uniform 3D ellipsoid has the correct
-    parameters, i.e. the all particles are within the ellipsoid, and that the other
-    beam parameters are as they would be for a Gaussian beam.
+    parameters, i.e. the all particles are within the ellipsoid, and that the other beam
+    parameters are as they would be for a Gaussian beam.
     """
     radius_x = torch.tensor([1e-3, 2e-3])
     radius_y = torch.tensor([1e-4, 2e-4])
