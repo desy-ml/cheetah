@@ -139,9 +139,14 @@ class Species(nn.Module):
     def clone(self) -> "Species":
         """Return a copy of the species."""
         if self.name in self.__class__.known:
-            return Species(name=self.name)
+            # Manually passing charge and mass is not allowed for known species to avoid
+            # users defining confusing species. Since no tensors are passed in that case
+            # dtype and device have to be passed manually.
+            return self.__class__(
+                name=self.name, device=self.mass_eV.device, dtype=self.mass_eV.dtype
+            )
         else:
-            return Species(
+            return self.__class__(
                 name=self.name,
                 num_elementary_charges=self.num_elementary_charges.clone(),
                 mass_eV=self.mass_eV.clone(),
