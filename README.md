@@ -4,6 +4,7 @@
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/cheetah-accelerator)](https://pypi.org/project/cheetah-accelerator)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb)
 
 <!-- [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
 
@@ -26,6 +27,8 @@ pip install cheetah-accelerator
 ```
 
 ## How To Use
+
+**You can run the following example in Binder by clicking [here](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb) or on the badge above.**
 
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
@@ -92,6 +95,8 @@ segment.plot_overview(incoming=beam)
 
 where the keyword argument `incoming` is the incoming beam represented in the plot.
 
+**For more demos check out the [`cheetah-demos`](https://github.com/desy-ml/cheetah-demos) repository.**
+
 ## Cite Cheetah
 
 If you use Cheetah, please cite the following two papers:
@@ -154,6 +159,8 @@ The following people have contributed to the development of Cheetah:
 - Juan Pablo Gonzalez-Aguilera (@jp-ga)
 - Ryan Roussel (@roussel-ryan)
 - Auralee Edelen (@lee-edelen)
+- Amelia Pollard (@amylizzle)
+- Julian Gethmann (@smartsammler)
 
 ### Institutions
 
@@ -166,11 +173,13 @@ The development of Cheetah is a joint effort by members of the following institu
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/slac.png" alt="SLAC" style="width: 9em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png" alt="University of Liverpool" style="width: 10em;" vspace="2em"/>&nbsp;&nbsp;
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png" alt="Cockcroft Institute" style="width: 7em;" vspace="2em"/>&nbsp;&nbsp;
-<img src="https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png" alt="Hamburg University of Technology" style="width: 5em;" vspace="2em"/>
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png" alt="Hamburg University of Technology" style="width: 5em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png" alt="Science and Technology Facilities Council" style="width: 8em;" vspace="2em"/>&nbsp;&nbsp;
+<img src="https://github.com/desy-ml/cheetah/raw/master/images/argonne.png" alt="Argonne National Laboratory" style="width: 9em;" vspace="2em"/>
 
 ### Funding
 
 The work to develop Cheetah has in part been funded by the IVF project InternLabs-0011 (HIR3X) and the Initiative and Networking Fund by the Helmholtz Association (Autonomous Accelerator, ZT-I-PF-5-6).
 Further, we gratefully acknowledge funding by the EuXFEL R&D project "RP-513: Learning Based Methods".
-This work is also supported by the U.S. Department of Energy, Office of Science under Contract No. DE-AC02-76SF00515 and the Center for Bright Beams, NSF Award No. PHY-1549132.
-In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF.
+This work is also supported by the U.S. Department of Energy, Office of Science under Contract No. DE-AC02-76SF00515, the Center for Bright Beams, NSF Award No. PHY-1549132, and the U.S. DOE Office of Science-Basic Energy Sciences, under Contract No. DE-AC02-06CH11357.
+In addition, we acknowledge support from DESY (Hamburg, Germany) and KIT (Karlsruhe, Germany), members of the Helmholtz Association HGF as well as from the Science and Technology Facilities Council (UK).
