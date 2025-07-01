@@ -450,5 +450,10 @@ def test_device_and_dtype(device, dtype):
         sigma_py=torch.tensor(1e-4),
     ).to(device=device, dtype=dtype)
 
-    # Run to see if errors are raised
-    _ = segment.track(incoming_beam)
+    # Run in part to see if errors are raised
+    outgoing_beam = segment.track(incoming_beam)
+
+    # Check device and dtype of the output
+    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+        assert getattr(outgoing_beam, attribute).device.type == device.type
+        assert getattr(outgoing_beam, attribute).dtype == dtype
