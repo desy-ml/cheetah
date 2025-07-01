@@ -671,11 +671,6 @@ class SpaceChargeKick(Element):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for SpaceCharge properly, for now just returns the
-        # element itself
-        return [self]
-
     @property
     def is_skippable(self) -> bool:
         return False
