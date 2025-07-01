@@ -97,13 +97,7 @@ def test_conflicting_element_dtype(element):
         )
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_forced_beam_dtype(BeamClass):
     """
     Test that the dtype is properly overriden on beam creation.
@@ -125,13 +119,7 @@ def test_forced_beam_dtype(BeamClass):
         assert getattr(beam, attribute).dtype == torch.float32
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_infer_beam_dtype(BeamClass):
     """
     Test that the dtype is properly inferred on beam creation.
@@ -150,13 +138,7 @@ def test_infer_beam_dtype(BeamClass):
         assert getattr(beam, attribute).dtype == torch.float64
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_conflicting_beam_dtype(BeamClass):
     """Test if creating a beam with conflicting argument dtypes fails."""
     with pytest.raises(AssertionError):
@@ -166,17 +148,9 @@ def test_conflicting_beam_dtype(BeamClass):
         )
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_transformed_beam_dtype(BeamClass):
-    """
-    Test that Beam.transformed_to keeps the dtype by default.
-    """
+    """Test that `Beam.transformed_to` keeps the dtype by default."""
     beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5), dtype=torch.float64)
     beam_attributes = beam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
 
