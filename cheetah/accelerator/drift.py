@@ -25,6 +25,9 @@ class Drift(Element):
     :param length: Length in meters.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -32,12 +35,13 @@ class Drift(Element):
         length: torch.Tensor,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -129,7 +133,7 @@ class Drift(Element):
         return self.tracking_method == "cheetah"
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         return [
             Drift(
                 self.length / num_splits,

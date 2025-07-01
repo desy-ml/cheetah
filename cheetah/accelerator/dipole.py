@@ -38,6 +38,9 @@ class Dipole(Element):
     :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
         supports `"linear_edge"`.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -56,6 +59,7 @@ class Dipole(Element):
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
@@ -76,7 +80,7 @@ class Dipole(Element):
             dtype,
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -414,7 +418,9 @@ class Dipole(Element):
         R = R_exit @ R @ R_enter
 
         # Apply rotation for tilted magnets
-        R = rotation_matrix(-self.tilt) @ R @ rotation_matrix(self.tilt)
+        if torch.any(self.tilt != 0):
+            rotation = rotation_matrix(self.tilt)
+            R = rotation.transpose(-1, -2) @ R @ rotation
 
         return R
 
@@ -457,11 +463,6 @@ class Dipole(Element):
         tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
 
         return tm
-
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for dipole properly, for now just returns the
-        # element itself
-        return [self]
 
     def __repr__(self):
         return (

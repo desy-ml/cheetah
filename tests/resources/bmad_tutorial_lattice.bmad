@@ -13,8 +13,9 @@ d: drift, L = 0.5 * (0.3 + 0.7)
 ! The two spaces in the expression for L are on purpose to test the parser's ability to
 ! handle this
 b: sbend, L = 0.6  -0.1, g = 1, e1 = 0.1, dg = sqrt(0.000001) ! g = 1/design_radius
+n: drift, L=-0.4
 q: quadrupole, L = abs(abs), k1 = 0.23
 s: sextupole, tilt = -0.1, L = 0.3, k2 = 0.42
 
-lat: line = (d, b, q, s) ! List of lattice elements
+lat: line = (d, b, n, q, s) ! List of lattice elements
 use, lat ! Line used to construct the lattice
