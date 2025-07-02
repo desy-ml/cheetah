@@ -224,7 +224,7 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def to_mesh(self, s: float = 0.0) -> trimesh.Scene:
+    def to_mesh(self, s: float = 0.0) -> "trimesh.Scene":
         """
         Return a 3D mesh representation of the element at position `s`.
 
