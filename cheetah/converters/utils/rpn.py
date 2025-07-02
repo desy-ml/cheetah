@@ -110,10 +110,10 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
                     if token in context:
                         number = context[token]
                     elif "[" in token and token[-1] == "]":
-                        # nested lookup var[key]
+                        # Nested lookup var[key]
                         val, key = token.split("[")
 
-                        key = key[:-1]  # trim the ]
+                        key = key[:-1]  # Trim the ]
                         if val in context and key in context[val]:
                             number = context[val][key]
                         else:
