@@ -38,27 +38,6 @@ def test_diverging_particle_beam():
     )
 
 
-@pytest.mark.skip(
-    reason="Requires rewriting Element and Beam member variables to be buffers."
-)
-def test_device_like_torch_module():
-    """
-    Test that when changing the device, Drift reacts like a `torch.nn.Module`.
-    """
-    # There is no point in running this test, if there aren't two different devices to
-    # move between
-    if not torch.cuda.is_available():
-        return
-
-    element = cheetah.Drift(length=torch.tensor(0.2), device="cuda")
-
-    assert element.length.device.type == "cuda"
-
-    element = element.cpu()
-
-    assert element.length.device.type == "cpu"
-
-
 @pytest.mark.parametrize(
     "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )

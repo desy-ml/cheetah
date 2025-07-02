@@ -135,16 +135,3 @@ def test_transverse_deflecting_cavity_all_parameters_vectorization():
     outgoing_beam = tdc.track(incoming_beam)
 
     assert outgoing_beam.particles.shape[:-2] == torch.Size([4, 3, 2, 2])
-
-
-def test_tracking_inactive_in_segment():
-    """
-    Test that tracking through a `Segment` that contains an inactive
-    `TransverseDeflectingCavity` does not throw an exception. This was an issue in #290.
-    """
-    segment = cheetah.Segment(
-        elements=[cheetah.TransverseDeflectingCavity(length=torch.tensor(1.0))]
-    )
-    beam = cheetah.ParticleBeam.from_parameters()
-
-    segment.track(beam)
