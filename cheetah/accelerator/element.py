@@ -231,10 +231,26 @@ class Element(ABC, nn.Module):
         :param s: Position of the element along the s-axis in meters.
         :return: A `trimesh.Scene` containing the mesh representation of the element.
         """
-        # Load the model scene ... see `Segment3DBuilder._load_and_transform_mesh`
-        # Can probably assume that `asset_path` is "asset_directory/class_name.glb"
-        # This way all elements will automatically find their 3D model.
-        pass
+        from importlib.resources import files
+
+        import trimesh
+
+        from cheetah import _assets
+
+        # Use importlib.resources to access the asset file.
+        asset_path = files(_assets) / f"{self.__class__.__name__}.glb"
+
+        # Force loading 3D model as a scene to ensure multiple geometries are handled
+        # properly. Additioanlly, try to coerce everything into a scene instead of a
+        # single mesh.
+        scene = trimesh.load(str(asset_path), file_type="glb", force="scene")
+
+        for mesh in scene.geometry.values():
+            # Translation vector [x, y, z] defining the model's position
+            # in 3D space. Determines where the component is placed within the scene
+            translation_vector = [0, 0, self.current_position]
+            self.transformer.transform_mesh(mesh, translation_vector)
+            self.scene.add_geometry(mesh)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={repr(self.name)})"
