@@ -143,16 +143,22 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
     """
     tokens = []
     current_token = ""
+    current_key = None
+
     for char in expression:
-        if char.isspace():
+        if char.isspace() or char in "+-*/^()[]":
             if current_token:
-                if current_token in context:
-                    tokens.append(context[current_token])
-                else:
-                    tokens.append(current_token)
-                current_token = ""
-        elif char in "+-*/^()":
-            if current_token:
+                if char == "]" and current_key is not None:
+                    # This will throw an index error if current key is invalid
+                    tokens.append(context[current_token][current_key])
+                    current_token = ""
+                    current_key = None
+                    continue
+                if char == "[" and current_token in context:
+                    # We're doing a var[key] lookup, start reading the key
+                    current_key = ""
+                    continue
+
                 # Workaround for conflicts between function and var names (i.e. abs and
                 # abs())
                 if char != "(" and current_token in context:
@@ -160,9 +166,15 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
                 else:
                     tokens.append(current_token)
                 current_token = ""
-            tokens.append(char)
+            if not char.isspace():
+                tokens.append(char)
         else:
-            current_token += char
+            if current_key is not None:
+                current_key += char
+            else:
+                current_token += char
+
+    # Handle the last token if it exists
     if current_token:
         if current_token in context:
             tokens.append(context[current_token])
