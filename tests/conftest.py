@@ -8,7 +8,7 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 ELEMENT_SUBCLASSES_ARGS = {
-    cheetah.Aperture: {"": {}},
+    cheetah.Aperture: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.Cavity: {"": {"length": torch.tensor(1.0)}},
     cheetah.CustomTransferMap: {"": {"predefined_transfer_map": torch.eye(7)}},
@@ -59,7 +59,7 @@ ELEMENT_SUBCLASSES_ARGS = {
             "tracking_method": "bmadx",
         },
     },
-    # cheetah.Screen: {"": {}},
+    cheetah.Screen: {"": {}},
     cheetah.Segment: {"": {"elements": [cheetah.Drift(length=torch.tensor(1.0))]}},
     cheetah.Sextupole: {
         "": {"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])}
@@ -108,8 +108,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     for_every_element(
         metafunc,
         arg_name,
-        only_if=for_every_element_marker.kwargs.get("only_if"),
         except_if=for_every_element_marker.kwargs.get("except_if"),
+        xfail_if=for_every_element_marker.kwargs.get("xfail_if"),
     )
 
 
@@ -166,8 +166,8 @@ def default_torch_dtype(request):
 def for_every_element(
     metafunc: pytest.Metafunc,
     arg_name: str,
-    only_if: Callable[[cheetah.Element], bool] | None = None,
     except_if: Callable[[cheetah.Element], bool] | None = None,
+    xfail_if: Callable[[cheetah.Element], bool] | None = None,
 ) -> None:
     """
     This marker can be used by adding the `@pytest.mark.for_every_element` marker to a
@@ -175,12 +175,15 @@ def for_every_element(
     positional argument or the `arg_name` keyword argument, and define an argument of
     that name in the test function's signature.
 
-    The `only_if` and `except_if` keyword arguments provide means to filter which
-    testcases are executed. They expect single-argument lambda expressions that evaluate
-    to a bool and are passed the testcase elements one-by-one.
+    The `except_if` keyword argument provides means to filter which testcases are
+    executed. It expects a single-argument lambda expression that evaluates to a bool
+    and is passed the testcase elements one-by-one.
+
+    The `xfail_if` keyword argument can be used to mark testcases are are supposed to
+    fail. It takes a lambda expression with the same signature as `except_if`.
     """
-    only_if = only_if if only_if is not None else lambda _: True
     except_if = except_if if except_if is not None else lambda _: False
+    xfail_if = xfail_if if xfail_if is not None else lambda _: False
 
     # Recursively discover all subclasses of `Element`
     def get_all_subclasses(cls):
@@ -191,25 +194,31 @@ def for_every_element(
     all_element_subclasses = get_all_subclasses(cheetah.Element)
 
     # Generate test cases for all element subclasses
-    testcase_dict = {
-        (
-            f"{subclass.__name__}-{label}"
-            if len(ELEMENT_SUBCLASSES_ARGS.get(subclass, {"": None})) > 1
-            else subclass.__name__
-        ): (
-            subclass(**testcase)
-            if testcase is not None
-            else pytest.param(None, marks=pytest.mark.fail_because_no_testcase_defined)
-        )
-        for subclass in all_element_subclasses
-        for label, testcase in ELEMENT_SUBCLASSES_ARGS.get(subclass, {"": None}).items()
-    }
+    testcases = []
+    for subclass in all_element_subclasses:
+        if subclass in ELEMENT_SUBCLASSES_ARGS:
+            subclass_testcases = ELEMENT_SUBCLASSES_ARGS[subclass]
+            for label, testcase_args in subclass_testcases.items():
+                testcase = subclass(**testcase_args)
+                if not except_if(testcase):
+                    testcases.append(
+                        pytest.param(
+                            testcase,
+                            id=(
+                                f"{subclass.__name__}-{label}"
+                                if len(subclass_testcases) > 1
+                                else subclass.__name__
+                            ),
+                            marks=pytest.mark.xfail if xfail_if(testcase) else (),
+                        )
+                    )
+        else:
+            testcases.append(
+                pytest.param(
+                    None,
+                    id=subclass.__name__,
+                    marks=pytest.mark.fail_because_no_testcase_defined,
+                )
+            )
 
-    # Remove test cases according to `only_if` and `except_if`
-    filtered_dict = {
-        label: testcase
-        for label, testcase in testcase_dict.items()
-        if only_if(testcase) and not except_if(testcase)
-    }
-
-    metafunc.parametrize(arg_name, filtered_dict.values(), ids=filtered_dict.keys())
+    metafunc.parametrize(arg_name, testcases)
