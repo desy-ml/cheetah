@@ -202,7 +202,11 @@ def for_every_element(
         if subclass in ELEMENT_SUBCLASSES_ARGS:
             subclass_testcases = ELEMENT_SUBCLASSES_ARGS[subclass]
             for label, testcase_args in subclass_testcases.items():
-                testcase = subclass(**testcase_args)
+                # The clone prevents tests from modifying the test cases, which is
+                # especially relevant for `Segment`. This is necessary since the
+                # subclass constructors reference their arguments instead of copying.
+                testcase = subclass(**testcase_args).clone()
+
                 if not except_if(testcase):
                     testcases.append(
                         pytest.param(
