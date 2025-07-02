@@ -224,7 +224,7 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def to_mesh(self, s: float = 0.0) -> "trimesh.Trimesh":
+    def to_mesh(self, s: float = 0.0) -> "trimesh.Trimesh":  # noqa: F821
         """
         Return a 3D mesh representation of the element at position `s`.
 
@@ -243,19 +243,19 @@ class Element(ABC, nn.Module):
         if not asset_path.exists():
             return None
 
-        # Force loading 3D model as a scene to ensure multiple geometries are handled
-        # properly. Additioanlly, try to coerce everything into a scene instead of a
-        # single mesh.
-        raw_scene = trimesh.load(str(asset_path), file_type="glb", force="scene")
+        mesh = trimesh.load(str(asset_path), file_type="glb", force="mesh")
 
-        cleaned_scene = trimesh.Scene()
-        for mesh in raw_scene.geometry.values():
-            # Translation vector [x, y, z] defining the model's position in 3D space.
-            # Determines where the component is placed within the scene.
-            mesh.apply_translation([0, 0, s])
-            cleaned_scene.add_geometry(mesh)
+        # NOTE: Scaling must be done before translation to ensure the mesh is
+        # positioned correctly after scaling.
 
-        mesh = cleaned_scene.to_mesh()
+        # Scale element to the correct length (only if the mesh has a length)
+        if abs(self.length.item()) > 0.0:
+            _, _, mesh_length = mesh.extents
+            scale_factor = self.length.item() / mesh_length
+            mesh.apply_scale(scale_factor)
+
+        # Move mesh to the correct position along the s-axis
+        mesh.apply_translation([0, 0, s])
 
         return mesh
 
