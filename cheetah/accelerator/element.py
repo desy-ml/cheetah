@@ -225,6 +225,12 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def to_mesh(self, s: float = 0.0) -> trimesh.Scene:
+        """
+        Return a 3D mesh representation of the element at position `s`.
+
+        :param s: Position of the element along the s-axis in meters.
+        :return: A `trimesh.Scene` containing the mesh representation of the element.
+        """
         # Load the model scene ... see `Segment3DBuilder._load_and_transform_mesh`
         # Can probably assume that `asset_path` is "asset_directory/class_name.glb"
         # This way all elements will automatically find their 3D model.
