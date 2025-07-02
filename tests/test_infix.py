@@ -127,3 +127,13 @@ def test_infix_error_handling_2():
 
     with pytest.raises(SyntaxError):
         infix.evaluate_expression(expression)
+
+
+def test_infix_nested_var_lookup():
+    """
+    Test that an infix expression with nested variable lookups is correctly evaluated.
+    """
+    expression = "a - b[test]"
+    context = {"a": 10, "b": {"beep": 10, "boop": 100, "test": 5}, "test": 3}
+
+    assert infix.evaluate_expression(expression, context) == 5
