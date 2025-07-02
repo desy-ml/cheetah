@@ -1,4 +1,4 @@
-# 3D Model 
+# 3D Model
 
 ## Accessing the 3D Model Files
 
@@ -11,6 +11,7 @@ Place the `.gltf` files for the Quadrupole and Dipole models in the designated d
 ```
 cheetah/_assets/3D_models/
 ```
+
 Once the models are added, update the path variables in `segment_3d_plotter.py` to reflect their locations correctly.
 
 ## Directory Structure
@@ -18,7 +19,7 @@ Once the models are added, update the path variables in `segment_3d_plotter.py` 
 The expected directory structure for `cheetah/_assets/` is as follows:
 .
 ├── ACHIP_EA1_2021.1351.001
-├── __init__.py
+├── **init**.py
 ├── ares_ea_cavity.glb
 ├── ares_ea_quadrupole.glb
 ├── ares_ea_screen_station.glb
