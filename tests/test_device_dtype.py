@@ -112,6 +112,7 @@ def test_forced_beam_dtype(BeamClass):
         assert getattr(beam, attribute).dtype == torch.float64
 
     beam = BeamClass.from_twiss(
+        beta_x=torch.tensor(1.0),
         beta_y=torch.tensor(2.0, dtype=torch.float64),
         dtype=torch.float32,
     )
