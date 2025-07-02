@@ -823,21 +823,23 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def to_mesh(self, s: float = 0.0) -> "trimesh.Scene":
+    def to_mesh(self, s: float = 0.0) -> "trimesh.Trimesh":
         import trimesh  # Import only here because most people will not need it
 
         scene = trimesh.Scene()
 
         for element in self.elements:
-            element_scene = element.to_mesh(s)
+            element_mesh = element.to_mesh(s)
 
             # assert mesh is not None
-            if isinstance(element_scene, trimesh.Scene):
-                scene += element_scene
+            if isinstance(element_mesh, trimesh.Trimesh):
+                scene += element_mesh
 
             s += element.length.item()
 
-        return scene
+        segment_mesh = scene.to_mesh()
+
+        return segment_mesh
 
     @property
     def defining_features(self) -> list[str]:

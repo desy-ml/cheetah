@@ -224,12 +224,12 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def to_mesh(self, s: float = 0.0) -> "trimesh.Scene":
+    def to_mesh(self, s: float = 0.0) -> "trimesh.Trimesh":
         """
         Return a 3D mesh representation of the element at position `s`.
 
         :param s: Position of the element along the s-axis in meters.
-        :return: A `trimesh.Scene` containing the mesh representation of the element.
+        :return: A 3D mesh representation of the element.
         """
         import math
         from importlib.resources import files
@@ -275,7 +275,9 @@ class Element(ABC, nn.Module):
             transformer.transform_mesh(mesh, translation_vector)
             cleaned_scene.add_geometry(mesh)
 
-        return cleaned_scene
+        mesh = cleaned_scene.to_mesh()
+
+        return mesh
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={repr(self.name)})"
