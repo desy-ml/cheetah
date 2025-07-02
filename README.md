@@ -102,7 +102,7 @@ In order to track a beam through the segment, simply call the segment's `track` 
 outgoing_beam = segment.track(astra_beam)
 ```
 
-You may plot a segment with reference particle traces bay calling
+You may plot a segment with reference particle traces by calling
 
 ```python
 segment.plot_overview(incoming=astra_beam, resolution=0.05)
