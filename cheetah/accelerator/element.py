@@ -231,26 +231,51 @@ class Element(ABC, nn.Module):
         :param s: Position of the element along the s-axis in meters.
         :return: A `trimesh.Scene` containing the mesh representation of the element.
         """
+        import math
         from importlib.resources import files
 
         import trimesh
 
         from cheetah import _assets
+        from cheetah.utils.segment_3d_builder import MeshTransformer
+
+        # Constants
+        DEFAULT_SCALE_FACTOR = 0.20
+        DEFAULT_ROTATION_ANGLE = 2 * math.pi
+        DEFAULT_ROTATION_AXIS = [0, 1, 0]
+
+        config = {
+            "scale_factor": DEFAULT_SCALE_FACTOR,
+            "rotation_angle": DEFAULT_ROTATION_ANGLE,
+            "rotation_axis": DEFAULT_ROTATION_AXIS,
+        }
+
+        transformer = MeshTransformer(
+            scale_factor=config["scale_factor"],
+            rotation_angle=config["rotation_angle"],
+            rotation_axis=config["rotation_axis"],
+        )
 
         # Use importlib.resources to access the asset file.
         asset_path = files(_assets) / f"{self.__class__.__name__}.glb"
 
+        if not asset_path.exists():
+            return None
+
         # Force loading 3D model as a scene to ensure multiple geometries are handled
         # properly. Additioanlly, try to coerce everything into a scene instead of a
         # single mesh.
-        scene = trimesh.load(str(asset_path), file_type="glb", force="scene")
+        raw_scene = trimesh.load(str(asset_path), file_type="glb", force="scene")
 
-        for mesh in scene.geometry.values():
-            # Translation vector [x, y, z] defining the model's position
-            # in 3D space. Determines where the component is placed within the scene
-            translation_vector = [0, 0, self.current_position]
-            self.transformer.transform_mesh(mesh, translation_vector)
-            self.scene.add_geometry(mesh)
+        cleaned_scene = trimesh.Scene()
+        for mesh in raw_scene.geometry.values():
+            # Translation vector [x, y, z] defining the model's position in 3D space.
+            # Determines where the component is placed within the scene.
+            translation_vector = [0, 0, s]
+            transformer.transform_mesh(mesh, translation_vector)
+            cleaned_scene.add_geometry(mesh)
+
+        return cleaned_scene
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={repr(self.name)})"
