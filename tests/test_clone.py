@@ -4,16 +4,16 @@ import torch
 import cheetah
 
 
-@pytest.mark.for_every_mwe_element("mwe_element")
-def test_element_buffer_contents_and_location(mwe_element):
+@pytest.mark.for_every_element("element")
+def test_element_buffer_contents_and_location(element):
     """
     Test that the buffers of cloned elements have the same content while not sharing the
     same memory location.
     """
-    clone = mwe_element.clone()
+    clone = element.clone()
 
-    for feature in mwe_element.defining_tensors:
-        mwe_feature = getattr(mwe_element, feature)
+    for feature in element.defining_tensors:
+        mwe_feature = getattr(element, feature)
         clone_feature = getattr(clone, feature)
 
         assert torch.allclose(mwe_feature, clone_feature, equal_nan=True)

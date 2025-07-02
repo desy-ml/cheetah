@@ -73,18 +73,6 @@ class HorizontalCorrector(Element):
     def is_active(self) -> bool:
         return torch.any(self.angle != 0).item()
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
-        return [
-            HorizontalCorrector(
-                self.length / num_splits,
-                self.angle / num_splits,
-                dtype=self.length.dtype,
-                device=self.length.device,
-            )
-            for i in range(num_splits)
-        ]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:

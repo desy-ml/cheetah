@@ -6,19 +6,19 @@ import torch
 import cheetah
 
 
-@pytest.mark.for_every_mwe_element(
-    "mwe_element", except_for=[cheetah.Marker, cheetah.Segment]
+@pytest.mark.for_every_element(
+    "single_element", except_for=[cheetah.Marker, cheetah.Segment]
 )
-def test_forced_element_dtype(mwe_element):
+def test_forced_element_dtype(single_element):
     """
     Test that the dtype is properly overridden for all element classes.
     """
     # Ensure everything is float32 by default
-    for feature in mwe_element.defining_tensors:
-        assert getattr(mwe_element, feature).dtype == torch.float32
+    for feature in single_element.defining_tensors:
+        assert getattr(single_element, feature).dtype == torch.float32
 
     # Create new element with overriden dtype
-    double_element = mwe_element.double()
+    double_element = single_element.double()
     half_element = double_element.__class__(
         **{
             feature: getattr(double_element, feature)
@@ -31,19 +31,19 @@ def test_forced_element_dtype(mwe_element):
         assert getattr(half_element, feature).dtype == torch.float16
 
 
-@pytest.mark.for_every_mwe_element(
-    "mwe_element", except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
+@pytest.mark.for_every_element(
+    "single_element", except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
 )
-def test_infer_element_dtype(mwe_element):
+def test_infer_element_dtype(single_element):
     """
     Test that the dtype is properly inferred for all element classes.
     """
     # Ensure everything is float32 by default
-    for feature in mwe_element.defining_tensors:
-        assert getattr(mwe_element, feature).dtype == torch.float32
+    for feature in single_element.defining_tensors:
+        assert getattr(single_element, feature).dtype == torch.float32
 
     # Create new element and infer the dtype from passed buffers
-    double_element = mwe_element.double()
+    double_element = single_element.double()
     inferred_element = double_element.__class__(
         **{
             feature: getattr(double_element, feature)
@@ -55,23 +55,23 @@ def test_infer_element_dtype(mwe_element):
         assert getattr(inferred_element, feature).dtype == torch.float64
 
 
-@pytest.mark.for_every_mwe_element("mwe_element")
-def test_conflicting_element_dtype(mwe_element):
+@pytest.mark.for_every_element("element")
+def test_conflicting_element_dtype(element):
     """Test that creating elements with conflicting argument dtypes fails."""
-    arguments = inspect.signature(mwe_element.__init__).parameters
+    arguments = inspect.signature(element.__init__).parameters
 
     # Extract required arguments for this element class
     required_arguments = {
-        name: getattr(mwe_element, name)
+        name: getattr(element, name)
         for name, properties in arguments.items()
         if name != "self" and properties.default is inspect._empty
     }
 
     # Generate list of optional tensor arguments whose dtype can be varied
     optional_tensor_arguments = {
-        feature: getattr(mwe_element, feature)
-        for feature in mwe_element.defining_features
-        if isinstance(getattr(mwe_element, feature), torch.Tensor)
+        feature: getattr(element, feature)
+        for feature in element.defining_features
+        if isinstance(getattr(element, feature), torch.Tensor)
         and feature not in required_arguments
     }
 
@@ -89,21 +89,15 @@ def test_conflicting_element_dtype(mwe_element):
     for name, value in optional_tensor_arguments.items():
         with pytest.raises(AssertionError):
             # Contains conflicting dtype
-            mwe_element.__class__(**{name: value.double()}, **required_arguments)
+            element.__class__(**{name: value.double()}, **required_arguments)
 
         # Conflict can be overriden by manual dtype selection
-        mwe_element.__class__(
+        element.__class__(
             **{name: value.double()}, **required_arguments, dtype=torch.float16
         )
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_forced_beam_dtype(BeamClass):
     """
     Test that the dtype is properly overriden on beam creation.
@@ -125,13 +119,7 @@ def test_forced_beam_dtype(BeamClass):
         assert getattr(beam, attribute).dtype == torch.float32
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_infer_beam_dtype(BeamClass):
     """
     Test that the dtype is properly inferred on beam creation.
@@ -150,13 +138,7 @@ def test_infer_beam_dtype(BeamClass):
         assert getattr(beam, attribute).dtype == torch.float64
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_conflicting_beam_dtype(BeamClass):
     """Test if creating a beam with conflicting argument dtypes fails."""
     with pytest.raises(AssertionError):
@@ -166,17 +148,9 @@ def test_conflicting_beam_dtype(BeamClass):
         )
 
 
-@pytest.mark.parametrize(
-    "BeamClass",
-    [
-        cheetah.ParameterBeam,
-        cheetah.ParticleBeam,
-    ],
-)
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_transformed_beam_dtype(BeamClass):
-    """
-    Test that Beam.transformed_to keeps the dtype by default.
-    """
+    """Test that `Beam.transformed_to` keeps the dtype by default."""
     beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5), dtype=torch.float64)
     beam_attributes = beam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
 
