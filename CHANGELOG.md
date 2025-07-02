@@ -18,6 +18,7 @@
 - Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
 - Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
 - PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
+- Make README example more copy-paste friendly (see #493) (@jank324, @ax3l)
 
 ### 🌟 First Time Contributors
 
