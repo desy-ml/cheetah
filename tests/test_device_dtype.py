@@ -7,7 +7,8 @@ import cheetah
 
 
 @pytest.mark.for_every_element(
-    "single_element", except_for=[cheetah.Marker, cheetah.Segment]
+    "single_element",
+    except_if=lambda e: isinstance(e, (cheetah.Marker, cheetah.Segment)),
 )
 def test_forced_element_dtype(single_element):
     """
@@ -32,7 +33,8 @@ def test_forced_element_dtype(single_element):
 
 
 @pytest.mark.for_every_element(
-    "single_element", except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
+    "single_element",
+    except_if=lambda e: isinstance(e, (cheetah.BPM, cheetah.Marker, cheetah.Segment)),
 )
 def test_infer_element_dtype(single_element):
     """

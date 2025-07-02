@@ -53,7 +53,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     a test function. The user must specify the argument name in the marker via the
     `arg_name` keyword argument, and define an argument of that name in the test
     function's signature. Element classes can be excluded from the test by using the
-    `except_for` keyword argument, which takes a list of element classes.
+    `except_if` keyword argument.
     """
     for_every_mwe_element_marker = metafunc.definition.get_closest_marker(
         "for_every_element"
@@ -68,10 +68,10 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         if for_every_mwe_element_marker.args[0] is not None
         else for_every_mwe_element_marker.kwargs["arg_name"]
     )
-    except_for = (
+    except_if = (
         for_every_mwe_element_marker.args[1]
         if len(for_every_mwe_element_marker.args) > 1
-        else for_every_mwe_element_marker.kwargs.get("except_for", [])
+        else for_every_mwe_element_marker.kwargs.get("except_if", lambda _: False)
     )
 
     # Recursively discover all subclasses of `Element`
@@ -82,24 +82,24 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
     all_element_subclasses = get_all_subclasses(cheetah.Element)
 
-    # Remove subclasses according to `except_for`
-    element_subclasses_to_test = [
-        subclass for subclass in all_element_subclasses if subclass not in except_for
-    ]
-
     # Generate minimal working examples
-    element_mwe_dict = {
+    testcase_dict = {
         subclass: (
             subclass(**ELEMENT_SUBCLASSES_ARGS[subclass]).clone()
             if subclass in ELEMENT_SUBCLASSES_ARGS
             else pytest.param(None, marks=pytest.mark.fail_because_no_mwe_args_defined)
         )
-        for subclass in element_subclasses_to_test
+        for subclass in all_element_subclasses
     }
 
-    metafunc.parametrize(
-        arg_name, element_mwe_dict.values(), ids=element_mwe_dict.keys()
-    )
+    # Remove test cases according to `except_if`
+    filtered_dict = {
+        label: testcase
+        for label, testcase in testcase_dict.items()
+        if not except_if(testcase)
+    }
+
+    metafunc.parametrize(arg_name, filtered_dict.values(), ids=filtered_dict.keys())
 
 
 def pytest_report_header(config) -> str:
