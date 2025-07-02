@@ -149,13 +149,13 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
         if char.isspace() or char in "+-*/^()[]":
             if current_token:
                 if char == "]" and current_key is not None:
-                    # this will throw an index error if current key is invalid
+                    # This will throw an index error if current key is invalid
                     tokens.append(context[current_token][current_key])
                     current_token = ""
                     current_key = None
                     continue
                 if char == "[" and current_token in context:
-                    # we're doing a var[key] lookup, start reading the key
+                    # We're doing a var[key] lookup, start reading the key
                     current_key = ""
                     continue
 
