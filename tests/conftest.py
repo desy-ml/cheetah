@@ -8,39 +8,74 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 ELEMENT_SUBCLASSES_ARGS = {
-    cheetah.Aperture: [{}],
-    cheetah.BPM: [{}],
-    cheetah.Cavity: [{"length": torch.tensor(1.0)}],
-    cheetah.CustomTransferMap: [{"predefined_transfer_map": torch.eye(7)}],
-    cheetah.Dipole: [{"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}],
-    cheetah.Drift: [{"length": torch.tensor([1.0, -1.0])}],
-    cheetah.HorizontalCorrector: [
-        {
+    cheetah.Aperture: {"": {}},
+    cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
+    cheetah.Cavity: {"": {"length": torch.tensor(1.0)}},
+    cheetah.CustomTransferMap: {"": {"predefined_transfer_map": torch.eye(7)}},
+    cheetah.Dipole: {
+        "cheetah": {
+            "length": torch.tensor(1.0),
+            "angle": torch.tensor([1.0, -2.0]),
+            "tracking_method": "cheetah",
+        },
+        "bmadx": {
+            "length": torch.tensor(1.0),
+            "angle": torch.tensor([1.0, -2.0]),
+            "tracking_method": "bmadx",
+        },
+    },
+    cheetah.Drift: {
+        "cheetah": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "cheetah"},
+        "bmadx": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "bmadx"},
+    },
+    cheetah.HorizontalCorrector: {
+        "": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
         }
-    ],
-    cheetah.Marker: [{}],
-    cheetah.Quadrupole: [
-        {
+    },
+    cheetah.Marker: {"": {}},
+    cheetah.Quadrupole: {
+        "cheetah": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
-        }
-    ],
-    cheetah.RBend: [{"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}],
-    cheetah.Screen: [{}],
-    cheetah.Segment: [{"elements": [cheetah.Drift(length=torch.tensor(1.0))]}],
-    cheetah.Sextupole: [{"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])}],
-    cheetah.Solenoid: [{"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}],
-    cheetah.SpaceChargeKick: [{"effect_length": torch.tensor(1.0)}],
-    cheetah.TransverseDeflectingCavity: [{"length": torch.tensor(1.0)}],
-    cheetah.Undulator: [{"length": torch.tensor(1.0)}],
-    cheetah.VerticalCorrector: [
-        {
+            "tracking_method": "cheetah",
+        },
+        "bmadx": {
+            "length": torch.tensor(1.0),
+            "k1": torch.tensor([1.0, -2.0]),
+            "tracking_method": "bmadx",
+        },
+    },
+    cheetah.RBend: {
+        "cheetah": {
+            "length": torch.tensor(1.0),
+            "angle": torch.tensor([1.0, -2.0]),
+            "tracking_method": "cheetah",
+        },
+        "bmadx": {
+            "length": torch.tensor(1.0),
+            "angle": torch.tensor([1.0, -2.0]),
+            "tracking_method": "bmadx",
+        },
+    },
+    # cheetah.Screen: {"": {}},
+    cheetah.Segment: {"": {"elements": [cheetah.Drift(length=torch.tensor(1.0))]}},
+    cheetah.Sextupole: {
+        "": {"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])}
+    },
+    cheetah.Solenoid: {
+        "": {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}
+    },
+    cheetah.SpaceChargeKick: {"": {"effect_length": torch.tensor(1.0)}},
+    cheetah.TransverseDeflectingCavity: {"": {"length": torch.tensor(1.0)}},
+    cheetah.Undulator: {"": {"length": torch.tensor(1.0)}},
+    cheetah.VerticalCorrector: {
+        "": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
         }
-    ],
+    },
 }
 
 
@@ -157,13 +192,17 @@ def for_every_element(
 
     # Generate test cases for all element subclasses
     testcase_dict = {
-        subclass: (
-            subclass(**testcase).clone()
+        (
+            f"{subclass.__name__}-{label}"
+            if len(ELEMENT_SUBCLASSES_ARGS.get(subclass, {"": None})) > 1
+            else subclass.__name__
+        ): (
+            subclass(**testcase)
             if testcase is not None
-            else pytest.param(None, marks=pytest.mark.fail_because_no_mwe_args_defined)
+            else pytest.param(None, marks=pytest.mark.fail_because_no_testcase_defined)
         )
         for subclass in all_element_subclasses
-        for testcase in ELEMENT_SUBCLASSES_ARGS.get(subclass, [None])
+        for label, testcase in ELEMENT_SUBCLASSES_ARGS.get(subclass, {"": None}).items()
     }
 
     # Remove test cases according to `only_if` and `except_if`
