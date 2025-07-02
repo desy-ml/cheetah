@@ -4,7 +4,9 @@ import torch
 import cheetah
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
     """
     Test that the results of tracking through a TDC with the `"bmadx"` tracking method

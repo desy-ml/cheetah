@@ -45,7 +45,11 @@ def test_astra_to_particle_beam():
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
-@pytest.mark.parametrize("desired_dtype", [None, torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "desired_dtype",
+    [None, torch.float32, torch.float64],
+    ids=["default", "float32", "float64"],
+)
 def test_dtypes(BeamClass: cheetah.Beam, desired_dtype: torch.dtype):
     """
     Test that Astra beams are correctly loaded into different types of Cheetah beams

@@ -59,7 +59,9 @@ def test_device_like_torch_module():
     assert element.length.device.type == "cpu"
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_drift_bmadx_tracking(dtype):
     """
     Test that the results of tracking through a drift with the `"bmadx"` tracking method
