@@ -239,21 +239,8 @@ class Element(ABC, nn.Module):
         from cheetah import _assets
         from cheetah.utils.segment_3d_builder import MeshTransformer
 
-        # Constants
-        DEFAULT_SCALE_FACTOR = 0.20
-        DEFAULT_ROTATION_ANGLE = 2 * math.pi
-        DEFAULT_ROTATION_AXIS = [0, 1, 0]
-
-        config = {
-            "scale_factor": DEFAULT_SCALE_FACTOR,
-            "rotation_angle": DEFAULT_ROTATION_ANGLE,
-            "rotation_axis": DEFAULT_ROTATION_AXIS,
-        }
-
         transformer = MeshTransformer(
-            scale_factor=config["scale_factor"],
-            rotation_angle=config["rotation_angle"],
-            rotation_axis=config["rotation_axis"],
+            scale_factor=0.20, rotation_angle=2 * math.pi, rotation_axis=[0, 1, 0]
         )
 
         # Use importlib.resources to access the asset file.
