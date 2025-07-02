@@ -18,5 +18,5 @@ q: quadrupole, L = abs(abs), k1 = 0.23
 s: sextupole, tilt = -0.1, L = 0.3, k2 = 0.42
 v: drift, l = -q[l]
 
-lat: line = (d, b, n, q, s) ! List of lattice elements
+lat: line = (d, b, n, q, s, v) ! List of lattice elements
 use, lat ! Line used to construct the lattice
