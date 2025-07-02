@@ -8,7 +8,7 @@
 
 - Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
 - Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
-- Allows use of previously defined element properties in lattice expressions (ie, referencing the length of a previous element) (see #501) (@amylizzle)
+- Add the ability to the Bmad and Elegant converters to parse expressions that access properties from other elements (see #501, #498) (@amylizzle, @jank324)
 
 ### 🐛 Bug fixes
 
