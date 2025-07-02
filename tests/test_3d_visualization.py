@@ -42,6 +42,8 @@ def test_segment_method():
             cheetah.Drift(length=torch.tensor(0.3)),
             cheetah.Quadrupole(length=torch.tensor(0.2)),
             cheetah.Drift(length=torch.tensor(0.1)),
+            cheetah.HorizontalCorrector(length=torch.tensor(0.1)),
+            cheetah.Drift(length=torch.tensor(0.3)),
         ],
     )
     mesh = segment.to_mesh(s=0.0)
