@@ -60,9 +60,6 @@ class BPM(Element):
 
         return incoming.clone()
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
