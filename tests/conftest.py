@@ -105,13 +105,13 @@ def seed_random_generators(request):
 
 
 @pytest.fixture(autouse=True)
-def fail_because_no_mwe_args_defined(request):
+def fail_because_no_testcase_defined(request):
     """
-    Mark a test to fail because no MWE args are defined for the given `Element`
+    Mark a test to fail because no testcases are defined for the given `Element`
     subclass.
     """
-    if request.node.get_closest_marker("no_mwe") is not None:
-        pytest.fail("No MWE args are defined for this Element subclass.")
+    if request.node.get_closest_marker("fail_because_no_testcase_defined") is not None:
+        pytest.fail("No Testcases are defined for this Element subclass.")
 
 
 @pytest.fixture
