@@ -73,8 +73,11 @@ class Aperture(Element):
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
-        if not (isinstance(incoming, ParticleBeam) and self.is_active):
+        if not self.is_active:
             return incoming
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Aperture tracking is currently only supported for `ParticleBeam`."
 
         assert torch.all(self.x_max >= 0) and torch.all(self.y_max >= 0)
         assert self.shape in [
