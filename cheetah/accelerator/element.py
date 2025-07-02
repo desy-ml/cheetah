@@ -231,17 +231,11 @@ class Element(ABC, nn.Module):
         :param s: Position of the element along the s-axis in meters.
         :return: A 3D mesh representation of the element.
         """
-        import math
         from importlib.resources import files
 
         import trimesh
 
         from cheetah import _assets
-        from cheetah.utils.segment_3d_builder import MeshTransformer
-
-        transformer = MeshTransformer(
-            scale_factor=0.20, rotation_angle=2 * math.pi, rotation_axis=[0, 1, 0]
-        )
 
         # Use importlib.resources to access the asset file.
         asset_path = files(_assets) / f"{self.__class__.__name__}.glb"
@@ -258,8 +252,7 @@ class Element(ABC, nn.Module):
         for mesh in raw_scene.geometry.values():
             # Translation vector [x, y, z] defining the model's position in 3D space.
             # Determines where the component is placed within the scene.
-            translation_vector = [0, 0, s]
-            transformer.transform_mesh(mesh, translation_vector)
+            mesh.apply_translation([0, 0, s])
             cleaned_scene.add_geometry(mesh)
 
         mesh = cleaned_scene.to_mesh()
