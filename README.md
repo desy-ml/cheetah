@@ -33,22 +33,23 @@ pip install cheetah-accelerator
 A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
 
 ```python
+import cheetah
 import torch
-from cheetah import BPM, Drift, HorizontalCorrector, Segment, VerticalCorrector
 
-segment = Segment(
+segment = cheetah.Segment(
     elements=[
-        BPM(name="BPM1SMATCH"),
-        Drift(length=torch.tensor(1.0)),
-        BPM(name="BPM6SMATCH"),
-        Drift(length=torch.tensor(1.0)),
-        VerticalCorrector(length=torch.tensor(0.3), name="V7SMATCH"),
-        Drift(length=torch.tensor(0.2)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H10SMATCH"),
-        Drift(length=torch.tensor(7.0)),
-        HorizontalCorrector(length=torch.tensor(0.3), name="H12SMATCH"),
-        Drift(length=torch.tensor(0.05)),
-        BPM(name="BPM13SMATCH"),
+        cheetah.Drift(length=torch.tensor(0.175)),
+        cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM1"),
+        cheetah.Drift(length=torch.tensor(0.428)),
+        cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM2"),
+        cheetah.Drift(length=torch.tensor(0.204)),
+        cheetah.VerticalCorrector(length=torch.tensor(0.02), name="AREAMCVM1"),
+        cheetah.Drift(length=torch.tensor(0.204)),
+        cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM3"),
+        cheetah.Drift(length=torch.tensor(0.179)),
+        cheetah.HorizontalCorrector(length=torch.tensor(0.02), name="AREAMCHM1"),
+        cheetah.Drift(length=torch.tensor(0.45)),
+        cheetah.Screen(name="AREABSCR1"),
     ]
 )
 ```
@@ -56,7 +57,7 @@ segment = Segment(
 Alternatively you can create a segment from an Ocelot cell by running
 
 ```python
-segment = Segment.from_ocelot(cell)
+segment = cheetah.Segment.from_ocelot(cell)
 ```
 
 All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
@@ -65,24 +66,26 @@ All elements can be accesses as a property of the segment via their name. The st
 segment.AREAMQZM2.k1 = torch.tensor(4.2)
 ```
 
-In order to track a beam through the segment, simply call the segment like so
-
-```python
-outgoing_beam = segment.track(incoming_beam)
-```
-
 You can choose to track either a beam defined by its parameters (fast) or by its particles (precise). _Cheetah_ defines two different beam classes for this purpose and beams may be created by
 
 ```python
-beam1 = ParameterBeam.from_parameters()
-beam2 = ParticleBeam.from_parameters()
+parameter_beam = cheetah.ParameterBeam.from_twiss(beta_x=torch.tensor(3.14))
+particle_beam = cheetah.ParticleBeam.from_twiss(
+    beta_x=torch.tensor(3.14), num_particles=10_000
+)
 ```
 
 It is also possible to load beams from Ocelot `ParticleArray` or Astra particle distribution files for both types of beam
 
 ```python
-ocelot_beam = ParticleBeam.from_ocelot(parray)
-astra_beam = ParticleBeam.from_astra(filepath)
+ocelot_beam = cheetah.ParticleBeam.from_ocelot(parray)
+astra_beam = cheetah.ParticleBeam.from_astra(filepath)
+```
+
+In order to track a beam through the segment, simply call the segment like so
+
+```python
+outgoing_beam = segment.track(astra_beam)
 ```
 
 You may plot a segment with the beam position and size by calling
