@@ -231,6 +231,7 @@ class Element(ABC, nn.Module):
         :param s: Position of the element along the s-axis in meters.
         :return: A 3D mesh representation of the element.
         """
+        # Import only here because most people will not need it
         from importlib.resources import files
 
         import trimesh
