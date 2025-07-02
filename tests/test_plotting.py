@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -5,6 +6,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_twiss_plot():
     """
     Test that the Twiss plot does not raise an exception using the ARES EA as an
@@ -28,10 +30,10 @@ def test_twiss_plot():
     segment.plot_twiss(incoming_beam)
 
 
-def test_reference_particle_plot():
+def test_mean_and_std_particle_plot():
     """
-    Test that the reference particle plot does not raise an exception using the example
-    from the `simple.ipynb` example notebook from the documentation.
+    Test that the mean and standard deviation particle plot does not raise an exception
+    using the example from the `simple.ipynb` example notebook from the documentation.
     """
     segment = cheetah.Segment(
         elements=[
@@ -59,10 +61,11 @@ def test_reference_particle_plot():
     segment.plot_overview(incoming=incoming)
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_twiss_plot_vectorized_2d():
     """
-    Test that the Twiss plot does not raise an exception using the ARES EA as an
-    example and when the model has two vector dimensions.
+    Test that the Twiss plot does not raise an exception using the ARES EA as an example
+    and when the model has two vector dimensions.
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     segment.AREAMQZM1.k1 = torch.tensor(5.0)
@@ -82,19 +85,20 @@ def test_twiss_plot_vectorized_2d():
     segment.plot_twiss(incoming=incoming, vector_idx=(0, 2))
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_reference_particle_plot_vectorized_2d():
     """
-    Test that the Twiss plot does not raise an exception using the ARES EA as an
-    example and when the model has two vector dimensions.
+    Test that the Twiss plot does not raise an exception using the ARES EA as an example
+    and when the model has two vector dimensions.
     """
     segment = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     segment.AREAMQZM1.k1 = torch.tensor(5.0)
-    segment.AREAMQZM2.k1 = torch.tensor([[-5.0, -2.0, -1.0], [1.0, 2.0, 5.0]])
+    segment.AREAMQZM2.k1 = torch.tensor([1.0, 2.0, 5.0])
     segment.AREAMCVM1.k1 = torch.tensor(1e-3)
     segment.AREAMQZM3.k1 = torch.tensor(5.0)
     segment.AREAMCHM1.k1 = torch.tensor(-2e-3)
     segment.Drift_AREAMCHM1.length = (
-        torch.FloatTensor(2, 3).uniform_(0.9, 1.1) * segment.Drift_AREAMCHM1.length
+        torch.FloatTensor(2, 1).uniform_(0.9, 1.1) * segment.Drift_AREAMCHM1.length
     )
 
     incoming = cheetah.ParticleBeam.from_astra(
@@ -140,12 +144,13 @@ def test_plotting_with_gradients():
     segment.plot_twiss(incoming=beam)
 
 
-def test_plot_6d_particle_beam_distribution():
+@pytest.mark.parametrize("style", ["histogram", "contour"])
+def test_plot_6d_particle_beam_distribution(style):
     """Test that the 6D `ParticleBeam` distribution plot does not raise an exception."""
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     # Run the plotting to see if it raises an exception
-    _ = beam.plot_distribution(bin_ranges="unit_same", plot_2d_kws={"contour": True})
+    _ = beam.plot_distribution(bin_ranges="unit_same", plot_2d_kws={"style": style})
 
 
 def test_plot_particle_beam_point_cloud():

@@ -34,3 +34,8 @@
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qv0.5.17 (2023-02-05)\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QImprove docstrings (@FelixTheilen)\nImplement better testing with pytest (@FelixTheilen)\nSetup formatting with \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q as well as \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q listing (@cr-xu)\nAdd type annotations (@jank324)\nSetup Sphinx documentation on readthedocs (@jank324)\\E$"}
 {"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QFix dependencies on readthedocs (see #54) (@jank324)\nFix error when tracking \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q through segment on CPU (see #68) (@cr-xu)\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qformat pytest Documentation Status codestyle License: GPL v3 PyPI Downloads\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\Qformat pytest Documentation Status codestyle License: GPL v3 PyPI Downloads\\E$"}
+{"rule":"LICENCE_LICENSE_NOUN_SINGULAR","sentence":"^\\Qformat pytest Documentation Status codestyle License: GPL v3 PyPI Downloads\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere the keyword argument \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is the incoming beam represented in the plot.\\E$"}
+{"rule":"WHITESPACE_RULE","sentence":"^$"}

@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import ocelot
+import pytest
 import torch
 
 import cheetah
@@ -11,7 +12,7 @@ from .resources import ARESlatticeStage3v1_9 as ares
 
 def test_dipole():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element.
     """
     # Cheetah
@@ -38,7 +39,7 @@ def test_dipole():
 
 def test_dipole_with_float64():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element using float64 precision.
     """
     # Cheetah
@@ -67,7 +68,7 @@ def test_dipole_with_float64():
 
 def test_dipole_with_fringe_field():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element when there are fringe fields.
     """
     # Cheetah
@@ -99,7 +100,7 @@ def test_dipole_with_fringe_field():
 
 def test_dipole_with_fringe_field_and_tilt():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element when there are fringe fields and tilt, and the
     e1 and e2 angles are set.
     """
@@ -145,7 +146,7 @@ def test_dipole_with_fringe_field_and_tilt():
 
 def test_aperture():
     """
-    Test that the tracking results through a Cheeath `Aperture` element match those
+    Test that the tracking results through a Cheetah `Aperture` element match those
     through an Oclet `Aperture` element.
     """
     # Cheetah
@@ -184,7 +185,7 @@ def test_aperture():
 
 def test_aperture_elliptical():
     """
-    Test that the tracking results through an elliptical Cheeath `Aperture` element
+    Test that the tracking results through an elliptical Cheetah `Aperture` element
     match those through an elliptical Oclet `Aperture` element.
     """
     # Cheetah
@@ -229,7 +230,7 @@ def test_aperture_elliptical():
 
 def test_solenoid():
     """
-    Test that the tracking results through a Cheeath `Solenoid` element match those
+    Test that the tracking results through a Cheetah `Solenoid` element match those
     through an Oclet `Solenoid` element.
     """
     # Cheetah
@@ -254,6 +255,7 @@ def test_solenoid():
     )
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ares_ea():
     """
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES
@@ -394,7 +396,7 @@ def test_astra_import():
 
 def test_quadrupole():
     """
-    Test if the tracking results through a Cheeath `Quadrupole` element match those
+    Test if the tracking results through a Cheetah `Quadrupole` element match those
     through an Ocelot `Quadrupole` element.
     """
     # Cheetah
@@ -436,7 +438,7 @@ def test_quadrupole():
 
 def test_tilted_quadrupole():
     """
-    Test if the tracking results through a tilted Cheeath `Quadrupole` element match
+    Test if the tracking results through a tilted Cheetah `Quadrupole` element match
     those through a tilted Ocelot `Quadrupole` element.
     """
     # Cheetah
@@ -477,7 +479,7 @@ def test_tilted_quadrupole():
 
 def test_sbend():
     """
-    Test if the tracking results through a Cheeath `Dipole` element match those through
+    Test if the tracking results through a Cheetah `Dipole` element match those through
     an Ocelot `SBend` element.
     """
     # Cheetah
@@ -518,7 +520,7 @@ def test_sbend():
 
 def test_rbend():
     """
-    Test if the tracking results through a Cheeath `RBend` element match those through
+    Test if the tracking results through a Cheetah `RBend` element match those through
     an Ocelot `RBend` element.
     """
     # Cheetah
@@ -709,11 +711,11 @@ def test_cavity():
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
     )
     assert np.allclose(
-        outgoing_beam.particles[:, :, 5].cpu().numpy(),
+        outgoing_beam.particles[:, 5].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 5],
     )
     assert np.allclose(
-        outgoing_beam.particles[:, :, 4].cpu().numpy(),
+        outgoing_beam.particles[:, 4].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 4],
     )
 
@@ -763,10 +765,10 @@ def test_cavity_non_zero_phase():
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
     )
     assert np.allclose(
-        outgoing_beam.particles[:, :, 5].cpu().numpy(),
+        outgoing_beam.particles[:, 5].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 5],
     )
     assert np.allclose(
-        outgoing_beam.particles[:, :, 4].cpu().numpy(),
+        outgoing_beam.particles[:, 4].cpu().numpy(),
         outgoing_parray.rparticles.transpose()[:, 4],
     )

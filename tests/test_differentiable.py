@@ -32,14 +32,13 @@ def test_simple_quadrupole():
     assert outgoing_beam.particles.grad_fn is not None
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ea_magnets():
     """
     Test that gradients are tracking when the magnet settings in the ARES experimental
     area require grad.
     """
-    ea = cheetah.Segment.from_ocelot(ares.cell, warnings=False).subcell(
-        "AREASOLA1", "AREABSCR1"
-    )
+    ea = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
@@ -55,35 +54,33 @@ def test_ea_magnets():
     assert outgoing_beam.particles.grad_fn is not None
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ea_incoming_parameter_beam():
     """
     Test that gradients are tracking when incoming beam (being a `ParameterBeam`)
     requires grad.
     """
-    ea = cheetah.Segment.from_ocelot(ares.cell, warnings=False).subcell(
-        "AREASOLA1", "AREABSCR1"
-    )
+    ea = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     incoming_beam = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    incoming_beam._mu = nn.Parameter(incoming_beam._mu)
-    incoming_beam._cov = nn.Parameter(incoming_beam._cov)
+    incoming_beam.mu = nn.Parameter(incoming_beam.mu)
+    incoming_beam.cov = nn.Parameter(incoming_beam.cov)
 
     outgoing_beam = ea.track(incoming_beam)
 
-    assert outgoing_beam._mu.grad_fn is not None
-    assert outgoing_beam._cov.grad_fn is not None
+    assert outgoing_beam.mu.grad_fn is not None
+    assert outgoing_beam.cov.grad_fn is not None
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ea_incoming_particle_beam():
     """
     Test that gradients are tracking when incoming beam (being a `ParticleBeam`)
     requires grad.
     """
-    ea = cheetah.Segment.from_ocelot(ares.cell, warnings=False).subcell(
-        "AREASOLA1", "AREABSCR1"
-    )
+    ea = cheetah.Segment.from_ocelot(ares.cell).subcell("AREASOLA1", "AREABSCR1")
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
@@ -95,55 +92,15 @@ def test_ea_incoming_particle_beam():
     assert outgoing_beam.particles.grad_fn is not None
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
-)
-def test_nonleaf_tracking(ElementClass):
-    """
-    Test that a beam with non-leaf tensors as elements can be tracked through elements
-    with length parameter.
-    """
+@pytest.mark.for_every_element("element")
+def test_nonleaf_tracking(element):
+    """Test that a beam with non-leaf tensors as elements can be tracked."""
     beam = cheetah.ParticleBeam.from_parameters()
 
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
-            ElementClass(length=torch.tensor(2.0)),
-        ]
-    )
-    segment.track(beam)
-
-
-@pytest.mark.parametrize(
-    "ElementClass", [cheetah.Aperture, cheetah.BPM, cheetah.Screen]
-)
-def test_nonleaf_lenghtless_elements(ElementClass):
-    """
-    Test that a beam with non-leaf tensors as elements can be tracked through elements
-    without length parameter.
-
-    The split into lengthless elements is necessary since there is no common constructor
-    for all element classes. Some require a length, some cannot handle a length
-    argument.
-    """
-    beam = cheetah.ParticleBeam.from_parameters()
-
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
-            ElementClass(is_active=True),
+            element,
         ]
     )
     segment.track(beam)
@@ -171,3 +128,20 @@ def test_parameters_at_initialization():
     assert list(dipole_initial.parameters()) == list(dipole_assigned.parameters())
     assert len(list(dipole_initial.parameters())) == 1
     assert parameter in dipole_initial.parameters()
+
+
+def test_requiregrad_at_particlebeam_initialization():
+    """
+    Test that passing a torch.tensor with requires_grad=True at
+    ParticleBeam.from_parameters initialization creates a beam with proper
+    gradient tracking.
+    """
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100,
+        mu_x=torch.tensor(0.0, requires_grad=True),
+        mu_y=torch.tensor(0.0, requires_grad=True),
+        energy=torch.tensor(1e6),
+    )
+
+    assert beam.x.requires_grad
+    assert beam.y.requires_grad

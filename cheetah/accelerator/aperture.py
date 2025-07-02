@@ -1,11 +1,11 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -23,29 +23,38 @@ class Aperture(Element):
     :param shape: Shape of the aperture. Can be "rectangular" or "elliptical".
     :param is_active: If the aperture actually blocks particles.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
-        x_max: Optional[torch.Tensor] = None,
-        y_max: Optional[torch.Tensor] = None,
+        x_max: torch.Tensor | None = None,
+        y_max: torch.Tensor | None = None,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
         is_active: bool = True,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.register_buffer("x_max", torch.tensor(float("inf"), **factory_kwargs))
-        self.register_buffer("y_max", torch.tensor(float("inf"), **factory_kwargs))
-
-        if x_max is not None:
-            self.x_max = torch.as_tensor(x_max, **factory_kwargs)
-        if y_max is not None:
-            self.y_max = torch.as_tensor(y_max, **factory_kwargs)
+        self.register_buffer_or_parameter(
+            "x_max",
+            torch.as_tensor(
+                x_max if x_max is not None else float("inf"), **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "y_max",
+            torch.as_tensor(
+                y_max if y_max is not None else float("inf"), **factory_kwargs
+            ),
+        )
 
         self.shape = shape
         self.is_active = is_active
@@ -56,7 +65,7 @@ class Aperture(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.x_max.device
         dtype = self.x_max.dtype
 
@@ -95,15 +104,15 @@ class Aperture(Element):
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities * survived_mask,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
+            s=incoming.s,
+            species=incoming.species.clone(),
         )
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for aperture properly, for now just return self
-        return [self]
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2

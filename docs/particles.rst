@@ -14,3 +14,7 @@ Particles
 .. automodule:: particles.particle_beam
     :members:
     :undoc-members:
+
+.. automodule:: particles.species
+    :members:
+    :undoc-members:

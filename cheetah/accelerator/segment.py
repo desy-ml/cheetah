@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Iterator
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -13,8 +13,8 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
-from cheetah.particles import Beam
-from cheetah.utils import UniqueNameGenerator
+from cheetah.particles import Beam, Species
+from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -25,12 +25,26 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
-    def __init__(self, elements: list[Element], name: Optional[str] = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        elements: list[Element],
+        name: str | None = None,
+        sanitize_name: bool = False,
+    ) -> None:
+        super().__init__(name=name, sanitize_name=sanitize_name)
 
-        self.elements = nn.ModuleList(elements)
+        # Segment inherits `length` as a buffer from `Element`. Since `length` is
+        # overwritten as a standard Python property, this is misleading when calling
+        # `Segment.buffers()`. We therefore manually remove `length` from the list of
+        # buffers.
+        del self._buffers["length"]
+
+        self.register_module("elements", nn.ModuleList(elements))
 
         for element in self.elements:
             # Make elements accessible via .name attribute. If multiple elements have
@@ -43,17 +57,52 @@ class Segment(Element):
             else:
                 self.__dict__[element.name] = element
 
-    def subcell(self, start: str, end: str) -> "Segment":
-        """Extract a subcell `[start, end]` from an this segment."""
+    def subcell(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        include_start: bool = True,
+        include_end: bool = True,
+    ) -> "Segment":
+        """
+        Extract a subcell from this segment.
+
+        If either `start` or `end` is `None`, the subcell starts or ends at the same
+        element as the original segment. If `start` or `end` is not part of the segment,
+        a `ValueError` is raised.
+
+        :param start: Name of the element at the start of the subcell. If `None` is
+            passed, the subcell starts at the same element as the original segment.
+        :param end: Name of the element at the end of the subcell. If `None` is
+            passed, the subcell ends at the same element as the original segment.
+        :param include_start: If `True`, `start` is included in the subcell, otherwise
+            not.
+        :param include_end: If `True`, `end` is included in the subcell, otherwise not.
+        :return: Subcell of elements from `start` to `end`.
+        """
+        is_start_in_segment = start is None or start in self.__dict__
+        if not is_start_in_segment:
+            raise ValueError(f"Element {start} is not part of the segment.")
+        is_end_in_segment = end is None or end in self.__dict__
+        if not is_end_in_segment:
+            raise ValueError(f"Element {end} is not part of the segment.")
+
         subcell = []
-        is_in_subcell = False
+        is_in_subcell = start is None
         for element in self.elements:
             if element.name == start:
                 is_in_subcell = True
+                if include_start:
+                    subcell.append(element)
+                continue
+
+            if element.name == end:
+                if include_end and is_in_subcell:
+                    subcell.append(element)
+                break
+
             if is_in_subcell:
                 subcell.append(element)
-            if element.name == end:
-                break
 
         return self.__class__(subcell)
 
@@ -72,7 +121,7 @@ class Segment(Element):
         return Segment(elements=flattened_elements, name=self.name)
 
     def transfer_maps_merged(
-        self, incoming_beam: Beam, except_for: Optional[list[str]] = None
+        self, incoming_beam: Beam, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where the transfer maps of skipable elements are merged into
@@ -122,7 +171,7 @@ class Segment(Element):
         return Segment(elements=merged_elements, name=self.name)
 
     def without_inactive_markers(
-        self, except_for: Optional[list[str]] = None
+        self, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where all inactive markers are removed. This can be used to
@@ -149,7 +198,7 @@ class Segment(Element):
         )
 
     def without_inactive_zero_length_elements(
-        self, except_for: Optional[list[str]] = None
+        self, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where all inactive zero length elements are removed. This can
@@ -177,7 +226,7 @@ class Segment(Element):
         )
 
     def inactive_elements_as_drifts(
-        self, except_for: Optional[list[str]] = None
+        self, except_for: list[str] | None = None
     ) -> "Segment":
         """
         Return a segment where all inactive elements (that have a length) are replaced
@@ -213,19 +262,26 @@ class Segment(Element):
         )
 
     @classmethod
-    def from_lattice_json(cls, filepath: str) -> "Segment":
+    def from_lattice_json(
+        cls,
+        filepath: str,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> "Segment":
         """
         Load a Cheetah model from a JSON file.
 
-        :param filename: Name/path of the file to load the lattice from.
+        :param filepath: Path of the file to load the lattice from.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return load_cheetah_model(filepath)
+        return load_cheetah_model(filepath, device=device, dtype=dtype)
 
     def to_lattice_json(
         self,
         filepath: str,
-        title: Optional[str] = None,
+        title: str | None = None,
         info: str = "This is a placeholder lattice description",
     ) -> None:
         """
@@ -244,10 +300,10 @@ class Segment(Element):
     def from_ocelot(
         cls,
         cell,
-        name: Optional[str] = None,
-        warnings: bool = True,
-        device=None,
-        dtype=torch.float32,
+        name: str | None = None,
+        sanitize_names: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
         **kwargs,
     ) -> "Segment":
         """
@@ -261,27 +317,34 @@ class Segment(Element):
 
         :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
         :param name: Unique identifier for the entire segment.
-        :param warnings: Whether to print warnings when objects are not supported by
-            Cheetah or converted with potentially unexpected behavior.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
+        :param device: Device to place the lattice elements on.
+        :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
         """
         from cheetah.converters import ocelot
 
         converted = [
             ocelot.convert_element_to_cheetah(
-                element, warnings=warnings, device=device, dtype=dtype
+                element,
+                sanitize_name=sanitize_names,
+                device=device,
+                dtype=dtype,
             )
             for element in cell
         ]
-        return cls(converted, name=name, **kwargs)
+        return cls(converted, name=name, sanitize_name=sanitize_names, **kwargs)
 
     @classmethod
     def from_bmad(
         cls,
         bmad_lattice_file_path: str,
-        environment_variables: Optional[dict] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        environment_variables: dict | None = None,
+        sanitize_names: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from a Bmad lattice file.
@@ -294,13 +357,16 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return bmad.convert_lattice_to_cheetah(
-            bmad_lattice_file_path, environment_variables, device, dtype
+            bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -308,14 +374,18 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        device: Optional[Union[str, torch.device]] = None,
-        dtype: torch.dtype = torch.float32,
+        sanitize_names: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
         Read a Cheetah segment from an elegant lattice file.
 
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param name: Name of the root element
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the elegant lattice.
@@ -323,11 +393,11 @@ class Segment(Element):
 
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice_to_cheetah(
-            elegant_lattice_file_path, name, device, dtype
+            elegant_lattice_file_path, name, sanitize_names, device, dtype
         )
 
     @classmethod
-    def from_nx_tables(cls, filepath: Union[Path, str]) -> "Element":
+    def from_nx_tables(cls, filepath: Path | str) -> "Element":
         """
         Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
         `Segment`.
@@ -351,11 +421,11 @@ class Segment(Element):
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
-                tm = torch.matmul(element.transfer_map(energy), tm)
+                tm = element.transfer_map(energy, species) @ tm
             return tm
         else:
             return None
@@ -365,13 +435,24 @@ class Segment(Element):
             return super().track(incoming)
         else:
             todos = []
+            continuous_skippable_elements = []
             for element in self.elements:
-                if not element.is_skippable:
-                    todos.append(element)
-                elif not todos or not todos[-1].is_skippable:
-                    todos.append(Segment([element], name="temporary_todo"))
+                if element.is_skippable:
+                    # Collect skippable elements until a non-skippable element is found
+                    continuous_skippable_elements.append(element)
                 else:
-                    todos[-1].elements.append(element)
+                    # If a non-skippable element is found, merge the skippable elements
+                    # and append them before the non-skippable element
+                    if len(continuous_skippable_elements) > 0:
+                        todos.append(Segment(elements=continuous_skippable_elements))
+                        continuous_skippable_elements = []
+
+                    todos.append(element)
+
+            # If there are still skippable elements at the end of the segment append
+            # them as well
+            if len(continuous_skippable_elements) > 0:
+                todos.append(Segment(elements=continuous_skippable_elements))
 
             for todo in todos:
                 incoming = todo.track(incoming)
@@ -390,125 +471,212 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
-        element_lengths = [element.length for element in self.elements]
-        element_ss = [torch.tensor(0.0)] + [
-            sum(element_lengths[: i + 1]) for i, _ in enumerate(element_lengths)
-        ]
-        element_ss = [s + element_s for element_s in element_ss]
-        broadcast_ss = torch.broadcast_tensors(*element_ss)
-        stacked_ss = torch.stack(broadcast_ss)
-        dimension_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
+    def beam_along_segment_generator(
+        self, incoming: Beam, resolution: float | None = None
+    ) -> Iterator[Beam]:
+        """
+        Generator for beam objects along the segment either at the end of each element
+        or at a given resolution.
 
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :return: Generator that yields the beam objects along the segment.
+        """
+        # If a resolution is passed, run this method for the split Segment
+        if resolution is not None:
+            yield from self.__class__(
+                elements=self.split(resolution), name=f"{self.name}_split"
+            ).beam_along_segment_generator(incoming)
+        else:
+            yield incoming
+            for element in self.elements:
+                outgoing = element.track(incoming)
+                yield outgoing
+                incoming = outgoing
+
+    def get_beam_attrs_along_segment(
+        self,
+        attr_names: tuple[str, ...] | str,
+        incoming: Beam,
+        resolution: float | None = None,
+    ) -> tuple[torch.Tensor, ...] | torch.Tensor:
+        """
+        Get metrics along the segment either at the end of each element or at a given
+        resolution.
+
+        :param attr_names: Metrics to compute. Can be a single metric or a tuple of
+            metrics. Supported metrics are any property of beam class of `incoming`.
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :return: Tuple of tensors containing the requested metrics along the segment.
+        """
+        attr_name_tuple = attr_names if isinstance(attr_names, tuple) else (attr_names,)
+
+        results = zip(
+            *(
+                tuple(getattr(beam, attr_name) for attr_name in attr_name_tuple)
+                for beam in self.beam_along_segment_generator(
+                    incoming, resolution=resolution
+                )
+            )
+        )
+        broadcasted_results = tuple(
+            torch.stack(
+                torch.broadcast_tensors(*attr_tensor),
+                dim=-(incoming.UNVECTORIZED_NUM_ATTR_DIMS[attr_name] + 1),
+            )
+            for attr_tensor, attr_name in zip(results, attr_name_tuple)
+        )
+
+        return (
+            broadcasted_results
+            if isinstance(attr_names, tuple)
+            else broadcasted_results[0]
+        )
+
+    def set_attrs_on_every_element_of_type(
+        self,
+        element_type: type[Element] | tuple[type[Element]],
+        is_recursive: bool = True,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """
+        Set attributes on every element of a specific type in the segment.
+
+        :param element_type: Type of the elements to set the attributes for.
+        :param is_recursive: If `True`, the this method is applied to nested `Segment`s
+            as well. If `False`, only the elements directly in the top-level `Segment`
+            are considered.
+        :param kwargs: Attributes to set and their values.
+        """
+        for element in self.elements:
+            if isinstance(element, element_type):
+                for key, value in kwargs.items():
+                    setattr(element, key, value)
+            elif is_recursive and isinstance(element, Segment):
+                element.set_attrs_on_every_element_of_type(
+                    element_type, is_recursive=True, **kwargs
+                )
+
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
+        element_lengths = [element.length for element in self.elements]
+        broadcast_element_lengths = torch.broadcast_tensors(*element_lengths)
+        stacked_element_lengths = torch.stack(broadcast_element_lengths, dim=-1)
+        element_end_s_positions = torch.cumsum(stacked_element_lengths, dim=-1)
+        s_positions = torch.cat(
+            (
+                torch.zeros_like(element_end_s_positions[..., :1]),
+                element_end_s_positions,
+            ),
+            dim=-1,
+        )
+
+        # The element lengths might not capture the entire vector shape with the
+        # incoming beam used in plotting functions that might use this function. The
+        # following tries to extract the correct vector index for just the s positions
+        # of the elements, while preserving the ability to use this element plotting
+        # function without an incoming beam.
         plot_ss = (
-            dimension_reordered_ss[vector_idx]
-            if stacked_ss.dim() > 1
-            else dimension_reordered_ss
+            s_positions[
+                squash_index_for_unavailable_dims(vector_idx, s_positions.shape)
+            ]
+            if s_positions.dim() > 1
+            else s_positions
         ).detach()
 
         ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
 
         for element, s in zip(self.elements, plot_ss[:-1]):
-            element.plot(ax, s, vector_idx)
+            element.plot(s, vector_idx, ax)
 
         ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
         ax.set_yticks([])
 
-    def plot_reference_particle_traces(
+        return ax
+
+    def plot_mean_and_std(
         self,
         axx: plt.Axes,
         axy: plt.Axes,
         incoming: Beam,
-        num_particles: int = 10,
-        resolution: float = 0.01,
-        vector_idx: Optional[tuple] = None,
+        resolution: float | None = None,
+        vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot `n` reference particles along the segment view in x- and y-direction.
+        Plot the mean (i.e. beam position) and standard deviation (i.e. beam size) of
+        the beam along the segment view in x- and y-direction.
 
         :param axx: Axes to plot the particle traces into viewed in x-direction.
         :param axy: Axes to plot the particle traces into viewed in y-direction.
-        :param incoming: Entering beam from which the reference particles are sampled.
-        :param num_particles: Number of reference particles to plot. Must not be larger
-            than number of particles passed in `beam`.
-        :param resolution: Minimum resolution of the tracking of the reference particles
-            in the plot.
+        :param incoming: Entering beam for which the position and size are shown
+        :param resolution: Minimum resolution of the tracking of the beam position and
+            beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
         """
-        reference_segment = self.clone()
-        splits = reference_segment.split(resolution=torch.tensor(resolution))
+        reference_segment = self.clone()  # Prevent side effects when plotting
 
-        split_lengths = [split.length for split in splits]
-        ss = [torch.tensor(0.0)] + [
-            sum(split_lengths[: i + 1]) for i, _ in enumerate(split_lengths)
-        ]
-        broadcast_ss = torch.broadcast_tensors(*ss)
-        stacked_ss = torch.stack(broadcast_ss)
-        dimensions_reordered_ss = stacked_ss.movedim(0, -1)  # Place vector dims first
+        ss, x_means, x_stds, y_means, y_stds = (
+            reference_segment.get_beam_attrs_along_segment(
+                ("s", "mu_x", "sigma_x", "mu_y", "sigma_y"),
+                incoming,
+                resolution=resolution,
+            )
+        )
+        ss, x_means, x_stds, y_means, y_stds = torch.broadcast_tensors(
+            ss, x_means, x_stds, y_means, y_stds
+        )
 
-        references = [incoming.linspaced(num_particles)]
-        for split in splits:
-            sample = split(references[-1])
-            references.append(sample)
+        plot_ss, plot_x_means, plot_x_stds, plot_y_means, plot_y_stds = (
+            (metric[vector_idx] if metric.dim() > 1 else metric).detach()
+            for metric in (ss, x_means, x_stds, y_means, y_stds)
+        )
 
-        xs = [reference_beam.x for reference_beam in references]
-        broadcast_xs = torch.broadcast_tensors(*xs)
-        stacked_xs = torch.stack(broadcast_xs)
-        dimension_reordered_xs = stacked_xs.movedim(0, -1)  # Place vector dims first
+        axx.plot(plot_ss, plot_x_means)
+        axx.fill_between(
+            plot_ss, plot_x_means - plot_x_stds, plot_x_means + plot_x_stds, alpha=0.4
+        )
 
-        ys = [reference_beam.y for reference_beam in references]
-        broadcast_ys = torch.broadcast_tensors(*ys)
-        stacked_ys = torch.stack(broadcast_ys)
-        dimension_reordered_ys = stacked_ys.movedim(0, -1)  # Place vector dims first
-
-        plot_ss = (
-            dimensions_reordered_ss[vector_idx]
-            if stacked_ss.dim() > 1
-            else dimensions_reordered_ss
-        ).detach()
-        plot_xs = (
-            dimension_reordered_xs[vector_idx]
-            if stacked_xs.dim() > 2
-            else dimension_reordered_xs
-        ).detach()
-        plot_ys = (
-            dimension_reordered_ys[vector_idx]
-            if stacked_ys.dim() > 2
-            else dimension_reordered_ys
-        ).detach()
-
-        for particle_idx in range(num_particles):
-            axx.plot(plot_ss, plot_xs[particle_idx])
-            axy.plot(plot_ss, plot_ys[particle_idx])
+        axy.plot(plot_ss, plot_y_means)
+        axy.fill_between(
+            plot_ss, plot_y_means - plot_y_stds, plot_y_means + plot_y_stds, alpha=0.4
+        )
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
-        axx.grid()
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
-        axy.grid()
 
     def plot_overview(
         self,
         incoming: Beam,
-        fig: Optional[matplotlib.figure.Figure] = None,
-        num_particles: int = 10,
-        resolution: float = 0.01,
-        vector_idx: Optional[tuple] = None,
+        fig: matplotlib.figure.Figure | None = None,
+        resolution: float | None = None,
+        vector_idx: tuple | None = None,
     ) -> None:
         """
-        Plot an overview of the segment with the lattice and traced reference particles.
+        Plot an overview of the segment with the lattice along with the beam position
+        and size.
 
-        :param incoming: Entering beam from which the reference particles are sampled.
+        :param incoming: Entering beam for which the position and size are shown.
         :param fig: Figure to plot the overview into.
-        :param num_particles: Number of reference particles to plot. Must not be larger
-            than number of particles passed in `beam`.
-        :param resolution: Minimum resolution of the tracking of the reference particles
-            in the plot.
+        :param resolution: Minimum resolution of the tracking of the beam position and
+            beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
@@ -519,12 +687,11 @@ class Segment(Element):
         gs = fig.add_gridspec(3, hspace=0, height_ratios=[2, 2, 1])
         axs = gs.subplots(sharex=True)
 
-        axs[0].set_title("Reference Particle Traces")
-        self.plot_reference_particle_traces(
+        axs[0].set_title("Beam Position and Size")
+        self.plot_mean_and_std(
             axx=axs[0],
             axy=axs[1],
             incoming=incoming,
-            num_particles=num_particles,
             resolution=resolution,
             vector_idx=vector_idx,
         )
@@ -533,72 +700,117 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def plot_twiss(
+    def plot_beam_attrs(
         self,
         incoming: Beam,
-        ax: Optional[Any] = None,
-        vector_idx: Optional[tuple] = None,
+        attr_names: tuple[str, ...] | str,
+        resolution: float | None = None,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
+    ) -> plt.Axes:
+        """
+        Plot beam attributes along the segment.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param attr_names: Metrics to compute. Can be a single metric or a tuple of
+            metrics. Supported metrics are any property of beam class of `incoming`.
+        :param resolution: Requested resolution of trajectory. Note that not all
+            elements can be split at arbitrary resolutions, which can lead to deviations
+            from the requested resolution. If `None` is passed, samples are taken at the
+            end of each element.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param ax: Axes to plot into.
+        :return: Axes with the plotted beam attributes.
+        """
+        attr_names_with_s = ("s",) + (
+            attr_names if isinstance(attr_names, tuple) else (attr_names,)
+        )
+        beam_attrs = self.get_beam_attrs_along_segment(
+            attr_names_with_s, incoming, resolution=resolution
+        )
+
+        ax = ax or plt.subplot(111)
+
+        s = beam_attrs[0]
+        for attr, attr_name in zip(beam_attrs[1:], attr_names_with_s[1:]):
+            ax.plot(
+                (s[vector_idx] if s.dim() > 1 else s).detach(),
+                (attr[vector_idx] if attr.dim() > 1 else attr).detach(),
+                label=attr_name,
+            )
+
+        ax.legend()
+
+        return ax
+
+    def plot_beam_attrs_over_lattice(
+        self,
+        incoming: Beam,
+        attr_names: tuple[str, ...] | str,
+        figsize=(8, 4),
+        resolution: float | None = None,
+        vector_idx: tuple | None = None,
     ) -> None:
+        """
+        Plot beam attributes in a plot over a plot of the lattice.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param attr_names: Metrics to compute. Can be a single metric or a tuple of
+            metrics. Supported metrics are any property of beam class of `incoming`.
+        :param figsize: Size of the figure.
+        :param resolution: Minimum resolution of the tracking of the beam position and
+            beam size in the plot.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        """
+        fig = plt.figure(figsize=figsize)
+        gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
+        axs = gs.subplots(sharex=True)
+
+        self.plot_beam_attrs(
+            incoming=incoming,
+            attr_names=attr_names,
+            resolution=resolution,
+            vector_idx=vector_idx,
+            ax=axs[0],
+        )
+        self.plot(s=0.0, ax=axs[1])
+
+        plt.tight_layout()
+
+    def plot_twiss(
+        self, incoming: Beam, vector_idx: tuple | None = None, ax: Any | None = None
+    ) -> plt.Axes:
         """Plot twiss parameters along the segment."""
-        longitudinal_beams = [incoming]
-        s_positions = [torch.tensor(0.0)]
-        for element in self.elements:
-            if torch.all(element.length == 0):
-                continue
+        ax = self.plot_beam_attrs(
+            incoming,
+            ("beta_x", "beta_y"),
+            resolution=None,
+            vector_idx=vector_idx,
+            ax=ax,
+        )
 
-            outgoing = element.track(longitudinal_beams[-1])
+        beta_x_line = ax.get_lines()[0]
+        beta_y_line = ax.get_lines()[1]
 
-            longitudinal_beams.append(outgoing)
-            s_positions.append(s_positions[-1] + element.length)
-
-        beta_x = [beam.beta_x for beam in longitudinal_beams]
-        beta_y = [beam.beta_y for beam in longitudinal_beams]
-
-        # Extraction of the correct vector element for plotting
-        broadcast_s_positions = torch.broadcast_tensors(*s_positions)
-        stacked_s_positions = torch.stack(broadcast_s_positions)
-        dimension_reordered_s_positions = stacked_s_positions.movedim(0, -1)
-        plot_s_positions = (
-            dimension_reordered_s_positions[vector_idx]
-            if stacked_s_positions.dim() > 1
-            else dimension_reordered_s_positions
-        ).detach()
-
-        broadcast_beta_x = torch.broadcast_tensors(*beta_x)
-        stacked_beta_x = torch.stack(broadcast_beta_x)
-        dimension_reordered_beta_x = stacked_beta_x.movedim(0, -1)
-        plot_beta_x = (
-            dimension_reordered_beta_x[vector_idx]
-            if stacked_beta_x.dim() > 2
-            else dimension_reordered_beta_x
-        ).detach()
-
-        broadcast_beta_y = torch.broadcast_tensors(*beta_y)
-        stacked_beta_y = torch.stack(broadcast_beta_y)
-        dimension_reordered_beta_y = stacked_beta_y.movedim(0, -1)
-        plot_beta_y = (
-            dimension_reordered_beta_y[vector_idx]
-            if stacked_beta_y.dim() > 2
-            else dimension_reordered_beta_y
-        ).detach()
-
-        if ax is None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
+        beta_x_line.set_label(r"$\beta_x$")
+        beta_x_line.set_color("tab:red")
+        beta_y_line.set_label(r"$\beta_y$")
+        beta_y_line.set_color("tab:green")
 
         ax.set_title("Twiss Parameters")
         ax.set_xlabel("s (m)")
         ax.set_ylabel(r"$\beta$ (m)")
-
-        ax.plot(plot_s_positions, plot_beta_x, label=r"$\beta_x$", c="tab:red")
-        ax.plot(plot_s_positions, plot_beta_y, label=r"$\beta_y$", c="tab:green")
-
         ax.legend()
-        plt.tight_layout()
 
-    @property
-    def defining_features(self) -> list[str]:
-        return super().defining_features + ["elements"]
+        return ax
 
     def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
         """Plot twiss parameters in a plot over a plot of the lattice."""
@@ -607,9 +819,13 @@ class Segment(Element):
         axs = gs.subplots(sharex=True)
 
         self.plot_twiss(incoming, ax=axs[0])
-        self.plot(axs[1], 0)
+        self.plot(s=0.0, ax=axs[1])
 
         plt.tight_layout()
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + ["elements"]
 
     def __repr__(self) -> str:
         return (

@@ -1,16 +1,18 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx, compute_relativistic_factors
+from cheetah.particles import Beam, ParticleBeam, Species
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    compute_relativistic_factors,
+    verify_device_and_dtype,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Drift(Element):
@@ -23,27 +25,33 @@ class Drift(Element):
     :param length: Length in meters.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
+        device, dtype = verify_device_and_dtype([length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
+
         self.tracking_method = tracking_method
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy)
+        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 
@@ -91,18 +99,18 @@ class Drift(Element):
         delta = incoming.p
 
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
+            tau, delta, incoming.energy, incoming.species.mass_eV
         )
 
         # Begin Bmad-X tracking
         x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, electron_mass_eV
+            self.length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
         )
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
         tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
+            z, pz, p0c, incoming.species.mass_eV
         )
 
         # Broadcast to align their shapes so that they can be stacked
@@ -115,8 +123,8 @@ class Drift(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
+            s=incoming.s + self.length,
+            species=incoming.species,
         )
         return outgoing_beam
 
@@ -125,7 +133,7 @@ class Drift(Element):
         return self.tracking_method == "cheetah"
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         return [
             Drift(
                 self.length / num_splits,
@@ -136,8 +144,12 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
-        pass
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+        # This does nothing on purpose, because drift sections are visualised as gaps.
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

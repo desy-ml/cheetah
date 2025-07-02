@@ -1,11 +1,9 @@
-from typing import Optional
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
+from cheetah.particles import Species
 from cheetah.utils import (
     UniqueNameGenerator,
     compute_relativistic_factors,
@@ -14,43 +12,46 @@ from cheetah.utils import (
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-
 
 class VerticalCorrector(Element):
     """
     Verticle corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the vertical plane.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the vertical plane.
 
     :param length: Length in meters.
     :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
-        angle: Optional[torch.Tensor] = None,
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        angle: torch.Tensor | None = None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
-
-        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if angle is not None:
-            self.angle = torch.as_tensor(angle, **factory_kwargs)
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+        self.register_buffer_or_parameter(
+            "angle",
+            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+        )
+
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
-        _, igamma2, beta = compute_relativistic_factors(energy)
+        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(
             self.length.shape, igamma2.shape, self.angle.shape
@@ -70,21 +71,13 @@ class VerticalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.angle != 0)
+        return torch.any(self.angle != 0).item()
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
-        return [
-            VerticalCorrector(
-                self.length / num_splits,
-                self.angle / num_splits,
-                dtype=self.length.dtype,
-                device=self.length.device,
-            )
-            for _ in range(num_splits)
-        ]
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle

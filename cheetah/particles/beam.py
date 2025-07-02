@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import torch
-from scipy.constants import physical_constants
 from torch import nn
 
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+from cheetah.particles.species import Species
 
 
 class Beam(ABC, nn.Module):
@@ -33,29 +31,63 @@ class Beam(ABC, nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
+    UNVECTORIZED_NUM_ATTR_DIMS = {
+        "energy": 0,
+        "total_charge": 0,
+        "s": 0,
+        "mu_x": 0,
+        "sigma_x": 0,
+        "mu_px": 0,
+        "sigma_px": 0,
+        "mu_y": 0,
+        "sigma_y": 0,
+        "mu_py": 0,
+        "sigma_py": 0,
+        "mu_tau": 0,
+        "sigma_tau": 0,
+        "mu_p": 0,
+        "sigma_p": 0,
+        "relativistic_gamma": 0,
+        "relativistic_beta": 0,
+        "p0c": 0,
+        "cov_xpx": 0,
+        "cov_ypy": 0,
+        "cov_taup": 0,
+        "emittance_x": 0,
+        "normalized_emittance_x": 0,
+        "beta_x": 0,
+        "alpha_x": 0,
+        "emittance_y": 0,
+        "normalized_emittance_y": 0,
+        "beta_y": 0,
+        "alpha_y": 0,
+    }
+
     @classmethod
     @abstractmethod
     def from_parameters(
         cls,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        mu_tau: Optional[torch.Tensor] = None,
-        mu_p: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        cov_xpx: Optional[torch.Tensor] = None,
-        cov_ypy: Optional[torch.Tensor] = None,
-        cov_taup: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        mu_x: torch.Tensor | None = None,
+        mu_px: torch.Tensor | None = None,
+        mu_y: torch.Tensor | None = None,
+        mu_py: torch.Tensor | None = None,
+        mu_tau: torch.Tensor | None = None,
+        mu_p: torch.Tensor | None = None,
+        sigma_x: torch.Tensor | None = None,
+        sigma_px: torch.Tensor | None = None,
+        sigma_y: torch.Tensor | None = None,
+        sigma_py: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        cov_xpx: torch.Tensor | None = None,
+        cov_ypy: torch.Tensor | None = None,
+        cov_taup: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
+        species: Species | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Beam":
         """
         Create beam that with given beam parameters.
@@ -81,6 +113,8 @@ class Beam(ABC, nn.Module):
         :param cov_taup: Covariance between tau and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param s: Position along the beamline of the reference particle in meters.
+        :param species: Particle species of the beam. Defaults to electron.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -91,19 +125,21 @@ class Beam(ABC, nn.Module):
     @abstractmethod
     def from_twiss(
         cls,
-        beta_x: Optional[torch.Tensor] = None,
-        alpha_x: Optional[torch.Tensor] = None,
-        emittance_x: Optional[torch.Tensor] = None,
-        beta_y: Optional[torch.Tensor] = None,
-        alpha_y: Optional[torch.Tensor] = None,
-        emittance_y: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        cov_taup: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        beta_x: torch.Tensor | None = None,
+        alpha_x: torch.Tensor | None = None,
+        emittance_x: torch.Tensor | None = None,
+        beta_y: torch.Tensor | None = None,
+        alpha_y: torch.Tensor | None = None,
+        emittance_y: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        cov_taup: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
+        species: Species | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Beam":
         """
         Create a beam from twiss parameters.
@@ -121,6 +157,8 @@ class Beam(ABC, nn.Module):
         :param cov_taup: Covariance between tau and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam. Defaults to electron.
+        :param s: Position along the beamline of the reference particle in meters.
         :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
             selected if available. The CPU is used otherwise.
         :param dtype: Data type of the beam.
@@ -129,36 +167,39 @@ class Beam(ABC, nn.Module):
 
     @classmethod
     @abstractmethod
-    def from_ocelot(cls, parray, device=None, dtype=None) -> "Beam":
-        """
-        Convert an Ocelot ParticleArray `parray` to a Cheetah Beam.
-        """
+    def from_ocelot(
+        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "Beam":
+        """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def from_astra(cls, path: str, device=None, dtype=None) -> "Beam":
+    def from_astra(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
 
     def transformed_to(
         self,
-        mu_x: Optional[torch.Tensor] = None,
-        mu_px: Optional[torch.Tensor] = None,
-        mu_y: Optional[torch.Tensor] = None,
-        mu_py: Optional[torch.Tensor] = None,
-        mu_tau: Optional[torch.Tensor] = None,
-        mu_p: Optional[torch.Tensor] = None,
-        sigma_x: Optional[torch.Tensor] = None,
-        sigma_px: Optional[torch.Tensor] = None,
-        sigma_y: Optional[torch.Tensor] = None,
-        sigma_py: Optional[torch.Tensor] = None,
-        sigma_tau: Optional[torch.Tensor] = None,
-        sigma_p: Optional[torch.Tensor] = None,
-        energy: Optional[torch.Tensor] = None,
-        total_charge: Optional[torch.Tensor] = None,
-        device=None,
-        dtype=None,
+        mu_x: torch.Tensor | None = None,
+        mu_px: torch.Tensor | None = None,
+        mu_y: torch.Tensor | None = None,
+        mu_py: torch.Tensor | None = None,
+        mu_tau: torch.Tensor | None = None,
+        mu_p: torch.Tensor | None = None,
+        sigma_x: torch.Tensor | None = None,
+        sigma_px: torch.Tensor | None = None,
+        sigma_y: torch.Tensor | None = None,
+        sigma_py: torch.Tensor | None = None,
+        sigma_tau: torch.Tensor | None = None,
+        sigma_p: torch.Tensor | None = None,
+        energy: torch.Tensor | None = None,
+        total_charge: torch.Tensor | None = None,
+        species: Species | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Beam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -181,6 +222,7 @@ class Beam(ABC, nn.Module):
             dimensionless.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param species: Particle species of the beam.
         :param device: Device to create the transformed beam on. If set to `"auto"` a
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the transformed beam.
@@ -230,6 +272,7 @@ class Beam(ABC, nn.Module):
         sigma_p = sigma_p if sigma_p is not None else self.sigma_p
         energy = energy if energy is not None else self.energy
         total_charge = total_charge if total_charge is not None else self.total_charge
+        species = species if species is not None else self.species
 
         return self.__class__.from_parameters(
             mu_x=mu_x,
@@ -246,6 +289,7 @@ class Beam(ABC, nn.Module):
             sigma_p=sigma_p,
             energy=energy,
             total_charge=total_charge,
+            species=species,
             device=device,
             dtype=dtype,
         )
@@ -313,7 +357,7 @@ class Beam(ABC, nn.Module):
     @property
     def relativistic_gamma(self) -> torch.Tensor:
         """Reference relativistic gamma of the beam."""
-        return self.energy / electron_mass_eV
+        return self.energy / self.species.mass_eV
 
     @property
     def relativistic_beta(self) -> torch.Tensor:
@@ -327,7 +371,7 @@ class Beam(ABC, nn.Module):
     @property
     def p0c(self) -> torch.Tensor:
         """Get the reference momentum * speed of light in eV."""
-        return self.relativistic_beta * self.relativistic_gamma * electron_mass_eV
+        return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property
     @abstractmethod
@@ -399,6 +443,23 @@ class Beam(ABC, nn.Module):
     def clone(self) -> "Beam":
         """Return a cloned beam that does not share the underlying memory."""
         raise NotImplementedError
+
+    def register_buffer_or_parameter(
+        self, name: str, value: torch.Tensor | nn.Parameter
+    ) -> None:
+        """
+        Register a buffer or parameter with the given name and value. Automatically
+        selects the correct method from `register_buffer` or `register_parameter` based
+        on the type of `value`.
+
+        :param name: Name of the buffer or parameter.
+        :param value: Value of the buffer or parameter.
+        :param default: Default value of the buffer.
+        """
+        if isinstance(value, nn.Parameter):
+            self.register_parameter(name, value)
+        else:
+            self.register_buffer(name, value)
 
     def __repr__(self) -> str:
         raise NotImplementedError

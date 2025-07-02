@@ -1,18 +1,15 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
+from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
 class Dipole(Element):
@@ -41,26 +38,30 @@ class Dipole(Element):
     :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
         supports `"linear_edge"`.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         length: torch.Tensor,
-        angle: Optional[torch.Tensor] = None,
-        k1: Optional[torch.Tensor] = None,
-        dipole_e1: Optional[torch.Tensor] = None,
-        dipole_e2: Optional[torch.Tensor] = None,
-        tilt: Optional[torch.Tensor] = None,
-        gap: Optional[torch.Tensor] = None,
-        gap_exit: Optional[torch.Tensor] = None,
-        fringe_integral: Optional[torch.Tensor] = None,
-        fringe_integral_exit: Optional[torch.Tensor] = None,
+        angle: torch.Tensor | None = None,
+        k1: torch.Tensor | None = None,
+        dipole_e1: torch.Tensor | None = None,
+        dipole_e2: torch.Tensor | None = None,
+        tilt: torch.Tensor | None = None,
+        gap: torch.Tensor | None = None,
+        gap_exit: torch.Tensor | None = None,
+        fringe_integral: torch.Tensor | None = None,
+        fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
-        name: Optional[str] = None,
-        device=None,
-        dtype=None,
+        name: str | None = None,
+        sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         device, dtype = verify_device_and_dtype(
             [
@@ -79,43 +80,60 @@ class Dipole(Element):
             dtype,
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
-
-        self.register_buffer("angle", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("k1", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("_e1", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("_e2", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("fringe_integral", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("fringe_integral_exit", None)
-        self.register_buffer("gap", torch.tensor(0.0, **factory_kwargs))
-        self.register_buffer("gap_exit", None)
-        self.register_buffer("tilt", torch.tensor(0.0, **factory_kwargs))
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
-        if angle is not None:
-            self.angle = torch.as_tensor(angle, **factory_kwargs)
-        if k1 is not None:
-            self.k1 = torch.as_tensor(k1, **factory_kwargs)
-        if dipole_e1 is not None:
-            self._e1 = torch.as_tensor(dipole_e1, **factory_kwargs)
-        if dipole_e2 is not None:
-            self._e2 = torch.as_tensor(dipole_e2, **factory_kwargs)
-        if fringe_integral is not None:
-            self.fringe_integral = torch.as_tensor(fringe_integral, **factory_kwargs)
-        self.fringe_integral_exit = (
-            torch.as_tensor(fringe_integral_exit, **factory_kwargs)
-            if fringe_integral_exit is not None
-            else self.fringe_integral
+
+        self.register_buffer_or_parameter(
+            "angle",
+            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
         )
-        if gap is not None:
-            self.gap = torch.as_tensor(gap, **factory_kwargs)
-        self.gap_exit = (
-            torch.as_tensor(gap_exit, **factory_kwargs)
-            if gap_exit is not None
-            else self.gap
+        self.register_buffer_or_parameter(
+            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
         )
-        if tilt is not None:
-            self.tilt = torch.as_tensor(tilt, **factory_kwargs)
+        self.register_buffer_or_parameter(
+            "_e1",
+            torch.as_tensor(
+                dipole_e1 if dipole_e1 is not None else 0.0, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "_e2",
+            torch.as_tensor(
+                dipole_e2 if dipole_e2 is not None else 0.0, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "fringe_integral",
+            torch.as_tensor(
+                fringe_integral if fringe_integral is not None else 0.0,
+                **factory_kwargs,
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "fringe_integral_exit",
+            torch.as_tensor(
+                (
+                    fringe_integral_exit
+                    if fringe_integral_exit is not None
+                    else self.fringe_integral
+                ),
+                **factory_kwargs,
+            ),
+        )
+
+        self.register_buffer_or_parameter(
+            "gap", torch.as_tensor(gap if gap is not None else 0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "gap_exit",
+            torch.as_tensor(
+                gap_exit if gap_exit is not None else self.gap, **factory_kwargs
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+        )
 
         self.fringe_at = fringe_at
         self.fringe_type = fringe_type
@@ -146,12 +164,12 @@ class Dipole(Element):
         return self.tracking_method == "cheetah"
 
     @property
-    def is_active(self):
-        return torch.any(self.angle != 0)
+    def is_active(self) -> bool:
+        return torch.any(self.angle != 0).item()
 
     def track(self, incoming: Beam) -> Beam:
         """
-        Track particles through the quadrupole element.
+        Track particles through the dipole element.
 
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
@@ -189,10 +207,9 @@ class Dipole(Element):
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
+        mc2 = incoming.species.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, electron_mass_eV
-        )
+        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
@@ -207,9 +224,7 @@ class Dipole(Element):
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
-        x, px, y, py, z, pz = self._bmadx_body(
-            x, px, y, py, z, pz, p0c, electron_mass_eV
-        )
+        x, px, y, py, z, pz = self._bmadx_body(x, px, y, py, z, pz, p0c, mc2)
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
@@ -225,9 +240,7 @@ class Dipole(Element):
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, electron_mass_eV
-        )
+        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         # Broadcast to align their shapes so that they can be stacked
         x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)
@@ -239,8 +252,8 @@ class Dipole(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            device=incoming.particles.device,
-            dtype=incoming.particles.dtype,
+            s=incoming.s + self.length,
+            species=incoming.species,
         )
         return outgoing_beam
 
@@ -272,6 +285,9 @@ class Dipole(Element):
         phi1 = torch.arcsin(px / px_norm)
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
+        gp_safe = torch.where(
+            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
+        )
 
         alpha = (
             2
@@ -298,7 +314,7 @@ class Dipole(Element):
         x2_t3 = torch.cos(self.angle.unsqueeze(-1) + phi1)
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
-        c2 = x2_t1 + (x2_t2 - x2_t3) / gp
+        c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
         temp = torch.abs(self.angle.unsqueeze(-1) + phi1)
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
@@ -374,7 +390,7 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
+    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
@@ -386,6 +402,7 @@ class Dipole(Element):
                 length=self.length,
                 k1=self.k1,
                 hx=self.hx,
+                species=species,
                 tilt=torch.zeros_like(self.length),
                 energy=energy,
             )  # Tilt is applied after adding edges
@@ -398,11 +415,13 @@ class Dipole(Element):
             R[..., 2, 3] = self.length
 
         # Apply fringe fields
-        R = torch.matmul(R_exit, torch.matmul(R, R_enter))
+        R = R_exit @ R @ R_enter
+
         # Apply rotation for tilted magnets
-        R = torch.matmul(
-            rotation_matrix(-self.tilt), torch.matmul(R, rotation_matrix(self.tilt))
-        )
+        if torch.any(self.tilt != 0):
+            rotation = rotation_matrix(self.tilt)
+            R = rotation.transpose(-1, -2) @ R @ rotation
+
         return R
 
     def _transfer_map_enter(self) -> torch.Tensor:
@@ -445,11 +464,6 @@ class Dipole(Element):
 
         return tm
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for dipole properly, for now just returns the
-        # element itself
-        return [self]
-
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "
@@ -486,7 +500,11 @@ class Dipole(Element):
             "tracking_method",
         ]
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: Optional[tuple] = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle

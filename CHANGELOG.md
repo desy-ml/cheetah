@@ -1,12 +1,133 @@
 # Changelog
 
-## v0.7.1 [🚧 Work in Progress]
+## v0.7.5 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+- Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
+- Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
+
+### 🐛 Bug fixes
+
+- Fix various `dtype` and `device` pertaining to `ParticleBeam`, `Species` and `SpaceChargeKick` (see #485, #486, #490, #491) (@Hespe, @jank324, @adhamrait)
+- Remove incorrect implementation of `split` from `HorizontalCorrector` and `VerticalCorrector` (see #480) (@Hespe)
+
+### 🐆 Other
+
+- Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
+- Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
+- PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
+- Make README example more copy-paste friendly (see #493) (@jank324, @ax3l)
+
+### 🌟 First Time Contributors
+
+- Julian Gethmann (@smartsammler)
+- Arjun Dhamrait (@adhamrait)
+
+## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
+
+### 🚀 Features
+
+- The new warning system was extended to have more specific subclasses of `PhysicsWarning` to allow for better and easier filtering of warnings (see #415) (@Hespe, @jank324)
+- Implement an infix notation parser for Bmad and Elegant converters, fixing a potential security issue where `eval()` could be called on user input. (see #412) (@amylizzle)
+- Improve numerical stability of the `base_rmatrix` and `base_ttensor` functions (related to #469) (see #474) (@Hespe, @jank324)
+- Minor speed improvements in `base_rmatrix` and `base_ttensor` by reducing memory allocations for constants, and skipping rotation computations when the present tilt has now effect. (see #474) (@Hespe, @jank324)
+
+### 🐛 Bug fixes
+
+- Fix issue that `base_rmatrix` has large error for small `k1` values even for double precision (see #469) (@cr-xu)
+- Rework the covariance computation in `ParticleBeam.as_parameter_beam` to fix an issue that caused the covariance to be computed incorrectly for vectorised beams (see #471) (@cr-xu, @jank324, @Hespe)
+- Unrecognised element properties in Bmad and Elegant lattice files now print a warning instead of exiting with an `AssertionError` (see #415) (@amylizzle, @jank324)
+- A bug was fixed that caused the Bmad and Elegant importers to incorrectly parse `;` line endings and comments starting with `#` (see #415) (@Hespe, @jank324)
+- The `santize_names` parameter is now correctly passed to `BPM` and `Marker` elements when converting from Elegant (see #473) (@amylizzle)
+
+## [v0.7.3](https://github.com/desy-ml/cheetah/releases/tag/v0.7.3) (2025-06-11)
+
+### 🚨 Breaking Changes
+
+- The default resolution of all plotting functions on `Segment` is now `None`, i.e. element-wise. For most lattices this will only result in faster plotting, but note that it is possible that your plots look slightly different, especially if your lattice is short or has few elements. (see #459) (@jank324, @Hespe)
+- Cheetah now requires `torch>=2.3` (see #461) (@jank324)
+- Combine the `num_grid_points_{x,y,tau}` arguments of `SpaceChargeKick` into the `grid_shape` tuple. Fixes the cloning of `SpaceChargeKick`. In addition, the `grid_extend_*` properties were renamed to `grid_extent_*` (see #418) (@Hespe, @jank324)
+- Warning messages, which were previously just printed are now produced using the `warnings` module, brining with it all the features of the latter. (see #450) (@Hespe, @jank324)
+
+### 🚀 Features
+
+- Add `KQUAD` and `CSRCSBEND` element names to Elegant converter (see #409) (@amylizzle)
+- Add `Sextupole` to Bmad, Elegant, and Ocelot converters (see #430) (@Hespe)
+- Implement convenience method for quickly setting attributes for all elements of a type in a `Segment` (see #431) (@jank324)
+- Add a method to `ParticleBeam` that lets you subsample a particle beam with fewer particles and the same distribution (see #432, #465) (@jank324)
+- `Segment` now has new functions `beam_along_segment_generator` and `get_beam_attrs_along_segment` for easily retrieving beam objects and their properties. The plot functions have been refactored to use these, and two functions `plot_beam_attrs` and `plot_beam_attrs_over_lattice` were added for straightforward plotting of different beam attributes in a single line of code. (see #436, #440) (@jank324, @amylizzle)
+- `Beam` subclasses now track their `s` position along the beamline (see #436) (@jank324)
+- There is a warning now when converting elements from Elegant or Bmad that have names which are invalid for use with the `segment.element_name` syntax, and add a convenience method for explicitly converting these names to valid Python variable names. (see #411) (@amylizzle, @jank324)
+- Rotation matrices are no longer computed twice for forward and backward phase space rotations (see #452) (@Hespe)
+
+### 🐛 Bug fixes
+
+- Fix issue where `Dipole` with `tracking_method="bmadx"` and `angle=0.0` would output `NaN` values as a result of a division by zero (see #434) (@jank324)
+- Fix issue in CI space-charge tests (incorrect beam duration in non-relativistic case) (see #446) (@RemiLehe)
+- Fix issue that passing tensors with `requires_grad=True` does not result in gradient tracked particles when using `ParticleBeam.from_parameters` initialization (see #445) (@cr-xu)
+- Fix import of `CustomTransferMap` from Elegant. The affine phase-space component was previously not carried through (see #455) (@Hespe)
+- Provide more default values for parameters in the Elegant conversion, where elements without length `l` for example broke the converter. (see #442) (@cr-xu)
+- Functions using `Sextupole.split` and `Sextupole.plot` no longer raise an error (see #453) (@Hespe)
+
+### 🐆 Other
+
+- Bmad is no longer actively run in the test workflows, and comparisons to Bmad are now done on static pre-computed results from Bmad. This also removes the use of Anaconda in the test workflow. (see #429, #431) (@jank324)
+- The PyTorch pin to `<=2.6` was removed, as the issue with `abort trap: 6` was caused by Bmad is no longer actively used in the test workflow (see #429, #431) (@jank324)
+- There was a temporary pin `snowballstemmer<3.0` for the docs build because of an issue with the latest release. It has since been unpinned again because the release was yanked. Refer to https://github.com/sphinx-doc/sphinx/issues/13533 and https://github.com/snowballstem/snowball/issues/229. (see #436, #438) (@jank324)
+- Assert that the last row of a predefined transfer map is always correct when creating a `CustomTransferMap` element (see #462) (@jank324, @Hespe)
+- Minimum compatible versions were defined for all dependencies, and tests were added to ensure that the minimum versions are compatible with Cheetah. (see #463) (@Hespe, @jank324)
+- Add a `pytest` marker for running tests on all subclasses of `Element`. The marker automatically detects if an MWE has not yet been defined for a subclass and alerts the developer through a test failure. (see #418) (@Hespe, @jank324)
+
+### 🌟 First Time Contributors
+
+- Copilot 🤖
+
+## [v0.7.2](https://github.com/desy-ml/cheetah/releases/tag/v0.7.2) (2025-04-28)
+
+### 🚨 Breaking Changes
+
+- Replace the `Segment.plot_reference_particle_traces` with a clearer visualisation in the for of `Segment.plot_mean_and_std`. This also changes the plot generated by the `Segment.plot_overview` method. (see #392) (@RemiLehe)
+- The order of the pixels in `Screen.reading` was changed to start from the bottom left instead of the top left. This is now consistent with the `Screen.pixel_bin_centers` and `Screen.pixel_bin_edges` properties. (see #408) (@jank324)
+
+### 🚀 Features
+
+- Implement `split` method for the `Solenoid` element (see #380) (@cr-xu)
+- Implement a more robust RPN parser, fixing a bug where short strings in an Elegant variable definition would cause parsing to fail. (see #387, #417) (@amylizzle, @Hespe, @jank324)
+- Add a `Sextupole` element (see #406) (@jank324, @Hespe)
+
+### 🐛 Bug fixes
+
+- Fix issue where semicolons after an Elegant line would cause parsing to fail (see #383) (@amylizzle)
+- Fix Twiss plot to plot samples also after elements in nested (see #388) (@RemiLehe)
+- Fix issue where generating screen images did not work on GPU because `Screen.pixel_bin_centers` was not on the same device (see #372) (@roussel-ryan, @jank324)
+- Fix issue where `Quadrupole.tracking_method` was not preserved on cloning (see #404) (@RemiLehe, @jank324)
+- The vertical screen misalignment is now correctly applied to `y` instead of `px` (see #405) (@RemiLehe)
+- Fix issues when generating screen images caused by the sign of particle charges (see #394) (@Hespe, @jank324)
+- Fix an issue where newer versions of `torch` only accept a `torch.Tensor` as input to `torch.rad2deg` (see #417) (@jank324)
+- Fix bug that caused correlations to be lost in the conversion from a `ParameterBeam` to a `ParticleBeam` (see #408) (@jank324, @Hespe)
+
+### 🐆 Other
+
+- Temporarily limit `torch` dependency to `2.6` or lower to avoid `abort trap: 6` error with `2.7` (at least on macOS) (see #419) (@jank324)
+
+### 🌟 First Time Contributors
+
+- Amelia Pollard (@amylizzle)
+
+## [v0.7.1](https://github.com/desy-ml/cheetah/releases/tag/v0.7.1) (2025-03-21)
 
 ### 🚨 Breaking Changes
 
 - The `incoming` argument of `Segment.plot_overview` is no longer optional. This change also affects the order of the arguments. Fixes an exception that was raised by an underlying plot function that requires `incoming` to be set. (see #316, #344) (@Hespe)
 - Python 3.9 is no longer supported. This does not immediately break existing code, but might cause it to break in the future. (see #325) (@jank324)
 - The covariance properties of the different beam classes were renamed from names like `cor_x` and `sigma_xpx` to consistent names like `cov_xpx` (see #331) (@jank324)
+- The signature of the `transfer_map` method of all element subclasses was extended by a non-optional `species` argument (see #276) (@cr-xu, @jank324, @Hespe)
+- `ParticleBeam.plot_distribution` allows for Seaborn-style passing of `axs` and returns the latter as well. In line with that change for the purpose of overlaying distributions, the `contour` argument of `ParticleBeam.plot_2d_distribution` was replaced by a `style` argument. (see #330) (@jank324)
+- The default values for `total_charge` in both beam classes are no longer `0.0` but more sensible values (see #377) (@jank324)
+- `ParameterBeam._mu` and `ParameterBeam._cov` were renamed to `ParameterBeam.mu` and `ParameterBeam.cov` (see #378) (@jank324)
 
 ### 🚀 Features
 
@@ -15,11 +136,16 @@
 - Add Python 3.13 support (see #275) (@jank324)
 - Methods `to_parameter_beam` and `to_particle_beam` have been added for convenient conversion between `ParticleBeam` and `ParameterBeam` (see #331) (@jank324)
 - Beam classes now have the `mu_tau` and `mu_p` properties on their interfaces (see #331) (@jank324)
+- Lattice and beam converters now adhere to the default torch `dtype` when no explicit `dtype` is passed (see #340) (@Hespe, @jank324)
+- Add options to include or exclude the first and last element when retrieving a `Segment.subcell` and improve error handling (see #350) (@Hespe, @jank324)
+- Add support for particle species through a new `Species` class (see #276, #376) (@cr-xu, @jank324, @Hespe)
+- Various optimisations for a roughly 2x speed improvement over `v0.7.0` (see #367) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
 - Fix issue where a space before a comma could cause the Elegant and Bmad converters to fail (see #327) (@jank324)
 - Fix issue of `BPM` and `Screen` not properly converting the `dtype` of their readings (see #335) (@Hespe)
+- Fix `is_active` and `is_skippable` of some elements not being boolean properties (see #357) (@jank324)
 
 ### 🐆 Other
 
@@ -31,8 +157,10 @@
 - The tests for backward-mode differentiation with space charge was improved by checking the accuracy of the gradients (see #339) (@RemiLehe)
 - A tests for forward-mode differentiation with space charge was added (see #339) (@RemiLehe)
 - Link to different ImpactX example in test docstring (see #341) (@ax3l)
-
-### 🌟 First Time Contributors
+- Add link to the new Discord server (see #355, #382) (@jank324)
+- Fix typo that said "quadrupole" in a dipole docstring (see #358) (@jank324)
+- Type annotations were updated to the post-PEP 585/604... style (see #360) (@jank324)
+- Add badge to the README for the number of downloads from PyPI (see #364) (@jank324)
 
 ## [v0.7.0](https://github.com/desy-ml/cheetah/releases/tag/v0.7.0) (2024-12-13)
 

@@ -1,13 +1,12 @@
 import csv
 from pathlib import Path
-from typing import Dict, Optional
 
 import torch
 
 import cheetah
 
 
-def translate_element(row: list[str], header: list[str]) -> Optional[Dict]:
+def translate_element(row: list[str], header: list[str]) -> dict | None:
     """
     Translate a row of an NX Tables file to a Cheetah `Element`.
 

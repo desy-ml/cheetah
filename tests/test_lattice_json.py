@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -5,6 +6,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_save_and_reload_ares_example(tmp_path):
     """
     Test that saving Cheetah `Segment` to LatticeJSON works and that it can be reloaded
@@ -68,3 +70,28 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
         custom_transfer_map_element.length, reloaded_custom_transfer_map_element.length
     )
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
+
+
+@pytest.mark.parametrize("desired_dtype", [torch.float32, torch.float64])
+def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
+    """
+    Test that the lattice JSON import correctly interprets its optional dtype parameter.
+    """
+    original_segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Dipole(length=torch.tensor(0.5), angle=torch.tensor(1e-3)),
+            cheetah.Quadrupole(length=torch.tensor(0.3), k1=torch.tensor(31.415)),
+        ]
+    )
+    original_segment.to_lattice_json(str(tmp_path / "dummy_lattice.json"))
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "dummy_lattice.json"), dtype=desired_dtype
+    )
+
+    assert all(
+        getattr(element, feature).dtype == desired_dtype
+        for element in reloaded_segment.elements
+        for feature in element.defining_tensors
+    )
