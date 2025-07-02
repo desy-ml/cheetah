@@ -828,8 +828,11 @@ class Segment(Element):
 
         scene = trimesh.Scene()
 
-        for element in self.segment.elements:
+        for element in self.elements:
             mesh = element.to_mesh(s)
+
+            # assert mesh is not None
+
             scene.add_geometry(mesh)
             s += element.length.item()
 
