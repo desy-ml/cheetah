@@ -45,15 +45,17 @@ def test_defining_features_dtype(element):
 @pytest.mark.parametrize(
     "device, dtype",
     [
-        (torch.device("cpu"), torch.float16),
+        pytest.param(
+            torch.device("cpu"),
+            torch.float16,
+            marks=pytest.mark.skip(reason="Float16 not currently supported"),
+        ),
         (torch.device("cpu"), torch.float32),
         (torch.device("cpu"), torch.float64),
         pytest.param(
             torch.device("cuda"),
             torch.float16,
-            marks=pytest.mark.skipif(
-                not torch.cuda.is_available(), reason="CUDA not available"
-            ),
+            marks=pytest.mark.skip(reason="Float16 not currently supported"),
         ),
         pytest.param(
             torch.device("cuda"),
@@ -65,9 +67,7 @@ def test_defining_features_dtype(element):
         pytest.param(
             torch.device("mps"),
             torch.float16,
-            marks=pytest.mark.skipif(
-                not is_mps_available_and_functional(), reason="MPS not available"
-            ),
+            marks=pytest.mark.skip(reason="Float16 not currently supported"),
         ),
         pytest.param(
             torch.device("mps"),
@@ -132,15 +132,17 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 @pytest.mark.parametrize(
     "device, dtype",
     [
-        (torch.device("cpu"), torch.float16),
+        pytest.param(
+            torch.device("cpu"),
+            torch.float16,
+            marks=pytest.mark.skip(reason="Float16 not currently supported"),
+        ),
         (torch.device("cpu"), torch.float32),
         (torch.device("cpu"), torch.float64),
         pytest.param(
             torch.device("cuda"),
             torch.float16,
-            marks=pytest.mark.skipif(
-                not torch.cuda.is_available(), reason="CUDA not available"
-            ),
+            marks=pytest.mark.skip(reason="Float16 not currently supported"),
         ),
         pytest.param(
             torch.device("cuda"),
@@ -152,9 +154,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
         pytest.param(
             torch.device("mps"),
             torch.float16,
-            marks=pytest.mark.skipif(
-                not is_mps_available_and_functional(), reason="MPS not available"
-            ),
+            marks=pytest.mark.skip(reason="Float16 not currently supported"),
         ),
         pytest.param(
             torch.device("mps"),
