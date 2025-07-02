@@ -109,6 +109,19 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
                 except ValueError:
                     if token in context:
                         number = context[token]
+                    elif "[" in token and token[-1] == "]":
+                        # nested lookup var[key]
+                        val, key = token.split("[")
+
+                        key = key[:-1]  # trim the ]
+                        if val in context and key in context[val]:
+                            number = context[val][key]
+                        else:
+                            raise SyntaxError(
+                                f"Invalid expression: {expression} - {token} is"
+                                + " not a number or a variable"
+                            )
+
                     else:
                         raise SyntaxError(
                             f"Invalid expression: {expression} - {token} is"
