@@ -828,14 +828,15 @@ class Segment(Element):
     ) -> "trimesh.Trimesh | None":  # noqa: F821
         import trimesh  # Import only here because most people will not need it
 
-        scene = trimesh.Scene()
-
+        meshes = []
         for element in self.elements:
             element_mesh = element.to_mesh(s, cuteness)
-            scene.add_geometry(element_mesh, node_name=element.name)
+            meshes.append(element_mesh)
             s += element.length.item()
 
-        segment_mesh = scene.to_mesh()
+        # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
+        # materials. Otherwise you might find that everything becomes glossy. (But doesn't always work.)
+        segment_mesh = trimesh.util.concatenate(meshes)
 
         return segment_mesh
 
