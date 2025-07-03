@@ -225,7 +225,10 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def to_mesh(
-        self, s: float = 0.0, cuteness: float = 1.0, show_download_progress: bool = True
+        self,
+        s: float = 0.0,
+        cuteness: float | dict = 1.0,
+        show_download_progress: bool = True,
     ) -> "trimesh.Trimesh | None":  # noqa: F821
         """
         Return a 3D mesh representation of the element at position `s`.
@@ -234,7 +237,10 @@ class Element(ABC, nn.Module):
         :param cuteness: Scaling factor for the mesh. This can be used to adjust the
             size of the mesh for better visualisation. A value of 1.0 means no
             scaling, while values less than 1.0 will make the mesh smaller and values
-            greater than 1.0 will make it larger.
+            greater than 1.0 will make it larger. May be float applied to all elements,
+            or a dictionary mapping element names and types to their respective
+            scaling factors. Names have precedence over types. The `"*"` key can be used
+            to specify a default scaling factor.
         :param show_download_progress: If `True`, show a progress bar during the
             download of the mesh if it is not cached.
         :return: A 3D mesh representation of the element.
@@ -263,9 +269,20 @@ class Element(ABC, nn.Module):
         if abs(self.length.item()) > 0.0:
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
-            mesh.apply_scale(scale_factor_for_correct_length * cuteness)
-        else:
-            mesh.apply_scale(cuteness)
+            mesh.apply_scale(scale_factor_for_correct_length)
+
+        scale_factor_for_cuteness = 1.0
+        if isinstance(cuteness, float):
+            scale_factor_for_cuteness = cuteness
+        elif isinstance(cuteness, dict):
+            # Use the name of the element to find the correct scaling factor
+            if self.name in cuteness:
+                scale_factor_for_cuteness = cuteness[self.name]
+            elif self.__class__ in cuteness:
+                scale_factor_for_cuteness = cuteness[self.__class__]
+            elif "*" in cuteness:
+                scale_factor_for_cuteness = cuteness["*"]
+        mesh.apply_scale(scale_factor_for_cuteness)
 
         # Move mesh to the correct position along the s-axis
         mesh.apply_translation([0, 0, s])
