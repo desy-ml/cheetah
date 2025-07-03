@@ -30,12 +30,16 @@ pip install cheetah-accelerator
 
 **You can run the following example in Binder by clicking [here](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb) or on the badge above.**
 
-A sequence of accelerator elements (or a lattice) is called a `Segment` in _Cheetah_. You can create a `Segment` as follows
+In this example, we create a custom lattice and track a beam through it. We start with some imports.
 
 ```python
 import cheetah
 import torch
+```
 
+Lattices in _Cheetah_ are represented by `Segments`. A `Segment` is created as follows.
+
+```python
 segment = cheetah.Segment(
     elements=[
         cheetah.Drift(length=torch.tensor(0.175)),
@@ -54,51 +58,61 @@ segment = cheetah.Segment(
 )
 ```
 
-Alternatively you can create a segment from an Ocelot cell by running
+Alternatively you can load lattices from Cheetah's variant of LatticeJSON or convert them from an Ocelot cell
 
 ```python
+lattice_json_segment = cheetah.Segment.from_lattice_json("lattice_file.json")
 segment = cheetah.Segment.from_ocelot(cell)
 ```
 
-All elements can be accesses as a property of the segment via their name. The strength of a quadrupole named _AREAMQZM2_ for example, may be set by running
+**Note** that many values must be passed to lattice elements as `torch.Tensor`s. This is because _Cheetah_ uses automatic differentiation to compute the gradient of the beam position at the end of the lattice with respect to the element strengths. This is necessary for gradient-based magnet setting optimisation.
+
+Named lattice elements (i.e. elements that were given a `name` keyword argument) can be accessed by name and their parameters changed like so.
 
 ```python
-segment.AREAMQZM2.k1 = torch.tensor(4.2)
+segment.AREAMQZM1.k1 = torch.tensor(8.2)
+segment.AREAMQZM2.k1 = torch.tensor(-14.3)
+segment.AREAMCVM1.angle = torch.tensor(9e-5)
+segment.AREAMQZM3.k1 = torch.tensor(3.142)
+segment.AREAMCHM1.angle = torch.tensor(-1e-4)
 ```
 
-You can choose to track either a beam defined by its parameters (fast) or by its particles (precise). _Cheetah_ defines two different beam classes for this purpose and beams may be created by
+Cheetah has two different beam classes: `ParticleBeam` and `ParameterBeam`. The former tracks multiple individual macroparticles for high-fidelity results, while the latter tracks the parameters of a particle distribution to save on compute time and memory.
+
+You can create a beam manually by specifying the beam parameters of a Gaussian distributed beam
 
 ```python
 parameter_beam = cheetah.ParameterBeam.from_twiss(beta_x=torch.tensor(3.14))
 particle_beam = cheetah.ParticleBeam.from_twiss(
-    beta_x=torch.tensor(3.14), num_particles=10_000
+    beta_x=torch.tensor(3.14), beta_y=torch.tensor(42.0), num_particles=10_000
 )
 ```
 
-It is also possible to load beams from Ocelot `ParticleArray` or Astra particle distribution files for both types of beam
+or load beams from other codes and standards, including openPMD, Ocelot and Astra.
 
 ```python
-ocelot_beam = cheetah.ParticleBeam.from_ocelot(parray)
-astra_beam = cheetah.ParticleBeam.from_astra(filepath)
+astra_beam = cheetah.ParticleBeam.from_astra(
+    "../../tests/resources/ACHIP_EA1_2021.1351.001"
+)
 ```
 
-In order to track a beam through the segment, simply call the segment like so
+In order to track a beam through the segment, simply call the segment's `track` method.
 
 ```python
 outgoing_beam = segment.track(astra_beam)
 ```
 
-You may plot a segment with the beam position and size by calling
+You may plot a segment with reference particle traces by calling
 
 ```python
-segment.plot_overview(incoming=beam)
+segment.plot_overview(incoming=astra_beam, resolution=0.05)
 ```
 
 ![Overview Plot](https://github.com/desy-ml/cheetah/raw/master/images/readme_overview_plot.png)
 
-where the keyword argument `incoming` is the incoming beam represented in the plot.
+where the keyword argument `incoming` is the incoming beam represented by the reference particles.
 
-**For more demos check out the [`cheetah-demos`](https://github.com/desy-ml/cheetah-demos) repository.**
+**For more demos and examples check out the _Examples_ section in the [Cheetah documentation](https://cheetah-accelerator.readthedocs.io/en/latest/) and the [`cheetah-demos`](https://github.com/desy-ml/cheetah-demos) repository.**
 
 ## Cite Cheetah
 
