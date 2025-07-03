@@ -7,7 +7,7 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import DirtyNameWarning, UniqueNameGenerator
+from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -226,7 +226,7 @@ class Element(ABC, nn.Module):
 
     def to_mesh(
         self, s: float = 0.0, cuteness: float = 1.0, show_download_progress: bool = True
-    ) -> "trimesh.Trimesh":  # noqa: F821
+    ) -> "trimesh.Trimesh | None":  # noqa: F821
         """
         Return a 3D mesh representation of the element at position `s`.
 
@@ -246,6 +246,15 @@ class Element(ABC, nn.Module):
             f"{self.__class__.__name__}.glb",
             show_download_progress=show_download_progress,
         )
+
+        if mesh is None:
+            warnings.warn(
+                f"Could not load 3D mesh for element {self.name} of type "
+                f"{self.__class__.__name__}. The element will not be visualised.",
+                category=NoVisualizationWarning,
+                stacklevel=2,
+            )
+            return None
 
         # NOTE: Scaling must be done before translation to ensure the mesh is
         # positioned correctly after scaling.

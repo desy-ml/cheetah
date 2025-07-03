@@ -1,4 +1,3 @@
-import warnings
 from functools import reduce
 from pathlib import Path
 from typing import Any, Iterator
@@ -15,11 +14,7 @@ from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, Species
-from cheetah.utils import (
-    NoVisualizationWarning,
-    UniqueNameGenerator,
-    squash_index_for_unavailable_dims,
-)
+from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -830,24 +825,14 @@ class Segment(Element):
 
     def to_mesh(
         self, s: float = 0.0, cuteness: float = 1.0
-    ) -> "trimesh.Trimesh":  # noqa: F821
+    ) -> "trimesh.Trimesh | None":  # noqa: F821
         import trimesh  # Import only here because most people will not need it
 
         scene = trimesh.Scene()
 
         for element in self.elements:
             element_mesh = element.to_mesh(s, cuteness)
-
-            if isinstance(element_mesh, trimesh.Trimesh):
-                scene.add_geometry(element_mesh, node_name=element.name)
-            elif not isinstance(element, Drift):
-                warnings.warn(
-                    f"No 3D model available for element {element.name} of type "
-                    f"{element.__class__.__name__}. The element won't be visualised.",
-                    category=NoVisualizationWarning,
-                    stacklevel=2,
-                )
-
+            scene.add_geometry(element_mesh, node_name=element.name)
             s += element.length.item()
 
         segment_mesh = scene.to_mesh()
