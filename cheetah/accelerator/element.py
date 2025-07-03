@@ -244,7 +244,7 @@ class Element(ABC, nn.Module):
         if not asset_path.exists():
             return None
 
-        mesh = trimesh.load(str(asset_path), file_type="glb", force="mesh")
+        mesh = trimesh.load_mesh(str(asset_path), file_type="glb")
 
         # NOTE: Scaling must be done before translation to ensure the mesh is
         # positioned correctly after scaling.
