@@ -5,9 +5,19 @@ from setuptools import find_packages, setup
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
+
+def get_version():
+    version_file = Path("your_package/_version.py").read_text()
+    for line in version_file.splitlines():
+        if line.startswith("__version__"):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
+
+
 setup(
     name="cheetah-accelerator",
-    version="0.7.4",
+    version=get_version(),
     author="Jan Kaiser, Chenran Xu and Christian Hespe",
     author_email="jan.kaiser@desy.de",
     url="https://github.com/desy-ml/cheetah",
