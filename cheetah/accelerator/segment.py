@@ -837,7 +837,7 @@ class Segment(Element):
             element_mesh = element.to_mesh(s)
 
             if isinstance(element_mesh, trimesh.Trimesh):
-                scene += element_mesh
+                scene.add_geometry(element_mesh, node_name=element.name)
             elif not isinstance(element, Drift):
                 warnings.warn(
                     f"No 3D model available for element {element.name} of type "
