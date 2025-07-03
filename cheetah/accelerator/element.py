@@ -264,6 +264,8 @@ class Element(ABC, nn.Module):
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length * cuteness)
+        else:
+            mesh.apply_scale(cuteness)
 
         # Move mesh to the correct position along the s-axis
         mesh.apply_translation([0, 0, s])
