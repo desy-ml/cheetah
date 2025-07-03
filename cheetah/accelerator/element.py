@@ -92,8 +92,8 @@ class Element(ABC, nn.Module):
             return ParameterBeam(
                 new_mu,
                 new_cov,
-                incoming.energy,
-                total_charge=incoming.total_charge,
+                incoming.energy.clone(),
+                total_charge=incoming.total_charge.clone(),
                 s=new_s,
                 species=incoming.species.clone(),
             )
@@ -103,9 +103,9 @@ class Element(ABC, nn.Module):
             new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
-                incoming.energy,
-                particle_charges=incoming.particle_charges,
-                survival_probabilities=incoming.survival_probabilities,
+                incoming.energy.clone(),
+                particle_charges=incoming.particle_charges.clone(),
+                survival_probabilities=incoming.survival_probabilities.clone(),
                 s=new_s,
                 species=incoming.species.clone(),
             )
