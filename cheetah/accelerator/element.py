@@ -224,11 +224,17 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def to_mesh(self, s: float = 0.0) -> "trimesh.Trimesh":  # noqa: F821
+    def to_mesh(
+        self, s: float = 0.0, cuteness: float = 1.0
+    ) -> "trimesh.Trimesh":  # noqa: F821
         """
         Return a 3D mesh representation of the element at position `s`.
 
         :param s: Position of the element along the s-axis in meters.
+        :param cuteness: Scaling factor for the mesh. This can be used to adjust the
+            size of the mesh for better visualisation. A value of 1.0 means no
+            scaling, while values less than 1.0 will make the mesh smaller and values
+            greater than 1.0 will make it larger.
         :return: A 3D mesh representation of the element.
         """
         # Import only here because most people will not need it
@@ -252,8 +258,8 @@ class Element(ABC, nn.Module):
         # Scale element to the correct length (only if the mesh has a length)
         if abs(self.length.item()) > 0.0:
             _, _, mesh_length = mesh.extents
-            scale_factor = self.length.item() / mesh_length
-            mesh.apply_scale(scale_factor)
+            scale_factor_for_correct_length = self.length.item() / mesh_length
+            mesh.apply_scale(scale_factor_for_correct_length * cuteness)
 
         # Move mesh to the correct position along the s-axis
         mesh.apply_translation([0, 0, s])

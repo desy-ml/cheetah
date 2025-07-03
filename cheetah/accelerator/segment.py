@@ -828,13 +828,15 @@ class Segment(Element):
 
         plt.tight_layout()
 
-    def to_mesh(self, s: float = 0.0) -> "trimesh.Trimesh":  # noqa: F821
+    def to_mesh(
+        self, s: float = 0.0, cuteness: float = 1.0
+    ) -> "trimesh.Trimesh":  # noqa: F821
         import trimesh  # Import only here because most people will not need it
 
         scene = trimesh.Scene()
 
         for element in self.elements:
-            element_mesh = element.to_mesh(s)
+            element_mesh = element.to_mesh(s, cuteness)
 
             if isinstance(element_mesh, trimesh.Trimesh):
                 scene.add_geometry(element_mesh, node_name=element.name)
