@@ -7,8 +7,9 @@ long_description = (this_directory / "README.md").read_text()
 
 
 def get_version():
-    version_file = this_directory / "cheetah" / "_version.py"
-    for line in version_file.splitlines():
+    version_file_path = this_directory / "cheetah" / "_version.py"
+    version_file_content = version_file_path.read_text()
+    for line in version_file_content.splitlines():
         if line.startswith("__version__"):
             delim = '"' if '"' in line else "'"
             return line.split(delim)[1]
