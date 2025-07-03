@@ -28,6 +28,7 @@ def test_bmad_tutorial():
                 tilt=torch.tensor(-0.1),
                 name="s",
             ),
+            cheetah.Drift(length=torch.tensor(-0.6), name="v"),
         ],
         name="bmad_tutorial",
     )
@@ -46,6 +47,7 @@ def test_bmad_tutorial():
     assert converted.s.length == correct.s.length
     assert converted.s.k2 == correct.s.k2
     assert converted.s.tilt == correct.s.tilt
+    assert converted.v.length == correct.v.length
 
 
 @pytest.mark.filterwarnings(
