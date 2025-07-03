@@ -824,13 +824,18 @@ class Segment(Element):
         plt.tight_layout()
 
     def to_mesh(
-        self, s: float = 0.0, cuteness: float = 1.0
+        self,
+        s: float = 0.0,
+        cuteness: float | dict = 1.0,
+        show_download_progress: bool = True,
     ) -> "trimesh.Trimesh | None":  # noqa: F821
         import trimesh  # Import only here because most people will not need it
 
         meshes = []
         for element in self.elements:
-            element_mesh = element.to_mesh(s, cuteness)
+            element_mesh = element.to_mesh(
+                s=s, cuteness=cuteness, show_download_progress=show_download_progress
+            )
             meshes.append(element_mesh)
             s += element.length.item()
 

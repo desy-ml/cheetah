@@ -244,7 +244,10 @@ class Quadrupole(Element):
         ax.add_patch(patch)
 
     def to_mesh(
-        self, s: float = 0.0, cuteness: float = 1.0, show_download_progress: bool = True
+        self,
+        s: float = 0.0,
+        cuteness: float | dict = 1.0,
+        show_download_progress: bool = True,
     ) -> "trimesh.Trimesh | None":  # noqa: F821
         import trimesh
 
