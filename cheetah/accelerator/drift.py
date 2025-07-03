@@ -151,6 +151,13 @@ class Drift(Element):
         # This does nothing on purpose, because drift sections are visualised as gaps.
         return ax
 
+    def to_mesh(
+        self, s: float = 0.0, cuteness: float = 1.0, show_download_progress: bool = True
+    ) -> "trimesh.Trimesh | None":  # noqa: F821
+        # Override to return None, as drift sections do not have a 3D mesh
+        # representation on purpose.
+        return None
+
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "tracking_method"]

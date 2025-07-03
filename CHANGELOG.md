@@ -9,6 +9,7 @@
 - Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
 - Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
 - Add the ability to the Bmad and Elegant converters to parse expressions that access properties from other elements (see #501, #498) (@amylizzle, @jank324)
+- New feature for generating 3D models of lattices and viewing them (see #352) (@chrisjcc, @jank324)
 
 ### 🐛 Bug fixes
 
@@ -26,6 +27,7 @@
 
 - Julian Gethmann (@smartsammler)
 - Arjun Dhamrait (@adhamrait)
+- Christian Contreras-Campana (@chrisjcc)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
