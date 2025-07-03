@@ -63,7 +63,11 @@ def download_url_to_file(
 
     destination_path.parent.mkdir(parents=True, exist_ok=True)
     with open(destination_path, "wb") as f, tqdm(
-        total=total_size, disable=not show_progress, unit="iB", unit_scale=True
+        total=total_size,
+        disable=not show_progress,
+        unit="iB",
+        unit_scale=True,
+        desc=f"Downloading {source_url.split('/')[-1]}",
     ) as pbar:
         for chunk in response.iter_content(chunk_size=block_size):
             f.write(chunk)
