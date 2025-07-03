@@ -38,6 +38,6 @@ setup(
     ],
     extras_require={
         "openpmd": ["openpmd-beamphysics"],
-        "3d-visualization": ["trimesh>=4.0.0"],
+        "3d-visualization": ["trimesh>=4.0.0", "requests>=2.32.2"],
     },
 )
