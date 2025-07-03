@@ -8,7 +8,7 @@
 
 - Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
 - Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
-- Allows use of previously defined element properties in lattice expressions (ie, referencing the length of a previous element) (see #501) (@amylizzle)
+- Add the ability to the Bmad and Elegant converters to parse expressions that access properties from other elements (see #501, #498) (@amylizzle, @jank324)
 - Visualisation of lattices in 3D (see #352) (@chrisjcc, @jank324)
 
 ### 🐛 Bug fixes
@@ -21,7 +21,7 @@
 - Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
 - Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
 - PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
-- Make README example more copy-paste friendly (see #493) (@jank324, @ax3l)
+- Make README example more copy-paste friendly, and generally improve it and the simple intro notebook in the docs. (see #493, #496) (@jank324, @ax3l)
 
 ### 🌟 First Time Contributors
 
