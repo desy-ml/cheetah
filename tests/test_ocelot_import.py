@@ -71,7 +71,11 @@ def test_ocelot_to_particlebeam():
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
-@pytest.mark.parametrize("desired_dtype", [None, torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "desired_dtype",
+    [None, torch.float32, torch.float64],
+    ids=["default", "float32", "float64"],
+)
 def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype):
     """Test that Ocelot import respects the desired dtype."""
     parray = ocelot.astraBeam2particleArray("tests/resources/ACHIP_EA1_2021.1351.001")

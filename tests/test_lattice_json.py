@@ -72,7 +72,9 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
 
 
-@pytest.mark.parametrize("desired_dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "desired_dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     """
     Test that the lattice JSON import correctly interprets its optional dtype parameter.

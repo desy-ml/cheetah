@@ -70,6 +70,7 @@ def test_bmad_tutorial():
             ),
         ),
     ],
+    ids=["cpu", "cuda", "mps"],
 )
 def test_device_passing(device: torch.device):
     """Test that the device is passed correctly."""
@@ -91,7 +92,9 @@ def test_device_passing(device: torch.device):
 @pytest.mark.filterwarnings(
     r"ignore:.*( d | g | dg ).*:cheetah.utils.NotUnderstoodPropertyWarning"
 )
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_dtype_passing(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
     file_path = "tests/resources/bmad_tutorial_lattice.bmad"
@@ -113,7 +116,10 @@ def test_dtype_passing(dtype: torch.dtype):
     r"ignore:.*( d | g | dg ).*:cheetah.utils.NotUnderstoodPropertyWarning"
 )
 @pytest.mark.parametrize(
-    "default_torch_dtype", [torch.float32, torch.float64], indirect=True
+    "default_torch_dtype",
+    [torch.float32, torch.float64],
+    indirect=True,
+    ids=["float32", "float64"],
 )
 def test_default_dtype(default_torch_dtype):
     """Test that the default dtype is used if no explicit type is passed."""

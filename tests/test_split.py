@@ -11,10 +11,11 @@ def test_element_end(original):
     original element.
     """
 
+    original.to(torch.float64)
     split = cheetah.Segment(original.split(resolution=torch.tensor(0.015)))
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
 
     outgoing_beam_original = original.track(incoming_beam)

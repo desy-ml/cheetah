@@ -143,6 +143,7 @@ def test_generate_uniform_ellipsoid_dtype():
             ),
         ),
     ],
+    ids=["cpu", "cuda", "mps"],
 )
 def test_generate_uniform_ellipsoid_device(device):
     """
@@ -302,6 +303,7 @@ def test_indexing_fails_for_invalid_index():
             ),
         ),
     ],
+    ids=["cpu", "cuda", "mps"],
 )
 def test_random_subsample_gaussian_properties(device: torch.device):
     """
@@ -371,6 +373,7 @@ def test_random_subsample_gaussian_properties(device: torch.device):
             ),
         ),
     ],
+    ids=["cpu", "cuda", "mps"],
 )
 def test_random_subsample_energy_distance_better_than_gaussian(device: torch.device):
     """

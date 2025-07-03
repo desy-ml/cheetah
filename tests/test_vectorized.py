@@ -336,15 +336,18 @@ def test_vectorized_screen_2d(BeamClass, method):
 
 @pytest.mark.for_every_element(
     "element_with_length",
-    except_for=[
-        cheetah.Aperture,
-        cheetah.BPM,
-        cheetah.CustomTransferMap,
-        cheetah.Marker,
-        cheetah.Screen,
-        cheetah.Segment,
-        cheetah.SpaceChargeKick,
-    ],
+    except_if=lambda testcase: isinstance(
+        testcase,
+        (
+            cheetah.Aperture,
+            cheetah.BPM,
+            cheetah.CustomTransferMap,
+            cheetah.Marker,
+            cheetah.Screen,
+            cheetah.Segment,
+            cheetah.SpaceChargeKick,
+        ),
+    ),
 )
 def test_broadcasting_two_different_inputs(element_with_length):
     """
