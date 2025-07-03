@@ -2,4 +2,3 @@ git+https://github.com/ocelot-collab/ocelot.git   # Ocelot
 openpmd-beamphysics
 pytest
 pytest-cov
-trimesh==4.6.13
