@@ -37,7 +37,11 @@ def get_repository_raw_url() -> str:
     version_tag = (
         f"v{cheetah.__version__}" if "-dev" not in cheetah.__version__ else "master"
     )
-    return f"https://raw.githubusercontent.com/desy-ml/cheetah/{version_tag}"
+    # return f"https://raw.githubusercontent.com/desy-ml/cheetah/{version_tag}"
+    # return "https://github.com/chrisjcc/cheetah/raw/refs/heads/feature/3d_lattice_viewer/assets/3d/HorizontalCorrector.glb"
+    return (
+        f"https://raw.githubusercontent.com/chrisjcc/cheetah/feature/3d_lattice_viewer/"
+    )
 
 
 def download_url_to_file(
@@ -57,6 +61,7 @@ def download_url_to_file(
     total_size = int(response.headers.get("content-length", 0))
     block_size = 8192  # 8 KB
 
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
     with open(destination_path, "wb") as f, tqdm(
         total=total_size, disable=not show_progress, unit="iB", unit_scale=True
     ) as pbar:
@@ -65,7 +70,9 @@ def download_url_to_file(
             pbar.update(len(chunk))
 
 
-def load_3d_asset(name: str, show_download_progress: bool = True) -> trimesh.Trimesh:
+def load_3d_asset(
+    name: str, show_download_progress: bool = True
+) -> trimesh.Trimesh | None:
     """
     Get a 3D asset by file name.
 
@@ -79,8 +86,11 @@ def load_3d_asset(name: str, show_download_progress: bool = True) -> trimesh.Tri
 
     if not asset_path.exists():
         asset_url = f"{get_repository_raw_url()}/assets/3d/{name}"
-        download_url_to_file(
-            asset_url, asset_path, show_progress=show_download_progress
-        )
+        try:
+            download_url_to_file(
+                asset_url, asset_path, show_progress=show_download_progress
+            )
+        except requests.HTTPError:
+            return None
 
     return trimesh.load_mesh(asset_path, file_type="glb")
