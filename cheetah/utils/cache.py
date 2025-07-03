@@ -37,11 +37,7 @@ def get_repository_raw_url() -> str:
     version_tag = (
         f"v{cheetah.__version__}" if "-dev" not in cheetah.__version__ else "master"
     )
-    # return f"https://raw.githubusercontent.com/desy-ml/cheetah/{version_tag}"
-    # return "https://github.com/chrisjcc/cheetah/raw/refs/heads/feature/3d_lattice_viewer/assets/3d/HorizontalCorrector.glb"
-    return (
-        f"https://raw.githubusercontent.com/chrisjcc/cheetah/feature/3d_lattice_viewer/"
-    )
+    return f"https://raw.githubusercontent.com/desy-ml/cheetah/{version_tag}"
 
 
 def download_url_to_file(
