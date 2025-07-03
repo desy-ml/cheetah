@@ -225,7 +225,7 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def to_mesh(
-        self, s: float = 0.0, cuteness: float = 1.0
+        self, s: float = 0.0, cuteness: float = 1.0, show_download_progress: bool = True
     ) -> "trimesh.Trimesh":  # noqa: F821
         """
         Return a 3D mesh representation of the element at position `s`.
@@ -235,22 +235,17 @@ class Element(ABC, nn.Module):
             size of the mesh for better visualisation. A value of 1.0 means no
             scaling, while values less than 1.0 will make the mesh smaller and values
             greater than 1.0 will make it larger.
+        :param show_download_progress: If `True`, show a progress bar during the
+            download of the mesh if it is not cached.
         :return: A 3D mesh representation of the element.
         """
         # Import only here because most people will not need it
-        from importlib.resources import files
+        from cheetah.utils import cache
 
-        import trimesh
-
-        from cheetah import _assets
-
-        # Use importlib.resources to access the asset file.
-        asset_path = files(_assets) / f"{self.__class__.__name__}.glb"
-
-        if not asset_path.exists():
-            return None
-
-        mesh = trimesh.load_mesh(str(asset_path), file_type="glb")
+        mesh = cache.load_3d_asset(
+            f"{self.__class__.__name__}.glb",
+            show_download_progress=show_download_progress,
+        )
 
         # NOTE: Scaling must be done before translation to ensure the mesh is
         # positioned correctly after scaling.
