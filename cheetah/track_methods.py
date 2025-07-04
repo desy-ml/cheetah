@@ -6,6 +6,62 @@ from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
 
 
+def _base_rmatrix(
+    R: torch.Tensor,
+    length: torch.Tensor,
+    k1: torch.Tensor,
+    hx: torch.Tensor,
+    species: Species,
+    energy: torch.Tensor | None = None,
+) -> None:
+    """
+    Write a first-order universal transfer map for a beamline element into an existing
+    tensor.
+
+    :param R: Tensor to write the transfer matrix into. Has to be initialized with an
+        identity matrix beforehand.
+    :param length: Length of the element in m.
+    :param k1: Quadrupole strength in 1/m**2.
+    :param hx: Curvature (1/radius) of the element in 1/m.
+    :param species: Particle species of the beam.
+    :param energy: Beam energy in eV.
+    """
+    device = R.device
+    dtype = R.dtype
+
+    zero = torch.tensor(0.0, device=device, dtype=dtype)
+    energy = energy if energy is not None else zero
+
+    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+
+    kx2 = k1 + hx**2
+    ky2 = -k1
+    kx = torch.sqrt(torch.complex(kx2, zero))
+    ky = torch.sqrt(torch.complex(ky2, zero))
+    cx = torch.cos(kx * length).real
+    cy = torch.cos(ky * length).real
+    sx = (torch.sinc(kx * length / torch.pi) * length).real
+    sy = (torch.sinc(ky * length / torch.pi) * length).real
+    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
+    r56 = torch.where(kx2 != 0, hx**2 * (length - sx) / kx2 / beta**2, zero)
+
+    r56 = r56 - length / beta**2 * igamma2
+
+    R[..., 0, 0] = cx
+    R[..., 0, 1] = sx
+    R[..., 0, 5] = dx / beta
+    R[..., 1, 0] = -kx2 * sx
+    R[..., 1, 1] = cx
+    R[..., 1, 5] = sx * hx / beta
+    R[..., 2, 2] = cy
+    R[..., 2, 3] = sy
+    R[..., 3, 2] = -ky2 * sy
+    R[..., 3, 3] = cy
+    R[..., 4, 0] = sx * hx / beta
+    R[..., 4, 1] = dx / beta
+    R[..., 4, 5] = r56
+
+
 def base_rmatrix(
     length: torch.Tensor,
     k1: torch.Tensor,
@@ -27,45 +83,14 @@ def base_rmatrix(
     """
     device = length.device
     dtype = length.dtype
-
-    zero = torch.tensor(0.0, device=device, dtype=dtype)
-
-    tilt = tilt if tilt is not None else zero
-    energy = energy if energy is not None else zero
-
-    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
-
-    kx2 = k1 + hx**2
-    ky2 = -k1
-    kx = torch.sqrt(torch.complex(kx2, zero))
-    ky = torch.sqrt(torch.complex(ky2, zero))
-    cx = torch.cos(kx * length).real
-    cy = torch.cos(ky * length).real
-    sx = (torch.sinc(kx * length / torch.pi) * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
-    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
-    r56 = torch.where(kx2 != 0, hx**2 * (length - sx) / kx2 / beta**2, zero)
-
-    r56 = r56 - length / beta**2 * igamma2
+    tilt = tilt if tilt is not None else torch.tensor(0.0, device=device, dtype=dtype)
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
     )
 
     R = torch.eye(7, dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
-    R[..., 0, 0] = cx
-    R[..., 0, 1] = sx
-    R[..., 0, 5] = dx / beta
-    R[..., 1, 0] = -kx2 * sx
-    R[..., 1, 1] = cx
-    R[..., 1, 5] = sx * hx / beta
-    R[..., 2, 2] = cy
-    R[..., 2, 3] = sy
-    R[..., 3, 2] = -ky2 * sy
-    R[..., 3, 3] = cy
-    R[..., 4, 0] = sx * hx / beta
-    R[..., 4, 1] = dx / beta
-    R[..., 4, 5] = r56
+    _base_rmatrix(R, length=length, k1=k1, hx=hx, species=species, energy=energy)
 
     # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
     # if hx != 0 or k1 != 0. Note that the first if is here to improve speed when no
@@ -274,7 +299,14 @@ def base_ttensor(
         + 0.5 * hx**2 / beta * j1
         - 0.25 / beta * (length + cy * sy)
     )
-    T[..., 6, 6, 6] = 0.0  # Constant term currently handled by first order transfer map
+
+    # Add the first-order tracking components. _base_rmatrix assumes that the storage is
+    # pre-filled with an identity matrix, so we insert that first.
+    for i in range(7):
+        T[..., i, 6, i] = 1.0
+    _base_rmatrix(
+        T[..., :, 6, :], length=length, k1=k1, hx=hx, species=species, energy=energy
+    )
 
     # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
     # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
