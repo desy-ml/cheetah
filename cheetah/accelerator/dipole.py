@@ -492,11 +492,6 @@ class Dipole(Element):
 
         return tm
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for dipole properly, for now just returns the
-        # element itself
-        return [self]
-
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(length={repr(self.length)}, "

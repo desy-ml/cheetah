@@ -203,11 +203,6 @@ class TransverseDeflectingCavity(Element):
         )
         return outgoing_beam
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for cavity properly, for now just returns the
-        # element itself
-        return [self]
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:

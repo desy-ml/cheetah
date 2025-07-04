@@ -6,13 +6,27 @@
 
 ### 🚀 Features
 
-- Allow second order tracking for dipole, drift, and quadrupole elements, and add a convenient method to set tracking method for all the segment. Rename the tracking method `cheetah` to `linear`. (see #476) (@cr-xu)
+- Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
+- Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
+- Add the ability to the Bmad and Elegant converters to parse expressions that access properties from other elements (see #501, #498) (@amylizzle, @jank324)
+- Allow second-order tracking for dipole, drift, and quadrupole elements, and add a convenient method to set tracking method for all the segment. Rename the tracking method `cheetah` to `linear`. (see #476) (@cr-xu)
 
 ### 🐛 Bug fixes
 
+- Fix various `dtype` and `device` pertaining to `ParticleBeam`, `Species` and `SpaceChargeKick` (see #485, #486, #490, #491) (@Hespe, @jank324, @adhamrait)
+- Remove incorrect implementation of `split` from `HorizontalCorrector` and `VerticalCorrector` (see #480) (@Hespe)
+
 ### 🐆 Other
 
+- Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
+- Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
+- PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
+- Make README example more copy-paste friendly, and generally improve it and the simple intro notebook in the docs. (see #493, #496) (@jank324, @ax3l)
+
 ### 🌟 First Time Contributors
+
+- Julian Gethmann (@smartsammler)
+- Arjun Dhamrait (@adhamrait)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 

@@ -160,7 +160,7 @@ class Drift(Element):
         return self.tracking_method == "cheetah" or self.tracking_method == "linear"
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         return [
             Drift(
                 self.length / num_splits,

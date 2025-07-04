@@ -228,7 +228,6 @@ class Element(ABC, nn.Module):
             }
         )
 
-    @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`. Some elements may not
@@ -238,7 +237,7 @@ class Element(ABC, nn.Module):
         :param resolution: Length of the longest allowed split in meters.
         :return: Ordered sequence of sliced elements.
         """
-        raise NotImplementedError
+        return [self]
 
     def is_name_sanitized(self) -> bool:
         """
