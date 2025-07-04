@@ -10,7 +10,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
-@pytest.mark.parametrize("tracking_method", ["cheetah", "second_order"])
+@pytest.mark.parametrize("tracking_method", ["linear", "second_order"])
 def test_dipole(tracking_method):
     """
     Test that the tracking results through a Cheetah `Dipole` element match those

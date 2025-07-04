@@ -232,7 +232,7 @@ def test_tracking_method_vectorization(tracking_method):
     assert outgoing.total_charge.shape == torch.Size([])
 
 
-@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+@pytest.mark.parametrize("tracking_method", ["linear", "bmadx"])
 def test_quadrupole_clone_tracking_method(tracking_method):
     """
     Test that the tracking_method is preserved when cloning a Quadrupole.
