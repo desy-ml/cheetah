@@ -146,18 +146,13 @@ class Element(ABC, nn.Module):
             )
             return Element.track(self, incoming)
 
-        first_order_tm = self.transfer_map(incoming.energy, incoming.species)
         second_order_tm = self.second_order_map(incoming.energy, incoming.species)
-
-        # Apply the transfer map to the incoming particles
-        first_order_particles = incoming.particles @ first_order_tm.transpose(-2, -1)
-        second_order_particles = torch.einsum(
+        outgoing_particles = torch.einsum(
             "...ijk,...j,...k->...i",
             second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
             incoming.particles,
             incoming.particles,
         )
-        outgoing_particles = second_order_particles + first_order_particles
 
         return ParticleBeam(
             particles=outgoing_particles,
