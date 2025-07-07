@@ -248,7 +248,7 @@ class Quadrupole(Element):
         s: float = 0.0,
         cuteness: float | dict = 1.0,
         show_download_progress: bool = True,
-    ) -> "trimesh.Trimesh | None":  # noqa: F821
+    ) -> "trimesh.Trimesh | None":  # noqa: F821 # type: ignore
         import trimesh
 
         mesh = super().to_mesh(

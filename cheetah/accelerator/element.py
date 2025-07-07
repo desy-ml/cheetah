@@ -229,7 +229,7 @@ class Element(ABC, nn.Module):
         s: float = 0.0,
         cuteness: float | dict = 1.0,
         show_download_progress: bool = True,
-    ) -> "trimesh.Trimesh | None":  # noqa: F821
+    ) -> "trimesh.Trimesh | None":  # noqa: F821 # type: ignore
         """
         Return a 3D mesh representation of the element at position `s`.
 
