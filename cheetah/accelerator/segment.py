@@ -840,7 +840,8 @@ class Segment(Element):
             s += element.length.item()
 
         # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
-        # materials. Otherwise you might find that everything becomes glossy. (But doesn't always work.)
+        # materials. Otherwise you might find that everything becomes glossy. (But
+        # doesn't always work.)
         segment_mesh = trimesh.util.concatenate(meshes)
 
         return segment_mesh
