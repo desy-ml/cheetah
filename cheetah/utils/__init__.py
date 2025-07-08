@@ -20,7 +20,6 @@ from .warnings import (  # noqa: F401
     DefaultParameterWarning,
     DirtyNameWarning,
     NoBeamPropertiesInLatticeWarning,
-    NotSupportedTrackingMethodWarning,
     NotUnderstoodPropertyWarning,
     PhysicsWarning,
     UnknownElementWarning,

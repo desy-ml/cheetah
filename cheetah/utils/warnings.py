@@ -53,12 +53,3 @@ class DirtyNameWarning(Warning):
     """
 
     ...
-
-
-class NotSupportedTrackingMethodWarning(PhysicsWarning):
-    """
-    Warning raised when a tracking method is not supported in combination with the
-    type of beam that is being tracked.
-    """
-
-    ...

@@ -7,11 +7,7 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import (
-    DirtyNameWarning,
-    NotSupportedTrackingMethodWarning,
-    UniqueNameGenerator,
-)
+from cheetah.utils import DirtyNameWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -132,19 +128,15 @@ class Element(ABC, nn.Module):
     def track_second_order(self, incoming: Beam):
         """
         Track particles through the element with second-order transfer maps.
-        The input can be a `ParameterBeam` or a `ParticleBeam`.
+        For now, second order tracking is only supported for `ParticleBeam`.
 
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if isinstance(incoming, ParameterBeam):
-            warnings.warn(
-                "Second order tracking is not supported for `ParameterBeam` "
-                "for now. Falling back to first-order tracking instead.",
-                category=NotSupportedTrackingMethodWarning,
-                stacklevel=2,
-            )
-            return Element.track(self, incoming)
+
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Second-order tracking is currently only supported for `ParticleBeam`."
 
         second_order_tm = self.second_order_map(incoming.energy, incoming.species)
         outgoing_particles = torch.einsum(
