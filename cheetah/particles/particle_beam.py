@@ -1235,10 +1235,12 @@ class ParticleBeam(Beam):
         TODO: Add documentation
         Mention that this returns the PDF (i.e. normalized to 1, when multiplied by bin size)
         """
+        factory_kwargs = {"device": self.particles.device, "dtype": self.particles.dtype}
+
         # Extract particle quantities
         x_array = getattr(self, dimension)
         weights = getattr(self, 'particle_charges').abs() * getattr(self, 'survival_probabilities')
-        bin_edges = torch.linspace(bin_range[0], bin_range[1], bins)
+        bin_edges = torch.linspace(bin_range[0], bin_range[1], bins, **factory_kwargs)
 
         # Compute histogram
         if method == "histogram":
@@ -1254,6 +1256,7 @@ class ParticleBeam(Beam):
                     if kde_bandwidth is not None
                     else bin_edges[1] - bin_edges[0]
                 ),
+                **factory_kwargs
             )
             histogram = kde_histogram_1d(
                 x=x_array,
