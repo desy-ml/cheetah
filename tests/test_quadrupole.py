@@ -199,7 +199,7 @@ def test_quadrupole_bmadx_tracking(dtype):
     )
 
 
-@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+@pytest.mark.parametrize("tracking_method", ["linear", "bmadx"])
 def test_tracking_method_vectorization(tracking_method):
     """
     Test that the quadruople vectorisation works correctly with both tracking methods.
