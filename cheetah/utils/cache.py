@@ -5,8 +5,6 @@ import requests
 import trimesh
 from tqdm import tqdm
 
-import cheetah
-
 # This follows the way PyTorch and Torchvision download model weights and store them in
 # a cache directory, which is typically something like `~/.cache/cheetah`.
 # See https://github.com/pytorch/pytorch/blob/main/torch/hub.py and
@@ -26,22 +24,16 @@ def get_cheetah_cache_dir() -> Path:
     return system_cache_dir / "cheetah"
 
 
-def get_repository_raw_url() -> str:
+def get_repository_raw_url(owner: str, repository: str, branch_or_tag: str) -> str:
     """
-    Get base URL for raw files in the Cheetah repository.
+    Get the base URL for the root of the raw content of a GitHub repository.
 
-    Points to the correct version of the repository based on the current Cheetah
-    version. Points to the `master` branch if a development version is used. (Signified
-    by "-dev" in the version string.)
+    :param owner: The owner of the GitHub repository. Can be a user or an organisation.
+    :param repository: The name of the GitHub repository.
+    :param branch_or_tag: The branch or tag name for the version of the repository.
+    :return: The base URL for the raw content of the repository.
     """
-    version_tag = (
-        f"v{cheetah.__version__}" if "-dev" not in cheetah.__version__ else "master"
-    )
-    # return f"https://raw.githubusercontent.com/desy-ml/cheetah/{version_tag}"
-    # return "https://github.com/chrisjcc/cheetah/raw/refs/heads/feature/3d_lattice_viewer/assets/3d/HorizontalCorrector.glb"
-    return (
-        f"https://raw.githubusercontent.com/chrisjcc/cheetah/feature/3d_lattice_viewer/"
-    )
+    return f"https://raw.githubusercontent.com/{owner}/{repository}/{branch_or_tag}"
 
 
 def download_url_to_file(
@@ -89,7 +81,10 @@ def load_3d_asset(
     asset_path = assets_dir / name
 
     if not asset_path.exists():
-        asset_url = f"{get_repository_raw_url()}/assets/3d/{name}"
+        asset_repository_url = get_repository_raw_url(
+            owner="desy-ml", repository="3d-assets", branch_or_tag="master"
+        )
+        asset_url = f"{asset_repository_url}/{name}"
         try:
             download_url_to_file(
                 asset_url, asset_path, show_progress=show_download_progress
