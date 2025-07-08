@@ -188,6 +188,10 @@ def test_segment_set_tracking_method(tracking_method):
             cheetah.Quadrupole(length=torch.tensor(0.3), name="q1"),
             cheetah.Drift(length=torch.tensor(0.2), name="d2"),
             cheetah.Dipole(length=torch.tensor(0.5), name="b1"),
+            cheetah.Sextupole(
+                length=torch.tensor(0.4), k2=torch.tensor(0.1), name="s1"
+            ),
+            cheetah.Marker(name="m1"),
         ]
     )
 
@@ -195,4 +199,6 @@ def test_segment_set_tracking_method(tracking_method):
     segment.set_tracking_method(tracking_method)
 
     for element in segment.elements:
-        assert element.tracking_method == tracking_method
+        if hasattr(element, "supported_tracking_method"):
+            if tracking_method in element.supported_tracking_methods:
+                assert element.tracking_method == tracking_method
