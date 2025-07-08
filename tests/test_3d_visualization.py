@@ -5,12 +5,10 @@ import trimesh
 import cheetah
 
 
-def test_segment_method():
+def test_run_and_check_return():
     """
-    Test that the `to_mesh` method of the `Segment` class returns a trimesh.Scene
-    without raising an error.
-
-    TODO: Rename test once `Segment3DBuilder` is phased out and refine test depth.
+    Test that the `to_mesh` method of the `Segment` class returns a `trimesh.Scene` and
+    correctly shaped output transform matrix without raising an error.
     """
     segment = cheetah.Segment(
         elements=[
@@ -25,3 +23,4 @@ def test_segment_method():
 
     assert isinstance(mesh, trimesh.Trimesh)
     assert isinstance(output_transform, np.ndarray)
+    assert output_transform.shape == (4, 4)
