@@ -300,14 +300,6 @@ def base_ttensor(
         - 0.25 / beta * (length + cy * sy)
     )
 
-    # Add the first-order tracking components. _base_rmatrix assumes that the storage is
-    # pre-filled with an identity matrix, so we insert that first.
-    for i in range(7):
-        T[..., i, 6, i] = 1.0
-    _base_rmatrix(
-        T[..., :, 6, :], length=length, k1=k1, hx=hx, species=species, energy=energy
-    )
-
     # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
     # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
     # when no rotation needs to be applied accross all vector dimensions. The
