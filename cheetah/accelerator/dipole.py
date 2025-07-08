@@ -464,23 +464,22 @@ class Dipole(Element):
 
         return tm
 
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"angle={repr(self.angle)}, "
-            + f"k1={repr(self.k1)}, "
-            + f"dipole_e1={repr(self.dipole_e1)},"
-            + f"dipole_e2={repr(self.dipole_e2)},"
-            + f"tilt={repr(self.tilt)},"
-            + f"gap={repr(self.gap)},"
-            + f"gap_exit={repr(self.gap_exit)},"
-            + f"fringe_integral={repr(self.fringe_integral)},"
-            + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
-            + f"fringe_at={repr(self.fringe_at)},"
-            + f"fringe_type={repr(self.fringe_type)},"
-            + f"tracking_method={repr(self.tracking_method)}, "
-            + f"name={repr(self.name)})"
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+        plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
+
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+
+        patch = Rectangle(
+            (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
         )
+        ax.add_patch(patch)
 
     @property
     def defining_features(self) -> list[str]:
@@ -500,19 +499,20 @@ class Dipole(Element):
             "tracking_method",
         ]
 
-    def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
-    ) -> plt.Axes:
-        ax = ax or plt.subplot(111)
-
-        plot_s = s[vector_idx] if s.dim() > 0 else s
-        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
-        plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
-
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
-
-        patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"angle={repr(self.angle)}, "
+            + f"k1={repr(self.k1)}, "
+            + f"dipole_e1={repr(self.dipole_e1)},"
+            + f"dipole_e2={repr(self.dipole_e2)},"
+            + f"tilt={repr(self.tilt)},"
+            + f"gap={repr(self.gap)},"
+            + f"gap_exit={repr(self.gap_exit)},"
+            + f"fringe_integral={repr(self.fringe_integral)},"
+            + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
+            + f"fringe_at={repr(self.fringe_at)},"
+            + f"fringe_type={repr(self.fringe_type)},"
+            + f"tracking_method={repr(self.tracking_method)}, "
+            + f"name={repr(self.name)})"
         )
-        ax.add_patch(patch)
