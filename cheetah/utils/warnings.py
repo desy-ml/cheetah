@@ -53,3 +53,12 @@ class DirtyNameWarning(Warning):
     """
 
     ...
+
+
+class NoVisualizationWarning(Warning):
+    """
+    Warning raised when an element does not have a visualization method, i.e. it cannot
+    be converted to a 3D mesh.
+    """
+
+    ...
