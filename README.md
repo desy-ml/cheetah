@@ -112,6 +112,23 @@ segment.plot_overview(incoming=astra_beam, resolution=0.05)
 
 where the keyword argument `incoming` is the incoming beam represented by the reference particles.
 
+You can also visualise your segment in 3D. **Note** that this requires that you installed Cheetah as `pip install cheetah-accelerator[3d]`.
+
+Use `mesh.show` to view the mesh and `mesh.export` to export it to a file.
+
+```python
+mesh, _ = segment.to_mesh(
+    cuteness={cheetah.HorizontalCorrector: 2.0, cheetah.VerticalCorrector: 2.0}
+)
+mesh.show()
+```
+
+![Animated Mesh](https://github.com/desy-ml/cheetah/raw/master/images/animated_mesh.gif)
+
+```python
+mesh.export(file_obj="my_first_cheetah_mesh.glb", file_type="glb")
+```
+
 **For more demos and examples check out the _Examples_ section in the [Cheetah documentation](https://cheetah-accelerator.readthedocs.io/en/latest/) and the [`cheetah-demos`](https://github.com/desy-ml/cheetah-demos) repository.**
 
 ## Cite Cheetah
