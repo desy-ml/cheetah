@@ -20,7 +20,10 @@ def test_compare_sextupole_to_ocelot_particle():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_sextupole = cheetah.Sextupole(
-        length=torch.tensor(length), k2=torch.tensor(k2), tilt=torch.tensor(tilt)
+        length=torch.tensor(length),
+        k2=torch.tensor(k2),
+        tilt=torch.tensor(tilt),
+        tracking_method="second_order",
     )
     outgoing_cheetah = cheetah_sextupole.track(incoming)
 
@@ -61,6 +64,7 @@ def test_compare_sextupole_to_ocelot_particle_vectorized():
         length=torch.tensor(length),
         k2=torch.tensor(k2).repeat([2]),
         tilt=torch.tensor(tilt).repeat([3, 1]),
+        tracking_method="second_order",
     )
     outgoing_cheetah = cheetah_sextupole.track(incoming)
 
@@ -82,7 +86,7 @@ def test_compare_sextupole_to_ocelot_particle_vectorized():
     )
 
 
-def test_compare_sextupole_to_ocelot_parameter():
+def test_compare_sextupole_to_ocelot_parameter_linear():
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot for a
     `ParameterBeam` with only first order effects in Ocelot.
@@ -157,12 +161,17 @@ def test_sextupole_with_misalignments():
         sigma_py=torch.tensor(2e-7),
         sigma_p=torch.tensor(1e-2),
     )
+    incoming_beam_with_misalignment = incoming_beam.clone()
+    incoming_beam_with_misalignment.particles[:, 0] -= 1e-3
+
     outbeam_sextupole_with_misalignment = sextupole_with_misalignment(incoming_beam)
-    outbeam_sextupole_without_misalignment = sextupole_without_misalignment(
-        incoming_beam
+    outbeam_sextupole_without_misalignment_mismatched_incoming = (
+        sextupole_without_misalignment(incoming_beam_with_misalignment)
     )
 
-    assert not torch.allclose(
-        outbeam_sextupole_with_misalignment.mu_x,
-        outbeam_sextupole_without_misalignment.mu_x,
+    outbeam_sextupole_without_misalignment_mismatched_incoming.particles[:, 0] += 1e-3
+
+    assert torch.allclose(
+        outbeam_sextupole_with_misalignment.particles,
+        outbeam_sextupole_without_misalignment_mismatched_incoming.particles,
     )

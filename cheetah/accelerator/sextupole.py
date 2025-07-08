@@ -1,3 +1,5 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -16,11 +18,16 @@ class Sextupole(Element):
     :param k2: Sextupole strength in 1/m^3.
     :param misalignment: Transverse misalignment in x and y directions in meters.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
+    :param tracking_method: Method to use for tracking through the element.
+        Note: By default, the sextupole is created with linear tracking method so it
+        will not have second order effects.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """
+
+    supported_tracking_methods = ["linear", "second_order"]
 
     def __init__(
         self,
@@ -28,6 +35,7 @@ class Sextupole(Element):
         k2: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
+        tracking_method: Literal["linear", "second_order"] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -54,6 +62,8 @@ class Sextupole(Element):
         self.register_buffer_or_parameter(
             "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
         )
+
+        self.tracking_method = tracking_method
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         R = base_rmatrix(
@@ -91,7 +101,10 @@ class Sextupole(Element):
         return T
 
     def track(self, incoming: Beam) -> Beam:
-        return super().track_second_order(incoming)
+        if self.tracking_method == "linear":
+            return super().track(incoming)
+        elif self.tracking_method == "second_order":
+            return super().track_second_order(incoming)
 
     @property
     def is_skippable(self) -> bool:
