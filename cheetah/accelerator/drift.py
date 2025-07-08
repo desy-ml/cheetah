@@ -152,11 +152,21 @@ class Drift(Element):
         return ax
 
     def to_mesh(
-        self, s: float = 0.0, cuteness: float = 1.0, show_download_progress: bool = True
-    ) -> "trimesh.Trimesh | None":  # noqa: F821
-        # Override to return None, as drift sections do not have a 3D mesh
-        # representation on purpose.
-        return None
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Override to return None for the mesh, as drift sections do not have a 3D mesh
+        # representation on purpose. If this override were not present, Cheetah would
+        # throw a warning that no mesh is available for `Drift` elements.
+
+        # Import only here because most people will not need it
+        import trimesh
+
+        # Compute transformation matrix needed for next mesh to align to output
+        output_transform = trimesh.transformations.translation_matrix(
+            [0.0, 0.0, self.length.item()]
+        )
+
+        return None, output_transform
 
     @property
     def defining_features(self) -> list[str]:

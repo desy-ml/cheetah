@@ -244,16 +244,17 @@ class Quadrupole(Element):
         ax.add_patch(patch)
 
     def to_mesh(
-        self,
-        s: float = 0.0,
-        cuteness: float | dict = 1.0,
-        show_download_progress: bool = True,
-    ) -> "trimesh.Trimesh | None":  # noqa: F821 # type: ignore
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Import only here because most people will not need it
         import trimesh
 
-        mesh = super().to_mesh(
-            s=0.0, cuteness=cuteness, show_download_progress=show_download_progress
+        mesh, output_transform = super().to_mesh(
+            cuteness=cuteness, show_download_progress=show_download_progress
         )
+
+        # NOTE: The quadrupole's tilt and misalignment have no effect on where the next
+        # element is placed.
 
         # Rotate according to tilt
         rotation_matrix = trimesh.transformations.rotation_matrix(
@@ -261,13 +262,12 @@ class Quadrupole(Element):
         )
         mesh.apply_transform(rotation_matrix)
 
-        # Apply misalignment in x and y directions and translate along s-axis
+        # Apply misalignment in x and y directions
         mesh.apply_translation(
-            [self.misalignment[0].item(), self.misalignment[1].item(), s]
+            [self.misalignment[0].item(), self.misalignment[1].item(), 0.0]
         )
-        # mesh.apply_translation([0.0, 0.0, s])
 
-        return mesh
+        return mesh, output_transform
 
     @property
     def defining_features(self) -> list[str]:

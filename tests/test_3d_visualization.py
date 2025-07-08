@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import trimesh
 
@@ -20,6 +21,7 @@ def test_segment_method():
             cheetah.Drift(length=torch.tensor(0.3)),
         ],
     )
-    mesh = segment.to_mesh(s=0.0)
+    mesh, output_transform = segment.to_mesh()
 
     assert isinstance(mesh, trimesh.Trimesh)
+    assert isinstance(output_transform, np.ndarray)

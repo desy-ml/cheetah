@@ -225,15 +225,11 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def to_mesh(
-        self,
-        s: float = 0.0,
-        cuteness: float | dict = 1.0,
-        show_download_progress: bool = True,
-    ) -> "trimesh.Trimesh | None":  # noqa: F821 # type: ignore
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         """
         Return a 3D mesh representation of the element at position `s`.
 
-        :param s: Position of the element along the s-axis in meters.
         :param cuteness: Scaling factor for the mesh. This can be used to adjust the
             size of the mesh for better visualisation. A value of 1.0 means no
             scaling, while values less than 1.0 will make the mesh smaller and values
@@ -243,9 +239,15 @@ class Element(ABC, nn.Module):
             to specify a default scaling factor.
         :param show_download_progress: If `True`, show a progress bar during the
             download of the mesh if it is not cached.
-        :return: A 3D mesh representation of the element.
+        :return: Tuple of a 3D mesh representation of the element, oriented with the
+            beam's inbound point in the origin and the s-axis pointing along the
+            longitudinal direction of the element, and the transformation matrix that
+            would have to be applied to a downstream mesh to align it with this mesh's
+            output.
         """
         # Import only here because most people will not need it
+        import trimesh
+
         from cheetah.utils import cache
 
         mesh = cache.load_3d_asset(
@@ -271,6 +273,7 @@ class Element(ABC, nn.Module):
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
 
+        # Apply scaling to make the mesh look cuter
         scale_factor_for_cuteness = 1.0
         if isinstance(cuteness, float):
             scale_factor_for_cuteness = cuteness
@@ -284,10 +287,12 @@ class Element(ABC, nn.Module):
                 scale_factor_for_cuteness = cuteness["*"]
         mesh.apply_scale(scale_factor_for_cuteness)
 
-        # Move mesh to the correct position along the s-axis
-        mesh.apply_translation([0, 0, s])
+        # Compute transformation matrix needed for next mesh to align to output
+        output_transform = trimesh.transformations.translation_matrix(
+            [0.0, 0.0, self.length.item()]
+        )
 
-        return mesh
+        return mesh, output_transform
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={repr(self.name)})"
