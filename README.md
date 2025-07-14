@@ -112,7 +112,7 @@ segment.plot_overview(incoming=astra_beam, resolution=0.05)
 
 where the keyword argument `incoming` is the incoming beam represented by the reference particles.
 
-You can also visualise your segment in 3D. **Note** that this requires that you installed Cheetah as `pip install cheetah-accelerator[3d]`.
+You can also visualise your segment in 3D. **Note** that this requires that you installed Cheetah as `pip install cheetah-accelerator[3d-visualization]`.
 
 Use `mesh.show` to view the mesh and `mesh.export` to export it to a file.
 
