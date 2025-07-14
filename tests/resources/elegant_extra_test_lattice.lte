@@ -5,3 +5,4 @@
 "A:d2": drift ,l=-2.0 # gap: 10.0
 
 fodo: line=("A:q1", "A:d1", "A:q2", "A:d2")
+fodo_rev: line=(-fodo)

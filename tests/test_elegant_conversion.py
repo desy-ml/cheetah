@@ -112,7 +112,7 @@ def test_cavity_import():
 
 def test_name_with_colon_import():
     """Test importing an element with a colon in its name."""
-    file_path = "tests/resources/fodo_name_with_colon.lte"
+    file_path = "tests/resources/elegant_extra_test_lattice.lte"
 
     # with pytest.warns(DirtyNameWarning, match=r"A\:"):
     converted = cheetah.Segment.from_elegant(file_path, "fodo")
@@ -129,6 +129,31 @@ def test_name_with_colon_import():
         ],
         name="fodo",
     )
+    assert converted.name == correct_lattice.name
+    assert [element.name for element in converted.elements] == [
+        element.name for element in correct_lattice.elements
+    ]
+
+
+def test_reverse_beamline_import():
+    """Test importing a reversed beamline."""
+    file_path = "tests/resources/elegant_extra_test_lattice.lte"
+    converted = cheetah.Segment.from_elegant(file_path, "fodo_rev").flattened()
+
+    correct_lattice = cheetah.Segment(
+        [
+            cheetah.Drift(name="a:d2", length=torch.tensor(-2.0)),
+            cheetah.Quadrupole(
+                name="a:q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
+            ),
+            cheetah.Drift(name="a:d1", length=torch.tensor(1.0)),
+            cheetah.Quadrupole(
+                name="a:q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+            ),
+        ],
+        name="fodo_rev",
+    )
+
     assert converted.name == correct_lattice.name
     assert [element.name for element in converted.elements] == [
         element.name for element in correct_lattice.elements
