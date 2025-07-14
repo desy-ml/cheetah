@@ -250,8 +250,11 @@ class Element(ABC, nn.Module):
 
         from cheetah.utils import cache
 
+        snake_case_class_name = "".join(
+            "_" + c.lower() if c.isupper() else c for c in self.__class__.__name__
+        ).lstrip("_")
         mesh = cache.load_3d_asset(
-            f"{self.__class__.__name__}.glb",
+            f"{snake_case_class_name}.glb",
             show_download_progress=show_download_progress,
         )
 
