@@ -110,6 +110,31 @@ def test_cavity_import():
     assert np.isclose(converted.c1.phase, 0.0)
 
 
+def test_name_with_colon_import():
+    """Test importing an element with a colon in its name."""
+    file_path = "tests/resources/fodo_name_with_colon.lte"
+
+    # with pytest.warns(DirtyNameWarning, match=r"A\:"):
+    converted = cheetah.Segment.from_elegant(file_path, "fodo")
+    correct_lattice = cheetah.Segment(
+        [
+            cheetah.Quadrupole(
+                name="a:q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+            ),
+            cheetah.Drift(name="a:d1", length=torch.tensor(1.0)),
+            cheetah.Quadrupole(
+                name="a:q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
+            ),
+            cheetah.Drift(name="a:d2", length=torch.tensor(-2.0)),
+        ],
+        name="fodo",
+    )
+    assert converted.name == correct_lattice.name
+    assert [element.name for element in converted.elements] == [
+        element.name for element in correct_lattice.elements
+    ]
+
+
 @pytest.mark.filterwarnings(
     "ignore:"
     ".*(end[12]_focus|body_focus_model|change_p0).*:"

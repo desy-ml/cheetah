@@ -13,7 +13,8 @@ from cheetah.converters.utils import infix, rpn
 from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
 
 # Regex patterns
-ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
+# ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
+ELEMENT_NAME_PATTERN = r'"[a-z0-9_\-\.\:^"]+"|[a-z0-9_\-\.]+'
 PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
 VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
 PROPERTY_ASSIGNMENT_PATTERN = (
@@ -26,10 +27,10 @@ ELEMENT_DEFINITION_PATTERN = (
     + f"({VARIABLE_NAME_PATTERN})"
     + r"(\s*\,(.*))?"
 )
-LINE_DEFINITION_PATTERN = f"({VARIABLE_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
+LINE_DEFINITION_PATTERN = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
 USE_LINE_PATTERN = r"use\s*\,\s*([a-z0-9_]+)"
 OVERLAY_DEFINITION_PATTERN = (
-    f"({VARIABLE_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
+    f"({ELEMENT_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
 )
 OVERLAY_KNOT_BASED_PATTERN = (
     OVERLAY_DEFINITION_PATTERN + r"\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"
@@ -252,7 +253,7 @@ def define_element(line: str, context: dict) -> dict:
     """
     match = re.fullmatch(ELEMENT_DEFINITION_PATTERN, line)
 
-    element_name = match.group(1).strip()
+    element_name = match.group(1).strip('" ')
     element_type = match.group(2).strip()
 
     if element_type in context:
@@ -296,12 +297,12 @@ def define_line(line: str, context: dict) -> dict:
     """
     match = re.fullmatch(LINE_DEFINITION_PATTERN, line)
 
-    line_name = match.group(1).strip()
+    line_name = match.group(1).strip('" ')
     line_elements_string = match.group(2).strip()
 
     line_elements = []
     for element_name in line_elements_string.split(","):
-        element_name = element_name.strip()
+        element_name = element_name.strip('" ')
 
         line_elements.append(element_name)
 
