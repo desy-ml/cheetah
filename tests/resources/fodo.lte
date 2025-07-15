@@ -17,5 +17,5 @@ m1: mark
 
 "a:q3": quad, l=0.1, k1=1.5
 
-fodo: line=(c,q1,d1,m1,b1,d1,q2,d2,s1,csrbend,long-name-quad,d3, "A:q3")
+fodo: line=(c,q1,d1,m1,b1,d1,q2,d2,s1,csrbend,long-name-quad,d3, "a:q3")
 reversed_fodo: line=(-fodo)
