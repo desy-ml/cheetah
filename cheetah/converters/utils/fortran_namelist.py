@@ -17,25 +17,6 @@ from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
 ELEMENT_NAME_PATTERN = r'"[a-z0-9_\-\.\:^"]+"|[a-z0-9_\-\.]+'
 PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
 VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
-PROPERTY_ASSIGNMENT_PATTERN = (
-    f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
-)
-VARIABLE_ASSIGNMENT_PATTERN = f"({VARIABLE_NAME_PATTERN})" + r"\s*=(.*)"
-ELEMENT_DEFINITION_PATTERN = (
-    f"({ELEMENT_NAME_PATTERN})"
-    + r"\s*\:\s*"
-    + f"({VARIABLE_NAME_PATTERN})"
-    + r"(\s*\,(.*))?"
-)
-LINE_DEFINITION_PATTERN = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
-USE_LINE_PATTERN = r"use\s*\,\s*([a-z0-9_]+)"
-OVERLAY_DEFINITION_PATTERN = (
-    f"({ELEMENT_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
-)
-OVERLAY_KNOT_BASED_PATTERN = (
-    OVERLAY_DEFINITION_PATTERN + r"\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"
-)
-OVERLAY_EXPRESSION_BASED_PATTERN = OVERLAY_DEFINITION_PATTERN + r"\{(.*)\}\s*(\,.*)*"
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -202,7 +183,8 @@ def assign_property(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    match = re.fullmatch(PROPERTY_ASSIGNMENT_PATTERN, line)
+    pattern = f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
+    match = re.fullmatch(pattern, line)
 
     object_name = match.group(1).strip()
     property_name = match.group(2).strip()
@@ -232,7 +214,8 @@ def assign_variable(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    match = re.fullmatch(VARIABLE_ASSIGNMENT_PATTERN, line)
+    pattern = r"([a-z0-9_]+)\s*=(.*)"
+    match = re.fullmatch(pattern, line)
 
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
@@ -251,7 +234,8 @@ def define_element(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    match = re.fullmatch(ELEMENT_DEFINITION_PATTERN, line)
+    pattern = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
+    match = re.fullmatch(pattern, line)
 
     element_name = match.group(1).strip('" ')
     element_type = match.group(2).strip()
@@ -295,7 +279,8 @@ def define_line(line: str, context: dict) -> dict:
 
     :return: Updated context.
     """
-    match = re.fullmatch(LINE_DEFINITION_PATTERN, line)
+    pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
+    match = re.fullmatch(pattern, line)
 
     line_name = match.group(1).strip('" ')
     line_elements_string = match.group(2).strip()
@@ -320,9 +305,11 @@ def define_overlay(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
+    knot_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"  # noqa: E501
+    expression_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}\s*(\,.*)*"  # noqa: E501
 
-    expression_match = re.fullmatch(OVERLAY_EXPRESSION_BASED_PATTERN, line)
-    knot_match = re.fullmatch(OVERLAY_KNOT_BASED_PATTERN, line)
+    expression_match = re.fullmatch(expression_based_pattern, line)
+    knot_match = re.fullmatch(knot_based_pattern, line)
 
     if knot_match:
         overlay_name = knot_match.group(1).strip()
@@ -364,7 +351,8 @@ def parse_use_line(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    match = re.fullmatch(USE_LINE_PATTERN, line)
+    pattern = r"use\s*\,\s*([a-z0-9_]+)"
+    match = re.fullmatch(pattern, line)
 
     use_line_name = match.group(1).strip()
     context["__use__"] = use_line_name
@@ -380,6 +368,14 @@ def parse_lines(lines: str) -> dict:
     :param lines: List of lines to parse.
     :return: Dictionary of variables defined in the lattice file.
     """
+    property_assignment_pattern = PROPERTY_NAME_PATTERN + r"\[[a-z0-9_%]+\]\s*=.*"
+    variable_assignment_pattern = VARIABLE_NAME_PATTERN + r"\s*=.*"
+    element_definition_pattern = (
+        ELEMENT_NAME_PATTERN + r"\s*\:\s*" + VARIABLE_NAME_PATTERN + r".*"
+    )
+    line_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*line\s*=\s*\(.*\)"
+    overlay_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*overlay\s*=\s*\{.*"
+    use_line_pattern = r"use\s*\,\s*" + VARIABLE_NAME_PATTERN
 
     context = {
         "pi": scipy.constants.pi,
@@ -405,17 +401,17 @@ def parse_lines(lines: str) -> dict:
     ]
 
     for line in semicolon_split_lines:
-        if re.fullmatch(PROPERTY_ASSIGNMENT_PATTERN, line):
+        if re.fullmatch(property_assignment_pattern, line):
             context = assign_property(line, context)
-        elif re.fullmatch(VARIABLE_ASSIGNMENT_PATTERN, line):
+        elif re.fullmatch(variable_assignment_pattern, line):
             context = assign_variable(line, context)
-        elif re.fullmatch(LINE_DEFINITION_PATTERN, line):
+        elif re.fullmatch(line_definition_pattern, line):
             context = define_line(line, context)
-        elif re.fullmatch(OVERLAY_DEFINITION_PATTERN, line):
+        elif re.fullmatch(overlay_definition_pattern, line):
             context = define_overlay(line, context)
-        elif re.fullmatch(ELEMENT_DEFINITION_PATTERN, line):
+        elif re.fullmatch(element_definition_pattern, line):
             context = define_element(line, context)
-        elif re.fullmatch(USE_LINE_PATTERN, line):
+        elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
 
     return context
