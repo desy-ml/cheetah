@@ -265,7 +265,10 @@ class Element(ABC, nn.Module):
                 category=NoVisualizationWarning,
                 stacklevel=2,
             )
-            return None
+            output_transform = trimesh.transformations.translation_matrix(
+                [0.0, 0.0, self.length.item()]
+            )
+            return None, output_transform
 
         # NOTE: Scaling must be done before translation to ensure the mesh is
         # positioned correctly after scaling.
