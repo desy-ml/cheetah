@@ -114,7 +114,6 @@ def test_name_with_colon_import():
     """Test importing an element with a colon in its name."""
     file_path = "tests/resources/elegant_extra_test_lattice.lte"
 
-    # with pytest.warns(DirtyNameWarning, match=r"A\:"):
     converted = cheetah.Segment.from_elegant(file_path, "fodo")
     correct_lattice = cheetah.Segment(
         [
