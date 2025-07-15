@@ -10,7 +10,7 @@
 - Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
 - Add the ability to the Bmad and Elegant converters to parse expressions that access properties from other elements (see #501, #498) (@amylizzle, @jank324)
 - Update the Elegant converter to allow element names with colon as well as the definition of reversed beamlines with a minus sign. (see #504) (@cr-xu, @jank324)
-- `Segment`s can now easily be reversed with the `Segment.reversed` method (see #504) (@jank324)
+- `Segment`s can now conveniently be reversed with the `Segment.reversed` method (see #504) (@jank324)
 
 ### 🐛 Bug fixes
 

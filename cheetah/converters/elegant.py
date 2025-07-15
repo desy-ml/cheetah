@@ -39,8 +39,8 @@ def convert_element(
         "dtype": dtype or torch.get_default_dtype(),
     }
 
-    is_reversed_line = True if name.startswith("-") else False
-    name = name.lstrip("-")
+    is_reversed_line = name.startswith("-")
+    name = name.removeprefix("-")
 
     parsed = context[name]
 
