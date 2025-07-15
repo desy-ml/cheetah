@@ -47,9 +47,7 @@ def convert_element(
     shared_properties = ["element_type", "group"]
 
     if isinstance(parsed, list):
-        parsed = reversed(parsed) if is_reversed_line else parsed
-
-        return cheetah.Segment(
+        segment = cheetah.Segment(
             elements=[
                 convert_element(element_name, context, sanitize_name, device, dtype)
                 for element_name in parsed
@@ -57,6 +55,7 @@ def convert_element(
             name=name,
             sanitize_name=sanitize_name,
         )
+        return segment if not is_reversed_line else segment.reversed()
     elif isinstance(parsed, dict) and "element_type" in parsed:
         if parsed["element_type"] == "sole":
             # The group property does not have an analoge in Cheetah, so it is neglected
