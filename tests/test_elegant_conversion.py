@@ -57,6 +57,9 @@ def test_fodo():
                 cheetah.Drift(
                     name="d3", length=torch.tensor(0.0)
                 ),  # No length `l` provided
+                cheetah.Quadrupole(
+                    name="A:q3", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+                ),  # Element with a colon in the name
             ],
             name="fodo",
         )
@@ -94,6 +97,24 @@ def test_fodo():
     assert torch.isclose(converted.s1.k2, correct_lattice.s1.k2)
 
 
+def test_reverse_beamline_import():
+    """Test importing a reversed beamline."""
+    file_path = "tests/resources/fodo.lte"
+
+    converted_forward = cheetah.Segment.from_elegant(file_path, "fodo")
+    correct_lattice = converted_forward.reversed()
+    correct_lattice.name = "reversed_fodo"
+
+    converted_reversed = cheetah.Segment.from_elegant(
+        file_path, "reversed_fodo"
+    ).flattened()
+
+    assert converted_reversed.name == correct_lattice.name
+    assert [element.name for element in converted_reversed.elements] == [
+        element.name for element in correct_lattice.elements
+    ]
+
+
 def test_cavity_import():
     """Test importing an accelerating cavity defined in the Elegant file format."""
     file_path = "tests/resources/cavity.lte"
@@ -108,55 +129,6 @@ def test_cavity_import():
 
     # Cheetah and Elegant use different phase conventions shifted by 90 deg
     assert np.isclose(converted.c1.phase, 0.0)
-
-
-def test_name_with_colon_import():
-    """Test importing an element with a colon in its name."""
-    file_path = "tests/resources/elegant_extra_test_lattice.lte"
-
-    converted = cheetah.Segment.from_elegant(file_path, "fodo")
-    correct_lattice = cheetah.Segment(
-        [
-            cheetah.Quadrupole(
-                name="a:q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
-            ),
-            cheetah.Drift(name="a:d1", length=torch.tensor(1.0)),
-            cheetah.Quadrupole(
-                name="a:q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
-            ),
-            cheetah.Drift(name="a:d2", length=torch.tensor(-2.0)),
-        ],
-        name="fodo",
-    )
-    assert converted.name == correct_lattice.name
-    assert [element.name for element in converted.elements] == [
-        element.name for element in correct_lattice.elements
-    ]
-
-
-def test_reverse_beamline_import():
-    """Test importing a reversed beamline."""
-    file_path = "tests/resources/elegant_extra_test_lattice.lte"
-    converted = cheetah.Segment.from_elegant(file_path, "fodo_rev").flattened()
-
-    correct_lattice = cheetah.Segment(
-        [
-            cheetah.Drift(name="a:d2", length=torch.tensor(-2.0)),
-            cheetah.Quadrupole(
-                name="a:q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
-            ),
-            cheetah.Drift(name="a:d1", length=torch.tensor(1.0)),
-            cheetah.Quadrupole(
-                name="a:q1", length=torch.tensor(0.1), k1=torch.tensor(1.5)
-            ),
-        ],
-        name="fodo_rev",
-    )
-
-    assert converted.name == correct_lattice.name
-    assert [element.name for element in converted.elements] == [
-        element.name for element in correct_lattice.elements
-    ]
 
 
 @pytest.mark.filterwarnings(

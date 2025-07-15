@@ -1,8 +1,0 @@
-"A:q1": quad,l=0.1,k1=1.5;
-"A:q2": kquad,l=0.2,k1=-3
-
-"A:d1": drift,l=1, nonsense=1; # gap: 42.0
-"A:d2": drift ,l=-2.0 # gap: 10.0
-
-fodo: line=("A:q1", "A:d1", "A:q2", "A:d2")
-fodo_rev: line=(-fodo)
