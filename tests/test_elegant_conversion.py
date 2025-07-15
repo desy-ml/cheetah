@@ -58,7 +58,7 @@ def test_fodo():
                     name="d3", length=torch.tensor(0.0)
                 ),  # No length `l` provided
                 cheetah.Quadrupole(
-                    name="A:q3", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+                    name="a:q3", length=torch.tensor(0.1), k1=torch.tensor(1.5)
                 ),  # Element with a colon in the name
             ],
             name="fodo",

@@ -13,7 +13,7 @@ from cheetah.converters.utils import infix, rpn
 from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
 
 # Regex patterns
-ELEMENT_NAME_PATTERN = r'[a-z0-9_\-\.]+|"[a-z0-9_\-\.\:^"]+"'
+ELEMENT_NAME_PATTERN = r'(?:[a-z0-9_\-\.]+|"[a-z0-9_\-\.\:]+")'
 PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
 VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
 
@@ -270,7 +270,7 @@ def define_element(line: str, context: dict) -> dict:
 
 def define_line(line: str, context: dict) -> dict:
     """
-    Define a beam line in the context.
+    Define a beamline in the context.
 
     :param line: Line of a beam line definition to be parsed.
     :param context: Dictionary of variables to define the beam line in and from which
@@ -412,6 +412,15 @@ def parse_lines(lines: str) -> dict:
             context = define_element(line, context)
         elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
+        else:
+            # If the line is not empty and does not match any known pattern, raise an
+            # error.
+            if not line.strip():
+                continue
+
+            raise ValueError(
+                f"Line '{line}' not understood. Please check the syntax and try again."
+            )
 
     return context
 
