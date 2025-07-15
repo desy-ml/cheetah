@@ -13,8 +13,7 @@ from cheetah.converters.utils import infix, rpn
 from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
 
 # Regex patterns
-# ELEMENT_NAME_PATTERN = r"[a-z0-9_\-\.]+"
-ELEMENT_NAME_PATTERN = r'"[a-z0-9_\-\.\:^"]+"|[a-z0-9_\-\.]+'
+ELEMENT_NAME_PATTERN = r'[a-z0-9_\-\.]+|"[a-z0-9_\-\.\:^"]+"'
 PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
 VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
 
