@@ -38,13 +38,18 @@ def convert_element(
         "device": device or torch.get_default_device(),
         "dtype": dtype or torch.get_default_dtype(),
     }
+
+    # Handle the case when the beamline is reversed
+    reversed_line = False
+    if name.startswith("-"):
+        reversed_line = True
+        name = name[1:]
     parsed = context[name]
 
     shared_properties = ["element_type", "group"]
 
     if isinstance(parsed, list):
-        if name.startswith("-"):  # Reversed beamline
-            name = name[1:]
+        if reversed_line:
             parsed = parsed[::-1]
         return cheetah.Segment(
             elements=[
