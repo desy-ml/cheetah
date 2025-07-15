@@ -278,7 +278,7 @@ def define_line(line: str, context: dict) -> dict:
 
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
+    pattern = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
     match = re.fullmatch(pattern, line)
 
     line_name = match.group(1).strip('" ')
@@ -350,7 +350,7 @@ def parse_use_line(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"use\s*\,\s*([a-z0-9_]+)"
+    pattern = r"use\s*\,\s*" + f"({ELEMENT_NAME_PATTERN})"
     match = re.fullmatch(pattern, line)
 
     use_line_name = match.group(1).strip()
@@ -372,9 +372,9 @@ def parse_lines(lines: str) -> dict:
     element_definition_pattern = (
         ELEMENT_NAME_PATTERN + r"\s*\:\s*" + VARIABLE_NAME_PATTERN + r".*"
     )
-    line_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*line\s*=\s*\(.*\)"
+    line_definition_pattern = ELEMENT_NAME_PATTERN + r"\s*\:\s*line\s*=\s*\(.*\)"
     overlay_definition_pattern = VARIABLE_NAME_PATTERN + r"\s*\:\s*overlay\s*=\s*\{.*"
-    use_line_pattern = r"use\s*\,\s*" + VARIABLE_NAME_PATTERN
+    use_line_pattern = r"use\s*\,\s*" + ELEMENT_NAME_PATTERN
 
     context = {
         "pi": scipy.constants.pi,
@@ -413,9 +413,9 @@ def parse_lines(lines: str) -> dict:
         elif re.fullmatch(use_line_pattern, line):
             context = parse_use_line(line, context)
         else:
-            # If the line is not empty and does not match any known pattern, raise an
-            # error.
-            if not line.strip():
+            # If the line is not empty or the final line, and does not match any known
+            # pattern, raise an error.
+            if not line.strip() or line == "return":
                 continue
 
             raise ValueError(
