@@ -38,7 +38,6 @@ def convert_element(
         "device": device or torch.get_default_device(),
         "dtype": dtype or torch.get_default_dtype(),
     }
-
     parsed = context[name]
 
     shared_properties = ["element_type", "group"]
