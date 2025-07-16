@@ -12,6 +12,7 @@
 - Update the Elegant converter to allow element names with colon as well as the definition of reversed beamlines with a minus sign. (see #504) (@cr-xu, @jank324)
 - `Segment`s can now conveniently be reversed with the `Segment.reversed` method (see #504) (@jank324)
 - Allow second-order tracking for dipole, drift, and quadrupole elements, and add a convenient method to set tracking method for all the segment. Rename the tracking method `cheetah` to `linear`. (see #476) (@cr-xu)
+- New feature for generating 3D models of lattices and viewing them (see #352, #502) (@jank324, @chrisjcc)
 
 ### 🐛 Bug fixes
 
@@ -29,6 +30,7 @@
 
 - Julian Gethmann (@smartsammler)
 - Arjun Dhamrait (@adhamrait)
+- Christian Contreras-Campana (@chrisjcc)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
