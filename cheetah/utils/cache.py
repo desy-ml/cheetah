@@ -36,6 +36,20 @@ def get_repository_raw_url(owner: str, repository: str, branch_or_tag: str) -> s
     return f"https://raw.githubusercontent.com/{owner}/{repository}/{branch_or_tag}"
 
 
+def get_latest_release_tag(owner: str, repository: str) -> str:
+    """
+    Get the latest release tag of a GitHub repository.
+
+    :param owner: The owner of the GitHub repository. Can be a user or an organisation.
+    :param repository: The name of the GitHub repository.
+    :return: The latest release tag of the repository.
+    """
+    url = f"https://api.github.com/repos/{owner}/{repository}/releases/latest"
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an error if request failed
+    return response.json()["tag_name"]
+
+
 def download_url_to_file(
     source_url: str, destination_path: Path, show_progress: bool = True
 ) -> None:
@@ -81,8 +95,11 @@ def load_3d_asset(
     asset_path = assets_dir / name
 
     if not asset_path.exists():
+        latest_release_tag = get_latest_release_tag(
+            owner="desy-ml", repository="3d-assets"
+        )
         asset_repository_url = get_repository_raw_url(
-            owner="desy-ml", repository="3d-assets", branch_or_tag="v1.0.1"
+            owner="desy-ml", repository="3d-assets", branch_or_tag=latest_release_tag
         )
         asset_url = f"{asset_repository_url}/{name}"
         try:
