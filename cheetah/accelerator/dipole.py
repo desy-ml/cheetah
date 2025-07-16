@@ -166,7 +166,7 @@ class Dipole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method == "cheetah" or self.tracking_method == "linear"
+        return self.tracking_method in ["linear", "cheetah"]
 
     @property
     def is_active(self) -> bool:
@@ -442,8 +442,8 @@ class Dipole(Element):
     def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         T = base_ttensor(
             length=self.length,
-            k1=torch.zeros_like(self.length),
-            k2=torch.zeros_like(self.length),
+            k1=torch.tensor(0.0, dtype=self.length.dtype, device=self.length.device),
+            k2=torch.tensor(0.0, dtype=self.length.dtype, device=self.length.device),
             hx=self.hx,
             species=species,
             tilt=self.tilt,

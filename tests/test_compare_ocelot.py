@@ -33,10 +33,7 @@ def test_dipole(tracking_method):
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
-    if tracking_method == "second_order":
-        ocelot_method = {"global": ocelot.SecondTM}
-    else:
-        ocelot_method = {"global": ocelot.TransferMap}
+    ocelot_method = {"global" ocelot.SecondTM if tracking_method == "second_order" else ocelot.TransferMap}
 
     lattice = ocelot.MagneticLattice([ocelot_bend], method=ocelot_method)
     navigator = ocelot.Navigator(lattice)
