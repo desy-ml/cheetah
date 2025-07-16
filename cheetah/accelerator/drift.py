@@ -68,7 +68,9 @@ class Drift(Element):
 
         return tm
 
-    def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         T = base_ttensor(
             self.length,
             k1=torch.zeros_like(self.length),

@@ -82,7 +82,7 @@ class Sextupole(Element):
             R = R_exit @ R @ R_entry
             return R
 
-    def second_order_map(self, energy, species):
+    def second_order_transfer_map(self, energy, species):
         T = base_ttensor(
             length=self.length,
             k1=torch.zeros_like(self.length),

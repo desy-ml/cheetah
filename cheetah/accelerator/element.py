@@ -76,7 +76,9 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def second_order_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         r"""
         Generates the element's second-order transfer map that describes how the beam
         and its particles are transformed when traveling through the element.
@@ -139,7 +141,9 @@ class Element(ABC, nn.Module):
         ), "Second-order tracking is currently only supported for `ParticleBeam`."
 
         first_order_tm = self.transfer_map(incoming.energy, incoming.species)
-        second_order_tm = self.second_order_map(incoming.energy, incoming.species)
+        second_order_tm = self.second_order_transfer_map(
+            incoming.energy, incoming.species
+        )
         # Fill the first-order transfer map into the second-order transfer map.
         second_order_tm[..., :, 6, :] = first_order_tm
 
