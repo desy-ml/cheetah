@@ -1,9 +1,11 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Species
+from cheetah.particles import Beam, Species
 from cheetah.utils import (
     UniqueNameGenerator,
     compute_relativistic_factors,
@@ -27,10 +29,13 @@ class HorizontalCorrector(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["linear"]
+
     def __init__(
         self,
         length: torch.Tensor,
         angle: torch.Tensor | None = None,
+        tracking_method: Literal["linear"] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -46,6 +51,10 @@ class HorizontalCorrector(Element):
             "angle",
             torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
         )
+        self.tracking_method = tracking_method
+
+    def track(self, incoming: Beam) -> Beam:
+        return super().track_first_order(incoming)
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         device = self.length.device

@@ -22,6 +22,8 @@ class Element(ABC, nn.Module):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods: list[str] = []
+
     def __init__(
         self,
         name: str | None = None,
@@ -95,6 +97,16 @@ class Element(ABC, nn.Module):
         """
         Track particles through the element. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        raise NotImplementedError
+
+    def track_first_order(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the element with linear transfer map. The input can be
+        a `ParameterBeam` or a `ParticleBeam`.
 
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.

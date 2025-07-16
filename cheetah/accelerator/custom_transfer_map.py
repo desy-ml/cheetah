@@ -1,3 +1,5 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -21,10 +23,13 @@ class CustomTransferMap(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["linear"]
+
     def __init__(
         self,
         predefined_transfer_map: torch.Tensor,
         length: torch.Tensor | None = None,
+        tracking_method: Literal["linear"] = "linear",
         name: torch.Tensor | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -48,6 +53,8 @@ class CustomTransferMap(Element):
         )
 
         assert self.predefined_transfer_map.shape[-2:] == (7, 7)
+
+        self.tracking_method = tracking_method
 
     @classmethod
     def from_merging_elements(
@@ -90,6 +97,9 @@ class CustomTransferMap(Element):
         return cls(
             tm, length=combined_length, device=device, dtype=dtype, name=combined_name
         )
+
+    def track(self, incoming: Beam) -> Beam:
+        return super().track_first_order(incoming)
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         return self.predefined_transfer_map
