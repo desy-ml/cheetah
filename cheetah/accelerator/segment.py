@@ -120,6 +120,26 @@ class Segment(Element):
 
         return Segment(elements=flattened_elements, name=self.name)
 
+    def reversed(self) -> "Segment":
+        """
+        Return a reversed version of the segment, i.e. one where the order of the
+        elements is reversed.
+        """
+        reversed_elements = list(
+            reversed(
+                [
+                    element.reversed() if isinstance(element, Segment) else element
+                    for element in self.elements
+                ]
+            )
+        )
+
+        return Segment(
+            elements=reversed_elements,
+            name=f"{self.name}_reversed",
+            sanitize_name=self.sanitize_name,
+        )
+
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: list[str] | None = None
     ) -> "Segment":

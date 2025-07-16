@@ -38,12 +38,16 @@ def convert_element(
         "device": device or torch.get_default_device(),
         "dtype": dtype or torch.get_default_dtype(),
     }
+
+    is_reversed_line = name.startswith("-")
+    name = name.removeprefix("-")
+
     parsed = context[name]
 
     shared_properties = ["element_type", "group"]
 
     if isinstance(parsed, list):
-        return cheetah.Segment(
+        segment = cheetah.Segment(
             elements=[
                 convert_element(element_name, context, sanitize_name, device, dtype)
                 for element_name in parsed
@@ -51,6 +55,7 @@ def convert_element(
             name=name,
             sanitize_name=sanitize_name,
         )
+        return segment if not is_reversed_line else segment.reversed()
     elif isinstance(parsed, dict) and "element_type" in parsed:
         if parsed["element_type"] == "sole":
             # The group property does not have an analoge in Cheetah, so it is neglected
