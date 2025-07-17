@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 from scipy.constants import physical_constants
@@ -115,11 +116,11 @@ def test_cavity(cavity_type, phase):
     Test that tracking a particle through a cavity in Cheetah agrees with Bmad results.
     """
     incoming = cheetah.ParameterBeam.from_twiss(
-        beta_x=5.91253677,
-        beta_y=5.91253677,
-        alpha_x=3.55631308,
-        alpha_y=3.55631308,
-        energy=6e6,
+        beta_x=torch.tensor(5.91253677),
+        beta_y=torch.tensor(5.91253677),
+        alpha_x=torch.tensor(3.55631308),
+        alpha_y=torch.tensor(3.55631308),
+        energy=torch.tensor(6e6),
         species=cheetah.Species("electron"),
     )
 
@@ -129,13 +130,29 @@ def test_cavity(cavity_type, phase):
         phase=torch.tensor(phase),
         frequency=torch.tensor(1.3e9),
         cavity_type=cavity_type,
-        dtype=torch.double,
     )
 
     outgoing = cavity.track(incoming)
 
-    assert torch.isclose(outgoing.beta_x, 42.0)
-    assert torch.isclose(outgoing.beta_y, 42.0)
-    assert torch.isclose(outgoing.alpha_x, 42.0)
-    assert torch.isclose(outgoing.alpha_y, 42.0)
-    assert torch.isclose(outgoing.energy, 42.0)
+    if cavity_type == "standing_wave" and phase == 0.0:
+        expected_beta_x = 0.238473521593469
+        expected_beta_y = 0.238473521593469
+        expected_alpha_x = -1.01606875938083
+        expected_alpha_y = -1.01606875938083
+        expected_energy = "todo"
+    elif cavity_type == "traveling_wave" and phase == 0.0:
+        expected_beta_x = 2.9943987369624
+        expected_beta_y = 2.9943987369624
+        expected_alpha_x = -5.30493404396745
+        expected_alpha_y = -5.30493404396745
+        expected_energy = "todo"
+    else:
+        pytest.fail(
+            f"Unexpected combination of cavity_type={cavity_type} and phase={phase}"
+        )
+
+    assert np.isclose(outgoing.beta_x, expected_beta_x)
+    assert np.isclose(outgoing.beta_y, expected_beta_y)
+    assert np.isclose(outgoing.alpha_x, expected_alpha_x)
+    assert np.isclose(outgoing.alpha_y, expected_alpha_y)
+    assert np.isclose(outgoing.energy, expected_energy)
