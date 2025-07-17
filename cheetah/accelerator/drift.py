@@ -133,7 +133,7 @@ class Drift(Element):
         return self.tracking_method == "cheetah"
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         return [
             Drift(
                 self.length / num_splits,
@@ -150,6 +150,23 @@ class Drift(Element):
         ax = ax or plt.subplot(111)
         # This does nothing on purpose, because drift sections are visualised as gaps.
         return ax
+
+    def to_mesh(
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Override to return None for the mesh, as drift sections do not have a 3D mesh
+        # representation on purpose. If this override were not present, Cheetah would
+        # throw a warning that no mesh is available for `Drift` elements.
+
+        # Import only here because most people will not need it
+        import trimesh
+
+        # Compute transformation matrix needed for next mesh to align to output
+        output_transform = trimesh.transformations.translation_matrix(
+            [0.0, 0.0, self.length.item()]
+        )
+
+        return None, output_transform
 
     @property
     def defining_features(self) -> list[str]:

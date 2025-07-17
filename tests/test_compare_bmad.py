@@ -15,13 +15,16 @@ atomic_mass_eV = (
 @pytest.mark.parametrize(
     "species",
     [
-        cheetah.Species("proton"),
-        cheetah.Species("electron"),
-        cheetah.Species("positron"),
-        cheetah.Species("antiproton"),
-        cheetah.Species("deuteron"),
+        cheetah.Species("proton", dtype=torch.float64),
+        cheetah.Species("electron", dtype=torch.float64),
+        cheetah.Species("positron", dtype=torch.float64),
+        cheetah.Species("antiproton", dtype=torch.float64),
+        cheetah.Species("deuteron", dtype=torch.float64),
         cheetah.Species(
-            "#12C+3", num_elementary_charges=3, mass_eV=12 * atomic_mass_eV
+            "#12C+3",
+            num_elementary_charges=3,
+            mass_eV=12 * atomic_mass_eV,
+            dtype=torch.float64,
         ),
     ],
 )
@@ -30,7 +33,7 @@ atomic_mass_eV = (
     [
         (
             cheetah.Drift(
-                length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.double
+                length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.float64
             )
         ),
         (
@@ -47,7 +50,7 @@ atomic_mass_eV = (
                 fringe_at="both",
                 fringe_type="linear_edge",
                 tracking_method="bmadx",
-                dtype=torch.double,
+                dtype=torch.float64,
             )
         ),
         (
@@ -55,7 +58,7 @@ atomic_mass_eV = (
                 length=torch.tensor(0.5),
                 k1=torch.tensor(1.0),
                 tracking_method="bmadx",
-                dtype=torch.double,
+                dtype=torch.float64,
             )
         ),
     ],
@@ -66,16 +69,16 @@ def test_different_species_in_different_elements(species, cheetah_element):
     agrees with Bmad results.
     """
     coordinate_list = [1e-3, 2e-3, -3e-3, -1e-3, 2e-3, -1e-3]
-    coordinates = torch.tensor(coordinate_list, dtype=torch.double)
+    coordinates = torch.tensor(coordinate_list, dtype=torch.float64)
 
-    p0c = torch.tensor(5.0e7, dtype=torch.double)
+    p0c = torch.tensor(5.0e7, dtype=torch.float64)
     mc2 = species.mass_eV
 
     tau, delta, ref_energy = bmad_to_cheetah_z_pz(
         coordinates[4], coordinates[5], p0c, mc2
     )
 
-    cheetah_coordinates = torch.ones((1, 7), dtype=torch.double)
+    cheetah_coordinates = torch.ones((1, 7), dtype=torch.float64)
     cheetah_coordinates[:, :4] = coordinates[:4]
     cheetah_coordinates[:, 4] = tau
     cheetah_coordinates[:, 5] = delta
@@ -84,7 +87,7 @@ def test_different_species_in_different_elements(species, cheetah_element):
         particles=cheetah_coordinates,
         energy=ref_energy,
         species=species,
-        dtype=torch.double,
+        dtype=torch.float64,
     )
 
     # Track with Cheetah using bmadx routines

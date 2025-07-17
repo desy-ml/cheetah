@@ -5,7 +5,7 @@ q2: kquad,l=0.2,k1=-3
 long-name-quad: quad,l=0.3,k1=2
 
 d1: drift,l=1, nonsense=1; # gap: 42.0
-d2: drift ,l=2.0 # gap: 10.0
+d2: drift ,l=-2.0 # gap: 10.0
 d3: drift
 
 b1: sben, l=0.3,e1=0.25
@@ -15,4 +15,7 @@ s1: sext,l=0.2,k2=-87.1;
 
 m1: mark
 
-fodo: line=(c,q1,d1,m1,b1,d1,q2,d2,s1,csrbend,long-name-quad,d3)
+"a:q3": quad, l=0.1, k1=1.5
+
+fodo: line=(c,q1,d1,m1,b1,d1,q2,d2,s1,csrbend,long-name-quad,d3, "a:q3")
+reversed_fodo: line=(-fodo)

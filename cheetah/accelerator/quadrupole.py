@@ -199,7 +199,7 @@ class Quadrupole(Element):
         return torch.any(self.k1 != 0).item()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         return [
             Quadrupole(
                 self.length / num_splits,
@@ -242,6 +242,32 @@ class Quadrupole(Element):
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )
         ax.add_patch(patch)
+
+    def to_mesh(
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Import only here because most people will not need it
+        import trimesh
+
+        mesh, output_transform = super().to_mesh(
+            cuteness=cuteness, show_download_progress=show_download_progress
+        )
+
+        # NOTE: The quadrupole's tilt and misalignment have no effect on where the next
+        # element is placed.
+
+        # Rotate according to tilt
+        rotation_matrix = trimesh.transformations.rotation_matrix(
+            self.tilt.item(), [0, 0, 1], [0, 0, 0]
+        )
+        mesh.apply_transform(rotation_matrix)
+
+        # Apply misalignment in x and y directions
+        mesh.apply_translation(
+            [self.misalignment[0].item(), self.misalignment[1].item(), 0.0]
+        )
+
+        return mesh, output_transform
 
     @property
     def defining_features(self) -> list[str]:
