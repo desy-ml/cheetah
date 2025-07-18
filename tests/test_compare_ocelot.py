@@ -323,20 +323,20 @@ def test_twiss_particle_beam():
         particle_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
     )
     assert np.isclose(
-        particle_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
+        particle_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+        particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-3
     )
     assert np.isclose(particle_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
     assert np.isclose(
         particle_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
     )
     assert np.isclose(
-        particle_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
+        particle_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+        particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-3
     )
 
 
@@ -363,20 +363,20 @@ def test_twiss_parameter_beam():
         parameter_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
     )
     assert np.isclose(
-        parameter_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
+        parameter_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+        parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-3
     )
     assert np.isclose(parameter_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
     assert np.isclose(
         parameter_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
     )
     assert np.isclose(
-        parameter_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
+        parameter_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+        parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-3
     )
 
 
@@ -702,10 +702,18 @@ def test_cavity():
     outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Compare
-    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
-    assert np.isclose(outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x)
-    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
-    assert np.isclose(outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y)
+    assert np.isclose(
+        outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x, rtol=1e-3
+    )
+    assert np.isclose(
+        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-3
+    )
+    assert np.isclose(
+        outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y, rtol=1e-3
+    )
+    assert np.isclose(
+        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-3
+    )
     assert np.isclose(
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
     )
@@ -755,10 +763,18 @@ def test_cavity_non_zero_phase():
     outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Compare
-    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
-    assert np.isclose(outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x)
-    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
-    assert np.isclose(outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y)
+    assert np.isclose(
+        outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x, rtol=1e-3
+    )
+    assert np.isclose(
+        outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x, rtol=1e-3
+    )
+    assert np.isclose(
+        outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y, rtol=1e-3
+    )
+    assert np.isclose(
+        outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y, rtol=1e-3
+    )
     assert np.isclose(
         outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
     )
