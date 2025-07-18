@@ -669,16 +669,15 @@ def test_cavity():
     """
 
     # Ocelot
-    tws = ocelot.Twiss()
-    tws.beta_x = 5.91253677
-    tws.alpha_x = 3.55631308
-    tws.beta_y = 5.91253677
-    tws.alpha_y = 3.55631308
-    tws.emit_x = 3.494768647122823e-09
-    tws.emit_y = 3.497810737006068e-09
-    tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
-    tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
-    tws.E = 6e-3
+    tws = ocelot.Twiss(
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emit_x=3.494768647122823e-09,
+        emit_y=3.497810737006068e-09,
+        E=6e-3,
+    )
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
@@ -723,16 +722,15 @@ def test_cavity():
 def test_cavity_non_zero_phase():
     """Compare tracking through a cavity with a phase offset."""
     # Ocelot
-    tws = ocelot.Twiss()
-    tws.beta_x = 5.91253677
-    tws.alpha_x = 3.55631308
-    tws.beta_y = 5.91253677
-    tws.alpha_y = 3.55631308
-    tws.emit_x = 3.494768647122823e-09
-    tws.emit_y = 3.497810737006068e-09
-    tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
-    tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
-    tws.E = 6e-3
+    tws = ocelot.Twiss(
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emit_x=3.494768647122823e-09,
+        emit_y=3.497810737006068e-09,
+        E=6e-3,
+    )
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
