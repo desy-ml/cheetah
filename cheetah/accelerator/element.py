@@ -22,6 +22,8 @@ class Element(ABC, nn.Module):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods: list[str] = []
+
     def __init__(
         self,
         name: str | None = None,
@@ -76,10 +78,35 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Generates the element's second-order transfer map that describes how the beam
+        and its particles are transformed when traveling through the element.
+
+        :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
+
+        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
+        :param species: Species of the particles in the beam
+        :return: A 7x7x7 Tensor T_ijk for further calculations.
+        """
+        raise NotImplementedError
+
     def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the element. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        raise NotImplementedError
+
+    def track_first_order(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the element with linear transfer map. The input can be
+        a `ParameterBeam` or a `ParticleBeam`.
 
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
@@ -111,6 +138,42 @@ class Element(ABC, nn.Module):
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def track_second_order(self, incoming: Beam):
+        """
+        Track particles through the element with second-order transfer maps.
+        For now, second order tracking is only supported for `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Second-order tracking is currently only supported for `ParticleBeam`."
+
+        first_order_tm = self.transfer_map(incoming.energy, incoming.species)
+        second_order_tm = self.second_order_transfer_map(
+            incoming.energy, incoming.species
+        )
+        # Fill the first-order transfer map into the second-order transfer map.
+        second_order_tm[..., :, 6, :] = first_order_tm
+
+        outgoing_particles = torch.einsum(
+            "...ijk,...j,...k->...i",
+            second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
+            incoming.particles,
+            incoming.particles,
+        )
+
+        return ParticleBeam(
+            particles=outgoing_particles,
+            energy=incoming.energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
+            species=incoming.species,
+        )
 
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""

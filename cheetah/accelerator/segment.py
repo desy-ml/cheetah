@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -452,7 +452,7 @@ class Segment(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
-            return super().track(incoming)
+            return super().track_first_order(incoming)
         else:
             todos = []
             continuous_skippable_elements = []
@@ -585,6 +585,17 @@ class Segment(Element):
                 element.set_attrs_on_every_element_of_type(
                     element_type, is_recursive=True, **kwargs
                 )
+
+    def set_tracking_method(
+        self,
+        tracking_method: Literal[
+            "linear", "cheetah", "bmadx", "second_order"
+        ] = "linear",
+    ) -> None:
+        for element in self.elements:
+            if hasattr(element, "tracking_method"):
+                if tracking_method in element.supported_tracking_methods:
+                    element.tracking_method = tracking_method
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
