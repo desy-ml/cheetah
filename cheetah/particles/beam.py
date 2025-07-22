@@ -374,62 +374,6 @@ class Beam(ABC, nn.Module):
         return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property
-    def trace_space_covariance_matrix(self) -> torch.Tensor:
-        """
-        Covariance matrix of the trace space coordinates (x, xp, y, yp, tau, deltap).
-        """
-        raise NotImplementedError
-
-    @property
-    def twiss_parameters(self):
-        """Twiss parameters using trace space coordinates."""
-        ts_cov = self.trace_space_covariance_matrix
-
-        Dx = ts_cov[..., 0, 5] / ts_cov[..., 5, 5]
-        Dxp = ts_cov[..., 1, 5] / ts_cov[..., 5, 5]
-
-        Dy = ts_cov[..., 2, 5] / ts_cov[..., 5, 5]
-        Dyp = ts_cov[..., 3, 5] / ts_cov[..., 5, 5]
-
-        emit_beta_x = ts_cov[..., 0, 0] - ts_cov[..., 0, 5] ** 2 / ts_cov[..., 5, 5]
-        emit_gamma_x = ts_cov[..., 1, 1] - ts_cov[..., 1, 5] ** 2 / ts_cov[..., 5, 5]
-        emit_alpha_x = (
-            -ts_cov[..., 0, 1]
-            + ts_cov[..., 0, 5] * ts_cov[..., 1, 5] / ts_cov[..., 5, 5]
-        )
-        emit_x = torch.sqrt(emit_beta_x * emit_gamma_x - emit_alpha_x**2)
-        beta_x = emit_beta_x / emit_x
-        alpha_x = emit_alpha_x / emit_x
-        gamma_x = emit_gamma_x / emit_x
-
-        emit_beta_y = ts_cov[..., 2, 2] - ts_cov[..., 2, 5] ** 2 / ts_cov[..., 5, 5]
-        emit_gamma_y = ts_cov[..., 3, 3] - ts_cov[..., 3, 5] ** 2 / ts_cov[..., 5, 5]
-        emit_alpha_y = (
-            -ts_cov[..., 2, 3]
-            + ts_cov[..., 2, 5] * ts_cov[..., 3, 5] / ts_cov[..., 5, 5]
-        )
-        emit_y = torch.sqrt(emit_beta_y * emit_gamma_y - emit_alpha_y**2)
-        beta_y = emit_beta_y / emit_y
-        alpha_y = emit_alpha_y / emit_y
-        gamma_y = emit_gamma_y / emit_y
-
-        twiss_parameters = {
-            "beta_x": beta_x,
-            "alpha_x": alpha_x,
-            "gamma_x": gamma_x,
-            "emit_x": emit_x,
-            "Dx": Dx,
-            "Dxp": Dxp,
-            "beta_y": beta_y,
-            "alpha_y": alpha_y,
-            "gamma_y": gamma_y,
-            "emit_y": emit_y,
-            "Dy": Dy,
-            "Dyp": Dyp,
-        }
-        return twiss_parameters
-
-    @property
     @abstractmethod
     def cov_xpx(self) -> torch.Tensor:
         # The covariance of (x,px) ~ $\sigma_{xpx}$
@@ -464,18 +408,6 @@ class Beam(ABC, nn.Module):
     def beta_x(self) -> torch.Tensor:
         """Beta function in x direction in meters."""
         return self.sigma_x**2 / self.emittance_x
-
-    def geometric_beta_x(self) -> torch.Tensor:
-        """Geometric beta function in x direction in meters."""
-        trace_space_sigma_x = self.trace_space_covariance_matrix[..., 0, 0]
-        trace_space_cov_xp = self.trace_space_covariance_matrix[..., 0, 5]
-        trace_space_sigma_p = self.trace_space_covariance_matrix[..., 5, 5]
-
-        emittance_beta_x = (
-            trace_space_sigma_x - trace_space_cov_xp**2 / trace_space_sigma_p
-        )
-
-        return emittance_beta_x / self.emittance_x
 
     @property
     def alpha_x(self) -> torch.Tensor:

@@ -1052,35 +1052,6 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
-    @property
-    def trace_space_particles(self) -> torch.Tensor:
-        """
-        Particle tensor in trace space coordinates (x, x', y, y', tau, deltap).
-
-        The trace space coordinates are defined as:
-        - x: horizontal position in meters
-        - x': horizontal slope, dimensionless
-        - y: vertical position in meters
-        - y': vertical slope, dimensionless
-        - tau: longitudinal position in meters
-        - deltap: fractional momentum deviation, dimensionless
-        """
-        # Normalised longitudinal momentum
-        pz = torch.sqrt((self.momenta / self.p0c) ** 2 - self.px**2 - self.py**2)
-
-        trace_space_coordinates = torch.clone(self.particles[..., :6])
-        trace_space_coordinates[..., 1] = self.px / pz
-        trace_space_coordinates[..., 3] = self.py / pz
-        trace_space_coordinates[..., 5] = (self.momenta - self.p0c) / self.p0c
-
-        return trace_space_coordinates
-
-    @property
-    def trace_space_covariance_matrix(self) -> torch.Tensor:
-        return unbiased_weighted_covariance_matrix(
-            self.trace_space_particles, weights=self.survival_probabilities
-        )
-
     def as_parameter_beam(self) -> "ParameterBeam":  # noqa: F821
         """
         Convert the the beam to a `ParameterBeam`.
