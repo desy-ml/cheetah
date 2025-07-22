@@ -99,7 +99,7 @@ def load_3d_asset(
         #     owner="desy-ml", repository="3d-assets"
         # )
         asset_repository_url = get_repository_raw_url(
-            owner="desy-ml", repository="3d-assets", branch_or_tag="v1.0.1"
+            owner="desy-ml", repository="3d-assets", branch_or_tag="v1.0.2"
         )
         asset_url = f"{asset_repository_url}/{name}"
         try:
