@@ -12,7 +12,7 @@
 - Update the Elegant converter to allow element names with colon as well as the definition of reversed beamlines with a minus sign. (see #504) (@cr-xu, @jank324)
 - `Segment`s can now conveniently be reversed with the `Segment.reversed` method (see #504) (@jank324)
 - New feature for generating 3D models of lattices and viewing them (see #352, #502) (@jank324, @chrisjcc)
-- Add a `twiss_parameter` method to calculate the trace space twiss paramters for `ParticleBeam` (see #513) (@cr-xu)
+- Add a `twiss_parameter` method to compute the trace space Twiss parameters for `ParticleBeam` (see #513) (@cr-xu)
 
 ### 🐛 Bug fixes
 
