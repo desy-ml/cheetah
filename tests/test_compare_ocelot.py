@@ -308,7 +308,9 @@ def test_twiss_computation(beam_cls):
     that same Astra beam.
     """
     # Cheetah
-    cheetah_beam = beam_cls.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+    cheetah_beam = beam_cls.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
 
     # Ocelot
     p_array = ocelot.astraBeam2particleArray(
