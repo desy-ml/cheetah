@@ -311,72 +311,34 @@ def test_twiss_particle_beam():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
+    cheetah_twiss = particle_beam.twiss_parameters
+
     # Ocelot
     p_array = ocelot.astraBeam2particleArray(
         "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
+    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array, auto_disp=True)
 
     # Compare
-    assert np.isclose(particle_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
+    assert np.isclose(cheetah_twiss["emit_x"].cpu().numpy(), ocelot_twiss.emit_x)
     assert np.isclose(
         particle_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
     )
     assert np.isclose(
-        particle_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-2
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(
-        particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-3
+        cheetah_twiss["beta_x"].cpu().numpy(), ocelot_twiss.beta_x, rtol=6e-5
     )
-    assert np.isclose(particle_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
+    assert np.isclose(
+        cheetah_twiss["alpha_x"].cpu().numpy(), ocelot_twiss.alpha_x, rtol=6e-5
+    )
+    assert np.isclose(cheetah_twiss["emit_y"].cpu().numpy(), ocelot_twiss.emit_y)
     assert np.isclose(
         particle_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
     )
     assert np.isclose(
-        particle_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-2
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(
-        particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-3
-    )
-
-
-def test_twiss_parameter_beam():
-    """
-    Test that the twiss parameters computed by Cheetah for a `ParameterBeam` loaded from
-    an Astra beam are the same as those computed by Ocelot for the `ParticleArray`
-    loaded from that same Astra beam.
-    """
-    # Cheetah
-    parameter_beam = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-
-    # Ocelot
-    p_array = ocelot.astraBeam2particleArray(
-        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
-    )
-    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
-
-    # Compare
-    assert np.isclose(parameter_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
-    assert np.isclose(
-        parameter_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
+        cheetah_twiss["gamma_y"].cpu().numpy(), ocelot_twiss.gamma_y, rtol=6e-5
     )
     assert np.isclose(
-        parameter_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-2
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(
-        parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-3
-    )
-    assert np.isclose(parameter_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
-    assert np.isclose(
-        parameter_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
-    )
-    assert np.isclose(
-        parameter_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-2
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(
-        parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-3
+        cheetah_twiss["alpha_y"].cpu().numpy(), ocelot_twiss.alpha_y, rtol=6e-5
     )
 
 
