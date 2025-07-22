@@ -370,55 +370,41 @@ class Beam(ABC, nn.Module):
 
     @property
     def p0c(self) -> torch.Tensor:
-        """Get the reference momentum * speed of light in eV."""
+        """Reference momentum * speed of light in eV."""
         return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
+    @property
     def trace_space_covariance_matrix(self) -> torch.Tensor:
         """
-        Get the covariance matrix of the trace space coordinates
-            (x, xp, y, yp, tau, deltap).
+        Covariance matrix of the trace space coordinates (x, xp, y, yp, tau, deltap).
         """
         raise NotImplementedError
 
     @property
-    def twiss_parameters(
-        self,
-    ):
-        """
-        Calculate the Twiss parameters using trace space coordinates.
-        """
-        cov_matrix = self.trace_space_covariance_matrix()
+    def twiss_parameters(self):
+        """Twiss parameters using trace space coordinates."""
+        cov = self.trace_space_covariance_matrix
 
-        Dx = cov_matrix[..., 0, 5] / cov_matrix[..., 5, 5]
-        Dxp = cov_matrix[..., 1, 5] / cov_matrix[..., 5, 5]
+        Dx = cov[..., 0, 5] / cov[..., 5, 5]
+        Dxp = cov[..., 1, 5] / cov[..., 5, 5]
 
-        Dy = cov_matrix[..., 2, 5] / cov_matrix[..., 5, 5]
-        Dyp = cov_matrix[..., 3, 5] / cov_matrix[..., 5, 5]
+        Dy = cov[..., 2, 5] / cov[..., 5, 5]
+        Dyp = cov[..., 3, 5] / cov[..., 5, 5]
 
-        emit_beta_x = (
-            cov_matrix[..., 0, 0] - cov_matrix[..., 0, 5] ** 2 / cov_matrix[..., 5, 5]
-        )
-        emit_gamma_x = (
-            cov_matrix[..., 1, 1] - cov_matrix[..., 1, 5] ** 2 / cov_matrix[..., 5, 5]
-        )
+        emit_beta_x = cov[..., 0, 0] - cov[..., 0, 5] ** 2 / cov[..., 5, 5]
+        emit_gamma_x = cov[..., 1, 1] - cov[..., 1, 5] ** 2 / cov[..., 5, 5]
         emit_alpha_x = (
-            -cov_matrix[..., 0, 1]
-            + cov_matrix[..., 0, 5] * cov_matrix[..., 1, 5] / cov_matrix[..., 5, 5]
+            -cov[..., 0, 1] + cov[..., 0, 5] * cov[..., 1, 5] / cov[..., 5, 5]
         )
         emit_x = torch.sqrt(emit_beta_x * emit_gamma_x - emit_alpha_x**2)
         beta_x = emit_beta_x / emit_x
         alpha_x = emit_alpha_x / emit_x
         gamma_x = emit_gamma_x / emit_x
 
-        emit_beta_y = (
-            cov_matrix[..., 2, 2] - cov_matrix[..., 2, 5] ** 2 / cov_matrix[..., 5, 5]
-        )
-        emit_gamma_y = (
-            cov_matrix[..., 3, 3] - cov_matrix[..., 3, 5] ** 2 / cov_matrix[..., 5, 5]
-        )
+        emit_beta_y = cov[..., 2, 2] - cov[..., 2, 5] ** 2 / cov[..., 5, 5]
+        emit_gamma_y = cov[..., 3, 3] - cov[..., 3, 5] ** 2 / cov[..., 5, 5]
         emit_alpha_y = (
-            -cov_matrix[..., 2, 3]
-            + cov_matrix[..., 2, 5] * cov_matrix[..., 3, 5] / cov_matrix[..., 5, 5]
+            -cov[..., 2, 3] + cov[..., 2, 5] * cov[..., 3, 5] / cov[..., 5, 5]
         )
         emit_y = torch.sqrt(emit_beta_y * emit_gamma_y - emit_alpha_y**2)
         beta_y = emit_beta_y / emit_y
