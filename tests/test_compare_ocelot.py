@@ -317,7 +317,7 @@ def test_twiss_particle_beam():
     p_array = ocelot.astraBeam2particleArray(
         "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
     )
-    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array, auto_disp=True)
+    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
     # Compare
     assert np.isclose(cheetah_twiss["emit_x"].cpu().numpy(), ocelot_twiss.emit_x)
