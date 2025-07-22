@@ -1053,7 +1053,7 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def particles_trace_space(self) -> torch.Tensor:
+    def trace_space_particles(self) -> torch.Tensor:
         """
         Particle tensor in trace space coordinates (x, x', y, y', tau, deltap).
 
@@ -1078,7 +1078,7 @@ class ParticleBeam(Beam):
     @property
     def trace_space_covariance_matrix(self) -> torch.Tensor:
         return unbiased_weighted_covariance_matrix(
-            self.particles_trace_space, weights=self.survival_probabilities
+            self.trace_space_particles, weights=self.survival_probabilities
         )
 
     def as_parameter_beam(self) -> "ParameterBeam":  # noqa: F821
