@@ -25,7 +25,7 @@
 - Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
 - PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
 - Make README example more copy-paste friendly, and generally improve it and the simple intro notebook in the docs. (see #493, #496) (@jank324, @ax3l)
-- Fix comparison tests to work with new PyPI release of Ocelot (see #513) (@jank324)
+- Fix comparison tests to work with new PyPI release of Ocelot (see #513, #519) (@jank324)
 
 ### 🌟 First Time Contributors
 
