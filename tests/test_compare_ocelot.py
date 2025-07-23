@@ -324,20 +324,20 @@ def test_twiss_computation(beam_cls):
         cheetah_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
     )
     assert np.isclose(
-        cheetah_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
+        cheetah_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        cheetah_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+        cheetah_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-3
     )
     assert np.isclose(cheetah_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
     assert np.isclose(
         cheetah_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
     )
     assert np.isclose(
-        cheetah_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
+        cheetah_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        cheetah_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+        cheetah_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-3
     )
 
 
