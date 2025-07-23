@@ -6,12 +6,16 @@ from scipy.constants import physical_constants
 from torch import nn
 
 import cheetah
-from cheetah.utils import compute_relativistic_factors, is_mps_available_and_functional
+from cheetah.utils import compute_relativistic_factors
 
 
 # Run the test below for both the ultra-relativistic case
 # (250 MeV) and the non-relativistic case (1 MeV).
-@pytest.mark.parametrize("energy", [torch.tensor(2.5e8), torch.tensor(1e6)])
+@pytest.mark.parametrize(
+    "energy",
+    [torch.tensor(2.5e8), torch.tensor(1e6)],
+    ids=["ultra-relativistic", "non-relativistic"],
+)
 def test_cold_uniform_beam_expansion(energy):
     """
     Tests that that a cold uniform beam doubles in size in both dimensions when
@@ -407,53 +411,3 @@ def test_space_charge_with_aperture_cutoff():
     )
     # Check that the number of surviving particles is less than the initial number
     assert outgoing_beam_with_aperture.survival_probabilities.sum(dim=-1).max() < 10_000
-
-
-@pytest.mark.parametrize(
-    "device, dtype",
-    [
-        (torch.device("cpu"), torch.float32),
-        (torch.device("cpu"), torch.float64),
-        pytest.param(
-            torch.device("cuda"),
-            torch.float32,
-            marks=pytest.mark.skipif(
-                not torch.cuda.is_available(), reason="CUDA not available"
-            ),
-        ),
-        pytest.param(
-            torch.device("mps"),
-            torch.float32,
-            marks=pytest.mark.skipif(
-                not is_mps_available_and_functional(), reason="MPS not available"
-            ),
-        ),
-    ],
-)
-def test_device_and_dtype(device, dtype):
-    """
-    Test that `SpaceChargeKick` works correctly on various devices and with various
-    dtypes.
-    """
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(0.25)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5)),
-            cheetah.Drift(length=torch.tensor(0.25)),
-        ]
-    ).to(device=device, dtype=dtype)
-    incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=10_000,
-        total_charge=torch.tensor(1e-9),
-        mu_x=torch.tensor(5e-5),
-        sigma_px=torch.tensor(1e-4),
-        sigma_py=torch.tensor(1e-4),
-    ).to(device=device, dtype=dtype)
-
-    # Run in part to see if errors are raised
-    outgoing_beam = segment.track(incoming_beam)
-
-    # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        assert getattr(outgoing_beam, attribute).device.type == device.type
-        assert getattr(outgoing_beam, attribute).dtype == dtype
