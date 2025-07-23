@@ -12,7 +12,7 @@
 - Update the Elegant converter to allow element names with colon as well as the definition of reversed beamlines with a minus sign. (see #504) (@cr-xu, @jank324)
 - `Segment`s can now conveniently be reversed with the `Segment.reversed` method (see #504) (@jank324)
 - New feature for generating 3D models of lattices and viewing them (see #352, #502, #511) (@jank324, @chrisjcc, @SuchethShenoy)
-- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. Rename the tracking method `"cheetah"` to `"linear"`. `"cheetah"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu)
+- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu)
 
 ### 🐛 Bug fixes
 

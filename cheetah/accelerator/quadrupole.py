@@ -36,7 +36,13 @@ class Quadrupole(Element):
         syntax to access the element in a segment.
     """
 
-    supported_tracking_methods = ["linear", "cheetah", "bmadx", "second_order"]
+    supported_tracking_methods = [
+        "linear",
+        "cheetah",
+        "drift_kick_drift",
+        "bmadx",
+        "second_order",
+    ]
 
     def __init__(
         self,
@@ -46,7 +52,7 @@ class Quadrupole(Element):
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
         tracking_method: Literal[
-            "linear", "cheetah", "bmadx", "second_order"
+            "linear", "cheetah", "drift_kick_drift", "bmadx", "second_order"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
@@ -134,20 +140,33 @@ class Quadrupole(Element):
             return super().track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super().track_second_order(incoming)
+        elif self.tracking_method == "drift_kick_drift":
+            assert isinstance(incoming, ParticleBeam), (
+                "Drift_kick_drift tracking is currently only supported for "
+                "`ParticleBeam`."
+            )
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
             ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
-            return self._track_bmadx(incoming)
+            warnings.warn(
+                "The 'bmadx' tracking method is deprecated and will be removed in a"
+                " future version. Please use 'drift_kick_drift' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
                 + "Supported methods are 'linear', 'second_order', and 'bmadx'."
             )
 
-    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the quadrupole element using the Bmad-X tracking method.
+        Track particles through the quadrupole element using the Drift_kick_drift
+            tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
