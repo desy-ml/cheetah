@@ -174,8 +174,7 @@ def test_longitudinal_beam_metric(attr_names):
 
 
 @pytest.mark.parametrize(
-    "tracking_method",
-    ["linear", "second_order", "bmadx"],
+    "tracking_method", ["linear", "second_order", "bmadx"]
 )
 def test_segment_set_tracking_method(tracking_method):
     """
