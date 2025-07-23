@@ -102,10 +102,10 @@ def test_dipole_vectorized_execution(DipoleType):
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-def test_dipole_bmadx_tracking(dtype):
+def test_dipole_drift_kick_drift_tracking(dtype):
     """
-    Test that the results of tracking through a dipole with the `"bmadx"` tracking
-    method match the results from Bmad-X.
+    Test that the results of tracking through a dipole with the `"drift_kick_drift"`
+    tracking method match the results from Bmad-X.
     """
     incoming = torch.load("tests/resources/bmadx/incoming.pt", weights_only=False).to(
         dtype
@@ -127,7 +127,7 @@ def test_dipole_bmadx_tracking(dtype):
         gap_exit=torch.tensor(0.05, dtype=dtype),
         fringe_at="both",
         fringe_type="linear_edge",
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=dtype,
     )
     segment_cheetah_bmadx = cheetah.Segment(elements=[dipole_cheetah_bmadx])
@@ -203,9 +203,10 @@ def test_buffer_registration():
     assert name not in dipole.buffers()
 
 
-def test_bmadx_zero_angle():
+def test_drift_kick_drift_zero_angle():
     """
-    Test that a dipole with zero angle using the bmadx tracking method works at all.
+    Test that a dipole with zero angle using the drift_kick_drift tracking method works
+    at all.
 
     There was a bug in the past where a division by zero due to the angle being zero
     resulted in NaN values in the output.
@@ -216,7 +217,7 @@ def test_bmadx_zero_angle():
     dipole = cheetah.Dipole(
         length=torch.tensor(1.0601),
         angle=torch.tensor(0.0),
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=torch.float64,
     )
 
