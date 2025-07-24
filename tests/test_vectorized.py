@@ -383,7 +383,7 @@ def test_broadcasting_two_different_inputs_bmadx(ElementClass):
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
     element = ElementClass(
-        tracking_method="bmadx", length=torch.tensor([[0.6], [0.5], [0.4]])
+        tracking_method="drift_kick_drift", length=torch.tensor([[0.6], [0.5], [0.4]])
     )
 
     outgoing = element.track(incoming)

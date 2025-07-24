@@ -60,16 +60,16 @@ def test_device_like_torch_module():
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-def test_drift_bmadx_tracking(dtype):
+def test_drift_drift_kick_drift_tracking(dtype):
     """
-    Test that the results of tracking through a drift with the `"bmadx"` tracking method
-    match the results from Bmad-X.
+    Test that the results of tracking through a drift with the `"drift_kick_drift"`
+    tracking method match the results from Bmad-X.
     """
     incoming_beam = torch.load(
         "tests/resources/bmadx/incoming.pt", weights_only=False
     ).to(dtype)
     drift = cheetah.Drift(
-        length=torch.tensor(1.0), tracking_method="bmadx", dtype=dtype
+        length=torch.tensor(1.0), tracking_method="drift_kick_drift", dtype=dtype
     )
 
     # Run tracking

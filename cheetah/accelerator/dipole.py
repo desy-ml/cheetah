@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, rotation_matrix
+from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -24,24 +25,34 @@ class Dipole(Element):
     :param tilt: Tilt of the magnet in x-y plane [rad].
     :param gap: The magnet gap in meters. Note that in MAD and ELEGANT: HGAP = gap/2.
     :param gap_exit: The magnet gap at the exit in meters. Note that in MAD and
-        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Only used with
-        `"bmadx"` tracking method.
+        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Now it's only used with
+        `"drift_kick_drift"` tracking method.
     :param fringe_integral: Fringe field integral (of the enterance face).
     :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
-        different from `fringe_integral`. Only used with `"bmadx"` tracking method.
-    :param fringe_at: Where to apply the fringe fields for `"bmadx"` tracking. The
-        available options are:
+        different from `fringe_integral`. Only used with `"drift_kick_drift"` tracking
+        method.
+    :param fringe_at: Where to apply the fringe fields for `"drift_kick_drift"`
+        tracking. The available options are:
         - "neither": Do not apply fringe fields.
         - "entrance": Apply fringe fields at the entrance end.
         - "exit": Apply fringe fields at the exit end.
         - "both": Apply fringe fields at both ends.
-    :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
-        supports `"linear_edge"`.
+    :param fringe_type: Type of fringe field for `"drift_kick_drift"` tracking.
+        Currently only supports `"linear_edge"`.
+    :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """
+
+    supported_tracking_methods = [
+        "linear",
+        "cheetah",
+        "drift_kick_drift",
+        "bmadx",
+        "second_order",
+    ]
 
     def __init__(
         self,
@@ -57,7 +68,9 @@ class Dipole(Element):
         fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal[
+            "linear", "cheetah", "drift_kick_drift", "bmadx", "second_order"
+        ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -161,7 +174,7 @@ class Dipole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method == "cheetah"
+        return self.tracking_method in ["linear", "cheetah"]
 
     @property
     def is_active(self) -> bool:
@@ -174,22 +187,39 @@ class Dipole(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if self.tracking_method == "cheetah":
-            return super().track(incoming)
+        if self.tracking_method == "linear":
+            return super().track_first_order(incoming)
+        elif self.tracking_method == "cheetah":
+            warnings.warn(
+                "The 'cheetah' tracking method is deprecated and will be removed in a"
+                "future version. Please use 'linear' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return super().track_first_order(incoming)
+        elif self.tracking_method == "second_order":
+            return super().track_second_order(incoming)
+        elif self.tracking_method == "drift_kick_drift":
+            assert isinstance(incoming, ParticleBeam), (
+                "Drift_kick_drift tracking is currently only supported for "
+                "`ParticleBeam`."
+            )
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
             ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
-            return self._track_bmadx(incoming)
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah' and 'bmadx'."
+                + "Supported methods are 'linear', 'second_order', and 'bmadx'."
             )
 
-    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the quadrupole element using the Bmad-X tracking method.
+        Track particles through the quadrupole element using the Drift_kick_drift
+            tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
@@ -390,7 +420,9 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 
@@ -423,6 +455,21 @@ class Dipole(Element):
             R = rotation.transpose(-1, -2) @ R @ rotation
 
         return R
+
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        T = base_ttensor(
+            length=self.length,
+            k1=torch.tensor(0.0, dtype=self.length.dtype, device=self.length.device),
+            k2=torch.tensor(0.0, dtype=self.length.dtype, device=self.length.device),
+            hx=self.hx,
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
+
+        return T
 
     def _transfer_map_enter(self) -> torch.Tensor:
         """Linear transfer map for the entrance face of the dipole magnet."""

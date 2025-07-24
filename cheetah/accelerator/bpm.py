@@ -45,7 +45,9 @@ class BPM(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )

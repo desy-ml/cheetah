@@ -1,3 +1,5 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -21,10 +23,13 @@ class CustomTransferMap(Element):
         syntax to access the element in a segment.
     """
 
+    supported_tracking_methods = ["linear"]
+
     def __init__(
         self,
         predefined_transfer_map: torch.Tensor,
         length: torch.Tensor | None = None,
+        tracking_method: Literal["linear"] = "linear",
         name: torch.Tensor | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -49,6 +54,8 @@ class CustomTransferMap(Element):
 
         assert self.predefined_transfer_map.shape[-2:] == (7, 7)
 
+        self.tracking_method = tracking_method
+
     @classmethod
     def from_merging_elements(
         cls, elements: list[Element], incoming_beam: Beam
@@ -70,7 +77,7 @@ class CustomTransferMap(Element):
             " incorrect tracking results."
         )
 
-        first_element_transfer_map = elements[0].transfer_map(
+        first_element_transfer_map = elements[0].first_order_transfer_map(
             incoming_beam.energy, incoming_beam.species
         )
         device = first_element_transfer_map.device
@@ -80,7 +87,12 @@ class CustomTransferMap(Element):
             (*incoming_beam.energy.shape, 1, 1)
         )
         for element in elements:
-            tm = element.transfer_map(incoming_beam.energy, incoming_beam.species) @ tm
+            tm = (
+                element.first_order_transfer_map(
+                    incoming_beam.energy, incoming_beam.species
+                )
+                @ tm
+            )
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
@@ -91,7 +103,12 @@ class CustomTransferMap(Element):
             tm, length=combined_length, device=device, dtype=dtype, name=combined_name
         )
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def track(self, incoming: Beam) -> Beam:
+        return super().track_first_order(incoming)
+
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return self.predefined_transfer_map
 
     @property

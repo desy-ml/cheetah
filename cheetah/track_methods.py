@@ -274,7 +274,6 @@ def base_ttensor(
         + 0.5 * hx**2 / beta * j1
         - 0.25 / beta * (length + cy * sy)
     )
-    T[..., 6, 6, 6] = 0.0  # Constant term currently handled by first order transfer map
 
     # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
     # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
