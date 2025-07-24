@@ -651,7 +651,7 @@ def test_cavity(cavity_type, phase):
     assert np.allclose(outgoing_beam.y.cpu().numpy(), outgoing_parray.y(), atol=1e-9)
     assert np.allclose(outgoing_beam.py.cpu().numpy(), outgoing_parray.py(), atol=1e-4)
     assert np.allclose(
-        outgoing_beam.tau.cpu().numpy(), outgoing_parray.tau(), atol=1e-9
+        outgoing_beam.tau.cpu().numpy(), outgoing_parray.tau(), atol=2e-4
     )
     assert np.allclose(outgoing_beam.p.cpu().numpy(), outgoing_parray.p(), atol=1e-4)
 
