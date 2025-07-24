@@ -51,11 +51,49 @@ class Element(ABC, nn.Module):
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
-        Generates the element's transfer map that describes how the beam and its
-        particles are transformed when traveling through the element.
-        The state vector consists of 6 values with a physical meaning.
-        They represent a particle in the phase space with
+        NOTE: This method is deprecated and will be removed in a future version. Use
+        `first_order_transfer_map` instead.
 
+        Generates the element's transfer map that describes how the beam and its
+        particles are transformed when traveling through the element. The state vector
+        consists of 6 values with a physical meaning. They represent a particle in the
+        phase space with:
+        - x: Position in x direction (m) relative to the reference particle
+        - px: Horinzontal momentum normalized over the reference momentum
+            (dimensionless) :math:`px = P_x / P_0`
+        - y: Position in y direction (m) relative to the reference particle
+        - py: Vertical momentum normalized over the reference momentum
+            (dimensionless) :math:`py = P_y / P_0`
+        - tau: Position in longitudinal direction (m) with the zero value set to the
+            reference position (usually the center of the pulse)
+        - p: Relative energy deviation from the reference particle (dimensionless)
+            :math:`p = \frac{\Delta E}{p_0 C}`
+
+        As well as a seventh value used to add constants to some of the previous values
+        if necessary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication, i.e. the augmented matrix as in an
+        affine transformation.
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7 Matrix for further calculations.
+        """
+        warnings.warn(
+            "The `transfer_map` method is deprecated and will be removed in a future "
+            "version. Use `first_order_transfer_map` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.first_order_transfer_map(energy, species)
+
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Generates the element's first order transfer map that describes how the beam and
+        its particles are transformed when traveling through the element. The state
+        vector consists of 6 values with a physical meaning. They represent a particle
+        in the phase space with:
         - x: Position in x direction (m) relative to the reference particle
         - px: Horinzontal momentum normalized over the reference momentum
             (dimensionless) :math:`px = P_x / P_0`
@@ -72,8 +110,8 @@ class Element(ABC, nn.Module):
         represented using a matrix multiplication, i.e. the augmented matrix as in an
         affine transformation.
 
-        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
-        :param species: Species of the particles in the beam
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
         :return: A 7x7 Matrix for further calculations.
         """
         raise NotImplementedError
@@ -87,8 +125,8 @@ class Element(ABC, nn.Module):
 
         :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
 
-        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
-        :param species: Species of the particles in the beam
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
         :return: A 7x7x7 Tensor T_ijk for further calculations.
         """
         raise NotImplementedError
@@ -112,7 +150,7 @@ class Element(ABC, nn.Module):
         :return: Beam of particles exiting the element.
         """
         if isinstance(incoming, ParameterBeam):
-            tm = self.transfer_map(incoming.energy, incoming.species)
+            tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
             new_s = incoming.s + self.length
@@ -125,7 +163,7 @@ class Element(ABC, nn.Module):
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy, incoming.species)
+            tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_particles = incoming.particles @ tm.transpose(-2, -1)
             new_s = incoming.s + self.length
             return ParticleBeam(
@@ -152,7 +190,9 @@ class Element(ABC, nn.Module):
             incoming, ParticleBeam
         ), "Second-order tracking is currently only supported for `ParticleBeam`."
 
-        first_order_tm = self.transfer_map(incoming.energy, incoming.species)
+        first_order_tm = self.first_order_transfer_map(
+            incoming.energy, incoming.species
+        )
         second_order_tm = self.second_order_transfer_map(
             incoming.energy, incoming.species
         )

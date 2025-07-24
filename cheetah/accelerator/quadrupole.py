@@ -78,7 +78,9 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,

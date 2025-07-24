@@ -270,9 +270,9 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     energy = torch.tensor(1e9, dtype=dtype)
     spiecies = cheetah.Species("electron")
 
-    tm_quad = quad.transfer_map(energy, spiecies)
-    tm_skew_quad = skew_quad.transfer_map(energy, spiecies)
-    tm_drift = drift.transfer_map(energy, spiecies)
+    tm_quad = quad.first_order_transfer_map(energy, spiecies)
+    tm_skew_quad = skew_quad.first_order_transfer_map(energy, spiecies)
+    tm_drift = drift.first_order_transfer_map(energy, spiecies)
 
     # Check that the transfer matrices are equal of the dtype
     # NOTE: The `==` is used here over `torch.allclose` on purpose

@@ -77,7 +77,7 @@ class CustomTransferMap(Element):
             " incorrect tracking results."
         )
 
-        first_element_transfer_map = elements[0].transfer_map(
+        first_element_transfer_map = elements[0].first_order_transfer_map(
             incoming_beam.energy, incoming_beam.species
         )
         device = first_element_transfer_map.device
@@ -87,7 +87,12 @@ class CustomTransferMap(Element):
             (*incoming_beam.energy.shape, 1, 1)
         )
         for element in elements:
-            tm = element.transfer_map(incoming_beam.energy, incoming_beam.species) @ tm
+            tm = (
+                element.first_order_transfer_map(
+                    incoming_beam.energy, incoming_beam.species
+                )
+                @ tm
+            )
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
@@ -101,7 +106,9 @@ class CustomTransferMap(Element):
     def track(self, incoming: Beam) -> Beam:
         return super().track_first_order(incoming)
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return self.predefined_transfer_map
 
     @property

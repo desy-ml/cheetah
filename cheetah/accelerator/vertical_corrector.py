@@ -56,7 +56,9 @@ class VerticalCorrector(Element):
     def track(self, incoming: Beam) -> Beam:
         return super().track_first_order(incoming)
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 

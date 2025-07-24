@@ -405,7 +405,9 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 

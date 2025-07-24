@@ -74,7 +74,9 @@ class Cavity(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
@@ -113,7 +115,7 @@ class Cavity(Element):
 
         phi = torch.deg2rad(self.phase)
 
-        tm = self.transfer_map(incoming.energy, incoming.species)
+        tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
