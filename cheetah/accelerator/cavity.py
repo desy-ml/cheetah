@@ -1,3 +1,5 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -26,6 +28,7 @@ class Cavity(Element):
         `n * voltage`.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
+    :param cavity_type: Type of the cavity.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
@@ -38,6 +41,7 @@ class Cavity(Element):
         voltage: torch.Tensor | None = None,
         phase: torch.Tensor | None = None,
         frequency: torch.Tensor | None = None,
+        cavity_type: Literal["standing_wave", "traveling_wave"] = "standing_wave",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -65,6 +69,8 @@ class Cavity(Element):
                 frequency if frequency is not None else 0.0, **factory_kwargs
             ),
         )
+
+        self.cavity_type = cavity_type
 
     @property
     def is_active(self) -> bool:
@@ -268,31 +274,61 @@ class Cavity(Element):
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
-        r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
-
-        # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
-        # otherwise. This is implemented differently here in order to achieve results
-        # closer to Bmad.
-        r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
-
-        r21 = (
-            -Ep
-            / Ef
-            * (
-                torch.cos(phi) / torch.sqrt(2 * eta)
-                + torch.sqrt(eta / 8) / torch.cos(phi)
+        if self.cavity_type == "standing_wave":
+            r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
+                alpha
             )
-            * torch.sin(alpha)
-        )
 
-        r22 = (
-            Ei
-            / Ef
-            * (
-                torch.cos(alpha)
-                + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+            # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
+            # otherwise. This is implemented differently here to achieve results
+            # closer to Bmad.
+            r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
+
+            r21 = (
+                -Ep
+                / Ef
+                * (
+                    torch.cos(phi) / torch.sqrt(2 * eta)
+                    + torch.sqrt(eta / 8) / torch.cos(phi)
+                )
+                * torch.sin(alpha)
             )
-        )
+
+            r22 = (
+                Ei
+                / Ef
+                * (
+                    torch.cos(alpha)
+                    + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+                )
+            )
+        elif self.cavity_type == "traveling_wave":
+            # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
+            dE = Ef - Ei
+            f = (Ei / dE) * torch.log(1 + (dE / Ei))
+
+            vector_shape = torch.broadcast_shapes(
+                self.length.shape, f.shape, Ei.shape, Ef.shape, dE.shape
+            )
+
+            M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_body[..., 0, 1] = self.length * f
+            M_body[..., 1, 1] = Ei / Ef
+
+            M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
+
+            M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
+
+            M_combined = M_f_exit @ M_body @ M_f_entry
+
+            r11 = M_combined[..., 0, 0]
+            r12 = M_combined[..., 0, 1]
+            r21 = M_combined[..., 1, 0]
+            r22 = M_combined[..., 1, 1]
+        else:
+            raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
         r56 = torch.tensor(0.0, **factory_kwargs)
         beta0 = torch.tensor(1.0, **factory_kwargs)
@@ -360,7 +396,13 @@ class Cavity(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "voltage", "phase", "frequency"]
+        return super().defining_features + [
+            "length",
+            "voltage",
+            "phase",
+            "frequency",
+            "cavity_type",
+        ]
 
     def __repr__(self) -> str:
         return (
@@ -368,5 +410,6 @@ class Cavity(Element):
             + f"voltage={repr(self.voltage)}, "
             + f"phase={repr(self.phase)}, "
             + f"frequency={repr(self.frequency)}, "
+            + f"cavity_type={repr(self.cavity_type)}, "
             + f"name={repr(self.name)})"
         )

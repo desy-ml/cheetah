@@ -127,6 +127,16 @@ def convert_element_to_cheetah(
             voltage=torch.tensor(element.v, **factory_kwargs) * 1e9,
             frequency=torch.tensor(element.freq, **factory_kwargs),
             phase=torch.tensor(element.phi, **factory_kwargs),
+            cavity_type="standing_wave",
+            name=element.id,
+        )
+    elif isinstance(element, ocelot.TWCavity):
+        return cheetah.Cavity(
+            length=torch.tensor(element.l, **factory_kwargs),
+            voltage=torch.tensor(element.v, **factory_kwargs) * 1e9,
+            frequency=torch.tensor(element.freq, **factory_kwargs),
+            phase=torch.tensor(element.phi, **factory_kwargs),
+            cavity_type="traveling_wave",
             name=element.id,
             sanitize_name=sanitize_name,
         )
