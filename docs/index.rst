@@ -139,6 +139,7 @@ The following people have contributed to the development of Cheetah:
 - Auralee Edelen (@lee-edelen)
 - Zihan Zhu (@zihan-zh)
 - Christian Contreras-Campana (@chrisjcc)
+- Sucheth Shenoy (@SuchethShenoy)
 - Amelia Pollard (@amylizzle)
 - Julian Gethmann (@smartsammler)
 

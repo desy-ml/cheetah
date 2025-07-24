@@ -1,4 +1,4 @@
-git+https://github.com/ocelot-collab/ocelot.git   # Ocelot
+ocelot-collab
 openpmd-beamphysics
 pytest
 pytest-cov
