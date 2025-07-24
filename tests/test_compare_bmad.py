@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 from scipy.constants import physical_constants
