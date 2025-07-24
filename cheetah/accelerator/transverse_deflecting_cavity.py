@@ -1,6 +1,7 @@
 from typing import Literal
 
 import matplotlib.pyplot as plt
+from cheetah.track_methods import base_rmatrix
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import speed_of_light
@@ -102,9 +103,7 @@ class TransverseDeflectingCavity(Element):
         :return: Beam exiting the element.
         """
         if self.tracking_method == "cheetah":
-            raise NotImplementedError(
-                "Cheetah transverse deflecting cavity tracking is not yet implemented."
-            )
+            return super().track(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
@@ -115,6 +114,45 @@ class TransverseDeflectingCavity(Element):
                 f"Invalid tracking method {self.tracking_method}. "
                 + "Supported methods are 'cheetah' and 'bmadx'."
             )
+        
+    def transfer_map(self, energy: torch.Tensor, species: Beam) -> torch.Tensor:
+        """
+        Compute the transfer map for a thick lens transverse deflecting cavity.
+        Use drift-kick-drift method for tracking.
+
+        Note: This method only works for zero phase.
+
+        :param energy: Energy of the beam in eV.
+        :param species: Species of the beam.
+        :return: Transfer map for the element.
+        """
+        assert torch.allclose(self.phase, torch.zeros_like(self.phase)), "Phase must be zero for transfer map calculation."
+
+        # calculate drift transfer matrix
+        R_drift = base_rmatrix(
+            length=self.length / 2.0,
+            k1=torch.zeros_like(self.length),
+            hx=torch.zeros_like(self.length),
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
+        
+        # calculate kick transfer matrix
+        k = 2 * torch.pi * self.frequency * self.voltage / speed_of_light / energy
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape, k.shape, energy.shape
+        )
+        R_kick = torch.eye(7, dtype=self.length.dtype, device=self.length.device).repeat(*vector_shape, 1, 1)
+
+        # note that the longidutinal coordinate in cheetah is negative normal convention
+        R_kick[...,1,4] = -k
+        R_kick[...,5,0] = k
+
+        # calculate total transfer matrix
+        R = torch.matmul(R_kick, R_drift)
+        R = torch.matmul(R_drift, R)
+        return R
 
     def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
         """
