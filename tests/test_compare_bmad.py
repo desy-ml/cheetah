@@ -33,7 +33,9 @@ atomic_mass_eV = (
     [
         (
             cheetah.Drift(
-                length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.float64
+                length=torch.tensor(1.0),
+                tracking_method="drift_kick_drift",
+                dtype=torch.float64,
             )
         ),
         (
@@ -49,7 +51,7 @@ atomic_mass_eV = (
                 gap_exit=torch.tensor(0.06),
                 fringe_at="both",
                 fringe_type="linear_edge",
-                tracking_method="bmadx",
+                tracking_method="drift_kick_drift",
                 dtype=torch.float64,
             )
         ),
@@ -57,7 +59,7 @@ atomic_mass_eV = (
             cheetah.Quadrupole(
                 length=torch.tensor(0.5),
                 k1=torch.tensor(1.0),
-                tracking_method="bmadx",
+                tracking_method="drift_kick_drift",
                 dtype=torch.float64,
             )
         ),

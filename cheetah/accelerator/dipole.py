@@ -25,26 +25,34 @@ class Dipole(Element):
     :param tilt: Tilt of the magnet in x-y plane [rad].
     :param gap: The magnet gap in meters. Note that in MAD and ELEGANT: HGAP = gap/2.
     :param gap_exit: The magnet gap at the exit in meters. Note that in MAD and
-        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Only used with
-        `"bmadx"` tracking method.
+        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Now it's only used with
+        `"drift_kick_drift"` tracking method.
     :param fringe_integral: Fringe field integral (of the enterance face).
     :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
-        different from `fringe_integral`. Only used with `"bmadx"` tracking method.
-    :param fringe_at: Where to apply the fringe fields for `"bmadx"` tracking. The
-        available options are:
+        different from `fringe_integral`. Only used with `"drift_kick_drift"` tracking
+        method.
+    :param fringe_at: Where to apply the fringe fields for `"drift_kick_drift"`
+        tracking. The available options are:
         - "neither": Do not apply fringe fields.
         - "entrance": Apply fringe fields at the entrance end.
         - "exit": Apply fringe fields at the exit end.
         - "both": Apply fringe fields at both ends.
-    :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
-        supports `"linear_edge"`.
+    :param fringe_type: Type of fringe field for `"drift_kick_drift"` tracking.
+        Currently only supports `"linear_edge"`.
+    :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python
         variable name. This is needed if you want to use the `segment.element_name`
         syntax to access the element in a segment.
     """
 
-    supported_tracking_methods = ["linear", "cheetah", "bmadx", "second_order"]
+    supported_tracking_methods = [
+        "linear",
+        "cheetah",
+        "drift_kick_drift",
+        "bmadx",
+        "second_order",
+    ]
 
     def __init__(
         self,
@@ -61,7 +69,7 @@ class Dipole(Element):
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal[
-            "linear", "cheetah", "bmadx", "second_order"
+            "linear", "cheetah", "drift_kick_drift", "bmadx", "second_order"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
@@ -191,20 +199,27 @@ class Dipole(Element):
             return super().track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super().track_second_order(incoming)
+        elif self.tracking_method == "drift_kick_drift":
+            assert isinstance(incoming, ParticleBeam), (
+                "Drift_kick_drift tracking is currently only supported for "
+                "`ParticleBeam`."
+            )
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
             ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
-            return self._track_bmadx(incoming)
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
                 + "Supported methods are 'linear', 'second_order', and 'bmadx'."
             )
 
-    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the quadrupole element using the Bmad-X tracking method.
+        Track particles through the quadrupole element using the Drift_kick_drift
+            tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.

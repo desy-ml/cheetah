@@ -34,7 +34,7 @@ class TransverseDeflectingCavity(Element):
         syntax to access the element in a segment.
     """
 
-    supported_tracking_methods = ["bmadx"]
+    supported_tracking_methods = ["drift_kick_drift", "bmadx"]
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class TransverseDeflectingCavity(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
-        tracking_method: Literal["bmadx"] = "bmadx",
+        tracking_method: Literal["drift_kick_drift", "bmadx"] = "drift_kick_drift",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -107,18 +107,24 @@ class TransverseDeflectingCavity(Element):
             raise NotImplementedError(
                 "Cheetah transverse deflecting cavity tracking is not yet implemented."
             )
+        elif self.tracking_method == "drift_kick_drift":
+            assert isinstance(incoming, ParticleBeam), (
+                "Drift_kick_drift tracking is currently only supported for "
+                "`ParticleBeam`."
+            )
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
             assert isinstance(
                 incoming, ParticleBeam
             ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
-            return self._track_bmadx(incoming)
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
                 + "Supported methods are 'cheetah' and 'bmadx'."
             )
 
-    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
         Track particles through the TDC element using the Bmad-X tracking method.
 
