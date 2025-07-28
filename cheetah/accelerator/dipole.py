@@ -349,7 +349,10 @@ class Dipole(Element):
         z_f = (
             z
             + (beta * self.length.unsqueeze(-1) / beta0.unsqueeze(-1))
-            - ((1 + pz) * Lp / px_norm)
+            + (
+                (1 + pz) * Lp / px_norm
+            )  # In this line, sign should be + since head-tail convention
+            # is different compared to BmadX. Confirmed with elegant simulaton.
         )
 
         return x_f, px_f, y_f, py, z_f, pz
