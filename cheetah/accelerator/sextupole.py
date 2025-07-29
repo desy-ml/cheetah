@@ -104,9 +104,9 @@ class Sextupole(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.tracking_method == "linear":
-            return super().track_first_order(incoming)
+            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
-            return super().track_second_order(incoming)
+            return super()._track_second_order(incoming)
 
     @property
     def is_skippable(self) -> bool:

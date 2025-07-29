@@ -101,7 +101,7 @@ class Drift(Element):
         :return: Beam exiting the element.
         """
         if self.tracking_method == "linear":
-            return super().track_first_order(incoming)
+            return super()._track_first_order(incoming)
         elif self.tracking_method == "cheetah":
             warnings.warn(
                 "The 'cheetah' tracking method is deprecated and will be removed in a"
@@ -109,9 +109,9 @@ class Drift(Element):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return super().track_first_order(incoming)
+            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
-            return super().track_second_order(incoming)
+            return super()._track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
             assert isinstance(incoming, ParticleBeam), (
                 "Drift_kick_drift tracking is currently only supported for "

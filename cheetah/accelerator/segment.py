@@ -454,7 +454,7 @@ class Segment(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
-            return super().track_first_order(incoming)
+            return super()._track_first_order(incoming)
         else:
             todos = []
             continuous_skippable_elements = []

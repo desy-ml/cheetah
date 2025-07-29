@@ -142,7 +142,7 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def track_first_order(self, incoming: Beam) -> Beam:
+    def _track_first_order(self, incoming: Beam) -> Beam:
         """
         Track particles through the element with linear transfer map. The input can be
         a `ParameterBeam` or a `ParticleBeam`.
@@ -178,7 +178,7 @@ class Element(ABC, nn.Module):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
-    def track_second_order(self, incoming: Beam):
+    def _track_second_order(self, incoming: Beam):
         """
         Track particles through the element with second-order transfer maps.
         For now, second order tracking is only supported for `ParticleBeam`.

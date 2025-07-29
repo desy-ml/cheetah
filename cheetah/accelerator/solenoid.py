@@ -67,7 +67,7 @@ class Solenoid(Element):
         self.tracking_method = tracking_method
 
     def track(self, incoming: Beam) -> Beam:
-        return super().track_first_order(incoming)
+        return super()._track_first_order(incoming)
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
