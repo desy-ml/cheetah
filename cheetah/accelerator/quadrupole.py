@@ -135,7 +135,7 @@ class Quadrupole(Element):
         elif self.tracking_method == "cheetah":
             warnings.warn(
                 "The 'cheetah' tracking method is deprecated and will be removed in a"
-                "future version. Please use 'linear' instead.",
+                "future release. Please use 'linear' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -147,15 +147,16 @@ class Quadrupole(Element):
         elif self.tracking_method == "bmadx":
             warnings.warn(
                 "The 'bmadx' tracking method is deprecated and will be removed in a"
-                " future version. Please use 'drift_kick_drift' instead.",
+                " future release. Please use 'drift_kick_drift' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
             return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method} for element of type "
-                f"{self.__class__.__name__} and beam of type {type(incoming)}."
+                f"Invalid tracking method {self.tracking_method}. "
+                + "Supported methods are 'linear', 'second_order', and "
+                + "'drift_kick_drift'."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
@@ -167,6 +168,10 @@ class Quadrupole(Element):
             `ParticleBeam`.
         :return: Beam exiting the element.
         """
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+
         # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px

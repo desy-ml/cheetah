@@ -49,9 +49,9 @@ class Dipole(Element):
     supported_tracking_methods = [
         "linear",
         "cheetah",
+        "second_order",
         "drift_kick_drift",
         "bmadx",
-        "second_order",
     ]
 
     def __init__(
@@ -69,7 +69,7 @@ class Dipole(Element):
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal[
-            "linear", "cheetah", "drift_kick_drift", "bmadx", "second_order"
+            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
@@ -192,7 +192,7 @@ class Dipole(Element):
         elif self.tracking_method == "cheetah":
             warnings.warn(
                 "The 'cheetah' tracking method is deprecated and will be removed in a"
-                "future version. Please use 'linear' instead.",
+                "future release. Please use 'linear' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -200,20 +200,20 @@ class Dipole(Element):
         elif self.tracking_method == "second_order":
             return super().track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
-            assert isinstance(incoming, ParticleBeam), (
-                "Drift_kick_drift tracking is currently only supported for "
-                "`ParticleBeam`."
-            )
             return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
-            assert isinstance(
-                incoming, ParticleBeam
-            ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
+            warnings.warn(
+                "The 'bmadx' tracking method is deprecated and will be removed in a"
+                "future release. Please use 'drift_kick_drift' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'linear', 'second_order', and 'bmadx'."
+                + "Supported methods are 'linear', 'second_order', and "
+                + "'drift_kick_drift'."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
@@ -225,10 +225,14 @@ class Dipole(Element):
             `ParticleBeam`.
         :return: Beam exiting the element.
         """
-        # TODO: The renaming of the compinents of `incoming` to just the component name
-        # makes things hard to read. The resuse and overwriting of those component names
-        # throughout the function makes it even hard, is bad practice and should really
-        # be fixed!
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+
+        # TODO: The renaming of the components of `incoming` to just the component name
+        # makes things hard to read. The reuse and overwriting of those component names
+        # throughout the function makes it even harder, is bad practice and should
+        # really be fixed!
 
         # Compute Bmad coordinates and p0c
         x = incoming.x
