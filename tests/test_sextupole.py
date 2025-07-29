@@ -143,35 +143,36 @@ def test_sextupole_as_drift():
 
 
 def test_sextupole_with_misalignments():
-    """
-    Test that a sextupole with misalignments behaves as expected.
-    """
-    sextupole_with_misalignment = cheetah.Sextupole(
+    """Test that a sextupole with misalignments behaves as expected."""
+
+    centered_sextupole = cheetah.Sextupole(
+        length=torch.tensor(1.0), k2=torch.tensor(0.5)
+    )
+    misaligned_sextupole = cheetah.Sextupole(
         length=torch.tensor(1.0),
         k2=torch.tensor(0.5),
         misalignment=torch.tensor([1e-3, 0.0]),
     )
 
-    sextupole_without_misalignment = cheetah.Sextupole(
-        length=torch.tensor(1.0), k2=torch.tensor(0.5)
-    )
-    incoming_beam = cheetah.ParticleBeam.from_parameters(
-        mu_x=torch.tensor(1e-3),
+    centered_incoming_beam = cheetah.ParticleBeam.from_parameters(
+        mu_x=torch.tensor(0.0),
         sigma_px=torch.tensor(2e-7),
         sigma_py=torch.tensor(2e-7),
         sigma_p=torch.tensor(1e-2),
     )
-    incoming_beam_with_misalignment = incoming_beam.clone()
-    incoming_beam_with_misalignment.particles[:, 0] -= 1e-3
+    misaligned_incoming_beam = centered_incoming_beam.clone()
+    misaligned_incoming_beam.particles[:, 0] -= 1e-3
 
-    outbeam_sextupole_with_misalignment = sextupole_with_misalignment(incoming_beam)
-    outbeam_sextupole_without_misalignment_mismatched_incoming = (
-        sextupole_without_misalignment(incoming_beam_with_misalignment)
+    outgoing_beam_misaligned_sextupole = misaligned_sextupole.track(
+        centered_incoming_beam
+    )
+    outgoing_beam_misaligned_incoming = centered_sextupole.track(
+        misaligned_incoming_beam
     )
 
-    outbeam_sextupole_without_misalignment_mismatched_incoming.particles[:, 0] += 1e-3
+    outgoing_beam_misaligned_incoming.particles[:, 0] += 1e-3
 
     assert torch.allclose(
-        outbeam_sextupole_with_misalignment.particles,
-        outbeam_sextupole_without_misalignment_mismatched_incoming.particles,
+        outgoing_beam_misaligned_sextupole.particles,
+        outgoing_beam_misaligned_incoming.particles,
     )
