@@ -31,9 +31,9 @@ class Quadrupole(Element):
         element when tracking method is set to `"bmadx"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     supported_tracking_methods = [
@@ -52,7 +52,7 @@ class Quadrupole(Element):
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
         tracking_method: Literal[
-            "linear", "cheetah", "drift_kick_drift", "bmadx", "second_order"
+            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,

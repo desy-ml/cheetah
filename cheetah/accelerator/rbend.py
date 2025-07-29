@@ -53,7 +53,7 @@ class RBend(Dipole):
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal[
-            "linear", "cheetah", "bmadx", "second_order"
+            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
