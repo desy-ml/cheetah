@@ -211,9 +211,9 @@ class Dipole(Element):
             return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'linear', 'second_order', and "
-                + "'drift_kick_drift'."
+                f"Invalid tracking method {self.tracking_method}. For element of"
+                f" type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:

@@ -109,8 +109,9 @@ class Sextupole(Element):
             return super()._track_second_order(incoming)
         else:
             raise ValueError(
-                f"Unsupported tracking method '{self.tracking_method}' for element of"
-                f" type {self.__class__.__name__}."
+                f"Invalid tracking method {self.tracking_method}. For element of"
+                f" type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}."
             )
 
     @property
