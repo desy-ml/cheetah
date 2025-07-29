@@ -17,9 +17,9 @@ class Element(ABC, nn.Module):
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     # Should be overridden by subclasses

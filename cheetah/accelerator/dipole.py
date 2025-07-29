@@ -41,9 +41,9 @@ class Dipole(Element):
         Currently only supports `"linear_edge"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     supported_tracking_methods = [

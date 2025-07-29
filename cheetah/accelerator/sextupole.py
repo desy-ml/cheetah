@@ -22,9 +22,9 @@ class Sextupole(Element):
         Note: By default, the sextupole is created with linear tracking method so it
         will not have second order effects.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     supported_tracking_methods = ["linear", "second_order"]
@@ -107,6 +107,11 @@ class Sextupole(Element):
             return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super()._track_second_order(incoming)
+        else:
+            raise ValueError(
+                f"Unsupported tracking method '{self.tracking_method}' for element of"
+                f" type {self.__class__.__name__}."
+            )
 
     @property
     def is_skippable(self) -> bool:

@@ -25,9 +25,9 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
@@ -591,7 +591,7 @@ class Segment(Element):
     def set_tracking_method(
         self,
         tracking_method: Literal[
-            "linear", "cheetah", "bmadx", "second_order"
+            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
         ] = "linear",
     ) -> None:
         for element in self.elements:

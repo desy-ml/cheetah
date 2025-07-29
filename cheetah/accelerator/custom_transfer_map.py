@@ -18,9 +18,9 @@ class CustomTransferMap(Element):
     :param predefined_transfer_map: The transfer map to use for this element.
     :param length: Length of the element in meters. If `None`, the length is set to 0.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     supported_tracking_methods = ["linear"]
