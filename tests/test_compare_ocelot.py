@@ -16,7 +16,6 @@ def test_dipole(tracking_method):
     Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element.
     """
-
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
@@ -397,10 +396,11 @@ def test_quadrupole(tracking_method):
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     ocelot_quadrupole = ocelot.Quadrupole(l=0.23, k1=5.0)
-    if tracking_method == "second_order":
-        ocelot_method = {"global": ocelot.SecondTM}
-    else:
-        ocelot_method = {"global": ocelot.TransferMap}
+    ocelot_method = {
+        "global": (
+            ocelot.SecondTM if tracking_method == "second_order" else ocelot.TransferMap
+        )
+    }
     lattice = ocelot.MagneticLattice(
         [ocelot.Drift(l=0.1), ocelot_quadrupole, ocelot.Drift(l=0.1)],
         method=ocelot_method,
