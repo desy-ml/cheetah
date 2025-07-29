@@ -174,10 +174,15 @@ def test_longitudinal_beam_metric(attr_names):
 
 
 @pytest.mark.parametrize(
-    "tracking_method", ["linear", "second_order", "drift_kick_drift", "bmadx"]
+    "target_tracking_method",
+    ["linear", "second_order", "drift_kick_drift", "unsupported"],
 )
-def test_segment_set_tracking_method(tracking_method):
-    """Test that the segment can set the tracking method for all supporting elements."""
+def test_setting_tracking_method(target_tracking_method):
+    """
+    Test that setting the tracking method over an entire `Segment` works as expected,
+    especially that it only changes the tracking method of elements that support the
+    requested tracking method.
+    """
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.5), name="d1"),
@@ -191,10 +196,20 @@ def test_segment_set_tracking_method(tracking_method):
         ]
     )
 
-    # Set tracking method
-    segment.set_tracking_method(tracking_method)
+    original_tracking_methods = {
+        element.name: element.tracking_method
+        for element in segment.elements
+        if hasattr(element, "tracking_method")
+    }
 
+    # Set tracking method
+    segment.set_tracking_method(target_tracking_method)
+
+    # Check that elements have the target tracking iff they support it
     for element in segment.elements:
-        if hasattr(element, "supported_tracking_method"):
-            if tracking_method in element.supported_tracking_methods:
-                assert element.tracking_method == tracking_method
+        correct_tracking_method = (
+            target_tracking_method
+            if target_tracking_method in element.supported_tracking_methods
+            else original_tracking_methods[element.name]
+        )
+        assert element.tracking_method == correct_tracking_method
