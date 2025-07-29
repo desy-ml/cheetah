@@ -22,6 +22,7 @@ class Element(ABC, nn.Module):
         syntax to access the element in a segment.
     """
 
+    # Should be overridden by subclasses
     supported_tracking_methods: list[str] = []
 
     def __init__(

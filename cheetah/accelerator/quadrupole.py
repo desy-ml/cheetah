@@ -39,9 +39,9 @@ class Quadrupole(Element):
     supported_tracking_methods = [
         "linear",
         "cheetah",
+        "second_order",
         "drift_kick_drift",
         "bmadx",
-        "second_order",
     ]
 
     def __init__(
@@ -109,8 +109,8 @@ class Quadrupole(Element):
         T = base_ttensor(
             length=self.length,
             k1=self.k1,
-            k2=torch.zeros_like(self.length),
-            hx=torch.zeros_like(self.length),
+            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
             tilt=self.tilt,
             energy=energy,
             species=species,
@@ -143,15 +143,8 @@ class Quadrupole(Element):
         elif self.tracking_method == "second_order":
             return super().track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
-            assert isinstance(incoming, ParticleBeam), (
-                "Drift_kick_drift tracking is currently only supported for "
-                "`ParticleBeam`."
-            )
             return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
-            assert isinstance(
-                incoming, ParticleBeam
-            ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
             warnings.warn(
                 "The 'bmadx' tracking method is deprecated and will be removed in a"
                 " future version. Please use 'drift_kick_drift' instead.",
@@ -161,8 +154,8 @@ class Quadrupole(Element):
             return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'linear', 'second_order', and 'bmadx'."
+                f"Invalid tracking method {self.tracking_method} for element of type "
+                f"{self.__class__.__name__} and beam of type {type(incoming)}."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
