@@ -106,7 +106,7 @@ class Sextupole(Element):
         return (
             self._track_second_order(incoming)
             if self.tracking_method == "second_order"
-            else self._track_linear(incoming)
+            else self._track_first_order(incoming)
         )
 
     @property
