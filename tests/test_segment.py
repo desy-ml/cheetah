@@ -71,7 +71,7 @@ def test_attr_setting_by_element_type_convenience_method(is_recursive):
     )
 
     segment.set_attrs_on_every_element(
-        cheetah.Drift, is_recursive=is_recursive, length=torch.tensor(4.2)
+        filter_type=cheetah.Drift, is_recursive=is_recursive, length=torch.tensor(4.2)
     )
 
     for element in segment.elements:
