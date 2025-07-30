@@ -5,7 +5,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Species
+from cheetah.particles import Beam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
 from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
 
@@ -101,6 +101,13 @@ class Sextupole(Element):
                 "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
             )
         return T
+
+    def track(self, incoming: Beam) -> Beam:
+        return (
+            self._track_second_order(incoming)
+            if self.tracking_method == "second_order"
+            else self._track_linear(incoming)
+        )
 
     @property
     def is_skippable(self) -> bool:

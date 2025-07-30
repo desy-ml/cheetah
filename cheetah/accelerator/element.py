@@ -142,18 +142,7 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if self.tracking_method == "identity":
-            return incoming.clone()
-        elif self.tracking_method == "linear":
-            return self._track_first_order(incoming)
-        elif self.tracking_method == "second_order":
-            return self._track_second_order(incoming)
-        else:
-            raise ValueError(
-                f"Invalid tracking method '{self.tracking_method}' for element "
-                f"{self.name} of type {self.__class__.__name__}. Supported methods are "
-                f"{self.supported_tracking_methods}."
-            )
+        return self._track_first_order(incoming)
 
     def _track_first_order(self, incoming: Beam) -> Beam:
         """

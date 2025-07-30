@@ -3,7 +3,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, Species
+from cheetah.particles import Species
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -41,9 +41,6 @@ class Undulator(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.is_active = is_active
-
-    def track(self, incoming: Beam) -> Beam:
-        return super()._track_first_order(incoming)
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species

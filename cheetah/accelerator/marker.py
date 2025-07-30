@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Species
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -17,8 +17,6 @@ class Marker(Element):
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
     """
-
-    supported_tracking_methods = ["identity"]
 
     def __init__(
         self,
@@ -37,6 +35,9 @@ class Marker(Element):
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )
+
+    def track(self, incoming: Beam) -> Beam:
+        return incoming.clone()
 
     @property
     def is_skippable(self) -> bool:
