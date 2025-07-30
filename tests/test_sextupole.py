@@ -6,7 +6,7 @@ import torch
 import cheetah
 
 
-def test_compare_sextupole_to_ocelot_particle():
+def test_compare_sextupole_particle_beam_to_ocelot():
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
     `ParticleBeam` with second order effects in Ocelot.
@@ -42,7 +42,7 @@ def test_compare_sextupole_to_ocelot_particle():
     )
 
 
-def test_compare_sextupole_to_ocelot_particle_vectorized():
+def test_compare_sextupole_particle_beam_to_ocelot_vectorized():
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
     `ParticleBeam` with second order effects in Ocelot.
@@ -82,7 +82,7 @@ def test_compare_sextupole_to_ocelot_particle_vectorized():
     )
 
 
-def test_compare_sextupole_to_ocelot_parameter_linear():
+def test_compare_sextupole_parameter_beam_to_ocelot():
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot for a
     `ParameterBeam` with only first order effects in Ocelot.
@@ -96,7 +96,10 @@ def test_compare_sextupole_to_ocelot_parameter_linear():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_sextupole = cheetah.Sextupole(
-        length=torch.tensor(length), k2=torch.tensor(k2), tilt=torch.tensor(tilt)
+        length=torch.tensor(length),
+        k2=torch.tensor(k2),
+        tilt=torch.tensor(tilt),
+        tracking_method="linear",
     )
     outgoing_cheetah = cheetah_sextupole.track(incoming)
 
@@ -139,36 +142,49 @@ def test_sextupole_as_drift():
 
 
 def test_sextupole_with_misalignments():
-    """Test that a sextupole with misalignments behaves as expected."""
+    """
+    Test that tracking a centered beam through a misaligned sextupole gives the same
+    result as tracking a misaligned beam through a centered sextupole (including
+    shifting the output beam to account for the misalignment).
+    """
+    horizontal_misalignment = 1e-3
 
-    centered_sextupole = cheetah.Sextupole(
-        length=torch.tensor(1.0), k2=torch.tensor(0.5)
-    )
+    # Centered beam through a misaligned sextupole
     misaligned_sextupole = cheetah.Sextupole(
         length=torch.tensor(1.0),
         k2=torch.tensor(0.5),
-        misalignment=torch.tensor([1e-3, 0.0]),
+        misalignment=torch.tensor([horizontal_misalignment, 0.0]),
     )
-
     centered_incoming_beam = cheetah.ParticleBeam.from_parameters(
         mu_x=torch.tensor(0.0),
         sigma_px=torch.tensor(2e-7),
         sigma_py=torch.tensor(2e-7),
         sigma_p=torch.tensor(1e-2),
     )
-    misaligned_incoming_beam = centered_incoming_beam.clone()
-    misaligned_incoming_beam.particles[:, 0] -= 1e-3
 
-    outgoing_beam_misaligned_sextupole = misaligned_sextupole.track(
+    centered_through_misaligned_outgoing_beam = misaligned_sextupole.track(
         centered_incoming_beam
     )
-    outgoing_beam_misaligned_incoming = centered_sextupole.track(
-        misaligned_incoming_beam
+
+    # Misaligned beam through a centered sextupole
+    centered_sextupole = cheetah.Sextupole(
+        length=torch.tensor(1.0), k2=torch.tensor(0.5)
+    )
+    misaligned_incoming_beam = centered_incoming_beam.transformed_to(
+        mu_x=torch.tensor(-horizontal_misalignment)
     )
 
-    outgoing_beam_misaligned_incoming.particles[:, 0] += 1e-3
+    misaligned_through_centered_outgoing_beam = centered_sextupole.track(
+        misaligned_incoming_beam
+    )
+    shifted_misaligned_through_centered_outgoing_beam = (
+        misaligned_through_centered_outgoing_beam.transformed_to(
+            mu_x=misaligned_incoming_beam.mu_x + horizontal_misalignment
+        )
+    )
 
+    # Check that the results are the same
     assert torch.allclose(
-        outgoing_beam_misaligned_sextupole.particles,
-        outgoing_beam_misaligned_incoming.particles,
+        centered_through_misaligned_outgoing_beam.particles,
+        shifted_misaligned_through_centered_outgoing_beam.particles,
     )

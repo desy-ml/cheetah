@@ -182,13 +182,12 @@ class Element(ABC, nn.Module):
 
     def _track_second_order(self, incoming: Beam):
         """
-        Track particles through the element with second-order transfer maps.
-        For now, second order tracking is only supported for `ParticleBeam`.
+        Track particles through the element with second-order effects. Currently, second
+        order tracking is only supported for `ParticleBeam`.
 
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-
         assert isinstance(
             incoming, ParticleBeam
         ), "Second-order tracking is currently only supported for `ParticleBeam`."
@@ -240,17 +239,6 @@ class Element(ABC, nn.Module):
             `supported_tracking_methods`. If the method is not supported, a the previous
             tracking method is kept and a warning is issued.
         """
-        from icecream import ic
-
-        ic(
-            self.__class__.__name__,
-            self.name,
-            tracking_method,
-            self._tracking_method,
-            self.supported_tracking_methods,
-            tracking_method in self.supported_tracking_methods,
-        )
-
         if tracking_method in self.supported_tracking_methods:
             self._tracking_method = tracking_method
         else:
