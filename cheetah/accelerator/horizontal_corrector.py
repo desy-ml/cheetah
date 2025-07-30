@@ -3,7 +3,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, Species
+from cheetah.particles import Species
 from cheetah.utils import (
     UniqueNameGenerator,
     compute_relativistic_factors,
