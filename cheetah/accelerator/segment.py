@@ -585,7 +585,7 @@ class Segment(Element):
                     setattr(element, key, value)
             elif is_recursive and isinstance(element, Segment):
                 element.set_attrs_on_every_element(
-                    filter_type, is_recursive=True, **kwargs
+                    filter_type=filter_type, is_recursive=True, **kwargs
                 )
 
     def plot(
