@@ -91,24 +91,6 @@ class Cavity(Element):
         )
 
     def track(self, incoming: Beam) -> Beam:
-        """
-        Track particles through the cavity. The input can be a `ParameterBeam` or a
-        `ParticleBeam`. For a cavity, this does a little more than just the transfer map
-        multiplication done by most elements.
-
-        :param incoming: Beam of particles entering the element.
-        :return: Beam of particles exiting the element.
-        """
-        if isinstance(incoming, (ParameterBeam, ParticleBeam)):
-            return self._track_beam(incoming)
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-
-    def _track_beam(self, incoming: Beam) -> Beam:
-        """
-        Track particles through the cavity. The input can be a `ParameterBeam` or a
-        `ParticleBeam`.
-        """
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
