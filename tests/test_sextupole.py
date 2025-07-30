@@ -20,10 +20,7 @@ def test_compare_sextupole_to_ocelot_particle():
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
     cheetah_sextupole = cheetah.Sextupole(
-        length=torch.tensor(length),
-        k2=torch.tensor(k2),
-        tilt=torch.tensor(tilt),
-        tracking_method="second_order",
+        length=torch.tensor(length), k2=torch.tensor(k2), tilt=torch.tensor(tilt)
     )
     outgoing_cheetah = cheetah_sextupole.track(incoming)
 
@@ -64,7 +61,6 @@ def test_compare_sextupole_to_ocelot_particle_vectorized():
         length=torch.tensor(length),
         k2=torch.tensor(k2).repeat([2]),
         tilt=torch.tensor(tilt).repeat([3, 1]),
-        tracking_method="second_order",
     )
     outgoing_cheetah = cheetah_sextupole.track(incoming)
 
