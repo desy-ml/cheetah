@@ -35,7 +35,7 @@ class Sextupole(Element):
         k2: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
-        tracking_method: Literal["linear", "second_order"] = "linear",
+        tracking_method: Literal["linear", "second_order"] = "second_order",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
