@@ -1,5 +1,3 @@
-from typing import Literal
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -35,7 +33,6 @@ class VerticalCorrector(Element):
         self,
         length: torch.Tensor,
         angle: torch.Tensor | None = None,
-        tracking_method: Literal["linear"] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -51,7 +48,6 @@ class VerticalCorrector(Element):
             "angle",
             torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
         )
-        self.tracking_method = tracking_method
 
     def track(self, incoming: Beam) -> Beam:
         return super()._track_first_order(incoming)

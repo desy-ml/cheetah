@@ -18,7 +18,6 @@ class Marker(Element):
         access the element in a segment.
     """
 
-    _tracking_method = "identity"
     supported_tracking_methods = ["identity"]
 
     def __init__(

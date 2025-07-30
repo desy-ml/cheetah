@@ -1,5 +1,3 @@
-from typing import Literal
-
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -32,7 +30,6 @@ class Undulator(Element):
         self,
         length: torch.Tensor,
         is_active: bool = False,
-        tracking_method: Literal["linear"] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -44,7 +41,6 @@ class Undulator(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.is_active = is_active
-        self.tracking_method = tracking_method
 
     def track(self, incoming: Beam) -> Beam:
         return super()._track_first_order(incoming)

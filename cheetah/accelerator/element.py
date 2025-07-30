@@ -23,10 +23,6 @@ class Element(ABC, nn.Module):
         access the element in a segment.
     """
 
-    # Should be overridden by subclasses
-    _tracking_method: str | None = None
-    supported_tracking_methods: list[str] = []
-
     def __init__(
         self,
         name: str | None = None,
@@ -51,6 +47,10 @@ class Element(ABC, nn.Module):
                 )
 
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
+
+        if not hasattr(self, "supported_tracking_methods"):
+            self.supported_tracking_methods = [self.__class__.__name__.lower()]
+        self._tracking_method = self.supported_tracking_methods[0]
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
@@ -142,15 +142,15 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        if self._tracking_method == "identity":
+        if self.tracking_method == "identity":
             return incoming.clone()
-        elif self._tracking_method == "first_order":
+        elif self.tracking_method == "linear":
             return self._track_first_order(incoming)
-        elif self._tracking_method == "second_order":
+        elif self.tracking_method == "second_order":
             return self._track_second_order(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method '{self._tracking_method}' for element "
+                f"Invalid tracking method '{self.tracking_method}' for element "
                 f"{self.name} of type {self.__class__.__name__}. Supported methods are "
                 f"{self.supported_tracking_methods}."
             )
@@ -251,6 +251,17 @@ class Element(ABC, nn.Module):
             `supported_tracking_methods`. If the method is not supported, a the previous
             tracking method is kept and a warning is issued.
         """
+        from icecream import ic
+
+        ic(
+            self.__class__.__name__,
+            self.name,
+            tracking_method,
+            self._tracking_method,
+            self.supported_tracking_methods,
+            tracking_method in self.supported_tracking_methods,
+        )
+
         if tracking_method in self.supported_tracking_methods:
             self._tracking_method = tracking_method
         else:
