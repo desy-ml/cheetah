@@ -1,6 +1,6 @@
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator, Literal
+from typing import Any, Iterator
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -564,40 +564,29 @@ class Segment(Element):
             else broadcasted_results[0]
         )
 
-    def set_attrs_on_every_element_of_type(
+    def set_attrs_on_every_element(
         self,
-        element_type: type[Element] | tuple[type[Element]],
+        filter_type: type[Element] | tuple[type[Element]] | None = None,
         is_recursive: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
         """
         Set attributes on every element of a specific type in the segment.
 
-        :param element_type: Type of the elements to set the attributes for.
+        :param filter_type: Type of the elements to set the attributes for.
         :param is_recursive: If `True`, the this method is applied to nested `Segment`s
             as well. If `False`, only the elements directly in the top-level `Segment`
             are considered.
         :param kwargs: Attributes to set and their values.
         """
         for element in self.elements:
-            if isinstance(element, element_type):
+            if filter_type is None or isinstance(element, filter_type):
                 for key, value in kwargs.items():
                     setattr(element, key, value)
             elif is_recursive and isinstance(element, Segment):
-                element.set_attrs_on_every_element_of_type(
-                    element_type, is_recursive=True, **kwargs
+                element.set_attrs_on_every_element(
+                    filter_type, is_recursive=True, **kwargs
                 )
-
-    def set_tracking_method(
-        self,
-        tracking_method: Literal[
-            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
-        ] = "linear",
-    ) -> None:
-        for element in self.elements:
-            if hasattr(element, "tracking_method"):
-                if tracking_method in element.supported_tracking_methods:
-                    element.tracking_method = tracking_method
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

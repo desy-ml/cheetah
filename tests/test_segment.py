@@ -2,6 +2,7 @@ import pytest
 import torch
 
 import cheetah
+from cheetah.utils.warnings import PhysicsWarning
 
 
 def test_subcell_start_end():
@@ -69,7 +70,7 @@ def test_attr_setting_by_element_type_convenience_method(is_recursive):
         + [cheetah.Quadrupole(length=torch.tensor(0.6))]
     )
 
-    segment.set_attrs_on_every_element_of_type(
+    segment.set_attrs_on_every_element(
         cheetah.Drift, is_recursive=is_recursive, length=torch.tensor(4.2)
     )
 
@@ -203,7 +204,14 @@ def test_setting_tracking_method(target_tracking_method):
     }
 
     # Set tracking method
-    segment.set_tracking_method(target_tracking_method)
+    with pytest.warns(
+        PhysicsWarning,
+        match=(
+            "Invalid tracking method '.+' for element .+ of type .+, supported methods "
+            r"are \[.+\]. Keeping the previous tracking method .+."
+        ),
+    ):
+        segment.set_attrs_on_every_element(tracking_method=target_tracking_method)
 
     # Check that elements have the target tracking iff they support it
     for element in segment.elements:

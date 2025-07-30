@@ -8,6 +8,7 @@ from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
+from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -23,6 +24,7 @@ class Element(ABC, nn.Module):
     """
 
     # Should be overridden by subclasses
+    _tracking_method: str | None = None
     supported_tracking_methods: list[str] = []
 
     def __init__(
@@ -140,7 +142,18 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
-        raise NotImplementedError
+        if self._tracking_method == "identity":
+            return incoming.clone()
+        elif self._tracking_method == "first_order":
+            return self._track_first_order(incoming)
+        elif self._tracking_method == "second_order":
+            return self._track_second_order(incoming)
+        else:
+            raise ValueError(
+                f"Invalid tracking method '{self._tracking_method}' for element "
+                f"{self.name} of type {self.__class__.__name__}. Supported methods are "
+                f"{self.supported_tracking_methods}."
+            )
 
     def _track_first_order(self, incoming: Beam) -> Beam:
         """
@@ -219,6 +232,36 @@ class Element(ABC, nn.Module):
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
+
+    @property
+    def tracking_method(self) -> str:
+        """
+        The tracking method used by the element. This is used to determine how the
+        element is tracked through the accelerator.
+        """
+        return self._tracking_method
+
+    @tracking_method.setter
+    def tracking_method(self, tracking_method: str) -> None:
+        """
+        Set the tracking method for the element. This is used to determine how the
+        element is tracked through the accelerator.
+
+        :param tracking_method: The tracking method to use. Must be one of the
+            `supported_tracking_methods`. If the method is not supported, a the previous
+            tracking method is kept and a warning is issued.
+        """
+        if tracking_method in self.supported_tracking_methods:
+            self._tracking_method = tracking_method
+        else:
+            warnings.warn(
+                f"Invalid tracking method '{tracking_method}' for element {self.name} "
+                f"of type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}. Keeping the previous tracking "
+                f"method {self._tracking_method}.",
+                PhysicsWarning,
+                stacklevel=2,
+            )
 
     @property
     @abstractmethod
