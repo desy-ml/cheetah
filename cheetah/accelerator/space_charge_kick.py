@@ -568,108 +568,107 @@ class SpaceChargeKick(Element):
         :param incoming: Beam of particles entering the element.
         :returns: Beam of particles exiting the element.
         """
-        if isinstance(incoming, ParticleBeam):
-            # This flattening is a hack to only think about one vector dimension in the
-            # following code. It is reversed at the end of the function.
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "SpaceChargeKick currently only supports tracking particle beams."
 
-            # Make sure that the incoming beam has at least one vector dimension by
-            # broadcasting with a dummy dimension (1,).
-            vector_shape = torch.broadcast_shapes(
-                incoming.particles.shape[:-2],
-                incoming.energy.shape,
-                incoming.particle_charges.shape[:-1],
-                incoming.survival_probabilities.shape[:-1],
-                (1,),
-            )
-            vectorized_incoming = ParticleBeam(
-                particles=torch.broadcast_to(
-                    incoming.particles, (*vector_shape, incoming.num_particles, 7)
-                ),
-                energy=torch.broadcast_to(incoming.energy, vector_shape),
-                particle_charges=torch.broadcast_to(
-                    incoming.particle_charges, (*vector_shape, incoming.num_particles)
-                ),
-                survival_probabilities=torch.broadcast_to(
-                    incoming.survival_probabilities,
-                    (*vector_shape, incoming.num_particles),
-                ),
-                device=incoming.particles.device,
-                dtype=incoming.particles.dtype,
-            )
+        # This flattening is a hack to only think about one vector dimension in the
+        # following code. It is reversed at the end of the function.
 
-            flattened_incoming = ParticleBeam(
-                particles=vectorized_incoming.particles.flatten(end_dim=-3),
-                energy=vectorized_incoming.energy.flatten(end_dim=-1),
-                particle_charges=vectorized_incoming.particle_charges.flatten(
-                    end_dim=-2
-                ),
-                survival_probabilities=(
-                    vectorized_incoming.survival_probabilities.flatten(end_dim=-2)
-                ),
-                device=vectorized_incoming.particles.device,
-                dtype=vectorized_incoming.particles.dtype,
-            )
-            flattened_length_effect = self.effect_length.flatten(end_dim=-1)
+        # Make sure that the incoming beam has at least one vector dimension by
+        # broadcasting with a dummy dimension (1,).
+        vector_shape = torch.broadcast_shapes(
+            incoming.particles.shape[:-2],
+            incoming.energy.shape,
+            incoming.particle_charges.shape[:-1],
+            incoming.survival_probabilities.shape[:-1],
+            (1,),
+        )
+        vectorized_incoming = ParticleBeam(
+            particles=torch.broadcast_to(
+                incoming.particles, (*vector_shape, incoming.num_particles, 7)
+            ),
+            energy=torch.broadcast_to(incoming.energy, vector_shape),
+            particle_charges=torch.broadcast_to(
+                incoming.particle_charges, (*vector_shape, incoming.num_particles)
+            ),
+            survival_probabilities=torch.broadcast_to(
+                incoming.survival_probabilities,
+                (*vector_shape, incoming.num_particles),
+            ),
+            device=incoming.particles.device,
+            dtype=incoming.particles.dtype,
+        )
 
-            # Compute useful quantities
-            grid_dimensions = torch.stack(
-                [
-                    self.grid_extent_x * flattened_incoming.sigma_x,
-                    self.grid_extent_y * flattened_incoming.sigma_y,
-                    self.grid_extent_tau * flattened_incoming.sigma_tau,
-                ],
-                dim=-1,
-            )
-            cell_size = (
-                2
-                * grid_dimensions
-                / torch.tensor(
-                    self.grid_shape,
-                    device=grid_dimensions.device,
-                    dtype=grid_dimensions.dtype,
-                )
-            )
-            dt = flattened_length_effect / (
-                speed_of_light * flattened_incoming.relativistic_beta
-            )
+        flattened_incoming = ParticleBeam(
+            particles=vectorized_incoming.particles.flatten(end_dim=-3),
+            energy=vectorized_incoming.energy.flatten(end_dim=-1),
+            particle_charges=vectorized_incoming.particle_charges.flatten(end_dim=-2),
+            survival_probabilities=(
+                vectorized_incoming.survival_probabilities.flatten(end_dim=-2)
+            ),
+            device=vectorized_incoming.particles.device,
+            dtype=vectorized_incoming.particles.dtype,
+        )
+        flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
-            # Change coordinates to apply the space charge effect
-            xp_coordinates = flattened_incoming.to_xyz_pxpypz()
-            forces = self._compute_forces(
-                flattened_incoming, xp_coordinates, cell_size, grid_dimensions
+        # Compute useful quantities
+        grid_dimensions = torch.stack(
+            [
+                self.grid_extent_x * flattened_incoming.sigma_x,
+                self.grid_extent_y * flattened_incoming.sigma_y,
+                self.grid_extent_tau * flattened_incoming.sigma_tau,
+            ],
+            dim=-1,
+        )
+        cell_size = (
+            2
+            * grid_dimensions
+            / torch.tensor(
+                self.grid_shape,
+                device=grid_dimensions.device,
+                dtype=grid_dimensions.dtype,
             )
-            xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[
-                ..., 0
-            ] * dt.unsqueeze(-1)
-            xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[
-                ..., 1
-            ] * dt.unsqueeze(-1)
-            xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[
-                ..., 2
-            ] * dt.unsqueeze(-1)
+        )
+        dt = flattened_length_effect / (
+            speed_of_light * flattened_incoming.relativistic_beta
+        )
 
-            # Reverse the flattening of the vector dimensions
-            outgoing_vector_shape = torch.broadcast_shapes(
-                incoming.particles.shape[:-2],
-                incoming.energy.shape,
-                incoming.particle_charges.shape[:-1],
-                incoming.survival_probabilities.shape[:-1],
-                self.effect_length.shape,
-            )
-            outgoing = ParticleBeam.from_xyz_pxpypz(
-                xp_coordinates=xp_coordinates.reshape(
-                    (*outgoing_vector_shape, incoming.num_particles, 7)
-                ),
-                energy=incoming.energy,
-                particle_charges=incoming.particle_charges,
-                survival_probabilities=incoming.survival_probabilities,
-                s=incoming.s,
-                species=incoming.species,
-            )
+        # Change coordinates to apply the space charge effect
+        xp_coordinates = flattened_incoming.to_xyz_pxpypz()
+        forces = self._compute_forces(
+            flattened_incoming, xp_coordinates, cell_size, grid_dimensions
+        )
+        xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[..., 0] * dt.unsqueeze(
+            -1
+        )
+        xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[..., 1] * dt.unsqueeze(
+            -1
+        )
+        xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[..., 2] * dt.unsqueeze(
+            -1
+        )
 
-            return outgoing
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+        # Reverse the flattening of the vector dimensions
+        outgoing_vector_shape = torch.broadcast_shapes(
+            incoming.particles.shape[:-2],
+            incoming.energy.shape,
+            incoming.particle_charges.shape[:-1],
+            incoming.survival_probabilities.shape[:-1],
+            self.effect_length.shape,
+        )
+        outgoing = ParticleBeam.from_xyz_pxpypz(
+            xp_coordinates=xp_coordinates.reshape(
+                (*outgoing_vector_shape, incoming.num_particles, 7)
+            ),
+            energy=incoming.energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s,
+            species=incoming.species,
+        )
+
+        return outgoing
 
     @property
     def is_skippable(self) -> bool:
