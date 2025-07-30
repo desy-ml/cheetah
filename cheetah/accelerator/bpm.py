@@ -3,7 +3,7 @@ import torch
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
+from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -53,12 +53,8 @@ class BPM(Element):
         )
 
     def track(self, incoming: Beam) -> Beam:
-        if isinstance(incoming, ParameterBeam):
-            self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
-        elif isinstance(incoming, ParticleBeam):
-            self.reading = torch.stack([incoming.mu_x, incoming.mu_y])
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+        if self.is_active:
+            self.reading = torch.stack([incoming.mu_x, incoming.mu_y], dim=-1)
 
         return incoming.clone()
 
