@@ -20,12 +20,12 @@ jobs:
       - name: Install pip dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e .[openpmd,3d-visualization]
           pip install -r test_requirements.txt
 
       - name: Run benchmark
         run: |
-          pytest tests/test_benchmark.py --benchmark-json output.json
+          pytest -m "benchmark" --benchmark-json output.json
 
       - name: Download previous benchmark data
         uses: actions/cache@v4
