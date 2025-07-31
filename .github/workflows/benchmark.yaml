@@ -25,4 +25,4 @@ jobs:
 
       - name: Run benchmark
         run: |
-          pytest -m "benchmark" --benchmark-json output.json
+          pytest tests/test_benchmark.py --benchmark-json output.json
