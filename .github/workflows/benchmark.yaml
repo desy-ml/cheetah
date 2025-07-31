@@ -39,6 +39,4 @@ jobs:
           tool: "pytest"
           output-file-path: output.json
           external-data-json-path: ./cache/benchmark-data.json
-          comment-on-alert: true
           summary-always: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
