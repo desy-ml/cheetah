@@ -473,6 +473,9 @@ class Dipole(Element):
             energy=energy,
         )
 
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = self.first_order_transfer_map(energy, species)
+
         return T
 
     def _transfer_map_enter(self) -> torch.Tensor:

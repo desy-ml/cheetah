@@ -192,14 +192,9 @@ class Element(ABC, nn.Module):
             incoming, ParticleBeam
         ), "Second-order tracking is currently only supported for `ParticleBeam`."
 
-        first_order_tm = self.first_order_transfer_map(
-            incoming.energy, incoming.species
-        )
         second_order_tm = self.second_order_transfer_map(
             incoming.energy, incoming.species
         )
-        # Fill the first-order transfer map into the second-order transfer map.
-        second_order_tm[..., :, 6, :] = first_order_tm
 
         outgoing_particles = torch.einsum(
             "...ijk,...j,...k->...i",

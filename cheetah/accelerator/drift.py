@@ -84,6 +84,10 @@ class Drift(Element):
             energy=energy,
             species=species,
         )
+
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = self.first_order_transfer_map(energy, species)
+
         return T
 
     def track(self, incoming: Beam) -> Beam:

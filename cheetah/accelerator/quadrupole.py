@@ -90,7 +90,7 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.zeros_like(self.length),
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
             species=species,
             tilt=self.tilt,
             energy=energy,
@@ -116,11 +116,23 @@ class Quadrupole(Element):
             species=species,
         )
 
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
+
+        # Apply misalignments to the entire second-order transfer map
         if not torch.all(self.misalignment == 0):
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             T = torch.einsum(
                 "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
             )
+
         return T
 
     def track(self, incoming: Beam) -> Beam:
