@@ -451,10 +451,6 @@ class Segment(Element):
             return None
 
     def track(self, incoming: Beam) -> Beam:
-        import time
-
-        time.sleep(0.1)
-
         if self.is_skippable:
             return super().track(incoming)
         else:
