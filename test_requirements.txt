@@ -1,5 +1,5 @@
 ocelot-collab
 openpmd-beamphysics
 pytest
-pytest-cov
 pytest-benchmark
+pytest-cov
