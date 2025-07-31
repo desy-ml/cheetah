@@ -41,4 +41,4 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest -m "not benchmark"
+          pytest --benchmark-skip

@@ -13,7 +13,6 @@ from .resources import ARESlatticeStage3v1_9 as ares
         (cheetah.ParameterBeam, "cheetah"),
     ],
 )
-@pytest.mark.benchmark
 def test_benchmark_ares_lattice(benchmark, beam_class, tracking_method):
     """Benchmark for tracking through the ARES lattice with fixed beam."""
     incoming = beam_class.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
