@@ -11,10 +11,47 @@ from .resources import ARESlatticeStage3v1_9 as ares
 
 
 @pytest.mark.parametrize("tracking_method", ["linear", "second_order"])
+def test_drift(tracking_method):
+    """
+    Test that the tracking results through a Cheetah `Drift` element match those through
+    an Ocelot `Drift` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_drift = cheetah.Drift(
+        length=torch.tensor(0.1), tracking_method=tracking_method
+    )
+    outgoing_beam = cheetah_drift.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_drift = ocelot.Drift(l=0.1)
+    ocelot_method = {
+        "global": (
+            ocelot.SecondTM if tracking_method == "second_order" else ocelot.TransferMap
+        )
+    }
+
+    lattice = ocelot.MagneticLattice([ocelot_drift], method=ocelot_method)
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    assert np.allclose(
+        outgoing_beam.particles[:, :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
+        atol=1e-6,
+    )
+
+
+@pytest.mark.parametrize("tracking_method", ["linear", "second_order"])
 def test_dipole(tracking_method):
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
-    through an Oclet `Bend` element.
+    through an Ocelot `Bend` element.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -52,7 +89,7 @@ def test_dipole(tracking_method):
 def test_dipole_with_float64():
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
-    through an Oclet `Bend` element using float64 precision.
+    through an Ocelot `Bend` element using float64 precision.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -81,7 +118,7 @@ def test_dipole_with_float64():
 def test_dipole_with_fringe_field():
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
-    through an Oclet `Bend` element when there are fringe fields.
+    through an Ocelot `Bend` element when there are fringe fields.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -113,7 +150,7 @@ def test_dipole_with_fringe_field():
 def test_dipole_with_fringe_field_and_tilt():
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
-    through an Oclet `Bend` element when there are fringe fields and tilt, and the
+    through an Ocelot `Bend` element when there are fringe fields and tilt, and the
     e1 and e2 angles are set.
     """
     # Cheetah
@@ -159,7 +196,7 @@ def test_dipole_with_fringe_field_and_tilt():
 def test_aperture():
     """
     Test that the tracking results through a Cheetah `Aperture` element match those
-    through an Oclet `Aperture` element.
+    through an Ocelot `Aperture` element.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -198,7 +235,7 @@ def test_aperture():
 def test_aperture_elliptical():
     """
     Test that the tracking results through an elliptical Cheetah `Aperture` element
-    match those through an elliptical Oclet `Aperture` element.
+    match those through an elliptical Ocelot `Aperture` element.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
@@ -243,7 +280,7 @@ def test_aperture_elliptical():
 def test_solenoid():
     """
     Test that the tracking results through a Cheetah `Solenoid` element match those
-    through an Oclet `Solenoid` element.
+    through an Ocelot `Solenoid` element.
     """
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_astra(
