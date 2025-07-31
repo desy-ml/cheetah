@@ -26,3 +26,19 @@ jobs:
       - name: Run benchmark
         run: |
           pytest tests/test_benchmark.py --benchmark-json output.json
+
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: "pytest"
+          output-file-path: output.json
+          external-data-json-path: ./cache/benchmark-data.json
+          comment-on-alert: true
+          summary-always: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
