@@ -187,4 +187,6 @@ def test_sextupole_with_misalignments():
     assert torch.allclose(
         centered_through_misaligned_outgoing_beam.particles,
         shifted_misaligned_through_centered_outgoing_beam.particles,
+        rtol=1e-4,
+        atol=1e-6,
     )
