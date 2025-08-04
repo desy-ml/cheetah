@@ -439,7 +439,6 @@ class Dipole(Element):
                 k1=self.k1,
                 hx=self.hx,
                 species=species,
-                tilt=torch.zeros_like(self.length),
                 energy=energy,
             )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
@@ -463,18 +462,56 @@ class Dipole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        T = base_ttensor(
-            length=self.length,
-            k1=torch.tensor(0.0, dtype=self.length.dtype, device=self.length.device),
-            k2=torch.tensor(0.0, dtype=self.length.dtype, device=self.length.device),
-            hx=self.hx,
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
+        device = self.length.device
+        dtype = self.length.dtype
+
+        R_enter = self._transfer_map_enter()
+        R_exit = self._transfer_map_exit()
+
+        if torch.any(self.length != 0.0):  # Bending magnet with finite length
+            T = base_ttensor(
+                length=self.length,
+                k1=self.k1,
+                k2=torch.tensor(0.0, dtype=dtype, device=device),
+                hx=self.hx,
+                species=species,
+                energy=energy,
+            )
+
+            # Fill the first-order transfer map into the second-order transfer map
+            T[..., :, 6, :] = base_rmatrix(
+                length=self.length,
+                k1=self.k1,
+                hx=self.hx,
+                species=species,
+                energy=energy,
+            )
+        else:  # Reduce to Thin-Corrector
+            R = torch.eye(7, device=device, dtype=dtype).repeat(
+                (*self.length.shape, 1, 1)
+            )
+            R[..., 0, 1] = self.length
+            R[..., 2, 6] = self.angle
+            R[..., 2, 3] = self.length
+
+            T = torch.zeros((*self.length.shape, 7, 7), dtype=dtype, device=device)
+            T[..., :, 6, :] = R
+
+        # Apply fringe fields
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_enter, R_enter
         )
 
-        # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = self.first_order_transfer_map(energy, species)
+        # Apply rotation for tilted magnets
+        if torch.any(self.tilt != 0):
+            rotation = rotation_matrix(self.tilt)
+            T = torch.einsum(
+                "...ij,...jkl,...kn,...lm->...inm",
+                rotation.transpose(-1, -2),
+                T,
+                rotation,
+                rotation,
+            )
 
         return T
 
