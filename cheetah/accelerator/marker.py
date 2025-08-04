@@ -13,9 +13,9 @@ class Marker(Element):
     General Marker / Monitor element
 
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
@@ -29,15 +29,15 @@ class Marker(Element):
             name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
         )
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )
 
     def track(self, incoming: Beam) -> Beam:
-        # TODO: At some point Markers should be able to be active or inactive. Active
-        # Markers would be able to record the beam tracked through them.
-        return incoming
+        return incoming.clone()
 
     @property
     def is_skippable(self) -> bool:

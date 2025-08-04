@@ -166,10 +166,10 @@ def test_quadrupole_length_multiple_vector_dimensions():
 @pytest.mark.parametrize(
     "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )
-def test_quadrupole_bmadx_tracking(dtype):
+def test_quadrupole_drift_kick_drift_tracking(dtype):
     """
-    Test that the results of tracking through a quadrupole with the `"bmadx"` tracking
-    method match the results from Bmad-X.
+    Test that the results of tracking through a quadrupole with the `"drift_kick_drift"`
+    tracking method match the results from Bmad-X.
     """
     incoming = torch.load("tests/resources/bmadx/incoming.pt", weights_only=False).to(
         dtype
@@ -180,7 +180,7 @@ def test_quadrupole_bmadx_tracking(dtype):
         misalignment=torch.tensor([0.01, -0.02], dtype=dtype),
         tilt=torch.tensor(0.5),
         num_steps=10,
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=dtype,
     )
     segment = cheetah.Segment(elements=[quadrupole])
@@ -201,10 +201,12 @@ def test_quadrupole_bmadx_tracking(dtype):
     )
 
 
-@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+@pytest.mark.parametrize(
+    "tracking_method", ["linear", "second_order", "drift_kick_drift"]
+)
 def test_tracking_method_vectorization(tracking_method):
     """
-    Test that the quadruople vectorisation works correctly with both tracking methods.
+    Test that the quadruople vectorisation works correctly with all tracking methods.
     Only checks the shapes, not the physical correctness of the results.
     """
     quadrupole = cheetah.Quadrupole(
@@ -234,7 +236,9 @@ def test_tracking_method_vectorization(tracking_method):
     assert outgoing.total_charge.shape == torch.Size([])
 
 
-@pytest.mark.parametrize("tracking_method", ["cheetah", "bmadx"])
+@pytest.mark.parametrize(
+    "tracking_method", ["linear", "second_order", "drift_kick_drift"]
+)
 def test_quadrupole_clone_tracking_method(tracking_method):
     """
     Test that the tracking_method is preserved when cloning a Quadrupole.
@@ -274,9 +278,9 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     energy = torch.tensor(1e9, dtype=dtype)
     spiecies = cheetah.Species("electron")
 
-    tm_quad = quad.transfer_map(energy, spiecies)
-    tm_skew_quad = skew_quad.transfer_map(energy, spiecies)
-    tm_drift = drift.transfer_map(energy, spiecies)
+    tm_quad = quad.first_order_transfer_map(energy, spiecies)
+    tm_skew_quad = skew_quad.first_order_transfer_map(energy, spiecies)
+    tm_drift = drift.first_order_transfer_map(energy, spiecies)
 
     # Check that the transfer matrices are equal of the dtype
     # NOTE: The `==` is used here over `torch.allclose` on purpose

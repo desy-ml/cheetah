@@ -2,6 +2,7 @@ import pytest
 import torch
 
 import cheetah
+from cheetah.utils.warnings import PhysicsWarning
 
 
 def test_subcell_start_end():
@@ -69,8 +70,8 @@ def test_attr_setting_by_element_type_convenience_method(is_recursive):
         + [cheetah.Quadrupole(length=torch.tensor(0.6))]
     )
 
-    segment.set_attrs_on_every_element_of_type(
-        cheetah.Drift, is_recursive=is_recursive, length=torch.tensor(4.2)
+    segment.set_attrs_on_every_element(
+        filter_type=cheetah.Drift, is_recursive=is_recursive, length=torch.tensor(4.2)
     )
 
     for element in segment.elements:
@@ -173,3 +174,52 @@ def test_longitudinal_beam_metric(attr_names):
             assert attr_result.shape == (
                 (4, incoming_beam.num_particles) if attr_name == "x" else (4,)
             )
+
+
+@pytest.mark.parametrize(
+    "target_tracking_method",
+    ["linear", "second_order", "drift_kick_drift", "unsupported"],
+)
+def test_setting_tracking_method(target_tracking_method):
+    """
+    Test that setting the tracking method over an entire `Segment` works as expected,
+    especially that it only changes the tracking method of elements that support the
+    requested tracking method.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="d1"),
+            cheetah.Quadrupole(length=torch.tensor(0.3), name="q1"),
+            cheetah.Drift(length=torch.tensor(0.2), name="d2"),
+            cheetah.Dipole(length=torch.tensor(0.5), name="b1"),
+            cheetah.Sextupole(
+                length=torch.tensor(0.4), k2=torch.tensor(0.1), name="s1"
+            ),
+            cheetah.Marker(name="m1"),
+        ]
+    )
+
+    original_tracking_methods = {
+        element.name: element.tracking_method
+        for element in segment.elements
+        if hasattr(element, "tracking_method")
+    }
+
+    # Set tracking method
+    with pytest.warns(
+        PhysicsWarning,
+        match=(
+            "Invalid tracking method '.+' for element .+ of type .+, supported methods "
+            r"are \[.+\]. Keeping the previous tracking method .+."
+        ),
+    ):
+        segment.set_attrs_on_every_element(tracking_method=target_tracking_method)
+
+    # Check that elements have the target tracking iff they support it
+    for element in segment.elements:
+        correct_tracking_method = (
+            target_tracking_method
+            if target_tracking_method in element.supported_tracking_methods
+            else original_tracking_methods[element.name]
+        )
+        assert element.tracking_method == correct_tracking_method

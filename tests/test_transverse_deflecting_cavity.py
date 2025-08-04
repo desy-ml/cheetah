@@ -7,10 +7,10 @@ import cheetah
 @pytest.mark.parametrize(
     "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )
-def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
+def test_transverse_deflecting_cavity_drift_kick_drift_tracking(dtype):
     """
-    Test that the results of tracking through a TDC with the `"bmadx"` tracking method
-    match the results from Bmad-X.
+    Test that the results of tracking through a TDC with the `"drift_kick_drift"`
+        tracking method match the results from Bmad-X.
     """
     incoming_beam = torch.load(
         "tests/resources/bmadx/incoming.pt", weights_only=False
@@ -20,7 +20,7 @@ def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
         voltage=torch.tensor(1e7),
         phase=torch.tensor(0.2, dtype=dtype),
         frequency=torch.tensor(1e9),
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=dtype,
     )
 
@@ -57,7 +57,7 @@ def test_transverse_deflecting_cavity_energy_length_vectorization():
         voltage=torch.tensor([[1e7], [2e7], [3e7]]),
         phase=torch.tensor(0.4),
         frequency=torch.tensor(1e9),
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
     )
 
     outgoing_beam = tdc.track(incoming_beam)
@@ -81,7 +81,7 @@ def test_transverse_deflecting_cavity_energy_phase_vectorization():
         voltage=torch.tensor(1e7),
         phase=torch.tensor([[0.6], [0.5], [0.4]]),
         frequency=torch.tensor(1e9),
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
     )
 
     outgoing_beam = tdc.track(incoming_beam)
@@ -105,7 +105,7 @@ def test_transverse_deflecting_cavity_energy_frequency_vectorization():
         voltage=torch.tensor(1e7),
         phase=torch.tensor(0.4),
         frequency=torch.tensor([[1e9], [2e9], [3e9]]),
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
     )
 
     _ = tdc3.track(incoming_beam)
@@ -129,7 +129,7 @@ def test_transverse_deflecting_cavity_all_parameters_vectorization():
         voltage=torch.ones([4, 1, 1, 1]) * 1e7,
         phase=torch.ones([1, 3, 1, 1]) * 0.4,
         frequency=torch.ones([1, 1, 2, 1]) * 1e9,
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
     )
 
     outgoing_beam = tdc.track(incoming_beam)

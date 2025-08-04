@@ -2,6 +2,7 @@ import pytest
 import torch
 
 import cheetah
+from cheetah.track_methods import rotation_matrix
 
 
 def test_dipole_off():
@@ -101,13 +102,11 @@ def test_dipole_vectorized_execution(DipoleType):
         segment(incoming)
 
 
-@pytest.mark.parametrize(
-    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
-)
-def test_dipole_bmadx_tracking(dtype):
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64], ids=["float32", "float64"])
+def test_dipole_drift_kick_drift_tracking(dtype):
     """
-    Test that the results of tracking through a dipole with the `"bmadx"` tracking
-    method match the results from Bmad-X.
+    Test that the results of tracking through a dipole with the `"drift_kick_drift"`
+    tracking method match the results from Bmad-X.
     """
     incoming = torch.load("tests/resources/bmadx/incoming.pt", weights_only=False).to(
         dtype
@@ -129,7 +128,7 @@ def test_dipole_bmadx_tracking(dtype):
         gap_exit=torch.tensor(0.05, dtype=dtype),
         fringe_at="both",
         fringe_type="linear_edge",
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=dtype,
     )
     segment_cheetah_bmadx = cheetah.Segment(elements=[dipole_cheetah_bmadx])
@@ -149,9 +148,10 @@ def test_dipole_bmadx_tracking(dtype):
     )
 
 
-def test_bmadx_zero_angle():
+def test_drift_kick_drift_zero_angle():
     """
-    Test that a dipole with zero angle using the bmadx tracking method works at all.
+    Test that a dipole with zero angle using the drift_kick_drift tracking method works
+    at all.
 
     There was a bug in the past where a division by zero due to the angle being zero
     resulted in NaN values in the output.
@@ -162,10 +162,58 @@ def test_bmadx_zero_angle():
     dipole = cheetah.Dipole(
         length=torch.tensor(1.0601),
         angle=torch.tensor(0.0),
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=torch.float64,
     )
 
     outgoing_beam = dipole.track(incoming_beam)
 
     assert not outgoing_beam.particles.isnan().any()
+
+
+@pytest.mark.parametrize(
+    "tracking_method", ["linear", "second_order", "drift_kick_drift"]
+)
+def test_dipole_tilt_sanity(tracking_method):
+    """
+    Test that tracking through a tilted dipole and untilting a tilted beam tracked
+    through non-tilted dipole gives the same result.
+    """
+    TILT = 0.52
+
+    # Track non-tilted beam through tilted dipole
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+
+    tilted_dipole = cheetah.Dipole(
+        length=torch.tensor(1.0601),
+        angle=torch.tensor(1e-3),
+        tilt=torch.tensor(TILT),
+        fringe_integral=torch.tensor(1e3),
+        tracking_method=tracking_method,
+        dtype=torch.float64,
+    )
+
+    tilted_dipole_outgoing_beam = tilted_dipole.track(incoming_beam)
+
+    # Track tilted beam through non-tilted dipole and then untilt the beam
+    tilted_incoming_beam = incoming_beam.clone()
+    tilted_incoming_beam.particles = (
+        tilted_incoming_beam.particles
+        @ rotation_matrix(torch.tensor(TILT, dtype=torch.float64)).T
+    )
+
+    non_tilted_dipole = tilted_dipole.clone()
+    non_tilted_dipole.tilt = torch.tensor(0.0, dtype=torch.float64)
+
+    non_tilted_dipole_outgoing_beam = non_tilted_dipole.track(tilted_incoming_beam)
+    non_tilted_dipole_outgoing_beam.particles = (
+        non_tilted_dipole_outgoing_beam.particles
+        @ rotation_matrix(torch.tensor(-TILT, dtype=torch.float64)).T
+    )
+
+    # Check that the two outgoing beams are equal
+    assert torch.allclose(
+        tilted_dipole_outgoing_beam.particles, non_tilted_dipole_outgoing_beam.particles
+    )
