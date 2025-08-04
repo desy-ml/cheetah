@@ -170,23 +170,19 @@ def test_sextupole_with_misalignments():
     centered_sextupole = cheetah.Sextupole(
         length=torch.tensor(1.0), k2=torch.tensor(0.5)
     )
-    misaligned_incoming_beam = centered_incoming_beam.transformed_to(
-        mu_x=torch.tensor(-horizontal_misalignment)
-    )
+    misaligned_incoming_beam = centered_incoming_beam.clone()
+    misaligned_incoming_beam.x -= horizontal_misalignment
 
     misaligned_through_centered_outgoing_beam = centered_sextupole.track(
         misaligned_incoming_beam
     )
     shifted_misaligned_through_centered_outgoing_beam = (
-        misaligned_through_centered_outgoing_beam.transformed_to(
-            mu_x=misaligned_incoming_beam.mu_x + horizontal_misalignment
-        )
+        misaligned_through_centered_outgoing_beam.clone()
     )
+    shifted_misaligned_through_centered_outgoing_beam.x += horizontal_misalignment
 
     # Check that the results are the same
     assert torch.allclose(
         centered_through_misaligned_outgoing_beam.particles,
         shifted_misaligned_through_centered_outgoing_beam.particles,
-        rtol=1e-4,
-        atol=1e-6,
     )
