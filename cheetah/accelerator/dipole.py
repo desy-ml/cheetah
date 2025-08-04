@@ -25,7 +25,7 @@ class Dipole(Element):
     :param tilt: Tilt of the magnet in x-y plane [rad].
     :param gap: The magnet gap in meters. Note that in MAD and ELEGANT: HGAP = gap/2.
     :param gap_exit: The magnet gap at the exit in meters. Note that in MAD and
-        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Now it's only used with
+        ELEGANT: HGAP = gap/2. Only set if different from `gap`. Only used with
         `"drift_kick_drift"` tracking method.
     :param fringe_integral: Fringe field integral (of the enterance face).
     :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
