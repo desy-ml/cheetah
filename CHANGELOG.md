@@ -10,6 +10,8 @@
 
 ### 🐆 Other
 
+- Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
+
 ### 🌟 First Time Contributors
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
