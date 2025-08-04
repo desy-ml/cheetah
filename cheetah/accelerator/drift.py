@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -5,12 +6,8 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import (
-    UniqueNameGenerator,
-    bmadx,
-    compute_relativistic_factors,
-    verify_device_and_dtype,
-)
+from cheetah.track_methods import base_ttensor, drift_matrix
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -19,21 +16,28 @@ class Drift(Element):
     """
     Drift section in a particle accelerator.
 
-    NOTE: The transfer map now uses the linear approximation.
-    Including the R_56 = L / (beta**2 * gamma **2)
-
     :param length: Length in meters.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
+
+    supported_tracking_methods = [
+        "linear",
+        "cheetah",
+        "second_order",
+        "drift_kick_drift",
+        "bmadx",
+    ]
 
     def __init__(
         self,
         length: torch.Tensor,
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal[
+            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
+        ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -47,20 +51,29 @@ class Drift(Element):
 
         self.tracking_method = tracking_method
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return drift_matrix(length=self.length, energy=energy, species=species)
 
-        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        T = base_ttensor(
+            self.length,
+            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            energy=energy,
+            species=species,
+        )
 
-        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = drift_matrix(
+            length=self.length, energy=energy, species=species
+        )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
-        tm[..., 0, 1] = self.length
-        tm[..., 2, 3] = self.length
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
-
-        return tm
+        return T
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -69,27 +82,47 @@ class Drift(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if self.tracking_method == "cheetah":
-            return super().track(incoming)
+        if self.tracking_method == "linear":
+            return super()._track_first_order(incoming)
+        elif self.tracking_method == "cheetah":
+            warnings.warn(
+                "The 'cheetah' tracking method is deprecated and will be removed in a"
+                "future version. Please use 'linear' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return super()._track_first_order(incoming)
+        elif self.tracking_method == "second_order":
+            return super()._track_second_order(incoming)
+        elif self.tracking_method == "drift_kick_drift":
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
-            assert isinstance(
-                incoming, ParticleBeam
-            ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
-            return self._track_bmadx(incoming)
+            warnings.warn(
+                "The 'bmadx' tracking method is deprecated and will be removed in a"
+                " future version. Please use 'drift_kick_drift' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah' and 'bmadx'."
+                f"Invalid tracking method {self.tracking_method}. For element of"
+                f" type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}."
             )
 
-    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the dipole element using the Bmad-X tracking method.
+        Track particles through the dipole element using the Drift_kick_drift method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
         :return: Beam exiting the element.
         """
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+
         # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
@@ -130,7 +163,7 @@ class Drift(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method == "cheetah"
+        return self.tracking_method in ["linear", "cheetah"]
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()

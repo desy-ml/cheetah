@@ -4,12 +4,17 @@
 
 ### 🚨 Breaking Changes
 
+- `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
+
 ### 🚀 Features
+
+- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu, @jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
 ### 🐆 Other
 
+- Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 
 ### 🌟 First Time Contributors

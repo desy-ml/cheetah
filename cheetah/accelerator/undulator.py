@@ -19,10 +19,12 @@ class Undulator(Element):
     :param is_active: Indicates if the undulator is active or not. Currently has no
         effect.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
+
+    supported_tracking_methods = ["linear"]
 
     def __init__(
         self,
@@ -40,7 +42,9 @@ class Undulator(Element):
 
         self.is_active = is_active
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         device = self.length.device
         dtype = self.length.dtype
 

@@ -16,10 +16,12 @@ class CustomTransferMap(Element):
     :param predefined_transfer_map: The transfer map to use for this element.
     :param length: Length of the element in meters. If `None`, the length is set to 0.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
+
+    supported_tracking_methods = ["linear"]
 
     def __init__(
         self,
@@ -70,7 +72,7 @@ class CustomTransferMap(Element):
             " incorrect tracking results."
         )
 
-        first_element_transfer_map = elements[0].transfer_map(
+        first_element_transfer_map = elements[0].first_order_transfer_map(
             incoming_beam.energy, incoming_beam.species
         )
         device = first_element_transfer_map.device
@@ -80,7 +82,12 @@ class CustomTransferMap(Element):
             (*incoming_beam.energy.shape, 1, 1)
         )
         for element in elements:
-            tm = element.transfer_map(incoming_beam.energy, incoming_beam.species) @ tm
+            tm = (
+                element.first_order_transfer_map(
+                    incoming_beam.energy, incoming_beam.species
+                )
+                @ tm
+            )
             incoming_beam = element.track(incoming_beam)
 
         combined_length = sum(element.length for element in elements)
@@ -91,7 +98,9 @@ class CustomTransferMap(Element):
             tm, length=combined_length, device=device, dtype=dtype, name=combined_name
         )
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return self.predefined_transfer_map
 
     @property
