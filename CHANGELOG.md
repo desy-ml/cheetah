@@ -15,6 +15,7 @@
 ### 🐆 Other
 
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
+- Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 
 ### 🌟 First Time Contributors
 
