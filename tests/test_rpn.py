@@ -67,3 +67,13 @@ def test_nested_rpn_expression_with_context():
     expression = "10 2 * pi 4 * +"  # 20 + 12 = 32
 
     assert rpn.evaluate_expression(expression, context) == 32
+
+
+def test_rpn_nested_var_lookup():
+    """
+    Test that an RPN expression with nested variable lookups is correctly evaluated.
+    """
+    expression = "a b[test] -"
+    context = {"a": 10, "b": {"beep": 10, "boop": 100, "test": 5}, "test": 3}
+
+    assert rpn.evaluate_expression(expression, context) == 5

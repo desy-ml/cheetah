@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import torch
+from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
-from cheetah.utils import verify_device_and_dtype
+from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
 
 
 class Sextupole(Element):
@@ -16,6 +17,9 @@ class Sextupole(Element):
     :param misalignment: Transverse misalignment in x and y directions in meters.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -25,6 +29,7 @@ class Sextupole(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -32,7 +37,7 @@ class Sextupole(Element):
             [length, k2, misalignment, tilt], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -123,13 +128,34 @@ class Sextupole(Element):
     def is_active(self) -> bool:
         return torch.any(self.k2 != 0.0).item()
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        raise NotImplementedError
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
-        raise NotImplementedError
+        ax = ax or plt.subplot(111)
+
+        plot_k2 = (
+            self.k2[squash_index_for_unavailable_dims(vector_idx, self.k2.shape)]
+            if len(self.k2.shape) > 0
+            else self.k2
+        )
+
+        plot_s = (
+            s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            if len(s.shape) > 0
+            else s
+        )
+        plot_length = (
+            self.length[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            if len(self.length.shape) > 0
+            else self.length
+        )
+
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (torch.sign(plot_k2) if self.is_active else 1)
+        patch = Rectangle(
+            (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
+        )
+        ax.add_patch(patch)
 
     @property
     def defining_features(self) -> list[str]:

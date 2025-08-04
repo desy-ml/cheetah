@@ -25,10 +25,18 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
-    def __init__(self, elements: list[Element], name: str | None = None) -> None:
-        super().__init__(name=name)
+    def __init__(
+        self,
+        elements: list[Element],
+        name: str | None = None,
+        sanitize_name: bool = False,
+    ) -> None:
+        super().__init__(name=name, sanitize_name=sanitize_name)
 
         # Segment inherits `length` as a buffer from `Element`. Since `length` is
         # overwritten as a standard Python property, this is misleading when calling
@@ -111,6 +119,26 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return Segment(elements=flattened_elements, name=self.name)
+
+    def reversed(self) -> "Segment":
+        """
+        Return a reversed version of the segment, i.e. one where the order of the
+        elements is reversed.
+        """
+        reversed_elements = list(
+            reversed(
+                [
+                    element.reversed() if isinstance(element, Segment) else element
+                    for element in self.elements
+                ]
+            )
+        )
+
+        return Segment(
+            elements=reversed_elements,
+            name=f"{self.name}_reversed",
+            sanitize_name=self.sanitize_name,
+        )
 
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: list[str] | None = None
@@ -293,7 +321,7 @@ class Segment(Element):
         cls,
         cell,
         name: str | None = None,
-        warnings: bool = True,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
         **kwargs,
@@ -309,8 +337,9 @@ class Segment(Element):
 
         :param cell: Ocelot cell, i.e. a list of Ocelot elements to be converted.
         :param name: Unique identifier for the entire segment.
-        :param warnings: Whether to print warnings when objects are not supported by
-            Cheetah or converted with potentially unexpected behaviour.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
@@ -319,18 +348,21 @@ class Segment(Element):
 
         converted = [
             ocelot.convert_element_to_cheetah(
-                element, warnings=warnings, device=device, dtype=dtype
+                element,
+                sanitize_name=sanitize_names,
+                device=device,
+                dtype=dtype,
             )
             for element in cell
         ]
-        return cls(converted, name=name, **kwargs)
+        return cls(converted, name=name, sanitize_name=sanitize_names, **kwargs)
 
     @classmethod
     def from_bmad(
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
-        warnings: bool = True,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -345,15 +377,16 @@ class Segment(Element):
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param environment_variables: Dictionary of environment variables to use when
             parsing the lattice file.
-        :param warnings: Whether to print warnings when elements or expressions are not
-            supported by Cheetah or converted with potentially unexpected behaviour.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
         return bmad.convert_lattice_to_cheetah(
-            bmad_lattice_file_path, environment_variables, warnings, device, dtype
+            bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -361,6 +394,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
+        sanitize_names: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -369,6 +403,9 @@ class Segment(Element):
 
         :param bmad_lattice_file_path: Path to the Bmad lattice file.
         :param name: Name of the root element
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the elegant lattice.
@@ -376,7 +413,7 @@ class Segment(Element):
 
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice_to_cheetah(
-            elegant_lattice_file_path, name, device, dtype
+            elegant_lattice_file_path, name, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -595,7 +632,7 @@ class Segment(Element):
         axx: plt.Axes,
         axy: plt.Axes,
         incoming: Beam,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
@@ -649,7 +686,7 @@ class Segment(Element):
         self,
         incoming: Beam,
         fig: matplotlib.figure.Figure | None = None,
-        resolution: float = 0.01,
+        resolution: float | None = None,
         vector_idx: tuple | None = None,
     ) -> None:
         """
@@ -805,6 +842,33 @@ class Segment(Element):
         self.plot(s=0.0, ax=axs[1])
 
         plt.tight_layout()
+
+    def to_mesh(
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Import only here because most people will not need it
+        import trimesh
+
+        meshes = []
+        input_transform = trimesh.transformations.identity_matrix()
+        for element in self.elements:
+            element_mesh, element_output_transform = element.to_mesh(
+                cuteness=cuteness, show_download_progress=show_download_progress
+            )
+
+            if element_mesh is not None:
+                element_mesh.apply_transform(input_transform)
+            input_transform = input_transform @ element_output_transform
+
+            meshes.append(element_mesh)
+
+        # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
+        # materials. Otherwise you might find that everything becomes glossy. (But
+        # doesn't always work.)
+        segment_mesh = trimesh.util.concatenate(meshes)
+        segment_output_transform = input_transform
+
+        return segment_mesh, segment_output_transform
 
     @property
     def defining_features(self) -> list[str]:

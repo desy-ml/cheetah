@@ -11,13 +11,15 @@ import sys
 # Source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, os.path.abspath("../cheetah"))
 
+from _version import __version__  # noqa: E402  # type: ignore
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Cheetah"
-copyright = "2021-2025 Jan Kaiser, Chenran Xu"
+copyright = "2021-2025 Jan Kaiser, Chenran Xu, Christian Hespe"
 author = "Jan Kaiser, Chenran Xu"
-release = "0.7.2"
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

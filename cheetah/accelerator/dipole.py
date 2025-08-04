@@ -38,6 +38,9 @@ class Dipole(Element):
     :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
         supports `"linear_edge"`.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -56,6 +59,7 @@ class Dipole(Element):
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
@@ -76,7 +80,7 @@ class Dipole(Element):
             dtype,
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -414,7 +418,9 @@ class Dipole(Element):
         R = R_exit @ R @ R_enter
 
         # Apply rotation for tilted magnets
-        R = rotation_matrix(-self.tilt) @ R @ rotation_matrix(self.tilt)
+        if torch.any(self.tilt != 0):
+            rotation = rotation_matrix(self.tilt)
+            R = rotation.transpose(-1, -2) @ R @ rotation
 
         return R
 
@@ -458,28 +464,48 @@ class Dipole(Element):
 
         return tm
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for dipole properly, for now just returns the
-        # element itself
-        return [self]
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
 
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"angle={repr(self.angle)}, "
-            + f"k1={repr(self.k1)}, "
-            + f"dipole_e1={repr(self.dipole_e1)},"
-            + f"dipole_e2={repr(self.dipole_e2)},"
-            + f"tilt={repr(self.tilt)},"
-            + f"gap={repr(self.gap)},"
-            + f"gap_exit={repr(self.gap_exit)},"
-            + f"fringe_integral={repr(self.fringe_integral)},"
-            + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
-            + f"fringe_at={repr(self.fringe_at)},"
-            + f"fringe_type={repr(self.fringe_type)},"
-            + f"tracking_method={repr(self.tracking_method)}, "
-            + f"name={repr(self.name)})"
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+        plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
+
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+
+        patch = Rectangle(
+            (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
         )
+        ax.add_patch(patch)
+
+    def to_mesh(
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Import only here because most people will not need it
+        import trimesh
+
+        mesh, output_transform = super().to_mesh(
+            cuteness=cuteness, show_download_progress=show_download_progress
+        )
+
+        # Rotate the mesh by half the bending angle
+        mesh_rotation = trimesh.transformations.rotation_matrix(
+            self.angle.item() / 2.0, [0, 1, 0], [0, 0, 0]
+        )
+        mesh.apply_transform(mesh_rotation)
+
+        # Rotate the output transform by the full bending angle
+        output_transform = (
+            trimesh.transformations.rotation_matrix(
+                self.angle.item(), [0, 1, 0], [0, 0, 0]
+            )
+            @ output_transform
+        )
+
+        return mesh, output_transform
 
     @property
     def defining_features(self) -> list[str]:
@@ -499,19 +525,20 @@ class Dipole(Element):
             "tracking_method",
         ]
 
-    def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
-    ) -> plt.Axes:
-        ax = ax or plt.subplot(111)
-
-        plot_s = s[vector_idx] if s.dim() > 0 else s
-        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
-        plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
-
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
-
-        patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(length={repr(self.length)}, "
+            + f"angle={repr(self.angle)}, "
+            + f"k1={repr(self.k1)}, "
+            + f"dipole_e1={repr(self.dipole_e1)},"
+            + f"dipole_e2={repr(self.dipole_e2)},"
+            + f"tilt={repr(self.tilt)},"
+            + f"gap={repr(self.gap)},"
+            + f"gap_exit={repr(self.gap_exit)},"
+            + f"fringe_integral={repr(self.fringe_integral)},"
+            + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
+            + f"fringe_at={repr(self.fringe_at)},"
+            + f"fringe_type={repr(self.fringe_type)},"
+            + f"tracking_method={repr(self.tracking_method)}, "
+            + f"name={repr(self.name)})"
         )
-        ax.add_patch(patch)

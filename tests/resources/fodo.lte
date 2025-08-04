@@ -1,10 +1,21 @@
 c: charge,total=0.25e-9
+
 q1: quad,l=0.1,k1=1.5;
 q2: kquad,l=0.2,k1=-3
-d1: drift,l=1 # gap: 42.0;
-d2: drift ,l=2.0 # gap: 10.0
+long-name-quad: quad,l=0.3,k1=2
+
+d1: drift,l=1, nonsense=1; # gap: 42.0
+d2: drift ,l=-2.0 # gap: 10.0
+d3: drift
+
 b1: sben, l=0.3,e1=0.25
+csrbend: csrcsbend, l = 0.200981, angle = 0.113612175128842, e2 = 0.113612175128842, k1 = 0;
+
 s1: sext,l=0.2,k2=-87.1;
-csrbend: csrcsbend, l = 0.200981, bins = 4096, csr = 1, isr = 1, n_slices = 8, synch_rad = 1, integration_order = 4, nonlinear = 1, sg_halfwidth = 1, edge_order = 2, edge1_effects = 1, edge2_effects = 1, angle = 0.113612175128842, fint = 0.4, e2 = 0.113612175128842, hgap = 0.005, high_frequency_cutoff0 = 0.2, high_frequency_cutoff1 = 0.25, k1 = 0;
+
 m1: mark
-fodo: line=(c,q1,d1,m1,b1,d1,q2,d2,s1,csrbend)
+
+"a:q3": quad, l=0.1, k1=1.5
+
+fodo: line=(c,q1,d1,m1,b1,d1,q2,d2,s1,csrbend,long-name-quad,d3, "a:q3")
+reversed_fodo: line=(-fodo)

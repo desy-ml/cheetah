@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
@@ -6,7 +7,7 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -16,17 +17,34 @@ class Element(ABC, nn.Module):
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
         self,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
+        if not self.is_name_sanitized():
+            if sanitize_name:
+                self.sanitize_name()
+            else:
+                warnings.warn(
+                    f"Dirty element name {self.name} is not a valid Python variable "
+                    "name. You will not be able to use the `segment.element_name` "
+                    "syntax to access this element. Set `sanitize_name=True` to change "
+                    "the name to a valid one, if you want to use this syntax.",
+                    category=DirtyNameWarning,
+                    stacklevel=2,
+                )
+
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
@@ -137,6 +155,15 @@ class Element(ABC, nn.Module):
         """
         return ["name"]
 
+    @property
+    def defining_tensors(self) -> list[str]:
+        """Subset of defining features that are of type `torch.Tensor`."""
+        return [
+            feature
+            for feature in self.defining_features
+            if isinstance(getattr(self, feature), torch.Tensor)
+        ]
+
     def clone(self) -> "Element":
         """Create a copy of the element which does not share the underlying memory."""
         return self.__class__(
@@ -150,7 +177,6 @@ class Element(ABC, nn.Module):
             }
         )
 
-    @abstractmethod
     def split(self, resolution: torch.Tensor) -> list["Element"]:
         """
         Split the element into slices no longer than `resolution`. Some elements may not
@@ -160,7 +186,27 @@ class Element(ABC, nn.Module):
         :param resolution: Length of the longest allowed split in meters.
         :return: Ordered sequence of sliced elements.
         """
-        raise NotImplementedError
+        return [self]
+
+    def is_name_sanitized(self) -> bool:
+        """
+        Check if a name is sanitised, i.e. it contains only alphanumeric characters and
+        underscores.
+
+        A clean name can be used as a Python variable name, which is a requirement
+        when using the `segment.element_name` syntax to access the element in a segment.
+        """
+        return all(c.isalnum() or c == "_" for c in self.name)
+
+    def sanitize_name(self) -> None:
+        """
+        Sanitise the element's name to be a valid Python variable name.
+
+        Replaces characters that are not alphanumeric or underscores with underscores.
+        """
+        self.name = "".join(
+            c if c.isalnum() or c == "_" else "_" for c in self.name
+        ).strip("_")
 
     @abstractmethod
     def plot(
@@ -177,6 +223,82 @@ class Element(ABC, nn.Module):
         :param ax: Axes to plot the representation into.
         """
         raise NotImplementedError
+
+    def to_mesh(
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        """
+        Return a 3D mesh representation of the element at position `s`.
+
+        :param cuteness: Scaling factor for the mesh. This can be used to adjust the
+            size of the mesh for better visualisation. A value of 1.0 means no
+            scaling, while values less than 1.0 will make the mesh smaller and values
+            greater than 1.0 will make it larger. May be float applied to all elements,
+            or a dictionary mapping element names and types to their respective
+            scaling factors. Names have precedence over types. The `"*"` key can be used
+            to specify a default scaling factor.
+        :param show_download_progress: If `True`, show a progress bar during the
+            download of the mesh if it is not cached.
+        :return: Tuple of a 3D mesh representation of the element, oriented with the
+            beam's inbound point in the origin and the s-axis pointing along the
+            longitudinal direction of the element, and the transformation matrix that
+            would have to be applied to a downstream mesh to align it with this mesh's
+            output.
+        """
+        # Import only here because most people will not need it
+        import trimesh
+
+        from cheetah.utils import cache
+
+        snake_case_class_name = "".join(
+            "_" + c.lower() if c.isupper() else c for c in self.__class__.__name__
+        ).lstrip("_")
+        mesh = cache.load_3d_asset(
+            f"{snake_case_class_name}.glb",
+            show_download_progress=show_download_progress,
+        )
+
+        if mesh is None:
+            warnings.warn(
+                f"Could not load 3D mesh for element {self.name} of type "
+                f"{self.__class__.__name__}. The element will not be visualised.",
+                category=NoVisualizationWarning,
+                stacklevel=2,
+            )
+            output_transform = trimesh.transformations.translation_matrix(
+                [0.0, 0.0, self.length.item()]
+            )
+            return None, output_transform
+
+        # NOTE: Scaling must be done before translation to ensure the mesh is
+        # positioned correctly after scaling.
+
+        # Scale element to the correct length (only if the mesh has a length)
+        if abs(self.length.item()) > 0.0:
+            _, _, mesh_length = mesh.extents
+            scale_factor_for_correct_length = self.length.item() / mesh_length
+            mesh.apply_scale(scale_factor_for_correct_length)
+
+        # Apply scaling to make the mesh look cuter
+        scale_factor_for_cuteness = 1.0
+        if isinstance(cuteness, float):
+            scale_factor_for_cuteness = cuteness
+        elif isinstance(cuteness, dict):
+            # Use the name of the element to find the correct scaling factor
+            if self.name in cuteness:
+                scale_factor_for_cuteness = cuteness[self.name]
+            elif self.__class__ in cuteness:
+                scale_factor_for_cuteness = cuteness[self.__class__]
+            elif "*" in cuteness:
+                scale_factor_for_cuteness = cuteness["*"]
+        mesh.apply_scale(scale_factor_for_cuteness)
+
+        # Compute transformation matrix needed for next mesh to align to output
+        output_transform = trimesh.transformations.translation_matrix(
+            [0.0, 0.0, self.length.item()]
+        )
+
+        return mesh, output_transform
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={repr(self.name)})"

@@ -26,6 +26,9 @@ class Solenoid(Element):
     :param misalignment: Misalignment vector of the solenoid magnet in x- and
         y-directions.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python
+        variable name. This is needed if you want to use the `segment.element_name`
+        syntax to access the element in a segment.
     """
 
     def __init__(
@@ -34,6 +37,7 @@ class Solenoid(Element):
         k: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -41,7 +45,7 @@ class Solenoid(Element):
             [length, k, misalignment], device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
@@ -111,7 +115,7 @@ class Solenoid(Element):
         return True
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
+        num_splits = (self.length.abs().max() / resolution).ceil().int()
         split_length = self.length / num_splits
         device = self.length.device
         dtype = self.length.dtype

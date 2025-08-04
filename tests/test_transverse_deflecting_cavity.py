@@ -96,7 +96,7 @@ def test_transverse_deflecting_cavity_energy_length_vectorization():
     correct shape, when the input beam's energy and the TDC's length are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         sigma_px=torch.tensor(2e-7),
         sigma_py=torch.tensor(2e-7),
         energy=torch.tensor([50e6, 60e6]),
@@ -120,7 +120,7 @@ def test_transverse_deflecting_cavity_energy_phase_vectorization():
     correct shape, when the input beam's energy and the TDC's phase are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         sigma_px=torch.tensor(2e-7),
         sigma_py=torch.tensor(2e-7),
         energy=torch.tensor([50e6, 60e6]),
@@ -144,7 +144,7 @@ def test_transverse_deflecting_cavity_energy_frequency_vectorization():
     correct shape, when the input beam's energy and the TDC's frequency are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         sigma_px=torch.tensor(2e-7),
         sigma_py=torch.tensor(2e-7),
         energy=torch.tensor([50e6, 60e6]),
@@ -168,7 +168,7 @@ def test_transverse_deflecting_cavity_all_parameters_vectorization():
     correct shape, when all parameters are vectorised.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         sigma_px=torch.tensor(2e-7),
         sigma_py=torch.tensor(2e-7),
         energy=torch.tensor([50e6, 60e6]),

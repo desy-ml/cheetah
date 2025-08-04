@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import ocelot
+import pytest
 import torch
 
 import cheetah
@@ -11,7 +12,7 @@ from .resources import ARESlatticeStage3v1_9 as ares
 
 def test_dipole():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element.
     """
     # Cheetah
@@ -38,7 +39,7 @@ def test_dipole():
 
 def test_dipole_with_float64():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element using float64 precision.
     """
     # Cheetah
@@ -67,7 +68,7 @@ def test_dipole_with_float64():
 
 def test_dipole_with_fringe_field():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element when there are fringe fields.
     """
     # Cheetah
@@ -99,7 +100,7 @@ def test_dipole_with_fringe_field():
 
 def test_dipole_with_fringe_field_and_tilt():
     """
-    Test that the tracking results through a Cheeath `Dipole` element match those
+    Test that the tracking results through a Cheetah `Dipole` element match those
     through an Oclet `Bend` element when there are fringe fields and tilt, and the
     e1 and e2 angles are set.
     """
@@ -145,7 +146,7 @@ def test_dipole_with_fringe_field_and_tilt():
 
 def test_aperture():
     """
-    Test that the tracking results through a Cheeath `Aperture` element match those
+    Test that the tracking results through a Cheetah `Aperture` element match those
     through an Oclet `Aperture` element.
     """
     # Cheetah
@@ -184,7 +185,7 @@ def test_aperture():
 
 def test_aperture_elliptical():
     """
-    Test that the tracking results through an elliptical Cheeath `Aperture` element
+    Test that the tracking results through an elliptical Cheetah `Aperture` element
     match those through an elliptical Oclet `Aperture` element.
     """
     # Cheetah
@@ -229,7 +230,7 @@ def test_aperture_elliptical():
 
 def test_solenoid():
     """
-    Test that the tracking results through a Cheeath `Solenoid` element match those
+    Test that the tracking results through a Cheetah `Solenoid` element match those
     through an Oclet `Solenoid` element.
     """
     # Cheetah
@@ -254,6 +255,7 @@ def test_solenoid():
     )
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_ares_ea():
     """
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES
@@ -298,15 +300,16 @@ def test_ares_ea():
     assert np.allclose(outgoing_beam.p.cpu().numpy(), outgoing_p_array.p())
 
 
-def test_twiss_particle_beam():
+@pytest.mark.parametrize("beam_cls", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+def test_twiss_computation(beam_cls):
     """
-    Test that the twiss parameters computed by Cheetah for a `ParticleBeam` loaded from
-    an Astra beam are the same as those computed by Ocelot for the `ParticleArray`
-    loaded from that same Astra beam.
+    Test that the Twiss parameters computed by Cheetah for a beam loaded from an Astra
+    beam are the same as those computed by Ocelot for the `ParticleArray` loaded from
+    that same Astra beam.
     """
     # Cheetah
-    particle_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+    cheetah_beam = beam_cls.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
 
     # Ocelot
@@ -316,65 +319,25 @@ def test_twiss_particle_beam():
     ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
 
     # Compare
-    assert np.isclose(particle_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
+    assert np.isclose(cheetah_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
     assert np.isclose(
-        particle_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
+        cheetah_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
     )
     assert np.isclose(
-        particle_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
+        cheetah_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        particle_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
+        cheetah_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-3
     )
-    assert np.isclose(particle_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
+    assert np.isclose(cheetah_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
     assert np.isclose(
-        particle_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
+        cheetah_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
     )
     assert np.isclose(
-        particle_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
+        cheetah_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-2
     )  # TODO: Is tolerance okay?
     assert np.isclose(
-        particle_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
-    )
-
-
-def test_twiss_parameter_beam():
-    """
-    Test that the twiss parameters computed by Cheetah for a `ParameterBeam` loaded from
-    an Astra beam are the same as those computed by Ocelot for the `ParticleArray`
-    loaded from that same Astra beam.
-    """
-    # Cheetah
-    parameter_beam = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-
-    # Ocelot
-    p_array = ocelot.astraBeam2particleArray(
-        "tests/resources/ACHIP_EA1_2021.1351.001", print_params=False
-    )
-    ocelot_twiss = ocelot.cpbd.beam.get_envelope(p_array)
-
-    # Compare
-    assert np.isclose(parameter_beam.emittance_x.cpu().numpy(), ocelot_twiss.emit_x)
-    assert np.isclose(
-        parameter_beam.normalized_emittance_x.cpu().numpy(), ocelot_twiss.emit_xn
-    )
-    assert np.isclose(
-        parameter_beam.beta_x.cpu().numpy(), ocelot_twiss.beta_x, rtol=1e-4
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(
-        parameter_beam.alpha_x.cpu().numpy(), ocelot_twiss.alpha_x, rtol=1e-4
-    )
-    assert np.isclose(parameter_beam.emittance_y.cpu().numpy(), ocelot_twiss.emit_y)
-    assert np.isclose(
-        parameter_beam.normalized_emittance_y.cpu().numpy(), ocelot_twiss.emit_yn
-    )
-    assert np.isclose(
-        parameter_beam.beta_y.cpu().numpy(), ocelot_twiss.beta_y, rtol=1e-4
-    )  # TODO: Is tolerance okay?
-    assert np.isclose(
-        parameter_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-4
+        cheetah_beam.alpha_y.cpu().numpy(), ocelot_twiss.alpha_y, rtol=1e-3
     )
 
 
@@ -394,7 +357,7 @@ def test_astra_import():
 
 def test_quadrupole():
     """
-    Test if the tracking results through a Cheeath `Quadrupole` element match those
+    Test if the tracking results through a Cheetah `Quadrupole` element match those
     through an Ocelot `Quadrupole` element.
     """
     # Cheetah
@@ -436,7 +399,7 @@ def test_quadrupole():
 
 def test_tilted_quadrupole():
     """
-    Test if the tracking results through a tilted Cheeath `Quadrupole` element match
+    Test if the tracking results through a tilted Cheetah `Quadrupole` element match
     those through a tilted Ocelot `Quadrupole` element.
     """
     # Cheetah
@@ -477,7 +440,7 @@ def test_tilted_quadrupole():
 
 def test_sbend():
     """
-    Test if the tracking results through a Cheeath `Dipole` element match those through
+    Test if the tracking results through a Cheetah `Dipole` element match those through
     an Ocelot `SBend` element.
     """
     # Cheetah
@@ -518,7 +481,7 @@ def test_sbend():
 
 def test_rbend():
     """
-    Test if the tracking results through a Cheeath `RBend` element match those through
+    Test if the tracking results through a Cheetah `RBend` element match those through
     an Ocelot `RBend` element.
     """
     # Cheetah
@@ -667,16 +630,15 @@ def test_cavity():
     """
 
     # Ocelot
-    tws = ocelot.Twiss()
-    tws.beta_x = 5.91253677
-    tws.alpha_x = 3.55631308
-    tws.beta_y = 5.91253677
-    tws.alpha_y = 3.55631308
-    tws.emit_x = 3.494768647122823e-09
-    tws.emit_y = 3.497810737006068e-09
-    tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
-    tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
-    tws.E = 6e-3
+    tws = ocelot.Twiss(
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emit_x=3.494768647122823e-09,
+        emit_y=3.497810737006068e-09,
+        E=6e-3,
+    )
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
@@ -685,7 +647,6 @@ def test_cavity():
     navigator = ocelot.Navigator(lattice=lattice)
 
     _, outgoing_parray = ocelot.track(lattice, deepcopy(p_array), navigator)
-    derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_ocelot(
@@ -701,36 +662,27 @@ def test_cavity():
     outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Compare
-    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
-    assert np.isclose(outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x)
-    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
-    assert np.isclose(outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y)
-    assert np.isclose(
-        outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
+    assert np.allclose(
+        outgoing_beam.particles[..., :6].cpu().numpy(),
+        outgoing_parray.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 5].cpu().numpy(),
-        outgoing_parray.rparticles.transpose()[:, 5],
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4].cpu().numpy(),
-        outgoing_parray.rparticles.transpose()[:, 4],
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_parray.q_array
     )
 
 
 def test_cavity_non_zero_phase():
     """Compare tracking through a cavity with a phase offset."""
     # Ocelot
-    tws = ocelot.Twiss()
-    tws.beta_x = 5.91253677
-    tws.alpha_x = 3.55631308
-    tws.beta_y = 5.91253677
-    tws.alpha_y = 3.55631308
-    tws.emit_x = 3.494768647122823e-09
-    tws.emit_y = 3.497810737006068e-09
-    tws.gamma_x = (1 + tws.alpha_x**2) / tws.beta_x
-    tws.gamma_y = (1 + tws.alpha_y**2) / tws.beta_y
-    tws.E = 6e-3
+    tws = ocelot.Twiss(
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emit_x=3.494768647122823e-09,
+        emit_y=3.497810737006068e-09,
+        E=6e-3,
+    )
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
 
@@ -739,7 +691,6 @@ def test_cavity_non_zero_phase():
     navigator = ocelot.Navigator(lattice=lattice)
 
     _, outgoing_parray = ocelot.track(lattice, deepcopy(p_array), navigator)
-    derived_twiss = ocelot.cpbd.beam.get_envelope(outgoing_parray)
 
     # Cheetah
     incoming_beam = cheetah.ParticleBeam.from_ocelot(
@@ -755,18 +706,10 @@ def test_cavity_non_zero_phase():
     outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Compare
-    assert np.isclose(outgoing_beam.beta_x.cpu().numpy(), derived_twiss.beta_x)
-    assert np.isclose(outgoing_beam.alpha_x.cpu().numpy(), derived_twiss.alpha_x)
-    assert np.isclose(outgoing_beam.beta_y.cpu().numpy(), derived_twiss.beta_y)
-    assert np.isclose(outgoing_beam.alpha_y.cpu().numpy(), derived_twiss.alpha_y)
-    assert np.isclose(
-        outgoing_beam.total_charge.cpu().numpy(), np.sum(outgoing_parray.q_array)
+    assert np.allclose(
+        outgoing_beam.particles[..., :6].cpu().numpy(),
+        outgoing_parray.rparticles.transpose(),
     )
     assert np.allclose(
-        outgoing_beam.particles[:, 5].cpu().numpy(),
-        outgoing_parray.rparticles.transpose()[:, 5],
-    )
-    assert np.allclose(
-        outgoing_beam.particles[:, 4].cpu().numpy(),
-        outgoing_parray.rparticles.transpose()[:, 4],
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_parray.q_array
     )

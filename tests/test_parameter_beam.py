@@ -170,19 +170,17 @@ def test_conversion_to_and_from_particle_beam():
         reconstructed_parameter_beam.sigma_py,
         rtol=1e-3,
     )
-    # TODO: Fix after #332 has been clarified
-    # assert torch.isclose(
-    #     original_parameter_beam.mu_tau, reconstructed_parameter_beam.mu_tau, atol=1e-6
-    # )
+    assert torch.isclose(
+        original_parameter_beam.mu_tau, reconstructed_parameter_beam.mu_tau, atol=1e-6
+    )
     assert torch.isclose(
         original_parameter_beam.sigma_tau,
         reconstructed_parameter_beam.sigma_tau,
         rtol=1e-3,
     )
-    # TODO: Fix after #332 has been clarified
-    # assert torch.isclose(
-    #     original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-6
-    # )
+    assert torch.isclose(
+        original_parameter_beam.mu_p, reconstructed_parameter_beam.mu_p, atol=1e-5
+    )
     assert torch.isclose(
         original_parameter_beam.sigma_p, reconstructed_parameter_beam.sigma_p, rtol=1e-3
     )
