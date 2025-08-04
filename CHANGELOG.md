@@ -10,7 +10,7 @@
 
 ### 🐆 Other
 
-- Add a benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
+- Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
 
 ### 🌟 First Time Contributors
 
