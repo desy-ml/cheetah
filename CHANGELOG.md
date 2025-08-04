@@ -1,10 +1,20 @@
 # Changelog
 
-## v0.7.5 [🚧 Work in Progress]
+## v0.7.6 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 
 ### 🚀 Features
 
