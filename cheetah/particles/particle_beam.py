@@ -81,7 +81,11 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.species = species if species is not None else Species("electron")
+        self.species = (
+            species.to(**factory_kwargs)
+            if species is not None
+            else Species("electron", **factory_kwargs)
+        )
 
         self.register_buffer_or_parameter(
             "particles", torch.as_tensor(particles, **factory_kwargs)
@@ -321,7 +325,11 @@ class ParticleBeam(Beam):
         )
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        species = species if species is not None else Species("electron")
+        species = (
+            species.to(**factory_kwargs)
+            if species is not None
+            else Species("electron", **factory_kwargs)
+        )
 
         # Set default values without function call in function signature
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
@@ -563,9 +571,11 @@ class ParticleBeam(Beam):
         # r: radius, 3rd root for uniform distribution in sphere volume
         # theta: polar angle, arccos for uniform distribution in sphere surface
         # phi: azimuthal angle, uniform between 0 and 2*pi
-        r = torch.pow(torch.rand(*vector_shape, num_particles), 1 / 3)
-        theta = torch.arccos(2 * torch.rand(*vector_shape, num_particles) - 1)
-        phi = torch.rand(*vector_shape, num_particles) * 2 * torch.pi
+        r = torch.pow(torch.rand(*vector_shape, num_particles, **factory_kwargs), 1 / 3)
+        theta = torch.arccos(
+            2 * torch.rand(*vector_shape, num_particles, **factory_kwargs) - 1
+        )
+        phi = torch.rand(*vector_shape, num_particles, **factory_kwargs) * 2 * torch.pi
 
         # Convert to Cartesian coordinates
         x = r * torch.sin(theta) * torch.cos(phi)
@@ -748,7 +758,7 @@ class ParticleBeam(Beam):
         particles[:, :6] = torch.as_tensor(
             parray.rparticles.transpose(), device=device, dtype=dtype
         )
-        particle_charges = torch.as_tensor(parray.q_array)
+        particle_charges = torch.as_tensor(parray.q_array, device=device, dtype=dtype)
 
         return cls(
             particles=particles,
@@ -771,10 +781,13 @@ class ParticleBeam(Beam):
         particles_7d = torch.ones((particles.shape[0], 7), device=device, dtype=dtype)
         particles_7d[:, :6] = torch.as_tensor(particles, device=device, dtype=dtype)
 
+        energy = torch.as_tensor(energy, device=device, dtype=dtype)
+        particle_charges = torch.as_tensor(particle_charges, device=device, dtype=dtype)
+
         return cls(
             particles=particles_7d,
-            energy=torch.as_tensor(energy),
-            particle_charges=torch.as_tensor(particle_charges),
+            energy=energy,
+            particle_charges=particle_charges,
             species=Species("electron"),
             device=device or torch.get_default_device(),
             dtype=dtype or torch.get_default_dtype(),
@@ -819,19 +832,29 @@ class ParticleBeam(Beam):
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
         """
-        species = Species(particle_group.species)
+        device, dtype = verify_device_and_dtype([energy], device, dtype)
+        factory_kwargs = {"device": device, "dtype": dtype}
+
+        species = Species(particle_group.species, **factory_kwargs)
         p0c = torch.sqrt(energy**2 - species.mass_eV**2)
 
-        x = torch.from_numpy(particle_group.x)
-        y = torch.from_numpy(particle_group.y)
-        px = torch.from_numpy(particle_group.px) / p0c
-        py = torch.from_numpy(particle_group.py) / p0c
-        tau = torch.from_numpy(particle_group.t) * constants.speed_of_light
-        delta = (torch.from_numpy(particle_group.energy) - energy) / p0c
+        x = torch.as_tensor(particle_group.x, **factory_kwargs)
+        y = torch.as_tensor(particle_group.y, **factory_kwargs)
+        px = torch.as_tensor(particle_group.px, **factory_kwargs) / p0c
+        py = torch.as_tensor(particle_group.py, **factory_kwargs) / p0c
+        tau = (
+            torch.as_tensor(particle_group.t, **factory_kwargs)
+            * constants.speed_of_light
+        )
+        delta = (
+            torch.as_tensor(particle_group.energy, **factory_kwargs) - energy
+        ) / p0c
 
         particles = torch.stack([x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1)
-        particle_charges = torch.from_numpy(particle_group.weight)
-        survival_probabilities = torch.from_numpy(particle_group.status)
+        particle_charges = torch.as_tensor(particle_group.weight, **factory_kwargs)
+        survival_probabilities = torch.as_tensor(
+            particle_group.status, **factory_kwargs
+        )
 
         return cls(
             particles=particles,
@@ -1145,7 +1168,7 @@ class ParticleBeam(Beam):
         s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
-        dtype=torch.float32,
+        dtype: torch.dtype | None = None,
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
@@ -1202,8 +1225,7 @@ class ParticleBeam(Beam):
             * constants.speed_of_light
         )  # Reference momentum in (kg m/s)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
-            torch.ones(self.particles.shape[:-1])
-            + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+            1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
         beta = torch.sqrt(1 - 1 / gamma**2)
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light

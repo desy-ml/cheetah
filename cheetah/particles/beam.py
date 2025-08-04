@@ -370,7 +370,7 @@ class Beam(ABC, nn.Module):
 
     @property
     def p0c(self) -> torch.Tensor:
-        """Get the reference momentum * speed of light in eV."""
+        """Reference momentum * speed of light in eV."""
         return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property

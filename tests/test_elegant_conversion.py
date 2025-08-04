@@ -38,7 +38,7 @@ def test_fodo():
                 cheetah.Quadrupole(
                     name="q2", length=torch.tensor(0.2), k1=torch.tensor(-3.0)
                 ),
-                cheetah.Drift(name="d2", length=torch.tensor(2.0)),
+                cheetah.Drift(name="d2", length=torch.tensor(-2.0)),
                 cheetah.Sextupole(
                     name="s1", length=torch.tensor(0.2), k2=torch.tensor(-87.1)
                 ),
@@ -57,6 +57,9 @@ def test_fodo():
                 cheetah.Drift(
                     name="d3", length=torch.tensor(0.0)
                 ),  # No length `l` provided
+                cheetah.Quadrupole(
+                    name="a:q3", length=torch.tensor(0.1), k1=torch.tensor(1.5)
+                ),  # Element with a colon in the name
             ],
             name="fodo",
         )
@@ -92,6 +95,24 @@ def test_fodo():
 
     assert torch.isclose(converted.s1.length, correct_lattice.s1.length)
     assert torch.isclose(converted.s1.k2, correct_lattice.s1.k2)
+
+
+def test_reverse_beamline_import():
+    """Test importing a reversed beamline."""
+    file_path = "tests/resources/fodo.lte"
+
+    converted_forward = cheetah.Segment.from_elegant(file_path, "fodo")
+    correct_lattice = converted_forward.reversed()
+    correct_lattice.name = "reversed_fodo"
+
+    converted_reversed = cheetah.Segment.from_elegant(
+        file_path, "reversed_fodo"
+    ).flattened()
+
+    assert converted_reversed.name == correct_lattice.name
+    assert [element.name for element in converted_reversed.elements] == [
+        element.name for element in correct_lattice.elements
+    ]
 
 
 def test_cavity_import():
