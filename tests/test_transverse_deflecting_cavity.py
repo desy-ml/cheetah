@@ -38,6 +38,57 @@ def test_transverse_deflecting_cavity_bmadx_tracking(dtype):
         rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )
 
+def test_transverse_deflecting_cavity_cheetah_tracking():
+    """
+    Test that the results of tracking through a TDC with the `"cheetah"` tracking method
+    match the results from Bmad-X.
+    """
+    incoming_beam = cheetah.ParticleBeam(
+        torch.zeros(1,7),
+        energy=torch.tensor(1e9),
+    )
+    tdc = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(1.0),
+        voltage=torch.tensor(1e7),
+        phase=torch.tensor(0.0),
+        frequency=torch.tensor(1e9),
+        tracking_method="cheetah",
+    )
+
+    # calculate the transfer map
+    transfer_map = tdc.transfer_map(
+        energy=incoming_beam.energy, species=incoming_beam.species
+    )
+
+    bmad_x_tdc = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(1.0),
+        voltage=torch.tensor(1e7),
+        phase=torch.tensor(0.0),
+        frequency=torch.tensor(1e9),
+        tracking_method="bmadx",
+    )
+
+    def forward(x):
+        beam = cheetah.ParticleBeam(
+            particles=x,
+            energy=torch.tensor(1e9),
+        )
+        return bmad_x_tdc.track(beam).particles
+    
+    map = torch.autograd.functional.jacobian(
+        forward,
+        torch.zeros(1, 7),
+    )
+
+    assert torch.allclose(
+        transfer_map.squeeze()[:6,:6],
+        map.squeeze()[:6,:6],
+        atol=1e-6,
+    )
+
+    # Run tracking
+    tdc.track(incoming_beam)
+
 
 def test_transverse_deflecting_cavity_energy_length_vectorization():
     """
