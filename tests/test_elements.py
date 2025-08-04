@@ -62,17 +62,12 @@ def test_defining_features_dtype(element):
             ),
         ),
     ],
-    ids=[
-        "cpu-float32",
-        "cpu-float64",
-        "cuda-float32",
-        "mps-float32",
-    ],
+    ids=["cpu-float32", "cpu-float64", "cuda-float32", "mps-float32"],
 )
 def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     """
-    Test that element subclasses work correctly on various devices and with various
-    dtypes if tracked with a `ParticleBeam`
+    Test that `Element` subclasses work correctly on various devices and with various
+    dtypes if tracked with a `ParticleBeam`.
     """
     segment = cheetah.Segment(
         elements=[
@@ -131,17 +126,12 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
             ),
         ),
     ],
-    ids=[
-        "cpu-float32",
-        "cpu-float64",
-        "cuda-float32",
-        "mps-float32",
-    ],
+    ids=["cpu-float32", "cpu-float64", "cuda-float32", "mps-float32"],
 )
 def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     """
-    Test that element subclasses work correctly on various devices and with various
-    dtypes if tracked with a `ParticleBeam`
+    Test that `Element` subclasses work correctly on various devices and with various
+    dtypes if tracked with a `ParticleBeam`.
     """
     segment = cheetah.Segment(
         elements=[
