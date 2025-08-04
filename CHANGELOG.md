@@ -6,11 +6,15 @@
 
 ### 🚀 Features
 
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
+
+- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 
@@ -22,7 +26,6 @@
 - Update the Elegant converter to allow element names with colon as well as the definition of reversed beamlines with a minus sign. (see #504) (@cr-xu, @jank324)
 - `Segment`s can now conveniently be reversed with the `Segment.reversed` method (see #504) (@jank324)
 - New feature for generating 3D models of lattices and viewing them (see #352, #502, #511) (@jank324, @chrisjcc, @SuchethShenoy)
-- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
 
 ### 🐛 Bug fixes
 
@@ -43,7 +46,6 @@
 - Arjun Dhamrait (@adhamrait)
 - Christian Contreras-Campana (@chrisjcc)
 - Sucheth Shenoy (@SuchethShenoy)
-- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
