@@ -237,7 +237,7 @@ def test_dipole_tilt_sanity(tracking_method):
     """
     TILT = 0.52
 
-    # Track non-tiled beam through tilted dipole
+    # Track non-tilted beam through tilted dipole
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
