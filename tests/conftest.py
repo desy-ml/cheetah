@@ -10,8 +10,8 @@ from cheetah.utils import is_mps_available_and_functional
 ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Aperture: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
-    cheetah.Cavity: {"": {"length": torch.tensor(1.0)}},
-    cheetah.CustomTransferMap: {"": {"predefined_transfer_map": torch.eye(7)}},
+    cheetah.Cavity: {"default": {"length": torch.tensor(1.0)}},
+    cheetah.CustomTransferMap: {"identity": {"predefined_transfer_map": torch.eye(7)}},
     cheetah.Dipole: {
         "cheetah": {
             "length": torch.tensor(1.0),
@@ -29,9 +29,9 @@ ELEMENT_SUBCLASSES_ARGS = {
         "bmadx": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "bmadx"},
     },
     cheetah.HorizontalCorrector: {
-        "": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
+        "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
-    cheetah.Marker: {"": {}},
+    cheetah.Marker: {"default": {}},
     cheetah.Quadrupole: {
         "cheetah": {
             "length": torch.tensor(1.0),
@@ -56,22 +56,24 @@ ELEMENT_SUBCLASSES_ARGS = {
             "tracking_method": "bmadx",
         },
     },
-    cheetah.Screen: {"": {}},
-    cheetah.Segment: {"": {"elements": [cheetah.Drift(length=torch.tensor(1.0))]}},
+    cheetah.Screen: {"default": {}},
+    cheetah.Segment: {
+        "default": {"elements": [cheetah.Drift(length=torch.tensor(1.0))]}
+    },
     cheetah.Sextupole: {
-        "": {"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])}
+        "default": {"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])}
     },
     cheetah.Solenoid: {
-        "": {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}
+        "default": {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}
     },
-    cheetah.SpaceChargeKick: {"": {"effect_length": torch.tensor(1.0)}},
+    cheetah.SpaceChargeKick: {"default": {"effect_length": torch.tensor(1.0)}},
     cheetah.TransverseDeflectingCavity: {
         "inactive": {"length": torch.tensor(1.0), "voltage": torch.tensor(0.0)},
         "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},
     },
-    cheetah.Undulator: {"": {"length": torch.tensor(1.0)}},
+    cheetah.Undulator: {"default": {"length": torch.tensor(1.0)}},
     cheetah.VerticalCorrector: {
-        "": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
+        "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
 }
 
