@@ -10,6 +10,8 @@
 
 ### 🐆 Other
 
+- Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
+
 ### 🌟 First Time Contributors
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
