@@ -8,9 +8,10 @@ from .resources import ARESlatticeStage3v1_9 as ares
 @pytest.mark.parametrize(
     ("beam_cls", "tracking_method"),
     [
-        (cheetah.ParticleBeam, "cheetah"),
-        (cheetah.ParticleBeam, "bmadx"),
-        (cheetah.ParameterBeam, "cheetah"),
+        (cheetah.ParticleBeam, "linear"),
+        (cheetah.ParticleBeam, "second_order"),
+        (cheetah.ParticleBeam, "drift_kick_drift"),
+        (cheetah.ParameterBeam, "linear"),
     ],
 )
 def test_benchmark_ares_lattice(benchmark, beam_cls, tracking_method):
@@ -18,10 +19,6 @@ def test_benchmark_ares_lattice(benchmark, beam_cls, tracking_method):
     incoming = beam_cls.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     segment = cheetah.Segment.from_ocelot(ares.cell)
-    segment.set_attrs_on_every_element_of_type(
-        element_type=(cheetah.Drift, cheetah.Dipole, cheetah.Quadrupole),
-        tracking_method=tracking_method,
-        num_steps=5,
-    )
+    segment.set_attrs_on_every_element(tracking_method=tracking_method, num_steps=5)
 
     benchmark(segment.track, incoming=incoming)

@@ -9,6 +9,7 @@ from cheetah.utils import (
     NotUnderstoodPropertyWarning,
     is_mps_available_and_functional,
 )
+from cheetah.utils.warnings import PhysicsWarning
 
 
 def test_fodo():
@@ -18,11 +19,15 @@ def test_fodo():
     with pytest.warns(
         NoBeamPropertiesInLatticeWarning, match=("c.*charge")
     ), pytest.warns(DirtyNameWarning, match="long-name-quad"), pytest.warns(
+        DirtyNameWarning, match="a:q3"
+    ), pytest.warns(
         NotUnderstoodPropertyWarning, match="nonsense"
     ):
         converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
-    with pytest.warns(DirtyNameWarning, match="long-name-quad"):
+    with pytest.warns(DirtyNameWarning, match="long-name-quad"), pytest.warns(
+        DirtyNameWarning, match="a:q3"
+    ):
         correct_lattice = cheetah.Segment(
             [
                 cheetah.Marker(name="c"),
@@ -97,6 +102,14 @@ def test_fodo():
     assert torch.isclose(converted.s1.k2, correct_lattice.s1.k2)
 
 
+@pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*a.*q3.*:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings(
+    "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
+)
+@pytest.mark.filterwarnings(
+    "ignore:.*nonsense.*:cheetah.utils.NotUnderstoodPropertyWarning"
+)
 def test_reverse_beamline_import():
     """Test importing a reversed beamline."""
     file_path = "tests/resources/fodo.lte"
@@ -120,7 +133,7 @@ def test_cavity_import():
     file_path = "tests/resources/cavity.lte"
     with pytest.warns(
         NotUnderstoodPropertyWarning, match="(end[12]_focus|body_focus_model|change_p0)"
-    ):
+    ), pytest.warns(PhysicsWarning, match="srs"):
         converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
     assert np.isclose(converted.c1.length, 0.7)
@@ -136,6 +149,7 @@ def test_cavity_import():
     ".*(end[12]_focus|body_focus_model|change_p0).*:"
     "cheetah.utils.NotUnderstoodPropertyWarning"
 )
+@pytest.mark.filterwarnings("ignore:.*srs.*:cheetah.utils.PhysicsWarning")
 def test_custom_transfer_map_import():
     """Test importing an Elegant EMATRIX into a Cheetah CustomTransferMap."""
     file_path = "tests/resources/cavity.lte"
@@ -157,6 +171,7 @@ def test_custom_transfer_map_import():
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*a.*q3.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
     "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
@@ -211,6 +226,7 @@ def test_device_passing(device: torch.device):
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*a.*q3.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
     "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )
@@ -248,6 +264,7 @@ def test_dtype_passing(dtype: torch.dtype):
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
+@pytest.mark.filterwarnings("ignore:.*a.*q3.*:cheetah.utils.DirtyNameWarning")
 @pytest.mark.filterwarnings(
     "ignore:.*c.*charge.*:cheetah.utils.NoBeamPropertiesInLatticeWarning"
 )

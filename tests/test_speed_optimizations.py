@@ -231,10 +231,10 @@ def test_skippable_elements_reset():
         incoming_beam=incoming_beam, except_for=["Q1", "HCOR_1"]
     )
 
-    original_tm = original_segment.elements[2].transfer_map(
+    original_tm = original_segment.elements[2].first_order_transfer_map(
         energy=incoming_beam.energy, species=incoming_beam.species
     )
-    merged_tm = merged_segment.elements[2].transfer_map(
+    merged_tm = merged_segment.elements[2].first_order_transfer_map(
         energy=incoming_beam.energy, species=incoming_beam.species
     )
 

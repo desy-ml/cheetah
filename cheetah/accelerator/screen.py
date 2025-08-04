@@ -33,12 +33,12 @@ class Screen(Element):
         distribution. If `False` the screen is inactive and will not record the beam's
         distribution.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
 
     NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method=`kde` instead. Similarly, `ParameterBeam` can also not be vectorised.
+        `method='kde'` instead. Similarly, `ParameterBeam` can also not be vectorised.
         Please use `ParticleBeam` instead.
     """
 
@@ -161,7 +161,9 @@ class Screen(Element):
             (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
         )
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 

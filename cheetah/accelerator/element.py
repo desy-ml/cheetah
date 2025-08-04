@@ -8,6 +8,7 @@ from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
+from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -17,9 +18,9 @@ class Element(ABC, nn.Module):
     Base class for elements of particle accelerators.
 
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
@@ -47,13 +48,55 @@ class Element(ABC, nn.Module):
 
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
+        if not hasattr(self, "supported_tracking_methods"):
+            self.supported_tracking_methods = [self.__class__.__name__.lower()]
+        self._tracking_method = self.supported_tracking_methods[0]
+
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
-        Generates the element's transfer map that describes how the beam and its
-        particles are transformed when traveling through the element.
-        The state vector consists of 6 values with a physical meaning.
-        They represent a particle in the phase space with
+        NOTE: This method is deprecated and will be removed in a future version. Use
+        `first_order_transfer_map` instead.
 
+        Generates the element's transfer map that describes how the beam and its
+        particles are transformed when traveling through the element. The state vector
+        consists of 6 values with a physical meaning. They represent a particle in the
+        phase space with:
+        - x: Position in x direction (m) relative to the reference particle
+        - px: Horinzontal momentum normalized over the reference momentum
+            (dimensionless) :math:`px = P_x / P_0`
+        - y: Position in y direction (m) relative to the reference particle
+        - py: Vertical momentum normalized over the reference momentum
+            (dimensionless) :math:`py = P_y / P_0`
+        - tau: Position in longitudinal direction (m) with the zero value set to the
+            reference position (usually the center of the pulse)
+        - p: Relative energy deviation from the reference particle (dimensionless)
+            :math:`p = \frac{\Delta E}{p_0 C}`
+
+        As well as a seventh value used to add constants to some of the previous values
+        if necessary. Through this seventh state, the addition of constants can be
+        represented using a matrix multiplication, i.e. the augmented matrix as in an
+        affine transformation.
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7 Matrix for further calculations.
+        """
+        warnings.warn(
+            "The `transfer_map` method is deprecated and will be removed in a future "
+            "version. Use `first_order_transfer_map` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.first_order_transfer_map(energy, species)
+
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Generates the element's first order transfer map that describes how the beam and
+        its particles are transformed when traveling through the element. The state
+        vector consists of 6 values with a physical meaning. They represent a particle
+        in the phase space with:
         - x: Position in x direction (m) relative to the reference particle
         - px: Horinzontal momentum normalized over the reference momentum
             (dimensionless) :math:`px = P_x / P_0`
@@ -70,9 +113,24 @@ class Element(ABC, nn.Module):
         represented using a matrix multiplication, i.e. the augmented matrix as in an
         affine transformation.
 
-        :param energy: Reference energy of the beam. Read from the fed-in Cheetah beam.
-        :param species: Species of the particles in the beam
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
         :return: A 7x7 Matrix for further calculations.
+        """
+        raise NotImplementedError
+
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Generates the element's second-order transfer map that describes how the beam
+        and its particles are transformed when traveling through the element.
+
+        :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7x7 Tensor T_ijk for further calculations.
         """
         raise NotImplementedError
 
@@ -84,8 +142,18 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
+        return self._track_first_order(incoming)
+
+    def _track_first_order(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the element with linear transfer map. The input can be
+        a `ParameterBeam` or a `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
         if isinstance(incoming, ParameterBeam):
-            tm = self.transfer_map(incoming.energy, incoming.species)
+            tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
             new_s = incoming.s + self.length
@@ -98,7 +166,7 @@ class Element(ABC, nn.Module):
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.transfer_map(incoming.energy, incoming.species)
+            tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_particles = incoming.particles @ tm.transpose(-2, -1)
             new_s = incoming.s + self.length
             return ParticleBeam(
@@ -112,9 +180,71 @@ class Element(ABC, nn.Module):
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
+    def _track_second_order(self, incoming: Beam):
+        """
+        Track particles through the element with second-order effects. Currently, second
+        order tracking is only supported for `ParticleBeam`.
+
+        :param incoming: Beam of particles entering the element.
+        :return: Beam of particles exiting the element.
+        """
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Second-order tracking is currently only supported for `ParticleBeam`."
+
+        second_order_tm = self.second_order_transfer_map(
+            incoming.energy, incoming.species
+        )
+
+        outgoing_particles = torch.einsum(
+            "...ijk,...j,...k->...i",
+            second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
+            incoming.particles,
+            incoming.particles,
+        )
+
+        return ParticleBeam(
+            particles=outgoing_particles,
+            energy=incoming.energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
+            species=incoming.species,
+        )
+
     def forward(self, incoming: Beam) -> Beam:
         """Forward function required by `torch.nn.Module`. Simply calls `track`."""
         return self.track(incoming)
+
+    @property
+    def tracking_method(self) -> str:
+        """
+        The tracking method used by the element. This is used to determine how the
+        element is tracked through the accelerator.
+        """
+        return self._tracking_method
+
+    @tracking_method.setter
+    def tracking_method(self, tracking_method: str) -> None:
+        """
+        Set the tracking method for the element. This is used to determine how the
+        element is tracked through the accelerator.
+
+        :param tracking_method: The tracking method to use. Must be one of the
+            `supported_tracking_methods`. If the method is not supported, the previous
+            tracking method is kept and a warning is issued.
+        """
+        if tracking_method in self.supported_tracking_methods:
+            self._tracking_method = tracking_method
+        else:
+            warnings.warn(
+                f"Invalid tracking method '{tracking_method}' for element {self.name} "
+                f"of type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}. Keeping the previous tracking "
+                f"method {self._tracking_method}.",
+                PhysicsWarning,
+                stacklevel=2,
+            )
 
     @property
     @abstractmethod

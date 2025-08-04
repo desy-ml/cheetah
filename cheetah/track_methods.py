@@ -274,7 +274,6 @@ def base_ttensor(
         + 0.5 * hx**2 / beta * j1
         - 0.25 / beta * (length + cy * sy)
     )
-    T[..., 6, 6, 6] = 0.0  # Constant term currently handled by first order transfer map
 
     # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
     # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
@@ -298,6 +297,25 @@ def base_ttensor(
             T,
         )
     return T
+
+
+def drift_matrix(
+    length: torch.Tensor, energy: torch.Tensor, species: Species
+) -> torch.Tensor:
+    """Create a first order transfer map for a drift space."""
+
+    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+
+    vector_shape = torch.broadcast_shapes(length.shape, igamma2.shape)
+
+    tm = torch.eye(7, device=length.device, dtype=length.dtype).repeat(
+        (*vector_shape, 1, 1)
+    )
+    tm[..., 0, 1] = length
+    tm[..., 2, 3] = length
+    tm[..., 4, 5] = -length / beta**2 * igamma2
+
+    return tm
 
 
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
@@ -341,4 +359,6 @@ def misalignment_matrix(
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
+    return R_entry, R_exit
+    return R_entry, R_exit
     return R_entry, R_exit
