@@ -2,6 +2,7 @@ import pytest
 import torch
 
 import cheetah
+from cheetah.track_methods import rotation_matrix
 
 
 def test_dipole_off():
@@ -224,3 +225,47 @@ def test_drift_kick_drift_zero_angle():
     outgoing_beam = dipole.track(incoming_beam)
 
     assert not outgoing_beam.particles.isnan().any()
+
+
+@pytest.mark.parametrize(
+    "tracking_method", ["linear", "second_order", "drift_kick_drift"]
+)
+def test_dipole_tilt_sanity(tracking_method):
+    """
+    Test that tracking through a tilted dipole and untilting a tilted beam tracked
+    through non-tilted dipole gives the same result.
+    """
+    # Track non-tiled beam through tilted dipole
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+
+    tilted_dipole = cheetah.Dipole(
+        length=torch.tensor(1.0601),
+        angle=torch.tensor(1e-3),
+        tilt=torch.tensor(0.52),
+        tracking_method=tracking_method,
+        dtype=torch.float64,
+    )
+
+    tilted_dipole_outgoing_beam = tilted_dipole.track(incoming_beam)
+
+    # Track tilted beam through non-tilted dipole and then untilt the beam
+    tilted_incoming_beam = incoming_beam.clone()
+    tilted_incoming_beam.particles = tilted_incoming_beam.particles @ rotation_matrix(
+        torch.tensor(-0.52, dtype=torch.float64)
+    )
+
+    non_tilted_dipole = tilted_dipole.clone()
+    non_tilted_dipole.tilt = torch.tensor(0.0)
+
+    non_tilted_dipole_outgoing_beam = non_tilted_dipole.track(tilted_incoming_beam)
+    non_tilted_dipole_outgoing_beam.particles = (
+        non_tilted_dipole_outgoing_beam.particles
+        @ rotation_matrix(torch.tensor(0.52, dtype=torch.float64))
+    )
+
+    # Check that the two outgoing beams are equal
+    assert torch.allclose(
+        tilted_dipole_outgoing_beam.particles, non_tilted_dipole_outgoing_beam.particles
+    )
