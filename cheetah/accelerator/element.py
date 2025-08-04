@@ -231,7 +231,7 @@ class Element(ABC, nn.Module):
         element is tracked through the accelerator.
 
         :param tracking_method: The tracking method to use. Must be one of the
-            `supported_tracking_methods`. If the method is not supported, a the previous
+            `supported_tracking_methods`. If the method is not supported, the previous
             tracking method is kept and a warning is issued.
         """
         if tracking_method in self.supported_tracking_methods:
