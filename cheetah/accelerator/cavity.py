@@ -30,9 +30,9 @@ class Cavity(Element):
     :param frequency: Frequency of the cavity in Hz.
     :param cavity_type: Type of the cavity.
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
@@ -80,7 +80,9 @@ class Cavity(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
@@ -95,31 +97,13 @@ class Cavity(Element):
         )
 
     def track(self, incoming: Beam) -> Beam:
-        """
-        Track particles through the cavity. The input can be a `ParameterBeam` or a
-        `ParticleBeam`. For a cavity, this does a little more than just the transfer map
-        multiplication done by most elements.
-
-        :param incoming: Beam of particles entering the element.
-        :return: Beam of particles exiting the element.
-        """
-        if isinstance(incoming, (ParameterBeam, ParticleBeam)):
-            return self._track_beam(incoming)
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-
-    def _track_beam(self, incoming: Beam) -> Beam:
-        """
-        Track particles through the cavity. The input can be a `ParameterBeam` or a
-        `ParticleBeam`.
-        """
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
 
         phi = torch.deg2rad(self.phase)
 
-        tm = self.transfer_map(incoming.energy, incoming.species)
+        tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)

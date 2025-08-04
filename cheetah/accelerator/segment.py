@@ -25,9 +25,9 @@ class Segment(Element):
 
     :param cell: List of Cheetah elements that describe an accelerator (section).
     :param name: Unique identifier of the element.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python
-        variable name. This is needed if you want to use the `segment.element_name`
-        syntax to access the element in a segment.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
@@ -441,18 +441,20 @@ class Segment(Element):
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         if self.is_skippable:
             tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
             for element in self.elements:
-                tm = element.transfer_map(energy, species) @ tm
+                tm = element.first_order_transfer_map(energy, species) @ tm
             return tm
         else:
             return None
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
-            return super().track(incoming)
+            return super()._track_first_order(incoming)
         else:
             todos = []
             continuous_skippable_elements = []
@@ -562,28 +564,28 @@ class Segment(Element):
             else broadcasted_results[0]
         )
 
-    def set_attrs_on_every_element_of_type(
+    def set_attrs_on_every_element(
         self,
-        element_type: type[Element] | tuple[type[Element]],
+        filter_type: type[Element] | tuple[type[Element]] | None = None,
         is_recursive: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
         """
         Set attributes on every element of a specific type in the segment.
 
-        :param element_type: Type of the elements to set the attributes for.
+        :param filter_type: Type of the elements to set the attributes for.
         :param is_recursive: If `True`, the this method is applied to nested `Segment`s
             as well. If `False`, only the elements directly in the top-level `Segment`
             are considered.
         :param kwargs: Attributes to set and their values.
         """
         for element in self.elements:
-            if isinstance(element, element_type):
+            if filter_type is None or isinstance(element, filter_type):
                 for key, value in kwargs.items():
                     setattr(element, key, value)
             elif is_recursive and isinstance(element, Segment):
-                element.set_attrs_on_every_element_of_type(
-                    element_type, is_recursive=True, **kwargs
+                element.set_attrs_on_every_element(
+                    filter_type=filter_type, is_recursive=True, **kwargs
                 )
 
     def plot(

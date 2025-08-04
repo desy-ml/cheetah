@@ -23,7 +23,7 @@ def convert_element_to_cheetah(
 
     :param element: Ocelot element object representing an element of particle
         accelerator.
-    :param sanitize_name: Whether to sanitise the name to be a valid Python variable "
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
     :return: Cheetah element object representing an element of particle accelerator.
