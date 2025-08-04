@@ -85,7 +85,7 @@ def pytest_addoption(parser) -> None:
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     """
-    Add a `pytest.mark.parametrize`-like marker that runs a test with an testcases of
+    Add a `pytest.mark.parametrize`-like marker that runs a test with a test case for
     each Cheetah `Element` subclass.
     """
     for_every_element_marker = metafunc.definition.get_closest_marker(
@@ -137,13 +137,13 @@ def seed_random_generators(request):
 
 
 @pytest.fixture(autouse=True)
-def fail_because_no_testcase_defined(request):
+def fail_because_no_test_case_defined(request):
     """
-    Mark a test to fail because no testcases are defined for the given `Element`
+    Mark a test as failing because no test cases are defined for the given `Element`
     subclass.
     """
-    if request.node.get_closest_marker("fail_because_no_testcase_defined") is not None:
-        pytest.fail("No Testcases are defined for this Element subclass.")
+    if request.node.get_closest_marker("fail_because_no_test_case_defined") is not None:
+        pytest.fail("No test cases are defined for this Element subclass.")
 
 
 @pytest.fixture
@@ -172,11 +172,11 @@ def for_every_element(
     positional argument or the `arg_name` keyword argument, and define an argument of
     that name in the test function's signature.
 
-    The `except_if` keyword argument provides means to filter which testcases are
+    The `except_if` keyword argument provides means to filter which test cases are
     executed. It expects a single-argument lambda expression that evaluates to a bool
-    and is passed the testcase elements one-by-one.
+    and is passed to the `Element` under test one-by-one.
 
-    The `xfail_if` keyword argument can be used to mark testcases are are supposed to
+    The `xfail_if` keyword argument can be used to mark test cases are are supposed to
     fail. It takes a lambda expression with the same signature as `except_if`.
     """
     except_if = except_if if except_if is not None else lambda _: False
@@ -191,34 +191,34 @@ def for_every_element(
     all_element_subclasses = get_all_subclasses(cheetah.Element)
 
     # Generate test cases for all element subclasses
-    testcases = []
+    test_cases = []
     for subclass in all_element_subclasses:
         if subclass in ELEMENT_SUBCLASSES_ARGS:
-            subclass_testcases = ELEMENT_SUBCLASSES_ARGS[subclass]
-            for label, testcase_args in subclass_testcases.items():
+            subclass_test_cases = ELEMENT_SUBCLASSES_ARGS[subclass]
+            for label, test_case_args in subclass_testcases.items():
                 # The clone prevents tests from modifying the test cases, which is
                 # especially relevant for `Segment`. This is necessary since the
                 # subclass constructors reference their arguments instead of copying.
-                testcase = subclass(**testcase_args).clone()
+                test_case = subclass(**testcase_args).clone()
 
-                if not except_if(testcase):
-                    testcases.append(
+                if not except_if(test_case):
+                    test_cases.append(
                         pytest.param(
-                            testcase,
+                            test_case,
                             id=(
                                 f"{subclass.__name__}-{label}"
-                                if len(subclass_testcases) > 1
+                                if len(subclass_test_cases) > 1
                                 else subclass.__name__
                             ),
-                            marks=pytest.mark.xfail if xfail_if(testcase) else (),
+                            marks=pytest.mark.xfail if xfail_if(test_case) else (),
                         )
                     )
         else:
-            testcases.append(
+            test_cases.append(
                 pytest.param(
                     None,
                     id=subclass.__name__,
-                    marks=pytest.mark.fail_because_no_testcase_defined,
+                    marks=pytest.mark.fail_because_no_test_case_defined,
                 )
             )
 

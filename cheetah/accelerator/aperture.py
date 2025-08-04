@@ -75,6 +75,7 @@ class Aperture(Element):
         # Only apply aperture to particle beams and if the element is active
         if not self.is_active:
             return incoming
+
         assert isinstance(
             incoming, ParticleBeam
         ), "Aperture tracking is currently only supported for `ParticleBeam`."
