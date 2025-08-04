@@ -256,7 +256,7 @@ def test_dipole_tilt_sanity(tracking_method):
     # Track tilted beam through non-tilted dipole and then untilt the beam
     tilted_incoming_beam = incoming_beam.clone()
     tilted_incoming_beam.particles = tilted_incoming_beam.particles @ rotation_matrix(
-        torch.tensor(-TILT, dtype=torch.float64)
+        torch.tensor(TILT, dtype=torch.float64).T
     )
 
     non_tilted_dipole = tilted_dipole.clone()
@@ -265,7 +265,7 @@ def test_dipole_tilt_sanity(tracking_method):
     non_tilted_dipole_outgoing_beam = non_tilted_dipole.track(tilted_incoming_beam)
     non_tilted_dipole_outgoing_beam.particles = (
         non_tilted_dipole_outgoing_beam.particles
-        @ rotation_matrix(torch.tensor(TILT, dtype=torch.float64))
+        @ rotation_matrix(torch.tensor(-TILT, dtype=torch.float64)).T
     )
 
     # Check that the two outgoing beams are equal
