@@ -6,13 +6,8 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_ttensor
-from cheetah.utils import (
-    UniqueNameGenerator,
-    bmadx,
-    compute_relativistic_factors,
-    verify_device_and_dtype,
-)
+from cheetah.track_methods import base_ttensor, drift_matrix
+from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -59,19 +54,7 @@ class Drift(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
-
-        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
-
-        vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
-
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
-        tm[..., 0, 1] = self.length
-        tm[..., 2, 3] = self.length
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
-
-        return tm
+        return drift_matrix(length=self.length, energy=energy, species=species)
 
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
@@ -86,7 +69,9 @@ class Drift(Element):
         )
 
         # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = self.first_order_transfer_map(energy, species)
+        T[..., :, 6, :] = drift_matrix(
+            length=self.length, energy=energy, species=species
+        )
 
         return T
 

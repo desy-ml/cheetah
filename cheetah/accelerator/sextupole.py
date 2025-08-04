@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
+from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
 from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
 
 
@@ -68,20 +68,7 @@ class Sextupole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        R = base_rmatrix(
-            length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
-        )
-
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = R_exit @ R @ R_entry
-
-        return R
+        return drift_matrix(length=self.length, species=species, energy=energy)
 
     def second_order_transfer_map(self, energy, species):
         T = base_ttensor(
@@ -95,13 +82,8 @@ class Sextupole(Element):
         )
 
         # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = base_rmatrix(
-            length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
+        T[..., :, 6, :] = drift_matrix(
+            length=self.length, species=species, energy=energy
         )
 
         # Apply misalignments to the entire second-order transfer map

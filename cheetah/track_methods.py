@@ -299,6 +299,25 @@ def base_ttensor(
     return T
 
 
+def drift_matrix(
+    length: torch.Tensor, energy: torch.Tensor, species: Species
+) -> torch.Tensor:
+    """Create a first order transfer map for a drift space."""
+
+    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+
+    vector_shape = torch.broadcast_shapes(length.shape, igamma2.shape)
+
+    tm = torch.eye(7, device=length.device, dtype=length.dtype).repeat(
+        (*vector_shape, 1, 1)
+    )
+    tm[..., 0, 1] = length
+    tm[..., 2, 3] = length
+    tm[..., 4, 5] = -length / beta**2 * igamma2
+
+    return tm
+
+
 def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     """
     Rotate the coordinate system in the x-y plane.
@@ -340,4 +359,6 @@ def misalignment_matrix(
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
+    return R_entry, R_exit
+    return R_entry, R_exit
     return R_entry, R_exit
