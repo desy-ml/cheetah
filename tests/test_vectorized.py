@@ -336,8 +336,8 @@ def test_vectorized_screen_2d(BeamClass, method):
 
 @pytest.mark.for_every_element(
     "element_with_length",
-    except_if=lambda testcase: isinstance(
-        testcase,
+    except_if=lambda test_case: isinstance(
+        test_case,
         (
             cheetah.Aperture,
             cheetah.BPM,

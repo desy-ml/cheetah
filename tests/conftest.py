@@ -195,11 +195,11 @@ def for_every_element(
     for subclass in all_element_subclasses:
         if subclass in ELEMENT_SUBCLASSES_ARGS:
             subclass_test_cases = ELEMENT_SUBCLASSES_ARGS[subclass]
-            for label, test_case_args in subclass_testcases.items():
+            for label, test_case_args in subclass_test_cases.items():
                 # The clone prevents tests from modifying the test cases, which is
                 # especially relevant for `Segment`. This is necessary since the
                 # subclass constructors reference their arguments instead of copying.
-                test_case = subclass(**testcase_args).clone()
+                test_case = subclass(**test_case_args).clone()
 
                 if not except_if(test_case):
                     test_cases.append(
@@ -222,4 +222,4 @@ def for_every_element(
                 )
             )
 
-    metafunc.parametrize(arg_name, testcases)
+    metafunc.parametrize(arg_name, test_cases)
