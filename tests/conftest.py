@@ -29,10 +29,7 @@ ELEMENT_SUBCLASSES_ARGS = {
         "bmadx": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "bmadx"},
     },
     cheetah.HorizontalCorrector: {
-        "": {
-            "length": torch.tensor(1.0),
-            "angle": torch.tensor([1.0, -2.0]),
-        }
+        "": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
     cheetah.Marker: {"": {}},
     cheetah.Quadrupole: {
@@ -74,10 +71,7 @@ ELEMENT_SUBCLASSES_ARGS = {
     },
     cheetah.Undulator: {"": {"length": torch.tensor(1.0)}},
     cheetah.VerticalCorrector: {
-        "": {
-            "length": torch.tensor(1.0),
-            "angle": torch.tensor([1.0, -2.0]),
-        }
+        "": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
 }
 
