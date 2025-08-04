@@ -120,6 +120,26 @@ class Segment(Element):
 
         return Segment(elements=flattened_elements, name=self.name)
 
+    def reversed(self) -> "Segment":
+        """
+        Return a reversed version of the segment, i.e. one where the order of the
+        elements is reversed.
+        """
+        reversed_elements = list(
+            reversed(
+                [
+                    element.reversed() if isinstance(element, Segment) else element
+                    for element in self.elements
+                ]
+            )
+        )
+
+        return Segment(
+            elements=reversed_elements,
+            name=f"{self.name}_reversed",
+            sanitize_name=self.sanitize_name,
+        )
+
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: list[str] | None = None
     ) -> "Segment":
@@ -822,6 +842,33 @@ class Segment(Element):
         self.plot(s=0.0, ax=axs[1])
 
         plt.tight_layout()
+
+    def to_mesh(
+        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        # Import only here because most people will not need it
+        import trimesh
+
+        meshes = []
+        input_transform = trimesh.transformations.identity_matrix()
+        for element in self.elements:
+            element_mesh, element_output_transform = element.to_mesh(
+                cuteness=cuteness, show_download_progress=show_download_progress
+            )
+
+            if element_mesh is not None:
+                element_mesh.apply_transform(input_transform)
+            input_transform = input_transform @ element_output_transform
+
+            meshes.append(element_mesh)
+
+        # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
+        # materials. Otherwise you might find that everything becomes glossy. (But
+        # doesn't always work.)
+        segment_mesh = trimesh.util.concatenate(meshes)
+        segment_output_transform = input_transform
+
+        return segment_mesh, segment_output_transform
 
     @property
     def defining_features(self) -> list[str]:

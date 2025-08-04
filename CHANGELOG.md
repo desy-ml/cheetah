@@ -1,12 +1,27 @@
 # Changelog
 
-## v0.7.5 [🚧 Work in Progress]
+## v0.7.6 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
 ### 🚀 Features
 
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
+
+### 🚀 Features
+
 - Add support for elements (especially `Drift`) with negative length (see #480) (@Hespe)
+- Warnings are now available in the top-level namespace so that they can be referenced as e.g. `cheetah.PhysicsWarning` to shorten `filterwarnigns` code. (see #497) (@jank324)
+- Add the ability to the Bmad and Elegant converters to parse expressions that access properties from other elements (see #501, #498) (@amylizzle, @jank324)
+- Update the Elegant converter to allow element names with colon as well as the definition of reversed beamlines with a minus sign. (see #504) (@cr-xu, @jank324)
+- `Segment`s can now conveniently be reversed with the `Segment.reversed` method (see #504) (@jank324)
+- New feature for generating 3D models of lattices and viewing them (see #352, #502, #511) (@jank324, @chrisjcc, @SuchethShenoy)
 
 ### 🐛 Bug fixes
 
@@ -18,11 +33,15 @@
 - Updated contributor list and funding strings in README and on docs index page (see #487) (@jank324)
 - Add a Binder and link to `cheetah-demos` (see #482) (@smartsammler, @jank324)
 - PyTorch is now configured to use only deterministic algorithms during tests, preventing intermittent test failures (see #480) (@Hespe)
+- Make README example more copy-paste friendly, and generally improve it and the simple intro notebook in the docs. (see #493, #496) (@jank324, @ax3l)
+- Fix comparison tests to work with new PyPI release of Ocelot. Remove Twiss tests where they are not needed. Increase tolerances where Cheetah and Ocelot follow slightly different models. (see #513, #519) (@jank324, @cr-xu, @Hespe)
 
 ### 🌟 First Time Contributors
 
 - Julian Gethmann (@smartsammler)
 - Arjun Dhamrait (@adhamrait)
+- Christian Contreras-Campana (@chrisjcc)
+- Sucheth Shenoy (@SuchethShenoy)
 
 ## [v0.7.4](https://github.com/desy-ml/cheetah/releases/tag/v0.7.4) (2025-06-19)
 
