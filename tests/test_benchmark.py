@@ -18,7 +18,7 @@ def test_benchmark_ares_lattice(benchmark, beam_cls, tracking_method):
     incoming = beam_cls.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
 
     segment = cheetah.Segment.from_ocelot(ares.cell)
-    segment.set_attrs_on_every_element_of_type(
+    segment.set_attrs_on_every_element(
         element_type=(cheetah.Drift, cheetah.Dipole, cheetah.Quadrupole),
         tracking_method=tracking_method,
         num_steps=5,
