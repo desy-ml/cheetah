@@ -257,7 +257,7 @@ def test_dipole_tilt_sanity(tracking_method):
     )
 
     non_tilted_dipole = tilted_dipole.clone()
-    non_tilted_dipole.tilt = torch.tensor(0.0)
+    non_tilted_dipole.tilt = torch.tensor(0.0, dtype=torch.float64)
 
     non_tilted_dipole_outgoing_beam = non_tilted_dipole.track(tilted_incoming_beam)
     non_tilted_dipole_outgoing_beam.particles = (
