@@ -102,7 +102,9 @@ def test_dipole_vectorized_execution(DipoleType):
         segment(incoming)
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64], ids=["float32", "float64"])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_dipole_drift_kick_drift_tracking(dtype):
     """
     Test that the results of tracking through a dipole with the `"drift_kick_drift"`
