@@ -141,13 +141,10 @@ class Sextupole(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "k2", "misalignment", "tilt"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            f"k2={repr(self.k2)}, "
-            f"misalignment={repr(self.misalignment)}, "
-            f"tilt={repr(self.tilt)}, "
-            f"name={repr(self.name)})"
-        )
+        return super().defining_features + [
+            "length",
+            "k2",
+            "misalignment",
+            "tilt",
+            "tracking_method",
+        ]

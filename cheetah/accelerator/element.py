@@ -431,4 +431,8 @@ class Element(ABC, nn.Module):
         return mesh, output_transform
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"
+        feature_list = [
+            f"{feature}={repr(getattr(self, feature))}"
+            for feature in self.defining_features
+        ]
+        return f"{self.__class__.__name__}({", ".join(feature_list)})"

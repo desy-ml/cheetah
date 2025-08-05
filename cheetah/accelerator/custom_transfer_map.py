@@ -107,14 +107,6 @@ class CustomTransferMap(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}("
-            + f"predefined_transfer_map={repr(self.predefined_transfer_map)}, "
-            + f"length={repr(self.length)}, "
-            + f"name={repr(self.name)})"
-        )
-
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "predefined_transfer_map"]

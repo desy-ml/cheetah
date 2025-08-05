@@ -692,13 +692,3 @@ class SpaceChargeKick(Element):
             "grid_extent_y",
             "grid_extent_tau",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(effect_length={repr(self.effect_length)}, "
-            + f"grid_shape={repr(self.grid_shape)}, "
-            + f"grid_extent_x={repr(self.grid_extent_x)}, "
-            + f"grid_extent_y={repr(self.grid_extent_y)}, "
-            + f"grid_extent_tau={repr(self.grid_extent_tau)}, "
-            + f"name={repr(self.name)})"
-        )

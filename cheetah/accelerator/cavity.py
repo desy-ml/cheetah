@@ -345,12 +345,3 @@ class Cavity(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "voltage", "phase", "frequency"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"voltage={repr(self.voltage)}, "
-            + f"phase={repr(self.phase)}, "
-            + f"frequency={repr(self.frequency)}, "
-            + f"name={repr(self.name)})"
-        )
