@@ -274,7 +274,6 @@ class Element(ABC, nn.Module):
             self.register_buffer(name, value)
 
     @property
-    @abstractmethod
     def defining_features(self) -> list[str]:
         """
         List of features that define the element. Used to compare elements for equality
