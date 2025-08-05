@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import PhysicsWarning, UniqueNameGenerator, verify_device_and_dtype
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -77,10 +78,13 @@ class Aperture(Element):
         # Only apply aperture to particle beams and if the element is active
         if not self.is_active:
             return incoming
-
-        assert isinstance(
-            incoming, ParticleBeam
-        ), "Aperture tracking is currently only supported for `ParticleBeam`."
+        if not isinstance(incoming, ParticleBeam):
+            warnings.warn(
+                "Aperture tracking is currently only supported for `ParticleBeam`.",
+                PhysicsWarning,
+                stacklevel=2,
+            )
+            return incoming
 
         assert torch.all(self.x_max >= 0) and torch.all(self.y_max >= 0)
         assert self.shape in [
