@@ -13,47 +13,69 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Cavity: {"default": {"length": torch.tensor(1.0)}},
     cheetah.CustomTransferMap: {"identity": {"predefined_transfer_map": torch.eye(7)}},
     cheetah.Dipole: {
-        "cheetah": {
+        "linear": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
-            "tracking_method": "cheetah",
+            "tracking_method": "linear",
         },
-        "bmadx": {
+        "second_order": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
-            "tracking_method": "bmadx",
+            "tracking_method": "second_order",
+        },
+        "drift_kick_drift": {
+            "length": torch.tensor(1.0),
+            "angle": torch.tensor([1.0, -2.0]),
+            "tracking_method": "drift_kick_drift",
         },
     },
     cheetah.Drift: {
-        "cheetah": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "cheetah"},
-        "bmadx": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "bmadx"},
+        "linear": {"length": torch.tensor([1.0, -1.0]), "tracking_method": "linear"},
+        "second_order": {
+            "length": torch.tensor([1.0, -1.0]),
+            "tracking_method": "second_order",
+        },
+        "drift_kick_drift": {
+            "length": torch.tensor([1.0, -1.0]),
+            "tracking_method": "drift_kick_drift",
+        },
     },
     cheetah.HorizontalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
     cheetah.Marker: {"default": {}},
     cheetah.Quadrupole: {
-        "cheetah": {
+        "linear": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
-            "tracking_method": "cheetah",
+            "tracking_method": "linear",
         },
-        "bmadx": {
+        "second_order": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
-            "tracking_method": "bmadx",
+            "tracking_method": "second_order",
+        },
+        "drift_kick_drift": {
+            "length": torch.tensor(1.0),
+            "k1": torch.tensor([1.0, -2.0]),
+            "tracking_method": "drift_kick_drift",
         },
     },
     cheetah.RBend: {
-        "cheetah": {
+        "linear": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
-            "tracking_method": "cheetah",
+            "tracking_method": "linear",
         },
-        "bmadx": {
+        "second_order": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
-            "tracking_method": "bmadx",
+            "tracking_method": "second_order",
+        },
+        "drift_kick_drift": {
+            "length": torch.tensor(1.0),
+            "angle": torch.tensor([1.0, -2.0]),
+            "tracking_method": "drift_kick_drift",
         },
     },
     cheetah.Screen: {"default": {}},
@@ -61,7 +83,16 @@ ELEMENT_SUBCLASSES_ARGS = {
         "default": {"elements": [cheetah.Drift(length=torch.tensor(1.0))]}
     },
     cheetah.Sextupole: {
-        "default": {"length": torch.tensor(1.0), "k2": torch.tensor([1.0, -2.0])}
+        "linear": {
+            "length": torch.tensor(1.0),
+            "k2": torch.tensor([1.0, -2.0]),
+            "tracking_method": "linear",
+        },
+        "second_order": {
+            "length": torch.tensor(1.0),
+            "k2": torch.tensor([1.0, -2.0]),
+            "tracking_method": "second_order",
+        },
     },
     cheetah.Solenoid: {
         "default": {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}

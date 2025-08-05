@@ -98,12 +98,18 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     xfail_if=lambda element: isinstance(
         element, (cheetah.SpaceChargeKick, cheetah.TransverseDeflectingCavity)
     )
-    or (isinstance(element, cheetah.Aperture) and element.is_active)
     or (
         isinstance(
-            element, (cheetah.Dipole, cheetah.Drift, cheetah.Quadrupole, cheetah.RBend)
+            element,
+            (
+                cheetah.Dipole,
+                cheetah.Drift,
+                cheetah.Quadrupole,
+                cheetah.RBend,
+                cheetah.Sextupole,
+            ),
         )
-        and element.tracking_method == "bmadx"
+        and element.tracking_method != "linear"
     ),
 )
 @pytest.mark.parametrize(
