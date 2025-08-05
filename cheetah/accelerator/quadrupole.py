@@ -343,5 +343,4 @@ class Quadrupole(Element):
             "misalignment",
             "tilt",
             "num_steps",
-            "tracking_method",
         ]

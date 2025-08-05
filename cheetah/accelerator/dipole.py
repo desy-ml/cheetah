@@ -613,5 +613,4 @@ class Dipole(Element):
             "fringe_integral_exit",
             "fringe_at",
             "fringe_type",
-            "tracking_method",
         ]

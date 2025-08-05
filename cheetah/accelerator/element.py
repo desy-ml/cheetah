@@ -283,7 +283,11 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return ["name"]
+        return (
+            ["name"]
+            if len(self.supported_tracking_methods) == 1
+            else ["name", "tracking_method"]
+        )
 
     @property
     def defining_tensors(self) -> list[str]:

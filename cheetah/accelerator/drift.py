@@ -203,4 +203,4 @@ class Drift(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "tracking_method"]
+        return super().defining_features + ["length"]

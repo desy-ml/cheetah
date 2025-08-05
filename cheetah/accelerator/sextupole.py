@@ -146,5 +146,4 @@ class Sextupole(Element):
             "k2",
             "misalignment",
             "tilt",
-            "tracking_method",
         ]
