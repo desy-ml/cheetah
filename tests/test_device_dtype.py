@@ -76,6 +76,14 @@ def test_conflicting_element_dtype(element):
         and feature not in required_arguments
     }
 
+    # Collect remaining optional arguments
+    optional_non_tensor_arguments = {
+        feature: getattr(element, feature)
+        for feature in element.defining_features
+        if not isinstance(getattr(element, feature), torch.Tensor)
+        and feature not in required_arguments
+    }
+
     # Ensure that at least one tensor is part of the arguments that are passed each call
     if (
         not any(
@@ -90,11 +98,18 @@ def test_conflicting_element_dtype(element):
     for name, value in optional_tensor_arguments.items():
         with pytest.raises(AssertionError):
             # Contains conflicting dtype
-            element.__class__(**{name: value.double()}, **required_arguments)
+            element.__class__(
+                **{name: value.double()},
+                **optional_non_tensor_arguments,
+                **required_arguments,
+            )
 
         # Conflict can be overriden by manual dtype selection
         element.__class__(
-            **{name: value.double()}, **required_arguments, dtype=torch.float32
+            **{name: value.double()},
+            **optional_non_tensor_arguments,
+            **required_arguments,
+            dtype=torch.float32,
         )
 
 

@@ -102,6 +102,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
         isinstance(
             element,
             (
+                cheetah.CustomTransferMap,
                 cheetah.Dipole,
                 cheetah.Drift,
                 cheetah.Quadrupole,
