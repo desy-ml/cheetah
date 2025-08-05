@@ -35,6 +35,7 @@ def test_assert_ei_greater_zero():
 @pytest.mark.parametrize(
     "voltage",
     [torch.tensor([0.0, 0.0]), torch.tensor([0.0, 1e6]), torch.tensor([1e6, 1e6])],
+    ids=["off", "mixed", "on"],
 )
 def test_vectorized_cavity_zero_voltage(voltage):
     """

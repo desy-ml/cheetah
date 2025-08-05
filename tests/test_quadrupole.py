@@ -163,7 +163,9 @@ def test_quadrupole_length_multiple_vector_dimensions():
     assert torch.allclose(outgoing.particles[0, 2], outgoing.particles[1, 1])
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_quadrupole_drift_kick_drift_tracking(dtype):
     """
     Test that the results of tracking through a quadrupole with the `"drift_kick_drift"`
@@ -254,7 +256,9 @@ def test_quadrupole_clone_tracking_method(tracking_method):
     assert cloned.tracking_method == tracking_method
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_tilted_quad_transfer_matrix_precision(dtype):
     """
     Test that the transfer matrix for a tilted quadrupole element with k1=0 matches the

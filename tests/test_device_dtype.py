@@ -7,7 +7,8 @@ import cheetah
 
 
 @pytest.mark.for_every_element(
-    "single_element", except_for=[cheetah.Marker, cheetah.Segment]
+    "single_element",
+    except_if=lambda e: isinstance(e, (cheetah.Marker, cheetah.Segment)),
 )
 def test_forced_element_dtype(single_element):
     """
@@ -18,21 +19,21 @@ def test_forced_element_dtype(single_element):
         assert getattr(single_element, feature).dtype == torch.float32
 
     # Create new element with overriden dtype
-    double_element = single_element.double()
-    half_element = double_element.__class__(
+    double_element = single_element.__class__(
         **{
-            feature: getattr(double_element, feature)
-            for feature in double_element.defining_features
+            feature: getattr(single_element, feature)
+            for feature in single_element.defining_features
         },
-        dtype=torch.float16,
+        dtype=torch.float64,
     )
 
-    for feature in half_element.defining_tensors:
-        assert getattr(half_element, feature).dtype == torch.float16
+    for feature in double_element.defining_tensors:
+        assert getattr(double_element, feature).dtype == torch.float64
 
 
 @pytest.mark.for_every_element(
-    "single_element", except_for=[cheetah.BPM, cheetah.Marker, cheetah.Segment]
+    "single_element",
+    except_if=lambda e: isinstance(e, (cheetah.BPM, cheetah.Marker, cheetah.Segment)),
 )
 def test_infer_element_dtype(single_element):
     """
@@ -93,7 +94,7 @@ def test_conflicting_element_dtype(element):
 
         # Conflict can be overriden by manual dtype selection
         element.__class__(
-            **{name: value.double()}, **required_arguments, dtype=torch.float16
+            **{name: value.double()}, **required_arguments, dtype=torch.float32
         )
 
 
@@ -111,7 +112,7 @@ def test_forced_beam_dtype(BeamClass):
         assert getattr(beam, attribute).dtype == torch.float64
 
     beam = BeamClass.from_twiss(
-        beta_x=torch.tensor(1.0, dtype=torch.float16),
+        beta_x=torch.tensor(1.0),
         beta_y=torch.tensor(2.0, dtype=torch.float64),
         dtype=torch.float32,
     )

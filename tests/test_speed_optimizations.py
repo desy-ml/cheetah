@@ -164,7 +164,9 @@ def test_active_elements_not_replaced_by_drift():
     assert isinstance(optimized_segment.elements[1], cheetah.Quadrupole)
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
     """
     Test that when an inactive magnet is replaced by a drift, the drift has the same

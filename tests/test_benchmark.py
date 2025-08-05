@@ -5,13 +5,25 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
+@pytest.mark.filterwarnings(
+    r"ignore:.*Invalid tracking method.*:cheetah.utils.PhysicsWarning"
+)
+@pytest.mark.filterwarnings(
+    r"ignore:.*default screen properties.*:cheetah.utils.DefaultParameterWarning"
+)
 @pytest.mark.parametrize(
     ("beam_cls", "tracking_method"),
     [
         (cheetah.ParticleBeam, "linear"),
         (cheetah.ParticleBeam, "second_order"),
         (cheetah.ParticleBeam, "drift_kick_drift"),
-        (cheetah.ParameterBeam, "linear"),
+        pytest.param(
+            cheetah.ParameterBeam,
+            "linear",
+            marks=pytest.mark.filterwarnings(
+                r"ignore:.*Aperture tracking.*:cheetah.utils.PhysicsWarning"
+            ),
+        ),
     ],
 )
 def test_benchmark_ares_lattice(benchmark, beam_cls, tracking_method):
