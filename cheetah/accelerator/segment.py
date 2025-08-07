@@ -881,14 +881,16 @@ class Segment(Element):
         if num_elements <= 5:  # TODO Discuss a reasonable threshold
             elements_repr = repr(self.elements)
         else:
-            repr_list = [
+            element_repr_list = [
                 f"({i}): {repr(self.elements[i])}"
                 for i in [0, 1, num_elements - 2, num_elements - 1]
             ]
-            repr_list.insert(2, " ⋮")
+            element_repr_list.insert(2, " ⋮")
 
             # Using `format` since Python 3.10 does not permit backslashes in f-strings
-            elements_repr = "ModuleList(\n  {0}\n)".format("\n  ".join(repr_list))
+            elements_repr = "ModuleList(\n  {0}\n)".format(
+                "\n  ".join(element_repr_list)
+            )
 
         return (
             f"{self.__class__.__name__}(elements={elements_repr}, "
