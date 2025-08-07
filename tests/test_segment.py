@@ -139,7 +139,9 @@ def test_resolution_longitudinal_beam_generator():
 
 
 @pytest.mark.parametrize(
-    "attr_names", ["beta_x", ("beta_x",), ("s", "beta_x"), ("x", "mu_x")]
+    "attr_names",
+    ["beta_x", ("beta_x",), ("s", "beta_x"), ("x", "mu_x")],
+    ids=["string", "1-tuple", "2-tuple", "tensor"],
 )
 def test_longitudinal_beam_metric(attr_names):
     """

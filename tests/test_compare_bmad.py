@@ -27,6 +27,7 @@ atomic_mass_eV = (
             dtype=torch.float64,
         ),
     ],
+    ids=["proton", "electron", "positron", "antiproton", "deuteron", "12C+3"],
 )
 @pytest.mark.parametrize(
     "cheetah_element",
@@ -64,6 +65,7 @@ atomic_mass_eV = (
             )
         ),
     ],
+    ids=["Drift", "Dipole", "Quadrupole"],
 )
 def test_different_species_in_different_elements(species, cheetah_element):
     """

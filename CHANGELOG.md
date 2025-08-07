@@ -16,6 +16,7 @@
 ### 🐆 Other
 
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
+- Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
 
 ### 🌟 First Time Contributors
 
