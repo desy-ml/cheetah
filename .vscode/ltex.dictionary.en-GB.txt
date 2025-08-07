@@ -49,3 +49,4 @@ beamlines
 @SuchethShenoy
 Sucheth
 Shenoy
+EuXFEL
