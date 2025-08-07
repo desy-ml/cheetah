@@ -111,7 +111,7 @@ class Quadrupole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        if self._cached_second_order_transfer_map is not None:
+        if self._cached_second_order_transfer_map is None:
             T = base_ttensor(
                 length=self.length,
                 k1=self.k1,

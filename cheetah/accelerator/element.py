@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
@@ -32,6 +33,12 @@ class Element(ABC, nn.Module):
     ) -> None:
         super().__init__()
 
+        # Must be done before setting any properties that are also in defining_features
+        self.register_buffer("_cached_first_order_transfer_map", None, persistent=False)
+        self.register_buffer(
+            "_cached_second_order_transfer_map", None, persistent=False
+        )
+
         self.name = name if name is not None else generate_unique_name()
         if not self.is_name_sanitized():
             if sanitize_name:
@@ -51,11 +58,6 @@ class Element(ABC, nn.Module):
         if not hasattr(self, "supported_tracking_methods"):
             self.supported_tracking_methods = [self.__class__.__name__.lower()]
         self._tracking_method = self.supported_tracking_methods[0]
-
-        self.register_buffer("_cached_first_order_transfer_map", None, persistent=False)
-        self.register_buffer(
-            "_cached_second_order_transfer_map", None, persistent=False
-        )
 
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
@@ -261,7 +263,7 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self.defining_features:
             self._cached_first_order_transfer_map = None
             self._cached_second_order_transfer_map = None
