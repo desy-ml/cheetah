@@ -51,11 +51,6 @@ class Drift(Element):
 
         self.tracking_method = tracking_method
 
-        self.register_buffer_or_parameter(
-            "_cached_first_order_transfer_map", torch.empty(7, 7, **factory_kwargs)
-        )
-        self._is_first_order_transfer_map_cache_valid = False
-
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
