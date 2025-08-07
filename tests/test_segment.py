@@ -15,6 +15,7 @@ def test_convenience_methods():
     assert segment.element_names == [f"drift_{i}" for i in range(10)]
     assert segment.get_element_index("drift_3") == 3
 
+
 def test_subcell_start_end():
     """
     Test that `start` and `end` have proper defaults and fallbacks if the named element

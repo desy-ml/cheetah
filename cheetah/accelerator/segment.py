@@ -64,7 +64,7 @@ class Segment(Element):
         :return: List of names of the elements in the segment.
         """
         return [element.name for element in self.elements]
-    
+
     def get_element_index(self, element_name: str) -> int:
         """
         Get the index of an element in the segment by its name.
