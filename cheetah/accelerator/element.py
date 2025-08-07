@@ -274,7 +274,6 @@ class Element(ABC, nn.Module):
             self.register_buffer(name, value)
 
     @property
-    @abstractmethod
     def defining_features(self) -> list[str]:
         """
         List of features that define the element. Used to compare elements for equality
@@ -283,7 +282,11 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return ["name"]
+        return (
+            ["name"]
+            if len(self.supported_tracking_methods) == 1
+            else ["name", "tracking_method"]
+        )
 
     @property
     def defining_tensors(self) -> list[str]:
@@ -431,4 +434,8 @@ class Element(ABC, nn.Module):
         return mesh, output_transform
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"
+        feature_list = [
+            f"{feature}={repr(getattr(self, feature))}"
+            for feature in self.defining_features
+        ]
+        return f"{self.__class__.__name__}({', '.join(feature_list)})"

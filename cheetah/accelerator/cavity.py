@@ -387,13 +387,3 @@ class Cavity(Element):
             "frequency",
             "cavity_type",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"voltage={repr(self.voltage)}, "
-            + f"phase={repr(self.phase)}, "
-            + f"frequency={repr(self.frequency)}, "
-            + f"cavity_type={repr(self.cavity_type)}, "
-            + f"name={repr(self.name)})"
-        )
