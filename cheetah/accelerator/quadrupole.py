@@ -3,7 +3,6 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
-from icecream import ic
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
@@ -92,13 +91,11 @@ class Quadrupole(Element):
             persistent=False,
         )
         self._is_transfer_map_cache_valid = False
-        ic()
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         if not self._is_transfer_map_cache_valid:
-            ic()
             R = base_rmatrix(
                 length=self.length,
                 k1=self.k1,
@@ -288,7 +285,6 @@ class Quadrupole(Element):
     def length(self, value: torch.Tensor) -> None:
         self._length = value
         self._is_transfer_map_cache_valid = False
-        ic()
 
     @property
     def k1(self) -> torch.Tensor:
@@ -298,7 +294,6 @@ class Quadrupole(Element):
     def k1(self, value: torch.Tensor) -> None:
         self._k1 = value
         self._is_transfer_map_cache_valid = False
-        ic()
 
     @property
     def misalignment(self) -> torch.Tensor:
@@ -308,7 +303,6 @@ class Quadrupole(Element):
     def misalignment(self, value: torch.Tensor) -> None:
         self._misalignment = value
         self._is_transfer_map_cache_valid = False
-        ic()
 
     @property
     def tilt(self) -> torch.Tensor:
@@ -318,7 +312,6 @@ class Quadrupole(Element):
     def tilt(self, value: torch.Tensor) -> None:
         self._tilt = value
         self._is_transfer_map_cache_valid = False
-        ic()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
