@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu, @jank324, @Hespe)
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
 
 ### 🐛 Bug fixes
 
@@ -18,6 +19,8 @@
 - Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
 
 ### 🌟 First Time Contributors
+
+- Zihan Zhu (@zihan-zh)
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 
