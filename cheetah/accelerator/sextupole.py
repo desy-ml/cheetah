@@ -141,9 +141,4 @@ class Sextupole(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + [
-            "length",
-            "k2",
-            "misalignment",
-            "tilt",
-        ]
+        return super().defining_features + ["length", "k2", "misalignment", "tilt"]
