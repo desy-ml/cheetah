@@ -399,18 +399,17 @@ class Segment(Element):
         dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
-        Read a Cheetah segment from an elegant lattice file.
+        Read a Cheetah segment from an Elegant lattice file.
 
-        :param bmad_lattice_file_path: Path to the Bmad lattice file.
-        :param name: Name of the root element
+        :param elegant_lattice_file_path: Path to the Elegant lattice file.
+        :param name: Name of the root element.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
             `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
-        :return: Cheetah `Segment` representing the elegant lattice.
+        :return: Cheetah `Segment` representing the Elegant lattice.
         """
-
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice_to_cheetah(
             elegant_lattice_file_path, name, sanitize_names, device, dtype
