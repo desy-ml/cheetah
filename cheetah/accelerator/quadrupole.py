@@ -68,34 +68,27 @@ class Quadrupole(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.register_buffer_or_parameter(
-            "_k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
+            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
-            "_misalignment",
+            "misalignment",
             torch.as_tensor(
                 misalignment if misalignment is not None else (0.0, 0.0),
                 **factory_kwargs,
             ),
         )
         self.register_buffer_or_parameter(
-            "_tilt",
+            "tilt",
             torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs),
         )
 
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-        self.register_buffer_or_parameter(
-            "_cached_first_order_transfer_map",
-            torch.empty(7, 7, **factory_kwargs),
-            persistent=False,
-        )
-        self._is_transfer_map_cache_valid = False
-
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        if not self._is_transfer_map_cache_valid:
+        if self._cached_first_order_transfer_map is None:
             R = base_rmatrix(
                 length=self.length,
                 k1=self.k1,
@@ -112,41 +105,49 @@ class Quadrupole(Element):
                 R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
 
             self._cached_first_order_transfer_map = R
-            self._is_transfer_map_cache_valid = True
 
         return self._cached_first_order_transfer_map
 
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        T = base_ttensor(
-            length=self.length,
-            k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            tilt=self.tilt,
-            energy=energy,
-            species=species,
-        )
-
-        # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = base_rmatrix(
-            length=self.length,
-            k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
-        )
-
-        # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        if self._cached_second_order_transfer_map is not None:
+            T = base_ttensor(
+                length=self.length,
+                k1=self.k1,
+                k2=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                tilt=self.tilt,
+                energy=energy,
+                species=species,
             )
 
-        return T
+            # Fill the first-order transfer map into the second-order transfer map
+            T[..., :, 6, :] = base_rmatrix(
+                length=self.length,
+                k1=self.k1,
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                species=species,
+                tilt=self.tilt,
+                energy=energy,
+            )
+
+            # Apply misalignments to the entire second-order transfer map
+            if not torch.all(self.misalignment == 0):
+                R_entry, R_exit = misalignment_matrix(self.misalignment)
+                T = torch.einsum(
+                    "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+                )
+
+            self._cached_second_order_transfer_map = T
+
+        return self._cached_second_order_transfer_map
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -276,42 +277,6 @@ class Quadrupole(Element):
     @property
     def is_active(self) -> bool:
         return torch.any(self.k1 != 0).item()
-
-    @property
-    def length(self) -> torch.Tensor:
-        return self._length
-
-    @length.setter
-    def length(self, value: torch.Tensor) -> None:
-        self._length = value
-        self._is_transfer_map_cache_valid = False
-
-    @property
-    def k1(self) -> torch.Tensor:
-        return self._k1
-
-    @k1.setter
-    def k1(self, value: torch.Tensor) -> None:
-        self._k1 = value
-        self._is_transfer_map_cache_valid = False
-
-    @property
-    def misalignment(self) -> torch.Tensor:
-        return self._misalignment
-
-    @misalignment.setter
-    def misalignment(self, value: torch.Tensor) -> None:
-        self._misalignment = value
-        self._is_transfer_map_cache_valid = False
-
-    @property
-    def tilt(self) -> torch.Tensor:
-        return self._tilt
-
-    @tilt.setter
-    def tilt(self, value: torch.Tensor) -> None:
-        self._tilt = value
-        self._is_transfer_map_cache_valid = False
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()

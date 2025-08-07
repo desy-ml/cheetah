@@ -59,9 +59,9 @@ class Drift(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        if not self._is_first_order_transfer_map_cache_valid:
+        if self._cached_first_order_transfer_map is None:
             R = drift_matrix(length=self.length, energy=energy, species=species)
-            # self._cached_first_order_transfer_map.copy_(R)
+
             self._cached_first_order_transfer_map = R
 
         return self._cached_first_order_transfer_map
@@ -69,21 +69,30 @@ class Drift(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        T = base_ttensor(
-            self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            energy=energy,
-            species=species,
-        )
+        if self._cached_second_order_transfer_map is None:
+            T = base_ttensor(
+                self.length,
+                k1=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                k2=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                energy=energy,
+                species=species,
+            )
 
-        # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = drift_matrix(
-            length=self.length, energy=energy, species=species
-        )
+            # Fill the first-order transfer map into the second-order transfer map
+            T[..., :, 6, :] = drift_matrix(
+                length=self.length, energy=energy, species=species
+            )
 
-        return T
+            self._cached_second_order_transfer_map = T
+
+        return self._cached_second_order_transfer_map
 
     def track(self, incoming: Beam) -> Beam:
         """

@@ -52,6 +52,11 @@ class Element(ABC, nn.Module):
             self.supported_tracking_methods = [self.__class__.__name__.lower()]
         self._tracking_method = self.supported_tracking_methods[0]
 
+        self.register_buffer("_cached_first_order_transfer_map", None, persistent=False)
+        self.register_buffer(
+            "_cached_second_order_transfer_map", None, persistent=False
+        )
+
     def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         r"""
         NOTE: This method is deprecated and will be removed in a future version. Use
@@ -255,6 +260,13 @@ class Element(ABC, nn.Module):
         elements.
         """
         raise NotImplementedError
+
+    def __setattr__(self, name, value):
+        if name in self.defining_features:
+            self._cached_first_order_transfer_map = None
+            self._cached_second_order_transfer_map = None
+
+        return super().__setattr__(name, value)
 
     def register_buffer_or_parameter(
         self, name: str, value: torch.Tensor | nn.Parameter, persistent: bool = True
