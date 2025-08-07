@@ -246,9 +246,8 @@ class Cavity(Element):
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        delta_energy = (
-            self.voltage * torch.cos(phi) * species.num_elementary_charges * -1
-        )
+        voltage_effective = self.voltage * species.num_elementary_charges * -1
+        delta_energy = voltage_effective * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / species.mass_eV
@@ -257,6 +256,13 @@ class Cavity(Element):
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
+
+        r55_cor = torch.tensor(0.0, **factory_kwargs)
+
+        k = 2 * torch.pi * self.frequency / constants.speed_of_light
+        beta0 = torch.sqrt(1 - 1 / Ei**2)
+        beta1 = torch.sqrt(1 - 1 / Ef**2)
+        r56 = torch.tensor(0.0, **factory_kwargs)
 
         if self.cavity_type == "standing_wave":
             r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
@@ -286,13 +292,32 @@ class Cavity(Element):
                     + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
                 )
             )
+
+            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            g0 = Ei
+            g1 = Ef
+            r55_cor = (
+                k
+                * self.length
+                * beta0
+                * voltage_effective
+                / species.mass_eV
+                * torch.sin(phi)
+                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
+                / (beta1 * g1 * (g0 - g1) ** 2)
+            )
+            r66 = Ei / Ef * beta0 / beta1
+            r65 = (
+                k * torch.sin(phi) * voltage_effective / (Ef * beta1 * species.mass_eV)
+            )
+
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             dE = Ef - Ei
-            f = (Ei / dE) * torch.log(1 + (dE / Ei))
+            f = Ei / dE * torch.log(1 + (dE / Ei))
 
             vector_shape = torch.broadcast_shapes(
-                self.length.shape, f.shape, Ei.shape, Ef.shape, dE.shape
+                self.length.shape, f.shape, Ei.shape, Ef.shape
             )
 
             M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
@@ -311,35 +336,10 @@ class Cavity(Element):
             r12 = M_combined[..., 0, 1]
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
+            r66 = r22
+            r65 = k * torch.sin(phi) * voltage_effective / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
-
-        r56 = torch.tensor(0.0, **factory_kwargs)
-        beta0 = torch.tensor(1.0, **factory_kwargs)
-        beta1 = torch.tensor(1.0, **factory_kwargs)
-
-        k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        r55_cor = torch.tensor(0.0, **factory_kwargs)
-        if torch.any((self.voltage != 0) & (energy != 0)):  # TODO: Do we need this if?
-            beta0 = torch.sqrt(1 - 1 / Ei**2)
-            beta1 = torch.sqrt(1 - 1 / Ef**2)
-
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            g0 = Ei
-            g1 = Ef
-            r55_cor = (
-                k
-                * self.length
-                * beta0
-                * self.voltage
-                / species.mass_eV
-                * torch.sin(phi)
-                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
-                / (beta1 * g1 * (g0 - g1) ** 2)
-            )
-
-        r66 = Ei / Ef * beta0 / beta1
-        r65 = k * torch.sin(phi) * self.voltage / (Ef * beta1 * species.mass_eV)
 
         # Make sure that all matrix elements have the same shape
         r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(
