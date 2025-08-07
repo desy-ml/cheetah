@@ -67,9 +67,10 @@ class BPM(Element):
         if self.is_active:
             self.reading = torch.stack(
                 [
-                    incoming.mu_x - self.misalignment[...,0], 
-                    incoming.mu_y - self.misalignment[...,1]
-                ], dim=-1
+                    incoming.mu_x - self.misalignment[..., 0], 
+                    incoming.mu_y - self.misalignment[..., 1],
+                ], 
+                dim=-1,
             )
 
         return incoming.clone()
