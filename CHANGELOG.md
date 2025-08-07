@@ -13,6 +13,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
+
 ### 🐆 Other
 
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
