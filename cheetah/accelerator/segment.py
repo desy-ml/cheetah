@@ -878,7 +878,7 @@ class Segment(Element):
 
     def __repr__(self) -> str:
         num_elements = len(self.elements)
-        if num_elements <= 5:  # TODO Discuss a reasonable threshold
+        if num_elements <= 5:
             elements_repr = repr(self.elements)
         else:
             element_repr_list = [
