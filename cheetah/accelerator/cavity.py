@@ -380,4 +380,10 @@ class Cavity(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "voltage", "phase", "frequency", "cavity_type"]
+        return super().defining_features + [
+            "length",
+            "voltage",
+            "phase",
+            "frequency",
+            "cavity_type",
+        ]
