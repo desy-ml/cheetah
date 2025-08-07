@@ -69,17 +69,18 @@ class Quadrupole(Element):
         self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.register_buffer_or_parameter(
-            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
+            "_k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
-            "misalignment",
+            "_misalignment",
             torch.as_tensor(
                 misalignment if misalignment is not None else (0.0, 0.0),
                 **factory_kwargs,
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "_tilt",
+            torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs),
         )
 
         self.num_steps = num_steps
