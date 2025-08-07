@@ -246,8 +246,8 @@ class Cavity(Element):
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        voltage_effective = self.voltage * species.num_elementary_charges * -1
-        delta_energy = voltage_effective * torch.cos(phi)
+        effective_voltage = self.voltage * species.num_elementary_charges * -1
+        delta_energy = effective_voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / species.mass_eV
@@ -300,7 +300,7 @@ class Cavity(Element):
                 k
                 * self.length
                 * beta0
-                * voltage_effective
+                * effective_voltage
                 / species.mass_eV
                 * torch.sin(phi)
                 * (g0 * g1 * (beta0 * beta1 - 1) + 1)
@@ -308,7 +308,7 @@ class Cavity(Element):
             )
             r66 = Ei / Ef * beta0 / beta1
             r65 = (
-                k * torch.sin(phi) * voltage_effective / (Ef * beta1 * species.mass_eV)
+                k * torch.sin(phi) * effective_voltage / (Ef * beta1 * species.mass_eV)
             )
 
         elif self.cavity_type == "traveling_wave":
@@ -337,7 +337,7 @@ class Cavity(Element):
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
             r66 = r22
-            r65 = k * torch.sin(phi) * voltage_effective / (Ef * species.mass_eV)
+            r65 = k * torch.sin(phi) * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
