@@ -3,6 +3,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import torch
+from icecream import ic
 from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
@@ -84,24 +85,38 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
+        self.register_buffer_or_parameter(
+            "_cached_first_order_transfer_map",
+            torch.empty(7, 7, **factory_kwargs),
+            persistent=False,
+        )
+        self._is_transfer_map_cache_valid = False
+        ic()
+
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        R = base_rmatrix(
-            length=self.length,
-            k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
-        )
+        if not self._is_transfer_map_cache_valid:
+            ic()
+            R = base_rmatrix(
+                length=self.length,
+                k1=self.k1,
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                species=species,
+                tilt=self.tilt,
+                energy=energy,
+            )
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+            if torch.any(self.misalignment != 0):
+                R_entry, R_exit = misalignment_matrix(self.misalignment)
+                R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+
+            self._cached_first_order_transfer_map = R
+            self._is_transfer_map_cache_valid = True
+
+        return self._cached_first_order_transfer_map
 
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
@@ -263,6 +278,46 @@ class Quadrupole(Element):
     @property
     def is_active(self) -> bool:
         return torch.any(self.k1 != 0).item()
+
+    @property
+    def length(self) -> torch.Tensor:
+        return self._length
+
+    @length.setter
+    def length(self, value: torch.Tensor) -> None:
+        self._length = value
+        self._is_transfer_map_cache_valid = False
+        ic()
+
+    @property
+    def k1(self) -> torch.Tensor:
+        return self._k1
+
+    @k1.setter
+    def k1(self, value: torch.Tensor) -> None:
+        self._k1 = value
+        self._is_transfer_map_cache_valid = False
+        ic()
+
+    @property
+    def misalignment(self) -> torch.Tensor:
+        return self._misalignment
+
+    @misalignment.setter
+    def misalignment(self, value: torch.Tensor) -> None:
+        self._misalignment = value
+        self._is_transfer_map_cache_valid = False
+        ic()
+
+    @property
+    def tilt(self) -> torch.Tensor:
+        return self._tilt
+
+    @tilt.setter
+    def tilt(self, value: torch.Tensor) -> None:
+        self._tilt = value
+        self._is_transfer_map_cache_valid = False
+        ic()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()

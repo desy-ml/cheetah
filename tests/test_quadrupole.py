@@ -13,38 +13,39 @@ def test_quadrupole_off():
     incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
-    outbeam_quad = quadrupole(incoming_beam)
-    outbeam_drift = drift(incoming_beam)
+    outbeam_quadrupole_off = quadrupole.track(incoming_beam)
+    outbeam_drift = drift.track(incoming_beam)
 
     quadrupole.k1 = torch.tensor(1.0, device=quadrupole.k1.device)
-    outbeam_quad_on = quadrupole(incoming_beam)
+    outbeam_quadrupole_on = quadrupole.track(incoming_beam)
 
-    assert torch.allclose(outbeam_quad.sigma_x, outbeam_drift.sigma_x)
-    assert not torch.allclose(outbeam_quad_on.sigma_x, outbeam_drift.sigma_x)
+    assert torch.allclose(outbeam_quadrupole_off.sigma_x, outbeam_drift.sigma_x)
+    assert not torch.allclose(outbeam_quadrupole_on.sigma_x, outbeam_drift.sigma_x)
 
 
 def test_quadrupole_with_misalignments_vectorized():
     """
     Test that a quadrupole with misalignments behaves as expected.
     """
-    quad_with_misalignment = cheetah.Quadrupole(
+    quadrupole_with_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
         misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0),
     )
 
-    quad_without_misalignment = cheetah.Quadrupole(
+    quadrupole_without_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
     incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
-    outbeam_quad_with_misalignment = quad_with_misalignment(incoming_beam)
-    outbeam_quad_without_misalignment = quad_without_misalignment(incoming_beam)
+    outbeam_quad_with_misalignment = quadrupole_with_misalignment.track(incoming_beam)
+    outbeam_quad_without_misalignment = quadrupole_without_misalignment.track(
+        incoming_beam
+    )
 
     assert not torch.allclose(
-        outbeam_quad_with_misalignment.mu_x,
-        outbeam_quad_without_misalignment.mu_x,
+        outbeam_quad_with_misalignment.mu_x, outbeam_quad_without_misalignment.mu_x
     )
 
 
@@ -53,12 +54,12 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
     Test that a quadrupole with misalignments that have multiple vector dimensions does
     not raise an error and behaves as expected.
     """
-    quad_with_misalignment = cheetah.Quadrupole(
+    quadrupole_with_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
         misalignment=torch.randn((4, 3, 2)) * 5e-4,
     )
-    quad_without_misalignment = cheetah.Quadrupole(
+    quadrupole_without_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
 
@@ -66,8 +67,8 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
 
-    outgoing_with_misalignment = quad_with_misalignment(incoming)
-    outgoing_without_misalignment = quad_without_misalignment(incoming)
+    outgoing_with_misalignment = quadrupole_with_misalignment.track(incoming)
+    outgoing_without_misalignment = quadrupole_without_misalignment.track(incoming)
 
     # Check that the misalignment has an effect
     assert not torch.allclose(
@@ -95,7 +96,7 @@ def test_tilted_quadrupole_vectorized():
             cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
 
     # Check that pi/4 and 5/4*pi rotations is the same for quadrupole
     assert torch.allclose(outgoing.particles[0], outgoing.particles[2])
@@ -129,7 +130,7 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
         num_particles=10_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
 
     # Test that shape is correct
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
@@ -157,7 +158,7 @@ def test_quadrupole_length_multiple_vector_dimensions():
         num_particles=10_000, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
 
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
     assert torch.allclose(outgoing.particles[0, 2], outgoing.particles[1, 1])

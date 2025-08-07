@@ -257,7 +257,7 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def register_buffer_or_parameter(
-        self, name: str, value: torch.Tensor | nn.Parameter
+        self, name: str, value: torch.Tensor | nn.Parameter, persistent: bool = True
     ) -> None:
         """
         Register a buffer or parameter with the given name and value. Automatically
@@ -267,11 +267,13 @@ class Element(ABC, nn.Module):
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
         :param default: Default value of the buffer.
+        :param persistent: Whether the buffer or parameter should be persistent. NOTE:
+            This is only relevant for buffers, as parameters are always persistent.
         """
         if isinstance(value, nn.Parameter):
             self.register_parameter(name, value)
         else:
-            self.register_buffer(name, value)
+            self.register_buffer(name, value, persistent)
 
     @property
     @abstractmethod
