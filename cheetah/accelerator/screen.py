@@ -357,15 +357,3 @@ class Screen(Element):
             "kde_bandwidth",
             "is_active",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(resolution={repr(self.resolution)}, "
-            + f"pixel_size={repr(self.pixel_size)}, "
-            + f"binning={repr(self.binning)}, "
-            + f"misalignment={repr(self.misalignment)}, "
-            + f"method={repr(self.method)}, "
-            + f"kde_bandwidth={repr(self.kde_bandwidth)}, "
-            + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)})"
-        )

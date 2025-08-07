@@ -877,7 +877,22 @@ class Segment(Element):
         return super().defining_features + ["elements"]
 
     def __repr__(self) -> str:
+        num_elements = len(self.elements)
+        if num_elements <= 5:
+            elements_repr = repr(self.elements)
+        else:
+            element_repr_list = [
+                f"({i}): {repr(self.elements[i])}"
+                for i in [0, 1, num_elements - 2, num_elements - 1]
+            ]
+            element_repr_list.insert(2, " ⋮")
+
+            # Using `format` since Python 3.10 does not permit backslashes in f-strings
+            elements_repr = "ModuleList(\n  {0}\n)".format(
+                "\n  ".join(element_repr_list)
+            )
+
         return (
-            f"{self.__class__.__name__}(elements={repr(self.elements)}, "
+            f"{self.__class__.__name__}(elements={elements_repr}, "
             + f"name={repr(self.name)})"
         )

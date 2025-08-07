@@ -74,6 +74,3 @@ class BPM(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["is_active"]
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"

@@ -13,6 +13,8 @@
 
 ### 🐛 Bug fixes
 
+- Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
+
 ### 🐆 Other
 
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
