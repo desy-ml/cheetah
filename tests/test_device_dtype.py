@@ -151,18 +151,15 @@ def test_conflicting_beam_dtype(BeamClass):
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_transformed_beam_dtype(BeamClass):
-    """Test that `Beam.transformed_to` keeps the dtype by default."""
-    beam = BeamClass.from_parameters(mu_x=torch.tensor(1e-5), dtype=torch.float64)
+    """Test that `Beam.transformed_to` retains the dtype."""
+    beam = BeamClass.from_parameters(
+        mu_x=torch.tensor(1e-5, dtype=torch.float64), dtype=torch.float64
+    )
     beam_attributes = beam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
 
-    # Verify the dtype is kept by default
-    transformed_beam = beam.transformed_to(mu_x=torch.tensor(-2e-5))
-    for attribute in beam_attributes:
-        assert getattr(transformed_beam, attribute).dtype == torch.float64
-
-    # Check that the manual dtype selection works
+    # Verify the dtype is kept
     transformed_beam = beam.transformed_to(
-        mu_x=torch.tensor(-2e-5), dtype=torch.float32
+        mu_x=torch.tensor(-2e-5, dtype=torch.float64)
     )
     for attribute in beam_attributes:
-        assert getattr(transformed_beam, attribute).dtype == torch.float32
+        assert getattr(transformed_beam, attribute).dtype == torch.float64
