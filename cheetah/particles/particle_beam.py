@@ -63,14 +63,8 @@ class ParticleBeam(Beam):
         species: Species | None = None,
         device: torch.device | str | None = None,
         dtype: torch.dtype | str | None = None,
-        _not_passing_parameters: bool = False,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        register_buffer_or_parameter = (
-            self.register_buffer
-            if _not_passing_parameters
-            else self.register_buffer_or_parameter
-        )
         super().__init__()
 
         assert (
@@ -81,9 +75,9 @@ class ParticleBeam(Beam):
             species if species is not None else Species("electron", **factory_kwargs)
         )
 
-        register_buffer_or_parameter("particles", particles)
-        register_buffer_or_parameter("energy", energy)
-        register_buffer_or_parameter(
+        self.register_buffer("particles", particles)
+        self.register_buffer("energy", energy)
+        self.register_buffer(
             "particle_charges",
             (
                 particle_charges
@@ -95,7 +89,7 @@ class ParticleBeam(Beam):
                 )
             ),
         )
-        register_buffer_or_parameter(
+        self.register_buffer(
             "survival_probabilities",
             (
                 survival_probabilities
@@ -103,7 +97,7 @@ class ParticleBeam(Beam):
                 else torch.ones(particles.shape[-2], **factory_kwargs)
             ),
         )
-        register_buffer_or_parameter(
+        self.register_buffer(
             "s",
             (s if s is not None else torch.tensor(0.0, **factory_kwargs)),
         )
