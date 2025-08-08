@@ -69,31 +69,44 @@ class ParticleBeam(Beam):
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.species = species or Species("electron").to(
-            device=particles.device, dtype=particles.dtype
+        self.species = (
+            species
+            if species is not None
+            else Species("electron").to(device=particles.device, dtype=particles.dtype)
         )
 
         self.register_buffer_or_parameter("particles", particles)
         self.register_buffer_or_parameter("energy", energy)
         self.register_buffer_or_parameter(
             "particle_charges",
-            particle_charges
-            or torch.full(
-                (particles.shape[-2],),
-                self.species.charge_coulomb,
-                device=particles.device,
-                dtype=particles.dtype,
+            (
+                particle_charges
+                if particle_charges is not None
+                else torch.full(
+                    (particles.shape[-2],),
+                    self.species.charge_coulomb,
+                    device=particles.device,
+                    dtype=particles.dtype,
+                )
             ),
         )
         self.register_buffer_or_parameter(
             "survival_probabilities",
-            survival_probabilities
-            or torch.ones(
-                particles.shape[-2], device=particles.device, dtype=particles.dtype
+            (
+                survival_probabilities
+                if survival_probabilities is not None
+                else torch.ones(
+                    particles.shape[-2], device=particles.device, dtype=particles.dtype
+                )
             ),
         )
         self.register_buffer_or_parameter(
-            "s", s or torch.tensor(0.0, device=particles.device, dtype=particles.dtype)
+            "s",
+            (
+                s
+                if s is not None
+                else torch.tensor(0.0, device=particles.device, dtype=particles.dtype)
+            ),
         )
 
     @classmethod
