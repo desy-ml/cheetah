@@ -153,11 +153,3 @@ class Solenoid(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "k", "misalignment"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"k={repr(self.k)}, "
-            + f"misalignment={repr(self.misalignment)}, "
-            + f"name={repr(self.name)})"
-        )

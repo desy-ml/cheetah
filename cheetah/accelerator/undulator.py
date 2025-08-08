@@ -81,11 +81,4 @@ class Undulator(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)})"
-        )
+        return super().defining_features + ["length", "is_active"]

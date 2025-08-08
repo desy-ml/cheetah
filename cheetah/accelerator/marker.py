@@ -50,10 +50,3 @@ class Marker(Element):
         # TODO: Implement a better visualisation for markers. At the moment they are
         # invisible.
         return ax
-
-    @property
-    def defining_features(self) -> list[str]:
-        return super().defining_features
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"

@@ -356,16 +356,5 @@ class Quadrupole(Element):
             "k1",
             "misalignment",
             "tilt",
-            "tracking_method",
+            "num_steps",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"k1={repr(self.k1)}, "
-            + f"misalignment={repr(self.misalignment)}, "
-            + f"tilt={repr(self.tilt)}, "
-            + f"num_steps={repr(self.num_steps)}, "
-            + f"tracking_method={repr(self.tracking_method)}, "
-            + f"name={repr(self.name)})"
-        )

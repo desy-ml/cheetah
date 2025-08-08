@@ -97,10 +97,3 @@ class HorizontalCorrector(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "angle"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"angle={repr(self.angle)}, "
-            + f"name={repr(self.name)})"
-        )
