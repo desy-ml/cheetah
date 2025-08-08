@@ -176,6 +176,7 @@ class Element(ABC, nn.Module):
                 survival_probabilities=incoming.survival_probabilities,
                 s=new_s,
                 species=incoming.species.clone(),
+                _not_passing_parameters=True,
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
