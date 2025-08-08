@@ -714,10 +714,11 @@ class ParticleBeam(Beam):
 
         particles, energy, particle_charges = from_astrabeam(path)
 
-        particles_7d = torch.ones((particles.shape[0], 7), dtype=particles.dtype)
-        particles_7d[:, :6] = torch.from_numpy(particles)
+        particles_6d = torch.from_numpy(particles)
+        particles_7d = torch.ones((particles.shape[0], 7), dtype=particles_6d.dtype)
+        particles_7d[:, :6] = particles_6d
 
-        energy = torch.from_numpy(energy)
+        energy = torch.as_tensor(energy)  # as_tensor because not an array just a float
 
         particle_charges = torch.from_numpy(particle_charges)
 
