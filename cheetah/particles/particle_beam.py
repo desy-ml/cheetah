@@ -32,9 +32,6 @@ class ParticleBeam(Beam):
         0.0 means the particle has been lost. Defaults to ones.
     :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
-    :param dtype: Data type of the generated particles.
     """
 
     PRETTY_DIMENSION_LABELS = {
@@ -65,55 +62,38 @@ class ParticleBeam(Beam):
         survival_probabilities: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [particles, energy, particle_charges, survival_probabilities, s],
-            device,
-            dtype,
-        )
-        factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
         assert (
             particles.shape[-2] > 0 and particles.shape[-1] == 7
         ), "Particle vectors must be 7-dimensional."
 
-        self.species = (
-            species.to(**factory_kwargs)
-            if species is not None
-            else Species("electron", **factory_kwargs)
+        self.species = species or Species("electron").to(
+            device=particles.device, dtype=particles.dtype
         )
 
-        self.register_buffer_or_parameter(
-            "particles", torch.as_tensor(particles, **factory_kwargs)
-        )
-        self.register_buffer_or_parameter(
-            "energy", torch.as_tensor(energy, **factory_kwargs)
-        )
+        self.register_buffer_or_parameter("particles", particles)
+        self.register_buffer_or_parameter("energy", energy)
         self.register_buffer_or_parameter(
             "particle_charges",
-            (
-                torch.as_tensor(particle_charges, **factory_kwargs)
-                if particle_charges is not None
-                else torch.full(
-                    (particles.shape[-2],),
-                    self.species.charge_coulomb,
-                    **factory_kwargs,
-                )
+            particle_charges
+            or torch.full(
+                (particles.shape[-2],),
+                self.species.charge_coulomb,
+                device=particles.device,
+                dtype=particles.dtype,
             ),
         )
         self.register_buffer_or_parameter(
             "survival_probabilities",
-            (
-                torch.as_tensor(survival_probabilities, **factory_kwargs)
-                if survival_probabilities is not None
-                else torch.ones(particles.shape[-2], **factory_kwargs)
+            survival_probabilities
+            or torch.ones(
+                particles.shape[-2], device=particles.device, dtype=particles.dtype
             ),
         )
         self.register_buffer_or_parameter(
-            "s", torch.as_tensor(s if s is not None else 0.0, **factory_kwargs)
+            "s", s or torch.tensor(0.0, device=particles.device, dtype=particles.dtype)
         )
 
     @classmethod
@@ -139,8 +119,6 @@ class ParticleBeam(Beam):
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles.
@@ -170,38 +148,8 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
         :return: ParticleBeam with random particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cov_xpx,
-                cov_ypy,
-                cov_taup,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
-        factory_kwargs = {"device": device, "dtype": dtype}
-
         # Set default values without function call in function signature
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
         mu_px = mu_px if mu_px is not None else torch.tensor(0.0, **factory_kwargs)
