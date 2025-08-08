@@ -78,7 +78,8 @@ class Quadrupole(Element):
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt",
+            torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs),
         )
 
         self.num_steps = num_steps
@@ -87,53 +88,66 @@ class Quadrupole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        R = base_rmatrix(
-            length=self.length,
-            k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
-        )
+        if self._cached_first_order_transfer_map is None:
+            R = base_rmatrix(
+                length=self.length,
+                k1=self.k1,
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                species=species,
+                tilt=self.tilt,
+                energy=energy,
+            )
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+            if torch.any(self.misalignment != 0):
+                R_entry, R_exit = misalignment_matrix(self.misalignment)
+                R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+
+            self._cached_first_order_transfer_map = R
+
+        return self._cached_first_order_transfer_map
 
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        T = base_ttensor(
-            length=self.length,
-            k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            tilt=self.tilt,
-            energy=energy,
-            species=species,
-        )
-
-        # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = base_rmatrix(
-            length=self.length,
-            k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            species=species,
-            tilt=self.tilt,
-            energy=energy,
-        )
-
-        # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        if self._cached_second_order_transfer_map is None:
+            T = base_ttensor(
+                length=self.length,
+                k1=self.k1,
+                k2=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                tilt=self.tilt,
+                energy=energy,
+                species=species,
             )
 
-        return T
+            # Fill the first-order transfer map into the second-order transfer map
+            T[..., :, 6, :] = base_rmatrix(
+                length=self.length,
+                k1=self.k1,
+                hx=torch.tensor(
+                    0.0, device=self.length.device, dtype=self.length.dtype
+                ),
+                species=species,
+                tilt=self.tilt,
+                energy=energy,
+            )
+
+            # Apply misalignments to the entire second-order transfer map
+            if not torch.all(self.misalignment == 0):
+                R_entry, R_exit = misalignment_matrix(self.misalignment)
+                T = torch.einsum(
+                    "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+                )
+
+            self._cached_second_order_transfer_map = T
+
+        return self._cached_second_order_transfer_map
 
     def track(self, incoming: Beam) -> Beam:
         """
