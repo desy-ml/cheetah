@@ -142,6 +142,7 @@
 ### 🐆 Other
 
 - Temporarily limit `torch` dependency to `2.6` or lower to avoid `abort trap: 6` error with `2.7` (at least on macOS) (see #419) (@jank324)
+- Automate publishing to PyPI and creation of GitHub releases (see #423) (@jank324)
 
 ### 🌟 First Time Contributors
 
