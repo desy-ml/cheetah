@@ -475,10 +475,11 @@ class Segment(Element):
             if len(continuous_skippable_elements) > 0:
                 todos.append(Segment(elements=continuous_skippable_elements))
 
+            beam = incoming.clone()
             for todo in todos:
-                incoming = todo.track(incoming)
+                beam = todo.track(beam, inplace=True)
 
-            return incoming
+            return beam
 
     def clone(self) -> "Segment":
         return Segment(
