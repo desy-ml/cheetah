@@ -176,6 +176,7 @@ class Element(ABC, nn.Module):
                 survival_probabilities=incoming.survival_probabilities,
                 s=new_s,
                 species=incoming.species.clone(),
+                _does_allow_parameter_registration=False,
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
@@ -210,6 +211,7 @@ class Element(ABC, nn.Module):
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
             species=incoming.species,
+            _does_allow_parameter_registration=False,
         )
 
     def forward(self, incoming: Beam) -> Beam:
