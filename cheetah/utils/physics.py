@@ -13,7 +13,7 @@ def compute_relativistic_factors(
     :return: gamma, igamma2, beta.
     """
     gamma = energy / particle_mass_eV
-    igamma2 = torch.where(gamma == 0.0, 0.0, 1 / gamma**2)
+    igamma2 = 1 / gamma**2  # Division by zero not handled because not physical
     beta = torch.sqrt(1 - igamma2)
 
     return gamma, igamma2, beta
