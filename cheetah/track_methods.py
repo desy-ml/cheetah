@@ -360,5 +360,3 @@ def misalignment_matrix(
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
     return R_entry, R_exit
-    return R_entry, R_exit
-    return R_entry, R_exit
