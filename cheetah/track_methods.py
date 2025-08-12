@@ -89,10 +89,11 @@ def base_rmatrix(
     # rotation needs to be applied accross all vector dimensions. The torch.where is
     # here to improve numerical stability for the vector elements where no rotation
     # needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0))):
+    needs_rotation = (tilt != 0) & ((hx != 0) | (k1 != 0))
+    if torch.any(needs_rotation):
         rotation = rotation_matrix(tilt)
         R = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
+            needs_rotation.unsqueeze(-1).unsqueeze(-1),
             rotation.transpose(-1, -2) @ R @ rotation,
             R,
         )
