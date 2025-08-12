@@ -60,7 +60,7 @@ def base_rmatrix(
         cx, sx, dx, cy, sy, r56, dx_ibeta2, sx_hx_ibeta2
     )
 
-    R = torch.eye(7, dtype=length.dtype, device=length.device).repeat(*cx.shape, 1, 1)
+    R = torch.eye(7, dtype=cx.dtype, device=cx.device).expand(*cx.shape, 7, 7).clone()
     R[
         ...,
         (0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4),
