@@ -49,9 +49,14 @@ def base_rmatrix(
     kx2_is_not_zero = kx2 != 0
     dx = torch.where(kx2_is_not_zero, hx / kx2 * (1.0 - cx), zero)
     r56 = (
-        torch.where(kx2_is_not_zero, torch.square(hx) * (length - sx) / kx2, zero)
-        - length * igamma2
-    ) * ibeta2
+        torch.addcmul(
+            torch.where(kx2_is_not_zero, torch.square(hx) * (length - sx) / kx2, zero),
+            length,
+            igamma2,
+            value=-1,
+        )
+        * ibeta2
+    )
 
     dx_ibeta2 = dx * ibeta2
     sx_hx_ibeta2 = sx * hx * ibeta2
