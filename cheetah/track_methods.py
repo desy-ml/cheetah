@@ -31,7 +31,7 @@ def base_rmatrix(
     zero = torch.tensor(0.0, device=device, dtype=dtype)
 
     tilt = tilt if tilt is not None else zero
-    energy = energy if energy is not None else zero
+    energy = energy if energy is not None else species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
