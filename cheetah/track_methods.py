@@ -25,13 +25,12 @@ def base_rmatrix(
     :param energy: Beam energy in eV.
     :return: First order transfer map for the element.
     """
-    device = length.device
-    dtype = length.dtype
+    zero = length.new_zeros(())
 
-    zero = torch.tensor(0.0, device=device, dtype=dtype)
-
-    tilt = tilt if tilt is not None else zero
-    energy = energy if energy is not None else species.mass_eV
+    if tilt is None:
+        tilt = zero
+    if energy is None:
+        energy = species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
@@ -49,7 +48,7 @@ def base_rmatrix(
     r56 = r56 - length / beta**2 * igamma2
     cx, sx, dx, cy, sy, r56 = torch.broadcast_tensors(cx, sx, dx, cy, sy, r56)
 
-    R = torch.eye(7, dtype=dtype, device=device).repeat(*cx.shape, 1, 1)
+    R = torch.eye(7, dtype=length.dtype, device=length.device).repeat(*cx.shape, 1, 1)
     R[
         ...,
         (0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4),
