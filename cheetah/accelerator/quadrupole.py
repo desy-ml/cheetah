@@ -135,17 +135,15 @@ class Quadrupole(Element):
 
         return T
 
-    def track(self, incoming: Beam, inplace: bool = False) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the quadrupole element.
 
         :param incoming: Beam entering the element.
-        :param inplace: If `True`, the incoming beam is modified in place. If `False`,
-            a new beam is returned.
         :return: Beam exiting the element.
         """
         if self.tracking_method == "linear":
-            return super()._track_first_order(incoming, inplace)
+            return super()._track_first_order(incoming)
         elif self.tracking_method == "cheetah":
             warnings.warn(
                 "The 'cheetah' tracking method is deprecated and will be removed in a"
@@ -153,11 +151,11 @@ class Quadrupole(Element):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return super()._track_first_order(incoming, inplace)
+            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
-            return super()._track_second_order(incoming, inplace)
+            return super()._track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
-            return self._track_drift_kick_drift(incoming, inplace)
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
             warnings.warn(
                 "The 'bmadx' tracking method is deprecated and will be removed in a"
@@ -165,7 +163,7 @@ class Quadrupole(Element):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return self._track_drift_kick_drift(incoming, inplace)
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
                 f"Invalid tracking method {self.tracking_method}. For element of"

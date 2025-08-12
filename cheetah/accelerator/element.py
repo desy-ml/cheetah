@@ -134,26 +134,22 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    def track(self, incoming: Beam, inplace: bool = False) -> Beam:
+    def track(self, incoming: Beam) -> Beam:
         """
         Track particles through the element. The input can be a `ParameterBeam` or a
         `ParticleBeam`.
 
         :param incoming: Beam of particles entering the element.
-        :param inplace: If `True`, the incoming beam is modified in place. If `False`,
-            a new beam is returned.
         :return: Beam of particles exiting the element.
         """
-        return self._track_first_order(incoming, inplace)
+        return self._track_first_order(incoming)
 
-    def _track_first_order(self, incoming: Beam, inplace: bool = False) -> Beam:
+    def _track_first_order(self, incoming: Beam) -> Beam:
         """
         Track particles through the element with linear transfer map. The input can be
         a `ParameterBeam` or a `ParticleBeam`.
 
         :param incoming: Beam of particles entering the element.
-        :param inplace: If `True`, the incoming beam is modified in place. If `False`,
-            a new beam is returned.
         :return: Beam of particles exiting the element.
         """
         if isinstance(incoming, ParameterBeam):
@@ -171,23 +167,17 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-
-            if inplace:
-                incoming.particles = incoming.particles @ tm.transpose(-2, -1)
-                incoming.s += self.length
-                return incoming
-            else:
-                new_particles = incoming.particles @ tm.transpose(-2, -1)
-                new_s = incoming.s + self.length
-                return ParticleBeam(
-                    new_particles,
-                    incoming.energy.clone(),
-                    particle_charges=incoming.particle_charges.clone(),
-                    survival_probabilities=incoming.survival_probabilities.clone(),
-                    s=new_s,
-                    species=incoming.species.clone(),
-                    _does_allow_parameter_registration=False,
-                )
+            new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_s = incoming.s + self.length
+            return ParticleBeam(
+                new_particles,
+                incoming.energy,
+                particle_charges=incoming.particle_charges,
+                survival_probabilities=incoming.survival_probabilities,
+                s=new_s,
+                species=incoming.species.clone(),
+                _does_allow_parameter_registration=False,
+            )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
