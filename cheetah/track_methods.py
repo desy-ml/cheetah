@@ -33,20 +33,32 @@ def base_rmatrix(
         energy = species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+    ibeta2 = torch.reciprocal(torch.square(beta))
 
-    kx2 = k1 + hx**2
+    kx2 = k1 + torch.square(hx)
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, zero))
     ky = torch.sqrt(torch.complex(ky2, zero))
-    cx = torch.cos(kx * length).real
-    cy = torch.cos(ky * length).real
-    sx = (torch.sinc(kx * length / torch.pi) * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
-    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
-    r56 = torch.where(kx2 != 0, hx**2 * (length - sx) / kx2 / beta**2, zero)
+    kLx = kx * length
+    kLy = ky * length
+    cx = torch.cos(kLx).real
+    cy = torch.cos(kLy).real
+    sx = (torch.sinc(kLx / torch.pi) * length).real
+    sy = (torch.sinc(kLy / torch.pi) * length).real
 
-    r56 = r56 - length / beta**2 * igamma2
-    cx, sx, dx, cy, sy, r56 = torch.broadcast_tensors(cx, sx, dx, cy, sy, r56)
+    kx2_is_not_zero = kx2 != 0
+    dx = torch.where(kx2_is_not_zero, hx / kx2 * (1.0 - cx), zero)
+    r56 = (
+        torch.where(kx2_is_not_zero, torch.square(hx) * (length - sx) / kx2, zero)
+        - length * igamma2
+    ) * ibeta2
+
+    dx_ibeta2 = dx * ibeta2
+    sx_hx_ibeta2 = sx * hx * ibeta2
+
+    cx, sx, dx, cy, sy, r56, dx_ibeta2, sx_hx_ibeta2 = torch.broadcast_tensors(
+        cx, sx, dx, cy, sy, r56, dx_ibeta2, sx_hx_ibeta2
+    )
 
     R = torch.eye(7, dtype=length.dtype, device=length.device).repeat(*cx.shape, 1, 1)
     R[
@@ -57,16 +69,16 @@ def base_rmatrix(
         [
             cx,
             sx,
-            dx / beta,
+            dx_ibeta2,
             -kx2 * sx,
             cx,
-            sx * hx / beta,
+            sx_hx_ibeta2,
             cy,
             sy,
             -ky2 * sy,
             cy,
-            sx * hx / beta,
-            dx / beta,
+            sx_hx_ibeta2,
+            dx_ibeta2,
             r56,
         ],
         dim=-1,
