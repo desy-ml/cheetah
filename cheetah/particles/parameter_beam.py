@@ -272,27 +272,24 @@ class ParameterBeam(Beam):
         cls, parray, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        mu = torch.ones(7, device=device, dtype=dtype)
-        mu[:6] = torch.as_tensor(
-            parray.rparticles.mean(axis=1), device=device, dtype=dtype
-        )
+        factory_kwargs = {"device": device, "dtype": dtype}
 
-        cov = torch.zeros(7, 7, device=device, dtype=dtype)
-        cov[:6, :6] = torch.as_tensor(
-            np.cov(parray.rparticles), device=device, dtype=dtype
-        )
+        mu = torch.ones(7, **factory_kwargs)
+        mu[:6] = torch.as_tensor(parray.rparticles.mean(axis=1), **factory_kwargs)
 
-        energy = 1e9 * torch.as_tensor(parray.E)
-        total_charge = torch.as_tensor(parray.q_array).sum()
+        cov = torch.zeros(7, 7, **factory_kwargs)
+        cov[:6, :6] = torch.as_tensor(np.cov(parray.rparticles), **factory_kwargs)
+
+        energy = 1e9 * torch.as_tensor(parray.E, **factory_kwargs)
+        total_charge = torch.as_tensor(parray.q_array, **factory_kwargs).sum()
 
         return cls(
             mu=mu,
             cov=cov,
             energy=energy,
             total_charge=total_charge,
-            species=Species("electron"),
-            device=device or torch.get_default_device(),
-            dtype=dtype or torch.get_default_dtype(),
+            species=Species("electron", **factory_kwargs),
+            **factory_kwargs,
         )
 
     @classmethod
