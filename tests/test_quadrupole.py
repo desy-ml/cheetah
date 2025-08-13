@@ -175,10 +175,10 @@ def test_quadrupole_drift_kick_drift_tracking(dtype):
         dtype
     )
     quadrupole = cheetah.Quadrupole(
-        length=torch.tensor(1.0),
-        k1=torch.tensor(10.0),
+        length=torch.tensor(1.0, dtype=dtype),
+        k1=torch.tensor(10.0, dtype=dtype),
         misalignment=torch.tensor([0.01, -0.02], dtype=dtype),
-        tilt=torch.tensor(0.5),
+        tilt=torch.tensor(0.5, dtype=dtype),
         num_steps=10,
         tracking_method="drift_kick_drift",
         dtype=dtype,
