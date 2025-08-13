@@ -231,7 +231,7 @@ class Quadrupole(Element):
         )
 
         # pz is unaffected by tracking, therefore needs to match vector dimensions
-        pz = pz * torch.ones_like(x)
+        pz, _ = torch.broadcast_tensors(pz, x)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates

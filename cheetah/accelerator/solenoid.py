@@ -73,7 +73,7 @@ class Solenoid(Element):
         )
 
         r56 = torch.where(
-            gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
+            gamma != 0, self.length / (1 - gamma**2), self.length.new_zeros(())
         )
 
         R = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))

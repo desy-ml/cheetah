@@ -74,15 +74,16 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        zero = self.length.new_zeros(())
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
-                k1=torch.zeros_like(self.length),
-                hx=torch.zeros_like(self.length),
+                k1=zero,
+                hx=zero,
                 species=species,
-                tilt=torch.zeros_like(self.length),
+                tilt=zero,
                 energy=energy,
             ),
         )
@@ -105,8 +106,8 @@ class Cavity(Element):
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
-        T556 = torch.full_like(self.length, 0.0)
-        T555 = torch.full_like(self.length, 0.0)
+        T556 = self.length.new_zeros(())
+        T555 = self.length.new_zeros(())
 
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
