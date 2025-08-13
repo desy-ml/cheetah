@@ -7,7 +7,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -57,9 +57,6 @@ class Screen(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [pixel_size, misalignment, kde_bandwidth], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
@@ -73,27 +70,23 @@ class Screen(Element):
 
         self.register_buffer_or_parameter(
             "pixel_size",
-            torch.as_tensor(
-                pixel_size if pixel_size is not None else (1e-3, 1e-3), **factory_kwargs
+            (
+                pixel_size
+                if pixel_size is not None
+                else torch.tensor((1e-3, 1e-3), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "kde_bandwidth",
-            torch.as_tensor(
-                (
-                    kde_bandwidth
-                    if kde_bandwidth is not None
-                    else self.pixel_size[0].clone()
-                ),
-                **factory_kwargs,
-            ),
+            kde_bandwidth if kde_bandwidth is not None else self.pixel_size[0].clone(),
         )
 
         self.resolution = resolution

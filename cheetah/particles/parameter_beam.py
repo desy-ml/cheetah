@@ -4,7 +4,6 @@ import torch
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.particles.species import Species
-from cheetah.utils import verify_device_and_dtype
 
 
 class ParameterBeam(Beam):
@@ -17,9 +16,8 @@ class ParameterBeam(Beam):
     :param total_charge: Total charge of the beam in C.
     :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
-    :param device: Device to use for the beam. If "auto", use CUDA if available.
-        Note: Compuationally it would be faster to use CPU for ParameterBeam.
-    :param dtype: Data type of the beam.
+    :param device: Device that the beam creates its tensors on.
+    :param dtype: Data type of the tensors created by the beam.
     """
 
     UNVECTORIZED_NUM_ATTR_DIMS = Beam.UNVECTORIZED_NUM_ATTR_DIMS | {
@@ -38,31 +36,26 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [mu, cov, energy, total_charge, s], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
         self.species = (
-            species.to(**factory_kwargs)
-            if species is not None
-            else Species("electron", **factory_kwargs)
+            species if species is not None else Species("electron", **factory_kwargs)
         )
 
-        self.register_buffer_or_parameter("mu", torch.as_tensor(mu, **factory_kwargs))
-        self.register_buffer_or_parameter("cov", torch.as_tensor(cov, **factory_kwargs))
-        self.register_buffer_or_parameter(
-            "energy", torch.as_tensor(energy, **factory_kwargs)
-        )
+        self.register_buffer_or_parameter("mu", mu)
+        self.register_buffer_or_parameter("cov", cov)
+        self.register_buffer_or_parameter("energy", energy)
         self.register_buffer_or_parameter(
             "total_charge",
-            torch.as_tensor(
-                total_charge if total_charge is not None else 0.0, **factory_kwargs
+            (
+                total_charge
+                if total_charge is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "s", torch.as_tensor(s if s is not None else 0.0, **factory_kwargs)
+            "s", s if s is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
     @classmethod
@@ -90,31 +83,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cov_xpx,
-                cov_ypy,
-                cov_taup,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -231,25 +199,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                beta_x,
-                alpha_x,
-                emittance_x,
-                beta_y,
-                alpha_y,
-                emittance_y,
-                sigma_tau,
-                sigma_p,
-                cov_taup,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature

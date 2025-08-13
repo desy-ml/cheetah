@@ -31,6 +31,8 @@ class ParticleBeam(Beam):
         0.0 means the particle has been lost. Defaults to ones.
     :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
+    :param device: Device that the beam creates its tensors on.
+    :param dtype: Data type of the tensors created by the beam.
     """
 
     PRETTY_DIMENSION_LABELS = {
