@@ -7,7 +7,7 @@ from scipy import constants
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix
+from cheetah.track_methods import drift_matrix
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -74,18 +74,10 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        zero = self.length.new_zeros(())
         return torch.where(
             (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
-            base_rmatrix(
-                length=self.length,
-                k1=zero,
-                hx=zero,
-                species=species,
-                tilt=zero,
-                energy=energy,
-            ),
+            drift_matrix(length=self.length, energy=energy, species=species),
         )
 
     def track(self, incoming: Beam) -> Beam:
