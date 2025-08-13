@@ -43,10 +43,11 @@ def base_rmatrix(
     kLy = ky * length
     cx = torch.cos(kLx).real
     cy = torch.cos(kLy).real
-    sx = (torch.sinc(kLx / torch.pi) * length).real
+    kLxpi = kLx / torch.pi
+    sx = (torch.sinc(kLxpi) * length).real
     sy = (torch.sinc(kLy / torch.pi) * length).real
 
-    r = torch.sinc(0.5 * kLx / torch.pi)
+    r = torch.sinc(0.5 * kLxpi)
     dx = hx * 0.5 * length * length * (r * r).real
 
     kx2_is_not_zero = kx2 != 0
