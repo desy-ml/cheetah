@@ -278,8 +278,6 @@ class Cavity(Element):
             )
 
             r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            g0 = Ei
-            g1 = Ef
             r55_cor = (
                 k
                 * self.length
@@ -287,8 +285,8 @@ class Cavity(Element):
                 * effective_voltage
                 / species.mass_eV
                 * torch.sin(phi)
-                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
-                / (beta1 * g1 * (g0 - g1) ** 2)
+                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                / (beta1 * Ef * (Ei - Ef) ** 2)
             )
             r66 = Ei / Ef * beta0 / beta1
             r65 = (
@@ -331,18 +329,13 @@ class Cavity(Element):
         )
 
         R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
-        R[..., 0, 0] = r11
-        R[..., 0, 1] = r12
-        R[..., 1, 0] = r21
-        R[..., 1, 1] = r22
-        R[..., 2, 2] = r11
-        R[..., 2, 3] = r12
-        R[..., 3, 2] = r21
-        R[..., 3, 3] = r22
-        R[..., 4, 4] = 1 + r55_cor
-        R[..., 4, 5] = r56
-        R[..., 5, 4] = r65
-        R[..., 5, 5] = r66
+        R[
+            ...,
+            (0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5),
+            (0, 1, 0, 1, 2, 3, 2, 3, 4, 5, 4, 5),
+        ] = torch.stack(
+            [r11, r12, r21, r22, r11, r12, r21, r22, 1 + r55_cor, r56, r65, r66], dim=-1
+        )
 
         return R
 
