@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 from cheetah.particles.beam import Beam
@@ -272,13 +271,16 @@ class ParameterBeam(Beam):
         cls, parray, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
 
         mu = torch.ones(7, **factory_kwargs)
         mu[:6] = torch.as_tensor(parray.rparticles.mean(axis=1), **factory_kwargs)
 
         cov = torch.zeros(7, 7, **factory_kwargs)
-        cov[:6, :6] = torch.as_tensor(np.cov(parray.rparticles), **factory_kwargs)
+        cov[:6, :6] = torch.cov(torch.as_tensor(parray.rparticles, **factory_kwargs))
 
         energy = 1e9 * torch.as_tensor(parray.E, **factory_kwargs)
         total_charge = torch.as_tensor(parray.q_array, **factory_kwargs).sum()
@@ -299,18 +301,21 @@ class ParameterBeam(Beam):
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astra import from_astrabeam
 
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
+
         particles, energy, particle_charges = from_astrabeam(path)
 
-        mu = torch.ones(7, device=device, dtype=dtype)
-        mu[:6] = torch.as_tensor(particles.mean(axis=0), device=device, dtype=dtype)
+        mu = torch.ones(7, **factory_kwargs)
+        mu[:6] = torch.as_tensor(particles.mean(axis=0), **factory_kwargs)
 
-        cov = torch.zeros(7, 7, device=device, dtype=dtype)
-        cov[:6, :6] = torch.as_tensor(
-            np.cov(particles.transpose()), device=device, dtype=dtype
-        )
+        cov = torch.zeros(7, 7, **factory_kwargs)
+        cov[:6, :6] = torch.cov(torch.as_tensor(particles, **factory_kwargs).T)
 
-        energy = torch.as_tensor(energy)
-        total_charge = torch.as_tensor(particle_charges).sum()
+        energy = torch.as_tensor(energy, **factory_kwargs)
+        total_charge = torch.as_tensor(particle_charges, **factory_kwargs).sum()
 
         return cls(
             mu=mu,
@@ -318,8 +323,7 @@ class ParameterBeam(Beam):
             energy=energy,
             total_charge=total_charge,
             species=Species("electron"),
-            device=device or torch.get_default_device(),
-            dtype=dtype or torch.get_default_dtype(),
+            **factory_kwargs,
         )
 
     def transformed_to(
