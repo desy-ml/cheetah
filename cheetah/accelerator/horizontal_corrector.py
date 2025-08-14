@@ -46,8 +46,7 @@ class HorizontalCorrector(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": energy.device, "dtype": energy.dtype}
 
         _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
@@ -55,7 +54,7 @@ class HorizontalCorrector(Element):
             self.length.shape, igamma2.shape, self.angle.shape
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
         tm[..., 0, 1] = self.length
         tm[..., 1, 6] = self.angle
         tm[..., 2, 3] = self.length

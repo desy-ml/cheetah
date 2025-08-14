@@ -74,8 +74,10 @@ class CustomTransferMap(Element):
         device = first_element_transfer_map.device
         dtype = first_element_transfer_map.dtype
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(
-            (*incoming_beam.energy.shape, 1, 1)
+        tm = (
+            torch.eye(7, device=device, dtype=dtype)
+            .expand((*incoming_beam.energy.shape, 7, 7))
+            .clone()
         )
         for element in elements:
             tm = (

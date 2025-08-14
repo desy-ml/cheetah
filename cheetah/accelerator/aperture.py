@@ -75,7 +75,7 @@ class Aperture(Element):
         device = self.x_max.device
         dtype = self.x_max.dtype
 
-        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, device=device, dtype=dtype).expand(*energy.shape, 7, 7)
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active

@@ -160,7 +160,7 @@ class Screen(Element):
         device = self.misalignment.device
         dtype = self.misalignment.dtype
 
-        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, device=device, dtype=dtype).expand((*energy.shape, 7, 7))
 
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active

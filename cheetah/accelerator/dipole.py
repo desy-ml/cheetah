@@ -403,8 +403,10 @@ class Dipole(Element):
                 energy=energy,
             )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype).repeat(
-                (*self.length.shape, 1, 1)
+            R = (
+                torch.eye(7, device=device, dtype=dtype)
+                .expand((*self.length.shape, 7, 7))
+                .clone()
             )
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
@@ -448,8 +450,10 @@ class Dipole(Element):
                 energy=energy,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype).repeat(
-                (*self.length.shape, 1, 1)
+            R = (
+                torch.eye(7, device=device, dtype=dtype)
+                .expand((*self.length.shape, 7, 7))
+                .clone()
             )
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
@@ -478,8 +482,7 @@ class Dipole(Element):
 
     def _transfer_map_enter(self) -> torch.Tensor:
         """Linear transfer map for the entrance face of the dipole magnet."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         sec_e = 1.0 / torch.cos(self._e1)
         phi = (
@@ -490,7 +493,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e1) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * torch.tan(self._e1)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
 
@@ -498,8 +501,7 @@ class Dipole(Element):
 
     def _transfer_map_exit(self) -> torch.Tensor:
         """Linear transfer map for the exit face of the dipole magnet."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         sec_e = 1.0 / torch.cos(self._e2)
         phi = (
@@ -510,7 +512,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e2) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * torch.tan(self._e2)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
 
