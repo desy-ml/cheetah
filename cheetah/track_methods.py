@@ -333,8 +333,10 @@ def drift_matrix(
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     length, beta, igamma2 = torch.broadcast_tensors(length, beta, igamma2)
-    tm = torch.eye(7, device=length.device, dtype=length.dtype).repeat(
-        (*length.shape, 1, 1)
+    tm = (
+        torch.eye(7, device=length.device, dtype=length.dtype)
+        .expand((*length.shape, 7, 7))
+        .clone()
     )
     tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
         [length, length, -length / beta**2 * igamma2], dim=-1
@@ -354,7 +356,11 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     cs = torch.cos(angle)
     sn = torch.sin(angle)
 
-    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
+    tm = (
+        torch.eye(7, dtype=angle.dtype, device=angle.device)
+        .expand((*angle.shape, 7, 7))
+        .clone()
+    )
     tm[..., (0, 0, 1, 1, 2, 2, 3, 3), (0, 2, 1, 3, 0, 2, 1, 3)] = torch.stack(
         [cs, sn, cs, sn, -sn, cs, -sn, cs], dim=-1
     )
@@ -371,10 +377,14 @@ def misalignment_matrix(
 
     vector_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
+    R_exit = (
+        torch.eye(7, device=device, dtype=dtype).expand(*vector_shape, 7, 7).clone()
+    )
     R_exit[..., (0, 2), (6, 6)] = misalignment
 
-    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
+    R_entry = (
+        torch.eye(7, device=device, dtype=dtype).expand(*vector_shape, 7, 7).clone()
+    )
     R_entry[..., (0, 2), (6, 6)] = -misalignment
 
     return R_entry, R_exit
