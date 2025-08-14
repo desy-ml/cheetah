@@ -194,8 +194,7 @@ def test_dipole_tilt_sanity(tracking_method):
         tilt=torch.tensor(TILT),
         fringe_integral=torch.tensor(1e3),
         tracking_method=tracking_method,
-        dtype=torch.float64,
-    )
+    ).to(torch.float64)
 
     tilted_dipole_outgoing_beam = tilted_dipole.track(incoming_beam)
 

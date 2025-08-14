@@ -7,12 +7,8 @@ from scipy import constants
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix
-from cheetah.utils import (
-    UniqueNameGenerator,
-    compute_relativistic_factors,
-    verify_device_and_dtype,
-)
+from cheetah.track_methods import drift_matrix
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -47,27 +43,22 @@ class Cavity(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, voltage, phase, frequency], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "voltage",
-            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+            voltage if voltage is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "phase",
-            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+            phase if phase is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "frequency",
-            torch.as_tensor(
-                frequency if frequency is not None else 0.0, **factory_kwargs
-            ),
+            frequency if frequency is not None else torch.tensor(0.0, **factory_kwargs),
         )
 
         self.cavity_type = cavity_type
@@ -83,18 +74,7 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return torch.where(
-            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
-            self._cavity_rmatrix(energy, species),
-            base_rmatrix(
-                length=self.length,
-                k1=torch.zeros_like(self.length),
-                hx=torch.zeros_like(self.length),
-                species=species,
-                tilt=torch.zeros_like(self.length),
-                energy=energy,
-            ),
-        )
+        return self._cavity_rmatrix(energy, species)
 
     def track(self, incoming: Beam) -> Beam:
         gamma0, igamma2, beta0 = compute_relativistic_factors(
@@ -114,8 +94,8 @@ class Cavity(Element):
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
-        T556 = torch.full_like(self.length, 0.0)
-        T555 = torch.full_like(self.length, 0.0)
+        T556 = self.length.new_zeros(())
+        T555 = self.length.new_zeros(())
 
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
@@ -294,8 +274,6 @@ class Cavity(Element):
             )
 
             r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            g0 = Ei
-            g1 = Ef
             r55_cor = (
                 k
                 * self.length
@@ -303,8 +281,8 @@ class Cavity(Element):
                 * effective_voltage
                 / species.mass_eV
                 * torch.sin(phi)
-                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
-                / (beta1 * g1 * (g0 - g1) ** 2)
+                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                / (beta1 * Ef * (Ei - Ef) ** 2)
             )
             r66 = Ei / Ef * beta0 / beta1
             r65 = (
@@ -320,14 +298,18 @@ class Cavity(Element):
                 self.length.shape, f.shape, Ei.shape, Ef.shape
             )
 
-            M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_body = torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
             M_body[..., 0, 1] = self.length * f
             M_body[..., 1, 1] = Ei / Ef
 
-            M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_entry = (
+                torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            )
             M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
 
-            M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_exit = (
+                torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            )
             M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
@@ -346,19 +328,14 @@ class Cavity(Element):
             r11, r12, r21, r22, r55_cor, r56, r65, r66
         )
 
-        R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
-        R[..., 0, 0] = r11
-        R[..., 0, 1] = r12
-        R[..., 1, 0] = r21
-        R[..., 1, 1] = r22
-        R[..., 2, 2] = r11
-        R[..., 2, 3] = r12
-        R[..., 3, 2] = r21
-        R[..., 3, 3] = r22
-        R[..., 4, 4] = 1 + r55_cor
-        R[..., 4, 5] = r56
-        R[..., 5, 4] = r65
-        R[..., 5, 5] = r66
+        R = torch.eye(7, **factory_kwargs).expand((*r11.shape, 7, 7)).clone()
+        R[
+            ...,
+            (0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5),
+            (0, 1, 0, 1, 2, 3, 2, 3, 4, 5, 4, 5),
+        ] = torch.stack(
+            [r11, r12, r21, r22, r11, r12, r21, r22, 1 + r55_cor, r56, r65, r66], dim=-1
+        )
 
         return R
 

@@ -4,7 +4,6 @@ from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import ParticleBeam
-from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
@@ -57,38 +56,36 @@ class SpaceChargeKick(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [effect_length, grid_extent_x, grid_extent_y, grid_extent_tau],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.grid_shape = grid_shape
 
-        self.register_buffer_or_parameter(
-            "effect_length", torch.as_tensor(effect_length, **factory_kwargs)
-        )
+        self.register_buffer_or_parameter("effect_length", effect_length)
         # In multiples of sigma
         self.register_buffer_or_parameter(
             "grid_extent_x",
-            torch.as_tensor(
-                grid_extent_x if grid_extent_x is not None else 3.0, **factory_kwargs
+            (
+                grid_extent_x
+                if grid_extent_x is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_y",
-            torch.as_tensor(
-                grid_extent_y if grid_extent_y is not None else 3.0, **factory_kwargs
+            (
+                grid_extent_y
+                if grid_extent_y is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_tau",
-            torch.as_tensor(
-                grid_extent_tau if grid_extent_tau is not None else 3.0,
-                **factory_kwargs,
+            (
+                grid_extent_tau
+                if grid_extent_tau is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
 
@@ -147,7 +144,7 @@ class SpaceChargeKick(Element):
         # Shape: (..., 8 * num_particles)
         idx_vector = (
             torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
+            .expand(8 * beam.particles.shape[-2], cell_indices.shape[0])
             .T
         )
         idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
@@ -508,7 +505,7 @@ class SpaceChargeKick(Element):
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
             torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
+            .expand(8 * beam.particles.shape[-2], cell_indices.shape[0])
             .T
         )  # Shape: (..., num_particles * 8)
         idx_x = surrounding_indices_flattened[..., 0]

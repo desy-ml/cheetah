@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -76,76 +76,50 @@ class Dipole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
-        device, dtype = verify_device_and_dtype(
-            [
-                length,
-                angle,
-                k1,
-                dipole_e1,
-                dipole_e2,
-                tilt,
-                gap,
-                gap_exit,
-                fringe_integral,
-                fringe_integral_exit,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "angle",
-            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+            angle if angle is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
-            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
+            "k1", k1 if k1 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "_e1",
-            torch.as_tensor(
-                dipole_e1 if dipole_e1 is not None else 0.0, **factory_kwargs
-            ),
+            dipole_e1 if dipole_e1 is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "_e2",
-            torch.as_tensor(
-                dipole_e2 if dipole_e2 is not None else 0.0, **factory_kwargs
-            ),
+            dipole_e2 if dipole_e2 is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "fringe_integral",
-            torch.as_tensor(
-                fringe_integral if fringe_integral is not None else 0.0,
-                **factory_kwargs,
+            (
+                fringe_integral
+                if fringe_integral is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "fringe_integral_exit",
-            torch.as_tensor(
-                (
-                    fringe_integral_exit
-                    if fringe_integral_exit is not None
-                    else self.fringe_integral
-                ),
-                **factory_kwargs,
-            ),
-        )
-
-        self.register_buffer_or_parameter(
-            "gap", torch.as_tensor(gap if gap is not None else 0.0, **factory_kwargs)
-        )
-        self.register_buffer_or_parameter(
-            "gap_exit",
-            torch.as_tensor(
-                gap_exit if gap_exit is not None else self.gap, **factory_kwargs
+            (
+                fringe_integral_exit
+                if fringe_integral_exit is not None
+                else self.fringe_integral
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "gap", gap if gap is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "gap_exit", gap_exit if gap_exit is not None else self.gap
+        )
+        self.register_buffer_or_parameter(
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.fringe_at = fringe_at
@@ -234,6 +208,9 @@ class Dipole(Element):
         # throughout the function makes it even harder, is bad practice and should
         # really be fixed!
 
+        # Zero constant for later use to save on tensor allocations
+        zero = self.tilt.new_zeros(())
+
         # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
@@ -246,15 +223,7 @@ class Dipole(Element):
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
-        x, px, y, py = bmadx.offset_particle_set(
-            torch.zeros_like(self.tilt),
-            torch.zeros_like(self.tilt),
-            self.tilt,
-            x,
-            px,
-            y,
-            py,
-        )
+        x, px, y, py = bmadx.offset_particle_set(zero, zero, self.tilt, x, px, y, py)
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
@@ -262,15 +231,7 @@ class Dipole(Element):
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
-        x, px, y, py = bmadx.offset_particle_unset(
-            torch.zeros_like(self.tilt),
-            torch.zeros_like(self.tilt),
-            self.tilt,
-            x,
-            px,
-            y,
-            py,
-        )
+        x, px, y, py = bmadx.offset_particle_unset(zero, zero, self.tilt, x, px, y, py)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -442,8 +403,10 @@ class Dipole(Element):
                 energy=energy,
             )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype).repeat(
-                (*self.length.shape, 1, 1)
+            R = (
+                torch.eye(7, device=device, dtype=dtype)
+                .expand((*self.length.shape, 7, 7))
+                .clone()
             )
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
@@ -487,8 +450,10 @@ class Dipole(Element):
                 energy=energy,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype).repeat(
-                (*self.length.shape, 1, 1)
+            R = (
+                torch.eye(7, device=device, dtype=dtype)
+                .expand((*self.length.shape, 7, 7))
+                .clone()
             )
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
@@ -517,8 +482,7 @@ class Dipole(Element):
 
     def _transfer_map_enter(self) -> torch.Tensor:
         """Linear transfer map for the entrance face of the dipole magnet."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         sec_e = 1.0 / torch.cos(self._e1)
         phi = (
@@ -529,7 +493,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e1) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * torch.tan(self._e1)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
 
@@ -537,8 +501,7 @@ class Dipole(Element):
 
     def _transfer_map_exit(self) -> torch.Tensor:
         """Linear transfer map for the exit face of the dipole magnet."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         sec_e = 1.0 / torch.cos(self._e2)
         phi = (
@@ -549,7 +512,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e2) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * torch.tan(self._e2)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
 

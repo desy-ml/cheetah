@@ -25,57 +25,83 @@ def base_rmatrix(
     :param energy: Beam energy in eV.
     :return: First order transfer map for the element.
     """
-    device = length.device
-    dtype = length.dtype
+    zero = length.new_zeros(())
 
-    zero = torch.tensor(0.0, device=device, dtype=dtype)
-
-    tilt = tilt if tilt is not None else zero
-    energy = energy if energy is not None else zero
+    if tilt is None:
+        tilt = zero
+    if energy is None:
+        energy = species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
+    ibeta2 = torch.reciprocal(torch.square(beta))
 
-    kx2 = k1 + hx**2
+    kx2 = k1 + hx * hx
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, zero))
     ky = torch.sqrt(torch.complex(ky2, zero))
-    cx = torch.cos(kx * length).real
-    cy = torch.cos(ky * length).real
-    sx = (torch.sinc(kx * length / torch.pi) * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
-    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
-    r56 = torch.where(kx2 != 0, hx**2 * (length - sx) / kx2 / beta**2, zero)
+    kLx = kx * length
+    kLy = ky * length
+    cx = torch.cos(kLx).real
+    cy = torch.cos(kLy).real
+    kLxpi = kLx / torch.pi
+    sx = (torch.sinc(kLxpi) * length).real
+    sy = (torch.sinc(kLy / torch.pi) * length).real
 
-    r56 = r56 - length / beta**2 * igamma2
+    r = torch.sinc(0.5 * kLxpi)
+    dx = hx * 0.5 * length * length * (r * r).real
 
-    vector_shape = torch.broadcast_shapes(
-        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
+    kx2_is_not_zero = kx2 != 0
+    r56 = (
+        torch.addcmul(
+            torch.where(kx2_is_not_zero, torch.square(hx) * (length - sx) / kx2, zero),
+            length,
+            igamma2,
+            value=-1,
+        )
+        * ibeta2
     )
 
-    R = torch.eye(7, dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
-    R[..., 0, 0] = cx
-    R[..., 0, 1] = sx
-    R[..., 0, 5] = dx / beta
-    R[..., 1, 0] = -kx2 * sx
-    R[..., 1, 1] = cx
-    R[..., 1, 5] = sx * hx / beta
-    R[..., 2, 2] = cy
-    R[..., 2, 3] = sy
-    R[..., 3, 2] = -ky2 * sy
-    R[..., 3, 3] = cy
-    R[..., 4, 0] = sx * hx / beta
-    R[..., 4, 1] = dx / beta
-    R[..., 4, 5] = r56
+    dx_ibeta2 = dx * ibeta2
+    sx_hx_ibeta2 = sx * hx * ibeta2
+
+    cx, sx, dx, cy, sy, r56, dx_ibeta2, sx_hx_ibeta2 = torch.broadcast_tensors(
+        cx, sx, dx, cy, sy, r56, dx_ibeta2, sx_hx_ibeta2
+    )
+
+    R = torch.eye(7, dtype=cx.dtype, device=cx.device).expand(*cx.shape, 7, 7).clone()
+    R[
+        ...,
+        (0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4),
+        (0, 1, 5, 0, 1, 5, 2, 3, 2, 3, 0, 1, 5),
+    ] = torch.stack(
+        [
+            cx,
+            sx,
+            dx_ibeta2,
+            -kx2 * sx,
+            cx,
+            sx_hx_ibeta2,
+            cy,
+            sy,
+            -ky2 * sy,
+            cy,
+            sx_hx_ibeta2,
+            dx_ibeta2,
+            r56,
+        ],
+        dim=-1,
+    )
 
     # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
     # if hx != 0 or k1 != 0. Note that the first if is here to improve speed when no
     # rotation needs to be applied accross all vector dimensions. The torch.where is
     # here to improve numerical stability for the vector elements where no rotation
     # needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0))):
+    needs_rotation = (tilt != 0) & ((hx != 0) | (k1 != 0))
+    if torch.any(needs_rotation):
         rotation = rotation_matrix(tilt)
         R = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
+            needs_rotation.unsqueeze(-1).unsqueeze(-1),
             rotation.transpose(-1, -2) @ R @ rotation,
             R,
         )
@@ -306,14 +332,15 @@ def drift_matrix(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    vector_shape = torch.broadcast_shapes(length.shape, igamma2.shape)
-
-    tm = torch.eye(7, device=length.device, dtype=length.dtype).repeat(
-        (*vector_shape, 1, 1)
+    length, beta, igamma2 = torch.broadcast_tensors(length, beta, igamma2)
+    tm = (
+        torch.eye(7, device=length.device, dtype=length.dtype)
+        .expand((*length.shape, 7, 7))
+        .clone()
     )
-    tm[..., 0, 1] = length
-    tm[..., 2, 3] = length
-    tm[..., 4, 5] = -length / beta**2 * igamma2
+    tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
+        [length, length, -length / beta**2 * igamma2], dim=-1
+    )
 
     return tm
 
@@ -329,15 +356,14 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     cs = torch.cos(angle)
     sn = torch.sin(angle)
 
-    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
-    tm[..., 0, 0] = cs
-    tm[..., 0, 2] = sn
-    tm[..., 1, 1] = cs
-    tm[..., 1, 3] = sn
-    tm[..., 2, 0] = -sn
-    tm[..., 2, 2] = cs
-    tm[..., 3, 1] = -sn
-    tm[..., 3, 3] = cs
+    tm = (
+        torch.eye(7, dtype=angle.dtype, device=angle.device)
+        .expand((*angle.shape, 7, 7))
+        .clone()
+    )
+    tm[..., (0, 0, 1, 1, 2, 2, 3, 3), (0, 2, 1, 3, 0, 2, 1, 3)] = torch.stack(
+        [cs, sn, cs, sn, -sn, cs, -sn, cs], dim=-1
+    )
 
     return tm
 
@@ -351,14 +377,14 @@ def misalignment_matrix(
 
     vector_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
-    R_exit[..., 0, 6] = misalignment[..., 0]
-    R_exit[..., 2, 6] = misalignment[..., 1]
+    R_exit = (
+        torch.eye(7, device=device, dtype=dtype).expand(*vector_shape, 7, 7).clone()
+    )
+    R_exit[..., (0, 2), (6, 6)] = misalignment
 
-    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
-    R_entry[..., 0, 6] = -misalignment[..., 0]
-    R_entry[..., 2, 6] = -misalignment[..., 1]
+    R_entry = (
+        torch.eye(7, device=device, dtype=dtype).expand(*vector_shape, 7, 7).clone()
+    )
+    R_entry[..., (0, 2), (6, 6)] = -misalignment
 
-    return R_entry, R_exit
-    return R_entry, R_exit
     return R_entry, R_exit
