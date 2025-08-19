@@ -588,6 +588,22 @@ class ParameterBeam(Beam):
     def cov_taup(self) -> torch.Tensor:
         return self.cov[..., 4, 5]
 
+    @property
+    def cov_xp(self) -> torch.Tensor:
+        return self.cov[..., 0, 5]
+
+    @property
+    def cov_pxp(self) -> torch.Tensor:
+        return self.cov[..., 1, 5]
+
+    @property
+    def cov_yp(self) -> torch.Tensor:
+        return self.cov[..., 2, 5]
+
+    @property
+    def cov_pyp(self) -> torch.Tensor:
+        return self.cov[..., 3, 5]
+
     def clone(self) -> "ParameterBeam":
         return self.__class__(
             mu=self.mu.clone(),
