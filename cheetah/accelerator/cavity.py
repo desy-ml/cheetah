@@ -291,7 +291,7 @@ class Cavity(Element):
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             dE = Ef - Ei
-            f = Ei / dE * torch.log(1 + (dE / Ei))
+            f = Ei / dE * torch.log1p(dE / Ei)
 
             vector_shape = torch.broadcast_shapes(
                 self.length.shape, f.shape, Ei.shape, Ef.shape
