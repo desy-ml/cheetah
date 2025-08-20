@@ -63,8 +63,8 @@ class Cavity(Element):
         self.cavity_type = cavity_type
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.voltage != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.voltage.any()
 
     @property
     def is_skippable(self) -> bool:
@@ -85,9 +85,9 @@ class Cavity(Element):
         tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            outgoing_cov = tm @ incoming.cov @ tm.mT
         else:  # ParticleBeam
-            outgoing_particles = incoming.particles @ tm.transpose(-2, -1)
+            outgoing_particles = incoming.particles @ tm.mT
         delta_energy = (
             self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )

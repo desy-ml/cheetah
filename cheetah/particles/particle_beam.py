@@ -938,11 +938,11 @@ class ParticleBeam(Beam):
 
         phase_space = self.particles[..., :6]
         phase_space = (
-            (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
+            (phase_space.mT - old_mu.unsqueeze(-1))
             / old_sigma.unsqueeze(-1)
             * new_sigma.unsqueeze(-1)
             + new_mu.unsqueeze(-1)
-        ).transpose(-2, -1)
+        ).mT
 
         particles = torch.ones(
             *phase_space.shape[:-1],
@@ -1249,7 +1249,7 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 x_edges,
                 y_edges,
-                clipped_histogram.T / smoothed_histogram.max(),
+                clipped_histogram.mT / smoothed_histogram.max(),
                 **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
             )
         elif style == "contour":
@@ -1258,7 +1258,7 @@ class ParticleBeam(Beam):
             ax.contour(
                 x_centers,
                 y_centers,
-                contour_histogram.T / contour_histogram.max(),
+                contour_histogram.mT / contour_histogram.max(),
                 **{"levels": 3} | (contour_kws or {}),
             )
 

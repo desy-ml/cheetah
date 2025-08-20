@@ -254,8 +254,8 @@ class Quadrupole(Element):
         return self.tracking_method in ["linear", "cheetah"]
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.k1 != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return torch.any(self.k1 != 0)
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
