@@ -50,15 +50,14 @@ class VerticalCorrector(Element):
 
         _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-        vector_shape = torch.broadcast_shapes(
-            self.length.shape, igamma2.shape, self.angle.shape
+        length, igamma2, angle, beta = torch.broadcast_tensors(
+            self.length, igamma2, self.angle, beta
         )
 
-        tm = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
-        tm[..., 0, 1] = self.length
-        tm[..., 2, 3] = self.length
-        tm[..., 3, 6] = self.angle
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
+        tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
+        tm[..., (0, 2, 3, 4), (1, 3, 6, 5)] = torch.stack(
+            [length, length, angle, -length / beta**2 * igamma2], dim=-1
+        )
 
         return tm
 
