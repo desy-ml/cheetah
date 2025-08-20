@@ -128,7 +128,7 @@ class Dipole(Element):
 
     @property
     def hx(self) -> torch.Tensor:
-        return torch.where(self.length == 0.0, 0.0, self.angle / self.length)
+        return self.angle / self.length  # Zero length not caught because not physical
 
     @property
     def dipole_e1(self) -> torch.Tensor:
