@@ -276,7 +276,8 @@ class Dipole(Element):
         :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
-        px_norm = torch.sqrt((1 + pz) ** 2 - py**2)  # For simplicity
+        pz1 = 1 + pz
+        px_norm = torch.sqrt(pz1 * pz1 - py * py)  # For simplicity
         phi1 = torch.arcsin(px / px_norm)
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
@@ -329,12 +330,12 @@ class Dipole(Element):
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu)
         )
 
-        Lc = torch.sqrt(Lcu**2 + Lcv**2)
+        Lc = torch.sqrt(Lcu * Lcu + Lcv * Lcv)
         Lp = Lc / bmadx.sinc(theta_p / 2)
 
         P = p0c.unsqueeze(-1) * (1 + pz)  # In eV
-        E = torch.sqrt(P**2 + mc2**2)  # In eV
-        E0 = torch.sqrt(p0c**2 + mc2**2)  # In eV
+        E = torch.sqrt(P * P + mc2 * mc2)  # In eV
+        E0 = torch.sqrt(p0c * p0c + mc2 * mc2)  # In eV
         beta = P / E
         beta0 = p0c / E0
 

@@ -19,9 +19,9 @@ def cheetah_to_bmad_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute p0c and Bmad z, pz
-    p0c = torch.sqrt(ref_energy**2 - mc2**2)
+    p0c = torch.sqrt(ref_energy * ref_energy - mc2 * mc2)
     energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = torch.sqrt(energy**2 - mc2**2)
+    p = torch.sqrt(energy * energy - mc2 * mc2)
     beta = p / energy
     z = -beta * tau
     pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -44,9 +44,9 @@ def bmad_to_cheetah_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = torch.sqrt(p0c**2 + mc2**2)
+    ref_energy = torch.sqrt(p0c * p0c + mc2 * mc2)
     p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = torch.sqrt(p**2 + mc2**2)
+    energy = torch.sqrt(p * p + mc2 * mc2)
     beta = p / energy
     tau = -z / beta
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -196,8 +196,8 @@ def low_energy_z_correction(
         * p0c.unsqueeze(-1)
         / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
     )
-    beta0 = p0c / torch.sqrt(p0c**2 + mc2**2)
-    e_tot = torch.sqrt(p0c**2 + mc2**2)
+    beta0 = p0c / torch.sqrt(p0c * p0c + mc2 * mc2)
+    e_tot = torch.sqrt(p0c * p0c + mc2 * mc2)
 
     evaluation = mc2 * (beta0.unsqueeze(-1) * pz) ** 2
     dz = ds.unsqueeze(-1) * pz * (
@@ -304,7 +304,7 @@ def particle_rf_time(z, pz, p0c, mc2):
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2 * mc2)
     )
     time = -z / (beta * speed_of_light)
 

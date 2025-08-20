@@ -1138,7 +1138,7 @@ class ParticleBeam(Beam):
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
         zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        p = torch.sqrt(momentum**2 - px**2 - py**2)
+        p = torch.sqrt(momentum * momentum - px * px - py * py)
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px

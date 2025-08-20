@@ -201,9 +201,9 @@ class SpaceChargeKick(Element):
             -0.5 * tau**2 * torch.atan(x * y / (tau * r))
             - 0.5 * y**2 * torch.atan(x * tau / (y * r))
             - 0.5 * x**2 * torch.atan(y * tau / (x * r))
-            + y * tau * torch.asinh(x / torch.sqrt(y**2 + tau**2))
-            + x * tau * torch.asinh(y / torch.sqrt(x**2 + tau**2))
-            + x * y * torch.asinh(tau / torch.sqrt(x**2 + y**2))
+            + y * tau * torch.asinh(x / torch.sqrt(y * y + tau * tau))
+            + x * tau * torch.asinh(y / torch.sqrt(x * x + tau * tau))
+            + x * y * torch.asinh(tau / torch.sqrt(x * x + y * y))
         )
         return integrated_potential
 
