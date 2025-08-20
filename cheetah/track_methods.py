@@ -125,7 +125,7 @@ def base_ttensor(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    kx2 = k1 + hx**2
+    kx2 = k1 + hx * hx
     ky2 = -k1
     kx = torch.sqrt(torch.complex(kx2, zero))
     ky = torch.sqrt(torch.complex(ky2, zero))
@@ -133,9 +133,9 @@ def base_ttensor(
     cy = torch.cos(ky * length).real
     sx = (torch.sinc(kx * length / torch.pi) * length).real
     sy = (torch.sinc(ky * length / torch.pi) * length).real
-    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length**2 / 2.0)
+    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length * length / 2.0)
 
-    d2y = 0.5 * sy**2
+    d2y = 0.5 * sy * sy
     s2y = sy * cy
     c2y = torch.cos(2 * ky * length).real
     fx = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
@@ -144,17 +144,19 @@ def base_ttensor(
     j1 = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
     j2 = torch.where(
         kx2 != 0,
-        (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2**2),
+        (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2 * kx2),
         length**5 / 20.0,
     )
     j3 = torch.where(
         kx2 != 0,
-        (15.0 * length - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx**2 + kx2 * sx**3)
+        (15.0 * length - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx * cx + kx2 * sx**3)
         / (6.0 * kx2**3),
         length**7 / 56.0,
     )
     j_denominator = kx2 - 4 * ky2
-    jc = torch.where(j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length**2)
+    jc = torch.where(
+        j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length * length
+    )
     js = torch.where(
         j_denominator != 0, (cy * sy - sx) / j_denominator, length**3 / 6.0
     )
@@ -311,7 +313,7 @@ def drift_matrix(
         .clone()
     )
     tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
-        [length, length, -length / beta**2 * igamma2], dim=-1
+        [length, length, -length / (beta * beta) * igamma2], dim=-1
     )
 
     return tm

@@ -150,8 +150,10 @@ class Cavity(Element):
                     / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 2)
                 )
                 T555 = (
-                    beta0**2
-                    * k**2
+                    beta0
+                    * beta0
+                    * k
+                    * k
                     * self.length
                     * dgamma
                     / 2.0
@@ -159,8 +161,8 @@ class Cavity(Element):
                         dgamma
                         * (
                             2 * gamma0 * gamma1**3 * (beta0 * beta1**3 - 1)
-                            + gamma0**2
-                            + 3 * gamma1**2
+                            + gamma0 * gamma0
+                            + 3 * gamma1 * gamma1
                             - 2
                         )
                         / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
@@ -239,9 +241,9 @@ class Cavity(Element):
         r55_cor = torch.tensor(0.0, **factory_kwargs)
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = torch.sqrt(1 - 1 / Ei**2)
-        beta1 = torch.sqrt(1 - 1 / Ef**2)
-        r56 = torch.tensor(0.0, **factory_kwargs)
+        beta0 = torch.sqrt(1 - torch.reciprocal(Ei * Ei))
+        beta1 = torch.sqrt(1 - torch.reciprocal(Ef * Ef))
+        r56 = self.length.new_zeros(())
 
         if self.cavity_type == "standing_wave":
             r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
