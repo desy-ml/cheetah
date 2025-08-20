@@ -7,7 +7,6 @@ from scipy import constants
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.track_methods import drift_matrix
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
