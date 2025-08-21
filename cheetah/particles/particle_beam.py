@@ -343,18 +343,39 @@ class ParticleBeam(Beam):
             / num_particles
         )
 
+        # Sample from standard normal distribution with zero mean unit variance
+        particles_standard = MultivariateNormal(
+            torch.zeros(6, **factory_kwargs), torch.eye(6, **factory_kwargs)
+        ).rsample((num_particles,))
+
+        sampled_mu = particles_standard.mean(dim=-2)
+        sampled_cov = torch.cov(particles_standard.T)
+        whitening_matrix = torch.linalg.inv(torch.linalg.cholesky(sampled_cov))
+
         vector_shape = torch.broadcast_shapes(mu.shape[:-1], cov.shape[:-2])
-        mu = mu.expand(*vector_shape, 6)
+        particles_standard = particles_standard.expand(*vector_shape, num_particles, 6)
+        sampled_mu = sampled_mu.expand(*vector_shape, 6).unsqueeze(-2)
+        whitening_matrix = whitening_matrix.expand(*vector_shape, 6, 6)
+
+        mu = mu.expand(*vector_shape, 6).unsqueeze(-2)
         cov = cov.expand(*vector_shape, 6, 6)
-        particles = torch.ones((*vector_shape, num_particles, 7), **factory_kwargs)
-        distributions = [
-            MultivariateNormal(sample_mu, covariance_matrix=sample_cov)
-            for sample_mu, sample_cov in zip(mu.view(-1, 6), cov.view(-1, 6, 6))
-        ]
-        particles[..., :6] = torch.stack(
-            [distribution.rsample((num_particles,)) for distribution in distributions],
-            dim=0,
-        ).view(*vector_shape, num_particles, 6)
+
+        # Compute the cholesky decomposition of target cov
+        chol_cov = torch.linalg.cholesky(cov)
+
+        # Transform the standard normal samples to the target mu and cov
+        particles = (particles_standard - sampled_mu) @ (
+            chol_cov @ whitening_matrix
+        ).transpose(-2, -1) + mu
+
+        # Stack one to the 7-th dimension
+        particles = torch.cat(
+            [
+                particles,
+                torch.ones_like(particles[..., 0], **factory_kwargs).unsqueeze(-1),
+            ],
+            dim=-1,
+        )
 
         return cls(
             particles,
