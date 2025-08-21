@@ -346,19 +346,14 @@ def misalignment_matrix(
     misalignment: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Shift the beam for tracking beam through misaligned elements."""
-    device = misalignment.device
-    dtype = misalignment.dtype
+    factory_kwargs = {"device": misalignment.device, "dtype": misalignment.dtype}
 
     vector_shape = misalignment.shape[:-1]
 
-    R_exit = (
-        torch.eye(7, device=device, dtype=dtype).expand(*vector_shape, 7, 7).clone()
-    )
+    R_exit = torch.eye(7, **factory_kwargs).expand(*vector_shape, 7, 7).clone()
     R_exit[..., (0, 2), (6, 6)] = misalignment
 
-    R_entry = (
-        torch.eye(7, device=device, dtype=dtype).expand(*vector_shape, 7, 7).clone()
-    )
+    R_entry = torch.eye(7, **factory_kwargs).expand(*vector_shape, 7, 7).clone()
     R_entry[..., (0, 2), (6, 6)] = -misalignment
 
     return R_entry, R_exit
