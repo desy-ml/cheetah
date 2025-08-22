@@ -254,7 +254,7 @@ def test_indexing_with_vectorized_incoming_beam():
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=1_000,
         sigma_x=torch.tensor(1e-5),
-        energy=(0.5 + torch.rand((5, 2))) * 154e6,
+        energy=torch.rand((5, 2)) * 154e6,
     )
 
     outgoing = quadrupole.track(incoming)
