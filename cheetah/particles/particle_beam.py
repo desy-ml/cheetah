@@ -13,6 +13,7 @@ from cheetah.particles.species import Species
 from cheetah.utils import (
     elementwise_linspace,
     format_axis_with_prefixed_unit,
+    match_distribution_moments,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
@@ -348,25 +349,8 @@ class ParticleBeam(Beam):
             torch.zeros(6, **factory_kwargs), torch.eye(6, **factory_kwargs)
         ).rsample((num_particles,))
 
-        sampled_mu = particles_standard.mean(dim=-2)
-        sampled_cov = torch.cov(particles_standard.T)
-        whitening_matrix = torch.linalg.inv(torch.linalg.cholesky(sampled_cov))
-
-        vector_shape = torch.broadcast_shapes(mu.shape[:-1], cov.shape[:-2])
-        particles_standard = particles_standard.expand(*vector_shape, num_particles, 6)
-        sampled_mu = sampled_mu.expand(*vector_shape, 6).unsqueeze(-2)
-        whitening_matrix = whitening_matrix.expand(*vector_shape, 6, 6)
-
-        mu = mu.expand(*vector_shape, 6).unsqueeze(-2)
-        cov = cov.expand(*vector_shape, 6, 6)
-
-        # Compute the cholesky decomposition of target cov
-        chol_cov = torch.linalg.cholesky(cov)
-
-        # Transform the standard normal samples to the target mu and cov
-        particles = (particles_standard - sampled_mu) @ (
-            chol_cov @ whitening_matrix
-        ).transpose(-2, -1) + mu
+        # Transform to the desired distribution
+        particles = match_distribution_moments(particles_standard, mu, cov)
 
         # Stack one to the 7-th dimension
         particles = torch.cat(

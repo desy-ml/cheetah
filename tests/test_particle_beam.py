@@ -85,7 +85,7 @@ def test_transform_to():
 
 def test_from_twiss_to_twiss():
     """
-    Test that a `ParameterBeam` created from twiss parameters actually has those
+    Test that a `ParticleBeam` created from twiss parameters has the desired
     parameters.
     """
     beam = cheetah.ParticleBeam.from_twiss(
