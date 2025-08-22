@@ -415,7 +415,8 @@ class Beam(ABC, nn.Module):
 
     @property
     def projected_emittance_x(self) -> torch.Tensor:
-        """Projected emittance of the beam in x direction in m.
+        """
+        Projected emittance of the beam in x direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
         return torch.sqrt(
@@ -427,8 +428,9 @@ class Beam(ABC, nn.Module):
 
     @property
     def emittance_x(self) -> torch.Tensor:
-        """Uncoupled betatron emittance of the beam in x direction in m.
-        This is calculated with the dispersion correction.
+        """
+        Uncoupled betatron emittance of the beam in x direction in m.
+        This is computed with the dispersion correction.
         """
         sigma_p = torch.clamp_min(self.sigma_p, torch.finfo(self.sigma_x.dtype).tiny)
 
@@ -474,8 +476,9 @@ class Beam(ABC, nn.Module):
 
     @property
     def emittance_y(self) -> torch.Tensor:
-        """Uncoupled betatron emittance of the beam in y direction in m.
-        This is calculated with the dispersion correction.
+        """
+        Uncoupled betatron emittance of the beam in y direction in m.
+        This is computed with the dispersion correction.
         """
         sigma_p = torch.clamp_min(self.sigma_p, torch.finfo(self.sigma_y.dtype).tiny)
 
