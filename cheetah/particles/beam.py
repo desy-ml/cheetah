@@ -82,6 +82,10 @@ class Beam(ABC, nn.Module):
         cov_xpx: torch.Tensor | None = None,
         cov_ypy: torch.Tensor | None = None,
         cov_taup: torch.Tensor | None = None,
+        cov_xp: torch.Tensor | None = None,
+        cov_pxp: torch.Tensor | None = None,
+        cov_yp: torch.Tensor | None = None,
+        cov_pyp: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
@@ -109,8 +113,12 @@ class Beam(ABC, nn.Module):
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
         :param cov_xpx: Covariance between x and px.
-        :param cov_ypy: Covariance between y and yp.
+        :param cov_ypy: Covariance between y and py.
         :param cov_taup: Covariance between tau and p.
+        :param cov_xp: Covariance between x and p.
+        :param cov_pxp: Covariance between px and p.
+        :param cov_yp: Covariance between y and p.
+        :param cov_pyp: Covariance between py and p.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
@@ -134,6 +142,10 @@ class Beam(ABC, nn.Module):
         sigma_tau: torch.Tensor | None = None,
         sigma_p: torch.Tensor | None = None,
         cov_taup: torch.Tensor | None = None,
+        dispersion_x: torch.Tensor | None = None,
+        dispersion_px: torch.Tensor | None = None,
+        dispersion_y: torch.Tensor | None = None,
+        dispersion_py: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
@@ -155,6 +167,10 @@ class Beam(ABC, nn.Module):
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
         :param cov_taup: Covariance between tau and p.
+        :param dispersion_x: Dispersion in x direction in meters.
+        :param dispersion_px: Dispersion in px direction, dimensionless.
+        :param dispersion_y: Dispersion in y direction in meters.
+        :param dispersion_py: Dispersion in py direction, dimensionless.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam. Defaults to electron.
