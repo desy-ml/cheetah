@@ -56,7 +56,7 @@ class VerticalCorrector(Element):
 
         tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
         tm[..., (0, 2, 3, 4), (1, 3, 6, 5)] = torch.stack(
-            [length, length, angle, -length / beta * beta * igamma2], dim=-1
+            [length, length, angle, -length / (beta * beta) * igamma2], dim=-1
         )
 
         return tm
