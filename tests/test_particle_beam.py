@@ -100,7 +100,7 @@ def test_from_twiss_to_twiss():
         beta_y=torch.tensor(5.91253676811640982),
         alpha_y=torch.tensor(1.0),  # TODO: set realistic value
         emittance_y=torch.tensor(3.497810737006068e-09),
-        disp_x=torch.tensor(2e-2),
+        dispersion_x=torch.tensor(2e-2),
         sigma_p=torch.tensor(1e-3),
         energy=torch.tensor(6e6),
     )

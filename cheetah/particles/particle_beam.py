@@ -412,10 +412,10 @@ class ParticleBeam(Beam):
         beta_y: torch.Tensor | None = None,
         alpha_y: torch.Tensor | None = None,
         emittance_y: torch.Tensor | None = None,
-        disp_x: torch.Tensor | None = None,
-        disp_px: torch.Tensor | None = None,
-        disp_y: torch.Tensor | None = None,
-        disp_py: torch.Tensor | None = None,
+        dispersion_x: torch.Tensor | None = None,
+        dispersion_px: torch.Tensor | None = None,
+        dispersion_y: torch.Tensor | None = None,
+        dispersion_py: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         sigma_tau: torch.Tensor | None = None,
         sigma_p: torch.Tensor | None = None,
@@ -435,10 +435,10 @@ class ParticleBeam(Beam):
                 beta_y,
                 alpha_y,
                 emittance_y,
-                disp_x,
-                disp_px,
-                disp_y,
-                disp_py,
+                dispersion_x,
+                dispersion_px,
+                dispersion_y,
+                dispersion_py,
                 energy,
                 sigma_tau,
                 sigma_p,
@@ -470,13 +470,25 @@ class ParticleBeam(Beam):
             if emittance_y is not None
             else torch.tensor(7.1971891e-13, **factory_kwargs)
         )
-        disp_x = disp_x if disp_x is not None else torch.tensor(0.0, **factory_kwargs)
-        disp_px = (
-            disp_px if disp_px is not None else torch.tensor(0.0, **factory_kwargs)
+        dispersion_x = (
+            dispersion_x
+            if dispersion_x is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
-        disp_y = disp_y if disp_y is not None else torch.tensor(0.0, **factory_kwargs)
-        disp_py = (
-            disp_py if disp_py is not None else torch.tensor(0.0, **factory_kwargs)
+        dispersion_px = (
+            dispersion_px
+            if dispersion_px is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        dispersion_y = (
+            dispersion_y
+            if dispersion_y is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        dispersion_py = (
+            dispersion_py
+            if dispersion_py is not None
+            else torch.tensor(0.0, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         sigma_tau = (
@@ -489,21 +501,21 @@ class ParticleBeam(Beam):
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-        sigma_x = torch.sqrt(beta_x * emittance_x + disp_x**2 * sigma_p**2)
+        sigma_x = torch.sqrt(beta_x * emittance_x + dispersion_x**2 * sigma_p**2)
         sigma_px = torch.sqrt(
-            emittance_x * (1 + alpha_x**2) / beta_x + disp_px**2 * sigma_p**2
+            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
         )
-        sigma_y = torch.sqrt(beta_y * emittance_y + disp_y**2 * sigma_p**2)
+        sigma_y = torch.sqrt(beta_y * emittance_y + dispersion_y**2 * sigma_p**2)
         sigma_py = torch.sqrt(
-            emittance_y * (1 + alpha_y**2) / beta_y + disp_py**2 * sigma_p**2
+            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
         )
-        cov_xpx = -emittance_x * alpha_x + disp_x * disp_px * sigma_p**2
-        cov_ypy = -emittance_y * alpha_y + disp_y * disp_py * sigma_p**2
+        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
+        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
 
-        cov_xp = disp_x * sigma_p**2
-        cov_pxp = disp_px * sigma_p**2
-        cov_yp = disp_y * sigma_p**2
-        cov_pyp = disp_py * sigma_p**2
+        cov_xp = dispersion_x * sigma_p**2
+        cov_pxp = dispersion_px * sigma_p**2
+        cov_yp = dispersion_y * sigma_p**2
+        cov_pyp = dispersion_py * sigma_p**2
 
         return cls.from_parameters(
             num_particles=num_particles,
