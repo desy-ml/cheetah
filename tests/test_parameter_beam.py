@@ -122,8 +122,8 @@ def test_from_twiss_dtype():
     assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982)
     assert np.isclose(beam.alpha_y.cpu().numpy(), 2e-7)
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
-    assert np.isclose(beam.disp_x.cpu().numpy(), 2e-2)
-    assert np.isclose(beam.disp_px.cpu().numpy(), 1e-3)
+    assert np.isclose(beam.dispersion_x.cpu().numpy(), 2e-2)
+    assert np.isclose(beam.dispersion_px.cpu().numpy(), 1e-3)
     assert np.isclose(beam.sigma_p.cpu().numpy(), 1e-3)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 

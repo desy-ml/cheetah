@@ -112,7 +112,7 @@ def test_from_twiss_to_twiss():
     assert np.isclose(beam.alpha_y.cpu().numpy(), 1.0, rtol=1e-3)
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09, rtol=1e-3)
     assert np.isclose(beam.sigma_p.cpu().numpy(), 1e-3, rtol=1e-3)
-    assert np.isclose(beam.disp_x.cpu().numpy(), 2e-2, rtol=1e-2)
+    assert np.isclose(beam.dispersion_x.cpu().numpy(), 2e-2, rtol=1e-2)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 

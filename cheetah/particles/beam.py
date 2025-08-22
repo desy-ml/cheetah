@@ -511,7 +511,7 @@ class Beam(ABC, nn.Module):
         )
 
     @property
-    def disp_x(self) -> torch.Tensor:
+    def dispersion_x(self) -> torch.Tensor:
         """Dispersion of the beam in x direction in m."""
         return (
             self.cov_xp
@@ -519,7 +519,7 @@ class Beam(ABC, nn.Module):
         )
 
     @property
-    def disp_px(self) -> torch.Tensor:
+    def dispersion_px(self) -> torch.Tensor:
         """Dispersion of the beam in px direction, dimensionless."""
         return (
             self.cov_pxp
@@ -527,7 +527,7 @@ class Beam(ABC, nn.Module):
         )
 
     @property
-    def disp_y(self) -> torch.Tensor:
+    def dispersion_y(self) -> torch.Tensor:
         """Dispersion of the beam in y direction in m."""
         return (
             self.cov_yp
@@ -535,7 +535,7 @@ class Beam(ABC, nn.Module):
         )
 
     @property
-    def disp_py(self) -> torch.Tensor:
+    def dispersion_py(self) -> torch.Tensor:
         """Dispersion of the beam in py direction, dimensionless."""
         return (
             self.cov_pyp
