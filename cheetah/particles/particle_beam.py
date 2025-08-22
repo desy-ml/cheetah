@@ -13,6 +13,7 @@ from cheetah.particles.species import Species
 from cheetah.utils import (
     elementwise_linspace,
     format_axis_with_prefixed_unit,
+    match_distribution_moments,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
@@ -343,18 +344,22 @@ class ParticleBeam(Beam):
             / num_particles
         )
 
-        vector_shape = torch.broadcast_shapes(mu.shape[:-1], cov.shape[:-2])
-        mu = mu.expand(*vector_shape, 6)
-        cov = cov.expand(*vector_shape, 6, 6)
-        particles = torch.ones((*vector_shape, num_particles, 7), **factory_kwargs)
-        distributions = [
-            MultivariateNormal(sample_mu, covariance_matrix=sample_cov)
-            for sample_mu, sample_cov in zip(mu.view(-1, 6), cov.view(-1, 6, 6))
-        ]
-        particles[..., :6] = torch.stack(
-            [distribution.rsample((num_particles,)) for distribution in distributions],
-            dim=0,
-        ).view(*vector_shape, num_particles, 6)
+        # Sample from standard normal distribution with zero mean unit variance
+        particles_standard = MultivariateNormal(
+            torch.zeros(6, **factory_kwargs), torch.eye(6, **factory_kwargs)
+        ).rsample((num_particles,))
+
+        # Transform to the desired distribution
+        particles = match_distribution_moments(particles_standard, mu, cov)
+
+        # Stack one to the 7-th dimension
+        particles = torch.cat(
+            [
+                particles,
+                torch.ones_like(particles[..., 0], **factory_kwargs).unsqueeze(-1),
+            ],
+            dim=-1,
+        )
 
         return cls(
             particles,

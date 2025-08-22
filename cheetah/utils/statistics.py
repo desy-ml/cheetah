@@ -85,3 +85,54 @@ def unbiased_weighted_covariance_matrix(
         centered_inputs,
     ) / correction_factor.unsqueeze(-1).unsqueeze(-1)
     return covariance
+
+
+def match_distribution_moments(
+    samples: torch.Tensor,
+    target_mu: torch.Tensor,
+    target_cov: torch.Tensor,
+    weights: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """
+    Match the first and second moments of a sample distribution to a target
+    distribution.
+
+    :param samples: Input samples of shape (..., n_samples, n_features).
+    :param weights: Weights for the samples of shape (..., n_samples).
+    :param target_mu: Mean of the target distribution. (..., n_features)
+    :param target_cov: Covariance of the target distribution.
+        (..., n_features, n_features)
+    :return: Transformed samples.
+    """
+    n_samples = samples.shape[-2]
+    n_features = samples.shape[-1]
+
+    # Compute the inverse square root of the sample covariance
+    if weights is None:
+        sample_cov = torch.cov(
+            samples.T,
+        )
+        sample_mu = samples.mean(dim=-2)
+    else:
+        sample_cov = unbiased_weighted_covariance_matrix(samples, weights)
+        sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(dim=-1)
+    inv_sqrt_sample_cov = torch.linalg.inv(torch.linalg.cholesky(sample_cov))
+
+    vector_shape = torch.broadcast_shapes(target_mu.shape[:-1], target_cov.shape[:-2])
+    sample_mu = sample_mu.expand(*vector_shape, n_features).unsqueeze(-2)
+    inv_sqrt_sample_cov = inv_sqrt_sample_cov.expand(
+        *vector_shape, n_features, n_features
+    )
+
+    mu = target_mu.expand(*vector_shape, n_features).unsqueeze(-2)
+    cov = target_cov.expand(*vector_shape, n_features, n_features)
+
+    # Compute the Cholesky decomposition
+    chol_cov = torch.linalg.cholesky(cov)
+
+    transformed_samples = samples.expand(*vector_shape, n_samples, n_features)
+    transformed_samples = (transformed_samples - sample_mu) @ (
+        chol_cov @ inv_sqrt_sample_cov
+    ).transpose(-2, -1) + mu
+
+    return transformed_samples
