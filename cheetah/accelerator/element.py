@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
@@ -31,6 +32,12 @@ class Element(ABC, nn.Module):
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
+
+        # Must be done before setting any properties that are also in defining_features
+        self.register_buffer("_cached_first_order_transfer_map", None, persistent=False)
+        self.register_buffer(
+            "_cached_second_order_transfer_map", None, persistent=False
+        )
 
         self.name = name if name is not None else generate_unique_name()
         if not self.is_name_sanitized():
@@ -256,8 +263,15 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in self.defining_features:
+            self._cached_first_order_transfer_map = None
+            self._cached_second_order_transfer_map = None
+
+        return super().__setattr__(name, value)
+
     def register_buffer_or_parameter(
-        self, name: str, value: torch.Tensor | nn.Parameter
+        self, name: str, value: torch.Tensor | nn.Parameter, persistent: bool = True
     ) -> None:
         """
         Register a buffer or parameter with the given name and value. Automatically
@@ -267,11 +281,13 @@ class Element(ABC, nn.Module):
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
         :param default: Default value of the buffer.
+        :param persistent: Whether the buffer or parameter should be persistent. NOTE:
+            This is only relevant for buffers, as parameters are always persistent.
         """
         if isinstance(value, nn.Parameter):
             self.register_parameter(name, value)
         else:
-            self.register_buffer(name, value)
+            self.register_buffer(name, value, persistent)
 
     @property
     def defining_features(self) -> list[str]:
