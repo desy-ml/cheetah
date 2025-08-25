@@ -60,16 +60,18 @@ class Segment(Element):
     @property
     def element_names(self) -> list[str]:
         """
-        List of names of the elements in the segment.
-        :return: List of names of the elements in the segment.
+        Ordered list of names of the elements in the segment.
+        
+        :return: Ordered list of names of the elements in the segment.
         """
         return [element.name for element in self.elements]
 
-    def get_element_index(self, element_name: str) -> int:
+    def element_index(self, element_name: str) -> int:
         """
-        Get the index of an element in the segment by its name.
+        Get the index of the first occurrence of an element in the segment by its name.
+        
         :param element_name: Name of the element to get the index for.
-        :return: Index of the element in the segment.
+        :return: Index of the first element in the segment with the passed name.
         """
         try:
             return self.element_names.index(element_name)
