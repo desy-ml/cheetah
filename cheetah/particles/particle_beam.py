@@ -123,6 +123,10 @@ class ParticleBeam(Beam):
         cov_xpx: torch.Tensor | None = None,
         cov_ypy: torch.Tensor | None = None,
         cov_taup: torch.Tensor | None = None,
+        cov_xp: torch.Tensor | None = None,
+        cov_pxp: torch.Tensor | None = None,
+        cov_yp: torch.Tensor | None = None,
+        cov_pyp: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
@@ -154,6 +158,10 @@ class ParticleBeam(Beam):
         :param cov_xpx: Correlation between x and px.
         :param cov_ypy: Correlation between y and py.
         :param cov_taup: Correlation between s and p.
+        :param cov_xp: Correlation between x and p.
+        :param cov_pxp: Correlation between px and p.
+        :param cov_yp: Correlation between y and p.
+        :param cov_pyp: Correlation between py and p.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
@@ -198,6 +206,14 @@ class ParticleBeam(Beam):
         cov_taup = (
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
+        cov_xp = cov_xp if cov_xp is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_pxp = (
+            cov_pxp if cov_pxp is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_yp = cov_yp if cov_yp is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_pyp = (
+            cov_pyp if cov_pyp is not None else torch.tensor(0.0, **factory_kwargs)
+        )
 
         mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p = torch.broadcast_tensors(
             mu_x, mu_px, mu_y, mu_py, mu_tau, mu_p
@@ -214,6 +230,10 @@ class ParticleBeam(Beam):
             sigma_tau,
             sigma_p,
             cov_taup,
+            cov_xp,
+            cov_pxp,
+            cov_yp,
+            cov_pyp,
         ) = torch.broadcast_tensors(
             sigma_x,
             sigma_px,
@@ -224,6 +244,10 @@ class ParticleBeam(Beam):
             sigma_tau,
             sigma_p,
             cov_taup,
+            cov_xp,
+            cov_pxp,
+            cov_yp,
+            cov_pyp,
         )
         cov = torch.zeros(*sigma_x.shape, 6, 6, **factory_kwargs)
         cov[..., 0, 0] = sigma_x**2
@@ -238,6 +262,14 @@ class ParticleBeam(Beam):
         cov[..., 4, 5] = cov_taup
         cov[..., 5, 4] = cov_taup
         cov[..., 5, 5] = sigma_p**2
+        cov[..., 0, 5] = cov_xp
+        cov[..., 5, 0] = cov_xp
+        cov[..., 1, 5] = cov_pxp
+        cov[..., 5, 1] = cov_pxp
+        cov[..., 2, 5] = cov_yp
+        cov[..., 5, 2] = cov_yp
+        cov[..., 3, 5] = cov_pyp
+        cov[..., 5, 3] = cov_pyp
 
         return cls.from_distribution(
             mu=mean,
@@ -326,6 +358,10 @@ class ParticleBeam(Beam):
         beta_y: torch.Tensor | None = None,
         alpha_y: torch.Tensor | None = None,
         emittance_y: torch.Tensor | None = None,
+        dispersion_x: torch.Tensor | None = None,
+        dispersion_px: torch.Tensor | None = None,
+        dispersion_y: torch.Tensor | None = None,
+        dispersion_py: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         sigma_tau: torch.Tensor | None = None,
         sigma_p: torch.Tensor | None = None,
@@ -357,6 +393,26 @@ class ParticleBeam(Beam):
             if emittance_y is not None
             else torch.tensor(7.1971891e-13, **factory_kwargs)
         )
+        dispersion_x = (
+            dispersion_x
+            if dispersion_x is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        dispersion_px = (
+            dispersion_px
+            if dispersion_px is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        dispersion_y = (
+            dispersion_y
+            if dispersion_y is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
+        dispersion_py = (
+            dispersion_py
+            if dispersion_py is not None
+            else torch.tensor(0.0, **factory_kwargs)
+        )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         sigma_tau = (
             sigma_tau if sigma_tau is not None else torch.tensor(1e-6, **factory_kwargs)
@@ -368,12 +424,21 @@ class ParticleBeam(Beam):
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-        sigma_x = torch.sqrt(beta_x * emittance_x)
-        sigma_px = torch.sqrt(emittance_x * (1 + alpha_x**2) / beta_x)
-        sigma_y = torch.sqrt(beta_y * emittance_y)
-        sigma_py = torch.sqrt(emittance_y * (1 + alpha_y**2) / beta_y)
-        cov_xpx = -emittance_x * alpha_x
-        cov_ypy = -emittance_y * alpha_y
+        sigma_x = torch.sqrt(beta_x * emittance_x + dispersion_x**2 * sigma_p**2)
+        sigma_px = torch.sqrt(
+            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
+        )
+        sigma_y = torch.sqrt(beta_y * emittance_y + dispersion_y**2 * sigma_p**2)
+        sigma_py = torch.sqrt(
+            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
+        )
+        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
+        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
+
+        cov_xp = dispersion_x * sigma_p**2
+        cov_pxp = dispersion_px * sigma_p**2
+        cov_yp = dispersion_y * sigma_p**2
+        cov_pyp = dispersion_py * sigma_p**2
 
         return cls.from_parameters(
             num_particles=num_particles,
@@ -391,6 +456,10 @@ class ParticleBeam(Beam):
             cov_taup=cov_taup,
             cov_xpx=cov_xpx,
             cov_ypy=cov_ypy,
+            cov_xp=cov_xp,
+            cov_pxp=cov_pxp,
+            cov_yp=cov_yp,
+            cov_pyp=cov_pyp,
             total_charge=total_charge,
             s=s,
             species=species,
@@ -1655,6 +1724,46 @@ class ParticleBeam(Beam):
         """
         return unbiased_weighted_covariance(
             self.tau, self.p, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_xp(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between x and p. :math:`\sigma_{x, p}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.x, self.p, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_pxp(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between px and p. :math:`\sigma_{px, p}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.px, self.p, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_yp(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between y and p. :math:`\sigma_{y, p}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.y, self.p, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_pyp(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between py and p. :math:`\sigma_{py, p}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.py, self.p, weights=self.survival_probabilities, dim=-1
         )
 
     @property

@@ -109,6 +109,9 @@ def test_from_twiss_dtype():
         beta_y=torch.tensor(5.91253676811640982),
         alpha_y=torch.tensor(2e-7),
         emittance_y=torch.tensor(3.497810737006068e-09),
+        dispersion_x=torch.tensor(2e-2),
+        dispersion_px=torch.tensor(1e-3),
+        sigma_p=torch.tensor(1e-3),
         energy=torch.tensor(6e6),
         dtype=torch.float64,
     )
@@ -119,6 +122,9 @@ def test_from_twiss_dtype():
     assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982)
     assert np.isclose(beam.alpha_y.cpu().numpy(), 2e-7)
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
+    assert np.isclose(beam.dispersion_x.cpu().numpy(), 2e-2)
+    assert np.isclose(beam.dispersion_px.cpu().numpy(), 1e-3)
+    assert np.isclose(beam.sigma_p.cpu().numpy(), 1e-3)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
     assert beam.mu.dtype == torch.float64

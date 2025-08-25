@@ -11,6 +11,7 @@
 - Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu, @jank324, @Hespe)
 - `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
 - Documented PyTorch `compile` for improved speed (see #390) (@ax3l)
+- Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
 
 ### 🐛 Bug fixes
 
@@ -21,6 +22,7 @@
 
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
 - Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
+- Fix false dtype in `Screen` documentation (see #544) (@jp-ga)
 
 ### 🌟 First Time Contributors
 

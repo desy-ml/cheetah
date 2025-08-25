@@ -17,7 +17,7 @@ class Screen(Element):
     Diagnostic screen in a particle accelerator.
 
     :param resolution: Resolution of the camera sensor looking at the screen given as
-        Tensor `(width, height)` in pixels.
+        tuple or list `(width, height)` in pixels.
     :param pixel_size: Size of a pixel on the screen in meters given as a Tensor
         `(width, height)`.
     :param binning: Binning used by the camera.
