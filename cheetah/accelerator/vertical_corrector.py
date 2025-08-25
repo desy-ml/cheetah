@@ -4,11 +4,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Species
-from cheetah.utils import (
-    UniqueNameGenerator,
-    compute_relativistic_factors,
-    verify_device_and_dtype,
-)
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -38,34 +34,30 @@ class VerticalCorrector(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "angle",
-            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+            "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": energy.device, "dtype": energy.dtype}
 
         _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-        vector_shape = torch.broadcast_shapes(
-            self.length.shape, igamma2.shape, self.angle.shape
+        length, igamma2, angle, beta = torch.broadcast_tensors(
+            self.length, igamma2, self.angle, beta
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
-        tm[..., 0, 1] = self.length
-        tm[..., 2, 3] = self.length
-        tm[..., 3, 6] = self.angle
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
+        tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
+        tm[..., (0, 2, 3, 4), (1, 3, 6, 5)] = torch.stack(
+            [length, length, angle, -length / (beta * beta) * igamma2], dim=-1
+        )
 
         return tm
 
@@ -74,8 +66,8 @@ class VerticalCorrector(Element):
         return True
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.angle != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.angle.any()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

@@ -48,8 +48,8 @@ class BPM(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
-            (*energy.shape, 1, 1)
+        return torch.eye(7, device=energy.device, dtype=energy.dtype).expand(
+            (*energy.shape, 7, 7)
         )
 
     def track(self, incoming: Beam) -> Beam:

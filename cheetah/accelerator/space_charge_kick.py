@@ -4,7 +4,6 @@ from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import ParticleBeam
-from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
@@ -57,38 +56,36 @@ class SpaceChargeKick(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [effect_length, grid_extent_x, grid_extent_y, grid_extent_tau],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.grid_shape = grid_shape
 
-        self.register_buffer_or_parameter(
-            "effect_length", torch.as_tensor(effect_length, **factory_kwargs)
-        )
+        self.register_buffer_or_parameter("effect_length", effect_length)
         # In multiples of sigma
         self.register_buffer_or_parameter(
             "grid_extent_x",
-            torch.as_tensor(
-                grid_extent_x if grid_extent_x is not None else 3.0, **factory_kwargs
+            (
+                grid_extent_x
+                if grid_extent_x is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_y",
-            torch.as_tensor(
-                grid_extent_y if grid_extent_y is not None else 3.0, **factory_kwargs
+            (
+                grid_extent_y
+                if grid_extent_y is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_tau",
-            torch.as_tensor(
-                grid_extent_tau if grid_extent_tau is not None else 3.0,
-                **factory_kwargs,
+            (
+                grid_extent_tau
+                if grid_extent_tau is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
 
@@ -110,7 +107,7 @@ class SpaceChargeKick(Element):
         )
 
         # Compute inverse cell size (to avoid multiple divisions later on)
-        inv_cell_size = 1 / cell_size
+        inv_cell_size = torch.reciprocal(cell_size)
 
         # Get particle positions
         particle_positions = xp_coordinates[..., [0, 2, 4]]
@@ -147,7 +144,7 @@ class SpaceChargeKick(Element):
         # Shape: (..., 8 * num_particles)
         idx_vector = (
             torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
+            .expand(8 * beam.particles.shape[-2], cell_indices.shape[0])
             .T
         )
         idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
@@ -204,9 +201,9 @@ class SpaceChargeKick(Element):
             -0.5 * tau**2 * torch.atan(x * y / (tau * r))
             - 0.5 * y**2 * torch.atan(x * tau / (y * r))
             - 0.5 * x**2 * torch.atan(y * tau / (x * r))
-            + y * tau * torch.asinh(x / torch.sqrt(y**2 + tau**2))
-            + x * tau * torch.asinh(y / torch.sqrt(x**2 + tau**2))
-            + x * y * torch.asinh(tau / torch.sqrt(x**2 + y**2))
+            + y * tau * torch.asinh(x / torch.sqrt(y * y + tau * tau))
+            + x * tau * torch.asinh(y / torch.sqrt(x * x + tau * tau))
+            + x * y * torch.asinh(tau / torch.sqrt(x * x + y * y))
         )
         return integrated_potential
 
@@ -394,7 +391,7 @@ class SpaceChargeKick(Element):
             integrated_green_function, dim=[1, 2, 3]
         )
         potential_ft = charge_density_ft * integrated_green_function_ft
-        potential = (1 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
+        potential = (torch.reciprocal(4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
             potential_ft, dim=[1, 2, 3]
         ).real
 
@@ -417,10 +414,10 @@ class SpaceChargeKick(Element):
         Computes the force field from the potential and the particle positions and
         velocities, as in https://doi.org/10.1063/1.2837054.
         """
-        inv_cell_size = 1 / cell_size
+        inv_cell_size = torch.reciprocal(cell_size)
         igamma2 = torch.zeros_like(beam.relativistic_gamma)
-        igamma2[beam.relativistic_gamma != 0] = (
-            1 / beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
+        igamma2[beam.relativistic_gamma != 0] = torch.reciprocal(
+            beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
         )
         potential = self._solve_poisson_equation(
             beam, xp_coordinates, cell_size, grid_dimensions
@@ -508,7 +505,7 @@ class SpaceChargeKick(Element):
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
             torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
+            .expand(8 * beam.particles.shape[-2], cell_indices.shape[0])
             .T
         )  # Shape: (..., num_particles * 8)
         idx_x = surrounding_indices_flattened[..., 0]
