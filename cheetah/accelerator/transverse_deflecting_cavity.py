@@ -166,7 +166,7 @@ class TransverseDeflectingCavity(Element):
 
         # TODO: Assigning px to px is really bad practice and should be separated into
         # two separate variables
-        px = px + voltage.unsqueeze(-1) * torch.sin(phase)
+        px = px + voltage.unsqueeze(-1) * phase.sin()
 
         beta_old = (
             (1 + pz)
@@ -174,7 +174,7 @@ class TransverseDeflectingCavity(Element):
             / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2 * mc2).sqrt()
         )
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
+        E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
             -1
         ) * x * p0c.unsqueeze(-1)
         pc = (E_new * E_new - mc2 * mc2).sqrt()

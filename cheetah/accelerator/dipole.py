@@ -288,7 +288,7 @@ class Dipole(Element):
         alpha = (
             2
             * (1 + g.unsqueeze(-1) * x)
-            * torch.sin(self.angle.unsqueeze(-1) + phi1)
+            * (self.angle.unsqueeze(-1) + phi1).sin()
             * self.length.unsqueeze(-1)
             * bmadx.sinc(self.angle).unsqueeze(-1)
             - gp
@@ -299,14 +299,12 @@ class Dipole(Element):
             ).square()
         )
 
-        x2_t1 = x * torch.cos(self.angle.unsqueeze(-1)) + self.length.unsqueeze(
+        x2_t1 = x * (self.angle.unsqueeze(-1)).cos() + self.length.unsqueeze(
             -1
         ).square() * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
 
-        x2_t2 = (
-            (torch.cos(self.angle.unsqueeze(-1) + phi1).square()) + gp * alpha
-        ).sqrt()
-        x2_t3 = torch.cos(self.angle.unsqueeze(-1) + phi1)
+        x2_t2 = ((self.angle.unsqueeze(-1) + phi1).cos().square() + gp * alpha).sqrt()
+        x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
         c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
@@ -318,12 +316,12 @@ class Dipole(Element):
             - self.length.unsqueeze(-1).square()
             * g.unsqueeze(-1)
             * bmadx.cosc(self.angle.unsqueeze(-1))
-            - x * torch.cos(self.angle.unsqueeze(-1))
+            - x * self.angle.cos().unsqueeze(-1)
         )
 
-        Lcv = -self.length.unsqueeze(-1) * bmadx.sinc(
-            self.angle.unsqueeze(-1)
-        ) - x * torch.sin(self.angle.unsqueeze(-1))
+        Lcv = -self.length.unsqueeze(-1) * bmadx.sinc(self.angle.unsqueeze(-1)) - x * (
+            self.angle.sin().unsqueeze(-1)
+        )
 
         theta_p = 2 * (
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu)
@@ -339,7 +337,7 @@ class Dipole(Element):
         beta0 = p0c / E0
 
         x_f = x2
-        px_f = px_norm * torch.sin(self.angle.unsqueeze(-1) + phi1 - theta_p)
+        px_f = px_norm * (self.angle.unsqueeze(-1) + phi1 - theta_p).sin()
         y_f = y + py * Lp / px_norm
         z_f = (
             z
@@ -376,10 +374,8 @@ class Dipole(Element):
             self.gap * (location == "entrance") + self.gap_exit * (location == "exit")
         )
 
-        hx = g * torch.tan(e)
-        hy = -g * torch.tan(
-            e - 2 * f_int * h_gap * g * (1 + e.sin().square()) / e.cos()
-        )
+        hx = g * e.tan()
+        hy = -g * (e - 2 * f_int * h_gap * g * (1 + e.sin().square()) / e.cos()).tan()
         px_f = px + x * hx.unsqueeze(-1)
         py_f = py + y * hy.unsqueeze(-1)
 
@@ -484,18 +480,18 @@ class Dipole(Element):
         """Linear transfer map for the entrance face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / torch.cos(self._e1)
+        sec_e = 1.0 / self._e1.cos()
         phi = (
             self.fringe_integral
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self._e1).square())
+            * (1 + self._e1.sin().square())
         )
 
         tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
-        tm[..., 1, 0] = self.hx * torch.tan(self._e1)
-        tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
+        tm[..., 1, 0] = self.hx * (self._e1.tan())
+        tm[..., 3, 2] = -self.hx * (self._e1 - phi).tan()
 
         return tm
 
@@ -503,18 +499,18 @@ class Dipole(Element):
         """Linear transfer map for the exit face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / torch.cos(self._e2)
+        sec_e = self._e2.cos().reciprocal()
         phi = (
             self.fringe_integral_exit
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self._e2).square())
+            * (1 + self._e2.sin().square())
         )
 
         tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
-        tm[..., 1, 0] = self.hx * torch.tan(self._e2)
-        tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
+        tm[..., 1, 0] = self.hx * self._e2.tan()
+        tm[..., 3, 2] = -self.hx * self._e2.tan() - phi
 
         return tm
 

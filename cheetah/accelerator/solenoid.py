@@ -63,8 +63,8 @@ class Solenoid(Element):
         dtype = self.length.dtype
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
-        c = torch.cos(self.length * self.k)
-        s = torch.sin(self.length * self.k)
+        c = (self.length * self.k).cos()
+        s = (self.length * self.k).sin()
 
         s_k = torch.where(self.k == 0.0, self.length, s / self.k)
 

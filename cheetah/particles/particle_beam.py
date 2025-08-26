@@ -568,9 +568,9 @@ class ParticleBeam(Beam):
         phi = torch.rand(*vector_shape, num_particles, **factory_kwargs) * 2 * torch.pi
 
         # Convert to Cartesian coordinates
-        x = r * torch.sin(theta) * torch.cos(phi)
-        y = r * torch.sin(theta) * torch.sin(phi)
-        tau = r * torch.cos(theta)
+        x = r * theta.sin() * phi.cos()
+        y = r * theta.sin() * phi.sin()
+        tau = r * theta.cos()
 
         # Replace the spatial coordinates with the generated ones.
         # This involves distorting the unit sphere into the desired ellipsoid.
@@ -1211,7 +1211,7 @@ class ParticleBeam(Beam):
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
             1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
-        beta = torch.sqrt(1 - torch.reciprocal(gamma * gamma))
+        beta = torch.sqrt(1 - (gamma * gamma).reciprocal())
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)

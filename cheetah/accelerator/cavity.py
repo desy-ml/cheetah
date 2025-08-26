@@ -89,7 +89,7 @@ class Cavity(Element):
         else:  # ParticleBeam
             outgoing_particles = incoming.particles @ tm.mT
         delta_energy = (
-            self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
+            -self.voltage * phi.cos() * incoming.species.num_elementary_charges
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
@@ -107,7 +107,7 @@ class Cavity(Element):
                 outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
                     outgoing_energy * beta1
                 ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
-                    torch.cos(-incoming.mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
+                    (-incoming.mu[..., 4] * beta0 * k + phi).cos() - phi.cos()
                 )
                 outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
             else:  # ParticleBeam
@@ -122,14 +122,13 @@ class Cavity(Element):
                 ) / (
                     outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
                 ) * (
-                    torch.cos(
-                        -1
-                        * incoming.particles[..., 4]
+                    (
+                        -incoming.particles[..., 4]
                         * beta0.unsqueeze(-1)
                         * k.unsqueeze(-1)
                         + phi.unsqueeze(-1)
-                    )
-                    - torch.cos(phi).unsqueeze(-1)
+                    ).cos()
+                    - phi.cos().unsqueeze(-1)
                 )
 
             dgamma = self.voltage / incoming.species.mass_eV
@@ -146,7 +145,7 @@ class Cavity(Element):
                     * dgamma
                     * gamma0
                     * (beta1**3 * gamma1**3 + beta0 * (gamma0 - gamma1**3))
-                    * torch.sin(phi)
+                    * phi.sin()
                     / (beta1**3 * gamma1**3 * (gamma0 - gamma1).square())
                 )
                 T555 = (
@@ -169,7 +168,7 @@ class Cavity(Element):
                         * phi.sin().square()
                         - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
                         / (beta1 * gamma1 * (gamma0 - gamma1).square())
-                        * torch.cos(phi)
+                        * phi.cos()
                     )
                 )
 
@@ -228,7 +227,7 @@ class Cavity(Element):
 
         phi = torch.deg2rad(self.phase)
         effective_voltage = self.voltage * species.num_elementary_charges * -1
-        delta_energy = effective_voltage * torch.cos(phi)
+        delta_energy = effective_voltage * phi.cos()
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / species.mass_eV
@@ -236,43 +235,31 @@ class Cavity(Element):
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
-        alpha = (eta / 8).sqrt() / torch.cos(phi) * torch.log(Ef / Ei)
+        alpha = (eta / 8).sqrt() / (phi.cos() * torch.log(Ef / Ei))
 
-        r55_cor = torch.tensor(0.0, **factory_kwargs)
+        r55_cor = self.length.new_zeros(())
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = (1 - torch.reciprocal(Ei * Ei)).sqrt()
-        beta1 = (1 - torch.reciprocal(Ef * Ef)).sqrt()
+        beta0 = (1 - (Ei * Ei).reciprocal()).sqrt()
+        beta1 = (1 - (Ef * Ef).reciprocal()).sqrt()
         r56 = self.length.new_zeros(())
 
         if self.cavity_type == "standing_wave":
-            r11 = torch.cos(alpha) - (2 / eta).sqrt() * torch.cos(phi) * torch.sin(
-                alpha
-            )
+            r11 = alpha.cos() - (2 / eta).sqrt() * phi.cos() * alpha.sin()
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
-            r12 = (8 / eta).sqrt() * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
+            r12 = (8 / eta).sqrt() * Ei / Ep * phi.cos() * alpha.sin()
 
             r21 = (
                 -Ep
                 / Ef
-                * (
-                    torch.cos(phi) / (2 * eta).sqrt()
-                    + (eta / 8).sqrt() / torch.cos(phi)
-                )
-                * torch.sin(alpha)
+                * (phi.cos() / (2 * eta).sqrt() + (eta / 8).sqrt() / phi.cos())
+                * alpha.sin()
             )
 
-            r22 = (
-                Ei
-                / Ef
-                * (
-                    torch.cos(alpha)
-                    + (2 / eta).sqrt() * torch.cos(phi) * torch.sin(alpha)
-                )
-            )
+            r22 = Ei / Ef * (alpha.cos() + (2 / eta).sqrt() * phi.cos() * alpha.sin())
 
             r56 = -self.length / (Ef * Ef * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             r55_cor = (
@@ -281,14 +268,12 @@ class Cavity(Element):
                 * beta0
                 * effective_voltage
                 / species.mass_eV
-                * torch.sin(phi)
+                * phi.sin()
                 * (Ei * Ef * (beta0 * beta1 - 1) + 1)
                 / (beta1 * Ef * (Ei - Ef).square())
             )
             r66 = Ei / Ef * beta0 / beta1
-            r65 = (
-                k * torch.sin(phi) * effective_voltage / (Ef * beta1 * species.mass_eV)
-            )
+            r65 = k * phi.sin() * effective_voltage / (Ef * beta1 * species.mass_eV)
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
@@ -320,7 +305,7 @@ class Cavity(Element):
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
             r66 = r22
-            r65 = k * torch.sin(phi) * effective_voltage / (Ef * species.mass_eV)
+            r65 = k * phi.sin() * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 

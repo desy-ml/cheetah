@@ -107,7 +107,7 @@ class SpaceChargeKick(Element):
         )
 
         # Compute inverse cell size (to avoid multiple divisions later on)
-        inv_cell_size = torch.reciprocal(cell_size)
+        inv_cell_size = cell_size.reciprocal()
 
         # Get particle positions
         particle_positions = xp_coordinates[..., [0, 2, 4]]
@@ -391,7 +391,7 @@ class SpaceChargeKick(Element):
             integrated_green_function, dim=[1, 2, 3]
         )
         potential_ft = charge_density_ft * integrated_green_function_ft
-        potential = (torch.reciprocal(4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
+        potential = ((4 * torch.pi * epsilon_0).reciprocal()) * torch.fft.irfftn(
             potential_ft, dim=[1, 2, 3]
         ).real
 
@@ -414,11 +414,11 @@ class SpaceChargeKick(Element):
         Computes the force field from the potential and the particle positions and
         velocities, as in https://doi.org/10.1063/1.2837054.
         """
-        inv_cell_size = torch.reciprocal(cell_size)
+        inv_cell_size = cell_size.reciprocal()
         igamma2 = torch.zeros_like(beam.relativistic_gamma)
-        igamma2[beam.relativistic_gamma != 0] = torch.reciprocal(
+        igamma2[beam.relativistic_gamma != 0] = (
             beam.relativistic_gamma[beam.relativistic_gamma != 0].square()
-        )
+        ).reciprocal()
         potential = self._solve_poisson_equation(
             beam, xp_coordinates, cell_size, grid_dimensions
         )

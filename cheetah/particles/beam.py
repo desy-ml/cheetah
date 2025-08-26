@@ -381,9 +381,9 @@ class Beam(ABC, nn.Module):
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
         relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = (
             1
-            - torch.reciprocal(
+            - (
                 self.relativistic_gamma[self.relativistic_gamma > 0].square()
-            )
+            ).reciprocal()
         ).sqrt()
         return relativistic_beta
 

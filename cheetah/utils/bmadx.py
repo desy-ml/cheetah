@@ -134,8 +134,8 @@ def offset_particle_set(
     :param py_lab: y-momentum in lab frame.
     :return: x, px, y, py coordinates in element frame.
     """
-    s = torch.sin(tilt)
-    c = torch.cos(tilt)
+    s = tilt.sin()
+    c = tilt.cos()
     x_ele_int = x_lab - x_offset.unsqueeze(-1)
     y_ele_int = y_lab - y_offset.unsqueeze(-1)
     x_ele = x_ele_int * c.unsqueeze(-1) + y_ele_int * s.unsqueeze(-1)
@@ -167,8 +167,8 @@ def offset_particle_unset(
     :param py_ele: y-momentum in element frame.
     :return: x, px, y, py coordinates in lab frame.
     """
-    s = torch.sin(tilt)
-    c = torch.cos(tilt)
+    s = tilt.sin()
+    c = tilt.cos()
     x_lab_int = x_ele * c.unsqueeze(-1) - y_ele * s.unsqueeze(-1)
     y_lab_int = x_ele * s.unsqueeze(-1) + y_ele * c.unsqueeze(-1)
     x_lab = x_lab_int + x_offset.unsqueeze(-1)
@@ -244,10 +244,8 @@ def calculate_quadrupole_coefficients(
     sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
     sk_l = sqrt_k * length.unsqueeze(-1)
 
-    cx = torch.cos(sk_l) * (k1 <= 0) + torch.cosh(sk_l) * (k1 > 0)
-    sx = (torch.sin(sk_l) / (sqrt_k)) * (k1 <= 0) + (torch.sinh(sk_l) / (sqrt_k)) * (
-        k1 > 0
-    )
+    cx = sk_l.cos() * (k1 <= 0) + sk_l.cosh() * (k1 > 0)
+    sx = (sk_l.sin() / (sqrt_k)) * (k1 <= 0) + (sk_l.sinh() / (sqrt_k)) * (k1 > 0)
 
     a11 = cx
     a12 = sx / rel_p

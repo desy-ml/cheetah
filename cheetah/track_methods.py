@@ -33,7 +33,7 @@ def base_rmatrix(
         energy = species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
-    ibeta2 = torch.reciprocal(torch.square(beta))
+    ibeta2 = torch.square(beta).reciprocal()
 
     kx2 = k1 + hx * hx
     ky2 = -k1
@@ -41,11 +41,11 @@ def base_rmatrix(
     ky = torch.complex(ky2, zero).sqrt()
     kLx = kx * length
     kLy = ky * length
-    cx = torch.cos(kLx).real
-    cy = torch.cos(kLy).real
+    cx = kLx.cos().real
+    cy = kLy.cos().real
     kLxpi = kLx / torch.pi
-    sx = (torch.sinc(kLxpi) * length).real
-    sy = (torch.sinc(kLy / torch.pi) * length).real
+    sx = (kLxpi.sinc() * length).real
+    sy = ((kLy / torch.pi).sinc() * length).real
 
     r = torch.sinc(0.5 * kLxpi)
     dx = hx * 0.5 * length * length * (r * r).real
@@ -129,15 +129,15 @@ def base_ttensor(
     ky2 = -k1
     kx = torch.complex(kx2, zero).sqrt()
     ky = torch.complex(ky2, zero).sqrt()
-    cx = torch.cos(kx * length).real
-    cy = torch.cos(ky * length).real
-    sx = (torch.sinc(kx * length / torch.pi) * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
+    cx = kx * length.cos().real
+    cy = ky * length.cos().real
+    sx = (kx * length / torch.pi).sinc() * length
+    sy = (ky * length / torch.pi).sinc() * length
     dx = torch.where(kx != 0, (1.0 - cx) / kx2, length * length / 2.0)
 
     d2y = 0.5 * sy * sy
     s2y = sy * cy
-    c2y = torch.cos(2 * ky * length).real
+    c2y = (2 * ky * length).cos().real
     fx = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
     f2y = torch.where(ky2 != 0, (length - s2y) / ky2, length**3 / 6.0)
 
@@ -327,8 +327,8 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
         dipole.
     :return: Rotation matrix to be multiplied to the element's transfer matrix.
     """
-    cs = torch.cos(angle)
-    sn = torch.sin(angle)
+    cs = angle.cos()
+    sn = angle.sin()
 
     tm = (
         torch.eye(7, dtype=angle.dtype, device=angle.device)
