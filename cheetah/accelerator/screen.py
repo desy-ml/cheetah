@@ -282,7 +282,7 @@ class Screen(Element):
                     )
 
                 image, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).T,
+                    torch.stack((read_beam.x, read_beam.y)).mT,
                     bins=self.pixel_bin_edges,
                     weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
