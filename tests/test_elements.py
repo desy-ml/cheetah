@@ -11,7 +11,10 @@ def test_element_subclasses_is_active_boolean(element):
     Test that the `is_active` property of all `Element` subclasses returns a boolean if
     the element class has an `is_active` property.
     """
-    assert not hasattr(element, "is_active") or isinstance(element.is_active, bool)
+    assert not hasattr(element, "is_active") or (
+        isinstance(element.is_active, torch.Tensor)
+        and element.is_active.dtype == torch.bool
+    )
 
 
 @pytest.mark.for_every_element("element")
