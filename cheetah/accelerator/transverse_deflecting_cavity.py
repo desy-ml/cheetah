@@ -149,7 +149,7 @@ class TransverseDeflectingCavity(Element):
 
         x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
-        voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
+        voltage = self.voltage * -incoming.species.num_elementary_charges / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (

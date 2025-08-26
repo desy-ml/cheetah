@@ -252,12 +252,12 @@ def base_ttensor(
         + 0.5 * hx / beta * (k2 + hx * k1) * j1 * sy
         - 0.25 / beta * k1 * length * sy
     )
-    T[..., 4, 0, 0] = -1 * (
+    T[..., 4, 0, 0] = -(
         hx / 12 / beta * khk * (sx * dx + 3 * j1)
         - 0.25 / beta * k1 * (length - sx * cx)
     )
     T[..., 4, 0, 1] = -2 * (hx / 12 / beta * khk * dx * dx + 0.25 / beta * k1 * sx * sx)
-    T[..., 4, 1, 1] = -1 * (
+    T[..., 4, 1, 1] = -(
         hx / 6 / beta * khk * j2 - 0.5 / beta * sx - 0.25 / beta * k1 * (j1 - sx * dx)
     )
     T[..., 4, 0, 5] = -2 * (
@@ -270,18 +270,18 @@ def base_ttensor(
         + 0.25 * hx / (beta * beta) * k1 * sx * j1
         + 0.5 * hx / (beta * beta) * igamma2 * dx
     )
-    T[..., 4, 5, 5] = -1 * (
+    T[..., 4, 5, 5] = -(
         hx**3 / 6 / beta**3 * khk * (3 * j3 - 2 * dx * j2)
         + hx * hx / 6 / beta**3 * k1 * (sx * dx * dx - j2 * (1 + 2 * cx))
         + 1.5 / beta**3 * igamma2 * (hx * hx * j1 - length)
     )
-    T[..., 4, 2, 2] = -1 * (
+    T[..., 4, 2, 2] = -(
         -hx / beta * k1 * k2 * jf
         - 0.5 * hx / beta * (k2 + hx * k1) * j1
         + 0.25 / beta * k1 * (length - cy * sy)
     )
     T[..., 4, 2, 3] = -2 * (-0.5 * hx / beta * k2 * jd - 0.25 / beta * k1 * sy * sy)
-    T[..., 4, 3, 3] = -1 * (
+    T[..., 4, 3, 3] = -(
         -hx / beta * k2 * jf
         + 0.5 * hx * hx / beta * j1
         - 0.25 / beta * (length + cy * sy)

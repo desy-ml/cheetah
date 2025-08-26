@@ -226,7 +226,7 @@ class Cavity(Element):
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        effective_voltage = self.voltage * species.num_elementary_charges * -1
+        effective_voltage = self.voltage * -species.num_elementary_charges
         delta_energy = effective_voltage * phi.cos()
         # Comment from Ocelot: Pure pi-standing-wave case
         eta = torch.tensor(1.0, **factory_kwargs)
