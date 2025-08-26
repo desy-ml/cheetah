@@ -79,7 +79,7 @@ class VerticalCorrector(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:cyan", alpha=alpha, zorder=2

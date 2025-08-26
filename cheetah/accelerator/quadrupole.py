@@ -83,7 +83,7 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
@@ -102,8 +102,8 @@ class Quadrupole(Element):
         T = base_ttensor(
             length=self.length,
             k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k2=self.length.new_zeros(()),
+            hx=self.length.new_zeros(()),
             tilt=self.tilt,
             energy=energy,
             species=species,
@@ -113,7 +113,7 @@ class Quadrupole(Element):
         T[..., :, 6, :] = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
@@ -255,7 +255,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> torch.Tensor:
-        return torch.any(self.k1 != 0)
+        return self.k1.any()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -296,7 +296,7 @@ class Quadrupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )

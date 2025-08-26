@@ -19,9 +19,9 @@ def cheetah_to_bmad_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute p0c and Bmad z, pz
-    p0c = torch.sqrt(ref_energy * ref_energy - mc2 * mc2)
+    p0c = (ref_energy * ref_energy - mc2 * mc2).sqrt()
     energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = torch.sqrt(energy * energy - mc2 * mc2)
+    p = (energy * energy - mc2 * mc2).sqrt()
     beta = p / energy
     z = -beta * tau
     pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -44,9 +44,9 @@ def bmad_to_cheetah_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = torch.sqrt(p0c * p0c + mc2 * mc2)
+    ref_energy = (p0c * p0c + mc2 * mc2).sqrt()
     p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = torch.sqrt(p * p + mc2 * mc2)
+    energy = (p * p + mc2 * mc2).sqrt()
     beta = p / energy
     tau = -z / beta
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -94,9 +94,7 @@ def bmad_to_cheetah_coords(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Initialize Cheetah coordinates
-    cheetah_coords = torch.ones(
-        (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
-    )
+    cheetah_coords = bmad_coords.new_ones((*bmad_coords.shape[:-1], 7))
     cheetah_coords[..., :6] = bmad_coords.clone()
 
     # Bmad longitudinal coordinates
@@ -241,7 +239,7 @@ def calculate_quadrupole_coefficients(
             z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
     """
     # TODO: Revisit to fix accumulated error due to machine epsilon
-    sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
+    sqrt_k = (k1.absolute() + eps).sqrt()
     sk_l = sqrt_k * length.unsqueeze(-1)
 
     cx = sk_l.cos() * (k1 <= 0) + sk_l.cosh() * (k1 > 0)
@@ -261,7 +259,7 @@ def calculate_quadrupole_coefficients(
 
 def sqrt_one(x):
     """Routine to calculate Sqrt[1+x] - 1 to machine precision."""
-    sq = torch.sqrt(1 + x)
+    sq = (1 + x).sqrt()
     rad = sq + 1
 
     return x / rad
@@ -284,7 +282,7 @@ def track_a_drift(
     Px = px_in / P  # Particle's 'x' momentum over p0
     Py = py_in / P  # Particle's 'y' momentum over p0
     Pxy2 = Px * Px + Py * Py  # Particle's transverse mometum^2 over p0^2
-    Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
+    Pl = (1.0 - Pxy2).sqrt()  # Particle's longitudinal momentum over p0
 
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
     dz = length.unsqueeze(-1) * (

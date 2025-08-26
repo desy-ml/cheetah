@@ -33,7 +33,7 @@ def base_rmatrix(
         energy = species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
-    ibeta2 = torch.square(beta).reciprocal()
+    ibeta2 = (beta * beta).reciprocal()
 
     kx2 = k1 + hx * hx
     ky2 = -k1
@@ -47,13 +47,12 @@ def base_rmatrix(
     sx = (kLxpi.sinc() * length).real
     sy = ((kLy / torch.pi).sinc() * length).real
 
-    r = torch.sinc(0.5 * kLxpi)
+    r = 0.5 * kLxpi.sinc()
     dx = hx * 0.5 * length * length * (r * r).real
 
     kx2_is_not_zero = kx2 != 0
     r56 = (
-        torch.addcmul(torch.square(hx) * (length - sx) / kx2, length, igamma2, value=-1)
-        * ibeta2
+        torch.addcmul(hx * hx * (length - sx) / kx2, length, igamma2, value=-1) * ibeta2
     )
 
     dx_ibeta2 = dx * ibeta2

@@ -60,9 +60,9 @@ class Drift(Element):
     ) -> torch.Tensor:
         T = base_ttensor(
             self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=self.length.new_zeros(()),
+            k2=self.length.new_zeros(()),
+            hx=self.length.new_zeros(()),
             energy=energy,
             species=species,
         )

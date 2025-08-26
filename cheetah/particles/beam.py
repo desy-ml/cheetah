@@ -379,7 +379,7 @@ class Beam(ABC, nn.Module):
     def relativistic_beta(self) -> torch.Tensor:
         """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
-        relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = (
+        relativistic_beta[self.relativistic_gamma.abs() > 0] = (
             1
             - (
                 self.relativistic_gamma[self.relativistic_gamma > 0].square()

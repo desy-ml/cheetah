@@ -59,8 +59,7 @@ class Solenoid(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
         c = (self.length * self.k).cos()
@@ -76,11 +75,7 @@ class Solenoid(Element):
             gamma != 0, self.length / (1 - gamma * gamma), self.length.new_zeros(())
         )
 
-        R = (
-            torch.eye(7, device=device, dtype=dtype)
-            .expand((*vector_shape, 7, 7))
-            .clone()
-        )
+        R = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
         R[..., 0, 0] = c * c
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c
@@ -101,12 +96,11 @@ class Solenoid(Element):
 
         R = R.real
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
+        if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+
+        return R
 
     @property
     def is_active(self) -> torch.Tensor:

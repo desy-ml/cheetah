@@ -225,17 +225,17 @@ class Cavity(Element):
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        phi = torch.deg2rad(self.phase)
+        phi = self.phase.deg2rad()
         effective_voltage = self.voltage * -species.num_elementary_charges
         delta_energy = effective_voltage * phi.cos()
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, **factory_kwargs)
+        eta = self.length.new_ones(())
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
-        alpha = (eta / 8).sqrt() / (phi.cos() * torch.log(Ef / Ei))
+        alpha = (eta / 8).sqrt() / (phi.cos() * (Ef / Ei).log())
 
         r55_cor = self.length.new_zeros(())
 
@@ -278,7 +278,7 @@ class Cavity(Element):
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             dE = Ef - Ei
-            f = Ei / dE * torch.log1p(dE / Ei)
+            f = Ei / dE * (dE / Ei).log1p()
 
             vector_shape = torch.broadcast_shapes(
                 self.length.shape, f.shape, Ei.shape, Ef.shape

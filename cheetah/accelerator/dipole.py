@@ -278,12 +278,10 @@ class Dipole(Element):
         """
         pz1 = 1 + pz
         px_norm = (pz1 * pz1 - py * py).sqrt()  # For simplicity
-        phi1 = torch.arcsin(px / px_norm)
+        phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
-        gp_safe = torch.where(
-            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
-        )
+        gp_safe = torch.where(gp != 0, gp, gp.new_full((), 1e-12))
 
         alpha = (
             2
@@ -308,7 +306,7 @@ class Dipole(Element):
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
         c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
-        temp = torch.abs(self.angle.unsqueeze(-1) + phi1)
+        temp = (self.angle.unsqueeze(-1) + phi1).abs()
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
         Lcu = (
@@ -431,7 +429,7 @@ class Dipole(Element):
             T = base_ttensor(
                 length=self.length,
                 k1=self.k1,
-                k2=torch.tensor(0.0, dtype=dtype, device=device),
+                k2=self.length.new_zeros(()),
                 hx=self.hx,
                 species=species,
                 energy=energy,
@@ -455,7 +453,7 @@ class Dipole(Element):
             R[..., 2, 6] = self.angle
             R[..., 2, 3] = self.length
 
-            T = torch.zeros((*self.length.shape, 7, 7), dtype=dtype, device=device)
+            T = self.length.new_zeros((*self.length.shape, 7, 7))
             T[..., :, 6, :] = R
 
         # Apply fringe fields
@@ -524,7 +522,7 @@ class Dipole(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
