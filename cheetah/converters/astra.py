@@ -21,11 +21,11 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     P0 = np.loadtxt(path)
 
     # remove lost particles
-    inds = np.argwhere(P0[:, 9] > 0)
-    inds = inds.reshape(inds.shape[0])
+    idxs = np.argwhere(P0[:, 9] > 0)
+    idxs = idxs.reshape(idxs.shape[0])
 
-    P0 = P0[inds, :]
-    n_particles = P0.shape[0]
+    P0 = P0[idxs, :]
+    num_particles = P0.shape[0]
 
     # s_ref = P0[0, 2]
     Pref = P0[0, 5]
@@ -34,19 +34,19 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     xp[0, 2] = 0.0
     xp[0, 5] = 0.0
 
-    gamref = np.sqrt((Pref / electron_mass_eV).square() + 1)
+    gamref = np.sqrt((Pref / electron_mass_eV) ** 2 + 1)
     # energy in eV: E = gamma * m_e
     energy = gamref * electron_mass_eV
 
-    n_particles = xp.shape[0]
-    particles = np.zeros((n_particles, 6))
+    num_particles = xp.shape[0]
+    particles = np.zeros((num_particles, 6))
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
     gamma = np.sqrt(1 + np.sum(u * u, 1) / (electron_mass_eV * electron_mass_eV))
     beta = np.sqrt(1 - gamma**-2)
     betaref = np.sqrt(1 - gamref**-2)
 
-    p0 = np.linalg.norm(u, 2, 1).reshape((n_particles, 1))
+    p0 = np.linalg.norm(u, 2, 1).reshape((num_particles, 1))
 
     u = u / p0
     cdt = -xp[:, 2] / (beta * u[:, 2])

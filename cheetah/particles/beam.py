@@ -448,7 +448,6 @@ class Beam(ABC, nn.Module):
         Uncoupled betatron emittance of the beam in x direction in m.
         This is computed with the dispersion correction.
         """
-
         return (
             (self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square())
             * (self.sigma_px.square() - self.cov_pxp.square() / self.sigma_p.square())
