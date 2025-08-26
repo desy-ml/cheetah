@@ -16,7 +16,7 @@ def unbiased_weighted_covariance(
     weighted_mean1 = torch.sum(input1 * weights, dim=dim) / torch.sum(weights, dim=dim)
     weighted_mean2 = torch.sum(input2 * weights, dim=dim) / torch.sum(weights, dim=dim)
     correction_factor = torch.sum(weights, dim=dim) - torch.sum(
-        weights**2, dim=dim
+        weights * weights, dim=dim
     ) / torch.sum(weights, dim=dim)
     covariance = torch.sum(
         weights
@@ -40,10 +40,10 @@ def unbiased_weighted_variance(
     """
     weighted_mean = torch.sum(input * weights, dim=dim) / torch.sum(weights, dim=dim)
     correction_factor = torch.sum(weights, dim=dim) - torch.sum(
-        weights**2, dim=dim
+        weights * weights, dim=dim
     ) / torch.sum(weights, dim=dim)
     variance = torch.sum(
-        weights * (input - weighted_mean.unsqueeze(-1)) ** 2, dim=dim
+        weights * (input - weighted_mean.unsqueeze(-1)).square(), dim=dim
     ) / (correction_factor)
     return variance
 
@@ -59,7 +59,7 @@ def unbiased_weighted_std(
     :param dim: Dimension along which to compute the standard deviation.
     :return: Unbiased weighted standard deviation.
     """
-    return torch.sqrt(unbiased_weighted_variance(input, weights, dim=dim))
+    return (unbiased_weighted_variance(input, weights, dim=dim)).sqrt()
 
 
 def unbiased_weighted_covariance_matrix(
@@ -73,7 +73,7 @@ def unbiased_weighted_covariance_matrix(
     :return: Unbiased weighted covariance matrix.
     """
     normalized_weights = weights / weights.sum(dim=-1, keepdim=True)
-    correction_factor = 1 - torch.sum(normalized_weights**2, dim=-1)
+    correction_factor = 1 - torch.sum(normalized_weights * normalized_weights, dim=-1)
 
     weighted_means = torch.sum(
         inputs * normalized_weights.unsqueeze(-1), dim=-2, keepdim=True

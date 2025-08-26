@@ -34,7 +34,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     xp[0, 2] = 0.0
     xp[0, 5] = 0.0
 
-    gamref = np.sqrt((Pref / electron_mass_eV) ** 2 + 1)
+    gamref = np.sqrt((Pref / electron_mass_eV).square() + 1)
     # energy in eV: E = gamma * m_e
     energy = gamref * electron_mass_eV
 
@@ -42,7 +42,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     particles = np.zeros((n_particles, 6))
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
-    gamma = np.sqrt(1 + np.sum(u * u, 1) / electron_mass_eV**2)
+    gamma = np.sqrt(1 + np.sum(u * u, 1) / (electron_mass_eV * electron_mass_eV))
     beta = np.sqrt(1 - gamma**-2)
     betaref = np.sqrt(1 - gamref**-2)
 

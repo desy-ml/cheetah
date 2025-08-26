@@ -62,8 +62,8 @@ def _kde_marginal_pdf(
     residuals = values - bins
     kernel_values = (
         weights
-        * torch.exp(-0.5 * (residuals / sigma).pow(2))
-        / torch.sqrt(2 * math.pi * sigma * sigma)
+        * (-0.5 * (residuals / sigma).square()).exp()
+        / (2 * math.pi * sigma * sigma).sqrt()
     )
 
     prob_mass = torch.sum(kernel_values, dim=-2)

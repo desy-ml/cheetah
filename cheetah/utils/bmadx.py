@@ -194,19 +194,23 @@ def low_energy_z_correction(
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2 * mc2).sqrt()
     )
-    beta0 = p0c / torch.sqrt(p0c * p0c + mc2 * mc2)
-    e_tot = torch.sqrt(p0c * p0c + mc2 * mc2)
+    beta0 = p0c / (p0c * p0c + mc2 * mc2).sqrt()
+    e_tot = (p0c * p0c + mc2 * mc2).sqrt()
 
-    evaluation = mc2 * (beta0.unsqueeze(-1) * pz) ** 2
+    evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
+    unsqueezed_beta0_squared = (beta0 * beta0).unsqueeze(-1)
     dz = ds.unsqueeze(-1) * pz * (
         1
-        - 3 * (pz * beta0.unsqueeze(-1) ** 2) / 2
-        + pz**2
-        * beta0.unsqueeze(-1) ** 2
-        * (2 * beta0.unsqueeze(-1) ** 2 - (mc2 / e_tot.unsqueeze(-1)) ** 2 / 2)
-    ) * (mc2 / e_tot.unsqueeze(-1)) ** 2 * (evaluation < 3e-7 * e_tot.unsqueeze(-1)) + (
+        - 3 * (pz * unsqueezed_beta0_squared) / 2
+        + pz
+        * pz
+        * unsqueezed_beta0_squared
+        * (2 * unsqueezed_beta0_squared - (mc2 / e_tot.unsqueeze(-1)).square() / 2)
+    ) * (mc2 / e_tot.unsqueeze(-1)).square() * (
+        evaluation < 3e-7 * e_tot.unsqueeze(-1)
+    ) + (
         ds.unsqueeze(-1) * (beta - beta0.unsqueeze(-1)) / beta0.unsqueeze(-1)
     ) * (
         evaluation >= 3e-7 * e_tot.unsqueeze(-1)
@@ -251,8 +255,8 @@ def calculate_quadrupole_coefficients(
     a22 = cx
 
     c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4
-    c2 = -k1 * sx**2 / (2 * rel_p)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p**2)
+    c2 = -k1 * sx * sx / (2 * rel_p)
+    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p * rel_p)
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
@@ -281,13 +285,14 @@ def track_a_drift(
     P = 1.0 + pz_in  # Particle's total momentum over p0
     Px = px_in / P  # Particle's 'x' momentum over p0
     Py = py_in / P  # Particle's 'y' momentum over p0
-    Pxy2 = Px**2 + Py**2  # Particle's transverse mometum^2 over p0^2
+    Pxy2 = Px * Px + Py * Py  # Particle's transverse mometum^2 over p0^2
     Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
 
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
     dz = length.unsqueeze(-1) * (
         sqrt_one(
-            (mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c.unsqueeze(-1) * P) ** 2 + mc2**2)
+            (mc2 * mc2 * (2 * pz_in + pz_in * pz_in))
+            / ((p0c.unsqueeze(-1) * P).square() + mc2 * mc2)
         )
         + sqrt_one(-Pxy2) / Pl
     )
@@ -304,7 +309,7 @@ def particle_rf_time(z, pz, p0c, mc2):
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2 * mc2)
+        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2 * mc2).sqrt()
     )
     time = -z / (beta * speed_of_light)
 
@@ -313,9 +318,9 @@ def particle_rf_time(z, pz, p0c, mc2):
 
 def sinc(x):
     """sinc(x) = sin(x)/x."""
-    return torch.sinc(x / torch.pi)
+    return (x / torch.pi).sinc()
 
 
 def cosc(x):
     """cosc(x) = (cos(x)-1)/x**2 = -1/2 [sinc(x/2)]**2"""
-    return -0.5 * sinc(x / 2) ** 2
+    return -0.5 * sinc(x / 2).square()

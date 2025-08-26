@@ -196,14 +196,14 @@ class SpaceChargeKick(Element):
         and is more robust to numerical errors.
         """
 
-        r = torch.sqrt(x**2 + y**2 + tau**2)
+        r = (x * x + y * y + tau * tau).sqrt()
         integrated_potential = (
-            -0.5 * tau**2 * torch.atan(x * y / (tau * r))
-            - 0.5 * y**2 * torch.atan(x * tau / (y * r))
-            - 0.5 * x**2 * torch.atan(y * tau / (x * r))
-            + y * tau * torch.asinh(x / torch.sqrt(y * y + tau * tau))
-            + x * tau * torch.asinh(y / torch.sqrt(x * x + tau * tau))
-            + x * y * torch.asinh(tau / torch.sqrt(x * x + y * y))
+            -0.5 * tau * tau * torch.atan(x * y / (tau * r))
+            - 0.5 * y * y * torch.atan(x * tau / (y * r))
+            - 0.5 * x * x * torch.atan(y * tau / (x * r))
+            + y * tau * torch.asinh(x / (y * y + tau * tau).sqrt())
+            + x * tau * torch.asinh(y / (x * x + tau * tau).sqrt())
+            + x * y * torch.asinh(tau / (x * x + y * y).sqrt())
         )
         return integrated_potential
 
@@ -417,7 +417,7 @@ class SpaceChargeKick(Element):
         inv_cell_size = torch.reciprocal(cell_size)
         igamma2 = torch.zeros_like(beam.relativistic_gamma)
         igamma2[beam.relativistic_gamma != 0] = torch.reciprocal(
-            beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
+            beam.relativistic_gamma[beam.relativistic_gamma != 0].square()
         )
         potential = self._solve_poisson_equation(
             beam, xp_coordinates, cell_size, grid_dimensions
