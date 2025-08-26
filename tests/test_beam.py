@@ -27,10 +27,16 @@ def test_change_beam_attribute_dtype(BeamClass):
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_transformed_beam_dtype(BeamClass):
     """Test that `Beam.transformed_to` retains the dtype."""
+    from icecream import ic
+
     beam = BeamClass.from_parameters(
         mu_x=torch.tensor(1e-5, dtype=torch.float64), dtype=torch.float64
     )
     beam_attributes = beam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+
+    ic(beam_attributes)
+    ic(beam)
+    ic(beam.emittance_x)
 
     # Verify the dtype is kept
     transformed_beam = beam.transformed_to(

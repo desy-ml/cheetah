@@ -14,11 +14,11 @@ def test_dipole_off():
     incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
-    outbeam_dipole_off = dipole(incoming_beam)
-    outbeam_drift = drift(incoming_beam)
+    outbeam_dipole_off = dipole.track(incoming_beam)
+    outbeam_drift = drift.track(incoming_beam)
 
     dipole.angle = torch.tensor(1.0, device=dipole.angle.device)
-    outbeam_dipole_on = dipole(incoming_beam)
+    outbeam_dipole_on = dipole.track(incoming_beam)
 
     assert dipole.name is not None
     assert torch.allclose(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
@@ -64,7 +64,7 @@ def test_dipole_vectorized_execution(DipoleType):
             cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
 
     assert outgoing.particles.shape == torch.Size([3, 100, 7])
     assert outgoing.mu_x.shape == torch.Size([3])
@@ -85,7 +85,7 @@ def test_dipole_vectorized_execution(DipoleType):
             cheetah.Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1, 1)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
     assert outgoing.particles.shape == torch.Size([2, 3, 3, 100, 7])
 
     # Test improper vectorisation -- this does not obey torch broadcasting rules
@@ -99,7 +99,7 @@ def test_dipole_vectorized_execution(DipoleType):
         ]
     )
     with pytest.raises(RuntimeError):
-        segment(incoming)
+        segment.track(incoming)
 
 
 @pytest.mark.parametrize(

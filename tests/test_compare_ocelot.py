@@ -168,7 +168,7 @@ def test_dipole_with_fringe_field_and_tilt():
         dipole_e1=torch.tensor(bend_angle / 2),
         dipole_e2=torch.tensor(bend_angle / 2),
     )
-    outgoing_beam = cheetah_dipole(incoming_beam)
+    outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
