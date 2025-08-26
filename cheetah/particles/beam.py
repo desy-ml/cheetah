@@ -453,7 +453,7 @@ class Beam(ABC, nn.Module):
             * (self.sigma_px.square() - self.cov_pxp.square() / self.sigma_p.square())
             - (
                 self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square()
-            ).square(),
+            ).square()
         ).sqrt()
 
     @property
