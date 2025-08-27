@@ -154,10 +154,8 @@ class Cavity(Element):
                     / (beta1**3 * gamma1**3 * (gamma0 - gamma1).square())
                 )
                 T555 = (
-                    beta0
-                    * beta0
-                    * k
-                    * k
+                    beta0.square()
+                    * k.square()
                     * self.length
                     * dgamma
                     / 2.0
@@ -165,8 +163,8 @@ class Cavity(Element):
                         dgamma
                         * (
                             2 * gamma0 * gamma1**3 * (beta0 * beta1**3 - 1)
-                            + gamma0 * gamma0
-                            + 3 * gamma1 * gamma1
+                            + gamma0.square()
+                            + 3 * gamma1.square()
                             - 2
                         )
                         / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
@@ -266,7 +264,9 @@ class Cavity(Element):
 
             r22 = Ei / Ef * (alpha.cos() + (2 / eta).sqrt() * phi.cos() * alpha.sin())
 
-            r56 = -self.length / (Ef * Ef * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            r56 = (
+                -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            )
             r55_cor = (
                 k
                 * self.length

@@ -72,26 +72,26 @@ class Solenoid(Element):
         )
 
         r56 = torch.where(
-            gamma != 0, self.length / (1 - gamma * gamma), self.length.new_zeros(())
+            gamma != 0, self.length / (1 - gamma.square()), self.length.new_zeros(())
         )
 
         R = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
-        R[..., 0, 0] = c * c
+        R[..., 0, 0] = c.square()
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c
         R[..., 0, 3] = s * s_k
         R[..., 1, 0] = -self.k * s * c
-        R[..., 1, 1] = c * c
-        R[..., 1, 2] = -self.k * s * s
+        R[..., 1, 1] = c.square()
+        R[..., 1, 2] = -self.k * s.square()
         R[..., 1, 3] = s * c
         R[..., 2, 0] = -s * c
         R[..., 2, 1] = -s * s_k
-        R[..., 2, 2] = c * c
+        R[..., 2, 2] = c.square()
         R[..., 2, 3] = c * s_k
-        R[..., 3, 0] = self.k * s * s
+        R[..., 3, 0] = self.k * s.square()
         R[..., 3, 1] = -s * c
         R[..., 3, 2] = -self.k * s * c
-        R[..., 3, 3] = c * c
+        R[..., 3, 3] = c.square()
         R[..., 4, 5] = r56
 
         R = R.real

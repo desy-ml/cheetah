@@ -277,7 +277,7 @@ class Dipole(Element):
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
         pz1 = 1 + pz
-        px_norm = (pz1 * pz1 - py * py).sqrt()  # For simplicity
+        px_norm = (pz1.square() - py.square()).sqrt()  # For simplicity
         phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
@@ -325,12 +325,12 @@ class Dipole(Element):
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu)
         )
 
-        Lc = (Lcu * Lcu + Lcv * Lcv).sqrt()
+        Lc = (Lcu.square() + Lcv.square()).sqrt()
         Lp = Lc / bmadx.sinc(theta_p / 2)
 
         P = p0c.unsqueeze(-1) * (1 + pz)  # In eV
-        E = (P * P + mc2 * mc2).sqrt()  # In eV
-        E0 = (p0c * p0c + mc2 * mc2).sqrt()  # In eV
+        E = (P.square() + mc2.square()).sqrt()  # In eV
+        E0 = (p0c.square() + mc2.square()).sqrt()  # In eV
         beta = P / E
         beta0 = p0c / E0
 

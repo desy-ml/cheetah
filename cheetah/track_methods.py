@@ -33,9 +33,9 @@ def base_rmatrix(
         energy = species.mass_eV
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
-    ibeta2 = (beta * beta).reciprocal()
+    ibeta2 = beta.square().reciprocal()
 
-    kx2 = k1 + hx * hx
+    kx2 = k1 + hx.square()
     ky2 = -k1
     kx = torch.complex(kx2, zero).sqrt()
     ky = torch.complex(ky2, zero).sqrt()
@@ -48,12 +48,12 @@ def base_rmatrix(
     sy = ((kLy / torch.pi).sinc() * length).real
 
     r = (0.5 * kLxpi).sinc()
-    dx = hx * 0.5 * length * length * (r * r).real
+    dx = hx * 0.5 * length.square() * r.square().real
 
     kx2_is_not_zero = kx2 != 0
     r56 = (
         torch.addcmul(
-            torch.where(kx2_is_not_zero, torch.square(hx) * (length - sx) / kx2, zero),
+            torch.where(kx2_is_not_zero, hx.square() * (length - sx) / kx2, zero),
             length,
             igamma2,
             value=-1,
@@ -130,7 +130,7 @@ def base_ttensor(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    kx2 = k1 + hx * hx
+    kx2 = k1 + hx.square()
     ky2 = -k1
     kx = torch.complex(kx2, zero).sqrt()
     ky = torch.complex(ky2, zero).sqrt()
@@ -140,7 +140,7 @@ def base_ttensor(
     sy = (ky * length / torch.pi).sinc().real * length
     dx = torch.where(kx2 != 0, (1.0 - cx) / kx2, length * length / 2.0)
 
-    d2y = 0.5 * sy * sy
+    d2y = 0.5 * sy.square()
     s2y = sy * cy
     c2y = (2 * ky * length).cos().real
     fx = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
@@ -149,18 +149,24 @@ def base_ttensor(
     j1 = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
     j2 = torch.where(
         kx2 != 0,
-        (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2 * kx2),
+        (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2.square()),
         length**5 / 20.0,
     )
     j3 = torch.where(
         kx2 != 0,
-        (15.0 * length - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx * cx + kx2 * sx**3)
+        (
+            15.0 * length
+            - 22.5 * sx
+            + 9.0 * sx * cx
+            - 1.5 * sx * cx.square()
+            + kx2 * sx**3
+        )
         / (6.0 * kx2**3),
         length**7 / 56.0,
     )
     j_denominator = kx2 - 4 * ky2
     jc = torch.where(
-        j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length * length
+        j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length.square()
     )
     js = torch.where(
         j_denominator != 0, (cy * sy - sx) / j_denominator, length**3 / 6.0
@@ -177,24 +183,24 @@ def base_ttensor(
     T = torch.zeros((7, 7, 7), dtype=dtype, device=device).repeat(
         *vector_shape, 1, 1, 1
     )
-    T[..., 0, 0, 0] = -1 / 6 * khk * (sx * sx + dx) - 0.5 * hx * kx2 * sx * sx
+    T[..., 0, 0, 0] = -1 / 6 * khk * (sx.square() + dx) - 0.5 * hx * kx2 * sx.square()
     T[..., 0, 0, 1] = 2 * (-1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx)
-    T[..., 0, 1, 1] = -1 / 6 * khk * dx * dx + 0.5 * hx * dx * cx
+    T[..., 0, 1, 1] = -1 / 6 * khk * dx.square() + 0.5 * hx * dx * cx
     T[..., 0, 0, 5] = 2 * (
-        -hx / 12 / beta * khk * (3 * sx * j1 - dx * dx)
-        + 0.5 * hx * hx / beta * sx * sx
+        -hx / 12 / beta * khk * (3 * sx * j1 - dx.square())
+        + 0.5 * hx.square() / beta * sx.square()
         + 0.25 / beta * k1 * length * sx
     )
     T[..., 0, 1, 5] = 2 * (
-        -hx / 12 / beta * khk * (sx * dx * dx - 2 * cx * j2)
-        + 0.25 * hx * hx / beta * (sx * dx + cx * j1)
+        -hx / 12 / beta * khk * (sx * dx.square() - 2 * cx * j2)
+        + 0.25 * hx.square() / beta * (sx * dx + cx * j1)
         - 0.25 / beta * (sx + length * cx)
     )
     T[..., 0, 5, 5] = (
-        -(hx * hx) / 6 / (beta * beta) * khk * (dx**3 - 2 * sx * j2)
-        + 0.5 * hx**3 / (beta * beta) * sx * j1
-        - 0.5 * hx / (beta * beta) * length * sx
-        - 0.5 * hx / (beta * beta) * igamma2 * dx
+        -hx.square() / 6 / (beta * beta) * khk * (dx**3 - 2 * sx * j2)
+        + 0.5 * hx**3 / beta.square() * sx * j1
+        - 0.5 * hx / beta.square() * length * sx
+        - 0.5 * hx / beta.square() * igamma2 * dx
     )
     T[..., 0, 2, 2] = k1 * k2 * jd + 0.5 * (k2 + hx * k1) * dx
     T[..., 0, 2, 3] = 2 * (0.5 * k2 * js)
@@ -207,12 +213,13 @@ def base_ttensor(
         - 0.25 / beta * k1 * (sx - length * cx)
     )
     T[..., 1, 1, 5] = 2 * (
-        -hx / 12 / beta * khk * (3 * sx * j1 + dx * dx) + 0.25 / beta * k1 * length * sx
+        -hx / 12 / beta * khk * (3 * sx * j1 + dx.square())
+        + 0.25 / beta * k1 * length * sx
     )
     T[..., 1, 5, 5] = (
-        -(hx * hx) / 6 / (beta * beta) * khk * (sx * dx * dx - 2 * cx * j2)
-        - 0.5 * hx / (beta * beta) * k1 * (cx * j1 - sx * dx)
-        - 0.5 * hx / (beta * beta) * igamma2 * sx
+        -hx.square() / 6 / beta.square() * khk * (sx * dx.square() - 2 * cx * j2)
+        - 0.5 * hx / beta.square() * k1 * (cx * j1 - sx * dx)
+        - 0.5 * hx / beta.square() * igamma2 * sx
     )
     T[..., 1, 2, 2] = k1 * k2 * js + 0.5 * (k2 + hx * k1) * sx
     T[..., 1, 2, 3] = 2 * (0.5 * k2 * jc)
@@ -227,12 +234,12 @@ def base_ttensor(
     T[..., 2, 1, 3] = 2 * (0.5 * k2 * (sy * js - 2 * cy * jd) + 0.5 * hx * dx * cy)
     T[..., 2, 2, 5] = 2 * (
         0.5 * hx / beta * k2 * (cy * jd - 2 * k1 * sy * jf)
-        + 0.5 * hx * hx / beta * k1 * j1 * sy
+        + 0.5 * hx.square() / beta * k1 * j1 * sy
         - 0.25 / beta * k1 * length * sy
     )
     T[..., 2, 3, 5] = 2 * (
         0.5 * hx / beta * k2 * (sy * jd - 2 * cy * jf)
-        + 0.5 * hx * hx / beta * j1 * cy
+        + 0.5 * hx.square() / beta * j1 * cy
         - 0.25 / beta * (sy + length * cy)
     )
     T[..., 3, 0, 2] = 2 * (
@@ -261,34 +268,36 @@ def base_ttensor(
         hx / 12 / beta * khk * (sx * dx + 3 * j1)
         - 0.25 / beta * k1 * (length - sx * cx)
     )
-    T[..., 4, 0, 1] = -2 * (hx / 12 / beta * khk * dx * dx + 0.25 / beta * k1 * sx * sx)
+    T[..., 4, 0, 1] = -2 * (
+        hx / 12 / beta * khk * dx * dx + 0.25 / beta * k1 * sx.square()
+    )
     T[..., 4, 1, 1] = -(
         hx / 6 / beta * khk * j2 - 0.5 / beta * sx - 0.25 / beta * k1 * (j1 - sx * dx)
     )
     T[..., 4, 0, 5] = -2 * (
-        hx * hx / 12 / (beta * beta) * khk * (3 * dx * j1 - 4 * j2)
-        + 0.25 * hx / (beta * beta) * k1 * j1 * (1 + cx)
-        + 0.5 * hx / (beta * beta) * igamma2 * sx
+        hx.square() / 12 / beta.square() * khk * (3 * dx * j1 - 4 * j2)
+        + 0.25 * hx / beta.square() * k1 * j1 * (1 + cx)
+        + 0.5 * hx / beta.square() * igamma2 * sx
     )
     T[..., 4, 1, 5] = -2 * (
-        hx * hx / 12 / (beta * beta) * khk * (dx * dx * dx - 2 * sx * j2)
-        + 0.25 * hx / (beta * beta) * k1 * sx * j1
-        + 0.5 * hx / (beta * beta) * igamma2 * dx
+        hx.square() / 12 / beta.square() * khk * (dx**3 - 2 * sx * j2)
+        + 0.25 * hx / beta.square() * k1 * sx * j1
+        + 0.5 * hx / beta.square() * igamma2 * dx
     )
     T[..., 4, 5, 5] = -(
         hx**3 / 6 / beta**3 * khk * (3 * j3 - 2 * dx * j2)
-        + hx * hx / 6 / beta**3 * k1 * (sx * dx * dx - j2 * (1 + 2 * cx))
-        + 1.5 / beta**3 * igamma2 * (hx * hx * j1 - length)
+        + hx.square() / 6 / beta**3 * k1 * (sx * dx.square() - j2 * (1 + 2 * cx))
+        + 1.5 / beta**3 * igamma2 * (hx.square() * j1 - length)
     )
     T[..., 4, 2, 2] = -(
         -hx / beta * k1 * k2 * jf
         - 0.5 * hx / beta * (k2 + hx * k1) * j1
         + 0.25 / beta * k1 * (length - cy * sy)
     )
-    T[..., 4, 2, 3] = -2 * (-0.5 * hx / beta * k2 * jd - 0.25 / beta * k1 * sy * sy)
+    T[..., 4, 2, 3] = -2 * (-0.5 * hx / beta * k2 * jd - 0.25 / beta * k1 * sy.square())
     T[..., 4, 3, 3] = -(
         -hx / beta * k2 * jf
-        + 0.5 * hx * hx / beta * j1
+        + 0.5 * hx.square() / beta * j1
         - 0.25 / beta * (length + cy * sy)
     )
 
@@ -318,7 +327,7 @@ def drift_matrix(
         .clone()
     )
     tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
-        [length, length, -length / (beta * beta) * igamma2], dim=-1
+        [length, length, -length / beta.square() * igamma2], dim=-1
     )
 
     return tm

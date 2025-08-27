@@ -13,7 +13,7 @@ def compute_relativistic_factors(
     :return: gamma, igamma2, beta.
     """
     gamma = energy / particle_mass_eV
-    igamma2 = (gamma * gamma).reciprocal()  # Division by zero not physical
+    igamma2 = gamma.square().reciprocal()  # Division by zero not physical
     beta = (1 - igamma2).sqrt()
 
     return gamma, igamma2, beta

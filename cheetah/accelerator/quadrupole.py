@@ -208,12 +208,12 @@ class Quadrupole(Element):
 
             z = (
                 z
-                + dzx[0] * x * x
+                + dzx[0] * x.square()
                 + dzx[1] * x * px
-                + dzx[2] * px * px
-                + dzy[0] * y * y
+                + dzx[2] * px.square()
+                + dzy[0] * y.square()
                 + dzy[1] * y * py
-                + dzy[2] * py * py
+                + dzy[2] * py.square()
             )
 
             x_next = tx[0][0] * x + tx[0][1] * px

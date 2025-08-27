@@ -190,14 +190,14 @@ class SpaceChargeKick(Element):
         and is more robust to numerical errors.
         """
 
-        r = (x * x + y * y + tau * tau).sqrt()
+        r = (x.square() + y.square() + tau.square()).sqrt()
         integrated_potential = (
-            -0.5 * tau * tau * (x * y / (tau * r)).atan()
-            - 0.5 * y * y * (x * tau / (y * r)).atan()
-            - 0.5 * x * x * (y * tau / (x * r)).atan()
-            + y * tau * (x / (y * y + tau * tau).sqrt()).asinh()
-            + x * tau * (y / (x * x + tau * tau).sqrt()).asinh()
-            + x * y * (tau / (x * x + y * y).sqrt()).asinh()
+            -0.5 * tau.square() * (x * y / (tau * r)).atan()
+            - 0.5 * y.square() * (x * tau / (y * r)).atan()
+            - 0.5 * x.square() * (y * tau / (x * r)).atan()
+            + y * tau * (x / (y.square() + tau.square()).sqrt()).asinh()
+            + x * tau * (y / (x.square() + tau.square()).sqrt()).asinh()
+            + x * y * (tau / (x.square() + y.square()).sqrt()).asinh()
         )
         return integrated_potential
 

@@ -19,9 +19,9 @@ def cheetah_to_bmad_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute p0c and Bmad z, pz
-    p0c = (ref_energy * ref_energy - mc2 * mc2).sqrt()
+    p0c = (ref_energy.square() - mc2.square()).sqrt()
     energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = (energy * energy - mc2 * mc2).sqrt()
+    p = (energy.square() - mc2.square()).sqrt()
     beta = p / energy
     z = -beta * tau
     pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -44,9 +44,9 @@ def bmad_to_cheetah_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = (p0c * p0c + mc2 * mc2).sqrt()
+    ref_energy = (p0c.square() + mc2.square()).sqrt()
     p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = (p * p + mc2 * mc2).sqrt()
+    energy = (p.square() + mc2.square()).sqrt()
     beta = p / energy
     tau = -z / beta
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -192,18 +192,17 @@ def low_energy_z_correction(
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2 * mc2).sqrt()
+        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
     )
-    beta0 = p0c / (p0c * p0c + mc2 * mc2).sqrt()
-    e_tot = (p0c * p0c + mc2 * mc2).sqrt()
+    beta0 = p0c / (p0c.square() + mc2.square()).sqrt()
+    e_tot = (p0c.square() + mc2.square()).sqrt()
 
     evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
-    unsqueezed_beta0_squared = (beta0 * beta0).unsqueeze(-1)
+    unsqueezed_beta0_squared = beta0.square().unsqueeze(-1)
     dz = ds.unsqueeze(-1) * pz * (
         1
         - 3 * (pz * unsqueezed_beta0_squared) / 2
-        + pz
-        * pz
+        + pz.square()
         * unsqueezed_beta0_squared
         * (2 * unsqueezed_beta0_squared - (mc2 / e_tot.unsqueeze(-1)).square() / 2)
     ) * (mc2 / e_tot.unsqueeze(-1)).square() * (
@@ -251,8 +250,8 @@ def calculate_quadrupole_coefficients(
     a22 = cx
 
     c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4
-    c2 = -k1 * sx * sx / (2 * rel_p)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p * rel_p)
+    c2 = -k1 * sx.square() / (2 * rel_p)
+    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p.square())
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
@@ -281,14 +280,14 @@ def track_a_drift(
     P = 1.0 + pz_in  # Particle's total momentum over p0
     Px = px_in / P  # Particle's 'x' momentum over p0
     Py = py_in / P  # Particle's 'y' momentum over p0
-    Pxy2 = Px * Px + Py * Py  # Particle's transverse mometum^2 over p0^2
+    Pxy2 = Px.square() + Py.square()  # Particle's transverse mometum^2 over p0^2
     Pl = (1.0 - Pxy2).sqrt()  # Particle's longitudinal momentum over p0
 
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
     dz = length.unsqueeze(-1) * (
         sqrt_one(
-            (mc2 * mc2 * (2 * pz_in + pz_in * pz_in))
-            / ((p0c.unsqueeze(-1) * P).square() + mc2 * mc2)
+            (mc2.square() * (2 * pz_in + pz_in.square()))
+            / ((p0c.unsqueeze(-1) * P).square() + mc2.square())
         )
         + sqrt_one(-Pxy2) / Pl
     )
@@ -305,7 +304,7 @@ def particle_rf_time(z, pz, p0c, mc2):
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2 * mc2).sqrt()
+        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
     )
     time = -z / (beta * speed_of_light)
 
