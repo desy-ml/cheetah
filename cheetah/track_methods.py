@@ -47,7 +47,7 @@ def base_rmatrix(
     sx = (kLxpi.sinc() * length).real
     sy = ((kLy / torch.pi).sinc() * length).real
 
-    r = 0.5 * kLxpi.sinc()
+    r = (0.5 * kLxpi).sinc()
     dx = hx * 0.5 * length * length * (r * r).real
 
     kx2_is_not_zero = kx2 != 0
@@ -136,8 +136,8 @@ def base_ttensor(
     ky = torch.complex(ky2, zero).sqrt()
     cx = kx * length.cos().real
     cy = ky * length.cos().real
-    sx = (kx * length / torch.pi).sinc() * length
-    sy = (ky * length / torch.pi).sinc() * length
+    sx = (kx * length / torch.pi).sinc().real * length
+    sy = (ky * length / torch.pi).sinc().real * length
     dx = torch.where(kx != 0, (1.0 - cx) / kx2, length * length / 2.0)
 
     d2y = 0.5 * sy * sy
