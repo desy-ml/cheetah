@@ -26,6 +26,10 @@ def test_create_from_parameters():
         cov_xpx=torch.tensor(0.0),
         cov_ypy=torch.tensor(0.0),
         cov_taup=torch.tensor(0.0),
+        cov_xp=torch.tensor(0.0),
+        cov_pxp=torch.tensor(0.0),
+        cov_yp=torch.tensor(0.0),
+        cov_pyp=torch.tensor(0.0),
         energy=torch.tensor(1e7),
         total_charge=torch.tensor(1e-9),
     )
@@ -96,15 +100,19 @@ def test_from_twiss_to_twiss():
         beta_y=torch.tensor(5.91253676811640982),
         alpha_y=torch.tensor(1.0),  # TODO: set realistic value
         emittance_y=torch.tensor(3.497810737006068e-09),
+        dispersion_x=torch.tensor(2e-2),
+        sigma_p=torch.tensor(1e-3),
         energy=torch.tensor(6e6),
     )
-
+    
     assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894)
     assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55631307633660354)
     assert np.isclose(beam.emittance_x.cpu().numpy(), 3.494768647122823e-09)
     assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982)
     assert np.isclose(beam.alpha_y.cpu().numpy(), 1.0)
     assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
+    assert np.isclose(beam.sigma_p.cpu().numpy(), 1e-3)
+    assert np.isclose(beam.dispersion_x.cpu().numpy(), 2e-2, rtol=1e-3)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
