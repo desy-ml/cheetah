@@ -104,7 +104,7 @@ def test_from_twiss_to_twiss():
         sigma_p=torch.tensor(1e-3),
         energy=torch.tensor(6e6),
     )
-    
+
     assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894)
     assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55631307633660354)
     assert np.isclose(beam.emittance_x.cpu().numpy(), 3.494768647122823e-09)
