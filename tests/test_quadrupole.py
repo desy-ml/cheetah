@@ -280,19 +280,18 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     k1 = torch.tensor(0.0, dtype=dtype)
     tilt = torch.tensor(torch.pi / 4, dtype=dtype)
 
-    quad = cheetah.Quadrupole(length=length, k1=k1)
-    skew_quad = cheetah.Quadrupole(length=length, k1=k1, tilt=tilt)
-    drift = cheetah.Drift(length=length)
+    quad = cheetah.Quadrupole(length=length, k1=k1, dtype=dtype)
+    skew_quad = cheetah.Quadrupole(length=length, k1=k1, tilt=tilt, dtype=dtype)
+    drift = cheetah.Drift(length=length, dtype=dtype)
 
     # Compute the transfer matrices
     energy = torch.tensor(1e9, dtype=dtype)
-    spiecies = cheetah.Species("electron")
+    species = cheetah.Species("electron", dtype=dtype)
 
-    tm_quad = quad.first_order_transfer_map(energy, spiecies)
-    tm_skew_quad = skew_quad.first_order_transfer_map(energy, spiecies)
-    tm_drift = drift.first_order_transfer_map(energy, spiecies)
+    tm_quad = quad.first_order_transfer_map(energy, species)
+    tm_skew_quad = skew_quad.first_order_transfer_map(energy, species)
+    tm_drift = drift.first_order_transfer_map(energy, species)
 
     # Check that the transfer matrices are equal of the dtype
-    # NOTE: The `==` is used here over `torch.allclose` on purpose
-    assert (tm_quad == tm_drift).all()
-    assert (tm_skew_quad == tm_drift).all()
+    assert torch.allclose(tm_quad, tm_drift)
+    assert torch.allclose(tm_skew_quad, tm_drift)
