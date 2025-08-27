@@ -44,8 +44,8 @@ def base_rmatrix(
     cx = kLx.cos().real
     cy = kLy.cos().real
     kLxpi = kLx / torch.pi
-    sx = (kLxpi.sinc() * length).real
-    sy = ((kLy / torch.pi).sinc() * length).real
+    sx = kLxpi.sinc().real * length
+    sy = (kLy / torch.pi).sinc().real * length
 
     r = (0.5 * kLxpi).sinc()
     dx = hx * 0.5 * length.square() * r.square().real
@@ -197,7 +197,7 @@ def base_ttensor(
         - 0.25 / beta * (sx + length * cx)
     )
     T[..., 0, 5, 5] = (
-        -hx.square() / 6 / (beta * beta) * khk * (dx**3 - 2 * sx * j2)
+        -hx.square() / 6 / beta.square() * khk * (dx**3 - 2 * sx * j2)
         + 0.5 * hx**3 / beta.square() * sx * j1
         - 0.5 * hx / beta.square() * length * sx
         - 0.5 * hx / beta.square() * igamma2 * dx
