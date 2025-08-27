@@ -243,8 +243,8 @@ class Cavity(Element):
         r55_cor = self.length.new_zeros(())
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = (1 - (Ei * Ei).reciprocal()).sqrt()
-        beta1 = (1 - (Ef * Ef).reciprocal()).sqrt()
+        beta0 = (1 - Ei.square().reciprocal()).sqrt()
+        beta1 = (1 - Ef.square().reciprocal()).sqrt()
         r56 = self.length.new_zeros(())
 
         if self.cavity_type == "standing_wave":

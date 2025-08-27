@@ -42,7 +42,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     particles = np.zeros((num_particles, 6))
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
-    gamma = np.sqrt(1 + np.sum(u**2, 1) / (electron_mass_eV**2))
+    gamma = np.sqrt(1 + np.sum(u**2, 1) / electron_mass_eV**2)
     beta = np.sqrt(1 - gamma**-2)
     betaref = np.sqrt(1 - gamref**-2)
 
