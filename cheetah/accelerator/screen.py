@@ -281,12 +281,13 @@ class Screen(Element):
                         "would like to see, please open an issue on GitHub."
                     )
 
-                image, _ = torch.histogramdd(
+                histogram, _ = torch.histogramdd(
                     torch.stack((read_beam.x, read_beam.y)).mT,
                     bins=self.pixel_bin_edges,
                     weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
-                ).mT
+                )
+                image = histogram.mT
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
