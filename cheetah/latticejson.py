@@ -146,9 +146,9 @@ def nontorch2feature(
     """
     return (
         value
-        if isinstance(value, (str, bool, int))
+        if isinstance(value, (str, int))
         or isinstance(value, (tuple, list))
-        and all(isinstance(v, (str, bool, int)) for v in value)
+        and all(isinstance(v, (str, int)) for v in value)
         else torch.tensor(value, device=device, dtype=dtype)
     )
 

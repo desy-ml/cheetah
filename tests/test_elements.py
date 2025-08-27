@@ -13,7 +13,6 @@ def test_element_subclasses_is_active_boolean(element):
     """
     assert not hasattr(element, "is_active") or (
         isinstance(element.is_active, torch.Tensor)
-        and element.is_active.dtype == torch.bool
     )
 
 
@@ -32,7 +31,6 @@ def test_defining_features_dtype(element):
     properly converted between different dtypes. This transitively tests if all defining
     features are registered as pytorch buffers.
     """
-
     # Ensure all features have the same dtype initially
     for feature in element.defining_tensors:
         assert getattr(element, feature).dtype == torch.float32

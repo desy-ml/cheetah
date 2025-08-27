@@ -18,7 +18,7 @@ def test_reading_shows_beam_particle(screen_method):
             cheetah.Screen(
                 resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
-                is_active=True,
+                is_active=torch.tensor(True),
                 method=screen_method,
                 name="my_screen",
             ),
@@ -47,7 +47,7 @@ def test_screen_kde_bandwidth(kde_bandwidth):
             cheetah.Screen(
                 resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
-                is_active=True,
+                is_active=torch.tensor(True),
                 method="kde",
                 name="my_screen",
                 kde_bandwidth=torch.tensor(kde_bandwidth),
@@ -79,7 +79,7 @@ def test_reading_shows_beam_parameter(screen_method):
             cheetah.Screen(
                 resolution=(100, 100),
                 pixel_size=torch.tensor((1e-5, 1e-5)),
-                is_active=True,
+                is_active=torch.tensor(True),
                 method=screen_method,
                 name="my_screen",
             ),
@@ -120,7 +120,7 @@ def test_reading_shows_beam_ares(screen_method):
         dtype=segment.AREABSCR1.pixel_size.dtype,
     )
     segment.AREABSCR1.binning = 1
-    segment.AREABSCR1.is_active = True
+    segment.AREABSCR1.is_active = torch.tensor(True)
 
     assert isinstance(segment.AREABSCR1.reading, torch.Tensor)
     assert segment.AREABSCR1.reading.shape == (2040, 2448)
@@ -139,7 +139,9 @@ def test_reading_dtype_conversion():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0), dtype=torch.float32),
-            cheetah.Screen(name="screen", is_active=True, dtype=torch.float32),
+            cheetah.Screen(
+                name="screen", is_active=torch.tensor(True), dtype=torch.float32
+            ),
         ],
     )
     beam = cheetah.ParameterBeam.from_parameters(dtype=torch.float32)
@@ -167,7 +169,7 @@ def test_screen_reading_not_unintentionally_modified_parameter_beam():
     incoming = cheetah.ParameterBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    screen = cheetah.Screen(is_active=True)
+    screen = cheetah.Screen(is_active=torch.tensor(True))
 
     outgoing = screen.track(incoming)
     original_read_beam = screen.get_read_beam().clone()
@@ -204,7 +206,7 @@ def test_screen_reading_not_unintentionally_modified_particle_beam():
     incoming = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
-    screen = cheetah.Screen(is_active=True)
+    screen = cheetah.Screen(is_active=torch.tensor(True))
 
     outgoing = screen.track(incoming)
     original_read_beam = screen.get_read_beam().clone()

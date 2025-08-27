@@ -23,17 +23,25 @@ class BPM(Element):
 
     def __init__(
         self,
-        is_active: bool = False,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(
             name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
         )
 
-        self.is_active = is_active
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(False, **factory_kwargs)
+            ),
+        )
 
         self.register_buffer(
             "reading",

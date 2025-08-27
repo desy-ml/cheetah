@@ -29,7 +29,7 @@ class Undulator(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        is_active: bool = False,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -40,7 +40,14 @@ class Undulator(Element):
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
-        self.is_active = is_active
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(False, **factory_kwargs)
+            ),
+        )
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
