@@ -138,7 +138,7 @@ def base_ttensor(
     cy = ky * length.cos().real
     sx = (kx * length / torch.pi).sinc().real * length
     sy = (ky * length / torch.pi).sinc().real * length
-    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length * length / 2.0)
+    dx = torch.where(kx2 != 0, (1.0 - cx) / kx2, length * length / 2.0)
 
     d2y = 0.5 * sy * sy
     s2y = sy * cy
@@ -191,9 +191,9 @@ def base_ttensor(
         - 0.25 / beta * (sx + length * cx)
     )
     T[..., 0, 5, 5] = (
-        -(hx * hx) / 6 / beta * beta * khk * (dx * dx * dx - 2 * sx * j2)
-        + 0.5 * hx**3 / beta * beta * sx * j1
-        - 0.5 * hx / beta * beta * length * sx
+        -(hx * hx) / 6 / (beta * beta) * khk * (dx**3 - 2 * sx * j2)
+        + 0.5 * hx**3 / (beta * beta) * sx * j1
+        - 0.5 * hx / (beta * beta) * length * sx
         - 0.5 * hx / (beta * beta) * igamma2 * dx
     )
     T[..., 0, 2, 2] = k1 * k2 * jd + 0.5 * (k2 + hx * k1) * dx
@@ -210,9 +210,9 @@ def base_ttensor(
         -hx / 12 / beta * khk * (3 * sx * j1 + dx * dx) + 0.25 / beta * k1 * length * sx
     )
     T[..., 1, 5, 5] = (
-        -(hx * hx) / 6 / beta * beta * khk * (sx * dx * dx - 2 * cx * j2)
-        - 0.5 * hx / beta * beta * k1 * (cx * j1 - sx * dx)
-        - 0.5 * hx / beta * beta * igamma2 * sx
+        -(hx * hx) / 6 / (beta * beta) * khk * (sx * dx * dx - 2 * cx * j2)
+        - 0.5 * hx / (beta * beta) * k1 * (cx * j1 - sx * dx)
+        - 0.5 * hx / (beta * beta) * igamma2 * sx
     )
     T[..., 1, 2, 2] = k1 * k2 * js + 0.5 * (k2 + hx * k1) * sx
     T[..., 1, 2, 3] = 2 * (0.5 * k2 * jc)
@@ -266,12 +266,12 @@ def base_ttensor(
         hx / 6 / beta * khk * j2 - 0.5 / beta * sx - 0.25 / beta * k1 * (j1 - sx * dx)
     )
     T[..., 4, 0, 5] = -2 * (
-        hx * hx / 12 / beta * beta * khk * (3 * dx * j1 - 4 * j2)
-        + 0.25 * hx / beta * beta * k1 * j1 * (1 + cx)
-        + 0.5 * hx / beta * beta * igamma2 * sx
+        hx * hx / 12 / (beta * beta) * khk * (3 * dx * j1 - 4 * j2)
+        + 0.25 * hx / (beta * beta) * k1 * j1 * (1 + cx)
+        + 0.5 * hx / (beta * beta) * igamma2 * sx
     )
     T[..., 4, 1, 5] = -2 * (
-        hx * hx / 12 / beta * beta * khk * (dx * dx * dx - 2 * sx * j2)
+        hx * hx / 12 / (beta * beta) * khk * (dx * dx * dx - 2 * sx * j2)
         + 0.25 * hx / (beta * beta) * k1 * sx * j1
         + 0.5 * hx / (beta * beta) * igamma2 * dx
     )
