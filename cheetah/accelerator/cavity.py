@@ -240,7 +240,7 @@ class Cavity(Element):
         Ep = (Ef - Ei) / self.length  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
-        alpha = (eta / 8).sqrt() / (phi.cos() * (Ef / Ei).log())
+        alpha = (eta / 8).sqrt() / phi.cos() * (Ef / Ei).log()
 
         r55_cor = self.length.new_zeros(())
 
