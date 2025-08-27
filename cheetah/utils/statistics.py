@@ -116,8 +116,8 @@ def match_distribution_moments(
     else:
         sample_cov = unbiased_weighted_covariance_matrix(samples, weights)
         sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(dim=-1)
-    sample_cov = sample_cov.contiguous()  # make sure memory is contiguous
-    inv_sqrt_sample_cov = torch.linalg.inv(torch.linalg.cholesky(sample_cov))
+    chol_sample_cov = torch.linalg.cholesky(sample_cov).contiguous()
+    inv_sqrt_sample_cov = torch.linalg.inv(chol_sample_cov)
 
     vector_shape = torch.broadcast_shapes(target_mu.shape[:-1], target_cov.shape[:-2])
     sample_mu = sample_mu.expand(*vector_shape, n_features).unsqueeze(-2)
