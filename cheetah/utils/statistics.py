@@ -115,7 +115,7 @@ def match_distribution_moments(
         sample_mu = samples.mean(dim=-2)
     else:
         sample_cov = unbiased_weighted_covariance_matrix(samples, weights)
-        sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(dim=-1)
+        sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(dim=-1, keepdim=True)
     chol_sample_cov = torch.linalg.cholesky(sample_cov).contiguous()
     inv_sqrt_sample_cov = torch.linalg.solve_triangular(
         chol_sample_cov,

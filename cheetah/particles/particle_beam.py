@@ -392,7 +392,7 @@ class ParticleBeam(Beam):
         particles = torch.cat(
             [
                 particles,
-                torch.ones_like(particles[..., 0], **factory_kwargs).unsqueeze(-1),
+                torch.ones_like(particles[..., 0]).unsqueeze(-1),
             ],
             dim=-1,
         )
