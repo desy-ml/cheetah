@@ -18,6 +18,7 @@
 
 - Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
+- Fix the issue that macroparticles sampled in `ParticleBeam` do not match exactly to the desired distribution. (see #546) (@cr-xu)
 
 ### 🐆 Other
 
