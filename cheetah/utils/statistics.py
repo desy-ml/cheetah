@@ -110,7 +110,7 @@ def match_distribution_moments(
     # Compute the inverse square root of the sample covariance
     if weights is None:
         sample_cov = torch.cov(
-            samples.T,
+            samples.mT,
         )
         sample_mu = samples.mean(dim=-2)
     else:
