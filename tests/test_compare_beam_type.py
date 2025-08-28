@@ -45,7 +45,6 @@ def test_from_twiss():
 
 def test_drift():
     """Test that the drift output for both beam types is roughly the same."""
-
     # Set up lattice
     cheetah_drift = cheetah.Drift(length=torch.tensor(1.0))
 
@@ -91,7 +90,6 @@ def test_drift():
 
 def test_quadrupole():
     """Test that the quadrupole output for both beam types is roughly the same."""
-
     # Set up lattice
     cheetah_quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.15), k1=torch.tensor(4.2)
@@ -142,7 +140,6 @@ def test_cavity_from_astra():
     Test that the cavity output for both beam types is roughly the same. This test uses
     a beam converted from an ASTRA beam file.
     """
-
     # Set up lattice
     cheetah_cavity = cheetah.Cavity(
         length=torch.tensor(1.0377),
