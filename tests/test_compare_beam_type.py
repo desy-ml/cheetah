@@ -8,9 +8,7 @@ import cheetah
 
 
 def test_from_twiss():
-    """
-    Test that a beams created from Twiss parameters have the same properties.
-    """
+    """Test that a beams created from Twiss parameters have the same properties."""
     parameter_beam = cheetah.ParameterBeam.from_twiss(
         beta_x=torch.tensor(5.91253676811640894),
         alpha_x=torch.tensor(3.55631307633660354),
