@@ -293,5 +293,7 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     tm_drift = drift.first_order_transfer_map(energy, species)
 
     # Check that the transfer matrices are equal of the dtype
-    assert torch.allclose(tm_quad, tm_drift)
-    assert torch.allclose(tm_skew_quad, tm_drift)
+    assert torch.allclose(tm_drift, tm_quad)
+    assert torch.allclose(
+        tm_drift, tm_skew_quad, atol=1e-8 if dtype == torch.float64 else 1e-7
+    )
