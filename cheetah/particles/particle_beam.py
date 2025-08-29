@@ -1328,7 +1328,7 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 x_edges,
                 y_edges,
-                clipped_histogram.mT / smoothed_histogram.max(),
+                clipped_histogram.T / smoothed_histogram.max(),
                 **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
             )
         elif style == "contour":
@@ -1337,7 +1337,7 @@ class ParticleBeam(Beam):
             ax.contour(
                 x_centers,
                 y_centers,
-                contour_histogram.mT / contour_histogram.max(),
+                contour_histogram.T / contour_histogram.max(),
                 **{"levels": 3} | (contour_kws or {}),
             )
 
