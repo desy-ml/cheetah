@@ -8,7 +8,7 @@ from scipy.constants import speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -52,45 +52,40 @@ class TransverseDeflectingCavity(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, voltage, phase, frequency, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "voltage",
-            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+            voltage if voltage is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
-            "phase",
-            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+            "phase", phase if phase is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "frequency",
-            torch.as_tensor(
-                frequency if frequency is not None else 0.0, **factory_kwargs
-            ),
+            frequency if frequency is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.voltage != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.voltage.any()
 
     @property
     def is_skippable(self) -> bool:
@@ -154,7 +149,7 @@ class TransverseDeflectingCavity(Element):
 
         x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
-        voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
+        voltage = self.voltage * -incoming.species.num_elementary_charges / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (
@@ -171,18 +166,18 @@ class TransverseDeflectingCavity(Element):
 
         # TODO: Assigning px to px is really bad practice and should be separated into
         # two separate variables
-        px = px + voltage.unsqueeze(-1) * torch.sin(phase)
+        px = px + voltage.unsqueeze(-1) * phase.sin()
 
         beta_old = (
             (1 + pz)
             * p0c.unsqueeze(-1)
-            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+            / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
         )
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
+        E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
             -1
         ) * x * p0c.unsqueeze(-1)
-        pc = torch.sqrt(E_new**2 - mc2**2)
+        pc = (E_new.square() - mc2.square()).sqrt()
         beta = pc / E_new
 
         pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)

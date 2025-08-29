@@ -8,12 +8,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
-from cheetah.utils import (
-    UniqueNameGenerator,
-    bmadx,
-    squash_index_for_unavailable_dims,
-    verify_device_and_dtype,
-)
+from cheetah.utils import UniqueNameGenerator, bmadx, squash_index_for_unavailable_dims
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -59,26 +54,24 @@ class Quadrupole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k1, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
+            "k1", k1 if k1 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.num_steps = num_steps
@@ -90,18 +83,17 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
         )
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
+        if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+            R = R_exit @ R @ R_entry
+
+        return R
 
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
@@ -109,8 +101,8 @@ class Quadrupole(Element):
         T = base_ttensor(
             length=self.length,
             k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k2=self.length.new_zeros(()),
+            hx=self.length.new_zeros(()),
             tilt=self.tilt,
             energy=energy,
             species=species,
@@ -120,14 +112,14 @@ class Quadrupole(Element):
         T[..., :, 6, :] = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
+        if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             T = torch.einsum(
                 "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
@@ -215,12 +207,12 @@ class Quadrupole(Element):
 
             z = (
                 z
-                + dzx[0] * x**2
+                + dzx[0] * x.square()
                 + dzx[1] * x * px
-                + dzx[2] * px**2
-                + dzy[0] * y**2
+                + dzx[2] * px.square()
+                + dzy[0] * y.square()
                 + dzy[1] * y * py
-                + dzy[2] * py**2
+                + dzy[2] * py.square()
             )
 
             x_next = tx[0][0] * x + tx[0][1] * px
@@ -238,7 +230,7 @@ class Quadrupole(Element):
         )
 
         # pz is unaffected by tracking, therefore needs to match vector dimensions
-        pz = pz * torch.ones_like(x)
+        pz, _ = torch.broadcast_tensors(pz, x)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -261,8 +253,8 @@ class Quadrupole(Element):
         return self.tracking_method in ["linear", "cheetah"]
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.k1 != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.k1.any()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -303,7 +295,7 @@ class Quadrupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )

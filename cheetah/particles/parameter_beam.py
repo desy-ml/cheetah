@@ -1,10 +1,8 @@
-import numpy as np
 import torch
 
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.particles.species import Species
-from cheetah.utils import verify_device_and_dtype
 
 
 class ParameterBeam(Beam):
@@ -17,9 +15,8 @@ class ParameterBeam(Beam):
     :param total_charge: Total charge of the beam in C.
     :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
-    :param device: Device to use for the beam. If "auto", use CUDA if available.
-        Note: Compuationally it would be faster to use CPU for ParameterBeam.
-    :param dtype: Data type of the beam.
+    :param device: Device that the beam creates its tensors on.
+    :param dtype: Data type of the tensors created by the beam.
     """
 
     UNVECTORIZED_NUM_ATTR_DIMS = Beam.UNVECTORIZED_NUM_ATTR_DIMS | {
@@ -38,31 +35,26 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [mu, cov, energy, total_charge, s], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
         self.species = (
-            species.to(**factory_kwargs)
-            if species is not None
-            else Species("electron", **factory_kwargs)
+            species if species is not None else Species("electron", **factory_kwargs)
         )
 
-        self.register_buffer_or_parameter("mu", torch.as_tensor(mu, **factory_kwargs))
-        self.register_buffer_or_parameter("cov", torch.as_tensor(cov, **factory_kwargs))
-        self.register_buffer_or_parameter(
-            "energy", torch.as_tensor(energy, **factory_kwargs)
-        )
+        self.register_buffer_or_parameter("mu", mu)
+        self.register_buffer_or_parameter("cov", cov)
+        self.register_buffer_or_parameter("energy", energy)
         self.register_buffer_or_parameter(
             "total_charge",
-            torch.as_tensor(
-                total_charge if total_charge is not None else 0.0, **factory_kwargs
+            (
+                total_charge
+                if total_charge is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "s", torch.as_tensor(s if s is not None else 0.0, **factory_kwargs)
+            "s", s if s is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
     @classmethod
@@ -94,35 +86,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cov_xpx,
-                cov_ypy,
-                cov_taup,
-                cov_xp,
-                cov_pxp,
-                cov_yp,
-                cov_pyp,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -212,18 +175,18 @@ class ParameterBeam(Beam):
             cov_pyp,
         )
         cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
-        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 0] = sigma_x.square()
         cov[..., 0, 1] = cov_xpx
         cov[..., 1, 0] = cov_xpx
-        cov[..., 1, 1] = sigma_px**2
-        cov[..., 2, 2] = sigma_y**2
+        cov[..., 1, 1] = sigma_px.square()
+        cov[..., 2, 2] = sigma_y.square()
         cov[..., 2, 3] = cov_ypy
         cov[..., 3, 2] = cov_ypy
-        cov[..., 3, 3] = sigma_py**2
-        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 3, 3] = sigma_py.square()
+        cov[..., 4, 4] = sigma_tau.square()
         cov[..., 4, 5] = cov_taup
         cov[..., 5, 4] = cov_taup
-        cov[..., 5, 5] = sigma_p**2
+        cov[..., 5, 5] = sigma_p.square()
         cov[..., 0, 5] = cov_xp
         cov[..., 5, 0] = cov_xp
         cov[..., 1, 5] = cov_pxp
@@ -267,29 +230,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                beta_x,
-                alpha_x,
-                emittance_x,
-                beta_y,
-                alpha_y,
-                emittance_y,
-                sigma_tau,
-                sigma_p,
-                cov_taup,
-                dispersion_x,
-                dispersion_px,
-                dispersion_y,
-                dispersion_py,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -354,20 +294,30 @@ class ParameterBeam(Beam):
             beta_y > 0
         ), "Beta function in y direction must be larger than 0 everywhere."
 
-        sigma_x = torch.sqrt(emittance_x * beta_x + dispersion_x**2 * sigma_p**2)
-        sigma_px = torch.sqrt(
-            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
+        sigma_x = (
+            emittance_x * beta_x + dispersion_x.square() * sigma_p.square()
+        ).sqrt()
+        sigma_px = (
+            emittance_x * (1 + alpha_x.square()) / beta_x
+            + dispersion_px.square() * sigma_p.square()
+        ).sqrt()
+        sigma_y = (
+            emittance_y * beta_y + dispersion_y.square() * sigma_p.square()
+        ).sqrt()
+        sigma_py = (
+            emittance_y * (1 + alpha_y.square()) / beta_y
+            + dispersion_py.square() * sigma_p.square()
+        ).sqrt()
+        cov_xpx = (
+            -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p.square()
         )
-        sigma_y = torch.sqrt(emittance_y * beta_y + dispersion_y**2 * sigma_p**2)
-        sigma_py = torch.sqrt(
-            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
+        cov_ypy = (
+            -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p.square()
         )
-        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
-        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
-        cov_xp = dispersion_x * sigma_p**2
-        cov_pxp = dispersion_px * sigma_p**2
-        cov_yp = dispersion_y * sigma_p**2
-        cov_pyp = dispersion_py * sigma_p**2
+        cov_xp = dispersion_x * sigma_p.square()
+        cov_pxp = dispersion_px * sigma_p.square()
+        cov_yp = dispersion_y * sigma_p.square()
+        cov_pyp = dispersion_py * sigma_p.square()
 
         return cls.from_parameters(
             sigma_x=sigma_x,
@@ -396,27 +346,27 @@ class ParameterBeam(Beam):
         cls, parray, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
-        mu = torch.ones(7, device=device, dtype=dtype)
-        mu[:6] = torch.as_tensor(
-            parray.rparticles.mean(axis=1), device=device, dtype=dtype
-        )
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
 
-        cov = torch.zeros(7, 7, device=device, dtype=dtype)
-        cov[:6, :6] = torch.as_tensor(
-            np.cov(parray.rparticles), device=device, dtype=dtype
-        )
+        mu = torch.ones(7, **factory_kwargs)
+        mu[:6] = torch.as_tensor(parray.rparticles.mean(axis=1), **factory_kwargs)
 
-        energy = 1e9 * torch.as_tensor(parray.E)
-        total_charge = torch.as_tensor(parray.q_array).sum()
+        cov = torch.zeros(7, 7, **factory_kwargs)
+        cov[:6, :6] = torch.cov(torch.as_tensor(parray.rparticles, **factory_kwargs))
+
+        energy = 1e9 * torch.as_tensor(parray.E, **factory_kwargs)
+        total_charge = torch.as_tensor(parray.q_array, **factory_kwargs).sum()
 
         return cls(
             mu=mu,
             cov=cov,
             energy=energy,
             total_charge=total_charge,
-            species=Species("electron"),
-            device=device or torch.get_default_device(),
-            dtype=dtype or torch.get_default_dtype(),
+            species=Species("electron", **factory_kwargs),
+            **factory_kwargs,
         )
 
     @classmethod
@@ -426,18 +376,21 @@ class ParameterBeam(Beam):
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astra import from_astrabeam
 
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
+
         particles, energy, particle_charges = from_astrabeam(path)
 
-        mu = torch.ones(7, device=device, dtype=dtype)
-        mu[:6] = torch.as_tensor(particles.mean(axis=0), device=device, dtype=dtype)
+        mu = torch.ones(7, **factory_kwargs)
+        mu[:6] = torch.as_tensor(particles.mean(axis=0), **factory_kwargs)
 
-        cov = torch.zeros(7, 7, device=device, dtype=dtype)
-        cov[:6, :6] = torch.as_tensor(
-            np.cov(particles.transpose()), device=device, dtype=dtype
-        )
+        cov = torch.zeros(7, 7, **factory_kwargs)
+        cov[:6, :6] = torch.cov(torch.as_tensor(particles, **factory_kwargs).T)
 
-        energy = torch.as_tensor(energy)
-        total_charge = torch.as_tensor(particle_charges).sum()
+        energy = torch.as_tensor(energy, **factory_kwargs)
+        total_charge = torch.as_tensor(particle_charges, **factory_kwargs).sum()
 
         return cls(
             mu=mu,
@@ -445,8 +398,7 @@ class ParameterBeam(Beam):
             energy=energy,
             total_charge=total_charge,
             species=Species("electron"),
-            device=device or torch.get_default_device(),
-            dtype=dtype or torch.get_default_dtype(),
+            **factory_kwargs,
         )
 
     def transformed_to(
@@ -611,7 +563,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_x(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 0, 0], 1e-20))
+        return self.cov[..., 0, 0].sqrt()
 
     @property
     def mu_px(self) -> torch.Tensor:
@@ -619,7 +571,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_px(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 1, 1], 1e-20))
+        return self.cov[..., 1, 1].sqrt()
 
     @property
     def mu_y(self) -> torch.Tensor:
@@ -627,7 +579,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_y(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 2, 2], 1e-20))
+        return self.cov[..., 2, 2].sqrt()
 
     @property
     def mu_py(self) -> torch.Tensor:
@@ -635,7 +587,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_py(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 3, 3], 1e-20))
+        return self.cov[..., 3, 3].sqrt()
 
     @property
     def mu_tau(self) -> torch.Tensor:
@@ -643,7 +595,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_tau(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 4, 4], 1e-20))
+        return self.cov[..., 4, 4].sqrt()
 
     @property
     def mu_p(self) -> torch.Tensor:
@@ -651,7 +603,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_p(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 5, 5], 1e-20))
+        return self.cov[..., 5, 5].sqrt()
 
     @property
     def cov_xpx(self) -> torch.Tensor:

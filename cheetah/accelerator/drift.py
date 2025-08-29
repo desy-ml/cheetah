@@ -7,7 +7,7 @@ import torch
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -43,11 +43,10 @@ class Drift(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([length], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.tracking_method = tracking_method
 
@@ -61,9 +60,9 @@ class Drift(Element):
     ) -> torch.Tensor:
         T = base_ttensor(
             self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=self.length.new_zeros(()),
+            k2=self.length.new_zeros(()),
+            hx=self.length.new_zeros(()),
             energy=energy,
             species=species,
         )

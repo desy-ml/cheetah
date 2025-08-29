@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
-from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
+from cheetah.utils import squash_index_for_unavailable_dims
 
 
 class Sextupole(Element):
@@ -41,26 +41,24 @@ class Sextupole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k2, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.register_buffer_or_parameter(
-            "k2", torch.as_tensor(k2 if k2 is not None else 0.0, **factory_kwargs)
+            "k2", k2 if k2 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.tracking_method = tracking_method
@@ -73,9 +71,9 @@ class Sextupole(Element):
     def second_order_transfer_map(self, energy, species):
         T = base_ttensor(
             length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=self.length.new_zeros(()),
             k2=self.k2,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
@@ -87,7 +85,7 @@ class Sextupole(Element):
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
+        if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             T = torch.einsum(
                 "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
@@ -107,8 +105,8 @@ class Sextupole(Element):
         return False
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.k2 != 0.0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.k2.any()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -133,7 +131,7 @@ class Sextupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k2) if self.is_active else 1)
+        height = 0.8 * (plot_k2.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
         )

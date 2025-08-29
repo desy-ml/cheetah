@@ -5,11 +5,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
-from cheetah.utils import (
-    UniqueNameGenerator,
-    compute_relativistic_factors,
-    verify_device_and_dtype,
-)
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -43,34 +39,31 @@ class Solenoid(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k, misalignment], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.length = torch.as_tensor(length, **factory_kwargs)
 
         self.register_buffer_or_parameter(
-            "k", torch.as_tensor(k if k is not None else 0.0, **factory_kwargs)
+            "k", k if k is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
-        c = torch.cos(self.length * self.k)
-        s = torch.sin(self.length * self.k)
+        c = (self.length * self.k).cos()
+        s = (self.length * self.k).sin()
 
         s_k = torch.where(self.k == 0.0, self.length, s / self.k)
 
@@ -79,40 +72,39 @@ class Solenoid(Element):
         )
 
         r56 = torch.where(
-            gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
+            gamma != 0, self.length / (1 - gamma.square()), self.length.new_zeros(())
         )
 
-        R = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
-        R[..., 0, 0] = c**2
+        R = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
+        R[..., 0, 0] = c.square()
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c
         R[..., 0, 3] = s * s_k
         R[..., 1, 0] = -self.k * s * c
-        R[..., 1, 1] = c**2
-        R[..., 1, 2] = -self.k * s**2
+        R[..., 1, 1] = c.square()
+        R[..., 1, 2] = -self.k * s.square()
         R[..., 1, 3] = s * c
         R[..., 2, 0] = -s * c
         R[..., 2, 1] = -s * s_k
-        R[..., 2, 2] = c**2
+        R[..., 2, 2] = c.square()
         R[..., 2, 3] = c * s_k
-        R[..., 3, 0] = self.k * s**2
+        R[..., 3, 0] = self.k * s.square()
         R[..., 3, 1] = -s * c
         R[..., 3, 2] = -self.k * s * c
-        R[..., 3, 3] = c**2
+        R[..., 3, 3] = c.square()
         R[..., 4, 5] = r56
 
         R = R.real
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
+        if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+
+        return R
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.k != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.k.any()
 
     @property
     def is_skippable(self) -> bool:
