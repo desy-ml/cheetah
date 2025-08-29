@@ -288,15 +288,6 @@ class Element(ABC, nn.Module):
             else ["name", "tracking_method"]
         )
 
-    @property
-    def defining_tensors(self) -> list[str]:
-        """Subset of defining features that are of type `torch.Tensor`."""
-        return [
-            feature
-            for feature in self.defining_features
-            if isinstance(getattr(self, feature), torch.Tensor)
-        ]
-
     def clone(self) -> "Element":
         """Create a copy of the element which does not share the underlying memory."""
         return self.__class__(
