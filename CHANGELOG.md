@@ -13,6 +13,7 @@
 - Documented PyTorch `compile` for improved speed (see #390) (@ax3l)
 - Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
 - Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
+- Add more beam covariance properties (see #547) (@ax3l)
 
 ### 🐛 Bug fixes
 

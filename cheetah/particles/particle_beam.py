@@ -1809,6 +1809,16 @@ class ParticleBeam(Beam):
         )
 
     @property
+    def cov_xp(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between x and px. :math:`\sigma_{x, px}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.x, self.p, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
     def cov_ypy(self) -> torch.Tensor:
         r"""
         Returns the covariance between y and py. :math:`\sigma_{y, py}^2`.
@@ -1816,6 +1826,16 @@ class ParticleBeam(Beam):
         """
         return unbiased_weighted_covariance(
             self.y, self.py, weights=self.survival_probabilities, dim=-1
+        )
+
+    @property
+    def cov_yp(self) -> torch.Tensor:
+        r"""
+        Returns the covariance between y and py. :math:`\sigma_{y, py}^2`.
+        It is weighted by the survival probability of the particles.
+        """
+        return unbiased_weighted_covariance(
+            self.y, self.p, weights=self.survival_probabilities, dim=-1
         )
 
     @property

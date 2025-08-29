@@ -658,8 +658,16 @@ class ParameterBeam(Beam):
         return self.cov[..., 0, 1]
 
     @property
+    def cov_xp(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
     def cov_ypy(self) -> torch.Tensor:
         return self.cov[..., 2, 3]
+
+    @property
+    def cov_yp(self) -> torch.Tensor:
+        raise NotImplementedError
 
     @property
     def cov_taup(self) -> torch.Tensor:
