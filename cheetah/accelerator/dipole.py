@@ -478,7 +478,7 @@ class Dipole(Element):
         """Linear transfer map for the entrance face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / self._e1.cos()
+        sec_e = self._e1.cos().reciprocal()
         phi = (
             self.fringe_integral
             * self.hx
@@ -488,7 +488,7 @@ class Dipole(Element):
         )
 
         tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
-        tm[..., 1, 0] = self.hx * (self._e1.tan())
+        tm[..., 1, 0] = self.hx * self._e1.tan()
         tm[..., 3, 2] = -self.hx * (self._e1 - phi).tan()
 
         return tm
@@ -508,7 +508,7 @@ class Dipole(Element):
 
         tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * self._e2.tan()
-        tm[..., 3, 2] = -self.hx * self._e2.tan() - phi
+        tm[..., 3, 2] = -self.hx * (self._e2 - phi).tan()
 
         return tm
 
