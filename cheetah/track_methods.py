@@ -134,11 +134,11 @@ def base_ttensor(
     ky2 = -k1
     kx = torch.complex(kx2, zero).sqrt()
     ky = torch.complex(ky2, zero).sqrt()
-    cx = kx * length.cos().real
-    cy = ky * length.cos().real
+    cx = (kx * length).cos().real
+    cy = (ky * length).cos().real
     sx = (kx * length / torch.pi).sinc().real * length
     sy = (ky * length / torch.pi).sinc().real * length
-    dx = torch.where(kx2 != 0, (1.0 - cx) / kx2, length * length / 2.0)
+    dx = torch.where(kx2 != 0, (1.0 - cx) / kx2, length.square() / 2.0)
 
     d2y = 0.5 * sy.square()
     s2y = sy * cy
