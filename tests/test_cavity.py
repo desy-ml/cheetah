@@ -35,12 +35,12 @@ def test_assert_ei_greater_zero():
 @pytest.mark.parametrize(
     ("voltage", "phase"),
     [
-        (torch.tensor([0.0]), torch.tensor([-90.0])),
-        (torch.tensor([1e6]), torch.tensor([0.0])),
-        (torch.tensor([0.0, 1e6]), torch.tensor([-90.0])),
-        (torch.tensor([0.0, 1e6]), torch.tensor([0.0])),
-        (torch.tensor([0.0]), torch.tensor([-90.0, 0.0])),
-        (torch.tensor([1e6]), torch.tensor([-90.0, 0.0])),
+        (torch.tensor(0.0), torch.tensor(-90.0)),
+        (torch.tensor(1e6), torch.tensor(0.0)),
+        (torch.tensor([0.0, 1e6]), torch.tensor(-90.0)),
+        (torch.tensor([0.0, 1e6]), torch.tensor(0.0)),
+        (torch.tensor(0.0), torch.tensor([-90.0, 0.0])),
+        (torch.tensor(1e6), torch.tensor([-90.0, 0.0])),
         (torch.tensor([0.0, 1e6]), torch.tensor([0.0, -90.0])),
         (torch.tensor([0.0, 1e6]), torch.tensor([-90.0, 0.0])),
     ],
@@ -55,7 +55,8 @@ def test_assert_ei_greater_zero():
         "mixed-aligned",
     ],
 )
-def test_vectorized_inactive_cavity(voltage, phase):
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
     """
     Tests that a vectorised cavity with zero voltage or off-crest phase does not produce
     NaNs and that switched-off cavities can be vectorized with switched-on.
@@ -65,18 +66,14 @@ def test_vectorized_inactive_cavity(voltage, phase):
     of zero voltage or off-crest phase. The latter produced NaNs in the transfer matrix.
     """
     cavity = cheetah.Cavity(
-        length=torch.tensor([3.0441, 3.0441]),
+        cavity_type=cavity_type,
+        length=torch.tensor(3.0441),
         voltage=voltage,
         phase=phase,
-        frequency=torch.tensor([2.8560e09, 2.8560e09]),
-        name="k27_1a",
+        frequency=torch.tensor(2.8560e09),
         dtype=torch.float64,
     )
     incoming = cheetah.ParameterBeam.from_parameters(
-        mu_x=torch.tensor(0.0),
-        mu_px=torch.tensor(0.0),
-        mu_y=torch.tensor(0.0),
-        mu_py=torch.tensor(0.0),
         sigma_x=torch.tensor(4.8492e-06),
         sigma_px=torch.tensor(1.5603e-07),
         sigma_y=torch.tensor(4.1209e-07),
