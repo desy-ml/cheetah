@@ -253,7 +253,9 @@ class Cavity(Element):
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
-            r12 = math.sqrt(8.0) * Ei / Ep * phi.cos() * alpha.sin()
+            r12 = (
+                math.sqrt(8.0) * energy / effective_voltage * alpha.sin() * self.length
+            )
 
             r21 = (
                 -Ep
