@@ -35,11 +35,11 @@ def test_assert_ei_greater_zero():
 @pytest.mark.parametrize(
     ("voltage", "phase"),
     [
-        (torch.tensor(0.0), torch.tensor(-90.0)),
+        (torch.tensor(0.0), torch.tensor([-90.0, 90.0])),
+        (torch.tensor([0.0, 1e6]), torch.tensor([[-90.0], [90.0], [0.0]])),
         (torch.tensor(1e6), torch.tensor(0.0)),
-        (torch.tensor([0.0, 1e6]), torch.tensor([[-90.0], [0.0]])),
     ],
-    ids=["off", "on", "mixed"],
+    ids=["off", "mixed", "on"],
 )
 @pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
 def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
