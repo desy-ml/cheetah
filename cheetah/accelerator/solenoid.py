@@ -62,37 +62,44 @@ class Solenoid(Element):
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
-        c = (self.length * self.k).cos()
-        s = (self.length * self.k).sin()
+        length, k, gamma = torch.broadcast_tensors(self.length, self.k, gamma)
 
-        s_k = torch.where(self.k == 0.0, self.length, s / self.k)
+        c = (length * k).cos()
+        s = (length * k).sin()
 
-        vector_shape = torch.broadcast_shapes(
-            self.length.shape, self.k.shape, energy.shape
-        )
+        s_k = torch.where(k == 0.0, length, s / k)
 
         r56 = torch.where(
-            gamma != 0, self.length / (1 - gamma.square()), self.length.new_zeros(())
+            gamma != 0, length / (1 - gamma.square()), length.new_zeros(())
         )
 
-        R = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
-        R[..., 0, 0] = c.square()
-        R[..., 0, 1] = c * s_k
-        R[..., 0, 2] = s * c
-        R[..., 0, 3] = s * s_k
-        R[..., 1, 0] = -self.k * s * c
-        R[..., 1, 1] = c.square()
-        R[..., 1, 2] = -self.k * s.square()
-        R[..., 1, 3] = s * c
-        R[..., 2, 0] = -s * c
-        R[..., 2, 1] = -s * s_k
-        R[..., 2, 2] = c.square()
-        R[..., 2, 3] = c * s_k
-        R[..., 3, 0] = self.k * s.square()
-        R[..., 3, 1] = -s * c
-        R[..., 3, 2] = -self.k * s * c
-        R[..., 3, 3] = c.square()
-        R[..., 4, 5] = r56
+        R = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
+        R[
+            ...,
+            (0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4),
+            (0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 5),
+        ] = torch.stack(
+            [
+                c.square(),
+                c * s_k,
+                s * c,
+                s * s_k,
+                -k * s * c,
+                c.square(),
+                -k * s.square(),
+                s * c,
+                -s * c,
+                -s * s_k,
+                c.square(),
+                c * s_k,
+                k * s.square(),
+                -s * c,
+                -k * s * c,
+                c.square(),
+                r56,
+            ],
+            dim=-1,
+        )
 
         if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)

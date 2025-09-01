@@ -1,3 +1,4 @@
+import math
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -229,42 +230,41 @@ class Cavity(Element):
         effective_voltage = self.voltage * -species.num_elementary_charges
         delta_energy = effective_voltage * phi.cos()
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = self.length.new_ones(())
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
-        Ep = delta_energy / species.mass_eV / self.length  # Derivative of the energy
+        dE = delta_energy / species.mass_eV
+        Ep = dE / self.length  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
-        alpha = (eta / 8).sqrt() / phi.cos() * (Ef / Ei).log()
-
-        r55_cor = self.length.new_zeros(())
-
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = (1 - Ei.square().reciprocal()).sqrt()
-        beta1 = (1 - Ef.square().reciprocal()).sqrt()
-        r56 = self.length.new_zeros(())
 
         if self.cavity_type == "standing_wave":
-            r11 = alpha.cos() - (2 / eta).sqrt() * phi.cos() * alpha.sin()
+            alpha = math.sqrt(0.125) / phi.cos() * (Ef / Ei).log()
+            beta0 = (1 - Ei.square().reciprocal()).sqrt()
+            beta1 = (1 - Ef.square().reciprocal()).sqrt()
+
+            r11 = alpha.cos() - math.sqrt(2.0) * phi.cos() * alpha.sin()
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
-            r12 = (8 / eta).sqrt() * Ei / Ep * phi.cos() * alpha.sin()
+            r12 = (
+                math.sqrt(8.0) * energy / effective_voltage * alpha.sin() * self.length
+            )
 
             r21 = (
                 -Ep
                 / Ef
-                * (phi.cos() / (2 * eta).sqrt() + (eta / 8).sqrt() / phi.cos())
+                * (phi.cos() / math.sqrt(2.0) + math.sqrt(0.125) / phi.cos())
                 * alpha.sin()
             )
 
-            r22 = Ei / Ef * (alpha.cos() + (2 / eta).sqrt() * phi.cos() * alpha.sin())
+            r22 = Ei / Ef * (alpha.cos() + math.sqrt(2.0) * phi.cos() * alpha.sin())
 
             r56 = (
                 -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             )
-            r55_cor = (
+            r55 = 1.0 + (
                 k
                 * self.length
                 * beta0
@@ -272,14 +272,13 @@ class Cavity(Element):
                 / species.mass_eV
                 * phi.sin()
                 * (Ei * Ef * (beta0 * beta1 - 1) + 1)
-                / (beta1 * Ef * (Ei - Ef).square())
+                / (beta1 * Ef * dE.square())
             )
             r66 = Ei / Ef * beta0 / beta1
             r65 = k * phi.sin() * effective_voltage / (Ef * beta1 * species.mass_eV)
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            dE = delta_energy / species.mass_eV
             f = Ei / dE * (dE / Ei).log1p()
 
             vector_shape = torch.broadcast_shapes(
@@ -306,14 +305,16 @@ class Cavity(Element):
             r12 = M_combined[..., 0, 1]
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
+            r55 = self.length.new_ones(())
+            r56 = self.length.new_zeros(())
             r66 = r22
             r65 = k * phi.sin() * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
         # Make sure that all matrix elements have the same shape
-        r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(
-            r11, r12, r21, r22, r55_cor, r56, r65, r66
+        r11, r12, r21, r22, r55, r56, r65, r66 = torch.broadcast_tensors(
+            r11, r12, r21, r22, r55, r56, r65, r66
         )
 
         R = torch.eye(7, **factory_kwargs).expand((*r11.shape, 7, 7)).clone()
@@ -322,7 +323,7 @@ class Cavity(Element):
             (0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5),
             (0, 1, 0, 1, 2, 3, 2, 3, 4, 5, 4, 5),
         ] = torch.stack(
-            [r11, r12, r21, r22, r11, r12, r21, r22, 1 + r55_cor, r56, r65, r66], dim=-1
+            [r11, r12, r21, r22, r11, r12, r21, r22, r55, r56, r65, r66], dim=-1
         )
 
         return R
