@@ -33,24 +33,41 @@ def test_assert_ei_greater_zero():
 
 
 @pytest.mark.parametrize(
-    "voltage",
-    [torch.tensor([0.0, 0.0]), torch.tensor([0.0, 1e6]), torch.tensor([1e6, 1e6])],
-    ids=["off", "mixed", "on"],
+    ("voltage", "phase"),
+    [
+        (torch.tensor([0.0]), torch.tensor([-90.0])),
+        (torch.tensor([1e6]), torch.tensor([0.0])),
+        (torch.tensor([0.0, 1e6]), torch.tensor([-90.0])),
+        (torch.tensor([0.0, 1e6]), torch.tensor([0.0])),
+        (torch.tensor([0.0]), torch.tensor([-90.0, 0.0])),
+        (torch.tensor([1e6]), torch.tensor([-90.0, 0.0])),
+        (torch.tensor([0.0, 1e6]), torch.tensor([0.0, -90.0])),
+        (torch.tensor([0.0, 1e6]), torch.tensor([-90.0, 0.0])),
+    ],
+    ids=[
+        "off",
+        "on",
+        "phase-offcrest",
+        "phase-oncrest",
+        "voltage-off",
+        "voltage-on",
+        "mixed-swapped",
+        "mixed-aligned",
+    ],
 )
-def test_vectorized_cavity_zero_voltage(voltage):
+def test_vectorized_inactive_cavity(voltage, phase):
     """
-    Tests that a vectorised cavity with zero voltage does not produce NaNs and that
-    zero voltage can be vectorised with non-zero voltage.
+    Tests that a vectorised cavity with zero voltage or off-crest phase does not produce
+    NaNs and that switched-off cavities can be vectorized with switched-on.
 
     This was a bug introduced during the vectorisation of Cheetah, when the special
     case of zero was removed and the `_cavity_rmatrix` method was also used in the case
-    of zero voltage. The latter produced NaNs in the transfer matrix when the voltage
-    is zero.
+    of zero voltage or off-crest phase. The latter produced NaNs in the transfer matrix.
     """
     cavity = cheetah.Cavity(
         length=torch.tensor([3.0441, 3.0441]),
         voltage=voltage,
-        phase=torch.tensor([-0.0, -0.0]),
+        phase=phase,
         frequency=torch.tensor([2.8560e09, 2.8560e09]),
         name="k27_1a",
         dtype=torch.float64,
