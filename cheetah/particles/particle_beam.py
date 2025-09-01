@@ -1208,16 +1208,16 @@ class ParticleBeam(Beam):
             * self.species.mass_kg
             * constants.speed_of_light
         ).unsqueeze(-1)
-        relativistic_beta_unsqueezed = self.relativistic_beta.unsqueeze(-1)
+        relativistic_beta = self.relativistic_beta.unsqueeze(-1)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
-            1.0 + self.particles[..., 5] * relativistic_beta_unsqueezed
+            1.0 + self.particles[..., 5] * relativistic_beta
         )
         beta = (1 - gamma.square().reciprocal()).sqrt()
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
         px = self.particles[..., 1] * p0
         py = self.particles[..., 3] * p0
-        zs = self.particles[..., 4] * -relativistic_beta_unsqueezed
+        zs = self.particles[..., 4] * -relativistic_beta
         p = (momentum.square() - px.square() - py.square()).sqrt()
 
         xp_coords = self.particles.clone()

@@ -275,10 +275,8 @@ def track_a_drift(
     Pxy2 = Px.square() + Py.square()  # Particle's transverse mometum^2 over p0^2
     Pl = (1.0 - Pxy2).sqrt()  # Particle's longitudinal momentum over p0
 
-    length_unsqueezed = length.unsqueeze(-1)
-
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
-    dz = length_unsqueezed * (
+    dz = length * (
         sqrt_one(
             (mc2.square() * (2 * pz_in + pz_in.square()))
             / ((p0c * P).square() + mc2.square())
@@ -286,8 +284,8 @@ def track_a_drift(
         + sqrt_one(-Pxy2) / Pl
     )
 
-    x_out = x_in + length_unsqueezed * Px / Pl
-    y_out = y_in + length_unsqueezed * Py / Pl
+    x_out = x_in + length * Px / Pl
+    y_out = y_in + length * Py / Pl
     z_out = z_in + dz
 
     return x_out, y_out, z_out

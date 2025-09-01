@@ -276,50 +276,36 @@ class Dipole(Element):
         :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
-        angle_unsqueezed = self.angle.unsqueeze(-1)
-        length_unsqueezed = self.length.unsqueeze(-1)
+        angle = self.angle.unsqueeze(-1)
+        length = self.length.unsqueeze(-1)
 
         pz1 = 1 + pz
         px_norm = (pz1.square() - py.square()).sqrt()  # For simplicity
         phi1 = (px / px_norm).arcsin()
-        g = angle_unsqueezed / length_unsqueezed
+        g = angle / length
         gp = g / px_norm
         gp_safe = torch.where(gp != 0, gp, gp.new_full((), 1e-12))
 
         alpha = (
-            2
-            * (1 + g * x)
-            * (angle_unsqueezed + phi1).sin()
-            * length_unsqueezed
-            * bmadx.sinc(angle_unsqueezed)
-            - gp
-            * ((1 + g * x) * length_unsqueezed * bmadx.sinc(angle_unsqueezed)).square()
+            2 * (1 + g * x) * (angle + phi1).sin() * length * bmadx.sinc(angle)
+            - gp * ((1 + g * x) * length * bmadx.sinc(angle)).square()
         )
 
-        x2_t1 = (
-            x * angle_unsqueezed.cos()
-            + length_unsqueezed.square() * g * bmadx.cosc(angle_unsqueezed)
-        )
+        x2_t1 = x * angle.cos() + length.square() * g * bmadx.cosc(angle)
 
-        x2_t2 = ((angle_unsqueezed + phi1).cos().square() + gp * alpha).sqrt()
-        x2_t3 = (angle_unsqueezed + phi1).cos()
+        x2_t2 = ((angle + phi1).cos().square() + gp * alpha).sqrt()
+        x2_t3 = (angle + phi1).cos()
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
         c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
-        temp = (angle_unsqueezed + phi1).abs()
+        temp = (angle + phi1).abs()
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
-        Lcu = (
-            x2
-            - length_unsqueezed.square() * g * bmadx.cosc(angle_unsqueezed)
-            - x * angle_unsqueezed.cos()
-        )
+        Lcu = x2 - length.square() * g * bmadx.cosc(angle) - x * angle.cos()
 
-        Lcv = -length_unsqueezed * bmadx.sinc(angle_unsqueezed) - x * (
-            angle_unsqueezed.sin()
-        )
+        Lcv = -length * bmadx.sinc(angle) - x * (angle.sin())
 
-        theta_p = 2 * (angle_unsqueezed + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu))
+        theta_p = 2 * (angle + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu))
 
         Lc = (Lcu.square() + Lcv.square()).sqrt()
         Lp = Lc / bmadx.sinc(theta_p / 2)
@@ -331,9 +317,9 @@ class Dipole(Element):
         beta0 = p0c / E0
 
         x_f = x2
-        px_f = px_norm * (angle_unsqueezed + phi1 - theta_p).sin()
+        px_f = px_norm * (angle + phi1 - theta_p).sin()
         y_f = y + py * Lp / px_norm
-        z_f = z + (beta * length_unsqueezed / beta0) - ((1 + pz) * Lp / px_norm)
+        z_f = z + (beta * length / beta0) - ((1 + pz) * Lp / px_norm)
 
         return x_f, px_f, y_f, py, z_f, pz
 

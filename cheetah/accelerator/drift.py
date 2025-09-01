@@ -121,6 +121,7 @@ class Drift(Element):
         assert isinstance(
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+        length = self.length.unsqueeze(-1)
 
         # Compute Bmad coordinates and p0c
         x = incoming.x
@@ -136,7 +137,7 @@ class Drift(Element):
 
         # Begin Bmad-X tracking
         x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
+            length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
         )
         # End of Bmad-X tracking
 

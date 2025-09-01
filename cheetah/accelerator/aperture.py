@@ -103,15 +103,11 @@ class Aperture(Element):
         ], f"Unknown aperture shape {self.shape}"
 
         if self.shape == "rectangular":
-            x_max_unsqueezed = self.x_max.unsqueeze(-1)
-            y_max_unsqueezed = self.y_max.unsqueeze(-1)
+            x_max = self.x_max.unsqueeze(-1)
+            y_max = self.y_max.unsqueeze(-1)
             survived_mask = torch.logical_and(
-                torch.logical_and(
-                    incoming.x > -x_max_unsqueezed, incoming.x < x_max_unsqueezed
-                ),
-                torch.logical_and(
-                    incoming.y > -y_max_unsqueezed, incoming.y < y_max_unsqueezed
-                ),
+                torch.logical_and(incoming.x > -x_max, incoming.x < x_max),
+                torch.logical_and(incoming.y > -y_max, incoming.y < y_max),
             )
         elif self.shape == "elliptical":
             survived_mask = (

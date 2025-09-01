@@ -127,6 +127,7 @@ class TransverseDeflectingCavity(Element):
         assert isinstance(
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+        length = self.length.unsqueeze(-1)
 
         # Compute Bmad coordinates and p0c
         x = incoming.x
@@ -147,7 +148,7 @@ class TransverseDeflectingCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(length / 2, x, px, y, py, z, pz, p0c, mc2)
 
         voltage = (self.voltage * -incoming.species.num_elementary_charges).unsqueeze(
             -1
@@ -179,7 +180,7 @@ class TransverseDeflectingCavity(Element):
         pz = (pc - p0c) / p0c
         z = z * beta / beta_old
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(length / 2, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
