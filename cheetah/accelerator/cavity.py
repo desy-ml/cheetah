@@ -75,7 +75,9 @@ class Cavity(Element):
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.where(
-            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
+            torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
+            .unsqueeze(-1)
+            .unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
             drift_matrix(self.length, energy=energy, species=species),
         )
@@ -282,7 +284,7 @@ class Cavity(Element):
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            dE = Ef - Ei
+            dE = delta_energy / species.mass_eV
             f = Ei / dE * (dE / Ei).log1p()
 
             vector_shape = torch.broadcast_shapes(
