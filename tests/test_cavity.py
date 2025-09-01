@@ -36,8 +36,8 @@ def test_assert_ei_greater_zero():
     ("voltage", "phase"),
     [
         (torch.tensor(0.0), torch.tensor([-90.0, 90.0])),
-        (torch.tensor([0.0, 1e6]), torch.tensor([[-90.0], [90.0], [0.0]])),
-        (torch.tensor(1e6), torch.tensor(0.0)),
+        (torch.tensor([0.0, 1e6]), torch.tensor([[-90.0], [0.0], [90.0], [180.0]])),
+        (torch.tensor(1e6), torch.tensor([0.0, 180.0])),
     ],
     ids=["off", "mixed", "on"],
 )

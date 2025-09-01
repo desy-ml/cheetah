@@ -84,7 +84,9 @@ class Cavity(Element):
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.where(
-            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
+            (self.voltage != 0 and (self.phase / 90) % 2 != 1.0)
+            .unsqueeze(-1)
+            .unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
@@ -252,7 +254,7 @@ class Cavity(Element):
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
-        Ep = (Ef - Ei) / self.length  # Derivative of the energy
+        Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
@@ -313,8 +315,7 @@ class Cavity(Element):
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            dE = Ef - Ei
-            f = Ei / dE * torch.log(1 + (dE / Ei))
+            f = Ei / delta_energy * torch.log(1 + (delta_energy / Ei))
 
             vector_shape = torch.broadcast_shapes(
                 self.length.shape, f.shape, Ei.shape, Ef.shape
@@ -325,10 +326,10 @@ class Cavity(Element):
             M_body[..., 1, 1] = Ei / Ef
 
             M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
+            M_f_entry[..., 1, 0] = -delta_energy / (2 * self.length * Ei)
 
             M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
+            M_f_exit[..., 1, 0] = delta_energy / (2 * self.length * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
 
