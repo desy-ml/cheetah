@@ -94,8 +94,6 @@ class Solenoid(Element):
         R[..., 3, 3] = c.square()
         R[..., 4, 5] = r56
 
-        R = R.real
-
         if self.misalignment.any():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)

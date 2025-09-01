@@ -383,7 +383,7 @@ class SpaceChargeKick(Element):
         potential_ft = charge_density_ft * integrated_green_function_ft
         potential = (1 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
             potential_ft, dim=[1, 2, 3]
-        ).real
+        )
 
         # Return the physical potential
         return potential[
