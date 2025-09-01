@@ -102,10 +102,8 @@ def _kde_joint_pdf_2d(
         )
 
     joint_kernel_values = kernel_values1.mT @ kernel_values2
-    normalization = (
-        joint_kernel_values.sum(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1) + epsilon
-    )
-    pdf = joint_kernel_values / normalization
+    normalization = joint_kernel_values.sum(dim=(-2, -1)) + epsilon
+    pdf = joint_kernel_values / normalization.view(*normalization.shape, 1, 1)
 
     return pdf
 

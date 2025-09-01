@@ -103,20 +103,20 @@ class Aperture(Element):
         ], f"Unknown aperture shape {self.shape}"
 
         if self.shape == "rectangular":
+            x_max_unsqueezed = self.x_max.unsqueeze(-1)
+            y_max_unsqueezed = self.y_max.unsqueeze(-1)
             survived_mask = torch.logical_and(
                 torch.logical_and(
-                    incoming.x > -self.x_max.unsqueeze(-1),
-                    incoming.x < self.x_max.unsqueeze(-1),
+                    incoming.x > -x_max_unsqueezed, incoming.x < x_max_unsqueezed
                 ),
                 torch.logical_and(
-                    incoming.y > -self.y_max.unsqueeze(-1),
-                    incoming.y < self.y_max.unsqueeze(-1),
+                    incoming.y > -y_max_unsqueezed, incoming.y < y_max_unsqueezed
                 ),
             )
         elif self.shape == "elliptical":
             survived_mask = (
-                incoming.x.square() / self.x_max.unsqueeze(-1).square()
-                + incoming.y.square() / self.y_max.unsqueeze(-1).square()
+                incoming.x.square() / self.x_max.square().unsqueeze(-1)
+                + incoming.y.square() / self.y_max.square().unsqueeze(-1)
             ) <= 1.0
 
         return ParticleBeam(

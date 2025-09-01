@@ -190,8 +190,9 @@ class Quadrupole(Element):
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
 
-        step_length = self.length / self.num_steps
-        b1 = self.k1 * self.length
+        length_unsqueezed = self.length.unsqueeze(-1)
+        step_length = length_unsqueezed / self.num_steps
+        b1 = self.k1.unsqueeze(-1) * length_unsqueezed
 
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
@@ -200,10 +201,10 @@ class Quadrupole(Element):
 
         for _ in range(self.num_steps):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
-            k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
+            k1 = b1 / (length_unsqueezed * rel_p)
 
-            tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
-            ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
+            tx, dzx = bmadx.compute_quadrupole_coefficients(-k1, step_length, rel_p)
+            ty, dzy = bmadx.compute_quadrupole_coefficients(k1, step_length, rel_p)
 
             z = (
                 z
@@ -240,7 +241,7 @@ class Quadrupole(Element):
             particles=torch.stack(
                 (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
             ),
-            energy=ref_energy,
+            energy=ref_energy.squeeze(-1),
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,

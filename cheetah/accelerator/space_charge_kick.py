@@ -614,24 +614,19 @@ class SpaceChargeKick(Element):
                 dtype=grid_dimensions.dtype,
             )
         )
-        dt = flattened_length_effect / (
-            speed_of_light * flattened_incoming.relativistic_beta
-        )
+        dt = (
+            flattened_length_effect
+            / (speed_of_light * flattened_incoming.relativistic_beta)
+        ).unsqueeze(-1)
 
         # Change coordinates to apply the space charge effect
         xp_coordinates = flattened_incoming.to_xyz_pxpypz()
         forces = self._compute_forces(
             flattened_incoming, xp_coordinates, cell_size, grid_dimensions
         )
-        xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[..., 0] * dt.unsqueeze(
-            -1
-        )
-        xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[..., 1] * dt.unsqueeze(
-            -1
-        )
-        xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[..., 2] * dt.unsqueeze(
-            -1
-        )
+        xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[..., 0] * dt
+        xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[..., 1] * dt
+        xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[..., 2] * dt
 
         # Reverse the flattening of the vector dimensions
         outgoing_vector_shape = torch.broadcast_shapes(

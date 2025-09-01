@@ -74,10 +74,11 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        is_active_cavity = torch.logical_and(
+            self.voltage != 0, (self.phase / 90) % 2 != 1.0
+        )
         return torch.where(
-            torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
-            .unsqueeze(-1)
-            .unsqueeze(-1),
+            is_active_cavity.view(*is_active_cavity.shape, 1, 1),
             self._cavity_rmatrix(energy, species),
             drift_matrix(self.length, energy=energy, species=species),
         )
@@ -118,28 +119,22 @@ class Cavity(Element):
                 )
                 outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
             else:  # ParticleBeam
-                outgoing_particles[..., 5] = incoming.particles[
-                    ..., 5
-                ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
-                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) + self.voltage.unsqueeze(
+                outgoing_particles[..., 5] = incoming.particles[..., 5] * (
+                    incoming.energy * beta0 / (outgoing_energy * beta1)
+                ).unsqueeze(-1) + (
+                    self.voltage * beta0 / (outgoing_energy * beta1)
+                ).unsqueeze(
                     -1
-                ) * beta0.unsqueeze(
-                    -1
-                ) / (
-                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
                 ) * (
                     (
-                        -incoming.particles[..., 4]
-                        * beta0.unsqueeze(-1)
-                        * k.unsqueeze(-1)
+                        -incoming.particles[..., 4] * (beta0 * k).unsqueeze(-1)
                         + phi.unsqueeze(-1)
                     ).cos()
                     - phi.cos().unsqueeze(-1)
                 )
 
             dgamma = self.voltage / incoming.species.mass_eV
-            if torch.any(delta_energy > 0):
+            if (delta_energy > 0).any():
                 T566 = (
                     self.length
                     * (beta0**3 * gamma0**3 - beta1**3 * gamma1**3)

@@ -149,7 +149,9 @@ class TransverseDeflectingCavity(Element):
 
         x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
 
-        voltage = self.voltage * -incoming.species.num_elementary_charges / p0c
+        voltage = (self.voltage * -incoming.species.num_elementary_charges).unsqueeze(
+            -1
+        ) / p0c
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (
@@ -166,21 +168,15 @@ class TransverseDeflectingCavity(Element):
 
         # TODO: Assigning px to px is really bad practice and should be separated into
         # two separate variables
-        px = px + voltage.unsqueeze(-1) * phase.sin()
+        px = px + voltage * phase.sin()
 
-        beta_old = (
-            (1 + pz)
-            * p0c.unsqueeze(-1)
-            / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
-        )
-        E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
-            -1
-        ) * x * p0c.unsqueeze(-1)
+        beta_old = (1 + pz) * p0c / (((1 + pz) * p0c).square() + mc2.square()).sqrt()
+        E_old = (1 + pz) * p0c / beta_old
+        E_new = E_old + voltage * phase.cos() * k_rf.unsqueeze(-1) * x * p0c
         pc = (E_new.square() - mc2.square()).sqrt()
         beta = pc / E_new
 
-        pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
+        pz = (pc - p0c) / p0c
         z = z * beta / beta_old
 
         x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
@@ -197,7 +193,7 @@ class TransverseDeflectingCavity(Element):
             particles=torch.stack(
                 (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
             ),
-            energy=ref_energy,
+            energy=ref_energy.squeeze(-1),
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,

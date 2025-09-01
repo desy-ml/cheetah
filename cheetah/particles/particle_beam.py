@@ -1175,7 +1175,7 @@ class ParticleBeam(Beam):
             * beam.relativistic_beta
             * beam.species.mass_kg
             * constants.speed_of_light
-        )
+        ).unsqueeze(-1)
         p = (
             xp_coordinates[..., 1].square()
             + xp_coordinates[..., 3].square()
@@ -1185,8 +1185,8 @@ class ParticleBeam(Beam):
             1 + (p / (beam.species.mass_kg * constants.speed_of_light)).square()
         ).sqrt()
 
-        beam.particles[..., 1] = xp_coordinates[..., 1] / p0.unsqueeze(-1)
-        beam.particles[..., 3] = xp_coordinates[..., 3] / p0.unsqueeze(-1)
+        beam.particles[..., 1] = xp_coordinates[..., 1] / p0
+        beam.particles[..., 3] = xp_coordinates[..., 3] / p0
         beam.particles[..., 4] = -xp_coordinates[
             ..., 4
         ] / beam.relativistic_beta.unsqueeze(-1)
@@ -1202,21 +1202,22 @@ class ParticleBeam(Beam):
         beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
         For each particle, the obtained vector is $(x, p_x, y, p_y, z, p_z, 1)$.
         """
-        p0 = (
+        p0 = (  # Reference momentum in (kg m/s)
             self.relativistic_gamma
             * self.relativistic_beta
             * self.species.mass_kg
             * constants.speed_of_light
-        )  # Reference momentum in (kg m/s)
+        ).unsqueeze(-1)
+        relativistic_beta_unsqueezed = self.relativistic_beta.unsqueeze(-1)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
-            1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+            1.0 + self.particles[..., 5] * relativistic_beta_unsqueezed
         )
         beta = (1 - gamma.square().reciprocal()).sqrt()
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
-        px = self.particles[..., 1] * p0.unsqueeze(-1)
-        py = self.particles[..., 3] * p0.unsqueeze(-1)
-        zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
+        px = self.particles[..., 1] * p0
+        py = self.particles[..., 3] * p0
+        zs = self.particles[..., 4] * -relativistic_beta_unsqueezed
         p = (momentum.square() - px.square() - py.square()).sqrt()
 
         xp_coords = self.particles.clone()

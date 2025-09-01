@@ -152,7 +152,7 @@ class Drift(Element):
             particles=torch.stack(
                 [x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1
             ),
-            energy=ref_energy,
+            energy=ref_energy.squeeze(-1),
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,

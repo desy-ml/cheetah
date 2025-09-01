@@ -244,7 +244,7 @@ class Dipole(Element):
             particles=torch.stack(
                 (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
             ),
-            energy=ref_energy,
+            energy=ref_energy.squeeze(-1),
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
@@ -261,7 +261,7 @@ class Dipole(Element):
         z: torch.Tensor,
         pz: torch.Tensor,
         p0c: torch.Tensor,
-        mc2: float,
+        mc2: torch.Tensor,
     ) -> list[torch.Tensor]:
         """
         Track particle coordinates through bend body.
@@ -276,72 +276,64 @@ class Dipole(Element):
         :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
+        angle_unsqueezed = self.angle.unsqueeze(-1)
+        length_unsqueezed = self.length.unsqueeze(-1)
+
         pz1 = 1 + pz
         px_norm = (pz1.square() - py.square()).sqrt()  # For simplicity
         phi1 = (px / px_norm).arcsin()
-        g = self.angle / self.length
-        gp = g.unsqueeze(-1) / px_norm
+        g = angle_unsqueezed / length_unsqueezed
+        gp = g / px_norm
         gp_safe = torch.where(gp != 0, gp, gp.new_full((), 1e-12))
 
         alpha = (
             2
-            * (1 + g.unsqueeze(-1) * x)
-            * (self.angle.unsqueeze(-1) + phi1).sin()
-            * self.length.unsqueeze(-1)
-            * bmadx.sinc(self.angle).unsqueeze(-1)
+            * (1 + g * x)
+            * (angle_unsqueezed + phi1).sin()
+            * length_unsqueezed
+            * bmadx.sinc(angle_unsqueezed)
             - gp
-            * (
-                (1 + g.unsqueeze(-1) * x)
-                * self.length.unsqueeze(-1)
-                * bmadx.sinc(self.angle).unsqueeze(-1)
-            ).square()
+            * ((1 + g * x) * length_unsqueezed * bmadx.sinc(angle_unsqueezed)).square()
         )
 
-        x2_t1 = x * (self.angle.unsqueeze(-1)).cos() + self.length.unsqueeze(
-            -1
-        ).square() * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
+        x2_t1 = (
+            x * angle_unsqueezed.cos()
+            + length_unsqueezed.square() * g * bmadx.cosc(angle_unsqueezed)
+        )
 
-        x2_t2 = ((self.angle.unsqueeze(-1) + phi1).cos().square() + gp * alpha).sqrt()
-        x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
+        x2_t2 = ((angle_unsqueezed + phi1).cos().square() + gp * alpha).sqrt()
+        x2_t3 = (angle_unsqueezed + phi1).cos()
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
         c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
-        temp = (self.angle.unsqueeze(-1) + phi1).abs()
+        temp = (angle_unsqueezed + phi1).abs()
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
         Lcu = (
             x2
-            - self.length.unsqueeze(-1).square()
-            * g.unsqueeze(-1)
-            * bmadx.cosc(self.angle.unsqueeze(-1))
-            - x * self.angle.cos().unsqueeze(-1)
+            - length_unsqueezed.square() * g * bmadx.cosc(angle_unsqueezed)
+            - x * angle_unsqueezed.cos()
         )
 
-        Lcv = -self.length.unsqueeze(-1) * bmadx.sinc(self.angle.unsqueeze(-1)) - x * (
-            self.angle.sin().unsqueeze(-1)
+        Lcv = -length_unsqueezed * bmadx.sinc(angle_unsqueezed) - x * (
+            angle_unsqueezed.sin()
         )
 
-        theta_p = 2 * (
-            self.angle.unsqueeze(-1) + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu)
-        )
+        theta_p = 2 * (angle_unsqueezed + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu))
 
         Lc = (Lcu.square() + Lcv.square()).sqrt()
         Lp = Lc / bmadx.sinc(theta_p / 2)
 
-        P = p0c.unsqueeze(-1) * (1 + pz)  # In eV
+        P = p0c * (1 + pz)  # In eV
         E = (P.square() + mc2.square()).sqrt()  # In eV
         E0 = (p0c.square() + mc2.square()).sqrt()  # In eV
         beta = P / E
         beta0 = p0c / E0
 
         x_f = x2
-        px_f = px_norm * (self.angle.unsqueeze(-1) + phi1 - theta_p).sin()
+        px_f = px_norm * (angle_unsqueezed + phi1 - theta_p).sin()
         y_f = y + py * Lp / px_norm
-        z_f = (
-            z
-            + (beta * self.length.unsqueeze(-1) / beta0.unsqueeze(-1))
-            - ((1 + pz) * Lp / px_norm)
-        )
+        z_f = z + (beta * length_unsqueezed / beta0) - ((1 + pz) * Lp / px_norm)
 
         return x_f, px_f, y_f, py, z_f, pz
 

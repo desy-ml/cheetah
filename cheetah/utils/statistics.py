@@ -71,16 +71,14 @@ def unbiased_weighted_covariance_matrix(
     :param weights: Weights tensor of shape (..., sample_size).
     :return: Unbiased weighted covariance matrix.
     """
-    normalized_weights = weights / weights.sum(dim=-1, keepdim=True)
-    correction_factor = 1 - normalized_weights.square().sum(dim=-1)
+    normalized_weights = (weights / weights.sum(dim=-1, keepdim=True)).unsqueeze(-1)
+    correction_factor = 1 - normalized_weights.square().sum(dim=-2, keepdim=True)
 
-    weighted_means = (inputs * normalized_weights.unsqueeze(-1)).sum(
-        dim=-2, keepdim=True
-    )
+    weighted_means = (inputs * normalized_weights).sum(dim=-2, keepdim=True)
     centered_inputs = inputs - weighted_means
 
     covariance = (
-        (normalized_weights.unsqueeze(-1) * centered_inputs).mT @ centered_inputs
-    ) / correction_factor.unsqueeze(-1).unsqueeze(-1)
+        (normalized_weights * centered_inputs).mT @ centered_inputs
+    ) / correction_factor
 
     return covariance
