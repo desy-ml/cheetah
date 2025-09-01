@@ -235,7 +235,7 @@ class Cavity(Element):
         eta = self.length.new_ones(())
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
-        Ep = (Ef - Ei) / self.length  # Derivative of the energy
+        Ep = delta_energy / species.mass_eV / self.length  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
         alpha = (eta / 8).sqrt() / phi.cos() * (Ef / Ei).log()
