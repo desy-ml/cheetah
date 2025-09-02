@@ -101,9 +101,8 @@ class Solenoid(Element):
             dim=-1,
         )
 
-        if self.misalignment.any():
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
 
         return R
 

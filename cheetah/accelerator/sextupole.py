@@ -85,11 +85,10 @@ class Sextupole(Element):
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if self.misalignment.any():
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
