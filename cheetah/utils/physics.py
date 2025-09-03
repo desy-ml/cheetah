@@ -1,6 +1,9 @@
+from functools import cache
+
 import torch
 
 
+@cache
 def compute_relativistic_factors(
     energy: torch.Tensor, particle_mass_eV: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
