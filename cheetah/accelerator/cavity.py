@@ -234,7 +234,7 @@ class Cavity(Element):
         Ef = (energy + delta_energy) / species.mass_eV
         dE = delta_energy / species.mass_eV
         Ep = dE / self.length  # Derivative of the energy
-        assert torch.all(Ei > 0), "Initial energy must be larger than 0"
+        assert (Ei > 0).all(), "Initial energy must be larger than 0"
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
 
@@ -246,8 +246,8 @@ class Cavity(Element):
             r11 = alpha.cos() - math.sqrt(2.0) * phi.cos() * alpha.sin()
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
-            # otherwise. This is implemented differently here to achieve results
-            # closer to Bmad.
+            # otherwise. This is implemented differently here to achieve results closer
+            # to Bmad.
             r12 = (
                 math.sqrt(8.0) * energy / effective_voltage * alpha.sin() * self.length
             )
