@@ -84,9 +84,7 @@ class Cavity(Element):
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.where(
-            torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
-            .unsqueeze(-1)
-            .unsqueeze(-1),
+            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
