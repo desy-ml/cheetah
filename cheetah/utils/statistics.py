@@ -104,6 +104,7 @@ def match_distribution_moments(
         (..., num_features, num_features)
     :return: Transformed samples.
     """
+    factory_kwargs = {"device": samples.device, "dtype": samples.dtype}
     num_samples = samples.shape[-2]
     num_features = samples.shape[-1]
 
@@ -116,16 +117,16 @@ def match_distribution_moments(
         sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(
             dim=-1, keepdim=True
         )
-    chol_sample_cov = torch.linalg.cholesky(sample_cov).contiguous()
-    inv_sqrt_sample_cov = torch.linalg.solve_triangular(
-        chol_sample_cov,
-        torch.eye(chol_sample_cov.shape[-1], device=chol_sample_cov.device),
+    cholesky_sample_cov = torch.linalg.cholesky(sample_cov).contiguous()
+    inverse_sqrt_sample_cov = torch.linalg.solve_triangular(
+        cholesky_sample_cov,
+        torch.eye(cholesky_sample_cov.shape[-1], **factory_kwargs),
         upper=False,
     )
 
     vector_shape = torch.broadcast_shapes(target_mu.shape[:-1], target_cov.shape[:-2])
-    sample_mu = sample_mu.expand(*vector_shape, num_features).unsqueeze(-2)
-    inv_sqrt_sample_cov = inv_sqrt_sample_cov.expand(
+    broadcasted_sample_mu = sample_mu.expand(*vector_shape, num_features).unsqueeze(-2)
+    broadcasted_inverse_sqrt_sample_cov = inverse_sqrt_sample_cov.expand(
         *vector_shape, num_features, num_features
     )
 
@@ -136,8 +137,8 @@ def match_distribution_moments(
     chol_cov = torch.linalg.cholesky(cov)
 
     transformed_samples = samples.expand(*vector_shape, num_samples, num_features)
-    transformed_samples = (transformed_samples - sample_mu) @ (
-        chol_cov @ inv_sqrt_sample_cov
+    transformed_samples = (transformed_samples - broadcasted_sample_mu) @ (
+        chol_cov @ broadcasted_inverse_sqrt_sample_cov
     ).mT + mu
 
     return transformed_samples
