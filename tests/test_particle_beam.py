@@ -89,21 +89,19 @@ def test_transform_to():
 
 def test_from_twiss_to_twiss():
     """
-    Test that a `ParticleBeam` created from twiss parameters has the desired
-    parameters.
+    Test that a `ParticleBeam` created from twiss parameters has the desired parameters.
     """
     beam = cheetah.ParticleBeam.from_twiss(
         num_particles=10_000_000,
-        beta_x=torch.tensor(5.91253676811640894, dtype=torch.float64),
-        alpha_x=torch.tensor(3.55631307633660354, dtype=torch.float64),
-        emittance_x=torch.tensor(3.494768647122823e-09, dtype=torch.float64),
-        beta_y=torch.tensor(5.91253676811640982, dtype=torch.float64),
-        alpha_y=torch.tensor(1.0, dtype=torch.float64),  # TODO: set realistic value
-        emittance_y=torch.tensor(3.497810737006068e-09, dtype=torch.float64),
-        dispersion_x=torch.tensor(2e-2, dtype=torch.float64),
-        sigma_p=torch.tensor(1e-3, dtype=torch.float64),
-        energy=torch.tensor(6e6, dtype=torch.float64),
-        dtype=torch.float64,
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(1.0),  # TODO: set realistic value
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        dispersion_x=torch.tensor(2e-2),
+        sigma_p=torch.tensor(1e-3),
+        energy=torch.tensor(6e6),
     )
 
     assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894)
@@ -423,10 +421,9 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     """
     original_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=10_000,  # Does not need as many particles as reconstructed beam
-        mu_x=torch.tensor((2e-4, 3e-4), dtype=torch.float64),
-        sigma_x=torch.tensor((2e-5, 3e-5), dtype=torch.float64),
-        energy=torch.tensor((1e7, 2e7), dtype=torch.float64),
-        dtype=torch.float64,
+        mu_x=torch.tensor((2e-4, 3e-4)),
+        sigma_x=torch.tensor((2e-5, 3e-5)),
+        energy=torch.tensor((1e7, 2e7)),
     )
 
     # Vectorise survival probabilities make make them slightly different

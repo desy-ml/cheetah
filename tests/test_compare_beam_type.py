@@ -8,27 +8,28 @@ import cheetah
 
 
 def test_from_twiss():
-    """Test that a beams created from Twiss parameters have the same properties."""
+    """
+    Test that a `ParameterBeam` and a `ParticleBeam` created from Twiss parameters have
+    the same properties.
+    """
     parameter_beam = cheetah.ParameterBeam.from_twiss(
-        beta_x=torch.tensor(5.91253676811640894, dtype=torch.float64),
-        alpha_x=torch.tensor(3.55631307633660354, dtype=torch.float64),
-        emittance_x=torch.tensor(3.494768647122823e-09, dtype=torch.float64),
-        beta_y=torch.tensor(5.91253676811640982, dtype=torch.float64),
-        alpha_y=torch.tensor(2e-7, dtype=torch.float64),
-        emittance_y=torch.tensor(3.497810737006068e-09, dtype=torch.float64),
-        energy=torch.tensor(6e6, dtype=torch.float64),
-        dtype=torch.float64,
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(2e-7),
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        energy=torch.tensor(6e6),
     )
     particle_beam = cheetah.ParticleBeam.from_twiss(
         num_particles=1_000_000,  # Large number of particles reduces noise
-        beta_x=torch.tensor(5.91253676811640894, dtype=torch.float64),
-        alpha_x=torch.tensor(3.55631307633660354, dtype=torch.float64),
-        emittance_x=torch.tensor(3.494768647122823e-09, dtype=torch.float64),
-        beta_y=torch.tensor(5.91253676811640982, dtype=torch.float64),
-        alpha_y=torch.tensor(2e-7, dtype=torch.float64),
-        emittance_y=torch.tensor(3.497810737006068e-09, dtype=torch.float64),
-        energy=torch.tensor(6e6, dtype=torch.float64),
-        dtype=torch.float64,
+        beta_x=torch.tensor(5.91253676811640894),
+        alpha_x=torch.tensor(3.55631307633660354),
+        emittance_x=torch.tensor(3.494768647122823e-09),
+        beta_y=torch.tensor(5.91253676811640982),
+        alpha_y=torch.tensor(2e-7),
+        emittance_y=torch.tensor(3.497810737006068e-09),
+        energy=torch.tensor(6e6),
     )
 
     assert torch.isclose(parameter_beam.mu_x, particle_beam.mu_x)

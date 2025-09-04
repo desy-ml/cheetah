@@ -131,15 +131,14 @@ def test_match_distribution_moments():
     Test that the first and second moments of the samples after transformation are
     matched to the target values.
     """
-
     # Randomly sample from a normal distribution
-    samples = torch.randn(1000, 3, dtype=torch.float64)
-    weights = torch.ones(1000, dtype=torch.float64)
+    samples = torch.randn(1000, 3)
+    weights = torch.ones(1000)
 
     # Define target moments
-    target_mu = torch.tensor([1.0, 2.0, 3.0], dtype=torch.float64)
+    target_mu = torch.tensor([1.0, 2.0, 3.0])
     # Randomly generate a target covariance matrix
-    target_L = torch.randn(3, 3, dtype=torch.float64)
+    target_L = torch.randn(3, 3)
     target_cov = target_L @ target_L.T
 
     # Transform samples to match target moments
