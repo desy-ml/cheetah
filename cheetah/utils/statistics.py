@@ -68,7 +68,7 @@ def unbiased_weighted_covariance_matrix(
     """
     Compute the unbiased weighted covariance matrix of a tensor.
 
-    :param inputs: Input tensor of shape (..., sample_size, n_features).
+    :param inputs: Input tensor of shape (..., sample_size, num_features).
     :param weights: Weights tensor of shape (..., sample_size).
     :return: Unbiased weighted covariance matrix.
     """
@@ -97,21 +97,19 @@ def match_distribution_moments(
     Match the first and second moments of a sample distribution to a target
     distribution.
 
-    :param samples: Input samples of shape (..., n_samples, n_features).
-    :param weights: Weights for the samples of shape (..., n_samples).
-    :param target_mu: Mean of the target distribution. (..., n_features)
+    :param samples: Input samples of shape (..., num_samples, num_features).
+    :param weights: Weights for the samples of shape (..., num_samples).
+    :param target_mu: Mean of the target distribution. (..., num_features)
     :param target_cov: Covariance of the target distribution.
-        (..., n_features, n_features)
+        (..., num_features, num_features)
     :return: Transformed samples.
     """
-    n_samples = samples.shape[-2]
-    n_features = samples.shape[-1]
+    num_samples = samples.shape[-2]
+    num_features = samples.shape[-1]
 
     # Compute the inverse square root of the sample covariance
     if weights is None:
-        sample_cov = torch.cov(
-            samples.mT,
-        )
+        sample_cov = samples.mT.cov()
         sample_mu = samples.mean(dim=-2)
     else:
         sample_cov = unbiased_weighted_covariance_matrix(samples, weights)
@@ -126,20 +124,20 @@ def match_distribution_moments(
     )
 
     vector_shape = torch.broadcast_shapes(target_mu.shape[:-1], target_cov.shape[:-2])
-    sample_mu = sample_mu.expand(*vector_shape, n_features).unsqueeze(-2)
+    sample_mu = sample_mu.expand(*vector_shape, num_features).unsqueeze(-2)
     inv_sqrt_sample_cov = inv_sqrt_sample_cov.expand(
-        *vector_shape, n_features, n_features
+        *vector_shape, num_features, num_features
     )
 
-    mu = target_mu.expand(*vector_shape, n_features).unsqueeze(-2)
-    cov = target_cov.expand(*vector_shape, n_features, n_features)
+    mu = target_mu.expand(*vector_shape, num_features).unsqueeze(-2)
+    cov = target_cov.expand(*vector_shape, num_features, num_features)
 
     # Compute the Cholesky decomposition
     chol_cov = torch.linalg.cholesky(cov)
 
-    transformed_samples = samples.expand(*vector_shape, n_samples, n_features)
+    transformed_samples = samples.expand(*vector_shape, num_samples, num_features)
     transformed_samples = (transformed_samples - sample_mu) @ (
         chol_cov @ inv_sqrt_sample_cov
-    ).transpose(-2, -1) + mu
+    ).mT + mu
 
     return transformed_samples

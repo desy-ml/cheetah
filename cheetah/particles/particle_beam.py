@@ -1253,7 +1253,7 @@ class ParticleBeam(Beam):
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
-        This tensor should have shape (..., n_particles, 7), where the last dimension
+        This tensor should have shape (..., num_particles, 7), where the last dimension
         is the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         beam = cls(
@@ -1296,8 +1296,9 @@ class ParticleBeam(Beam):
     def to_xyz_pxpypz(self) -> torch.Tensor:
         """
         Extracts the position and momentum coordinates in SI units, from the
-        beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
-        For each particle, the obtained vector is $(x, p_x, y, p_y, z, p_z, 1)$.
+        beam's `particles`, and returns it as a tensor with shape
+        (..., num_particles, 7). For each particle, the obtained vector is
+        $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         p0 = (
             self.relativistic_gamma
