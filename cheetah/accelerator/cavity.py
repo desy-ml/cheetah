@@ -84,7 +84,9 @@ class Cavity(Element):
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.where(
-            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
+            torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
+            .unsqueeze(-1)
+            .unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
@@ -252,7 +254,7 @@ class Cavity(Element):
         eta = torch.tensor(1.0, **factory_kwargs)
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
-        Ep = (Ef - Ei) / self.length  # Derivative of the energy
+        Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
         assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
@@ -313,7 +315,7 @@ class Cavity(Element):
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            dE = Ef - Ei
+            dE = delta_energy / species.mass_eV
             f = Ei / dE * torch.log(1 + (dE / Ei))
 
             vector_shape = torch.broadcast_shapes(
