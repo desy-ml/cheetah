@@ -264,7 +264,9 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in self.defining_features:
+        # Check if attribute even exists needed because `__setattr__` can be called
+        # during the initialisation of the object.
+        if hasattr(self, "defining_features") and name in self.defining_features:
             self._cached_first_order_transfer_map = None
             self._cached_second_order_transfer_map = None
 
