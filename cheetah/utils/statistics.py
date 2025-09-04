@@ -7,11 +7,11 @@ def unbiased_weighted_covariance(
     """
     Compute the unbiased weighted covariance of two tensors.
 
-    :param input1: Input tensor 1. (..., sample_size)
-    :param input2: Input tensor 2. (..., sample_size)
-    :param weights: Weights tensor. (..., sample_size)
+    :param input1: Input tensor 1 of shape (..., sample_size).
+    :param input2: Input tensor 2 of shape (..., sample_size).
+    :param weights: Weights tensor of shape (..., sample_size).
     :param dim: Dimension along which to compute the covariance.
-    :return: Unbiased weighted covariance. (..., 2, 2)
+    :return: Unbiased weighted covariance of shape (..., 2, 2).
     """
     weighted_mean1 = torch.sum(input1 * weights, dim=dim) / torch.sum(weights, dim=dim)
     weighted_mean2 = torch.sum(input2 * weights, dim=dim) / torch.sum(weights, dim=dim)
@@ -98,9 +98,9 @@ def match_distribution_moments(
     distribution.
 
     :param samples: Input samples of shape (..., num_samples, num_features).
-    :param target_mu: Mean of the target distribution. (..., num_features)
-    :param target_cov: Covariance of the target distribution.
-        (..., num_features, num_features)
+    :param target_mu: Mean of the target distribution of shape (..., num_features).
+    :param target_cov: Covariance of the target distribution of shape
+        (..., num_features, num_features).
     :param weights: Weights for the samples of shape (..., num_samples).
     :return: Transformed samples.
     """
