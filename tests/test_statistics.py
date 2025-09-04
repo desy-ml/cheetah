@@ -139,7 +139,7 @@ def test_match_distribution_moments():
     target_mu = torch.tensor([1.0, 2.0, 3.0])
     # Randomly generate a target covariance matrix
     target_L = torch.randn(3, 3)
-    target_cov = target_L @ target_L.T
+    target_cov = target_L @ target_L.mT
 
     # Transform samples to match target moments
     transformed_samples = match_distribution_moments(
