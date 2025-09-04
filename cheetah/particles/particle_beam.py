@@ -386,19 +386,19 @@ class ParticleBeam(Beam):
         ).rsample((num_particles,))
 
         # Transform to the desired distribution
-        particles = match_distribution_moments(particles_standard, mu, cov)
+        particles_matched_6d = match_distribution_moments(particles_standard, mu, cov)
 
         # Stack one to the 7-th dimension
-        particles = torch.cat(
+        particles_matched_7d = torch.cat(
             [
-                particles,
-                torch.ones_like(particles[..., 0]).unsqueeze(-1),
+                particles_matched_6d,
+                torch.ones_like(particles_matched_6d[..., 0]).unsqueeze(-1),
             ],
             dim=-1,
         )
 
         return cls(
-            particles,
+            particles_matched_7d,
             energy,
             particle_charges=particle_charges,
             s=s,
