@@ -98,10 +98,10 @@ def match_distribution_moments(
     distribution.
 
     :param samples: Input samples of shape (..., num_samples, num_features).
-    :param weights: Weights for the samples of shape (..., num_samples).
     :param target_mu: Mean of the target distribution. (..., num_features)
     :param target_cov: Covariance of the target distribution.
         (..., num_features, num_features)
+    :param weights: Weights for the samples of shape (..., num_samples).
     :return: Transformed samples.
     """
     factory_kwargs = {"device": samples.device, "dtype": samples.dtype}
