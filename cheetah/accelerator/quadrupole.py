@@ -78,8 +78,7 @@ class Quadrupole(Element):
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt",
-            torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs),
+            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
         )
 
         self.num_steps = num_steps
