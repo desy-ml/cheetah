@@ -96,12 +96,10 @@ class Quadrupole(Element):
             energy=energy,
         )
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        R = R_exit @ R @ R_entry
+
+        return R
 
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
@@ -127,11 +125,10 @@ class Quadrupole(Element):
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
