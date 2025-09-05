@@ -14,6 +14,7 @@ from cheetah.utils import (
     compute_relativistic_factors,
     verify_device_and_dtype,
 )
+from cheetah.utils.autograd import Log1plusXbyX
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -259,7 +260,12 @@ class Cavity(Element):
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
 
         if self.cavity_type == "standing_wave":
-            alpha = math.sqrt(0.125) / torch.cos(phi) * torch.log(Ef / Ei)
+            alpha = (
+                math.sqrt(0.125)
+                * effective_voltage
+                / energy
+                * Log1plusXbyX.apply(delta_energy / energy)
+            )
             beta0 = torch.sqrt(1 - 1 / Ei**2)
             beta1 = torch.sqrt(1 - 1 / Ef**2)
 

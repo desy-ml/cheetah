@@ -1,4 +1,4 @@
-from . import bmadx  # noqa: F401
+from . import autograd, bmadx  # noqa: F401
 from .argument_verification import verify_device_and_dtype  # noqa: F401
 from .device import is_mps_available_and_functional  # noqa: F401
 from .elementwise_linspace import elementwise_linspace  # noqa: F401
