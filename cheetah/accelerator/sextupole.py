@@ -65,12 +65,12 @@ class Sextupole(Element):
 
         self.tracking_method = tracking_method
 
-    def first_order_transfer_map(
+    def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return drift_matrix(length=self.length, species=species, energy=energy)
 
-    def second_order_transfer_map(self, energy, species):
+    def _compute_second_order_transfer_map(self, energy, species):
         T = base_ttensor(
             length=self.length,
             k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
