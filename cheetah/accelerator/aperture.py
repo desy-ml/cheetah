@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import PhysicsWarning, UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import PhysicsWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -34,31 +34,41 @@ class Aperture(Element):
         x_max: torch.Tensor | None = None,
         y_max: torch.Tensor | None = None,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
-        is_active: bool = True,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.register_buffer_or_parameter(
             "x_max",
-            torch.as_tensor(
-                x_max if x_max is not None else float("inf"), **factory_kwargs
+            (
+                x_max
+                if x_max is not None
+                else torch.tensor(float("inf"), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "y_max",
-            torch.as_tensor(
-                y_max if y_max is not None else float("inf"), **factory_kwargs
+            (
+                y_max
+                if y_max is not None
+                else torch.tensor(float("inf"), **factory_kwargs)
+            ),
+        )
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(True, **factory_kwargs)
             ),
         )
 
         self.shape = shape
-        self.is_active = is_active
 
         self.lost_particles = None
 
@@ -72,7 +82,7 @@ class Aperture(Element):
         device = self.x_max.device
         dtype = self.x_max.dtype
 
-        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, device=device, dtype=dtype).expand(*energy.shape, 7, 7)
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
@@ -93,20 +103,16 @@ class Aperture(Element):
         ], f"Unknown aperture shape {self.shape}"
 
         if self.shape == "rectangular":
+            x_max = self.x_max.unsqueeze(-1)
+            y_max = self.y_max.unsqueeze(-1)
             survived_mask = torch.logical_and(
-                torch.logical_and(
-                    incoming.x > -self.x_max.unsqueeze(-1),
-                    incoming.x < self.x_max.unsqueeze(-1),
-                ),
-                torch.logical_and(
-                    incoming.y > -self.y_max.unsqueeze(-1),
-                    incoming.y < self.y_max.unsqueeze(-1),
-                ),
+                torch.logical_and(incoming.x > -x_max, incoming.x < x_max),
+                torch.logical_and(incoming.y > -y_max, incoming.y < y_max),
             )
         elif self.shape == "elliptical":
             survived_mask = (
-                incoming.x**2 / self.x_max.unsqueeze(-1) ** 2
-                + incoming.y**2 / self.y_max.unsqueeze(-1) ** 2
+                incoming.x.square() / self.x_max.square().unsqueeze(-1)
+                + incoming.y.square() / self.y_max.square().unsqueeze(-1)
             ) <= 1.0
 
         return ParticleBeam(

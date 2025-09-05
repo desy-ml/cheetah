@@ -114,7 +114,7 @@ def test_plotting_with_nonleaf_tensors():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0, requires_grad=True)),
-            cheetah.BPM(is_active=True),
+            cheetah.BPM(is_active=torch.tensor(True)),
         ]
     )
 

@@ -182,7 +182,7 @@ def convert_element_to_cheetah(
             x_max=torch.tensor(element.xmax, **factory_kwargs),
             y_max=torch.tensor(element.ymax, **factory_kwargs),
             shape=shape_translation[element.type],
-            is_active=True,
+            is_active=torch.tensor(True, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )

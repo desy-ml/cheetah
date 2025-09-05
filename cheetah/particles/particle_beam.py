@@ -16,7 +16,6 @@ from cheetah.utils import (
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
-    verify_device_and_dtype,
 )
 
 
@@ -32,9 +31,8 @@ class ParticleBeam(Beam):
         0.0 means the particle has been lost. Defaults to ones.
     :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
-    :param dtype: Data type of the generated particles.
+    :param device: Device that the beam creates its tensors on.
+    :param dtype: Data type of the tensors created by the beam.
     """
 
     PRETTY_DIMENSION_LABELS = {
@@ -65,14 +63,9 @@ class ParticleBeam(Beam):
         survival_probabilities: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [particles, energy, particle_charges, survival_probabilities, s],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
@@ -81,21 +74,15 @@ class ParticleBeam(Beam):
         ), "Particle vectors must be 7-dimensional."
 
         self.species = (
-            species.to(**factory_kwargs)
-            if species is not None
-            else Species("electron", **factory_kwargs)
+            species if species is not None else Species("electron", **factory_kwargs)
         )
 
-        self.register_buffer_or_parameter(
-            "particles", torch.as_tensor(particles, **factory_kwargs)
-        )
-        self.register_buffer_or_parameter(
-            "energy", torch.as_tensor(energy, **factory_kwargs)
-        )
-        self.register_buffer_or_parameter(
+        self.register_buffer("particles", particles)
+        self.register_buffer("energy", energy)
+        self.register_buffer(
             "particle_charges",
             (
-                torch.as_tensor(particle_charges, **factory_kwargs)
+                particle_charges
                 if particle_charges is not None
                 else torch.full(
                     (particles.shape[-2],),
@@ -104,16 +91,17 @@ class ParticleBeam(Beam):
                 )
             ),
         )
-        self.register_buffer_or_parameter(
+        self.register_buffer(
             "survival_probabilities",
             (
-                torch.as_tensor(survival_probabilities, **factory_kwargs)
+                survival_probabilities
                 if survival_probabilities is not None
                 else torch.ones(particles.shape[-2], **factory_kwargs)
             ),
         )
-        self.register_buffer_or_parameter(
-            "s", torch.as_tensor(s if s is not None else 0.0, **factory_kwargs)
+        self.register_buffer(
+            "s",
+            (s if s is not None else torch.tensor(0.0, **factory_kwargs)),
         )
 
     @classmethod
@@ -143,8 +131,8 @@ class ParticleBeam(Beam):
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles.
@@ -178,40 +166,10 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device where the beam object creates its tensors.
+        :param dtype: Data type of tensors created by the beam object.
         :return: ParticleBeam with random particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cov_xpx,
-                cov_ypy,
-                cov_taup,
-                cov_xp,
-                cov_pxp,
-                cov_yp,
-                cov_pyp,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -292,18 +250,18 @@ class ParticleBeam(Beam):
             cov_pyp,
         )
         cov = torch.zeros(*sigma_x.shape, 6, 6, **factory_kwargs)
-        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 0] = sigma_x.square()
         cov[..., 0, 1] = cov_xpx
         cov[..., 1, 0] = cov_xpx
-        cov[..., 1, 1] = sigma_px**2
-        cov[..., 2, 2] = sigma_y**2
+        cov[..., 1, 1] = sigma_px.square()
+        cov[..., 2, 2] = sigma_y.square()
         cov[..., 2, 3] = cov_ypy
         cov[..., 3, 2] = cov_ypy
-        cov[..., 3, 3] = sigma_py**2
-        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 3, 3] = sigma_py.square()
+        cov[..., 4, 4] = sigma_tau.square()
         cov[..., 4, 5] = cov_taup
         cov[..., 5, 4] = cov_taup
-        cov[..., 5, 5] = sigma_p**2
+        cov[..., 5, 5] = sigma_p.square()
         cov[..., 0, 5] = cov_xp
         cov[..., 5, 0] = cov_xp
         cov[..., 1, 5] = cov_pxp
@@ -321,8 +279,7 @@ class ParticleBeam(Beam):
             total_charge=total_charge,
             s=s,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod
@@ -335,8 +292,8 @@ class ParticleBeam(Beam):
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of random particles from a multivariate normal
@@ -349,30 +306,20 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device where the beam object creates its tensors.
+        :param dtype: Data type of tensors created by the beam object.
         :return: ParticleBeam with random particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [mu, cov, energy, total_charge, s], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        species = (
-            species.to(**factory_kwargs)
-            if species is not None
-            else Species("electron", **factory_kwargs)
-        )
-
         # Set default values without function call in function signature
-        energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
-        total_charge = (
-            total_charge
-            if total_charge is not None
-            else species.charge_coulomb * num_particles
-        )
+        if species is None:
+            species = Species("electron", **factory_kwargs)
+        if energy is None:
+            energy = torch.tensor(1e8, **factory_kwargs)
+        if total_charge is None:
+            total_charge = species.charge_coulomb * num_particles
+
         particle_charges = (
             torch.ones((*total_charge.shape, num_particles), **factory_kwargs)
             * total_charge.unsqueeze(-1)
@@ -398,8 +345,7 @@ class ParticleBeam(Beam):
             particle_charges=particle_charges,
             s=s,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod
@@ -423,32 +369,9 @@ class ParticleBeam(Beam):
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                beta_x,
-                alpha_x,
-                emittance_x,
-                beta_y,
-                alpha_y,
-                emittance_y,
-                dispersion_x,
-                dispersion_px,
-                dispersion_y,
-                dispersion_py,
-                energy,
-                sigma_tau,
-                sigma_p,
-                cov_taup,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -501,21 +424,31 @@ class ParticleBeam(Beam):
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-        sigma_x = torch.sqrt(beta_x * emittance_x + dispersion_x**2 * sigma_p**2)
+        sigma_x = torch.sqrt(
+            beta_x * emittance_x + dispersion_x.square() * sigma_p.square()
+        )
         sigma_px = torch.sqrt(
-            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
+            emittance_x * (1 + alpha_x.square()) / beta_x
+            + dispersion_px.square() * sigma_p.square()
         )
-        sigma_y = torch.sqrt(beta_y * emittance_y + dispersion_y**2 * sigma_p**2)
+        sigma_y = torch.sqrt(
+            beta_y * emittance_y + dispersion_y.square() * sigma_p.square()
+        )
         sigma_py = torch.sqrt(
-            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
+            emittance_y * (1 + alpha_y.square()) / beta_y
+            + dispersion_py.square() * sigma_p.square()
         )
-        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
-        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
+        cov_xpx = (
+            -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p.square()
+        )
+        cov_ypy = (
+            -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p.square()
+        )
 
-        cov_xp = dispersion_x * sigma_p**2
-        cov_pxp = dispersion_px * sigma_p**2
-        cov_yp = dispersion_y * sigma_p**2
-        cov_pyp = dispersion_py * sigma_p**2
+        cov_xp = dispersion_x * sigma_p.square()
+        cov_pxp = dispersion_px * sigma_p.square()
+        cov_yp = dispersion_y * sigma_p.square()
+        cov_pyp = dispersion_py * sigma_p.square()
 
         return cls.from_parameters(
             num_particles=num_particles,
@@ -540,8 +473,7 @@ class ParticleBeam(Beam):
             total_charge=total_charge,
             s=s,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod
@@ -558,8 +490,8 @@ class ParticleBeam(Beam):
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ):
         """
         Generate a particle beam with spatially uniformly distributed particles inside
@@ -583,27 +515,10 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device where the beam object creates its tensors.
+        :param dtype: Data type of the beam object tensors.
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                radius_x,
-                radius_y,
-                radius_tau,
-                sigma_px,
-                sigma_py,
-                sigma_p,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -636,8 +551,7 @@ class ParticleBeam(Beam):
             total_charge=total_charge,
             s=s,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
         # Extract the vector dimension of the beam
@@ -647,16 +561,16 @@ class ParticleBeam(Beam):
         # r: radius, 3rd root for uniform distribution in sphere volume
         # theta: polar angle, arccos for uniform distribution in sphere surface
         # phi: azimuthal angle, uniform between 0 and 2*pi
-        r = torch.pow(torch.rand(*vector_shape, num_particles, **factory_kwargs), 1 / 3)
-        theta = torch.arccos(
+        r = torch.rand(*vector_shape, num_particles, **factory_kwargs).pow(1 / 3)
+        theta = (
             2 * torch.rand(*vector_shape, num_particles, **factory_kwargs) - 1
-        )
+        ).arccos()
         phi = torch.rand(*vector_shape, num_particles, **factory_kwargs) * 2 * torch.pi
 
         # Convert to Cartesian coordinates
-        x = r * torch.sin(theta) * torch.cos(phi)
-        y = r * torch.sin(theta) * torch.sin(phi)
-        tau = r * torch.cos(theta)
+        x = r * theta.sin() * phi.cos()
+        y = r * theta.sin() * phi.sin()
+        tau = r * theta.cos()
 
         # Replace the spatial coordinates with the generated ones.
         # This involves distorting the unit sphere into the desired ellipsoid.
@@ -686,8 +600,8 @@ class ParticleBeam(Beam):
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """
         Generate Cheetah Beam of *n* linspaced particles.
@@ -713,34 +627,11 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device where the beam object creates its tensors.
+        :param dtype: Data type of tensors created by the beam object.
         :return: ParticleBeam with *n* linspaced particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
-
-        species = species if species is not None else Species("electron")
 
         # Set default values without function call in function signature
         mu_x = mu_x if mu_x is not None else torch.tensor(0.0, **factory_kwargs)
@@ -768,6 +659,9 @@ class ParticleBeam(Beam):
             sigma_p if sigma_p is not None else torch.tensor(1e-6, **factory_kwargs)
         )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
+        species = (
+            species if species is not None else Species("electron", **factory_kwargs)
+        )
         total_charge = (
             total_charge
             if total_charge is not None
@@ -820,53 +714,76 @@ class ParticleBeam(Beam):
             particle_charges=particle_charges,
             s=s,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @classmethod
     def from_ocelot(
-        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        parray,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
+
         num_particles = parray.rparticles.shape[1]
-        particles = torch.ones((num_particles, 7), device=device, dtype=dtype)
+        particles = torch.ones((num_particles, 7), **factory_kwargs)
         particles[:, :6] = torch.as_tensor(
-            parray.rparticles.transpose(), device=device, dtype=dtype
+            parray.rparticles.transpose(), **factory_kwargs
         )
-        particle_charges = torch.as_tensor(parray.q_array, device=device, dtype=dtype)
+
+        energy = 1e9 * torch.as_tensor(parray.E, **factory_kwargs)
+
+        particle_charges = torch.as_tensor(parray.q_array, **factory_kwargs)
+
+        species = Species("electron", **factory_kwargs)
 
         return cls(
             particles=particles,
-            energy=1e9 * torch.as_tensor(parray.E),
+            energy=energy,
             particle_charges=particle_charges,
-            species=Species("electron"),
-            device=device or torch.get_default_device(),
-            dtype=dtype or torch.get_default_dtype(),
+            species=species,
+            **factory_kwargs,
         )
 
     @classmethod
     def from_astra(
-        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        path: str,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
+
         from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
 
-        particles_7d = torch.ones((particles.shape[0], 7), device=device, dtype=dtype)
-        particles_7d[:, :6] = torch.as_tensor(particles, device=device, dtype=dtype)
+        particles_7d = torch.ones((particles.shape[0], 7), **factory_kwargs)
+        particles_7d[:, :6] = torch.as_tensor(
+            particles, device=particles_7d.device, dtype=particles_7d.dtype
+        )
 
-        energy = torch.as_tensor(energy, device=device, dtype=dtype)
-        particle_charges = torch.as_tensor(particle_charges, device=device, dtype=dtype)
+        energy = torch.as_tensor(energy, **factory_kwargs)
+
+        particle_charges = torch.as_tensor(particle_charges, **factory_kwargs)
+
+        species = Species("electron", **factory_kwargs)
 
         return cls(
             particles=particles_7d,
             energy=energy,
             particle_charges=particle_charges,
-            species=Species("electron"),
-            device=device or torch.get_default_device(),
-            dtype=dtype or torch.get_default_dtype(),
+            species=species,
+            **factory_kwargs,
         )
 
     @classmethod
@@ -874,10 +791,12 @@ class ParticleBeam(Beam):
         cls,
         path: str,
         energy: torch.Tensor,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """Load an openPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
+        factory_kwargs = {"device": device, "dtype": dtype}
+
         try:
             import pmd_beamphysics as openpmd
         except ImportError:
@@ -887,32 +806,29 @@ class ParticleBeam(Beam):
             )
 
         particle_group = openpmd.ParticleGroup(path)
-        return cls.from_openpmd_particlegroup(
-            particle_group, energy, device=device, dtype=dtype
-        )
+        return cls.from_openpmd_particlegroup(particle_group, energy, **factory_kwargs)
 
     @classmethod
     def from_openpmd_particlegroup(
         cls,
         particle_group: "openpmd.ParticleGroup",  # noqa: F821
         energy: torch.Tensor,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """
         Create a Cheetah `ParticleBeam` from an openPMD `ParticleGroup` object.
 
         :param particle_group: openPMD `ParticleGroup` object.
         :param energy: Reference energy of the beam in eV.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device where the beam object creates its tensors.
+        :param dtype: Data type of tensors created by the beam object.
+        :return: ParticleBeam with particles from the openPMD `ParticleGroup`.
         """
-        device, dtype = verify_device_and_dtype([energy], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         species = Species(particle_group.species, **factory_kwargs)
-        p0c = torch.sqrt(energy**2 - species.mass_eV**2)
+        p0c = (energy.square() - species.mass_eV.square()).sqrt()
 
         x = torch.as_tensor(particle_group.x, **factory_kwargs)
         y = torch.as_tensor(particle_group.y, **factory_kwargs)
@@ -938,8 +854,7 @@ class ParticleBeam(Beam):
             particle_charges=particle_charges,
             survival_probabilities=survival_probabilities,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     def save_as_openpmd_h5(self, path: str) -> None:
@@ -979,8 +894,8 @@ class ParticleBeam(Beam):
 
         px = self.px * self.p0c
         py = self.py * self.p0c
-        p_total = torch.sqrt(self.energies**2 - self.species.mass_eV**2)
-        pz = torch.sqrt(p_total**2 - px**2 - py**2)
+        p_total = (self.energies.square() - self.species.mass_eV.square()).sqrt()
+        pz = (p_total.square() - px.square() - py.square()).sqrt()
         t = self.tau / constants.speed_of_light
         # TODO: To be discussed
         status = self.survival_probabilities > 0.5
@@ -1018,8 +933,6 @@ class ParticleBeam(Beam):
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Create version of this beam that is transformed to new beam parameters.
@@ -1043,13 +956,8 @@ class ParticleBeam(Beam):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Species of the particles in the beam.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the transformed particles.
+        :return: ParticleBeam with transformed parameters.
         """
-        device = device if device is not None else self.mu_x.device
-        dtype = dtype if dtype is not None else self.mu_x.dtype
-
         mu_x = mu_x if mu_x is not None else self.mu_x
         mu_px = mu_px if mu_px is not None else self.mu_px
         mu_y = mu_y if mu_y is not None else self.mu_y
@@ -1072,7 +980,7 @@ class ParticleBeam(Beam):
             particle_charges = self.particle_charges * total_charge / self.total_charge
         else:
             particle_charges = (
-                torch.ones_like(self.particle_charges, device=device, dtype=dtype)
+                torch.ones_like(self.particle_charges)
                 * total_charge.unsqueeze(-1)
                 / self.particle_charges.shape[-1]
             )
@@ -1109,13 +1017,18 @@ class ParticleBeam(Beam):
 
         phase_space = self.particles[..., :6]
         phase_space = (
-            (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
+            (phase_space.mT - old_mu.unsqueeze(-1))
             / old_sigma.unsqueeze(-1)
             * new_sigma.unsqueeze(-1)
             + new_mu.unsqueeze(-1)
-        ).transpose(-2, -1)
+        ).mT
 
-        particles = torch.ones(*phase_space.shape[:-1], 7)
+        particles = torch.ones(
+            *phase_space.shape[:-1],
+            7,
+            device=self.particles.device,
+            dtype=self.particles.dtype,
+        )
         particles[..., :6] = phase_space
 
         return self.__class__(
@@ -1125,8 +1038,8 @@ class ParticleBeam(Beam):
             survival_probabilities=self.survival_probabilities,
             s=self.s,
             species=species,
-            device=device,
-            dtype=dtype,
+            device=particles.device,
+            dtype=particles.dtype,
         )
 
     def as_parameter_beam(self) -> "ParameterBeam":  # noqa: F821
@@ -1145,8 +1058,6 @@ class ParticleBeam(Beam):
             ),
             energy=self.energy,
             total_charge=self.total_charge,
-            device=self.particles.device,
-            dtype=self.particles.dtype,
         )
 
     def linspaced(self, num_particles: int) -> "ParticleBeam":
@@ -1177,8 +1088,6 @@ class ParticleBeam(Beam):
             survival_probabilities=self.survival_probabilities,
             s=self.s,
             species=self.species,
-            device=self.particles.device,
-            dtype=self.particles.dtype,
         )
 
     def randomly_subsampled(
@@ -1223,8 +1132,6 @@ class ParticleBeam(Beam):
             particle_charges=subsampled_particle_charges,
             survival_probabilities=subsampled_survival_probabilities,
             species=self.species,
-            device=self.particles.device,
-            dtype=self.particles.dtype,
         )
 
         if adjust_particle_charges:
@@ -1243,14 +1150,16 @@ class ParticleBeam(Beam):
         survival_probabilities: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
         species: Species | None = None,
-        device: torch.device | None = None,
-        dtype: torch.dtype | None = None,
-    ) -> torch.Tensor:
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | str | None = None,
+    ) -> "ParticleBeam":
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
-        This tensor should have shape (..., n_particles, 7), where the last dimension
-        is the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
+        This tensor should have shape (..., n_particles, 7), where the last dimension is
+        the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
         """
+        factory_kwargs = {"device": device, "dtype": dtype}
+
         beam = cls(
             particles=xp_coordinates.clone(),
             energy=energy,
@@ -1258,8 +1167,7 @@ class ParticleBeam(Beam):
             survival_probabilities=survival_probabilities,
             s=s,
             species=species,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
         p0 = (
@@ -1267,18 +1175,18 @@ class ParticleBeam(Beam):
             * beam.relativistic_beta
             * beam.species.mass_kg
             * constants.speed_of_light
-        )
-        p = torch.sqrt(
-            xp_coordinates[..., 1] ** 2
-            + xp_coordinates[..., 3] ** 2
-            + xp_coordinates[..., 5] ** 2
-        )
-        gamma = torch.sqrt(
-            1 + (p / (beam.species.mass_kg * constants.speed_of_light)) ** 2
-        )
+        ).unsqueeze(-1)
+        p = (
+            xp_coordinates[..., 1].square()
+            + xp_coordinates[..., 3].square()
+            + xp_coordinates[..., 5].square()
+        ).sqrt()
+        gamma = (
+            1 + (p / (beam.species.mass_kg * constants.speed_of_light)).square()
+        ).sqrt()
 
-        beam.particles[..., 1] = xp_coordinates[..., 1] / p0.unsqueeze(-1)
-        beam.particles[..., 3] = xp_coordinates[..., 3] / p0.unsqueeze(-1)
+        beam.particles[..., 1] = xp_coordinates[..., 1] / p0
+        beam.particles[..., 3] = xp_coordinates[..., 3] / p0
         beam.particles[..., 4] = -xp_coordinates[
             ..., 4
         ] / beam.relativistic_beta.unsqueeze(-1)
@@ -1294,22 +1202,23 @@ class ParticleBeam(Beam):
         beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
         For each particle, the obtained vector is $(x, p_x, y, p_y, z, p_z, 1)$.
         """
-        p0 = (
+        p0 = (  # Reference momentum in (kg m/s)
             self.relativistic_gamma
             * self.relativistic_beta
             * self.species.mass_kg
             * constants.speed_of_light
-        )  # Reference momentum in (kg m/s)
+        ).unsqueeze(-1)
+        relativistic_beta = self.relativistic_beta.unsqueeze(-1)
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
-            1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
+            1.0 + self.particles[..., 5] * relativistic_beta
         )
-        beta = torch.sqrt(1 - 1 / gamma**2)
+        beta = (1 - gamma.square().reciprocal()).sqrt()
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
-        px = self.particles[..., 1] * p0.unsqueeze(-1)
-        py = self.particles[..., 3] * p0.unsqueeze(-1)
-        zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        p = torch.sqrt(momentum**2 - px**2 - py**2)
+        px = self.particles[..., 1] * p0
+        py = self.particles[..., 3] * p0
+        zs = self.particles[..., 4] * -relativistic_beta
+        p = (momentum.square() - px.square() - py.square()).sqrt()
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px
@@ -1646,7 +1555,7 @@ class ParticleBeam(Beam):
     @property
     def total_charge(self) -> torch.Tensor:
         """Total charge of the beam in C, taking into account particle losses."""
-        return torch.sum(self.particle_charges * self.survival_probabilities, dim=-1)
+        return (self.particle_charges * self.survival_probabilities).sum(dim=-1)
 
     @property
     def num_particles(self) -> int:
@@ -1676,8 +1585,8 @@ class ParticleBeam(Beam):
         Mean of the :math:`x` coordinates of the particles, weighted by their
         survival probability.
         """
-        return torch.sum(
-            (self.x * self.survival_probabilities), dim=-1
+        return (self.x * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1704,8 +1613,8 @@ class ParticleBeam(Beam):
         Mean of the :math:`px` coordinates of the particles, weighted by their
         survival probability.
         """
-        return torch.sum(
-            (self.px * self.survival_probabilities), dim=-1
+        return (self.px * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1728,8 +1637,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_y(self) -> float | None:
-        return torch.sum(
-            (self.y * self.survival_probabilities), dim=-1
+        return (self.y * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1748,8 +1657,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_py(self) -> torch.Tensor | None:
-        return torch.sum(
-            (self.py * self.survival_probabilities), dim=-1
+        return (self.py * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1768,8 +1677,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_tau(self) -> torch.Tensor | None:
-        return torch.sum(
-            (self.tau * self.survival_probabilities), dim=-1
+        return (self.tau * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1788,8 +1697,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_p(self) -> torch.Tensor | None:
-        return torch.sum(
-            (self.p * self.survival_probabilities), dim=-1
+        return (self.p * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1876,7 +1785,7 @@ class ParticleBeam(Beam):
     @property
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
-        return torch.sqrt(self.energies**2 - self.species.mass_eV**2)
+        return (self.energies.square() - self.species.mass_eV.square()).sqrt()
 
     def clone(self) -> "ParticleBeam":
         return self.__class__(

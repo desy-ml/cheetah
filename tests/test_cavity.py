@@ -57,8 +57,7 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
         voltage=voltage,
         phase=phase,
         frequency=torch.tensor(2.8560e09),
-        dtype=torch.float64,
-    )
+    ).to(torch.float64)
     incoming = cheetah.ParameterBeam.from_parameters(
         sigma_x=torch.tensor(4.8492e-06),
         sigma_px=torch.tensor(1.5603e-07),
@@ -68,8 +67,7 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
         sigma_p=torch.tensor(1.0000e-06),
         energy=torch.tensor(8.0000e09),
         total_charge=torch.tensor(0.0),
-        dtype=torch.float64,
-    )
+    ).to(torch.float64)
 
     outgoing = cavity.track(incoming)
 

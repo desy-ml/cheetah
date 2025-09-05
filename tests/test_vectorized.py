@@ -321,7 +321,7 @@ def test_vectorized_screen_2d(BeamClass, method):
                         [[-1e-4, -2e-4], [-3e-4, -4e-4], [-5e-4, -6e-4]],
                     ]
                 ),
-                is_active=True,
+                is_active=torch.tensor(True),
                 method=method,
                 name="my_screen",
             ),

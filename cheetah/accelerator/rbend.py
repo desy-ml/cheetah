@@ -3,7 +3,7 @@ from typing import Literal
 import torch
 
 from cheetah.accelerator.dipole import Dipole
-from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -60,39 +60,15 @@ class RBend(Dipole):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
-        # Set default values needed for conversion from RBend to Dipole
-        device, dtype = verify_device_and_dtype(
-            [
-                length,
-                angle,
-                k1,
-                rbend_e1,
-                rbend_e2,
-                tilt,
-                gap,
-                gap_exit,
-                fringe_integral,
-                fringe_integral_exit,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        angle = (
-            torch.as_tensor(angle, **factory_kwargs)
-            if angle is not None
-            else torch.tensor(0.0, **factory_kwargs)
-        )
+        # Set default values needed for conversion from RBend to Dipole
+        angle = angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         rbend_e1 = (
-            torch.as_tensor(rbend_e1, **factory_kwargs)
-            if rbend_e1 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            rbend_e1 if rbend_e1 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         rbend_e2 = (
-            torch.as_tensor(rbend_e2, **factory_kwargs)
-            if rbend_e2 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            rbend_e2 if rbend_e2 is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         super().__init__(
@@ -111,8 +87,7 @@ class RBend(Dipole):
             tracking_method=tracking_method,
             name=name,
             sanitize_name=sanitize_name,
-            device=device,
-            dtype=dtype,
+            **factory_kwargs,
         )
 
     @property

@@ -382,7 +382,7 @@ def test_space_charge_with_aperture_cutoff():
                 x_max=torch.tensor(1e-4),
                 y_max=torch.tensor(1e-4),
                 shape="rectangular",
-                is_active=False,
+                is_active=torch.tensor(False),
                 name="aperture",
             ),
             cheetah.Drift(length=torch.tensor(0.25)),
@@ -402,7 +402,7 @@ def test_space_charge_with_aperture_cutoff():
     outgoing_beam_without_aperture = segment.track(incoming_beam)
 
     # Activate the aperture and track the beam
-    segment.aperture.is_active = True
+    segment.aperture.is_active = torch.tensor(True)
     outgoing_beam_with_aperture = segment.track(incoming_beam)
 
     # Check that with particle loss the space charge kick is different

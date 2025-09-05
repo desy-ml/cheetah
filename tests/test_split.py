@@ -10,7 +10,6 @@ def test_element_end(original):
     Test that at the end of a split element the result is the same as at the end of the
     original element.
     """
-
     original.to(torch.float64)
     split = cheetah.Segment(original.split(resolution=torch.tensor(0.015)))
 
