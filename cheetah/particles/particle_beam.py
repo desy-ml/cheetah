@@ -31,9 +31,8 @@ class ParticleBeam(Beam):
         0.0 means the particle has been lost. Defaults to ones.
     :param s: Position along the beamline of the reference particle in meters.
     :param species: Particle species of the beam. Defaults to electron.
-    :param device: Device to move the beam's particle array to. If set to `"auto"` a
-        CUDA GPU is selected if available. The CPU is used otherwise.
-    :param dtype: Data type of the generated particles.
+    :param device: Device that the beam creates its tensors on.
+    :param dtype: Data type of the tensors created by the beam.
     """
 
     PRETTY_DIMENSION_LABELS = {
@@ -172,9 +171,8 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         :return: ParticleBeam with random particles.
         """
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -314,9 +312,8 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         :return: ParticleBeam with random particles.
         """
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -521,9 +518,8 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
         """
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -635,9 +631,8 @@ class ParticleBeam(Beam):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         :return: ParticleBeam with *n* linspaced particles.
         """
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -806,9 +801,8 @@ class ParticleBeam(Beam):
 
         :param particle_group: openPMD `ParticleGroup` object.
         :param energy: Reference energy of the beam in eV.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the generated particles.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         factory_kwargs = {"device": device, "dtype": dtype}
 
@@ -944,9 +938,8 @@ class ParticleBeam(Beam):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Species of the particles in the beam.
-        :param device: Device to move the beam's particle array to. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the transformed particles.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype

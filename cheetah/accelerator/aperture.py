@@ -68,10 +68,9 @@ class Aperture(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.x_max.device
-        dtype = self.x_max.dtype
+        factory_kwargs = {"device": self.x_max.device, "dtype": self.x_max.dtype}
 
-        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, **factory_kwargs).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
