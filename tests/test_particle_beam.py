@@ -89,30 +89,31 @@ def test_transform_to():
 
 def test_from_twiss_to_twiss():
     """
-    Test that a `ParameterBeam` created from twiss parameters actually has those
+    Test that a `ParticleBeam` created from twiss parameters has the desired
     parameters.
     """
     beam = cheetah.ParticleBeam.from_twiss(
         num_particles=10_000_000,
-        beta_x=torch.tensor(5.91253676811640894),
-        alpha_x=torch.tensor(3.55631307633660354),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        beta_y=torch.tensor(5.91253676811640982),
-        alpha_y=torch.tensor(1.0),  # TODO: set realistic value
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        dispersion_x=torch.tensor(2e-2),
-        sigma_p=torch.tensor(1e-3),
-        energy=torch.tensor(6e6),
+        beta_x=torch.tensor(5.91253676811640894, dtype=torch.float64),
+        alpha_x=torch.tensor(3.55631307633660354, dtype=torch.float64),
+        emittance_x=torch.tensor(3.494768647122823e-09, dtype=torch.float64),
+        beta_y=torch.tensor(5.91253676811640982, dtype=torch.float64),
+        alpha_y=torch.tensor(1.0, dtype=torch.float64),  # TODO: set realistic value
+        emittance_y=torch.tensor(3.497810737006068e-09, dtype=torch.float64),
+        dispersion_x=torch.tensor(2e-2, dtype=torch.float64),
+        sigma_p=torch.tensor(1e-3, dtype=torch.float64),
+        energy=torch.tensor(6e6, dtype=torch.float64),
+        dtype=torch.float64,
     )
-    # rather loose rtol is needed here due to the random sampling of the beam
-    assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894, rtol=1e-3)
-    assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55631307633660354, rtol=1e-3)
-    assert np.isclose(beam.emittance_x.cpu().numpy(), 3.494768647122823e-09, rtol=1e-3)
-    assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982, rtol=1e-3)
-    assert np.isclose(beam.alpha_y.cpu().numpy(), 1.0, rtol=1e-3)
-    assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09, rtol=1e-3)
-    assert np.isclose(beam.sigma_p.cpu().numpy(), 1e-3, rtol=1e-3)
-    assert np.isclose(beam.dispersion_x.cpu().numpy(), 2e-2, rtol=1e-2)
+
+    assert np.isclose(beam.beta_x.cpu().numpy(), 5.91253676811640894)
+    assert np.isclose(beam.alpha_x.cpu().numpy(), 3.55631307633660354)
+    assert np.isclose(beam.emittance_x.cpu().numpy(), 3.494768647122823e-09)
+    assert np.isclose(beam.beta_y.cpu().numpy(), 5.91253676811640982)
+    assert np.isclose(beam.alpha_y.cpu().numpy(), 1.0)
+    assert np.isclose(beam.emittance_y.cpu().numpy(), 3.497810737006068e-09)
+    assert np.isclose(beam.sigma_p.cpu().numpy(), 1e-3)
+    assert np.isclose(beam.dispersion_x.cpu().numpy(), 2e-2, rtol=1e-3)
     assert np.isclose(beam.energy.cpu().numpy(), 6e6)
 
 
@@ -422,9 +423,10 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     """
     original_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=10_000,  # Does not need as many particles as reconstructed beam
-        mu_x=torch.tensor((2e-4, 3e-4)),
-        sigma_x=torch.tensor((2e-5, 3e-5)),
-        energy=torch.tensor((1e7, 2e7)),
+        mu_x=torch.tensor((2e-4, 3e-4), dtype=torch.float64),
+        sigma_x=torch.tensor((2e-5, 3e-5), dtype=torch.float64),
+        energy=torch.tensor((1e7, 2e7), dtype=torch.float64),
+        dtype=torch.float64,
     )
 
     # Vectorise survival probabilities make make them slightly different
@@ -439,46 +441,20 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     )
 
     assert isinstance(roundtrip_converted_beam, cheetah.ParticleBeam)
+    assert torch.allclose(original_beam.mu_x, roundtrip_converted_beam.mu_x)
+    assert torch.allclose(original_beam.mu_px, roundtrip_converted_beam.mu_px)
+    assert torch.allclose(original_beam.mu_y, roundtrip_converted_beam.mu_y)
+    assert torch.allclose(original_beam.mu_py, roundtrip_converted_beam.mu_py)
+    assert torch.allclose(original_beam.mu_tau, roundtrip_converted_beam.mu_tau)
+    assert torch.allclose(original_beam.mu_p, roundtrip_converted_beam.mu_p)
+    assert torch.allclose(original_beam.sigma_x, roundtrip_converted_beam.sigma_x)
+    assert torch.allclose(original_beam.sigma_px, roundtrip_converted_beam.sigma_px)
+    assert torch.allclose(original_beam.sigma_y, roundtrip_converted_beam.sigma_y)
+    assert torch.allclose(original_beam.sigma_py, roundtrip_converted_beam.sigma_py)
+    assert torch.allclose(original_beam.sigma_tau, roundtrip_converted_beam.sigma_tau)
+    assert torch.allclose(original_beam.sigma_p, roundtrip_converted_beam.sigma_p)
+    assert torch.allclose(original_beam.energy, roundtrip_converted_beam.energy)
     assert torch.allclose(
-        original_beam.mu_x, roundtrip_converted_beam.mu_x, rtol=1e-3, atol=1e-6
+        original_beam.total_charge, roundtrip_converted_beam.total_charge
     )
-    assert torch.allclose(
-        original_beam.mu_px, roundtrip_converted_beam.mu_px, rtol=1e-3, atol=1e-6
-    )
-    assert torch.allclose(
-        original_beam.mu_y, roundtrip_converted_beam.mu_y, rtol=1e-3, atol=1e-6
-    )
-    assert torch.allclose(
-        original_beam.mu_py, roundtrip_converted_beam.mu_py, rtol=1e-3, atol=1e-6
-    )
-    assert torch.allclose(
-        original_beam.mu_tau, roundtrip_converted_beam.mu_tau, rtol=1e-3, atol=1e-6
-    )
-    assert torch.allclose(
-        original_beam.mu_p, roundtrip_converted_beam.mu_p, rtol=1e-3, atol=1e-5
-    )
-    assert torch.allclose(
-        original_beam.sigma_x, roundtrip_converted_beam.sigma_x, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.sigma_px, roundtrip_converted_beam.sigma_px, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.sigma_y, roundtrip_converted_beam.sigma_y, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.sigma_py, roundtrip_converted_beam.sigma_py, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.sigma_tau, roundtrip_converted_beam.sigma_tau, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.sigma_p, roundtrip_converted_beam.sigma_p, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.energy, roundtrip_converted_beam.energy, rtol=1e-3
-    )
-    assert torch.allclose(
-        original_beam.total_charge, roundtrip_converted_beam.total_charge, rtol=1e-3
-    )
-    assert torch.allclose(original_beam.s, roundtrip_converted_beam.s, rtol=1e-3)
+    assert torch.allclose(original_beam.s, roundtrip_converted_beam.s)
