@@ -16,7 +16,6 @@ from cheetah.utils import (
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
-    verify_device_and_dtype,
 )
 
 
@@ -68,11 +67,6 @@ class ParticleBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [particles, energy, particle_charges, survival_probabilities, s],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
@@ -183,35 +177,6 @@ class ParticleBeam(Beam):
         :param dtype: Data type of the generated particles.
         :return: ParticleBeam with random particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cov_xpx,
-                cov_ypy,
-                cov_taup,
-                cov_xp,
-                cov_pxp,
-                cov_yp,
-                cov_pyp,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -354,10 +319,6 @@ class ParticleBeam(Beam):
         :param dtype: Data type of the generated particles.
         :return: ParticleBeam with random particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [mu, cov, energy, total_charge, s], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         species = (
@@ -426,29 +387,6 @@ class ParticleBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                beta_x,
-                alpha_x,
-                emittance_x,
-                beta_y,
-                alpha_y,
-                emittance_y,
-                dispersion_x,
-                dispersion_px,
-                dispersion_y,
-                dispersion_py,
-                energy,
-                sigma_tau,
-                sigma_p,
-                cov_taup,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -588,22 +526,6 @@ class ParticleBeam(Beam):
         :param dtype: Data type of the generated particles.
         :return: ParticleBeam with uniformly distributed particles inside an ellipsoid.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                radius_x,
-                radius_y,
-                radius_tau,
-                sigma_px,
-                sigma_py,
-                sigma_p,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -718,26 +640,6 @@ class ParticleBeam(Beam):
         :param dtype: Data type of the generated particles.
         :return: ParticleBeam with *n* linspaced particles.
         """
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         species = species if species is not None else Species("electron")
@@ -908,7 +810,6 @@ class ParticleBeam(Beam):
             CUDA GPU is selected if available. The CPU is used otherwise.
         :param dtype: Data type of the generated particles.
         """
-        device, dtype = verify_device_and_dtype([energy], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
 
         species = Species(particle_group.species, **factory_kwargs)

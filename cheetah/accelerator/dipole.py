@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -76,22 +76,6 @@ class Dipole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
-        device, dtype = verify_device_and_dtype(
-            [
-                length,
-                angle,
-                k1,
-                dipole_e1,
-                dipole_e2,
-                tilt,
-                gap,
-                gap_exit,
-                fringe_integral,
-                fringe_integral_exit,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 

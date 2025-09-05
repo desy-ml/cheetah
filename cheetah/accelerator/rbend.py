@@ -3,7 +3,7 @@ from typing import Literal
 import torch
 
 from cheetah.accelerator.dipole import Dipole
-from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -60,23 +60,6 @@ class RBend(Dipole):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
-        # Set default values needed for conversion from RBend to Dipole
-        device, dtype = verify_device_and_dtype(
-            [
-                length,
-                angle,
-                k1,
-                rbend_e1,
-                rbend_e2,
-                tilt,
-                gap,
-                gap_exit,
-                fringe_integral,
-                fringe_integral_exit,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         angle = (

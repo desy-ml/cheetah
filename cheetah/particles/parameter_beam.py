@@ -4,7 +4,6 @@ import torch
 from cheetah.particles.beam import Beam
 from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.particles.species import Species
-from cheetah.utils import verify_device_and_dtype
 
 
 class ParameterBeam(Beam):
@@ -38,9 +37,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [mu, cov, energy, total_charge, s], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
@@ -94,35 +90,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                cov_xpx,
-                cov_ypy,
-                cov_taup,
-                cov_xp,
-                cov_pxp,
-                cov_yp,
-                cov_pyp,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature
@@ -267,29 +234,6 @@ class ParameterBeam(Beam):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
-        # Extract device and dtype from given arguments
-        device, dtype = verify_device_and_dtype(
-            [
-                beta_x,
-                alpha_x,
-                emittance_x,
-                beta_y,
-                alpha_y,
-                emittance_y,
-                sigma_tau,
-                sigma_p,
-                cov_taup,
-                dispersion_x,
-                dispersion_px,
-                dispersion_y,
-                dispersion_py,
-                energy,
-                total_charge,
-                s,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         # Set default values without function call in function signature

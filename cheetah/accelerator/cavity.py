@@ -8,11 +8,7 @@ from scipy import constants
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix
-from cheetah.utils import (
-    UniqueNameGenerator,
-    compute_relativistic_factors,
-    verify_device_and_dtype,
-)
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -47,9 +43,6 @@ class Cavity(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, voltage, phase, frequency], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 

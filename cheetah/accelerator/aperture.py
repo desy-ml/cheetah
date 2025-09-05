@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import PhysicsWarning, UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import PhysicsWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -40,7 +40,6 @@ class Aperture(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 

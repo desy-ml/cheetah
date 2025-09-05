@@ -29,8 +29,8 @@ def are_all_the_same_dtype(tensors: list[torch.Tensor]) -> torch.dtype:
 
 def verify_device_and_dtype(
     tensors: list[torch.Tensor | None],
-    desired_device: torch.device | None,
-    desired_dtype: torch.dtype | None,
+    desired_device: torch.device | None = None,
+    desired_dtype: torch.dtype | None = None,
 ) -> tuple[torch.device, torch.dtype]:
     """
     Verifies that a unique device and dtype can be determined from the passed tensors

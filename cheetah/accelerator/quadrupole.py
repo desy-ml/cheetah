@@ -8,12 +8,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
-from cheetah.utils import (
-    UniqueNameGenerator,
-    bmadx,
-    squash_index_for_unavailable_dims,
-    verify_device_and_dtype,
-)
+from cheetah.utils import UniqueNameGenerator, bmadx, squash_index_for_unavailable_dims
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -59,9 +54,6 @@ class Quadrupole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k1, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
