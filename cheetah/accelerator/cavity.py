@@ -1,3 +1,4 @@
+import math
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -243,44 +244,42 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
+        assert torch.all(energy > 0), "Initial energy must be larger than 0"
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        effective_voltage = self.voltage * species.num_elementary_charges * -1
+        effective_voltage = -self.voltage * species.num_elementary_charges
         delta_energy = effective_voltage * torch.cos(phi)
-        # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, **factory_kwargs)
+
         Ei = energy / species.mass_eV
-        Ef = (energy + delta_energy) / species.mass_eV
-        Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
-        assert torch.all(Ei > 0), "Initial energy must be larger than 0"
-
-        alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
-
-        r55_cor = torch.tensor(0.0, **factory_kwargs)
+        dE = delta_energy / species.mass_eV
+        Ef = Ei + dE
+        Ep = dE / self.length  # Derivative of the energy
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = torch.sqrt(1 - 1 / Ei**2)
-        beta1 = torch.sqrt(1 - 1 / Ef**2)
-        r56 = torch.tensor(0.0, **factory_kwargs)
 
         if self.cavity_type == "standing_wave":
-            r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
-                alpha
-            )
+            alpha = math.sqrt(0.125) / torch.cos(phi) * torch.log(Ef / Ei)
+            beta0 = torch.sqrt(1 - 1 / Ei**2)
+            beta1 = torch.sqrt(1 - 1 / Ef**2)
+
+            r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
-            r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
+            r12 = (
+                math.sqrt(8.0)
+                * energy
+                / effective_voltage
+                * torch.sin(alpha)
+                * self.length
+            )
 
             r21 = (
                 -Ep
                 / Ef
-                * (
-                    torch.cos(phi) / torch.sqrt(2 * eta)
-                    + torch.sqrt(eta / 8) / torch.cos(phi)
-                )
+                * (torch.cos(phi) / math.sqrt(2.0) + math.sqrt(0.125) / torch.cos(phi))
                 * torch.sin(alpha)
             )
 
@@ -289,31 +288,31 @@ class Cavity(Element):
                 / Ef
                 * (
                     torch.cos(alpha)
-                    + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+                    + math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
                 )
             )
 
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            g0 = Ei
-            g1 = Ef
-            r55_cor = (
+            r55 = 1.0 + (
                 k
                 * self.length
                 * beta0
                 * effective_voltage
                 / species.mass_eV
                 * torch.sin(phi)
-                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
-                / (beta1 * g1 * (g0 - g1) ** 2)
+                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                / (beta1 * Ef * (Ei - Ef) ** 2)
+            )
+            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            r65 = (
+                k
+                * torch.sin(phi)
+                * effective_voltage
+                / (beta1 * (energy + delta_energy))
             )
             r66 = Ei / Ef * beta0 / beta1
-            r65 = (
-                k * torch.sin(phi) * effective_voltage / (Ef * beta1 * species.mass_eV)
-            )
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            dE = delta_energy / species.mass_eV
             f = Ei / dE * torch.log(1 + (dE / Ei))
 
             vector_shape = torch.broadcast_shapes(
@@ -325,10 +324,10 @@ class Cavity(Element):
             M_body[..., 1, 1] = Ei / Ef
 
             M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
+            M_f_entry[..., 1, 0] = -Ep / (2 * Ei)
 
             M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
+            M_f_exit[..., 1, 0] = Ep / (2 * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
 
@@ -336,14 +335,16 @@ class Cavity(Element):
             r12 = M_combined[..., 0, 1]
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
+            r55 = self.length.new_ones(())
+            r56 = self.length.new_zeros(())
+            r65 = k * torch.sin(phi) * effective_voltage / (energy + delta_energy)
             r66 = r22
-            r65 = k * torch.sin(phi) * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
         # Make sure that all matrix elements have the same shape
-        r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(
-            r11, r12, r21, r22, r55_cor, r56, r65, r66
+        r11, r12, r21, r22, r55, r56, r65, r66 = torch.broadcast_tensors(
+            r11, r12, r21, r22, r55, r56, r65, r66
         )
 
         R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
@@ -355,7 +356,7 @@ class Cavity(Element):
         R[..., 2, 3] = r12
         R[..., 3, 2] = r21
         R[..., 3, 3] = r22
-        R[..., 4, 4] = 1 + r55_cor
+        R[..., 4, 4] = r55
         R[..., 4, 5] = r56
         R[..., 5, 4] = r65
         R[..., 5, 5] = r66
