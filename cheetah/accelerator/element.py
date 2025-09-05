@@ -120,6 +120,25 @@ class Element(ABC, nn.Module):
         represented using a matrix multiplication, i.e. the augmented matrix as in an
         affine transformation.
 
+        NOTE: This method may cache the transfer map for faster subsequent calls.
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7 Matrix for further calculations.
+        """
+        if self._cached_first_order_transfer_map is None:
+            self._cached_first_order_transfer_map = (
+                self._compute_first_order_transfer_map(energy, species)
+            )
+
+        return self._cached_first_order_transfer_map
+
+    def _compute_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Computes the first-order transfer map for the element.
+
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
         :return: A 7x7 Matrix for further calculations.
@@ -134,6 +153,25 @@ class Element(ABC, nn.Module):
         and its particles are transformed when traveling through the element.
 
         :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
+
+        NOTE: This method may cache the transfer map for faster subsequent calls.
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7x7 Tensor T_ijk for further calculations.
+        """
+        if self._cached_second_order_transfer_map is None:
+            self._cached_second_order_transfer_map = (
+                self._compute_second_order_transfer_map(energy, species)
+            )
+
+        return self._cached_second_order_transfer_map
+
+    def _compute_second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Computes the second-order transfer map for the element.
 
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.

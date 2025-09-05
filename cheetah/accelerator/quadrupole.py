@@ -85,69 +85,55 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def first_order_transfer_map(
+    def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        if self._cached_first_order_transfer_map is None:
-            R = base_rmatrix(
-                length=self.length,
-                k1=self.k1,
-                hx=torch.tensor(
-                    0.0, device=self.length.device, dtype=self.length.dtype
-                ),
-                species=species,
-                tilt=self.tilt,
-                energy=energy,
-            )
+        R = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
 
-            if torch.any(self.misalignment != 0):
-                R_entry, R_exit = misalignment_matrix(self.misalignment)
-                R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        if torch.any(self.misalignment != 0):
+            R_entry, R_exit = misalignment_matrix(self.misalignment)
+            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
 
-            self._cached_first_order_transfer_map = R
+        return R
 
-        return self._cached_first_order_transfer_map
-
-    def second_order_transfer_map(
+    def _compute_second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        if self._cached_second_order_transfer_map is None:
-            T = base_ttensor(
-                length=self.length,
-                k1=self.k1,
-                k2=torch.tensor(
-                    0.0, device=self.length.device, dtype=self.length.dtype
-                ),
-                hx=torch.tensor(
-                    0.0, device=self.length.device, dtype=self.length.dtype
-                ),
-                tilt=self.tilt,
-                energy=energy,
-                species=species,
+        T = base_ttensor(
+            length=self.length,
+            k1=self.k1,
+            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            tilt=self.tilt,
+            energy=energy,
+            species=species,
+        )
+
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            species=species,
+            tilt=self.tilt,
+            energy=energy,
+        )
+
+        # Apply misalignments to the entire second-order transfer map
+        if not torch.all(self.misalignment == 0):
+            R_entry, R_exit = misalignment_matrix(self.misalignment)
+            T = torch.einsum(
+                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
             )
 
-            # Fill the first-order transfer map into the second-order transfer map
-            T[..., :, 6, :] = base_rmatrix(
-                length=self.length,
-                k1=self.k1,
-                hx=torch.tensor(
-                    0.0, device=self.length.device, dtype=self.length.dtype
-                ),
-                species=species,
-                tilt=self.tilt,
-                energy=energy,
-            )
-
-            # Apply misalignments to the entire second-order transfer map
-            if not torch.all(self.misalignment == 0):
-                R_entry, R_exit = misalignment_matrix(self.misalignment)
-                T = torch.einsum(
-                    "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-                )
-
-            self._cached_second_order_transfer_map = T
-
-        return self._cached_second_order_transfer_map
+        return T
 
     def track(self, incoming: Beam) -> Beam:
         """
