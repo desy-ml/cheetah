@@ -96,8 +96,8 @@ def test_dipole_with_float64():
         "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
     )
     cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor(0.1), angle=torch.tensor(0.1), dtype=torch.float64
-    )
+        length=torch.tensor(0.1), angle=torch.tensor(0.1)
+    ).to(torch.float64)
     outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
@@ -168,7 +168,7 @@ def test_dipole_with_fringe_field_and_tilt():
         dipole_e1=torch.tensor(bend_angle / 2),
         dipole_e2=torch.tensor(bend_angle / 2),
     )
-    outgoing_beam = cheetah_dipole(incoming_beam)
+    outgoing_beam = cheetah_dipole.track(incoming_beam)
 
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(
@@ -698,8 +698,7 @@ def test_cavity(cavity_type, phase):
         frequency=torch.tensor(1.3e9),
         phase=torch.tensor(phase),
         cavity_type=cavity_type,
-        dtype=torch.float64,
-    )
+    ).to(torch.float64)
     outgoing_beam = cheetah_cavity.track(incoming_beam)
 
     # Compare

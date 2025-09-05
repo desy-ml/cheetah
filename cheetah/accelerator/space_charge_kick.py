@@ -4,7 +4,6 @@ from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import ParticleBeam
-from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
@@ -57,11 +56,6 @@ class SpaceChargeKick(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [effect_length, grid_extent_x, grid_extent_y, grid_extent_tau],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)

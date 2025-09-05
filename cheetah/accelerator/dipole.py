@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -76,22 +76,6 @@ class Dipole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
-        device, dtype = verify_device_and_dtype(
-            [
-                length,
-                angle,
-                k1,
-                dipole_e1,
-                dipole_e2,
-                tilt,
-                gap,
-                gap_exit,
-                fringe_integral,
-                fringe_integral_exit,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
@@ -427,8 +411,7 @@ class Dipole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
@@ -442,9 +425,7 @@ class Dipole(Element):
                 energy=energy,
             )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype).repeat(
-                (*self.length.shape, 1, 1)
-            )
+            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
             R[..., 2, 3] = self.length
@@ -462,8 +443,7 @@ class Dipole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
@@ -472,7 +452,7 @@ class Dipole(Element):
             T = base_ttensor(
                 length=self.length,
                 k1=self.k1,
-                k2=torch.tensor(0.0, dtype=dtype, device=device),
+                k2=torch.tensor(0.0, **factory_kwargs),
                 hx=self.hx,
                 species=species,
                 energy=energy,
@@ -487,14 +467,12 @@ class Dipole(Element):
                 energy=energy,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, device=device, dtype=dtype).repeat(
-                (*self.length.shape, 1, 1)
-            )
+            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
             R[..., 2, 3] = self.length
 
-            T = torch.zeros((*self.length.shape, 7, 7), dtype=dtype, device=device)
+            T = torch.zeros((*self.length.shape, 7, 7), **factory_kwargs)
             T[..., :, 6, :] = R
 
         # Apply fringe fields
@@ -517,8 +495,7 @@ class Dipole(Element):
 
     def _transfer_map_enter(self) -> torch.Tensor:
         """Linear transfer map for the entrance face of the dipole magnet."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         sec_e = 1.0 / torch.cos(self._e1)
         phi = (
@@ -529,7 +506,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e1) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
         tm[..., 1, 0] = self.hx * torch.tan(self._e1)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
 
@@ -537,8 +514,7 @@ class Dipole(Element):
 
     def _transfer_map_exit(self) -> torch.Tensor:
         """Linear transfer map for the exit face of the dipole magnet."""
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         sec_e = 1.0 / torch.cos(self._e2)
         phi = (
@@ -549,7 +525,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e2) ** 2)
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
         tm[..., 1, 0] = self.hx * torch.tan(self._e2)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
 

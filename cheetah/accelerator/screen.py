@@ -7,7 +7,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -57,9 +57,6 @@ class Screen(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [pixel_size, misalignment, kde_bandwidth], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
@@ -164,10 +161,12 @@ class Screen(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.misalignment.device
-        dtype = self.misalignment.dtype
+        factory_kwargs = {
+            "device": self.misalignment.device,
+            "dtype": self.misalignment.dtype,
+        }
 
-        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, **factory_kwargs).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active
