@@ -43,10 +43,16 @@ def base_rmatrix(
     cy = torch.cos(ky * length).real
     sx = (torch.sinc(kx * length / torch.pi) * length).real
     sy = (torch.sinc(ky * length / torch.pi) * length).real
-    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
-    r56 = torch.where(kx2 != 0, hx**2 * (length - sx) / kx2 / beta**2, zero)
 
-    r56 = r56 - length / beta**2 * igamma2
+    r = (0.5 * kx * length / torch.pi).sinc()
+    dx = hx * 0.5 * length.square() * r.square().real
+
+    kx2_is_not_zero = kx2 != 0
+    r56 = (
+        torch.where(kx2_is_not_zero, hx**2 * (length - sx) / kx2, zero)
+        * -length
+        * igamma2
+    )
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
@@ -72,13 +78,8 @@ def base_rmatrix(
     # rotation needs to be applied accross all vector dimensions. The torch.where is
     # here to improve numerical stability for the vector elements where no rotation
     # needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0))):
-        rotation = rotation_matrix(tilt)
-        R = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
-            rotation.transpose(-1, -2) @ R @ rotation,
-            R,
-        )
+    rotation = rotation_matrix(tilt)
+    R = rotation.transpose(-1, -2) @ R @ rotation
 
     return R
 
@@ -275,27 +276,15 @@ def base_ttensor(
         - 0.25 / beta * (length + cy * sy)
     )
 
-    # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
-    # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
-    # when no rotation needs to be applied accross all vector dimensions. The
-    # torch.where is here to improve numerical stability for the vector elements where
-    # no rotation needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))):
-        rotation = rotation_matrix(tilt)
-        T = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0)))
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-            .unsqueeze(-1),
-            torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm",
-                rotation.transpose(-1, -2),
-                T,
-                rotation,
-                rotation,
-            ),
-            T,
-        )
+    rotation = rotation_matrix(tilt)
+    T = torch.einsum(
+        "...ji,...jkl,...kn,...lm->...inm",
+        rotation,  # Switch index labels in einsum instead of transpose (faster)
+        T,
+        rotation,
+        rotation,
+    )
+
     return T
 
 
@@ -359,6 +348,4 @@ def misalignment_matrix(
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
-    return R_entry, R_exit
-    return R_entry, R_exit
     return R_entry, R_exit
