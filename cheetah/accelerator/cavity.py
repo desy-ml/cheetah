@@ -282,10 +282,10 @@ class Cavity(Element):
                 * self.length
             )
 
-            r21 = (
-                -Ep
-                / Ef
-                * (torch.cos(phi) / math.sqrt(2.0) + math.sqrt(0.125) / torch.cos(phi))
+            r21 = -(
+                effective_voltage
+                / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
+                * (0.5 + torch.cos(phi) ** 2)
                 * torch.sin(alpha)
             )
 
