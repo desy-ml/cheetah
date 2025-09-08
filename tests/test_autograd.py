@@ -24,4 +24,9 @@ def test_log1plusxbyx():
     )
 
     # Check gradient calculation using finite difference methods
-    assert torch.autograd.gradcheck(func=Log1plusXbyX.apply, inputs=test_points)
+    assert torch.autograd.gradcheck(
+        func=Log1plusXbyX.apply,
+        inputs=test_points,
+        check_backward_ad=True,
+        check_forward_ad=True,
+    )
