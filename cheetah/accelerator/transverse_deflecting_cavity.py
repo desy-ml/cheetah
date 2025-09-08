@@ -55,31 +55,29 @@ class TransverseDeflectingCavity(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "voltage",
-            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+            voltage if voltage is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
-            "phase",
-            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+            "phase", phase if phase is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "frequency",
-            torch.as_tensor(
-                frequency if frequency is not None else 0.0, **factory_kwargs
-            ),
+            frequency if frequency is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.num_steps = num_steps

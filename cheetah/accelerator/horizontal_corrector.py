@@ -37,11 +37,10 @@ class HorizontalCorrector(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "angle",
-            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+            "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
     def first_order_transfer_map(

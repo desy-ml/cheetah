@@ -36,7 +36,7 @@ class BPM(Element):
 
         self.register_buffer(
             "reading",
-            torch.as_tensor((torch.nan, torch.nan), **factory_kwargs),
+            torch.tensor((torch.nan, torch.nan), **factory_kwargs),
             persistent=False,
         )
 

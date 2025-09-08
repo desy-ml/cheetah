@@ -62,27 +62,30 @@ class SpaceChargeKick(Element):
 
         self.grid_shape = grid_shape
 
-        self.register_buffer_or_parameter(
-            "effect_length", torch.as_tensor(effect_length, **factory_kwargs)
-        )
+        self.register_buffer_or_parameter("effect_length", effect_length)
         # In multiples of sigma
         self.register_buffer_or_parameter(
             "grid_extent_x",
-            torch.as_tensor(
-                grid_extent_x if grid_extent_x is not None else 3.0, **factory_kwargs
+            (
+                grid_extent_x
+                if grid_extent_x is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_y",
-            torch.as_tensor(
-                grid_extent_y if grid_extent_y is not None else 3.0, **factory_kwargs
+            (
+                grid_extent_y
+                if grid_extent_y is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "grid_extent_tau",
-            torch.as_tensor(
-                grid_extent_tau if grid_extent_tau is not None else 3.0,
-                **factory_kwargs,
+            (
+                grid_extent_tau
+                if grid_extent_tau is not None
+                else torch.tensor(3.0, **factory_kwargs)
             ),
         )
 
