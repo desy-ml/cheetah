@@ -121,6 +121,7 @@ class Element(ABC, nn.Module):
         affine transformation.
 
         NOTE: This method may cache the transfer map for faster subsequent calls.
+        The cache is invalidated when any defining feature of the element changes.
 
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
@@ -155,6 +156,7 @@ class Element(ABC, nn.Module):
         :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
 
         NOTE: This method may cache the transfer map for faster subsequent calls.
+        The cache is invalidated when any defining feature of the element changes.
 
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
