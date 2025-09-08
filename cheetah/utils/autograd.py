@@ -8,10 +8,13 @@ class Log1plusXbyX(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, x):
-        result = torch.where(x != 0, x.log1p() / x, x.new_ones(()))
-        ctx.save_for_backward(x, result)
-        return result
+    def setup_context(ctx, inputs, output):
+        (x,) = inputs  # inputs is always passed as a tuple
+        ctx.save_for_backward(x, output)
+
+    @staticmethod
+    def forward(x):
+        return torch.where(x != 0, x.log1p() / x, x.new_ones(()))
 
     @staticmethod
     def backward(ctx, grad_output):
