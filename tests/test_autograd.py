@@ -33,6 +33,6 @@ def test_log1plusxbyx():
         torch.where(
             test_points != 0.0,
             bwd_torch,
-            -test_points.new_ones(()) / 2.0,
+            -0.5 * test_points.new_ones(()),
         ),
     )
