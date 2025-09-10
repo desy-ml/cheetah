@@ -116,7 +116,7 @@ class SpaceChargeKick(Element):
         ) * inv_cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_positions).type(torch.int)
+        cell_indices = normalized_positions.floor().to(torch.int)
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor(
@@ -473,7 +473,7 @@ class SpaceChargeKick(Element):
         ) / cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_positions).type(torch.int)
+        cell_indices = normalized_positions.floor().to(torch.int)
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor(
@@ -521,9 +521,9 @@ class SpaceChargeKick(Element):
         # Keep dimensions, and set F to zero if non-valid
         force_indices = (
             idx_vector,
-            torch.clamp(idx_x, min=0, max=grid_shape[0] - 1),
-            torch.clamp(idx_y, min=0, max=grid_shape[1] - 1),
-            torch.clamp(idx_tau, min=0, max=grid_shape[2] - 1),
+            idx_x.clamp(min=0, max=grid_shape[0] - 1),
+            idx_y.clamp(min=0, max=grid_shape[1] - 1),
+            idx_tau.clamp(min=0, max=grid_shape[2] - 1),
         )
 
         Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
