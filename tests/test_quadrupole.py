@@ -5,9 +5,7 @@ import cheetah
 
 
 def test_quadrupole_off():
-    """
-    Test that a quadrupole with k1=0 behaves still like a drift.
-    """
+    """Test that a quadrupole with k1=0 behaves still like a drift."""
     quadrupole = cheetah.Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(0.0))
     drift = cheetah.Drift(length=torch.tensor(1.0))
     incoming_beam = cheetah.ParameterBeam.from_parameters(
@@ -30,9 +28,7 @@ def test_quadrupole_off():
 
 
 def test_quadrupole_with_misalignments_vectorized():
-    """
-    Test that a quadrupole with misalignments behaves as expected.
-    """
+    """Test that a quadrupole with misalignments behaves as expected."""
     quad_with_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),

@@ -100,8 +100,7 @@ class ParticleBeam(Beam):
             ),
         )
         self.register_buffer(
-            "s",
-            (s if s is not None else torch.tensor(0.0, **factory_kwargs)),
+            "s", (s if s is not None else torch.tensor(0.0, **factory_kwargs))
         )
 
     @classmethod
@@ -817,13 +816,18 @@ class ParticleBeam(Beam):
         dtype: torch.dtype | str | None = None,
     ) -> "ParticleBeam":
         """
-        Create a Cheetah `ParticleBeam` from an openPMD `ParticleGroup` object.
+                Create a Cheetah `ParticleBeam` from an openPMD `ParticleGroup` object.
 
-        :param particle_group: openPMD `ParticleGroup` object.
-        :param energy: Reference energy of the beam in eV.
-        :param device: Device where the beam object creates its tensors.
-        :param dtype: Data type of tensors created by the beam object.
-        :return: ParticleBeam with particles from the openPMD `ParticleGroup`.
+                :param particle_group: openPMD `ParticleGroup` object.
+                :param energy: Reference energy of the beam in eV.
+        <<<<<<< HEAD
+                :param device: Device where the beam object creates its tensors.
+                :param dtype: Data type of tensors created by the beam object.
+                :return: ParticleBeam with particles from the openPMD `ParticleGroup`.
+        =======
+                :param device: Device that the beam creates its tensors on.
+                :param dtype: Data type of the tensors created by the beam.
+        >>>>>>> master
         """
         factory_kwargs = {"device": device, "dtype": dtype}
 

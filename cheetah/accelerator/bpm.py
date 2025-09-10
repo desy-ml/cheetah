@@ -30,9 +30,7 @@ class BPM(Element):
         dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(
-            name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
-        )
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.register_buffer_or_parameter(
             "is_active",
@@ -45,7 +43,7 @@ class BPM(Element):
 
         self.register_buffer(
             "reading",
-            torch.as_tensor((torch.nan, torch.nan), device=device, dtype=dtype),
+            torch.tensor((torch.nan, torch.nan), **factory_kwargs),
             persistent=False,
         )
 

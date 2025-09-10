@@ -71,11 +71,13 @@ class CustomTransferMap(Element):
         first_element_transfer_map = elements[0].first_order_transfer_map(
             incoming_beam.energy, incoming_beam.species
         )
-        device = first_element_transfer_map.device
-        dtype = first_element_transfer_map.dtype
+        factory_kwargs = {
+            "device": first_element_transfer_map.device,
+            "dtype": first_element_transfer_map.dtype,
+        }
 
         tm = (
-            torch.eye(7, device=device, dtype=dtype)
+            torch.eye(7, **factory_kwargs)
             .expand((*incoming_beam.energy.shape, 7, 7))
             .clone()
         )
@@ -92,9 +94,7 @@ class CustomTransferMap(Element):
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
-        return cls(
-            tm, length=combined_length, device=device, dtype=dtype, name=combined_name
-        )
+        return cls(tm, length=combined_length, name=combined_name, **factory_kwargs)
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species

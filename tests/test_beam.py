@@ -36,5 +36,6 @@ def test_transformed_beam_dtype(BeamClass):
     transformed_beam = beam.transformed_to(
         mu_x=torch.tensor(-2e-5, dtype=torch.float64)
     )
+
     for attribute in beam_attributes:
         assert getattr(transformed_beam, attribute).dtype == torch.float64

@@ -42,7 +42,7 @@ class Solenoid(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "k", k if k is not None else torch.tensor(0.0, **factory_kwargs)
@@ -117,15 +117,13 @@ class Solenoid(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
         split_length = self.length / num_splits
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
         return [
             Solenoid(
                 length=split_length,
                 k=self.k,
                 misalignment=self.misalignment,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
             for _ in range(num_splits)
         ]

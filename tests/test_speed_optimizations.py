@@ -105,9 +105,7 @@ def test_merged_transfer_maps_num_elements():
 
 
 def test_no_markers_left_after_removal():
-    """
-    Test that when removing markers, no markers are left in the segment.
-    """
+    """Test that when removing markers, no markers are left in the segment."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),

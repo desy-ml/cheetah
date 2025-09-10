@@ -44,6 +44,7 @@ class ParameterBeam(Beam):
 
         self.register_buffer_or_parameter("mu", mu)
         self.register_buffer_or_parameter("cov", cov)
+
         self.register_buffer_or_parameter("energy", energy)
         self.register_buffer_or_parameter(
             "total_charge",
@@ -442,9 +443,8 @@ class ParameterBeam(Beam):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
-        :param device: Device to create the transformed beam on. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the transformed beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype

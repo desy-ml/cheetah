@@ -82,8 +82,7 @@ class Dipole(Element):
         self.length = length
 
         self.register_buffer_or_parameter(
-            "angle",
-            angle if angle is not None else torch.tensor(0.0, **factory_kwargs),
+            "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "k1", k1 if k1 is not None else torch.tensor(0.0, **factory_kwargs)

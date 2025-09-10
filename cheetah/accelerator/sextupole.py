@@ -44,7 +44,7 @@ class Sextupole(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "k2", k2 if k2 is not None else torch.tensor(0.0, **factory_kwargs)

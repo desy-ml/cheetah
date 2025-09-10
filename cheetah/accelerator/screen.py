@@ -161,10 +161,12 @@ class Screen(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.misalignment.device
-        dtype = self.misalignment.dtype
+        factory_kwargs = {
+            "device": self.misalignment.device,
+            "dtype": self.misalignment.dtype,
+        }
 
-        return torch.eye(7, device=device, dtype=dtype).expand((*energy.shape, 7, 7))
+        return torch.eye(7, **factory_kwargs).expand((*energy.shape, 7, 7))
 
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active

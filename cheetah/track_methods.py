@@ -120,10 +120,9 @@ def base_ttensor(
     :param energy: Beam energy in eV.
     :return: Second order transfer map for the element.
     """
-    device = length.device
-    dtype = length.dtype
+    factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
-    zero = torch.tensor(0.0, device=device, dtype=dtype)
+    zero = torch.tensor(0.0, **factory_kwargs)
 
     tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero
@@ -180,9 +179,7 @@ def base_ttensor(
         length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
     )
 
-    T = torch.zeros((7, 7, 7), dtype=dtype, device=device).repeat(
-        *vector_shape, 1, 1, 1
-    )
+    T = torch.zeros((7, 7, 7), **factory_kwargs).repeat(*vector_shape, 1, 1, 1)
     T[..., 0, 0, 0] = -1 / 6 * khk * (sx.square() + dx) - 0.5 * hx * kx2 * sx.square()
     T[..., 0, 0, 1] = 2 * (-1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx)
     T[..., 0, 1, 1] = -1 / 6 * khk * dx.square() + 0.5 * hx * dx * cx
@@ -317,15 +314,12 @@ def drift_matrix(
     length: torch.Tensor, energy: torch.Tensor, species: Species
 ) -> torch.Tensor:
     """Create a first order transfer map for a drift space."""
+    factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     length, beta, igamma2 = torch.broadcast_tensors(length, beta, igamma2)
-    tm = (
-        torch.eye(7, device=length.device, dtype=length.dtype)
-        .expand((*length.shape, 7, 7))
-        .clone()
-    )
+    tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
     tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
         [length, length, -length / beta.square() * igamma2], dim=-1
     )

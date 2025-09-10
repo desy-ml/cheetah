@@ -22,8 +22,8 @@ atomic_mass_eV = (
         cheetah.Species("deuteron", dtype=torch.float64),
         cheetah.Species(
             "#12C+3",
-            num_elementary_charges=3,
-            mass_eV=12 * atomic_mass_eV,
+            num_elementary_charges=torch.tensor(3.0, dtype=torch.float64),
+            mass_eV=torch.tensor(12.0, dtype=torch.float64) * atomic_mass_eV,
             dtype=torch.float64,
         ),
     ],
