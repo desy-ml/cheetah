@@ -23,16 +23,15 @@ class Log1plusXbyX(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        x, result = ctx.saved_tensors
-        return grad_output * Log1plusXbyX._gradient(x, result)
+        x, fx = ctx.saved_tensors
+        return grad_output * torch.where(
+            x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(())
+        )
 
     @staticmethod
     def jvp(ctx, grad_input):
-        x, result = ctx.saved_tensors
-        return Log1plusXbyX._gradient(x, result) * grad_input
-
-    @staticmethod
-    def _gradient(x, fx):
-        return torch.where(
-            x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(())
+        x, fx = ctx.saved_tensors
+        return (
+            torch.where(x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(()))
+            * grad_input
         )
