@@ -5,6 +5,7 @@
 ### 🚨 Breaking Changes
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
+- Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
 
 ### 🚀 Features
 
@@ -13,6 +14,7 @@
 - Documented PyTorch `compile` for improved speed (see #390) (@ax3l)
 - Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
 - Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
+- First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532) (@jank324)
 
 ### 🐛 Bug fixes
 

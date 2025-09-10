@@ -16,10 +16,10 @@ def test_transverse_deflecting_cavity_drift_kick_drift_tracking(dtype):
         "tests/resources/bmadx/incoming.pt", weights_only=False
     ).to(dtype)
     tdc = cheetah.TransverseDeflectingCavity(
-        length=torch.tensor(1.0),
-        voltage=torch.tensor(1e7),
+        length=torch.tensor(1.0, dtype=dtype),
+        voltage=torch.tensor(1e7, dtype=dtype),
         phase=torch.tensor(0.2, dtype=dtype),
-        frequency=torch.tensor(1e9),
+        frequency=torch.tensor(1e9, dtype=dtype),
         tracking_method="drift_kick_drift",
         dtype=dtype,
     )

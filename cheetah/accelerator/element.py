@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
@@ -21,6 +22,8 @@ class Element(ABC, nn.Module):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
@@ -31,6 +34,12 @@ class Element(ABC, nn.Module):
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
+
+        # Must be done before setting any properties that are also in defining_features
+        self.register_buffer("_cached_first_order_transfer_map", None, persistent=False)
+        self.register_buffer(
+            "_cached_second_order_transfer_map", None, persistent=False
+        )
 
         self.name = name if name is not None else generate_unique_name()
         if not self.is_name_sanitized():
@@ -113,6 +122,26 @@ class Element(ABC, nn.Module):
         represented using a matrix multiplication, i.e. the augmented matrix as in an
         affine transformation.
 
+        NOTE: This method may cache the transfer map for faster subsequent calls.
+        The cache is invalidated when any defining feature of the element changes.
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7 Matrix for further calculations.
+        """
+        if self._cached_first_order_transfer_map is None:
+            self._cached_first_order_transfer_map = (
+                self._compute_first_order_transfer_map(energy, species)
+            )
+
+        return self._cached_first_order_transfer_map
+
+    def _compute_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Computes the first-order transfer map for the element.
+
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
         :return: A 7x7 Matrix for further calculations.
@@ -127,6 +156,26 @@ class Element(ABC, nn.Module):
         and its particles are transformed when traveling through the element.
 
         :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
+
+        NOTE: This method may cache the transfer map for faster subsequent calls.
+        The cache is invalidated when any defining feature of the element changes.
+
+        :param energy: Reference energy of the incoming beam.
+        :param species: Species of the particles in the incoming beam.
+        :return: A 7x7x7 Tensor T_ijk for further calculations.
+        """
+        if self._cached_second_order_transfer_map is None:
+            self._cached_second_order_transfer_map = (
+                self._compute_second_order_transfer_map(energy, species)
+            )
+
+        return self._cached_second_order_transfer_map
+
+    def _compute_second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        r"""
+        Computes the second-order transfer map for the element.
 
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
@@ -256,8 +305,17 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Check if attribute even exists needed because `__setattr__` can be called
+        # during the initialisation of the object.
+        if hasattr(self, "defining_features") and name in self.defining_features:
+            self._cached_first_order_transfer_map = None
+            self._cached_second_order_transfer_map = None
+
+        return super().__setattr__(name, value)
+
     def register_buffer_or_parameter(
-        self, name: str, value: torch.Tensor | nn.Parameter
+        self, name: str, value: torch.Tensor | nn.Parameter, persistent: bool = True
     ) -> None:
         """
         Register a buffer or parameter with the given name and value. Automatically
@@ -267,11 +325,13 @@ class Element(ABC, nn.Module):
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
         :param default: Default value of the buffer.
+        :param persistent: Whether the buffer or parameter should be persistent. NOTE:
+            This is only relevant for buffers, as parameters are always persistent.
         """
         if isinstance(value, nn.Parameter):
             self.register_parameter(name, value)
         else:
-            self.register_buffer(name, value)
+            self.register_buffer(name, value, persistent)
 
     @property
     def defining_features(self) -> list[str]:
