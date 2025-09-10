@@ -8,6 +8,7 @@ from .plot import (  # noqa: F401
     format_axis_with_prefixed_unit,
 )
 from .statistics import (  # noqa: F401
+    match_distribution_moments,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
