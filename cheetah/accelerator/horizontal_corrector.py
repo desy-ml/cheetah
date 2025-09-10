@@ -43,7 +43,7 @@ class HorizontalCorrector(Element):
             "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-    def first_order_transfer_map(
+    def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
