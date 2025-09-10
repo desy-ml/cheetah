@@ -25,10 +25,9 @@ def base_rmatrix(
     :param energy: Beam energy in eV.
     :return: First order transfer map for the element.
     """
-    device = length.device
-    dtype = length.dtype
+    factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
-    zero = torch.tensor(0.0, device=device, dtype=dtype)
+    zero = torch.tensor(0.0, **factory_kwargs)
 
     tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero
@@ -58,7 +57,7 @@ def base_rmatrix(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
     )
 
-    R = torch.eye(7, dtype=dtype, device=device).repeat(*vector_shape, 1, 1)
+    R = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
     R[..., 0, 0] = cx
     R[..., 0, 1] = sx
     R[..., 0, 5] = dx / beta
@@ -106,10 +105,9 @@ def base_ttensor(
     :param energy: Beam energy in eV.
     :return: Second order transfer map for the element.
     """
-    device = length.device
-    dtype = length.dtype
+    factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
-    zero = torch.tensor(0.0, device=device, dtype=dtype)
+    zero = torch.tensor(0.0, **factory_kwargs)
 
     tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero
@@ -158,9 +156,7 @@ def base_ttensor(
         length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
     )
 
-    T = torch.zeros((7, 7, 7), dtype=dtype, device=device).repeat(
-        *vector_shape, 1, 1, 1
-    )
+    T = torch.zeros((7, 7, 7), **factory_kwargs).repeat(*vector_shape, 1, 1, 1)
     T[..., 0, 0, 0] = -1 / 6 * khk * (sx**2 + dx) - 0.5 * hx * kx2 * sx**2
     T[..., 0, 0, 1] = 2 * (-1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx)
     T[..., 0, 1, 1] = -1 / 6 * khk * dx**2 + 0.5 * hx * dx * cx
@@ -292,14 +288,13 @@ def drift_matrix(
     length: torch.Tensor, energy: torch.Tensor, species: Species
 ) -> torch.Tensor:
     """Create a first order transfer map for a drift space."""
+    factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     vector_shape = torch.broadcast_shapes(length.shape, igamma2.shape)
 
-    tm = torch.eye(7, device=length.device, dtype=length.dtype).repeat(
-        (*vector_shape, 1, 1)
-    )
+    tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
     tm[..., 0, 1] = length
     tm[..., 2, 3] = length
     tm[..., 4, 5] = -length / beta**2 * igamma2
@@ -335,16 +330,15 @@ def misalignment_matrix(
     misalignment: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Shift the beam for tracking beam through misaligned elements."""
-    device = misalignment.device
-    dtype = misalignment.dtype
+    factory_kwargs = {"device": misalignment.device, "dtype": misalignment.dtype}
 
     vector_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
+    R_exit = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
     R_exit[..., 0, 6] = misalignment[..., 0]
     R_exit[..., 2, 6] = misalignment[..., 1]
 
-    R_entry = torch.eye(7, device=device, dtype=dtype).repeat(*vector_shape, 1, 1)
+    R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 

@@ -123,9 +123,8 @@ class Beam(ABC, nn.Module):
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
-            selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         raise NotImplementedError
 
@@ -175,9 +174,8 @@ class Beam(ABC, nn.Module):
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam. Defaults to electron.
         :param s: Position along the beamline of the reference particle in meters.
-        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
-            selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         raise NotImplementedError
 
@@ -239,9 +237,8 @@ class Beam(ABC, nn.Module):
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
-        :param device: Device to create the transformed beam on. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the transformed beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         device = device if device is not None else self.mu_x.device
         dtype = dtype if dtype is not None else self.mu_x.dtype

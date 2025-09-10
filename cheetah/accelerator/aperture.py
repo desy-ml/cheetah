@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import PhysicsWarning, UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import PhysicsWarning, UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -40,20 +40,23 @@ class Aperture(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([x_max, y_max], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.register_buffer_or_parameter(
             "x_max",
-            torch.as_tensor(
-                x_max if x_max is not None else float("inf"), **factory_kwargs
+            (
+                x_max
+                if x_max is not None
+                else torch.tensor(float("inf"), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "y_max",
-            torch.as_tensor(
-                y_max if y_max is not None else float("inf"), **factory_kwargs
+            (
+                y_max
+                if y_max is not None
+                else torch.tensor(float("inf"), **factory_kwargs)
             ),
         )
 
@@ -69,10 +72,9 @@ class Aperture(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.x_max.device
-        dtype = self.x_max.dtype
+        factory_kwargs = {"device": self.x_max.device, "dtype": self.x_max.dtype}
 
-        return torch.eye(7, device=device, dtype=dtype).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, **factory_kwargs).repeat((*energy.shape, 1, 1))
 
     def track(self, incoming: Beam) -> Beam:
         # Only apply aperture to particle beams and if the element is active
