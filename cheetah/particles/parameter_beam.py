@@ -212,18 +212,18 @@ class ParameterBeam(Beam):
             cov_pyp,
         )
         cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
-        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 0] = sigma_x.square()
         cov[..., 0, 1] = cov_xpx
         cov[..., 1, 0] = cov_xpx
-        cov[..., 1, 1] = sigma_px**2
-        cov[..., 2, 2] = sigma_y**2
+        cov[..., 1, 1] = sigma_px.square()
+        cov[..., 2, 2] = sigma_y.square()
         cov[..., 2, 3] = cov_ypy
         cov[..., 3, 2] = cov_ypy
-        cov[..., 3, 3] = sigma_py**2
-        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 3, 3] = sigma_py.square()
+        cov[..., 4, 4] = sigma_tau.square()
         cov[..., 4, 5] = cov_taup
         cov[..., 5, 4] = cov_taup
-        cov[..., 5, 5] = sigma_p**2
+        cov[..., 5, 5] = sigma_p.square()
         cov[..., 0, 5] = cov_xp
         cov[..., 5, 0] = cov_xp
         cov[..., 1, 5] = cov_pxp
@@ -354,20 +354,30 @@ class ParameterBeam(Beam):
             beta_y > 0
         ), "Beta function in y direction must be larger than 0 everywhere."
 
-        sigma_x = torch.sqrt(emittance_x * beta_x + dispersion_x**2 * sigma_p**2)
+        sigma_x = torch.sqrt(
+            emittance_x * beta_x + dispersion_x.square() * sigma_p.square()
+        )
         sigma_px = torch.sqrt(
-            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
+            emittance_x * (1 + alpha_x.square()) / beta_x
+            + dispersion_px.square() * sigma_p.square()
         )
-        sigma_y = torch.sqrt(emittance_y * beta_y + dispersion_y**2 * sigma_p**2)
+        sigma_y = torch.sqrt(
+            emittance_y * beta_y + dispersion_y.square() * sigma_p.square()
+        )
         sigma_py = torch.sqrt(
-            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
+            emittance_y * (1 + alpha_y.square()) / beta_y
+            + dispersion_py.square() * sigma_p.square()
         )
-        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
-        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
-        cov_xp = dispersion_x * sigma_p**2
-        cov_pxp = dispersion_px * sigma_p**2
-        cov_yp = dispersion_y * sigma_p**2
-        cov_pyp = dispersion_py * sigma_p**2
+        cov_xpx = (
+            -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p.square()
+        )
+        cov_ypy = (
+            -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p.square()
+        )
+        cov_xp = dispersion_x * sigma_p.square()
+        cov_pxp = dispersion_px * sigma_p.square()
+        cov_yp = dispersion_y * sigma_p.square()
+        cov_pyp = dispersion_py * sigma_p.square()
 
         return cls.from_parameters(
             sigma_x=sigma_x,

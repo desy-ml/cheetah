@@ -97,7 +97,7 @@ def test_unbiased_weighted_covariance_matrix_elementwise_reduction():
     calculated elementwise.
     """
     series = torch.arange(5.0)
-    data = torch.stack([series, series**2, series**3], dim=-1)
+    data = torch.stack([series, series.square(), series**3], dim=-1)
     weights = torch.tensor([[0.5, 1.0, 1.0, 0.9, 0.9], [0.4, 1.2, 1.4, 0.6, 0.7]])
 
     matrix = unbiased_weighted_covariance_matrix(data, weights)
@@ -116,7 +116,7 @@ def test_unbiased_weighted_covariance_matrix_torch():
     by torch for the unvectorized case.
     """
     series = torch.arange(5.0)
-    data = torch.stack([series, series**2, series**3], dim=-1)
+    data = torch.stack([series, series.square(), series**3], dim=-1)
     weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
 
     expected_covariance_matrix = torch.cov(data.T, aweights=weights)
