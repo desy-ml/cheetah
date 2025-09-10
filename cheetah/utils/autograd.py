@@ -7,6 +7,9 @@ class Log1plusXbyX(torch.autograd.Function):
     The singularity at 0 is replaced by its limit.
     """
 
+    # Automatically generate a custom vmap implementation
+    generate_vmap_rule = True
+
     @staticmethod
     def setup_context(ctx, inputs, output):
         (x,) = inputs  # inputs is always passed as a tuple
