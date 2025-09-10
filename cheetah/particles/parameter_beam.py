@@ -295,14 +295,14 @@ class ParameterBeam(Beam):
             beta_y > 0
         ), "Beta function in y direction must be larger than 0 everywhere."
 
-        sigma_x = torch.sqrt(emittance_x * beta_x + dispersion_x**2 * sigma_p**2)
-        sigma_px = torch.sqrt(
+        sigma_x = (emittance_x * beta_x + dispersion_x**2 * sigma_p**2).sqrt()
+        sigma_px = (
             emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
-        )
-        sigma_y = torch.sqrt(emittance_y * beta_y + dispersion_y**2 * sigma_p**2)
-        sigma_py = torch.sqrt(
+        ).sqrt()
+        sigma_y = (emittance_y * beta_y + dispersion_y**2 * sigma_p**2).sqrt()
+        sigma_py = (
             emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
-        )
+        ).sqrt()
         cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
         cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
         cov_xp = dispersion_x * sigma_p**2
@@ -553,7 +553,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_x(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 0, 0], 1e-20))
+        return (torch.clamp_min(self.cov[..., 0, 0], 1e-20)).sqrt()
 
     @property
     def mu_px(self) -> torch.Tensor:
@@ -561,7 +561,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_px(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 1, 1], 1e-20))
+        return (torch.clamp_min(self.cov[..., 1, 1], 1e-20)).sqrt()
 
     @property
     def mu_y(self) -> torch.Tensor:
@@ -569,7 +569,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_y(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 2, 2], 1e-20))
+        return (torch.clamp_min(self.cov[..., 2, 2], 1e-20)).sqrt()
 
     @property
     def mu_py(self) -> torch.Tensor:
@@ -577,7 +577,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_py(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 3, 3], 1e-20))
+        return (torch.clamp_min(self.cov[..., 3, 3], 1e-20)).sqrt()
 
     @property
     def mu_tau(self) -> torch.Tensor:
@@ -585,7 +585,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_tau(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 4, 4], 1e-20))
+        return (torch.clamp_min(self.cov[..., 4, 4], 1e-20)).sqrt()
 
     @property
     def mu_p(self) -> torch.Tensor:
@@ -593,7 +593,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_p(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 5, 5], 1e-20))
+        return (torch.clamp_min(self.cov[..., 5, 5], 1e-20)).sqrt()
 
     @property
     def cov_xpx(self) -> torch.Tensor:

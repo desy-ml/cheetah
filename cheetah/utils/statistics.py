@@ -59,7 +59,7 @@ def unbiased_weighted_std(
     :param dim: Dimension along which to compute the standard deviation.
     :return: Unbiased weighted standard deviation.
     """
-    return torch.sqrt(unbiased_weighted_variance(input, weights, dim=dim))
+    return unbiased_weighted_variance(input, weights, dim=dim).sqrt()
 
 
 def unbiased_weighted_covariance_matrix(

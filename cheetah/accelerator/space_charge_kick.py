@@ -134,9 +134,7 @@ class SpaceChargeKick(Element):
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
         # Shape: (..., num_particles, 8, 3)
-        weights = 1 - torch.abs(
-            normalized_positions.unsqueeze(-2) - surrounding_indices
-        )
+        weights = 1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
         # Shape: (.., num_particles, 8, 3)
         cell_weights = weights.prod(dim=-1)  # Shape: (.., num_particles, 8)
 
@@ -196,14 +194,14 @@ class SpaceChargeKick(Element):
         and is more robust to numerical errors.
         """
 
-        r = torch.sqrt(x**2 + y**2 + tau**2)
+        r = (x**2 + y**2 + tau**2).sqrt()
         integrated_potential = (
-            -0.5 * tau**2 * torch.atan(x * y / (tau * r))
-            - 0.5 * y**2 * torch.atan(x * tau / (y * r))
-            - 0.5 * x**2 * torch.atan(y * tau / (x * r))
-            + y * tau * torch.asinh(x / torch.sqrt(y**2 + tau**2))
-            + x * tau * torch.asinh(y / torch.sqrt(x**2 + tau**2))
-            + x * y * torch.asinh(tau / torch.sqrt(x**2 + y**2))
+            -0.5 * tau**2 * (x * y / (tau * r)).atan()
+            - 0.5 * y**2 * (x * tau / (y * r)).atan()
+            - 0.5 * x**2 * (y * tau / (x * r)).atan()
+            + y * tau * (x / (y**2 + tau**2).sqrt()).asinh()
+            + x * tau * (y / (x**2 + tau**2).sqrt()).asinh()
+            + x * y * (tau / (x**2 + y**2).sqrt()).asinh()
         )
         return integrated_potential
 
@@ -494,8 +492,8 @@ class SpaceChargeKick(Element):
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
             -3
         )  # Shape:(.., num_particles, 8, 3)
-        weights = 1 - torch.abs(
-            normalized_positions.unsqueeze(-2) - surrounding_indices
+        weights = (
+            1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
         )  # Shape: (..., num_particles, 8, 3)
         cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
 
