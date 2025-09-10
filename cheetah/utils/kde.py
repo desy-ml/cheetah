@@ -62,7 +62,7 @@ def _kde_marginal_pdf(
     residuals = values - bins.repeat(*values.shape)
     kernel_values = (
         weights
-        * torch.exp(-0.5 * (residuals / sigma).pow(2))
+        * torch.exp(-0.5 * (residuals / sigma).square())
         / torch.sqrt(2 * math.pi * sigma.square())
     )
 
