@@ -46,19 +46,18 @@ class HorizontalCorrector(Element):
     def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+        factory_kwargs = {"device": energy.device, "dtype": energy.dtype}
 
         _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-        vector_shape = torch.broadcast_shapes(
-            self.length.shape, igamma2.shape, self.angle.shape
+        length, igamma2, angle, beta = torch.broadcast_tensors(
+            self.length, igamma2, self.angle, beta
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
-        tm[..., 0, 1] = self.length
-        tm[..., 1, 6] = self.angle
-        tm[..., 2, 3] = self.length
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
+        tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
+        tm[..., (0, 1, 2, 4), (1, 6, 3, 5)] = torch.stack(
+            [length, angle, length, -length / beta.square() * igamma2], dim=-1
+        )
 
         return tm
 
@@ -67,8 +66,8 @@ class HorizontalCorrector(Element):
         return True
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.angle != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.angle.any()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -80,7 +79,7 @@ class HorizontalCorrector(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:blue", alpha=alpha, zorder=2

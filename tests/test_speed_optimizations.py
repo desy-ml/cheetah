@@ -172,7 +172,7 @@ def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
             cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(0.0)),
             cheetah.Drift(length=torch.tensor(0.4)),
         ]
-    ).to(dtype=dtype)
+    ).to(dtype)
 
     optimized_segment = segment.inactive_elements_as_drifts()
 

@@ -60,9 +60,9 @@ class Drift(Element):
     ) -> torch.Tensor:
         T = base_ttensor(
             self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=self.length.new_zeros(()),
+            k2=self.length.new_zeros(()),
+            hx=self.length.new_zeros(()),
             energy=energy,
             species=species,
         )
@@ -121,6 +121,7 @@ class Drift(Element):
         assert isinstance(
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+        length = self.length.unsqueeze(-1)
 
         # Compute Bmad coordinates and p0c
         x = incoming.x
@@ -136,7 +137,7 @@ class Drift(Element):
 
         # Begin Bmad-X tracking
         x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
+            length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
         )
         # End of Bmad-X tracking
 
@@ -152,7 +153,7 @@ class Drift(Element):
             particles=torch.stack(
                 [x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1
             ),
-            energy=ref_energy,
+            energy=ref_energy.squeeze(-1),
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
