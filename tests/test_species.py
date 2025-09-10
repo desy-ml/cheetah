@@ -89,4 +89,3 @@ def test_providing_both_masses():
     """
     with pytest.raises(AssertionError):
         cheetah.Species(name="muon", mass_eV=1e6, mass_kg=1e-27)
-        cheetah.Species(name="muon", mass_eV=1e6, mass_kg=1e-27)
