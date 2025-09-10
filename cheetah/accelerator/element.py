@@ -22,6 +22,8 @@ class Element(ABC, nn.Module):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
