@@ -35,7 +35,7 @@ def test_quadrupole_with_misalignments_vectorized():
         misalignment=torch.tensor([0.1, 0.1]).unsqueeze(0),
     )
 
-    quad_without_misalignment = cheetah.Quadrupole(
+    quadrupole_without_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
     incoming_beam = cheetah.ParameterBeam.from_parameters(
@@ -44,8 +44,8 @@ def test_quadrupole_with_misalignments_vectorized():
     outgoing_beam_quadrupole_with_misalignment = quad_with_misalignment.track(
         incoming_beam
     )
-    outgoing_beam_quadrupole_without_misalignment = quad_without_misalignment.track(
-        incoming_beam
+    outgoing_beam_quadrupole_without_misalignment = (
+        quadrupole_without_misalignment.track(incoming_beam)
     )
 
     assert not torch.allclose(
@@ -59,12 +59,12 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
     Test that a quadrupole with misalignments that have multiple vector dimensions does
     not raise an error and behaves as expected.
     """
-    quad_with_misalignment = cheetah.Quadrupole(
+    quadrupole_with_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0),
         k1=torch.tensor(1.0),
         misalignment=torch.randn((4, 3, 2)) * 5e-4,
     )
-    quad_without_misalignment = cheetah.Quadrupole(
+    quadrupole_without_misalignment = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(1.0)
     )
 
@@ -72,8 +72,8 @@ def test_quadrupole_with_misalignments_multiple_vector_dimensions():
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
 
-    outgoing_with_misalignment = quad_with_misalignment.track(incoming)
-    outgoing_without_misalignment = quad_without_misalignment.track(incoming)
+    outgoing_with_misalignment = quadrupole_with_misalignment.track(incoming)
+    outgoing_without_misalignment = quadrupole_without_misalignment.track(incoming)
 
     # Check that the misalignment has an effect
     assert not torch.allclose(
