@@ -71,7 +71,7 @@ def base_rmatrix(
     # rotation needs to be applied accross all vector dimensions. The torch.where is
     # here to improve numerical stability for the vector elements where no rotation
     # needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0))):
+    if ((tilt != 0) & ((hx != 0) | (k1 != 0))).any():
         rotation = rotation_matrix(tilt)
         R = torch.where(
             ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
@@ -276,7 +276,7 @@ def base_ttensor(
     # when no rotation needs to be applied accross all vector dimensions. The
     # torch.where is here to improve numerical stability for the vector elements where
     # no rotation needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))):
+    if ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))).any():
         rotation = rotation_matrix(tilt)
         T = torch.where(
             ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0)))

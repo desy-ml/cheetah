@@ -96,7 +96,7 @@ class Solenoid(Element):
 
         R = R.real
 
-        if torch.all(self.misalignment == 0):
+        if (self.misalignment == 0).all():
             return R
         else:
             R_entry, R_exit = misalignment_matrix(self.misalignment)
@@ -105,7 +105,7 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k != 0).item()
+        return (self.k != 0).any().item()
 
     @property
     def is_skippable(self) -> bool:

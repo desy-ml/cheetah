@@ -559,10 +559,10 @@ class ParticleBeam(Beam):
         # r: radius, 3rd root for uniform distribution in sphere volume
         # theta: polar angle, arccos for uniform distribution in sphere surface
         # phi: azimuthal angle, uniform between 0 and 2*pi
-        r = torch.pow(torch.rand(*vector_shape, num_particles, **factory_kwargs), 1 / 3)
-        theta = torch.arccos(
+        r = (torch.rand(*vector_shape, num_particles, **factory_kwargs)).pow(1 / 3)
+        theta = (
             2 * torch.rand(*vector_shape, num_particles, **factory_kwargs) - 1
-        )
+        ).arcos()
         phi = torch.rand(*vector_shape, num_particles, **factory_kwargs) * 2 * torch.pi
 
         # Convert to Cartesian coordinates

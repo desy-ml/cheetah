@@ -288,12 +288,12 @@ class ParameterBeam(Beam):
             else torch.tensor(0.0, **factory_kwargs)
         )
 
-        assert torch.all(
+        assert (
             beta_x > 0
-        ), "Beta function in x direction must be larger than 0 everywhere."
-        assert torch.all(
+        ).all(), "Beta function in x direction must be larger than 0 everywhere."
+        assert (
             beta_y > 0
-        ), "Beta function in y direction must be larger than 0 everywhere."
+        ).all(), "Beta function in y direction must be larger than 0 everywhere."
 
         sigma_x = (emittance_x * beta_x + dispersion_x**2 * sigma_p**2).sqrt()
         sigma_px = (

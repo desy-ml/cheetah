@@ -49,7 +49,7 @@ def test_cold_uniform_beam_expansion(energy):
     )
 
     # Compute section length that results in a doubling of the beam size
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * torch.log(3 + 2 * torch.tensor(2).sqrt())
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
@@ -102,7 +102,7 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
 
     # Compute section length
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * torch.log(3 + 2 * torch.tensor(2).sqrt())
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
@@ -225,7 +225,7 @@ def test_gradient_value_backward_ad():
 
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * torch.log(3 + 2 * torch.tensor(2).sqrt())
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
@@ -287,7 +287,7 @@ def test_gradient_value_forward_ad():
 
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * torch.log(3 + 2 * torch.tensor(2).sqrt())
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 

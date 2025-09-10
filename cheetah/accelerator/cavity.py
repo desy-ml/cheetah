@@ -94,7 +94,7 @@ class Cavity(Element):
             incoming.energy, incoming.species.mass_eV
         )
 
-        phi = torch.deg2rad(self.phase)
+        phi = self.phase.deg2rad()
 
         tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
@@ -110,7 +110,7 @@ class Cavity(Element):
         T556 = torch.full_like(self.length, 0.0)
         T555 = torch.full_like(self.length, 0.0)
 
-        if torch.any(incoming.energy + delta_energy > 0):
+        if (incoming.energy + delta_energy > 0).any():
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
             outgoing_energy = incoming.energy + delta_energy
             gamma1, _, beta1 = compute_relativistic_factors(
@@ -147,7 +147,7 @@ class Cavity(Element):
                 )
 
             dgamma = self.voltage / incoming.species.mass_eV
-            if torch.any(delta_energy > 0):
+            if (delta_energy > 0).any():
                 T566 = (
                     self.length
                     * (beta0**3 * gamma0**3 - beta1**3 * gamma1**3)
@@ -238,7 +238,7 @@ class Cavity(Element):
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        phi = torch.deg2rad(self.phase)
+        phi = self.phase.deg2rad()
         effective_voltage = self.voltage * species.num_elementary_charges * -1
         delta_energy = effective_voltage * phi.cos()
         # Comment from Ocelot: Pure pi-standing-wave case
@@ -246,7 +246,7 @@ class Cavity(Element):
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
         Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
-        assert torch.all(Ei > 0), "Initial energy must be larger than 0"
+        assert (Ei > 0).all(), "Initial energy must be larger than 0"
 
         alpha = (eta / 8).sqrt() / phi.cos() * (Ef / Ei).log()
 
@@ -293,7 +293,7 @@ class Cavity(Element):
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
             dE = delta_energy / species.mass_eV
-            f = Ei / dE * torch.log(1 + (dE / Ei))
+            f = Ei / dE * (1 + (dE / Ei)).log()
 
             vector_shape = torch.broadcast_shapes(
                 self.length.shape, f.shape, Ei.shape, Ef.shape

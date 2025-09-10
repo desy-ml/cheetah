@@ -85,7 +85,7 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.voltage != 0).item()
+        return (self.voltage != 0).any().item()
 
     @property
     def is_skippable(self) -> bool:

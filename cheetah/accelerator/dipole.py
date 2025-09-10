@@ -152,7 +152,7 @@ class Dipole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.angle != 0).item()
+        return (self.angle != 0).any().item()
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -387,8 +387,8 @@ class Dipole(Element):
             self.gap * (location == "entrance") + self.gap_exit * (location == "exit")
         )
 
-        hx = g * torch.tan(e)
-        hy = -g * torch.tan(e - 2 * f_int * h_gap * g * (1 + e.sin() ** 2) / e.cos())
+        hx = g * e.tan()
+        hy = -g * (e - 2 * f_int * h_gap * g * (1 + e.sin() ** 2) / e.cos()).tan()
         px_f = px + x * hx.unsqueeze(-1)
         py_f = py + y * hy.unsqueeze(-1)
 
@@ -402,7 +402,7 @@ class Dipole(Element):
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if torch.any(self.length != 0.0):  # Bending magnet with finite length
+        if (self.length != 0.0).any():  # Bending magnet with finite length
             R = base_rmatrix(
                 length=self.length,
                 k1=self.k1,
@@ -420,7 +420,7 @@ class Dipole(Element):
         R = R_exit @ R @ R_enter
 
         # Apply rotation for tilted magnets
-        if torch.any(self.tilt != 0):
+        if (self.tilt != 0).any():
             rotation = rotation_matrix(self.tilt)
             R = rotation.transpose(-1, -2) @ R @ rotation
 
@@ -434,7 +434,7 @@ class Dipole(Element):
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if torch.any(self.length != 0.0):  # Bending magnet with finite length
+        if (self.length != 0.0).any():  # Bending magnet with finite length
             T = base_ttensor(
                 length=self.length,
                 k1=self.k1,
@@ -467,7 +467,7 @@ class Dipole(Element):
         )
 
         # Apply rotation for tilted magnets
-        if torch.any(self.tilt != 0):
+        if (self.tilt != 0).any():
             rotation = rotation_matrix(self.tilt)
             T = torch.einsum(
                 "...ij,...jkl,...kn,...lm->...inm",
@@ -527,7 +527,7 @@ class Dipole(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
