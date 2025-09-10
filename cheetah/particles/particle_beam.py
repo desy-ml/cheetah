@@ -562,7 +562,7 @@ class ParticleBeam(Beam):
         r = (torch.rand(*vector_shape, num_particles, **factory_kwargs)).pow(1 / 3)
         theta = (
             2 * torch.rand(*vector_shape, num_particles, **factory_kwargs) - 1
-        ).arcos()
+        ).arccos()
         phi = torch.rand(*vector_shape, num_particles, **factory_kwargs) * 2 * torch.pi
 
         # Convert to Cartesian coordinates

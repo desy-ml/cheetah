@@ -18,12 +18,12 @@ def unbiased_weighted_covariance(
     correction_factor = weights.sum(dim=dim) - (weights**2).sum(
         dim=dim
     ) / weights.sum(dim=dim)
-    covariance = weights.sum(
+    covariance = (
         weights
         * (inputs1 - weighted_mean1.unsqueeze(-1))
-        * (inputs2 - weighted_mean2.unsqueeze(-1)),
-        dim=dim,
-    ) / (correction_factor)
+        * (inputs2 - weighted_mean2.unsqueeze(-1))
+    ).sum(dim=dim) / correction_factor
+
     return covariance
 
 
@@ -45,6 +45,7 @@ def unbiased_weighted_variance(
     variance = (weights * (inputs - weighted_mean.unsqueeze(-1)) ** 2).sum(
         dim=dim
     ) / correction_factor
+
     return variance
 
 
@@ -84,4 +85,5 @@ def unbiased_weighted_covariance_matrix(
         (normalized_weights.unsqueeze(-1) * centered_inputs).transpose(-1, -2),
         centered_inputs,
     ) / correction_factor.unsqueeze(-1).unsqueeze(-1)
+
     return covariance
