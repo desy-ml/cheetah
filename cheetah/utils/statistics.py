@@ -110,13 +110,11 @@ def match_distribution_moments(
 
     # Compute the inverse square root of the sample covariance
     if weights is None:
-        sample_cov = samples.mT.cov()
-        sample_mu = samples.mean(dim=-2)
-    else:
-        sample_cov = unbiased_weighted_covariance_matrix(samples, weights)
-        sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(
-            dim=-1, keepdim=True
-        )
+        weights = torch.ones_like(samples[..., 0])
+    sample_cov = unbiased_weighted_covariance_matrix(samples, weights)
+    sample_mu = (samples * weights.unsqueeze(-1)).sum(dim=-2) / weights.sum(
+        dim=-1, keepdim=True
+    )
     cholesky_sample_cov = torch.linalg.cholesky(sample_cov).contiguous()
     inverse_sqrt_sample_cov = torch.linalg.solve_triangular(
         cholesky_sample_cov,
