@@ -12,12 +12,13 @@ def test_element_buffer_contents_and_location(element):
     """
     clone = element.clone()
 
-    for feature in element.defining_tensors:
+    for feature in element.defining_features:
         mwe_feature = getattr(element, feature)
         clone_feature = getattr(clone, feature)
 
-        assert torch.allclose(mwe_feature, clone_feature, equal_nan=True)
-        assert not mwe_feature.data_ptr() == clone_feature.data_ptr()
+        if isinstance(mwe_feature, torch.Tensor):
+            assert torch.allclose(mwe_feature, clone_feature, equal_nan=True)
+            assert not mwe_feature.data_ptr() == clone_feature.data_ptr()
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])

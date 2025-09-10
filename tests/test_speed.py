@@ -17,7 +17,7 @@ def test_tracking_speed():
         ares.cell, "AREASOLA1", "AREABSCR1"
     )
     segment = cheetah.Segment.from_ocelot(cell)
-    segment.AREABSCR1.is_active = True  # Turn screen on and off
+    segment.AREABSCR1.is_active = torch.tensor(True)  # Turn screen on and off
 
     particles = cheetah.ParticleBeam.from_parameters(
         num_particles=int(1e5),

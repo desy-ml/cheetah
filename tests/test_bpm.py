@@ -8,7 +8,7 @@ def test_reading_dtype_conversion():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(1.0), dtype=torch.float32),
-            cheetah.BPM(name="bpm", is_active=True, dtype=torch.float32),
+            cheetah.BPM(name="bpm", is_active=torch.tensor(True), dtype=torch.float32),
         ],
     )
     beam = cheetah.ParameterBeam.from_parameters(dtype=torch.float32)
