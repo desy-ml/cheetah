@@ -376,9 +376,9 @@ class Beam(ABC, nn.Module):
     def relativistic_beta(self) -> torch.Tensor:
         """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
-        relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = torch.sqrt(
+        relativistic_beta[(self.relativistic_gamma).abs() > 0] = (
             1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0] ** 2)
-        )
+        ).sqrt()
         return relativistic_beta
 
     @property
@@ -432,9 +432,7 @@ class Beam(ABC, nn.Module):
         Projected emittance of the beam in x direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return torch.sqrt(
-            self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,
-        )
+        return (self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,).sqrt()
 
     @property
     def emittance_x(self) -> torch.Tensor:
@@ -443,11 +441,13 @@ class Beam(ABC, nn.Module):
         This is computed with the dispersion correction.
         """
 
-        return torch.sqrt(
-            (self.sigma_x**2 - self.cov_xp**2 / self.sigma_p**2)
-            * (self.sigma_px**2 - self.cov_pxp**2 / self.sigma_p**2)
-            - (self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p**2) ** 2,
-        )
+        return (
+            (
+                (self.sigma_x**2 - self.cov_xp**2 / self.sigma_p**2)
+                * (self.sigma_px**2 - self.cov_pxp**2 / self.sigma_p**2)
+                - (self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p**2) ** 2
+            )
+        ).sqrt()
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
@@ -472,7 +472,7 @@ class Beam(ABC, nn.Module):
         """Projected emittance of the beam in y direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return torch.sqrt(self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2)
+        return (self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2).sqrt()
 
     @property
     def emittance_y(self) -> torch.Tensor:
@@ -481,11 +481,11 @@ class Beam(ABC, nn.Module):
         This is computed with the dispersion correction.
         """
 
-        return torch.sqrt(
+        return (
             (self.sigma_y**2 - self.cov_yp**2 / self.sigma_p**2)
             * (self.sigma_py**2 - self.cov_pyp**2 / self.sigma_p**2)
-            - (self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p**2) ** 2,
-        )
+            - (self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p**2) ** 2
+        ).sqrt()
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
