@@ -72,7 +72,7 @@ class Cavity(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def first_order_transfer_map(
+    def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         is_active_cavity = torch.logical_and(

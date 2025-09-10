@@ -29,7 +29,7 @@ class Marker(Element):
             name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
         )
 
-    def first_order_transfer_map(
+    def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).expand(
