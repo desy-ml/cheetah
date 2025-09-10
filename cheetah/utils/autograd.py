@@ -11,12 +11,8 @@ class Log1plusXbyX(torch.autograd.Function):
     def setup_context(ctx, inputs, output):
         (x,) = inputs  # inputs is always passed as a tuple
 
-        # Save for backward mode AD
         ctx.save_for_backward(x, output)
-
-        # Save for forward mode AD
-        ctx.x = x
-        ctx.result = output
+        ctx.save_for_forward(x, output)
 
     @staticmethod
     def forward(x):
@@ -25,23 +21,15 @@ class Log1plusXbyX(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         x, result = ctx.saved_tensors
-        return grad_output * torch.where(
-            x != 0, ((1 + x).reciprocal() - result) / x, -0.5 * x.new_ones(())
-        )
+        return grad_output * Log1plusXbyX._gradient(x, result)
 
     @staticmethod
     def jvp(ctx, grad_input):
-        result = (
-            torch.where(
-                ctx.x != 0,
-                ((1 + ctx.x).reciprocal() - ctx.result) / ctx.x,
-                -0.5 * ctx.x.new_ones(()),
-            )
-            * grad_input
+        x, result = ctx.saved_tensors
+        return Log1plusXbyX._gradient(x, result) * grad_input
+
+    @staticmethod
+    def _gradient(x, fx):
+        return torch.where(
+            x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(())
         )
-
-        # Clear context that is not required for backward pass
-        del ctx.x
-        del ctx.result
-
-        return result
