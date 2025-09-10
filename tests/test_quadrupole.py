@@ -44,12 +44,13 @@ def test_quadrupole_with_misalignments_vectorized():
     outgoing_beam_quadrupole_with_misalignment = quad_with_misalignment.track(
         incoming_beam
     )
-    outgoing_beam_quadrupole_without_misalignment = quad_without_misalignment.track(
-        incoming_beam
+    outgoing_beam_quadrupole_without_misalignment = (
+        quadrupole_without_misalignment.track(incoming_beam)
     )
 
     assert not torch.allclose(
-        outbeam_quad_with_misalignment.mu_x, outbeam_quad_without_misalignment.mu_x
+        outgoing_beam_quadrupole_with_misalignment.mu_x,
+        outgoing_beam_quadrupole_without_misalignment.mu_x,
     )
 
 
