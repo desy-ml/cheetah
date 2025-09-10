@@ -87,7 +87,7 @@ class RBend(Dipole):
             tracking_method=tracking_method,
             name=name,
             sanitize_name=sanitize_name,
-            **factory_kwargs
+            **factory_kwargs,
         )
 
     @property
