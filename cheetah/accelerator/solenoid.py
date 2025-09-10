@@ -96,12 +96,10 @@ class Solenoid(Element):
 
         R = R.real
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+
+        return R
 
     @property
     def is_active(self) -> bool:
