@@ -19,9 +19,9 @@ def cheetah_to_bmad_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute p0c and Bmad z, pz
-    p0c = torch.sqrt(ref_energy.square() - mc2.square())
+    p0c = (ref_energy.square() - mc2.square()).sqrt()
     energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = torch.sqrt(energy.square() - mc2.square())
+    p = (energy.square() - mc2.square()).sqrt()
     beta = p / energy
     z = -beta * tau
     pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -44,9 +44,9 @@ def bmad_to_cheetah_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = torch.sqrt(p0c.square() + mc2.square())
+    ref_energy = (p0c.square() + mc2.square()).sqrt()
     p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = torch.sqrt(p.square() + mc2.square())
+    energy = (p.square() + mc2.square()).sqrt()
     beta = p / energy
     tau = -z / beta
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -134,8 +134,8 @@ def offset_particle_set(
     :param py_lab: y-momentum in lab frame.
     :return: x, px, y, py coordinates in element frame.
     """
-    s = torch.sin(tilt)
-    c = torch.cos(tilt)
+    s = tilt.sin()
+    c = tilt.cos()
     x_ele_int = x_lab - x_offset.unsqueeze(-1)
     y_ele_int = y_lab - y_offset.unsqueeze(-1)
     x_ele = x_ele_int * c.unsqueeze(-1) + y_ele_int * s.unsqueeze(-1)
@@ -167,8 +167,8 @@ def offset_particle_unset(
     :param py_ele: y-momentum in element frame.
     :return: x, px, y, py coordinates in lab frame.
     """
-    s = torch.sin(tilt)
-    c = torch.cos(tilt)
+    s = tilt.sin()
+    c = tilt.cos()
     x_lab_int = x_ele * c.unsqueeze(-1) - y_ele * s.unsqueeze(-1)
     y_lab_int = x_ele * s.unsqueeze(-1) + y_ele * c.unsqueeze(-1)
     x_lab = x_lab_int + x_offset.unsqueeze(-1)
@@ -194,10 +194,10 @@ def low_energy_z_correction(
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square())
+        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
     )
-    beta0 = p0c / torch.sqrt(p0c.square() + mc2.square())
-    e_tot = torch.sqrt(p0c.square() + mc2.square())
+    beta0 = p0c / (p0c.square() + mc2.square()).sqrt()
+    e_tot = (p0c.square() + mc2.square()).sqrt()
 
     evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
     dz = ds.unsqueeze(-1) * pz * (
@@ -239,13 +239,11 @@ def calculate_quadrupole_coefficients(
             z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
     """
     # TODO: Revisit to fix accumulated error due to machine epsilon
-    sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
+    sqrt_k = (k1.abs() + eps).sqrt()
     sk_l = sqrt_k * length.unsqueeze(-1)
 
-    cx = torch.cos(sk_l) * (k1 <= 0) + torch.cosh(sk_l) * (k1 > 0)
-    sx = (torch.sin(sk_l) / (sqrt_k)) * (k1 <= 0) + (torch.sinh(sk_l) / (sqrt_k)) * (
-        k1 > 0
-    )
+    cx = sk_l.cos() * (k1 <= 0) + sk_l.cosh() * (k1 > 0)
+    sx = (sk_l.sin() / (sqrt_k)) * (k1 <= 0) + (sk_l.sinh() / (sqrt_k)) * (k1 > 0)
 
     a11 = cx
     a12 = sx / rel_p
@@ -261,7 +259,7 @@ def calculate_quadrupole_coefficients(
 
 def sqrt_one(x):
     """Routine to calculate Sqrt[1+x] - 1 to machine precision."""
-    sq = torch.sqrt(1 + x)
+    sq = (1 + x).sqrt()
     rad = sq + 1
 
     return x / rad
@@ -284,7 +282,7 @@ def track_a_drift(
     Px = px_in / P  # Particle's 'x' momentum over p0
     Py = py_in / P  # Particle's 'y' momentum over p0
     Pxy2 = Px.square() + Py.square()  # Particle's transverse mometum^2 over p0^2
-    Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
+    Pl = (1.0 - Pxy2).sqrt()  # Particle's longitudinal momentum over p0
 
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
     dz = length.unsqueeze(-1) * (
@@ -307,7 +305,7 @@ def particle_rf_time(z, pz, p0c, mc2):
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square())
+        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
     )
     time = -z / (beta * speed_of_light)
 
@@ -316,7 +314,7 @@ def particle_rf_time(z, pz, p0c, mc2):
 
 def sinc(x):
     """sinc(x) = sin(x)/x."""
-    return torch.sinc(x / torch.pi)
+    return (x / torch.pi).sinc()
 
 
 def cosc(x):

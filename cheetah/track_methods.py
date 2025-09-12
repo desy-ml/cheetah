@@ -36,12 +36,12 @@ def base_rmatrix(
 
     kx2 = k1 + hx.square()
     ky2 = -k1
-    kx = torch.sqrt(torch.complex(kx2, zero))
-    ky = torch.sqrt(torch.complex(ky2, zero))
-    cx = torch.cos(kx * length).real
-    cy = torch.cos(ky * length).real
-    sx = (torch.sinc(kx * length / torch.pi) * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
+    kx = (torch.complex(kx2, zero)).sqrt()
+    ky = (torch.complex(ky2, zero)).sqrt()
+    cx = (kx * length).cos().real
+    cy = (ky * length).cos().real
+    sx = ((kx * length / torch.pi).sinc() * length).real
+    sy = ((ky * length / torch.pi).sinc() * length).real
     dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
     r56 = torch.where(kx2 != 0, hx.square() * (length - sx) / kx2 / beta.square(), zero)
 
@@ -71,7 +71,7 @@ def base_rmatrix(
     # rotation needs to be applied accross all vector dimensions. The torch.where is
     # here to improve numerical stability for the vector elements where no rotation
     # needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0))):
+    if ((tilt != 0) & ((hx != 0) | (k1 != 0))).any():
         rotation = rotation_matrix(tilt)
         R = torch.where(
             ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
@@ -115,17 +115,17 @@ def base_ttensor(
 
     kx2 = k1 + hx.square()
     ky2 = -k1
-    kx = torch.sqrt(torch.complex(kx2, zero))
-    ky = torch.sqrt(torch.complex(ky2, zero))
-    cx = torch.cos(kx * length).real
-    cy = torch.cos(ky * length).real
-    sx = (torch.sinc(kx * length / torch.pi) * length).real
-    sy = (torch.sinc(ky * length / torch.pi) * length).real
+    kx = (torch.complex(kx2, zero)).sqrt()
+    ky = (torch.complex(ky2, zero)).sqrt()
+    cx = (kx * length).cos().real
+    cy = (ky * length).cos().real
+    sx = ((kx * length / torch.pi).sinc() * length).real
+    sy = ((ky * length / torch.pi).sinc() * length).real
     dx = torch.where(kx != 0, (1.0 - cx) / kx2, length.square() / 2.0)
 
     d2y = 0.5 * sy.square()
     s2y = sy * cy
-    c2y = torch.cos(2 * ky * length).real
+    c2y = (2 * ky * length).cos().real
     fx = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
     f2y = torch.where(ky2 != 0, (length - s2y) / ky2, length**3 / 6.0)
 
@@ -287,7 +287,7 @@ def base_ttensor(
     # when no rotation needs to be applied accross all vector dimensions. The
     # torch.where is here to improve numerical stability for the vector elements where
     # no rotation needs to be applied.
-    if torch.any((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))):
+    if ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))).any():
         rotation = rotation_matrix(tilt)
         T = torch.where(
             ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0)))
@@ -332,8 +332,8 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
         dipole.
     :return: Rotation matrix to be multiplied to the element's transfer matrix.
     """
-    cs = torch.cos(angle)
-    sn = torch.sin(angle)
+    cs = angle.cos()
+    sn = angle.sin()
 
     tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
     tm[..., 0, 0] = cs

@@ -34,7 +34,7 @@ def test_cold_uniform_beam_expansion(energy):
     elementary_charge = torch.tensor(constants.elementary_charge)
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma.square())
+    beta = (1 - 1 / gamma.square()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=100_000,
@@ -49,11 +49,9 @@ def test_cold_uniform_beam_expansion(energy):
     )
 
     # Compute section length that results in a doubling of the beam size
-    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
-        3 + 2 * torch.sqrt(torch.tensor(2))
-    )
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming.total_charge / elementary_charge
-    section_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+    section_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
     segment = cheetah.Segment(
         elements=[
@@ -89,7 +87,7 @@ def test_vectorized_cold_uniform_beam_expansion():
     elementary_charge = torch.tensor(constants.elementary_charge)
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma.square())
+    beta = (1 - 1 / gamma.square()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=100_000,
@@ -104,11 +102,9 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
 
     # Compute section length
-    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
-        3 + 2 * torch.sqrt(torch.tensor(2))
-    )
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming.total_charge / elementary_charge
-    section_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+    section_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
     segment = cheetah.Segment(
         elements=[
@@ -140,7 +136,7 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma.square())
+    beta = (1 - 1 / gamma.square()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=10_000,
@@ -229,11 +225,9 @@ def test_gradient_value_backward_ad():
 
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
-        3 + 2 * torch.sqrt(torch.tensor(2))
-    )
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming_beam.total_charge / constants.elementary_charge
-    segment_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+    segment_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
     segment_length = nn.Parameter(segment_length)
     segment = cheetah.Segment(
@@ -260,7 +254,7 @@ def test_gradient_value_backward_ad():
     # For a sphere, the radius is sqrt(5) bigger than sigma_x
     dradius_dlength = 5**0.5 * dsigma_dlength
     # Theoretical formula obtained by conservation of energy in the beam frame
-    expected_dradius_dlength = torch.sqrt((Nb * electron_radius) / R0) / gamma
+    expected_dradius_dlength = (Nb * electron_radius / R0).sqrt() / gamma
 
     assert torch.allclose(dradius_dlength, expected_dradius_dlength, rtol=0.1)
 
@@ -293,11 +287,9 @@ def test_gradient_value_forward_ad():
 
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-    kappa = 1 + (torch.sqrt(torch.tensor(2)) / 4) * torch.log(
-        3 + 2 * torch.sqrt(torch.tensor(2))
-    )
+    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
     Nb = incoming_beam.total_charge / constants.elementary_charge
-    segment_length = beta * gamma * kappa * torch.sqrt(R0**3 / (Nb * electron_radius))
+    segment_length = beta * gamma * kappa * (R0**3 / (Nb * electron_radius)).sqrt()
 
     tangent = torch.ones_like(segment_length)
 
@@ -326,7 +318,7 @@ def test_gradient_value_forward_ad():
         # For a sphere, the radius is sqrt(5) bigger than sigma_x
         dradius_dlength = 5**0.5 * dsigma_dlength
         # Theoretical formula obtained by conservation of energy in the beam frame
-        expected_dradius_dlength = torch.sqrt((Nb * electron_radius) / R0) / gamma
+        expected_dradius_dlength = ((Nb * electron_radius) / R0).sqrt() / gamma
 
         assert torch.allclose(dradius_dlength, expected_dradius_dlength, rtol=0.1)
 
