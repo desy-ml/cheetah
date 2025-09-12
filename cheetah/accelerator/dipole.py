@@ -289,7 +289,7 @@ class Dipole(Element):
         :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
-        px_norm = torch.sqrt((1 + pz) ** 2 - py**2)  # For simplicity
+        px_norm = torch.sqrt((1 + pz).square() - py.square())  # For simplicity
         phi1 = torch.arcsin(px / px_norm)
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
@@ -308,16 +308,17 @@ class Dipole(Element):
                 (1 + g.unsqueeze(-1) * x)
                 * self.length.unsqueeze(-1)
                 * bmadx.sinc(self.angle).unsqueeze(-1)
-            )
-            ** 2
+            ).square()
         )
 
-        x2_t1 = x * torch.cos(self.angle.unsqueeze(-1)) + self.length.unsqueeze(
-            -1
-        ) ** 2 * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
+        x2_t1 = x * torch.cos(
+            self.angle.unsqueeze(-1)
+        ) + self.length.square().unsqueeze(-1) * g.unsqueeze(-1) * bmadx.cosc(
+            self.angle.unsqueeze(-1)
+        )
 
         x2_t2 = torch.sqrt(
-            (torch.cos(self.angle.unsqueeze(-1) + phi1) ** 2) + gp * alpha
+            (torch.cos(self.angle.unsqueeze(-1) + phi1).square()) + gp * alpha
         )
         x2_t3 = torch.cos(self.angle.unsqueeze(-1) + phi1)
 
@@ -328,7 +329,7 @@ class Dipole(Element):
 
         Lcu = (
             x2
-            - self.length.unsqueeze(-1) ** 2
+            - self.length.square().unsqueeze(-1)
             * g.unsqueeze(-1)
             * bmadx.cosc(self.angle.unsqueeze(-1))
             - x * torch.cos(self.angle.unsqueeze(-1))
@@ -342,12 +343,12 @@ class Dipole(Element):
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu)
         )
 
-        Lc = torch.sqrt(Lcu**2 + Lcv**2)
+        Lc = torch.sqrt(Lcu.square() + Lcv.square())
         Lp = Lc / bmadx.sinc(theta_p / 2)
 
         P = p0c.unsqueeze(-1) * (1 + pz)  # In eV
-        E = torch.sqrt(P**2 + mc2**2)  # In eV
-        E0 = torch.sqrt(p0c**2 + mc2**2)  # In eV
+        E = torch.sqrt(P.square() + mc2.square())  # In eV
+        E0 = torch.sqrt(p0c.square() + mc2.square())  # In eV
         beta = P / E
         beta0 = p0c / E0
 
@@ -391,7 +392,7 @@ class Dipole(Element):
 
         hx = g * torch.tan(e)
         hy = -g * torch.tan(
-            e - 2 * f_int * h_gap * g * (1 + torch.sin(e) ** 2) / torch.cos(e)
+            e - 2 * f_int * h_gap * g * (1 + torch.sin(e).square()) / torch.cos(e)
         )
         px_f = px + x * hx.unsqueeze(-1)
         py_f = py + y * hy.unsqueeze(-1)
@@ -493,7 +494,7 @@ class Dipole(Element):
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self._e1) ** 2)
+            * (1 + torch.sin(self._e1).square())
         )
 
         tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
@@ -512,7 +513,7 @@ class Dipole(Element):
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self._e2) ** 2)
+            * (1 + torch.sin(self._e2).square())
         )
 
         tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)

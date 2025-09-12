@@ -161,11 +161,11 @@ class Cavity(Element):
                     * gamma0
                     * (beta1**3 * gamma1**3 + beta0 * (gamma0 - gamma1**3))
                     * torch.sin(phi)
-                    / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 2)
+                    / (beta1**3 * gamma1**3 * (gamma0 - gamma1).square())
                 )
                 T555 = (
-                    beta0**2
-                    * k**2
+                    beta0.square()
+                    * k.square()
                     * self.length
                     * dgamma
                     / 2.0
@@ -173,42 +173,42 @@ class Cavity(Element):
                         dgamma
                         * (
                             2 * gamma0 * gamma1**3 * (beta0 * beta1**3 - 1)
-                            + gamma0**2
-                            + 3 * gamma1**2
+                            + gamma0.square()
+                            + 3 * gamma1.square()
                             - 2
                         )
                         / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
-                        * torch.sin(phi) ** 2
+                        * torch.sin(phi).square()
                         - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
-                        / (beta1 * gamma1 * (gamma0 - gamma1) ** 2)
+                        / (beta1 * gamma1 * (gamma0 - gamma1).square())
                         * torch.cos(phi)
                     )
                 )
 
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
-                    T566 * incoming.mu[..., 5] ** 2
+                    T566 * incoming.mu[..., 5].square()
                     + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
-                    + T555 * incoming.mu[..., 4] ** 2
+                    + T555 * incoming.mu[..., 4].square()
                 )
                 outgoing_cov[..., 4, 4] = (
-                    T566 * incoming.cov[..., 5, 5] ** 2
+                    T566 * incoming.cov[..., 5, 5].square()
                     + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
-                    + T555 * incoming.cov[..., 4, 4] ** 2
+                    + T555 * incoming.cov[..., 4, 4].square()
                 )
                 outgoing_cov[..., 4, 5] = (
-                    T566 * incoming.cov[..., 5, 5] ** 2
+                    T566 * incoming.cov[..., 5, 5].square()
                     + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
-                    + T555 * incoming.cov[..., 4, 4] ** 2
+                    + T555 * incoming.cov[..., 4, 4].square()
                 )
                 outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
             else:  # ParticleBeam
                 outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
-                    T566.unsqueeze(-1) * incoming.particles[..., 5] ** 2
+                    T566.unsqueeze(-1) * incoming.particles[..., 5].square()
                     + T556.unsqueeze(-1)
                     * incoming.particles[..., 4]
                     * incoming.particles[..., 5]
-                    + T555.unsqueeze(-1) * incoming.particles[..., 4] ** 2
+                    + T555.unsqueeze(-1) * incoming.particles[..., 4].square()
                 )
 
         if isinstance(incoming, ParameterBeam):
@@ -253,8 +253,8 @@ class Cavity(Element):
         r55_cor = torch.tensor(0.0, **factory_kwargs)
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = torch.sqrt(1 - 1 / Ei**2)
-        beta1 = torch.sqrt(1 - 1 / Ef**2)
+        beta0 = torch.sqrt(1 - 1 / Ei.square())
+        beta1 = torch.sqrt(1 - 1 / Ef.square())
         r56 = torch.tensor(0.0, **factory_kwargs)
 
         if self.cavity_type == "standing_wave":
@@ -286,7 +286,9 @@ class Cavity(Element):
                 )
             )
 
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            r56 = (
+                -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            )
             g0 = Ei
             g1 = Ef
             r55_cor = (
@@ -297,7 +299,7 @@ class Cavity(Element):
                 / species.mass_eV
                 * torch.sin(phi)
                 * (g0 * g1 * (beta0 * beta1 - 1) + 1)
-                / (beta1 * g1 * (g0 - g1) ** 2)
+                / (beta1 * g1 * (g0 - g1).square())
             )
             r66 = Ei / Ef * beta0 / beta1
             r65 = (

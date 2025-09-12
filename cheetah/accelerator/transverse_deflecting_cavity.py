@@ -171,13 +171,13 @@ class TransverseDeflectingCavity(Element):
         beta_old = (
             (1 + pz)
             * p0c.unsqueeze(-1)
-            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square())
         )
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
         E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
             -1
         ) * x * p0c.unsqueeze(-1)
-        pc = torch.sqrt(E_new**2 - mc2**2)
+        pc = torch.sqrt(E_new.square() - mc2.square())
         beta = pc / E_new
 
         pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
