@@ -429,7 +429,7 @@ class Dipole(Element):
             T = base_ttensor(
                 length=self.length,
                 k1=self.k1,
-                k2=torch.tensor(0.0, **factory_kwargs),
+                k2=self.length.new_zeros(()),
                 hx=self.hx,
                 species=species,
                 energy=energy,

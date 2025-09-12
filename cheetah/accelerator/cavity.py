@@ -74,6 +74,8 @@ class Cavity(Element):
     def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        zero = self.length.new_zeros(())
+
         return torch.where(
             torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
             .unsqueeze(-1)
@@ -81,10 +83,10 @@ class Cavity(Element):
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
-                k1=torch.zeros_like(self.length),
-                hx=torch.zeros_like(self.length),
+                k1=zero,
+                hx=zero,
                 species=species,
-                tilt=torch.zeros_like(self.length),
+                tilt=zero,
                 energy=energy,
             ),
         )
@@ -242,7 +244,7 @@ class Cavity(Element):
         effective_voltage = self.voltage * species.num_elementary_charges * -1
         delta_energy = effective_voltage * torch.cos(phi)
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, **factory_kwargs)
+        eta = self.length.new_ones(())
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
         Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
