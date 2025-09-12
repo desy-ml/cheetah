@@ -253,8 +253,8 @@ class Cavity(Element):
         r55_cor = torch.tensor(0.0, **factory_kwargs)
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = torch.sqrt(1 - 1 / Ei**2)
-        beta1 = torch.sqrt(1 - 1 / Ef**2)
+        beta0 = torch.sqrt(1 - (Ei**2).reciprocal())
+        beta1 = torch.sqrt(1 - (Ef**2).reciprocal())
         r56 = torch.tensor(0.0, **factory_kwargs)
 
         if self.cavity_type == "standing_wave":
