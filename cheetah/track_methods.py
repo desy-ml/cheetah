@@ -307,7 +307,9 @@ def drift_matrix(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
+    vector_shape = torch.broadcast_shapes(length.shape, igamma2.shape)
+
+    tm = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
     tm[..., 0, 1] = length
     tm[..., 2, 3] = length
     tm[..., 4, 5] = -length / beta**2 * igamma2
