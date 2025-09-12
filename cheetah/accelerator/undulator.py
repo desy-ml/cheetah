@@ -51,7 +51,7 @@ class Undulator(Element):
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 
-        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = self.length * igamma2

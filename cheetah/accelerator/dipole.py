@@ -415,7 +415,11 @@ class Dipole(Element):
                 energy=energy,
             )  # Tilt is applied after adding edges
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
+            R = (
+                torch.eye(7, **factory_kwargs)
+                .expand((*self.length.shape, 7, 7))
+                .clone()
+            )
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
             R[..., 2, 3] = self.length
@@ -457,7 +461,11 @@ class Dipole(Element):
                 energy=energy,
             )
         else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
+            R = (
+                torch.eye(7, **factory_kwargs)
+                .expand((*self.length.shape, 7, 7))
+                .clone()
+            )
             R[..., 0, 1] = self.length
             R[..., 2, 6] = self.angle
             R[..., 2, 3] = self.length
@@ -496,7 +504,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e1) ** 2)
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * torch.tan(self._e1)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
 
@@ -515,7 +523,7 @@ class Dipole(Element):
             * (1 + torch.sin(self._e2) ** 2)
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * torch.tan(self._e2)
         tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
 
