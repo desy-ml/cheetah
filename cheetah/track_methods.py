@@ -104,8 +104,6 @@ def base_ttensor(
     :param energy: Beam energy in eV.
     :return: Second order transfer map for the element.
     """
-    factory_kwargs = {"device": length.device, "dtype": length.dtype}
-
     zero = length.new_zeros(())
 
     tilt = tilt if tilt is not None else zero
@@ -155,7 +153,7 @@ def base_ttensor(
         length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
     )
 
-    T = torch.zeros((7, 7, 7), **factory_kwargs).repeat(*vector_shape, 1, 1, 1)
+    T = length.new_zeros((7, 7, 7)).repeat(*vector_shape, 1, 1, 1)
     T[..., 0, 0, 0] = -1 / 6 * khk * (sx**2 + dx) - 0.5 * hx * kx2 * sx**2
     T[..., 0, 0, 1] = 2 * (-1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx)
     T[..., 0, 1, 1] = -1 / 6 * khk * dx**2 + 0.5 * hx * dx * cx
