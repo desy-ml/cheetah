@@ -208,6 +208,9 @@ class Dipole(Element):
         # throughout the function makes it even harder, is bad practice and should
         # really be fixed!
 
+        # Zero constant for later use to save on tensor allocations
+        zero = self.tilt.new_zeros(())
+
         # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
@@ -220,15 +223,7 @@ class Dipole(Element):
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
-        x, px, y, py = bmadx.offset_particle_set(
-            torch.zeros_like(self.tilt),
-            torch.zeros_like(self.tilt),
-            self.tilt,
-            x,
-            px,
-            y,
-            py,
-        )
+        x, px, y, py = bmadx.offset_particle_set(zero, zero, self.tilt, x, px, y, py)
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
@@ -236,15 +231,7 @@ class Dipole(Element):
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
-        x, px, y, py = bmadx.offset_particle_unset(
-            torch.zeros_like(self.tilt),
-            torch.zeros_like(self.tilt),
-            self.tilt,
-            x,
-            px,
-            y,
-            py,
-        )
+        x, px, y, py = bmadx.offset_particle_unset(zero, zero, self.tilt, x, px, y, py)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates

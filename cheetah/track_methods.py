@@ -106,7 +106,7 @@ def base_ttensor(
     """
     factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
-    zero = torch.tensor(0.0, **factory_kwargs)
+    zero = length.new_zeros(())
 
     tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero

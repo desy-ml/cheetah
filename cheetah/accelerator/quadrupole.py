@@ -83,7 +83,7 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
@@ -98,11 +98,13 @@ class Quadrupole(Element):
     def _compute_second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
             length=self.length,
             k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k2=zero,
+            hx=zero,
             tilt=self.tilt,
             energy=energy,
             species=species,
@@ -112,7 +114,7 @@ class Quadrupole(Element):
         T[..., :, 6, :] = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=zero,
             species=species,
             tilt=self.tilt,
             energy=energy,

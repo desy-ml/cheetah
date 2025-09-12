@@ -107,8 +107,8 @@ class Cavity(Element):
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
-        T556 = torch.full_like(self.length, 0.0)
-        T555 = torch.full_like(self.length, 0.0)
+        T556 = self.length.new_zeros(())
+        T555 = self.length.new_zeros(())
 
         if torch.any(incoming.energy + delta_energy > 0):
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
@@ -250,12 +250,9 @@ class Cavity(Element):
 
         alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
 
-        r55_cor = torch.tensor(0.0, **factory_kwargs)
-
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
         beta0 = torch.sqrt(1 - 1 / Ei**2)
         beta1 = torch.sqrt(1 - 1 / Ef**2)
-        r56 = torch.tensor(0.0, **factory_kwargs)
 
         if self.cavity_type == "standing_wave":
             r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
@@ -289,7 +286,7 @@ class Cavity(Element):
             r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             g0 = Ei
             g1 = Ef
-            r55_cor = (
+            r55 = 1.0 + (
                 k
                 * self.length
                 * beta0
@@ -329,14 +326,16 @@ class Cavity(Element):
             r12 = M_combined[..., 0, 1]
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
+            r55 = self.length.new_ones(())
+            r56 = self.length.new_zeros(())
             r66 = r22
             r65 = k * torch.sin(phi) * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
         # Make sure that all matrix elements have the same shape
-        r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(
-            r11, r12, r21, r22, r55_cor, r56, r65, r66
+        r11, r12, r21, r22, r55, r56, r65, r66 = torch.broadcast_tensors(
+            r11, r12, r21, r22, r55, r56, r65, r66
         )
 
         R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
@@ -348,7 +347,7 @@ class Cavity(Element):
         R[..., 2, 3] = r12
         R[..., 3, 2] = r21
         R[..., 3, 3] = r22
-        R[..., 4, 4] = 1 + r55_cor
+        R[..., 4, 4] = r55
         R[..., 4, 5] = r56
         R[..., 5, 4] = r65
         R[..., 5, 5] = r66
