@@ -74,6 +74,8 @@ class Cavity(Element):
     def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        zero = self.length.new_zeros(())
+
         return torch.where(
             torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
             .unsqueeze(-1)
@@ -81,10 +83,10 @@ class Cavity(Element):
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
-                k1=torch.zeros_like(self.length),
-                hx=torch.zeros_like(self.length),
+                k1=zero,
+                hx=zero,
                 species=species,
-                tilt=torch.zeros_like(self.length),
+                tilt=zero,
                 energy=energy,
             ),
         )
@@ -107,8 +109,8 @@ class Cavity(Element):
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
-        T556 = torch.full_like(self.length, 0.0)
-        T555 = torch.full_like(self.length, 0.0)
+        T556 = self.length.new_zeros(())
+        T555 = self.length.new_zeros(())
 
         if (incoming.energy + delta_energy > 0).any():
             k = 2 * torch.pi * self.frequency / constants.speed_of_light
@@ -242,7 +244,7 @@ class Cavity(Element):
         effective_voltage = self.voltage * species.num_elementary_charges * -1
         delta_energy = effective_voltage * phi.cos()
         # Comment from Ocelot: Pure pi-standing-wave case
-        eta = torch.tensor(1.0, **factory_kwargs)
+        eta = self.length.new_ones(())
         Ei = energy / species.mass_eV
         Ef = (energy + delta_energy) / species.mass_eV
         Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
@@ -250,12 +252,9 @@ class Cavity(Element):
 
         alpha = (eta / 8).sqrt() / phi.cos() * (Ef / Ei).log()
 
-        r55_cor = torch.tensor(0.0, **factory_kwargs)
-
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
         beta0 = (1 - 1 / Ei.square()).sqrt()
         beta1 = (1 - 1 / Ef.square()).sqrt()
-        r56 = torch.tensor(0.0, **factory_kwargs)
 
         if self.cavity_type == "standing_wave":
             r11 = alpha.cos() - (2 / eta).sqrt() * phi.cos() * alpha.sin()
@@ -279,7 +278,7 @@ class Cavity(Element):
             )
             g0 = Ei
             g1 = Ef
-            r55_cor = (
+            r55 = 1.0 + (
                 k
                 * self.length
                 * beta0
@@ -317,14 +316,16 @@ class Cavity(Element):
             r12 = M_combined[..., 0, 1]
             r21 = M_combined[..., 1, 0]
             r22 = M_combined[..., 1, 1]
+            r55 = self.length.new_ones(())
+            r56 = self.length.new_zeros(())
             r66 = r22
             r65 = k * phi.sin() * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
         # Make sure that all matrix elements have the same shape
-        r11, r12, r21, r22, r55_cor, r56, r65, r66 = torch.broadcast_tensors(
-            r11, r12, r21, r22, r55_cor, r56, r65, r66
+        r11, r12, r21, r22, r55, r56, r65, r66 = torch.broadcast_tensors(
+            r11, r12, r21, r22, r55, r56, r65, r66
         )
 
         R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
@@ -333,7 +334,7 @@ class Cavity(Element):
             (0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5),
             (0, 1, 0, 1, 2, 3, 2, 3, 4, 5, 4, 5),
         ] = torch.stack(
-            [r11, r12, r21, r22, r11, r12, r21, r22, 1 + r55_cor, r56, r65, r66], dim=-1
+            [r11, r12, r21, r22, r11, r12, r21, r22, r55, r56, r65, r66], dim=-1
         )
 
         return R

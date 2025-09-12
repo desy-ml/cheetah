@@ -100,11 +100,7 @@ class SpaceChargeKick(Element):
         Deposits the charge density of the beam onto a grid, using the
         Cloud-In-Cell (CIC) method. Returns a grid of charge density in C/m^3.
         """
-        charge = torch.zeros(
-            beam.particles.shape[:-2] + self.grid_shape,
-            device=beam.particles.device,
-            dtype=beam.particles.dtype,
-        )
+        charge = beam.particles.new_zeros(beam.particles.shape[:-2] + self.grid_shape)
 
         # Compute inverse cell size (to avoid multiple divisions later on)
         inv_cell_size = 1 / cell_size
@@ -221,10 +217,8 @@ class SpaceChargeKick(Element):
         new_dims = tuple(2 * dim for dim in self.grid_shape)
 
         # Create a new tensor with the doubled dimensions, filled with zeros
-        new_charge_density = torch.zeros(
-            beam.particles.shape[:-2] + new_dims,
-            device=beam.particles.device,
-            dtype=beam.particles.dtype,
+        new_charge_density = beam.particles.new_zeros(
+            beam.particles.shape[:-2] + new_dims
         )
 
         # Copy the original charge_density values to the beginning of the new tensor
@@ -313,15 +307,13 @@ class SpaceChargeKick(Element):
         )
 
         # Initialize the grid with double dimensions
-        green_func_values = torch.zeros(
+        green_func_values = beam.particles.new_zeros(
             (
                 *beam.particles.shape[:-2],
                 2 * num_grid_points_x,
                 2 * num_grid_points_y,
                 2 * num_grid_points_tau,
-            ),
-            device=beam.particles.device,
-            dtype=beam.particles.dtype,
+            )
         )
 
         # Fill the grid with G_values and its periodic copies
@@ -459,10 +451,8 @@ class SpaceChargeKick(Element):
             beam, xp_coordinates, cell_size, grid_dimensions
         )
         grid_shape = self.grid_shape
-        interpolated_forces = torch.zeros(
-            (*beam.particles.shape[:-1], 3),
-            device=beam.particles.device,
-            dtype=beam.particles.dtype,
+        interpolated_forces = beam.particles.new_zeros(
+            (*beam.particles.shape[:-1], 3)
         )  # (..., num_particles, 3)
 
         # Get particle positions
