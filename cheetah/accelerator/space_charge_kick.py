@@ -144,7 +144,7 @@ class SpaceChargeKick(Element):
         # Shape: (..., 8 * num_particles)
         idx_vector = (
             torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
+            .expand(8 * beam.particles.shape[-2], cell_indices.shape[0])
             .T
         )
         idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
@@ -505,7 +505,7 @@ class SpaceChargeKick(Element):
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
             torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
+            .expand(8 * beam.particles.shape[-2], cell_indices.shape[0])
             .T
         )  # Shape: (..., num_particles * 8)
         idx_x = surrounding_indices_flattened[..., 0]

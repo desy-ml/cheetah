@@ -313,14 +313,18 @@ class Cavity(Element):
                 self.length.shape, f.shape, Ei.shape, Ef.shape
             )
 
-            M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_body = torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
             M_body[..., 0, 1] = self.length * f
             M_body[..., 1, 1] = Ei / Ef
 
-            M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_entry = (
+                torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            )
             M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
 
-            M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
+            M_f_exit = (
+                torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            )
             M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
@@ -339,7 +343,7 @@ class Cavity(Element):
             r11, r12, r21, r22, r55_cor, r56, r65, r66
         )
 
-        R = torch.eye(7, **factory_kwargs).repeat((*r11.shape, 1, 1))
+        R = torch.eye(7, **factory_kwargs).expand((*r11.shape, 7, 7)).clone()
         R[..., 0, 0] = r11
         R[..., 0, 1] = r12
         R[..., 1, 0] = r21
