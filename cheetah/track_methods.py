@@ -82,7 +82,7 @@ def base_rmatrix(
         rotation = rotation_matrix(tilt)
         R = torch.where(
             ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
-            rotation.transpose(-1, -2) @ R @ rotation,
+            rotation.mT @ R @ rotation,
             R,
         )
 
@@ -302,11 +302,7 @@ def base_ttensor(
             .unsqueeze(-1)
             .unsqueeze(-1),
             torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm",
-                rotation.transpose(-1, -2),
-                T,
-                rotation,
-                rotation,
+                "...ij,...jkl,...kn,...lm->...inm", rotation.mT, T, rotation, rotation
             ),
             T,
         )
