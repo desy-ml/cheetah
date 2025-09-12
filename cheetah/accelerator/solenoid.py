@@ -65,14 +65,18 @@ class Solenoid(Element):
 
         length, k, gamma = torch.broadcast_tensors(self.length, self.k, gamma)
 
-        c = (self.length * self.k).cos()
-        s = (self.length * self.k).sin()
+        c = (length * k).cos()
+        s = (length * k).sin()
 
         s_k = torch.where(k == 0.0, length, s / k)
 
         r56 = torch.where(
             gamma != 0, length / (1 - gamma.square()), torch.zeros_like(length)
         )
+
+        from icecream import ic
+
+        ic(c.shape, s_k.shape, s.shape, r56.shape)
 
         R = torch.eye(7, **factory_kwargs).repeat((*length.shape, 1, 1))
         R[
