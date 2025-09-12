@@ -253,8 +253,8 @@ class Cavity(Element):
         alpha = (eta / 8).sqrt() / phi.cos() * (Ef / Ei).log()
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = (1 - 1 / Ei.square()).sqrt()
-        beta1 = (1 - 1 / Ef.square()).sqrt()
+        beta0 = (1 - Ei.square().reciprocal()).sqrt()
+        beta1 = (1 - Ef.square().reciprocal()).sqrt()
 
         if self.cavity_type == "standing_wave":
             r11 = alpha.cos() - (2 / eta).sqrt() * phi.cos() * alpha.sin()

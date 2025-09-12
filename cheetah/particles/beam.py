@@ -377,7 +377,10 @@ class Beam(ABC, nn.Module):
         """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
         relativistic_beta[(self.relativistic_gamma).abs() > 0] = (
-            1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0].square())
+            1
+            - (
+                self.relativistic_gamma[self.relativistic_gamma > 0].square()
+            ).reciprocal()
         ).sqrt()
         return relativistic_beta
 

@@ -465,7 +465,7 @@ class Dipole(Element):
         """Linear transfer map for the entrance face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / self._e1.cos()
+        sec_e = self._e1.cos().reciprocal()
         phi = (
             self.fringe_integral
             * self.hx
@@ -484,7 +484,7 @@ class Dipole(Element):
         """Linear transfer map for the exit face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / self._e2.cos()
+        sec_e = self._e2.cos().reciprocal()
         phi = (
             self.fringe_integral_exit
             * self.hx
