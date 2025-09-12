@@ -64,8 +64,8 @@ class Cavity(Element):
         self.cavity_type = cavity_type
 
     @property
-    def is_active(self) -> bool:
-        return (self.voltage != 0).any().item()
+    def is_active(self) -> torch.Tensor:
+        return self.voltage.any()
 
     @property
     def is_skippable(self) -> bool:

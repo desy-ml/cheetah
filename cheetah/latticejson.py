@@ -8,7 +8,7 @@ import cheetah
 
 def feature2nontorch(value: Any) -> Any:
     """
-    if necesary, convert an the value of a feature of a `cheetah.Element` to a non-torch
+    If needed, convert the value of a feature of a `cheetah.Element` to a non-torch type
     type that can be saved to LatticeJSON.
 
     :param value: Value of the feature that might be in some kind of PyTorch format,
@@ -144,13 +144,16 @@ def nontorch2feature(
     :param dtype: Data type to use for the lattice elements.
     :return: Value converted to a `torch.Tensor` if necessary.
     """
-    return (
-        value
-        if isinstance(value, (str, bool, int))
-        or isinstance(value, (tuple, list))
-        and all(isinstance(v, (str, bool, int)) for v in value)
-        else torch.tensor(value, device=device, dtype=dtype)
-    )
+    if isinstance(value, bool):
+        return torch.tensor(value, device=device)  # Keep boolean dtype
+    elif isinstance(value, (str, int)):
+        return value
+    elif isinstance(value, (tuple, list)) and all(
+        isinstance(v, (str, int)) for v in value
+    ):
+        return value
+    else:
+        return torch.tensor(value, device=device, dtype=dtype)
 
 
 def parse_element(

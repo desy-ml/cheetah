@@ -51,7 +51,7 @@ class Screen(Element):
         method: Literal["histogram", "kde"] = "histogram",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
-        is_active: bool = False,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -88,12 +88,19 @@ class Screen(Element):
             "kde_bandwidth",
             kde_bandwidth if kde_bandwidth is not None else self.pixel_size[0].clone(),
         )
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(False, **factory_kwargs)
+            ),
+        )
 
         self.resolution = resolution
         self.binning = binning
         self.method = method
         self.is_blocking = is_blocking
-        self.is_active = is_active
 
         self.register_buffer(
             "cached_reading",

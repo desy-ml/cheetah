@@ -105,8 +105,8 @@ class Sextupole(Element):
         return False
 
     @property
-    def is_active(self) -> bool:
-        return (self.k2 != 0.0).any().item()
+    def is_active(self) -> torch.Tensor:
+        return self.k2.any()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

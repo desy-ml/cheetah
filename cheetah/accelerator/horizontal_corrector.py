@@ -66,8 +66,8 @@ class HorizontalCorrector(Element):
         return True
 
     @property
-    def is_active(self) -> bool:
-        return (self.angle != 0).any().item()
+    def is_active(self) -> torch.Tensor:
+        return self.angle.any()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

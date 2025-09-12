@@ -84,8 +84,8 @@ class TransverseDeflectingCavity(Element):
         self.tracking_method = tracking_method
 
     @property
-    def is_active(self) -> bool:
-        return (self.voltage != 0).any().item()
+    def is_active(self) -> torch.Tensor:
+        return self.voltage.any()
 
     @property
     def is_skippable(self) -> bool:

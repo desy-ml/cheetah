@@ -34,7 +34,7 @@ class Aperture(Element):
         x_max: torch.Tensor | None = None,
         y_max: torch.Tensor | None = None,
         shape: Literal["rectangular", "elliptical"] = "rectangular",
-        is_active: bool = True,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -59,9 +59,16 @@ class Aperture(Element):
                 else torch.tensor(float("inf"), **factory_kwargs)
             ),
         )
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(True, **factory_kwargs)
+            ),
+        )
 
         self.shape = shape
-        self.is_active = is_active
 
         self.lost_particles = None
 
