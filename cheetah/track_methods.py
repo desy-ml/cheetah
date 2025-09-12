@@ -47,24 +47,31 @@ def base_rmatrix(
 
     r56 = r56 - length / beta.square() * igamma2
 
-    vector_shape = torch.broadcast_shapes(
-        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
-    )
+    cx, sx, dx, cy, sy, r56 = torch.broadcast_tensors(cx, sx, dx, cy, sy, r56)
 
-    R = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
-    R[..., 0, 0] = cx
-    R[..., 0, 1] = sx
-    R[..., 0, 5] = dx / beta
-    R[..., 1, 0] = -kx2 * sx
-    R[..., 1, 1] = cx
-    R[..., 1, 5] = sx * hx / beta
-    R[..., 2, 2] = cy
-    R[..., 2, 3] = sy
-    R[..., 3, 2] = -ky2 * sy
-    R[..., 3, 3] = cy
-    R[..., 4, 0] = sx * hx / beta
-    R[..., 4, 1] = dx / beta
-    R[..., 4, 5] = r56
+    R = torch.eye(7, **factory_kwargs).repeat(*cx.shape, 1, 1)
+    R[
+        ...,
+        (0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4),
+        (0, 1, 5, 0, 1, 5, 2, 3, 2, 3, 0, 1, 5),
+    ] = torch.stack(
+        [
+            cx,
+            sx,
+            dx / beta,
+            -kx2 * sx,
+            cx,
+            sx * hx / beta,
+            cy,
+            sy,
+            -ky2 * sy,
+            cy,
+            sx * hx / beta,
+            dx / beta,
+            r56,
+        ],
+        dim=-1,
+    )
 
     # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
     # if hx != 0 or k1 != 0. Note that the first if is here to improve speed when no
@@ -314,12 +321,12 @@ def drift_matrix(
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-    vector_shape = torch.broadcast_shapes(length.shape, igamma2.shape)
+    length, beta, igamma2 = torch.broadcast_tensors(length, beta, igamma2)
 
-    tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
-    tm[..., 0, 1] = length
-    tm[..., 2, 3] = length
-    tm[..., 4, 5] = -length / beta.square() * igamma2
+    tm = torch.eye(7, **factory_kwargs).repeat((*length.shape, 1, 1))
+    tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
+        [length, length, -length / beta.square() * igamma2], dim=-1
+    )
 
     return tm
 
@@ -336,14 +343,9 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     sn = angle.sin()
 
     tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
-    tm[..., 0, 0] = cs
-    tm[..., 0, 2] = sn
-    tm[..., 1, 1] = cs
-    tm[..., 1, 3] = sn
-    tm[..., 2, 0] = -sn
-    tm[..., 2, 2] = cs
-    tm[..., 3, 1] = -sn
-    tm[..., 3, 3] = cs
+    tm[..., (0, 0, 1, 1, 2, 2, 3, 3), (0, 2, 1, 3, 0, 2, 1, 3)] = torch.stack(
+        [cs, sn, cs, sn, -sn, cs, -sn, cs], dim=-1
+    )
 
     return tm
 
@@ -357,11 +359,9 @@ def misalignment_matrix(
     vector_shape = misalignment.shape[:-1]
 
     R_exit = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
-    R_exit[..., 0, 6] = misalignment[..., 0]
-    R_exit[..., 2, 6] = misalignment[..., 1]
+    R_exit[..., (0, 2), (6, 6)] = misalignment
 
     R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
-    R_entry[..., 0, 6] = -misalignment[..., 0]
-    R_entry[..., 2, 6] = -misalignment[..., 1]
+    R_entry[..., (0, 2), (6, 6)] = -misalignment
 
     return R_entry, R_exit
