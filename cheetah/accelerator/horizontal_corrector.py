@@ -54,7 +54,7 @@ class HorizontalCorrector(Element):
             self.length, igamma2, self.angle, beta
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat((*length.shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
         tm[..., (0, 1, 2, 4), (1, 6, 3, 5)] = torch.stack(
             [length, angle, length, -length / beta.square() * igamma2], dim=-1
         )

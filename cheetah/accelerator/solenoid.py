@@ -74,11 +74,7 @@ class Solenoid(Element):
             gamma != 0, length / (1 - gamma.square()), torch.zeros_like(length)
         )
 
-        from icecream import ic
-
-        ic(c.shape, s_k.shape, s.shape, r56.shape)
-
-        R = torch.eye(7, **factory_kwargs).repeat((*length.shape, 1, 1))
+        R = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
         R[
             ...,
             (0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4),

@@ -25,8 +25,6 @@ def base_rmatrix(
     :param energy: Beam energy in eV.
     :return: First order transfer map for the element.
     """
-    factory_kwargs = {"device": length.device, "dtype": length.dtype}
-
     zero = length.new_zeros(())
 
     tilt = tilt if tilt is not None else zero
@@ -49,7 +47,7 @@ def base_rmatrix(
 
     cx, sx, dx, cy, sy, r56 = torch.broadcast_tensors(cx, sx, dx, cy, sy, r56)
 
-    R = torch.eye(7, **factory_kwargs).repeat(*cx.shape, 1, 1)
+    R = torch.eye(7, dtype=cx.dtype, device=cx.device).expand(*cx.shape, 7, 7).clone()
     R[
         ...,
         (0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4),
@@ -168,7 +166,7 @@ def base_ttensor(
         length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
     )
 
-    T = length.new_zeros((7, 7, 7)).repeat(*vector_shape, 1, 1, 1)
+    T = length.new_zeros((7, 7, 7)).expand(*vector_shape, 7, 7, 7).clone()
     T[..., 0, 0, 0] = -1 / 6 * khk * (sx.square() + dx) - 0.5 * hx * kx2 * sx.square()
     T[..., 0, 0, 1] = 2 * (-1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx)
     T[..., 0, 1, 1] = -1 / 6 * khk * dx.square() + 0.5 * hx * dx * cx
@@ -317,7 +315,7 @@ def drift_matrix(
 
     length, beta, igamma2 = torch.broadcast_tensors(length, beta, igamma2)
 
-    tm = torch.eye(7, **factory_kwargs).repeat((*length.shape, 1, 1))
+    tm = torch.eye(7, **factory_kwargs).expand((*length.shape, 7, 7)).clone()
     tm[..., (0, 2, 4), (1, 3, 5)] = torch.stack(
         [length, length, -length / beta.square() * igamma2], dim=-1
     )
@@ -336,7 +334,11 @@ def rotation_matrix(angle: torch.Tensor) -> torch.Tensor:
     cs = angle.cos()
     sn = angle.sin()
 
-    tm = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(*angle.shape, 1, 1)
+    tm = (
+        torch.eye(7, dtype=angle.dtype, device=angle.device)
+        .expand((*angle.shape, 7, 7))
+        .clone()
+    )
     tm[..., (0, 0, 1, 1, 2, 2, 3, 3), (0, 2, 1, 3, 0, 2, 1, 3)] = torch.stack(
         [cs, sn, cs, sn, -sn, cs, -sn, cs], dim=-1
     )
@@ -352,10 +354,10 @@ def misalignment_matrix(
 
     vector_shape = misalignment.shape[:-1]
 
-    R_exit = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
+    R_exit = torch.eye(7, **factory_kwargs).expand(*vector_shape, 7, 7).clone()
     R_exit[..., (0, 2), (6, 6)] = misalignment
 
-    R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
+    R_entry = torch.eye(7, **factory_kwargs).expand(*vector_shape, 7, 7).clone()
     R_entry[..., (0, 2), (6, 6)] = -misalignment
 
     return R_entry, R_exit
