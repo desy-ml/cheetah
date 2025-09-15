@@ -44,7 +44,9 @@ def cache_transfer_map(func):
             self, saved_cache_validity_key_attr_name, None
         )
 
-        if new_cache_validity_key != saved_cache_validity_key:
+        if new_cache_validity_key == saved_cache_validity_key:
+            result = getattr(self, cached_transfer_map_attr_name)
+        else:
             # Recompute the transfer map
             result = func(self, energy, species)
 
@@ -57,6 +59,6 @@ def cache_transfer_map(func):
             # Save the new validity key for later cache checks
             setattr(self, saved_cache_validity_key_attr_name, new_cache_validity_key)
 
-        return getattr(self, cached_transfer_map_attr_name)
+        return result
 
     return wrapper
