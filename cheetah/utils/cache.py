@@ -25,11 +25,15 @@ def cache_transfer_map(func):
             for arg in (energy, species.num_elementary_charges, species.mass_eV)
         ) + tuple(
             (
-                feature
-                if not isinstance(feature, torch.Tensor)
-                else (id(feature), feature._version, feature.requires_grad)
+                getattr(self, feature_name)
+                if not isinstance(getattr(self, feature_name), torch.Tensor)
+                else (
+                    id(getattr(self, feature_name)),
+                    getattr(self, feature_name)._version,
+                    getattr(self, feature_name).requires_grad,
+                )
             )
-            for feature in self.defining_features
+            for feature_name in self.defining_features
         )
         saved_cache_validity_key_attr_name = f"_cached_{func.__name__}_validity_key"
         saved_cache_validity_key = getattr(
