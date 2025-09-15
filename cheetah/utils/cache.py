@@ -17,111 +17,37 @@ def cache_transfer_map(func):
         ):
             return func(self, energy, species)
 
+        cached_transfer_map_attr_name = f"_cached_{func.__name__}_result"
+
         # Recompute and cache if any of the inputs or defining features have changed
-        if not all(
-            _is_tensor_arg_cache_hit(self, arg, arg_name, func.__name__)
-            for arg, arg_name in (
-                (energy, "energy"),
-                (species.num_elementary_charges, "num_elementary_charges"),
-                (species.mass_eV, "mass_eV"),
+        new_cache_validity_key = tuple(
+            (arg.item(), arg.requires_grad)
+            for arg in (energy, species.num_elementary_charges, species.mass_eV)
+        ) + tuple(
+            (
+                feature
+                if not isinstance(feature, torch.Tensor)
+                else (id(feature), feature._version, feature.requires_grad)
             )
-        ) or not all(
-            _is_defining_feature_cache_hit(self, feature_name, func.__name__)
-            for feature_name in self.defining_features
-        ):
-            # Recompute
+            for feature in self.defining_features
+        )
+        saved_cache_validity_key_attr_name = f"_cached_{func.__name__}_validity_key"
+        saved_cache_validity_key = getattr(
+            self, saved_cache_validity_key_attr_name, None
+        )
+        if new_cache_validity_key != saved_cache_validity_key:
+            # Recompute the transfer map
             result = func(self, energy, species)
 
-            # Make sure tensor cache variables are registered
-            if not hasattr(self, f"_cached_{func.__name__}_result"):
-                self.register_buffer(
-                    f"_cached_{func.__name__}_result", None, persistent=False
-                )
-            for arg_name in ["energy", "num_elementary_charges", "mass_eV"]:
-                if not hasattr(self, f"_cached_{func.__name__}_{arg_name}_value"):
-                    self.register_buffer(
-                        f"_cached_{func.__name__}_{arg_name}_value",
-                        None,
-                        persistent=False,
-                    )
+            # Ensure that a buffer is registered to hold the cached result
+            if not hasattr(self, cached_transfer_map_attr_name):
+                self.register_buffer(cached_transfer_map_attr_name, result)
+            else:
+                setattr(self, cached_transfer_map_attr_name, result)
 
-            # Update cache
-            setattr(self, f"_cached_{func.__name__}_result", result)
+            # Save the new validity key for later cache checks
+            setattr(self, saved_cache_validity_key_attr_name, new_cache_validity_key)
 
-            setattr(self, f"_cached_{func.__name__}_energy_value", energy.clone())
-            setattr(
-                self,
-                f"_cached_{func.__name__}_num_elementary_charges_value",
-                species.num_elementary_charges.clone(),
-            )
-            setattr(
-                self, f"_cached_{func.__name__}_mass_eV_value", species.mass_eV.clone()
-            )
-            for feature in self.defining_features:
-                if isinstance(getattr(self, feature), torch.Tensor):
-                    setattr(
-                        self,
-                        f"_cached_{func.__name__}_{feature}_id",
-                        id(getattr(self, feature)),
-                    )
-                    setattr(
-                        self,
-                        f"_cached_{func.__name__}_{feature}_version",
-                        getattr(self, feature)._version,
-                    )
-                    setattr(
-                        self,
-                        f"_cached_{func.__name__}_{feature}_requires_grad",
-                        getattr(self, feature).requires_grad,
-                    )
-                else:
-                    setattr(
-                        self,
-                        f"_cached_{func.__name__}_{feature}_hash",
-                        hash(getattr(self, feature)),
-                    )
-
-        # Return cached result
-        return getattr(self, f"_cached_{func.__name__}_result")
+        return getattr(self, cached_transfer_map_attr_name)
 
     return wrapper
-
-
-def _is_tensor_arg_cache_hit(
-    self, arg: torch.Tensor, arg_name: str, func_name: str
-) -> bool:
-    """
-    Check if the cache for a tensor-valued argument to the function `func_name` is still
-    valid. This is the case if the argument and cached tensor have the same value and
-    gradient function.
-    """
-    cached_tensor = getattr(self, f"_cached_{func_name}_{arg_name}_value", None)
-
-    return (
-        cached_tensor is not None
-        and torch.equal(arg, cached_tensor)
-        and arg.grad_fn == cached_tensor.grad_fn
-    )
-
-
-def _is_defining_feature_cache_hit(self, feature_name: str, func_name: str) -> bool:
-    """
-    Check if the cache for a defining feature of `self` is still valid. Distinguishes
-    between tensor and non-tensor features. Tensor features are considered a hit if
-    their memory ID, version and gradient requirement are the same. Non-tensor features
-    are considered a hit if their hash value is the same.
-    """
-    feature = getattr(self, feature_name)
-
-    if isinstance(feature, torch.Tensor):
-        return (
-            id(feature) == getattr(self, f"_cached_{func_name}_{feature_name}_id", None)
-            and feature._version
-            == getattr(self, f"_cached_{func_name}_{feature_name}_version", None)
-            and feature.requires_grad
-            == getattr(self, f"_cached_{func_name}_{feature_name}_requires_grad", None)
-        )
-    else:
-        return hash(feature) == getattr(
-            self, f"_cached_{func_name}_{feature_name}_hash", None
-        )
