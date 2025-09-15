@@ -160,3 +160,60 @@ def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
         assert getattr(outgoing_beam, attribute).device.type == device.type
         assert getattr(outgoing_beam, attribute).dtype == dtype
+
+
+def test_transfer_map_cache():
+    """Test that the transfer map is cached after the first computation."""
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    energy = torch.tensor(155e6)
+    species = cheetah.Species("electron")
+
+    first_cached_transfer_map = quadrupole.transfer_map(energy, species)
+    second_cached_transfer_map = quadrupole.transfer_map(energy, species)
+
+    assert id(first_cached_transfer_map) == id(second_cached_transfer_map)
+    assert torch.equal(first_cached_transfer_map, second_cached_transfer_map)
+
+
+def test_transfer_map_cache_invalidation_element_property():
+    """Test that changing an element property invalidates the transfer map cache."""
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    energy = torch.tensor(155e6)
+    species = cheetah.Species("electron")
+
+    original_transfer_map = quadrupole.transfer_map(energy, species)
+
+    # Change a property
+    quadrupole.k1 = torch.tensor(2.0)
+
+    updated_transfer_map = quadrupole.transfer_map(energy, species)
+
+    assert not torch.equal(original_transfer_map, updated_transfer_map)
+
+
+def test_transfer_map_cache_invalidation_energy():
+    """Test that changing the beam energy invalidates the transfer map cache."""
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    original_energy = torch.tensor(155e6)
+    species = cheetah.Species("electron")
+
+    original_transfer_map = quadrupole.transfer_map(original_energy, species)
+
+    updated_energy = torch.tensor(200e6)
+    updated_transfer_map = quadrupole.transfer_map(updated_energy, species)
+
+    assert not torch.equal(original_transfer_map, updated_transfer_map)
+
+
+def test_transfer_map_cache_invalidation_species():
+    """Test that changing the beam species invalidates the transfer map cache."""
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    energy = torch.tensor(155e6)
+    original_species = cheetah.Species("electron")
+
+    original_transfer_map = quadrupole.transfer_map(energy, original_species)
+
+    updated_species = cheetah.Species("proton")
+    updated_transfer_map = quadrupole.transfer_map(energy, updated_species)
+
+    assert not torch.equal(original_transfer_map, updated_transfer_map)
