@@ -21,7 +21,7 @@ def cache_transfer_map(func):
 
         # Recompute and cache if any of the inputs or defining features have changed
         new_cache_validity_key = tuple(
-            (arg.item(), arg.requires_grad)
+            (arg.tolist(), arg.requires_grad)
             for arg in (energy, species.num_elementary_charges, species.mass_eV)
         ) + tuple(
             (
