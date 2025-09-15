@@ -168,8 +168,8 @@ def test_transfer_map_cache():
     energy = torch.tensor(155e6)
     species = cheetah.Species("electron")
 
-    first_cached_transfer_map = quadrupole.transfer_map(energy, species)
-    second_cached_transfer_map = quadrupole.transfer_map(energy, species)
+    first_cached_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+    second_cached_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
     assert id(first_cached_transfer_map) == id(second_cached_transfer_map)
     assert torch.equal(first_cached_transfer_map, second_cached_transfer_map)
@@ -181,12 +181,12 @@ def test_transfer_map_cache_invalidation_element_property():
     energy = torch.tensor(155e6)
     species = cheetah.Species("electron")
 
-    original_transfer_map = quadrupole.transfer_map(energy, species)
+    original_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
     # Change a property
     quadrupole.k1 = torch.tensor(2.0)
 
-    updated_transfer_map = quadrupole.transfer_map(energy, species)
+    updated_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
     assert not torch.equal(original_transfer_map, updated_transfer_map)
 
@@ -197,10 +197,12 @@ def test_transfer_map_cache_invalidation_energy():
     original_energy = torch.tensor(155e6)
     species = cheetah.Species("electron")
 
-    original_transfer_map = quadrupole.transfer_map(original_energy, species)
+    original_transfer_map = quadrupole.first_order_transfer_map(
+        original_energy, species
+    )
 
     updated_energy = torch.tensor(200e6)
-    updated_transfer_map = quadrupole.transfer_map(updated_energy, species)
+    updated_transfer_map = quadrupole.first_order_transfer_map(updated_energy, species)
 
     assert not torch.equal(original_transfer_map, updated_transfer_map)
 
@@ -211,9 +213,11 @@ def test_transfer_map_cache_invalidation_species():
     energy = torch.tensor(155e6)
     original_species = cheetah.Species("electron")
 
-    original_transfer_map = quadrupole.transfer_map(energy, original_species)
+    original_transfer_map = quadrupole.first_order_transfer_map(
+        energy, original_species
+    )
 
     updated_species = cheetah.Species("proton")
-    updated_transfer_map = quadrupole.transfer_map(energy, updated_species)
+    updated_transfer_map = quadrupole.first_order_transfer_map(energy, updated_species)
 
     assert not torch.equal(original_transfer_map, updated_transfer_map)
