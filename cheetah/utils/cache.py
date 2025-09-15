@@ -20,25 +20,30 @@ def cache_transfer_map(func):
         cached_transfer_map_attr_name = f"_cached_{func.__name__}_result"
 
         # Recompute and cache if any of the inputs or defining features have changed
-        new_cache_validity_key = tuple(
+        new_cache_validity_key_arg_part = tuple(
             (arg.tolist(), arg.requires_grad)
             for arg in (energy, species.num_elementary_charges, species.mass_eV)
-        ) + tuple(
-            (
-                getattr(self, feature_name)
-                if not isinstance(getattr(self, feature_name), torch.Tensor)
-                else (
-                    id(getattr(self, feature_name)),
-                    getattr(self, feature_name)._version,
-                    getattr(self, feature_name).requires_grad,
-                )
-            )
-            for feature_name in self.defining_features
         )
+        new_cache_validity_key_feature_part = tuple()
+        for feature_name in self.defining_features:
+            feature = getattr(self, feature_name)
+            if not isinstance(feature, torch.Tensor):
+                new_cache_validity_key_feature_part += (feature,)
+            else:
+                new_cache_validity_key_feature_part += (
+                    id(feature),
+                    feature._version,
+                    feature.requires_grad,
+                )
+        new_cache_validity_key = (
+            new_cache_validity_key_arg_part + new_cache_validity_key_feature_part
+        )
+
         saved_cache_validity_key_attr_name = f"_cached_{func.__name__}_validity_key"
         saved_cache_validity_key = getattr(
             self, saved_cache_validity_key_attr_name, None
         )
+
         if new_cache_validity_key != saved_cache_validity_key:
             # Recompute the transfer map
             result = func(self, energy, species)
