@@ -441,12 +441,12 @@ class Element(ABC, nn.Module):
         # Import only here because most people will not need it
         import trimesh
 
-        from cheetah.utils import cache
+        from cheetah.utils import assets
 
         snake_case_class_name = "".join(
             "_" + c.lower() if c.isupper() else c for c in self.__class__.__name__
         ).lstrip("_")
-        mesh = cache.load_3d_asset(
+        mesh = assets.load_3d_asset(
             f"{snake_case_class_name}.glb",
             show_download_progress=show_download_progress,
         )
