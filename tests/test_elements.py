@@ -175,17 +175,57 @@ def test_transfer_map_cache():
     assert torch.equal(first_cached_transfer_map, second_cached_transfer_map)
 
 
-def test_transfer_map_cache_invalidation_element_property():
-    """Test that changing an element property invalidates the transfer map cache."""
+def test_transfer_map_cache_dtype_conversion():
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    energy = torch.tensor(155e6)
+    species = cheetah.Species("electron")
+
+    original_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+    assert original_transfer_map.dtype == torch.float32
+
+    quadrupole.to(torch.float64)
+    converted_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+
+    assert converted_transfer_map.dtype == torch.float64
+    assert torch.equal(original_transfer_map, converted_transfer_map.to(torch.float32))
+
+    # Force cache invalidation but keep same value
+    quadrupole.k1 = torch.tensor(1.0, dtype=torch.float64)
+    recalculated_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+
+    assert id(recalculated_transfer_map) != id(converted_transfer_map)
+    assert torch.equal(converted_transfer_map, recalculated_transfer_map)
+
+
+def test_transfer_map_cache_invalidation_element_property_assignment():
+    """Test that assigning to an element property invalidates the transfer map cache."""
     quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
     energy = torch.tensor(155e6)
     species = cheetah.Species("electron")
 
     original_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
-    # Change a property
+    # Assign to a property
     quadrupole.k1 = torch.tensor(2.0)
+    updated_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
+    assert not torch.equal(original_transfer_map, updated_transfer_map)
+
+
+def test_transfer_map_cache_invalidation_element_property_inplace():
+    """
+    Test that changing an element property inplace invalidates the transfer map cache.
+    """
+    strength = torch.tensor([1.0, 2.0])
+
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=strength)
+    energy = torch.tensor(155e6)
+    species = cheetah.Species("electron")
+
+    original_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+
+    # Change property inplace
+    strength[0] = torch.tensor(42.0)
     updated_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
     assert not torch.equal(original_transfer_map, updated_transfer_map)
