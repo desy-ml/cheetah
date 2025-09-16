@@ -50,13 +50,8 @@ def cache_transfer_map(func):
             # Recompute the transfer map
             result = func(self, energy, species)
 
-            # Ensure that a buffer is registered to hold the cached result
-            if hasattr(self, cached_transfer_map_attr_name):
-                setattr(self, cached_transfer_map_attr_name, result)
-            else:
-                self.register_buffer(cached_transfer_map_attr_name, result)
-
-            # Save the new validity key for later cache checks
+            # Save the transfer map, and the new validity key for later cache checks
+            setattr(self, cached_transfer_map_attr_name, result)
             setattr(self, saved_cache_validity_key_attr_name, new_cache_validity_key)
 
         return result
