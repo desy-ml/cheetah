@@ -21,7 +21,7 @@
 
 - Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
-- Remove division by zero in `Cavity` for off-crest phase (see #549) (@Hespe)
+- Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
 
 ### 🐆 Other
 
