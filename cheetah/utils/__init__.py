@@ -1,4 +1,4 @@
-from . import bmadx  # noqa: F401
+from . import autograd, bmadx  # noqa: F401
 from .cache import cache_transfer_map  # noqa: F401
 from .device import is_mps_available_and_functional  # noqa: F401
 from .elementwise_linspace import elementwise_linspace  # noqa: F401
@@ -9,6 +9,7 @@ from .plot import (  # noqa: F401
     format_axis_with_prefixed_unit,
 )
 from .statistics import (  # noqa: F401
+    match_distribution_moments,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
