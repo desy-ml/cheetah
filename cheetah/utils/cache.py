@@ -23,20 +23,20 @@ def cache_transfer_map(func):
         # Check if any of the inputs or defining features have changed by building a
         # validity key
         new_validity_key_arg_part = tuple(
-            (arg.tolist(), arg.requires_grad)
+            (arg.tolist(), arg.device, arg.dtype, arg.requires_grad)
             for arg in (energy, species.num_elementary_charges, species.mass_eV)
         )
         new_validity_key_feature_part = tuple()
         for feature_name in self.defining_features:
             feature = getattr(self, feature_name)
-            if not isinstance(feature, torch.Tensor):
-                new_validity_key_feature_part += (feature,)
-            else:
+            if isinstance(feature, torch.Tensor):
                 new_validity_key_feature_part += (
                     id(feature),
                     feature._version,
                     feature.requires_grad,
                 )
+            else:
+                new_validity_key_feature_part += (feature,)
         new_validity_key = new_validity_key_arg_part + new_validity_key_feature_part
 
         # Recompute the transfer map if the validity keys do not match
