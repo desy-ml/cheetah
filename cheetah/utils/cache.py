@@ -41,14 +41,10 @@ def cache_transfer_map(func):
 
         # Recompute the transfer map if the validity keys do not match
         if new_validity_key != wrapper.validity_key:
-            result = func(self, energy, species)
-
-            wrapper.cached_transfer_map = result
+            wrapper.cached_transfer_map = func(self, energy, species)
             wrapper.validity_key = new_validity_key
-        else:
-            result = wrapper.cached_transfer_map
 
-        return result
+        return wrapper.cached_transfer_map
 
     # Set initial cache state
     wrapper.cached_transfer_map = None
