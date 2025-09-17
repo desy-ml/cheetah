@@ -1,3 +1,5 @@
+import functools
+
 import torch
 
 
@@ -9,51 +11,43 @@ def cache_transfer_map(func):
     from cheetah.accelerator.element import Element
     from cheetah.particles.species import Species
 
+    @functools.wraps(func)
     def wrapper(self: Element, energy: torch.Tensor, species: Species) -> torch.Tensor:
-        # Caching not supported if any of input tensors require gradients
+        # Caching is not supported if any of input tensors require gradients
         if any(
             x.requires_grad
             for x in (energy, species.num_elementary_charges, species.mass_eV)
         ):
             return func(self, energy, species)
 
-        cached_transfer_map_attr_name = f"_cached_{func.__name__}_result"
-
-        # Recompute and cache if any of the inputs or defining features have changed
-        new_cache_validity_key_arg_part = tuple(
+        # Check if any of the inputs or defining features have changed by building a
+        # validity key
+        new_validity_key_arg_part = tuple(
             (arg.tolist(), arg.requires_grad)
             for arg in (energy, species.num_elementary_charges, species.mass_eV)
         )
-        new_cache_validity_key_feature_part = tuple()
+        new_validity_key_feature_part = tuple()
         for feature_name in self.defining_features:
             feature = getattr(self, feature_name)
             if not isinstance(feature, torch.Tensor):
-                new_cache_validity_key_feature_part += (feature,)
+                new_validity_key_feature_part += (feature,)
             else:
-                new_cache_validity_key_feature_part += (
+                new_validity_key_feature_part += (
                     id(feature),
                     feature._version,
                     feature.requires_grad,
                 )
-        new_cache_validity_key = (
-            new_cache_validity_key_arg_part + new_cache_validity_key_feature_part
-        )
+        new_validity_key = new_validity_key_arg_part + new_validity_key_feature_part
 
-        saved_cache_validity_key_attr_name = f"_cached_{func.__name__}_validity_key"
-        saved_cache_validity_key = getattr(
-            self, saved_cache_validity_key_attr_name, None
-        )
+        # Recompute the transfer map if the validity keys do not match
+        if new_validity_key != wrapper.validity_key:
+            wrapper.cached_transfer_map = func(self, energy, species)
+            wrapper.validity_key = new_validity_key
 
-        if new_cache_validity_key == saved_cache_validity_key:
-            result = getattr(self, cached_transfer_map_attr_name)
-        else:
-            # Recompute the transfer map
-            result = func(self, energy, species)
+        return wrapper.cached_transfer_map
 
-            # Save the transfer map, and the new validity key for later cache checks
-            setattr(self, cached_transfer_map_attr_name, result)
-            setattr(self, saved_cache_validity_key_attr_name, new_cache_validity_key)
-
-        return result
+    # Set initial cache state
+    wrapper.cached_transfer_map = None
+    wrapper.validity_key = None
 
     return wrapper
