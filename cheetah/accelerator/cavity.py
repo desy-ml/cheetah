@@ -10,7 +10,7 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
-from cheetah.utils.autograd import Log1plusXbyX
+from cheetah.utils.autograd import log1pdiv
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -255,7 +255,7 @@ class Cavity(Element):
                 math.sqrt(0.125)
                 * effective_voltage
                 / energy
-                * Log1plusXbyX.apply(delta_energy / energy)
+                * log1pdiv(delta_energy / energy)
             )
             beta0 = torch.sqrt(1 - 1 / Ei**2)
             beta1 = torch.sqrt(1 - 1 / Ef**2)

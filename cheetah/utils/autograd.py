@@ -1,7 +1,7 @@
 import torch
 
 
-class Log1plusXbyX(torch.autograd.Function):
+class Log1PDiv(torch.autograd.Function):
     """
     Implements a custom autograd function for the compound expression log(1+x)/x.
     The singularity at 0 is replaced by its limit.
@@ -35,3 +35,8 @@ class Log1plusXbyX(torch.autograd.Function):
             torch.where(x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(()))
             * grad_input
         )
+
+
+def log1pdiv(x: torch.Tensor) -> torch.Tensor:
+    """Calculate log(1+x)/x with proper removal of its singularity."""
+    return Log1PDiv.apply(x)
