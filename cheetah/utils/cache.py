@@ -1,5 +1,4 @@
 import functools
-import time
 
 import torch
 
@@ -44,8 +43,6 @@ def cache_transfer_map(func):
         if new_validity_key != wrapper.validity_key:
             wrapper.cached_transfer_map = func(self, energy, species)
             wrapper.validity_key = new_validity_key
-        else:
-            time.sleep(0.001)  # Simulate expensive computation
 
         return wrapper.cached_transfer_map
 
