@@ -41,19 +41,15 @@ def cache_transfer_map(func):
 
         if not hasattr(self, "_cache"):
             self._cache = {}
-        cache = self._cache
-        validity_key_dict_key = f"{func.__name__}_validity_key"
-        result_dict_key = f"{func.__name__}_result"
+        if func.__name__ not in self._cache:
+            self._cache[func.__name__] = {}
+        cache = self._cache[func.__name__]
 
         # Recompute the transfer map if the validity keys do not match
-        if new_validity_key != cache.get(validity_key_dict_key, None):
-            result = func(self, energy, species)
+        if new_validity_key != cache.get("validity_key", None):
+            cache["result"] = func(self, energy, species)
+            cache["validity_key"] = new_validity_key
 
-            cache[result_dict_key] = result
-            cache[validity_key_dict_key] = new_validity_key
-        else:
-            result = cache[result_dict_key]
-
-        return result
+        return cache["result"]
 
     return wrapper
