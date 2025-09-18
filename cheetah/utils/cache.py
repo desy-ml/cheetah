@@ -42,7 +42,7 @@ def cache_transfer_map(func):
 
         # Recompute the transfer map if the validity keys do not match
         if new_validity_key != wrapper.validity_key:
-            time.sleep(1.0)  # Simulate expensive computation
+            time.sleep(0.001)  # Simulate expensive computation
             wrapper.cached_transfer_map = func(self, energy, species)
             wrapper.validity_key = new_validity_key
 
