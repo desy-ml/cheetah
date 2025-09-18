@@ -169,6 +169,10 @@ def test_transfer_map_cache():
     species = cheetah.Species("electron")
 
     first_cached_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+
+    second_quad = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    second_quad.first_order_transfer_map(energy, species)
+
     second_cached_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
     assert id(first_cached_transfer_map) == id(second_cached_transfer_map)
