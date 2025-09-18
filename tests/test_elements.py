@@ -170,10 +170,27 @@ def test_transfer_map_cache():
 
     first_cached_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
-    second_quad = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
-    second_quad.first_order_transfer_map(energy, species)
-
     second_cached_transfer_map = quadrupole.first_order_transfer_map(energy, species)
+
+    assert id(first_cached_transfer_map) == id(second_cached_transfer_map)
+    assert torch.equal(first_cached_transfer_map, second_cached_transfer_map)
+
+
+def test_transfer_map_cache_caches_different_between_elements_of_same_type():
+    """
+    Test that the transfer map is cached after the first computation, while two elements
+    of the same type do not share the same cache.
+    """
+    quadrupole_1 = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    energy = torch.tensor(155e6)
+    species = cheetah.Species("electron")
+
+    first_cached_transfer_map = quadrupole_1.first_order_transfer_map(energy, species)
+
+    quadrupole_2 = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
+    quadrupole_2.first_order_transfer_map(energy, species)
+
+    second_cached_transfer_map = quadrupole_1.first_order_transfer_map(energy, species)
 
     assert id(first_cached_transfer_map) == id(second_cached_transfer_map)
     assert torch.equal(first_cached_transfer_map, second_cached_transfer_map)
