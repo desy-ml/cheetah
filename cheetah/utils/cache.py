@@ -20,9 +20,8 @@ def cache_transfer_map(func):
         ):
             return func(self, energy, species)
 
-        cached_transfer_map_attr_name = f"_cached_{func.__name__}_result"
-
-        # Recompute and cache if any of the inputs or defining features have changed
+        # Check if any of the inputs or defining features have changed by building a
+        # validity key
         new_validity_key_arg_part = tuple(
             (arg.tolist(), arg.device, arg.dtype, arg.requires_grad)
             for arg in (energy, species.num_elementary_charges, species.mass_eV)
@@ -40,21 +39,12 @@ def cache_transfer_map(func):
                 new_validity_key_feature_part += (feature,)
         new_validity_key = new_validity_key_arg_part + new_validity_key_feature_part
 
-        saved_validity_key_attr_name = f"_cached_{func.__name__}_validity_key"
-        saved_validity_key = getattr(self, saved_validity_key_attr_name, None)
-
         # Recompute the transfer map if the validity keys do not match
-        if new_validity_key != saved_validity_key:
-            # Recompute the transfer map
-            result = func(self, energy, species)
+        if new_validity_key != wrapper.validity_key:
+            wrapper.cached_transfer_map = func(self, energy, species)
+            wrapper.validity_key = new_validity_key
 
-            # Save the transfer map, and the new validity key for later cache checks
-            setattr(self, cached_transfer_map_attr_name, result)
-            setattr(self, saved_validity_key_attr_name, new_validity_key)
-        else:
-            result = getattr(self, cached_transfer_map_attr_name)
-
-        return result
+        return wrapper.cached_transfer_map
 
     # Set initial cache state
     wrapper.cached_transfer_map = None
