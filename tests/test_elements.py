@@ -197,6 +197,10 @@ def test_transfer_map_cache_caches_different_between_elements_of_same_type():
 
 
 def test_transfer_map_cache_dtype_conversion():
+    """
+    Test that converting an element to a different dtype invalidates the cache and that
+    the transfer map is recomputed in the new dtype.
+    """
     quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), k1=torch.tensor(1.0))
     energy = torch.tensor(155e6)
     species = cheetah.Species("electron")
@@ -207,15 +211,11 @@ def test_transfer_map_cache_dtype_conversion():
     quadrupole.to(torch.float64)
     converted_transfer_map = quadrupole.first_order_transfer_map(energy, species)
 
+    assert id(original_transfer_map) != id(converted_transfer_map)
     assert converted_transfer_map.dtype == torch.float64
-    assert torch.equal(original_transfer_map, converted_transfer_map.to(torch.float32))
-
-    # Force cache invalidation but keep same value
-    quadrupole.k1 = torch.tensor(1.0, dtype=torch.float64)
-    recalculated_transfer_map = quadrupole.first_order_transfer_map(energy, species)
-
-    assert id(recalculated_transfer_map) != id(converted_transfer_map)
-    assert torch.equal(converted_transfer_map, recalculated_transfer_map)
+    assert torch.allclose(
+        original_transfer_map.to(torch.float64), converted_transfer_map
+    )
 
 
 def test_transfer_map_cache_invalidation_element_property_assignment():
