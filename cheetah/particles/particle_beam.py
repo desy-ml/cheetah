@@ -13,6 +13,7 @@ from cheetah.particles.species import Species
 from cheetah.utils import (
     elementwise_linspace,
     format_axis_with_prefixed_unit,
+    match_distribution_moments,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
@@ -331,21 +332,25 @@ class ParticleBeam(Beam):
             / num_particles
         )
 
-        vector_shape = torch.broadcast_shapes(mu.shape[:-1], cov.shape[:-2])
-        mu = mu.expand(*vector_shape, 6)
-        cov = cov.expand(*vector_shape, 6, 6)
-        particles = torch.ones((*vector_shape, num_particles, 7), **factory_kwargs)
-        distributions = [
-            MultivariateNormal(sample_mu, covariance_matrix=sample_cov)
-            for sample_mu, sample_cov in zip(mu.view(-1, 6), cov.view(-1, 6, 6))
-        ]
-        particles[..., :6] = torch.stack(
-            [distribution.rsample((num_particles,)) for distribution in distributions],
-            dim=0,
-        ).view(*vector_shape, num_particles, 6)
+        # Sample from standard normal distribution with zero mean unit variance
+        particles_standard = MultivariateNormal(
+            torch.zeros(6, **factory_kwargs), torch.eye(6, **factory_kwargs)
+        ).rsample((num_particles,))
+
+        # Transform to the desired distribution
+        particles_matched_6d = match_distribution_moments(particles_standard, mu, cov)
+
+        # Stack one to the 7-th dimension
+        particles_matched_7d = torch.cat(
+            [
+                particles_matched_6d,
+                torch.ones_like(particles_matched_6d[..., 0]).unsqueeze(-1),
+            ],
+            dim=-1,
+        )
 
         return cls(
-            particles,
+            particles_matched_7d,
             energy,
             particle_charges=particle_charges,
             s=s,
@@ -1163,7 +1168,7 @@ class ParticleBeam(Beam):
     ) -> torch.Tensor:
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
-        This tensor should have shape (..., n_particles, 7), where the last dimension
+        This tensor should have shape (..., num_particles, 7), where the last dimension
         is the moment vector $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         beam = cls(
@@ -1206,8 +1211,9 @@ class ParticleBeam(Beam):
     def to_xyz_pxpypz(self) -> torch.Tensor:
         """
         Extracts the position and momentum coordinates in SI units, from the
-        beam's `particles`, and returns it as a tensor with shape (..., n_particles, 7).
-        For each particle, the obtained vector is $(x, p_x, y, p_y, z, p_z, 1)$.
+        beam's `particles`, and returns it as a tensor with shape
+        (..., num_particles, 7). For each particle, the obtained vector is
+        $(x, p_x, y, p_y, z, p_z, 1)$.
         """
         p0 = (
             self.relativistic_gamma

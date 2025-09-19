@@ -1,6 +1,8 @@
 import random
+import sys
 from typing import Callable
 
+import matplotlib
 import pytest
 import torch
 
@@ -191,6 +193,16 @@ def default_torch_dtype(request):
     yield tmp_dtype_for_test
 
     torch.set_default_dtype(previous_dtype)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def matplotlib_backend():
+    """
+    Switch matplotlib backend to 'Agg' on Windows to avoid error
+    _tkinter.TclError: Can't find a usable init.tcl in the following directories
+    """
+    if sys.platform.startswith("win"):
+        matplotlib.use("Agg")
 
 
 def for_every_element(

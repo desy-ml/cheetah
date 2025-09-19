@@ -15,18 +15,21 @@
 - Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
 - Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
 - First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532) (@jank324)
+- Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
 
 ### 🐛 Bug fixes
 
 - Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
-- Remove division by zero in `Cavity` for off-crest phase (see #549) (@Hespe)
+- Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
 
 ### 🐆 Other
 
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
 - Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
 - Fix false dtype in `Screen` documentation (see #544) (@jp-ga)
+- Fix an issue where running the plot tests on Windows (most notably on the recently upgraded GitHub Actions Windows runners) would sporadically fail with a `_tkinter.TclError: Can't find a usable init.tcl in the following directories` error, by forcing the matplotlib backend to `Agg` when running tests on Windows. (see #567) (@jank324)
+- Temporarily remove `flake8-black` from `format` Action because it causes issues with the latest `black` version (see #569) (@jank324)
 
 ### 🌟 First Time Contributors
 
