@@ -266,11 +266,7 @@ class Cavity(Element):
             # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
             r12 = (
-                math.sqrt(8.0)
-                * energy
-                / effective_voltage
-                * alpha.sin()
-                * self.length
+                math.sqrt(8.0) * energy / effective_voltage * alpha.sin() * self.length
             )
 
             r21 = -(
@@ -280,14 +276,7 @@ class Cavity(Element):
                 * alpha.sin()
             )
 
-            r22 = (
-                Ei
-                / Ef
-                * (
-                    alpha.cos()
-                    + math.sqrt(2.0) * phi.cos() * alpha.sin()
-                )
-            )
+            r22 = Ei / Ef * (alpha.cos() + math.sqrt(2.0) * phi.cos() * alpha.sin())
 
             r55 = 1.0 + (
                 k
@@ -300,12 +289,7 @@ class Cavity(Element):
                 / (beta1 * Ef * (Ei - Ef) ** 2)
             )
             r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            r65 = (
-                k
-                * phi.sin()
-                * effective_voltage
-                / (beta1 * (energy + delta_energy))
-            )
+            r65 = k * phi.sin() * effective_voltage / (beta1 * (energy + delta_energy))
             r66 = Ei / Ef * beta0 / beta1
 
         elif self.cavity_type == "traveling_wave":
