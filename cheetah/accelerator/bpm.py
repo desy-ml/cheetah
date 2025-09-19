@@ -26,7 +26,7 @@ class BPM(Element):
         self,
         is_active: bool = False,
         name: str | None = None,
-        misalignment: tuple[float, float] | None = None,
+        misalignment: torch.Tensor | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -47,7 +47,7 @@ class BPM(Element):
         self.register_buffer_or_parameter(
             "misalignment",
             torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
+                misalignment if misalignment is not None else torch.zeros(2, device=device, dtype=dtype),
                 **factory_kwargs,
             ),
         )
