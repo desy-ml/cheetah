@@ -28,6 +28,7 @@
 - Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
 - Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
 - Fix false dtype in `Screen` documentation (see #544) (@jp-ga)
+- Fix an issue where running the plot tests on Windows (most notably on the recently upgraded GitHub Actions Windows runners) would sporadically fail with a `_tkinter.TclError: Can't find a usable init.tcl in the following directories` error, by forcing the matplotlib backend to `Agg` when running tests on Windows. (see #567) (@jank324)
 
 ### 🌟 First Time Contributors
 
