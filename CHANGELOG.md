@@ -16,6 +16,7 @@
 - Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
 - First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532) (@jank324)
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
+- Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558)
 
 ### 🐛 Bug fixes
 
