@@ -57,6 +57,6 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     particles[:, 3] = xp[:, 4] / Pref
     particles[:, 5] = (gamma / gamref - 1) / betaref
 
-    q_array = abs(P0[:, 7]) * 1e-9  # convert charge array from nC to C
+    q_array = abs(P0[:, 7]) * 1e-9  # Convert charge array from nC to C
 
     return particles, energy, q_array

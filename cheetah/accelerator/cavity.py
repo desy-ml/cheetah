@@ -10,6 +10,7 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import drift_matrix
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils.autograd import log1pdiv
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -224,6 +225,7 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
+        assert torch.all(energy > 0), "Initial energy must be larger than 0"
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = self.phase.deg2rad()
