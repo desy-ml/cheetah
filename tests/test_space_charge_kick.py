@@ -411,3 +411,39 @@ def test_space_charge_with_aperture_cutoff():
     )
     # Check that the number of surviving particles is less than the initial number
     assert outgoing_beam_with_aperture.survival_probabilities.sum(dim=-1).max() < 10_000
+
+
+def test_species():
+    """
+    Tests that particle species is preserved by space charge kick.
+    """
+    species = cheetah.Species("proton")
+    rest_energy = (
+        species.mass_kg
+        * constants.speed_of_light**2
+        / species.charge_coulomb
+    )
+    kin_energy = torch.tensor(2.5e-6)
+    energy = rest_energy + kin_energy
+    gamma = energy / rest_energy
+    beta = torch.sqrt(1.0 - 1.0 / gamma**2)
+
+    R0 = torch.tensor(0.001)
+
+    beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
+        num_particles=10_000,
+        total_charge=torch.tensor(1e-8),
+        energy=energy,
+        species=species,
+        radius_x=R0,
+        radius_y=R0,
+        radius_tau=R0 / gamma / beta,
+        sigma_px=torch.tensor(1e-15),
+        sigma_py=torch.tensor(1e-15),
+        sigma_p=torch.tensor(1e-15),
+    )
+
+    element = cheetah.SpaceChargeKick(effect_length=torch.tensor(0.1))
+    beam_out = element.track(beam)
+
+    assert beam_out.species == beam.species
