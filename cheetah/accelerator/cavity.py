@@ -257,8 +257,8 @@ class Cavity(Element):
                 / energy
                 * log1pdiv(delta_energy / energy)
             )
-            beta0 = torch.sqrt(1 - 1 / Ei**2)
-            beta1 = torch.sqrt(1 - 1 / Ef**2)
+            beta0 = torch.sqrt(1 - 1 / Ei.square())
+            beta1 = torch.sqrt(1 - 1 / Ef.square())
 
             r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
 
@@ -299,7 +299,9 @@ class Cavity(Element):
                 * (Ei * Ef * (beta0 * beta1 - 1) + 1)
                 / (beta1 * Ef * (Ei - Ef).square())
             )
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            r56 = (
+                -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            )
             r65 = (
                 k
                 * torch.sin(phi)
