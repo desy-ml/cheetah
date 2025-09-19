@@ -276,7 +276,7 @@ class Cavity(Element):
             r21 = -(
                 effective_voltage
                 / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
-                * (0.5 + torch.cos(phi) ** 2)
+                * (0.5 + torch.cos(phi).square())
                 * torch.sin(alpha)
             )
 
