@@ -377,7 +377,7 @@ class Beam(ABC, nn.Module):
         """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
         relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = torch.sqrt(
-            1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0] ** 2)
+            1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0].square())
         )
         return relativistic_beta
 
@@ -433,7 +433,7 @@ class Beam(ABC, nn.Module):
         This is determined from the beam sizes without dispersion correction.
         """
         return torch.sqrt(
-            self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,
+            self.sigma_x.square() * self.sigma_px.square() - self.cov_xpx.square(),
         )
 
     @property
@@ -444,9 +444,11 @@ class Beam(ABC, nn.Module):
         """
 
         return torch.sqrt(
-            (self.sigma_x**2 - self.cov_xp**2 / self.sigma_p**2)
-            * (self.sigma_px**2 - self.cov_pxp**2 / self.sigma_p**2)
-            - (self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p**2) ** 2,
+            (self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square())
+            * (self.sigma_px.square() - self.cov_pxp.square() / self.sigma_p.square())
+            - (
+                self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square()
+            ).square(),
         )
 
     @property
@@ -457,13 +459,15 @@ class Beam(ABC, nn.Module):
     @property
     def beta_x(self) -> torch.Tensor:
         """Beta function in x direction in meters."""
-        return (self.sigma_x**2 - self.cov_xp**2 / self.sigma_p**2) / self.emittance_x
+        return (
+            self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square()
+        ) / self.emittance_x
 
     @property
     def alpha_x(self) -> torch.Tensor:
         """Alpha function in x direction, dimensionless."""
         return (
-            -(self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p**2)
+            -(self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square())
             / self.emittance_x
         )
 
@@ -472,7 +476,9 @@ class Beam(ABC, nn.Module):
         """Projected emittance of the beam in y direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return torch.sqrt(self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2)
+        return torch.sqrt(
+            self.sigma_y.square() * self.sigma_py.square() - self.cov_ypy.square()
+        )
 
     @property
     def emittance_y(self) -> torch.Tensor:
@@ -482,9 +488,11 @@ class Beam(ABC, nn.Module):
         """
 
         return torch.sqrt(
-            (self.sigma_y**2 - self.cov_yp**2 / self.sigma_p**2)
-            * (self.sigma_py**2 - self.cov_pyp**2 / self.sigma_p**2)
-            - (self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p**2) ** 2,
+            (self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square())
+            * (self.sigma_py.square() - self.cov_pyp.square() / self.sigma_p.square())
+            - (
+                self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
+            ).square(),
         )
 
     @property
@@ -495,35 +503,37 @@ class Beam(ABC, nn.Module):
     @property
     def beta_y(self) -> torch.Tensor:
         """Beta function in y direction in meters."""
-        return (self.sigma_y**2 - self.cov_yp**2 / self.sigma_p**2) / self.emittance_y
+        return (
+            self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square()
+        ) / self.emittance_y
 
     @property
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
         return (
-            -(self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p**2)
+            -(self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square())
             / self.emittance_y
         )
 
     @property
     def dispersion_x(self) -> torch.Tensor:
         """Dispersion of the beam in x direction in m."""
-        return self.cov_xp / self.sigma_p**2
+        return self.cov_xp / self.sigma_p.square()
 
     @property
     def dispersion_px(self) -> torch.Tensor:
         """Dispersion of the beam in px direction, dimensionless."""
-        return self.cov_pxp / self.sigma_p**2
+        return self.cov_pxp / self.sigma_p.square()
 
     @property
     def dispersion_y(self) -> torch.Tensor:
         """Dispersion of the beam in y direction in m."""
-        return self.cov_yp / self.sigma_p**2
+        return self.cov_yp / self.sigma_p.square()
 
     @property
     def dispersion_py(self) -> torch.Tensor:
         """Dispersion of the beam in py direction, dimensionless."""
-        return self.cov_pyp / self.sigma_p**2
+        return self.cov_pyp / self.sigma_p.square()
 
     @abstractmethod
     def clone(self) -> "Beam":
