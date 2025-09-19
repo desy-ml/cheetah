@@ -204,7 +204,7 @@ class Element(ABC, nn.Module):
         if isinstance(incoming, ParameterBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_cov = tm @ incoming.cov @ tm.mT
             new_s = incoming.s + self.length
             return ParameterBeam(
                 new_mu,
@@ -216,7 +216,7 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-            new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_particles = incoming.particles @ tm.mT
             new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
@@ -347,15 +347,6 @@ class Element(ABC, nn.Module):
             if len(self.supported_tracking_methods) == 1
             else ["name", "tracking_method"]
         )
-
-    @property
-    def defining_tensors(self) -> list[str]:
-        """Subset of defining features that are of type `torch.Tensor`."""
-        return [
-            feature
-            for feature in self.defining_features
-            if isinstance(getattr(self, feature), torch.Tensor)
-        ]
 
     def clone(self) -> "Element":
         """Create a copy of the element which does not share the underlying memory."""

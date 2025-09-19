@@ -29,7 +29,7 @@ class Undulator(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        is_active: bool = False,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -40,18 +40,25 @@ class Undulator(Element):
 
         self.length = length
 
-        self.is_active = is_active
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(False, **factory_kwargs)
+            ),
+        )
 
     def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+        factory_kwargs = {"device": energy.device, "dtype": energy.dtype}
 
         _, igamma2, _ = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 
-        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = self.length * igamma2

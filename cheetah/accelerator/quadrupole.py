@@ -83,15 +83,14 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
         )
 
-        if torch.any(self.misalignment != 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        R = R_exit @ R @ R_entry
 
         return R
 
@@ -101,8 +100,8 @@ class Quadrupole(Element):
         T = base_ttensor(
             length=self.length,
             k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k2=self.length.new_zeros(()),
+            hx=self.length.new_zeros(()),
             tilt=self.tilt,
             energy=energy,
             species=species,
@@ -112,18 +111,17 @@ class Quadrupole(Element):
         T[..., :, 6, :] = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
@@ -190,8 +188,9 @@ class Quadrupole(Element):
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
 
-        step_length = self.length / self.num_steps
-        b1 = self.k1 * self.length
+        length = self.length.unsqueeze(-1)
+        step_length = length / self.num_steps
+        b1 = self.k1.unsqueeze(-1) * length
 
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
@@ -200,19 +199,19 @@ class Quadrupole(Element):
 
         for _ in range(self.num_steps):
             rel_p = 1 + pz  # Particle's relative momentum (P/P0)
-            k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
+            k1 = b1 / (length * rel_p)
 
-            tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
-            ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
+            tx, dzx = bmadx.compute_quadrupole_coefficients(-k1, step_length, rel_p)
+            ty, dzy = bmadx.compute_quadrupole_coefficients(k1, step_length, rel_p)
 
             z = (
                 z
-                + dzx[0] * x**2
+                + dzx[0] * x.square()
                 + dzx[1] * x * px
-                + dzx[2] * px**2
-                + dzy[0] * y**2
+                + dzx[2] * px.square()
+                + dzy[0] * y.square()
                 + dzy[1] * y * py
-                + dzy[2] * py**2
+                + dzy[2] * py.square()
             )
 
             x_next = tx[0][0] * x + tx[0][1] * px
@@ -230,7 +229,7 @@ class Quadrupole(Element):
         )
 
         # pz is unaffected by tracking, therefore needs to match vector dimensions
-        pz = pz * torch.ones_like(x)
+        pz, _ = torch.broadcast_tensors(pz, x)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -240,7 +239,7 @@ class Quadrupole(Element):
             particles=torch.stack(
                 (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
             ),
-            energy=ref_energy,
+            energy=ref_energy.squeeze(-1),
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
@@ -253,8 +252,8 @@ class Quadrupole(Element):
         return self.tracking_method in ["linear", "cheetah"]
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.k1 != 0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.k1.any()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -295,7 +294,7 @@ class Quadrupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )

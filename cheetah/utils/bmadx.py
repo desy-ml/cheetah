@@ -5,7 +5,7 @@ double_precision_epsilon = torch.finfo(torch.float64).eps
 
 
 def cheetah_to_bmad_z_pz(
-    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: float
+    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
 ) -> torch.Tensor:
     """
     Transforms Cheetah longitudinal coordinates to Bmad coordinates
@@ -19,18 +19,18 @@ def cheetah_to_bmad_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute p0c and Bmad z, pz
-    p0c = torch.sqrt(ref_energy**2 - mc2**2)
-    energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = torch.sqrt(energy**2 - mc2**2)
+    p0c = (ref_energy.square() - mc2.square()).sqrt().unsqueeze(-1)
+    energy = ref_energy.unsqueeze(-1) + delta * p0c
+    p = (energy.square() - mc2.square()).sqrt()
     beta = p / energy
     z = -beta * tau
-    pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
+    pz = (p - p0c) / p0c
 
     return z, pz, p0c
 
 
 def bmad_to_cheetah_z_pz(
-    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: float
+    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
 ) -> tuple[torch.Tensor]:
     """
     Transforms Bmad longitudinal coordinates to Cheetah coordinates
@@ -44,12 +44,12 @@ def bmad_to_cheetah_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = torch.sqrt(p0c**2 + mc2**2)
-    p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = torch.sqrt(p**2 + mc2**2)
+    ref_energy = (p0c.square() + mc2.square()).sqrt()
+    p = (1 + pz) * p0c
+    energy = (p.square() + mc2.square()).sqrt()
     beta = p / energy
     tau = -z / beta
-    delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
+    delta = (energy - ref_energy) / p0c
 
     return tau, delta, ref_energy
 
@@ -94,9 +94,7 @@ def bmad_to_cheetah_coords(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Initialize Cheetah coordinates
-    cheetah_coords = torch.ones(
-        (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
-    )
+    cheetah_coords = bmad_coords.new_ones((*bmad_coords.shape[:-1], 7))
     cheetah_coords[..., :6] = bmad_coords.clone()
 
     # Bmad longitudinal coordinates
@@ -134,14 +132,14 @@ def offset_particle_set(
     :param py_lab: y-momentum in lab frame.
     :return: x, px, y, py coordinates in element frame.
     """
-    s = torch.sin(tilt)
-    c = torch.cos(tilt)
+    s = tilt.sin().unsqueeze(-1)
+    c = tilt.cos().unsqueeze(-1)
     x_ele_int = x_lab - x_offset.unsqueeze(-1)
     y_ele_int = y_lab - y_offset.unsqueeze(-1)
-    x_ele = x_ele_int * c.unsqueeze(-1) + y_ele_int * s.unsqueeze(-1)
-    y_ele = -x_ele_int * s.unsqueeze(-1) + y_ele_int * c.unsqueeze(-1)
-    px_ele = px_lab * c.unsqueeze(-1) + py_lab * s.unsqueeze(-1)
-    py_ele = -px_lab * s.unsqueeze(-1) + py_lab * c.unsqueeze(-1)
+    x_ele = x_ele_int * c + y_ele_int * s
+    y_ele = -x_ele_int * s + y_ele_int * c
+    px_ele = px_lab * c + py_lab * s
+    py_ele = -px_lab * s + py_lab * c
 
     return x_ele, px_ele, y_ele, py_ele
 
@@ -167,14 +165,14 @@ def offset_particle_unset(
     :param py_ele: y-momentum in element frame.
     :return: x, px, y, py coordinates in lab frame.
     """
-    s = torch.sin(tilt)
-    c = torch.cos(tilt)
-    x_lab_int = x_ele * c.unsqueeze(-1) - y_ele * s.unsqueeze(-1)
-    y_lab_int = x_ele * s.unsqueeze(-1) + y_ele * c.unsqueeze(-1)
+    s = tilt.sin().unsqueeze(-1)
+    c = tilt.cos().unsqueeze(-1)
+    x_lab_int = x_ele * c - y_ele * s
+    y_lab_int = x_ele * s + y_ele * c
     x_lab = x_lab_int + x_offset.unsqueeze(-1)
     y_lab = y_lab_int + y_offset.unsqueeze(-1)
-    px_lab = px_ele * c.unsqueeze(-1) - py_ele * s.unsqueeze(-1)
-    py_lab = px_ele * s.unsqueeze(-1) + py_ele * c.unsqueeze(-1)
+    px_lab = px_ele * c - py_ele * s
+    py_lab = px_ele * s + py_ele * c
 
     return x_lab, px_lab, y_lab, py_lab
 
@@ -191,31 +189,27 @@ def low_energy_z_correction(
     :param ds: Drift length.
     :return: dz=(ds-d_particle) + ds*(beta - beta_ref)/beta_ref
     """
-    beta = (
-        (1 + pz)
-        * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
-    )
-    beta0 = p0c / torch.sqrt(p0c**2 + mc2**2)
-    e_tot = torch.sqrt(p0c**2 + mc2**2)
+    beta = (1 + pz) * p0c / (((1 + pz) * p0c).square() + mc2.square()).sqrt()
+    beta0 = p0c / (p0c.square() + mc2.square()).sqrt()
+    beta0_squared = beta0.square()
+    e_tot = (p0c.square() + mc2.square()).sqrt()
 
-    evaluation = mc2 * (beta0.unsqueeze(-1) * pz) ** 2
-    dz = ds.unsqueeze(-1) * pz * (
+    evaluation = mc2 * (beta0 * pz).square()
+
+    dz = ds * pz * (
         1
-        - 3 * (pz * beta0.unsqueeze(-1) ** 2) / 2
-        + pz**2
-        * beta0.unsqueeze(-1) ** 2
-        * (2 * beta0.unsqueeze(-1) ** 2 - (mc2 / e_tot.unsqueeze(-1)) ** 2 / 2)
-    ) * (mc2 / e_tot.unsqueeze(-1)) ** 2 * (evaluation < 3e-7 * e_tot.unsqueeze(-1)) + (
-        ds.unsqueeze(-1) * (beta - beta0.unsqueeze(-1)) / beta0.unsqueeze(-1)
+        - 3 * (pz * beta0_squared) / 2
+        + pz.square() * beta0_squared * (2 * beta0_squared - (mc2 / e_tot).square() / 2)
+    ) * (mc2 / e_tot).square() * (evaluation < 3e-7 * e_tot) + (
+        ds * (beta - beta0) / beta0
     ) * (
-        evaluation >= 3e-7 * e_tot.unsqueeze(-1)
+        evaluation >= 3e-7 * e_tot
     )
 
     return dz
 
 
-def calculate_quadrupole_coefficients(
+def compute_quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     rel_p: torch.Tensor,
@@ -237,29 +231,27 @@ def calculate_quadrupole_coefficients(
             z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
     """
     # TODO: Revisit to fix accumulated error due to machine epsilon
-    sqrt_k = torch.sqrt(torch.absolute(k1) + eps)
-    sk_l = sqrt_k * length.unsqueeze(-1)
+    sqrt_k = (k1.absolute() + eps).sqrt()
+    sk_l = sqrt_k * length
 
-    cx = torch.cos(sk_l) * (k1 <= 0) + torch.cosh(sk_l) * (k1 > 0)
-    sx = (torch.sin(sk_l) / (sqrt_k)) * (k1 <= 0) + (torch.sinh(sk_l) / (sqrt_k)) * (
-        k1 > 0
-    )
+    cx = sk_l.cos() * (k1 <= 0) + sk_l.cosh() * (k1 > 0)
+    sx = (sk_l.sin() / (sqrt_k)) * (k1 <= 0) + (sk_l.sinh() / (sqrt_k)) * (k1 > 0)
 
     a11 = cx
     a12 = sx / rel_p
     a21 = k1 * sx * rel_p
     a22 = cx
 
-    c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4
-    c2 = -k1 * sx**2 / (2 * rel_p)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p**2)
+    c1 = k1 * (-cx * sx + length) / 4
+    c2 = -k1 * sx.square() / (2 * rel_p)
+    c3 = -(cx * sx + length) / (4 * rel_p.square())
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
 
 def sqrt_one(x):
     """Routine to calculate Sqrt[1+x] - 1 to machine precision."""
-    sq = torch.sqrt(1 + x)
+    sq = (1 + x).sqrt()
     rad = sq + 1
 
     return x / rad
@@ -277,23 +269,23 @@ def track_a_drift(
     mc2: torch.Tensor,
 ) -> tuple[torch.Tensor]:
     """Exact drift tracking used in different elements."""
-
     P = 1.0 + pz_in  # Particle's total momentum over p0
     Px = px_in / P  # Particle's 'x' momentum over p0
     Py = py_in / P  # Particle's 'y' momentum over p0
-    Pxy2 = Px**2 + Py**2  # Particle's transverse mometum^2 over p0^2
-    Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
+    Pxy2 = Px.square() + Py.square()  # Particle's transverse mometum^2 over p0^2
+    Pl = (1.0 - Pxy2).sqrt()  # Particle's longitudinal momentum over p0
 
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
-    dz = length.unsqueeze(-1) * (
+    dz = length * (
         sqrt_one(
-            (mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c.unsqueeze(-1) * P) ** 2 + mc2**2)
+            (mc2.square() * (2 * pz_in + pz_in.square()))
+            / ((p0c * P).square() + mc2.square())
         )
         + sqrt_one(-Pxy2) / Pl
     )
 
-    x_out = x_in + length.unsqueeze(-1) * Px / Pl
-    y_out = y_in + length.unsqueeze(-1) * Py / Pl
+    x_out = x_in + length * Px / Pl
+    y_out = y_in + length * Py / Pl
     z_out = z_in + dz
 
     return x_out, y_out, z_out
@@ -301,11 +293,7 @@ def track_a_drift(
 
 def particle_rf_time(z, pz, p0c, mc2):
     """Returns rf time of Particle p."""
-    beta = (
-        (1 + pz)
-        * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
-    )
+    beta = (1 + pz) * p0c / (((1 + pz) * p0c).square() + mc2.square()).sqrt()
     time = -z / (beta * speed_of_light)
 
     return time
@@ -313,9 +301,9 @@ def particle_rf_time(z, pz, p0c, mc2):
 
 def sinc(x):
     """sinc(x) = sin(x)/x."""
-    return torch.sinc(x / torch.pi)
+    return (x / torch.pi).sinc()
 
 
 def cosc(x):
     """cosc(x) = (cos(x)-1)/x**2 = -1/2 [sinc(x/2)]**2"""
-    return -0.5 * sinc(x / 2) ** 2
+    return -0.5 * sinc(x / 2).square()

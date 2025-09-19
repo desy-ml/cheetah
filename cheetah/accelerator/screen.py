@@ -51,7 +51,7 @@ class Screen(Element):
         method: Literal["histogram", "kde"] = "histogram",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
-        is_active: bool = False,
+        is_active: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -88,12 +88,19 @@ class Screen(Element):
             "kde_bandwidth",
             kde_bandwidth if kde_bandwidth is not None else self.pixel_size[0].clone(),
         )
+        self.register_buffer_or_parameter(
+            "is_active",
+            (
+                is_active
+                if is_active is not None
+                else torch.tensor(False, **factory_kwargs)
+            ),
+        )
 
         self.resolution = resolution
         self.binning = binning
         self.method = method
         self.is_blocking = is_blocking
-        self.is_active = is_active
 
         self.register_buffer(
             "cached_reading",
@@ -159,7 +166,7 @@ class Screen(Element):
             "dtype": self.misalignment.dtype,
         }
 
-        return torch.eye(7, **factory_kwargs).repeat((*energy.shape, 1, 1))
+        return torch.eye(7, **factory_kwargs).expand((*energy.shape, 7, 7))
 
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active
@@ -175,18 +182,16 @@ class Screen(Element):
                 copy_of_incoming.mu[..., 0] -= self.misalignment[..., 0]
                 copy_of_incoming.mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
+                unsqueezed_x_misalignment = self.misalignment[..., 0].unsqueeze(-1)
+                unsqueezed_y_misalignment = self.misalignment[..., 1].unsqueeze(-1)
+
                 broadcasted_particles, _ = torch.broadcast_tensors(
-                    copy_of_incoming.particles,
-                    self.misalignment[..., 0].unsqueeze(-1).unsqueeze(-1),
+                    copy_of_incoming.particles, unsqueezed_x_misalignment.unsqueeze(-1)
                 )
                 copy_of_incoming.particles = broadcasted_particles.clone()
 
-                copy_of_incoming.particles[..., 0] -= self.misalignment[
-                    ..., 0
-                ].unsqueeze(-1)
-                copy_of_incoming.particles[..., 2] -= self.misalignment[
-                    ..., 1
-                ].unsqueeze(-1)
+                copy_of_incoming.particles[..., 0] -= unsqueezed_x_misalignment
+                copy_of_incoming.particles[..., 2] -= unsqueezed_y_misalignment
 
             self.set_read_beam(copy_of_incoming)
 
@@ -265,8 +270,7 @@ class Screen(Element):
                 indexing="ij",
             )
             pos = torch.dstack((x, y))
-            image = dist.log_prob(pos).exp()
-            image = torch.transpose(image, -2, -1)
+            image = dist.log_prob(pos).exp().mT
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
                 # Catch vectorisation, which is currently not supported by "histogram"
@@ -281,13 +285,13 @@ class Screen(Element):
                         "would like to see, please open an issue on GitHub."
                     )
 
-                image, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).T,
+                histogram, _ = torch.histogramdd(
+                    torch.stack((read_beam.x, read_beam.y)).mT,
                     bins=self.pixel_bin_edges,
                     weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
                 )
-                image = torch.transpose(image, -2, -1)
+                image = histogram.mT
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
@@ -302,9 +306,7 @@ class Screen(Element):
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
-                )
-                # Change the x, y positions
-                image = torch.transpose(image, -2, -1)
+                ).mT
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 

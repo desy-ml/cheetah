@@ -10,8 +10,14 @@ import cheetah
 from cheetah.utils import is_mps_available_and_functional
 
 ELEMENT_SUBCLASSES_ARGS = {
-    cheetah.Aperture: {"inactive": {"is_active": False}, "active": {"is_active": True}},
-    cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
+    cheetah.Aperture: {
+        "inactive": {"is_active": torch.tensor(False)},
+        "active": {"is_active": torch.tensor(True)},
+    },
+    cheetah.BPM: {
+        "inactive": {"is_active": torch.tensor(False)},
+        "active": {"is_active": torch.tensor(True)},
+    },
     cheetah.Cavity: {"default": {"length": torch.tensor(1.0)}},
     cheetah.CustomTransferMap: {"identity": {"predefined_transfer_map": torch.eye(7)}},
     cheetah.Dipole: {

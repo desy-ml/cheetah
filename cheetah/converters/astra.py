@@ -21,10 +21,10 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     P0 = np.loadtxt(path)
 
     # remove lost particles
-    inds = np.argwhere(P0[:, 9] > 0)
-    inds = inds.reshape(inds.shape[0])
+    idxs = np.argwhere(P0[:, 9] > 0)
+    idxs = idxs.reshape(idxs.shape[0])
 
-    P0 = P0[inds, :]
+    P0 = P0[idxs, :]
     num_particles = P0.shape[0]
 
     # s_ref = P0[0, 2]
@@ -42,7 +42,7 @@ def from_astrabeam(path: str) -> tuple[np.ndarray, float, np.ndarray]:
     particles = np.zeros((num_particles, 6))
 
     u = np.c_[xp[:, 3], xp[:, 4], xp[:, 5] + Pref]
-    gamma = np.sqrt(1 + np.sum(u * u, 1) / electron_mass_eV**2)
+    gamma = np.sqrt(1 + np.sum(u**2, 1) / electron_mass_eV**2)
     beta = np.sqrt(1 - gamma**-2)
     betaref = np.sqrt(1 - gamref**-2)
 

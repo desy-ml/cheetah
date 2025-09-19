@@ -71,9 +71,9 @@ class Sextupole(Element):
     def _compute_second_order_transfer_map(self, energy, species):
         T = base_ttensor(
             length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=self.length.new_zeros(()),
             k2=self.k2,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
             tilt=self.tilt,
             energy=energy,
@@ -85,11 +85,10 @@ class Sextupole(Element):
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
@@ -105,8 +104,8 @@ class Sextupole(Element):
         return False
 
     @property
-    def is_active(self) -> bool:
-        return torch.any(self.k2 != 0.0).item()
+    def is_active(self) -> torch.Tensor:
+        return self.k2.any()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -131,7 +130,7 @@ class Sextupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k2) if self.is_active else 1)
+        height = 0.8 * (plot_k2.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
         )

@@ -209,7 +209,7 @@ def test_aperture():
                 y_max=torch.tensor(2e-4),
                 shape="rectangular",
                 name="aperture",
-                is_active=True,
+                is_active=torch.tensor(True),
             ),
             cheetah.Drift(length=torch.tensor(0.1)),
         ]
@@ -248,7 +248,7 @@ def test_aperture_elliptical():
                 y_max=torch.tensor(2e-4),
                 shape="elliptical",
                 name="aperture",
-                is_active=True,
+                is_active=torch.tensor(True),
             ),
             cheetah.Drift(length=torch.tensor(0.1)),
         ]

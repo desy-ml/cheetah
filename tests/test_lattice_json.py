@@ -95,5 +95,6 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     assert all(
         getattr(element, feature).dtype == desired_dtype
         for element in reloaded_segment.elements
-        for feature in element.defining_tensors
+        for feature in element.defining_features
+        if isinstance(getattr(element, feature), torch.Tensor)
     )

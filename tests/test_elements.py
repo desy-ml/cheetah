@@ -11,7 +11,9 @@ def test_element_subclasses_is_active_boolean(element):
     Test that the `is_active` property of all `Element` subclasses returns a boolean if
     the element class has an `is_active` property.
     """
-    assert not hasattr(element, "is_active") or isinstance(element.is_active, bool)
+    assert not hasattr(element, "is_active") or (
+        isinstance(element.is_active, torch.Tensor)
+    )
 
 
 @pytest.mark.for_every_element("element")
@@ -29,16 +31,21 @@ def test_defining_features_dtype(element):
     properly converted between different dtypes. This transitively tests if all defining
     features are registered as pytorch buffers.
     """
-
     # Ensure all features have the same dtype initially
-    for feature in element.defining_tensors:
-        assert getattr(element, feature).dtype == torch.float32
+    for feature in element.defining_features:
+        if feature == "is_active":
+            assert getattr(element, feature).dtype == torch.bool
+        elif isinstance(getattr(element, feature), torch.Tensor):
+            assert getattr(element, feature).dtype == torch.float32
 
     element.to(torch.float64)
 
     # Ensure all features have been converted to float64
-    for feature in element.defining_tensors:
-        assert getattr(element, feature).dtype == torch.float64
+    for feature in element.defining_features:
+        if feature == "is_active":
+            assert getattr(element, feature).dtype == torch.bool
+        elif isinstance(getattr(element, feature), torch.Tensor):
+            assert getattr(element, feature).dtype == torch.float64
 
 
 @pytest.mark.for_every_element("element")
