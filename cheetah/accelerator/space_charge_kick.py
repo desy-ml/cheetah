@@ -593,6 +593,7 @@ class SpaceChargeKick(Element):
                 incoming.survival_probabilities,
                 (*vector_shape, incoming.num_particles),
             ),
+            species=incoming.species,
             device=incoming.particles.device,
             dtype=incoming.particles.dtype,
         )
@@ -604,6 +605,7 @@ class SpaceChargeKick(Element):
             survival_probabilities=(
                 vectorized_incoming.survival_probabilities.flatten(end_dim=-2)
             ),
+            species=incoming.species,
             device=vectorized_incoming.particles.device,
             dtype=vectorized_incoming.particles.dtype,
         )
