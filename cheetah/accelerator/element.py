@@ -35,12 +35,6 @@ class Element(ABC, nn.Module):
     ) -> None:
         super().__init__()
 
-        # Must be done before setting any properties that are also in defining_features
-        self.register_buffer("_cached_first_order_transfer_map", None, persistent=False)
-        self.register_buffer(
-            "_cached_second_order_transfer_map", None, persistent=False
-        )
-
         self.name = name if name is not None else generate_unique_name()
         if not self.is_name_sanitized():
             if sanitize_name:
@@ -122,26 +116,6 @@ class Element(ABC, nn.Module):
         represented using a matrix multiplication, i.e. the augmented matrix as in an
         affine transformation.
 
-        NOTE: This method may cache the transfer map for faster subsequent calls.
-        The cache is invalidated when any defining feature of the element changes.
-
-        :param energy: Reference energy of the incoming beam.
-        :param species: Species of the particles in the incoming beam.
-        :return: A 7x7 Matrix for further calculations.
-        """
-        if self._cached_first_order_transfer_map is None:
-            self._cached_first_order_transfer_map = (
-                self._compute_first_order_transfer_map(energy, species)
-            )
-
-        return self._cached_first_order_transfer_map
-
-    def _compute_first_order_transfer_map(
-        self, energy: torch.Tensor, species: Species
-    ) -> torch.Tensor:
-        r"""
-        Computes the first-order transfer map for the element.
-
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
         :return: A 7x7 Matrix for further calculations.
@@ -156,26 +130,6 @@ class Element(ABC, nn.Module):
         and its particles are transformed when traveling through the element.
 
         :math:`pout_{i} = \sum_{j,k} T_{ijk} pin_{j} pin_{k}`
-
-        NOTE: This method may cache the transfer map for faster subsequent calls.
-        The cache is invalidated when any defining feature of the element changes.
-
-        :param energy: Reference energy of the incoming beam.
-        :param species: Species of the particles in the incoming beam.
-        :return: A 7x7x7 Tensor T_ijk for further calculations.
-        """
-        if self._cached_second_order_transfer_map is None:
-            self._cached_second_order_transfer_map = (
-                self._compute_second_order_transfer_map(energy, species)
-            )
-
-        return self._cached_second_order_transfer_map
-
-    def _compute_second_order_transfer_map(
-        self, energy: torch.Tensor, species: Species
-    ) -> torch.Tensor:
-        r"""
-        Computes the second-order transfer map for the element.
 
         :param energy: Reference energy of the incoming beam.
         :param species: Species of the particles in the incoming beam.
@@ -441,12 +395,12 @@ class Element(ABC, nn.Module):
         # Import only here because most people will not need it
         import trimesh
 
-        from cheetah.utils import cache
+        from cheetah.utils import assets
 
         snake_case_class_name = "".join(
             "_" + c.lower() if c.isupper() else c for c in self.__class__.__name__
         ).lstrip("_")
-        mesh = cache.load_3d_asset(
+        mesh = assets.load_3d_asset(
             f"{snake_case_class_name}.glb",
             show_download_progress=show_download_progress,
         )

@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
-from cheetah.utils import squash_index_for_unavailable_dims
+from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
 
 
 class Sextupole(Element):
@@ -63,12 +63,14 @@ class Sextupole(Element):
 
         self.tracking_method = tracking_method
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return drift_matrix(length=self.length, species=species, energy=energy)
 
-    def _compute_second_order_transfer_map(self, energy, species):
+    @cache_transfer_map
+    def second_order_transfer_map(self, energy, species):
         T = base_ttensor(
             length=self.length,
             k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),

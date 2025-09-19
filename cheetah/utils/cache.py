@@ -1,112 +1,55 @@
-import os
-from pathlib import Path
+import functools
 
-import requests
-import trimesh
-from tqdm import tqdm
-
-# This follows the way PyTorch and Torchvision download model weights and store them in
-# a cache directory, which is typically something like `~/.cache/cheetah`.
-# See https://github.com/pytorch/pytorch/blob/main/torch/hub.py and
-# https://github.com/pytorch/vision/blob/main/torchvision/models/_api.py for reference.
+import torch
 
 
-ENV_XDG_CACHE_HOME = "XDG_CACHE_HOME"
-DEFAULT_CACHE_DIR = "~/.cache"
-ENV_CHEETAH_CACHE_DIR = "CHEETAH_CACHE_DIR"
-
-
-def get_cheetah_cache_dir() -> Path:
-    """Get the path to the Cheetah cache directory."""
-    system_cache_dir = Path(
-        os.getenv(ENV_XDG_CACHE_HOME, DEFAULT_CACHE_DIR)
-    ).expanduser()
-    return system_cache_dir / "cheetah"
-
-
-def get_repository_raw_url(owner: str, repository: str, branch_or_tag: str) -> str:
+def cache_transfer_map(func):
     """
-    Get the base URL for the root of the raw content of a GitHub repository.
-
-    :param owner: The owner of the GitHub repository. Can be a user or an organisation.
-    :param repository: The name of the GitHub repository.
-    :param branch_or_tag: The branch or tag name for the version of the repository.
-    :return: The base URL for the raw content of the repository.
+    Decorator to cache the transfer map of an accelerator element based on its
+    defining features, the beam energy and the particle species.
     """
-    return f"https://raw.githubusercontent.com/{owner}/{repository}/{branch_or_tag}"
+    from cheetah.accelerator.element import Element
+    from cheetah.particles.species import Species
 
+    @functools.wraps(func)
+    def wrapper(self: Element, energy: torch.Tensor, species: Species) -> torch.Tensor:
+        # Caching is not supported if any of input tensors require gradients
+        if any(
+            x.requires_grad
+            for x in (energy, species.num_elementary_charges, species.mass_eV)
+        ):
+            return func(self, energy, species)
 
-def get_latest_release_tag(owner: str, repository: str) -> str:
-    """
-    Get the latest release tag of a GitHub repository.
-
-    :param owner: The owner of the GitHub repository. Can be a user or an organisation.
-    :param repository: The name of the GitHub repository.
-    :return: The latest release tag of the repository.
-    """
-    url = f"https://api.github.com/repos/{owner}/{repository}/releases/latest"
-    response = requests.get(url)
-    response.raise_for_status()  # Raise an error if request failed
-    return response.json()["tag_name"]
-
-
-def download_url_to_file(
-    source_url: str, destination_path: Path, show_progress: bool = True
-) -> None:
-    """
-    Download a file from a URL to a local path.
-
-    :param source_url: The URL to download the file from.
-    :param destination_path: The local path where the file should be saved.
-    :param show_progress: If True, show a progress bar during the download.
-    """
-    response = requests.get(source_url, stream=True)
-    response.raise_for_status()
-
-    # Get the total file size from headers
-    total_size = int(response.headers.get("content-length", 0))
-    block_size = 8192  # 8 KB
-
-    destination_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(destination_path, "wb") as f, tqdm(
-        total=total_size,
-        disable=not show_progress,
-        unit="iB",
-        unit_scale=True,
-        desc=f"Downloading {source_url.split('/')[-1]}",
-    ) as pbar:
-        for chunk in response.iter_content(chunk_size=block_size):
-            f.write(chunk)
-            pbar.update(len(chunk))
-
-
-def load_3d_asset(
-    name: str, show_download_progress: bool = True
-) -> trimesh.Trimesh | None:
-    """
-    Get a 3D asset by file name.
-
-    :param name: The name of the asset file (e.g., "Quadrupole.glb").
-    :param show_download_progress: If True and the asset is not cached, show a progress
-        bar during the download.
-    :return: A trimesh.Trimesh object representing the 3D asset.
-    """
-    assets_dir = get_cheetah_cache_dir() / "assets" / "3d"
-    asset_path = assets_dir / name
-
-    if not asset_path.exists():
-        # latest_release_tag = get_latest_release_tag(
-        #     owner="desy-ml", repository="3d-assets"
-        # )
-        asset_repository_url = get_repository_raw_url(
-            owner="desy-ml", repository="3d-assets", branch_or_tag="v1.0.2"
+        # Check if any of the inputs or defining features have changed by building a
+        # validity key
+        new_validity_key_arg_part = tuple(
+            (arg.tolist(), arg.device, arg.dtype, arg.requires_grad)
+            for arg in (energy, species.num_elementary_charges, species.mass_eV)
         )
-        asset_url = f"{asset_repository_url}/{name}"
-        try:
-            download_url_to_file(
-                asset_url, asset_path, show_progress=show_download_progress
-            )
-        except requests.HTTPError:
-            return None
+        new_validity_key_feature_part = tuple()
+        for feature_name in self.defining_features:
+            feature = getattr(self, feature_name)
+            if isinstance(feature, torch.Tensor):
+                new_validity_key_feature_part += (
+                    id(feature),
+                    feature._version,
+                    feature.requires_grad,
+                )
+            else:
+                new_validity_key_feature_part += (feature,)
+        new_validity_key = new_validity_key_arg_part + new_validity_key_feature_part
 
-    return trimesh.load_mesh(asset_path, file_type="glb")
+        if not hasattr(self, "_cache"):
+            self._cache = {}
+        if func.__name__ not in self._cache:
+            self._cache[func.__name__] = {}
+        cache = self._cache[func.__name__]
+
+        # Recompute the transfer map if the validity keys do not match
+        if new_validity_key != cache.get("validity_key", None):
+            cache["result"] = func(self, energy, species)
+            cache["validity_key"] = new_validity_key
+
+        return cache["result"]
+
+    return wrapper

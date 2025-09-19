@@ -4,7 +4,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Species
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    compute_relativistic_factors,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -43,7 +47,8 @@ class HorizontalCorrector(Element):
             "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
