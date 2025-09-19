@@ -106,7 +106,7 @@ class Cavity(Element):
             self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )
 
-        T566 = 1.5 * self.length * igamma2 / beta0**3
+        T566 = 1.5 * self.length * igamma2 / beta0.pow(3)
         T556 = torch.full_like(self.length, 0.0)
         T555 = torch.full_like(self.length, 0.0)
 
@@ -150,8 +150,15 @@ class Cavity(Element):
             if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
-                    * (beta0**3 * gamma0**3 - beta1**3 * gamma1**3)
-                    / (2 * beta0 * beta1**3 * gamma0 * (gamma0 - gamma1) * gamma1**3)
+                    * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
+                    / (
+                        2
+                        * beta0
+                        * beta1.pow(3)
+                        * gamma0
+                        * (gamma0 - gamma1)
+                        * gamma1.pow(3)
+                    )
                 )
                 T556 = (
                     beta0
@@ -159,9 +166,9 @@ class Cavity(Element):
                     * self.length
                     * dgamma
                     * gamma0
-                    * (beta1**3 * gamma1**3 + beta0 * (gamma0 - gamma1**3))
+                    * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
                     * torch.sin(phi)
-                    / (beta1**3 * gamma1**3 * (gamma0 - gamma1).square())
+                    / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).square())
                 )
                 T555 = (
                     beta0.square()
@@ -172,12 +179,12 @@ class Cavity(Element):
                     * (
                         dgamma
                         * (
-                            2 * gamma0 * gamma1**3 * (beta0 * beta1**3 - 1)
+                            2 * gamma0 * gamma1.pow(3) * (beta0 * beta1.pow(3) - 1)
                             + gamma0.square()
                             + 3 * gamma1.square()
                             - 2
                         )
-                        / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
+                        / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
                         * torch.sin(phi).square()
                         - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
                         / (beta1 * gamma1 * (gamma0 - gamma1).square())
