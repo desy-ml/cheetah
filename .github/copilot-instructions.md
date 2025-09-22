@@ -140,6 +140,7 @@ docs/                    # Sphinx documentation
 - GPU acceleration requires CUDA-enabled PyTorch installation
 - Screen readings require beam tracking to be active
 - **Network issues**: `pip install` may occasionally timeout due to PyPI connectivity. If installation fails with timeout errors, retry the command -- this is usually temporary
+- **Pre-commit hooks**: May fail with network timeouts when installing dependencies. Use `git commit --no-verify` to bypass hooks temporarily during network issues
 - **Virtual environments**: When testing in fresh virtual environments, ensure adequate timeout values for pip operations
 
 ## Timing Expectations
