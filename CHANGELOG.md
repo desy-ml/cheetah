@@ -22,7 +22,7 @@
 - Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
-- Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover)
+- Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
 
 ### 🐆 Other
 
