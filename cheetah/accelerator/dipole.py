@@ -449,7 +449,7 @@ class Dipole(Element):
             R[..., 2, 6] = self.angle
             R[..., 2, 3] = self.length
 
-            T = self.length.new_zeros((*self.length.shape, 7, 7, 7))
+            T = self.length.new_zeros((*self.length.shape, 7, 7))
             T[..., :, 6, :] = R
 
         # Apply fringe fields
