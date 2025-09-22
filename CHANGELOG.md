@@ -22,6 +22,7 @@
 - Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
+- Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
 
 ### 🐆 Other
 
