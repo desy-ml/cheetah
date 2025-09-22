@@ -16,6 +16,7 @@
 - Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
 - First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532) (@jank324)
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
+- `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
 - Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
@@ -23,6 +24,7 @@
 - Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
+- Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
 
 ### 🐆 Other
 
@@ -35,6 +37,7 @@
 ### 🌟 First Time Contributors
 
 - Zihan Zhu (@zihan-zh)
+- Austin Hoover (@austin-hoover)
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 
