@@ -45,9 +45,10 @@ class BPM(Element):
 
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else torch.zeros(2, device=device, dtype=dtype),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.zeros(2, **factory_kwargs)
             ),
         )
 
