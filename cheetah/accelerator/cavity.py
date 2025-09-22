@@ -102,9 +102,8 @@ class Cavity(Element):
             outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
         else:  # ParticleBeam
             outgoing_particles = incoming.particles @ tm.transpose(-2, -1)
-        delta_energy = (
-            self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
-        )
+        effective_voltage = -self.voltage * incoming.species.num_elementary_charges
+        delta_energy = effective_voltage * torch.cos(phi)
 
         T566 = 1.5 * self.length * igamma2 / beta0**3
         T556 = torch.full_like(self.length, 0.0)
@@ -120,7 +119,7 @@ class Cavity(Element):
             if isinstance(incoming, ParameterBeam):
                 outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
                     outgoing_energy * beta1
-                ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
+                ) + effective_voltage * beta0 / (outgoing_energy * beta1) * (
                     torch.cos(-incoming.mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
                 )
                 outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
@@ -129,7 +128,7 @@ class Cavity(Element):
                     ..., 5
                 ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
                     outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) + self.voltage.unsqueeze(
+                ) + effective_voltage.unsqueeze(
                     -1
                 ) * beta0.unsqueeze(
                     -1
@@ -146,7 +145,7 @@ class Cavity(Element):
                     - torch.cos(phi).unsqueeze(-1)
                 )
 
-            dgamma = self.voltage / incoming.species.mass_eV
+            dgamma = effective_voltage / incoming.species.mass_eV
             if torch.any(delta_energy > 0):
                 T566 = (
                     self.length
@@ -218,6 +217,7 @@ class Cavity(Element):
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
                 s=incoming.s + self.length,
+                species=incoming.species,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
             )
@@ -229,6 +229,7 @@ class Cavity(Element):
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
                 s=incoming.s + self.length,
+                species=incoming.species,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )
