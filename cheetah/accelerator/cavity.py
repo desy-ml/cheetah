@@ -1,3 +1,4 @@
+import math
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix
 from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils.autograd import log1pdiv
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -77,9 +79,7 @@ class Cavity(Element):
         zero = self.length.new_zeros(())
 
         return torch.where(
-            torch.logical_and(self.voltage != 0, (self.phase / 90) % 2 != 1.0)
-            .unsqueeze(-1)
-            .unsqueeze(-1),
+            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
             self._cavity_rmatrix(energy, species),
             base_rmatrix(
                 length=self.length,
@@ -238,41 +238,47 @@ class Cavity(Element):
 
     def _cavity_rmatrix(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
+        assert torch.all(energy > 0), "Initial energy must be larger than 0"
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         phi = torch.deg2rad(self.phase)
-        effective_voltage = self.voltage * species.num_elementary_charges * -1
+        effective_voltage = -self.voltage * species.num_elementary_charges
         delta_energy = effective_voltage * torch.cos(phi)
-        # Comment from Ocelot: Pure pi-standing-wave case
-        eta = self.length.new_ones(())
-        Ei = energy / species.mass_eV
-        Ef = (energy + delta_energy) / species.mass_eV
-        Ep = delta_energy / (species.mass_eV * self.length)  # Derivative of the energy
-        assert torch.all(Ei > 0), "Initial energy must be larger than 0"
 
-        alpha = torch.sqrt(eta / 8) / torch.cos(phi) * torch.log(Ef / Ei)
+        Ei = energy / species.mass_eV
+        dE = delta_energy / species.mass_eV
+        Ef = Ei + dE
+        Ep = dE / self.length  # Derivative of the energy
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
-        beta0 = torch.sqrt(1 - 1 / Ei**2)
-        beta1 = torch.sqrt(1 - 1 / Ef**2)
 
         if self.cavity_type == "standing_wave":
-            r11 = torch.cos(alpha) - torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(
-                alpha
+            alpha = (
+                math.sqrt(0.125)
+                * effective_voltage
+                / energy
+                * log1pdiv(delta_energy / energy)
             )
+            beta0 = torch.sqrt(1 - 1 / Ei**2)
+            beta1 = torch.sqrt(1 - 1 / Ef**2)
+
+            r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
 
             # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
             # otherwise. This is implemented differently here to achieve results
             # closer to Bmad.
-            r12 = torch.sqrt(8 / eta) * Ei / Ep * torch.cos(phi) * torch.sin(alpha)
+            r12 = (
+                math.sqrt(8.0)
+                * energy
+                / effective_voltage
+                * torch.sin(alpha)
+                * self.length
+            )
 
-            r21 = (
-                -Ep
-                / Ef
-                * (
-                    torch.cos(phi) / torch.sqrt(2 * eta)
-                    + torch.sqrt(eta / 8) / torch.cos(phi)
-                )
+            r21 = -(
+                effective_voltage
+                / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
+                * (0.5 + torch.cos(phi) ** 2)
                 * torch.sin(alpha)
             )
 
@@ -281,13 +287,10 @@ class Cavity(Element):
                 / Ef
                 * (
                     torch.cos(alpha)
-                    + torch.sqrt(2 / eta) * torch.cos(phi) * torch.sin(alpha)
+                    + math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
                 )
             )
 
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            g0 = Ei
-            g1 = Ef
             r55 = 1.0 + (
                 k
                 * self.length
@@ -295,17 +298,20 @@ class Cavity(Element):
                 * effective_voltage
                 / species.mass_eV
                 * torch.sin(phi)
-                * (g0 * g1 * (beta0 * beta1 - 1) + 1)
-                / (beta1 * g1 * (g0 - g1) ** 2)
+                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                / (beta1 * Ef * (Ei - Ef) ** 2)
+            )
+            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            r65 = (
+                k
+                * torch.sin(phi)
+                * effective_voltage
+                / (beta1 * (energy + delta_energy))
             )
             r66 = Ei / Ef * beta0 / beta1
-            r65 = (
-                k * torch.sin(phi) * effective_voltage / (Ef * beta1 * species.mass_eV)
-            )
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            dE = delta_energy / species.mass_eV
             f = Ei / dE * torch.log(1 + (dE / Ei))
 
             vector_shape = torch.broadcast_shapes(
@@ -317,10 +323,10 @@ class Cavity(Element):
             M_body[..., 1, 1] = Ei / Ef
 
             M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_entry[..., 1, 0] = -dE / (2 * self.length * Ei)
+            M_f_entry[..., 1, 0] = -Ep / (2 * Ei)
 
             M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_exit[..., 1, 0] = dE / (2 * self.length * Ef)
+            M_f_exit[..., 1, 0] = Ep / (2 * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
 
@@ -330,8 +336,8 @@ class Cavity(Element):
             r22 = M_combined[..., 1, 1]
             r55 = self.length.new_ones(())
             r56 = self.length.new_zeros(())
+            r65 = k * torch.sin(phi) * effective_voltage / (energy + delta_energy)
             r66 = r22
-            r65 = k * torch.sin(phi) * effective_voltage / (Ef * species.mass_eV)
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
