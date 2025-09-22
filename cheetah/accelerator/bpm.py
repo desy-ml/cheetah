@@ -31,16 +31,15 @@ class BPM(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        super().__init__(
-            name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
-        )
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.is_active = is_active
         factory_kwargs = {"device": device, "dtype": dtype}
 
         self.register_buffer(
             "reading",
-            torch.as_tensor((torch.nan, torch.nan), device=device, dtype=dtype),
+            torch.tensor((torch.nan, torch.nan), **factory_kwargs),
             persistent=False,
         )
 
@@ -56,7 +55,7 @@ class BPM(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def first_order_transfer_map(
+    def _compute_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(

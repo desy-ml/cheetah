@@ -105,9 +105,7 @@ def test_merged_transfer_maps_num_elements():
 
 
 def test_no_markers_left_after_removal():
-    """
-    Test that when removing markers, no markers are left in the segment.
-    """
+    """Test that when removing markers, no markers are left in the segment."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),
@@ -128,9 +126,7 @@ def test_no_markers_left_after_removal():
 
 
 def test_inactive_magnet_is_replaced_by_drift():
-    """
-    Test that an inactive magnet is replaced by a drift as expected.
-    """
+    """Test that an inactive magnet is replaced by a drift as expected."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),
@@ -148,9 +144,7 @@ def test_inactive_magnet_is_replaced_by_drift():
 
 
 def test_active_elements_not_replaced_by_drift():
-    """
-    Test that an active magnet is not replaced by a drift.
-    """
+    """Test that an active magnet is not replaced by a drift."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.6)),
@@ -174,13 +168,11 @@ def test_inactive_magnet_drift_replacement_dtype(dtype: torch.dtype):
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.6), dtype=dtype),
-            cheetah.Quadrupole(
-                length=torch.tensor(0.2), k1=torch.tensor(0.0), dtype=dtype
-            ),
-            cheetah.Drift(length=torch.tensor(0.4), dtype=dtype),
+            cheetah.Drift(length=torch.tensor(0.6)),
+            cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(0.0)),
+            cheetah.Drift(length=torch.tensor(0.4)),
         ]
-    )
+    ).to(dtype=dtype)
 
     optimized_segment = segment.inactive_elements_as_drifts()
 
