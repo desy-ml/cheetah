@@ -249,25 +249,17 @@ class Cavity(Element):
             beta1 = torch.sqrt(1 - 1 / Ef**2)
 
             r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
-
-            # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
-            # otherwise. This is implemented differently here to achieve results
-            # closer to Bmad.
             r12 = (
-                math.sqrt(8.0)
-                * energy
-                / effective_voltage
-                * torch.sin(alpha)
+                torch.sinc(alpha / torch.pi)
+                * log1pdiv(delta_energy / energy)
                 * self.length
             )
-
             r21 = -(
                 effective_voltage
                 / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
                 * (0.5 + torch.cos(phi) ** 2)
                 * torch.sin(alpha)
             )
-
             r22 = (
                 Ei
                 / Ef
