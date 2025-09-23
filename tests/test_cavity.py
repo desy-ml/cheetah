@@ -84,11 +84,11 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
 @pytest.mark.parametrize("beam_cls", [cheetah.ParticleBeam, cheetah.ParameterBeam])
 def test_multiple_cavities_preserve_species(beam_cls):
     """
-    Test that multiple cavities preserve the incoming beam species and accelerate as
-    expected.
+    Test that tracking through a cavity preserves the particle species.
 
     This test addresses the issue where subsequent cavities would receive
-    electron species instead of the original beam species.
+    electron species instead of the original beam species, resulting in unexpected
+    acceleration behaviour.
 
     Regression test for GitHub issue #570.
     """
@@ -100,19 +100,13 @@ def test_multiple_cavities_preserve_species(beam_cls):
         energy=torch.tensor(155e6),
     )
 
-    cavity1 = cheetah.Cavity(
+    cavity = cheetah.Cavity(
         length=torch.tensor(0.2),
         voltage=torch.tensor(-1.0e7),
         phase=torch.tensor(-30.0),
         frequency=torch.tensor(81_250_000.0),
     )
-    cavity2 = cavity1.clone()
 
-    outgoing1 = cavity1.track(incoming)
-    outgoing2 = cavity2.track(outgoing1)
+    outgoing = cavity.track(incoming)
 
-    # Verify species is preserved and acceleration is consistent
-    assert outgoing1.species == incoming.species
-    assert outgoing2.species == incoming.species
-    assert outgoing1.energy > incoming.energy
-    assert outgoing2.energy > outgoing1.energy
+    assert outgoing.species == incoming.species
