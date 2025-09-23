@@ -38,6 +38,7 @@
 
 - Zihan Zhu (@zihan-zh)
 - Austin Hoover (@austin-hoover)
+- @hjkim-iris
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 
