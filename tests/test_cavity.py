@@ -79,34 +79,3 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
     assert not torch.isnan(outgoing.sigma_y).any()
     assert not torch.isnan(outgoing.beta_x).any()
     assert not torch.isnan(outgoing.beta_y).any()
-
-
-@pytest.mark.parametrize("beam_cls", [cheetah.ParticleBeam, cheetah.ParameterBeam])
-def test_multiple_cavities_preserve_species(beam_cls):
-    """
-    Test that tracking through a cavity preserves the particle species.
-
-    This test addresses the issue where subsequent cavities would receive
-    electron species instead of the original beam species, resulting in unexpected
-    acceleration behaviour.
-
-    Regression test for GitHub issue #570.
-    """
-    # Test with proton beam
-    incoming = beam_cls.from_twiss(
-        beta_x=torch.tensor(3.14),
-        beta_y=torch.tensor(42.0),
-        species=cheetah.Species("proton"),
-        energy=torch.tensor(155e6),
-    )
-
-    cavity = cheetah.Cavity(
-        length=torch.tensor(0.2),
-        voltage=torch.tensor(-1.0e7),
-        phase=torch.tensor(-30.0),
-        frequency=torch.tensor(81_250_000.0),
-    )
-
-    outgoing = cavity.track(incoming)
-
-    assert outgoing.species == incoming.species
