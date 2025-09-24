@@ -284,7 +284,7 @@ def base_ttensor(
             .unsqueeze(-1)
             .unsqueeze(-1),
             torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", rotation.mT, T, rotation, rotation
+                "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
             ),
             T,
         )

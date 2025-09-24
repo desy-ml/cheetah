@@ -474,7 +474,7 @@ class Dipole(Element):
         if torch.any(self.tilt != 0):
             rotation = rotation_matrix(self.tilt)
             T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", rotation.mT, T, rotation, rotation
+                "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
             )
 
         return T
