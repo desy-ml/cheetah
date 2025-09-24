@@ -158,7 +158,7 @@ class Element(ABC, nn.Module):
         if isinstance(incoming, ParameterBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_cov = tm @ incoming.cov @ tm.mT
             new_s = incoming.s + self.length
             return ParameterBeam(
                 new_mu,
@@ -170,7 +170,7 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-            new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_particles = incoming.particles @ tm.mT
             new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
