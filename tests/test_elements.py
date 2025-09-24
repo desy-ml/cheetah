@@ -160,3 +160,34 @@ def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
         assert getattr(outgoing_beam, attribute).device.type == device.type
         assert getattr(outgoing_beam, attribute).dtype == dtype
+
+
+@pytest.mark.for_every_element("element")
+@pytest.mark.parametrize("beam_cls", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+def test_species_preservation(element, beam_cls):
+    """
+    Test that tracking through an element preserves the particle species.
+
+    Regression test for GitHub issue #570.
+    """
+    # Skip tests with ParameterBeam and drift-kick-drift tracking because that
+    # combination is not supported.
+    if beam_cls == cheetah.ParameterBeam and element.tracking_method != "linear":
+        pytest.xfail("ParameterBeam does not support drift-kick-drift elements")
+
+    # Test with proton beam because it is different from the default electron species
+    incoming = beam_cls.from_twiss(
+        beta_x=torch.tensor(3.14),
+        beta_y=torch.tensor(42.0),
+        species=cheetah.Species("proton"),
+        energy=torch.tensor(155e6),
+    )
+
+    outgoing = element.track(incoming)
+
+    assert outgoing.species.name == incoming.species.name
+    assert (
+        outgoing.species.num_elementary_charges
+        == incoming.species.num_elementary_charges
+    )
+    assert outgoing.species.mass_eV == incoming.species.mass_eV
