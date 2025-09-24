@@ -24,6 +24,7 @@
 - Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
 - Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
+- Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
 
 ### 🐆 Other
 
@@ -37,6 +38,7 @@
 
 - Zihan Zhu (@zihan-zh)
 - Austin Hoover (@austin-hoover)
+- @hjkim-iris
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 
