@@ -107,8 +107,8 @@ class Aperture(Element):
             )
         elif self.shape == "elliptical":
             survived_mask = (
-                incoming.x**2 / self.x_max.unsqueeze(-1) ** 2
-                + incoming.y**2 / self.y_max.unsqueeze(-1) ** 2
+                incoming.x.square() / self.x_max.square().unsqueeze(-1)
+                + incoming.y.square() / self.y_max.square().unsqueeze(-1)
             ) <= 1.0
 
         return ParticleBeam(
