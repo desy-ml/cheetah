@@ -1024,11 +1024,11 @@ class ParticleBeam(Beam):
 
         phase_space = self.particles[..., :6]
         phase_space = (
-            (phase_space.transpose(-2, -1) - old_mu.unsqueeze(-1))
+            (phase_space.mT - old_mu.unsqueeze(-1))
             / old_sigma.unsqueeze(-1)
             * new_sigma.unsqueeze(-1)
             + new_mu.unsqueeze(-1)
-        ).transpose(-2, -1)
+        ).mT
 
         particles = torch.ones(
             *phase_space.shape[:-1],

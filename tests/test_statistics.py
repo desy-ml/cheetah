@@ -120,7 +120,7 @@ def test_unbiased_weighted_covariance_matrix_torch():
     data = torch.stack([series, series.square(), series**3], dim=-1)
     weights = torch.tensor([0.5, 1.0, 1.0, 0.9, 0.9])
 
-    expected_covariance_matrix = torch.cov(data.T, aweights=weights)
+    expected_covariance_matrix = torch.cov(data.mT, aweights=weights)
     computed_covariance_matrix = unbiased_weighted_covariance_matrix(data, weights)
 
     assert torch.allclose(computed_covariance_matrix, expected_covariance_matrix)
