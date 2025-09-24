@@ -99,9 +99,9 @@ class Cavity(Element):
         tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            outgoing_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            outgoing_cov = tm @ incoming.cov @ tm.mT
         else:  # ParticleBeam
-            outgoing_particles = incoming.particles @ tm.transpose(-2, -1)
+            outgoing_particles = incoming.particles @ tm.mT
         delta_energy = (
             self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
         )
@@ -218,6 +218,7 @@ class Cavity(Element):
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
                 s=incoming.s + self.length,
+                species=incoming.species,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
             )
@@ -229,6 +230,7 @@ class Cavity(Element):
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
                 s=incoming.s + self.length,
+                species=incoming.species,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
             )
