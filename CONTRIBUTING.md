@@ -2,7 +2,7 @@
 
 ## How to write fast PyTorch code
 
-### Dividing one by tensor
+### Dividing 1 by a tensor
 
 ```python
 1 / x
