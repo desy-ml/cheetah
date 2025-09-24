@@ -161,7 +161,7 @@ def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
         assert getattr(outgoing_beam, attribute).device.type == device.type
         assert getattr(outgoing_beam, attribute).dtype == dtype
 
-        
+
 @pytest.mark.for_every_element("element")
 @pytest.mark.parametrize("beam_cls", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_species_preservation(element, beam_cls):
