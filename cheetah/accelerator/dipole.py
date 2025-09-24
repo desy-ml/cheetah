@@ -414,7 +414,7 @@ class Dipole(Element):
 
         # Apply rotation for tilted magnets
         rotation = rotation_matrix(self.tilt)
-        R = rotation.transpose(-1, -2) @ R @ rotation
+        R = rotation.mT @ R @ rotation
 
         return R
 
@@ -446,11 +446,7 @@ class Dipole(Element):
         # Apply rotation for tilted magnets
         rotation = rotation_matrix(self.tilt)
         T = torch.einsum(
-            "...ji,...jkl,...kn,...lm->...inm",
-            rotation,  # Switch index labels in einsum instead of transpose (faster)
-            T,
-            rotation,
-            rotation,
+            "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
         )
 
         return T

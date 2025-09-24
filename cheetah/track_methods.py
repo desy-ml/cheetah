@@ -68,7 +68,7 @@ def base_rmatrix(
     R[..., 4, 5] = r56
 
     rotation = rotation_matrix(tilt)
-    R = rotation.transpose(-1, -2) @ R @ rotation
+    R = rotation.mT @ R @ rotation
 
     return R
 
@@ -255,11 +255,7 @@ def base_ttensor(
 
     rotation = rotation_matrix(tilt)
     T = torch.einsum(
-        "...ji,...jkl,...kn,...lm->...inm",
-        rotation,  # Switch index labels in einsum instead of transpose (faster)
-        T,
-        rotation,
-        rotation,
+        "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
     )
 
     return T
