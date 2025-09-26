@@ -46,7 +46,12 @@ def base_rmatrix(
     r = (0.5 * kx * length / torch.pi).sinc()
     dx = hx * 0.5 * length.square() * r.square().real
 
-    r56 = hx**2 * (length - sx) / kx2 * -length * igamma2
+    kx2_is_not_zero = kx2 != 0
+    r56 = (
+        torch.where(kx2_is_not_zero, hx**2 * (length - sx) / kx2, zero)
+        * -length
+        * igamma2
+    )
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
@@ -112,24 +117,33 @@ def base_ttensor(
     cy = torch.cos(ky * length).real
     sx = (torch.sinc(kx * length / torch.pi) * length).real
     sy = (torch.sinc(ky * length / torch.pi) * length).real
-    dx = (1.0 - cx) / kx2
+    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length**2 / 2.0)
 
     d2y = 0.5 * sy**2
     s2y = sy * cy
     c2y = torch.cos(2 * ky * length).real
-    fx = (length - sx) / kx2
-    f2y = (length - s2y) / ky2
+    fx = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
+    f2y = torch.where(ky2 != 0, (length - s2y) / ky2, length**3 / 6.0)
 
-    j1 = (length - sx) / kx2
-    j2 = (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2**2)
-    j3 = (
-        15.0 * length - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx**2 + kx2 * sx**3
-    ) / (6.0 * kx2**3)
+    j1 = torch.where(kx2 != 0, (length - sx) / kx2, length**3 / 6.0)
+    j2 = torch.where(
+        kx2 != 0,
+        (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2**2),
+        length**5 / 20.0,
+    )
+    j3 = torch.where(
+        kx2 != 0,
+        (15.0 * length - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx**2 + kx2 * sx**3)
+        / (6.0 * kx2**3),
+        length**7 / 56.0,
+    )
     j_denominator = kx2 - 4 * ky2
-    jc = (c2y - cx) / j_denominator
-    js = (cy * sy - sx) / j_denominator
-    jd = (d2y - dx) / j_denominator
-    jf = (f2y - fx) / j_denominator
+    jc = torch.where(j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length**2)
+    js = torch.where(
+        j_denominator != 0, (cy * sy - sx) / j_denominator, length**3 / 6.0
+    )
+    jd = torch.where(j_denominator != 0, (d2y - dx) / j_denominator, length**4 / 24.0)
+    jf = torch.where(j_denominator != 0, (f2y - fx) / j_denominator, length**5 / 120.0)
 
     khk = k2 + 2 * hx * k1
 

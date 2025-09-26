@@ -293,6 +293,9 @@ class Dipole(Element):
         phi1 = torch.arcsin(px / px_norm)
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
+        gp_safe = torch.where(
+            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
+        )
 
         alpha = (
             2
@@ -319,7 +322,7 @@ class Dipole(Element):
         x2_t3 = torch.cos(self.angle.unsqueeze(-1) + phi1)
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
-        c2 = x2_t1 + (x2_t2 - x2_t3) / gp
+        c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
         temp = torch.abs(self.angle.unsqueeze(-1) + phi1)
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
