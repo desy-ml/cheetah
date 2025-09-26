@@ -82,7 +82,7 @@ def unbiased_weighted_covariance_matrix(
     centered_inputs = inputs - weighted_means
 
     covariance = torch.matmul(
-        (normalized_weights.unsqueeze(-1) * centered_inputs).transpose(-1, -2),
+        (normalized_weights.unsqueeze(-1) * centered_inputs).mT,
         centered_inputs,
     ) / correction_factor.unsqueeze(-1).unsqueeze(-1)
 

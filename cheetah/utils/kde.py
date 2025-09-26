@@ -101,7 +101,7 @@ def _kde_joint_pdf_2d(
             + f"Got {type(kernel_values2)}"
         )
 
-    joint_kernel_values = kernel_values1.transpose(-2, -1) @ kernel_values2
+    joint_kernel_values = kernel_values1.mT @ kernel_values2
     normalization = (
         joint_kernel_values.sum(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1) + epsilon
     )
