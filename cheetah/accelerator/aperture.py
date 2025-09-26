@@ -88,7 +88,7 @@ class Aperture(Element):
             )
             return incoming
 
-        assert torch.all(self.x_max >= 0) and torch.all(self.y_max >= 0)
+        assert (self.x_max >= 0).all() and (self.y_max >= 0).all()
         assert self.shape in [
             "rectangular",
             "elliptical",

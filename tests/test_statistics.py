@@ -15,7 +15,7 @@ def test_unbiased_weighted_variance_with_single_element():
 
     computed_variance = unbiased_weighted_variance(data, weights)
 
-    assert torch.isnan(computed_variance)
+    assert computed_variance.isnan()
 
 
 def test_unbiased_weighted_variance_with_same_weights():
@@ -50,7 +50,7 @@ def test_unbiased_weighted_variance_with_zero_weights():
 
     computed_variance = unbiased_weighted_variance(data, weights)
 
-    assert torch.isnan(computed_variance)
+    assert computed_variance.isnan()
 
 
 def test_unbiased_weighted_variance_with_small_numbers():

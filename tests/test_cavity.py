@@ -71,11 +71,13 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
 
     outgoing = cavity.track(incoming)
 
-    assert not torch.isnan(
-        cavity.first_order_transfer_map(incoming.energy, incoming.species)
-    ).any()
+    assert (
+        not cavity.first_order_transfer_map(incoming.energy, incoming.species)
+        .isnan()
+        .any()
+    )
 
-    assert not torch.isnan(outgoing.sigma_x).any()
-    assert not torch.isnan(outgoing.sigma_y).any()
-    assert not torch.isnan(outgoing.beta_x).any()
-    assert not torch.isnan(outgoing.beta_y).any()
+    assert not outgoing.sigma_x.isnan().any()
+    assert not outgoing.sigma_y.isnan().any()
+    assert not outgoing.beta_x.isnan().any()
+    assert not outgoing.beta_y.isnan().any()

@@ -85,7 +85,7 @@ class Sextupole(Element):
         )
 
         # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
+        if not (self.misalignment == 0).all():
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             T = torch.einsum(
                 "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
@@ -106,7 +106,7 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k2 != 0.0).item()
+        return (self.k2 != 0.0).any().item()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -131,7 +131,7 @@ class Sextupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k2) if self.is_active else 1)
+        height = 0.8 * (plot_k2.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
         )
