@@ -8,7 +8,6 @@ from scipy import constants
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix
 from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
@@ -81,18 +80,7 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return torch.where(
-            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
-            self._cavity_rmatrix(energy, species),
-            base_rmatrix(
-                length=self.length,
-                k1=torch.zeros_like(self.length),
-                hx=torch.zeros_like(self.length),
-                species=species,
-                tilt=torch.zeros_like(self.length),
-                energy=energy,
-            ),
-        )
+        return self._cavity_rmatrix(energy, species)
 
     def track(self, incoming: Beam) -> Beam:
         gamma0, igamma2, beta0 = compute_relativistic_factors(
@@ -268,25 +256,17 @@ class Cavity(Element):
             beta1 = torch.sqrt(1 - 1 / Ef**2)
 
             r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
-
-            # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
-            # otherwise. This is implemented differently here to achieve results
-            # closer to Bmad.
             r12 = (
-                math.sqrt(8.0)
-                * energy
-                / effective_voltage
-                * torch.sin(alpha)
+                torch.sinc(alpha / torch.pi)
+                * log1pdiv(delta_energy / energy)
                 * self.length
             )
-
             r21 = -(
                 effective_voltage
                 / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
                 * (0.5 + torch.cos(phi) ** 2)
                 * torch.sin(alpha)
             )
-
             r22 = (
                 Ei
                 / Ef
@@ -296,15 +276,17 @@ class Cavity(Element):
                 )
             )
 
-            r55 = 1.0 + (
-                k
-                * self.length
-                * beta0
-                * effective_voltage
-                / species.mass_eV
-                * torch.sin(phi)
-                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
-                / (beta1 * Ef * (Ei - Ef) ** 2)
+            r55 = 1.0 + torch.where(
+                dE != 0.0,
+                (
+                    k
+                    * self.length
+                    * beta0
+                    * phi.tan()
+                    * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                    / (beta1 * Ef * dE)
+                ),
+                torch.zeros_like(dE),
             )
             r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             r65 = (
@@ -317,7 +299,7 @@ class Cavity(Element):
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            f = Ei / dE * torch.log(1 + (dE / Ei))
+            f = log1pdiv(dE / Ei)
 
             vector_shape = torch.broadcast_shapes(
                 self.length.shape, f.shape, Ei.shape, Ef.shape

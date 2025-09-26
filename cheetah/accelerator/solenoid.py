@@ -76,9 +76,7 @@ class Solenoid(Element):
             self.length.shape, self.k.shape, energy.shape
         )
 
-        r56 = torch.where(
-            gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
-        )
+        r56 = self.length / (1 - gamma**2)
 
         R = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         R[..., 0, 0] = c**2
@@ -101,12 +99,10 @@ class Solenoid(Element):
 
         R = R.real
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
+        R_entry, R_exit = misalignment_matrix(self.misalignment)
+        R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+
+        return R
 
     @property
     def is_active(self) -> bool:
