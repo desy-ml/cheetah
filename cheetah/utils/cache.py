@@ -20,35 +20,48 @@ def cache_transfer_map(func):
         ):
             return func(self, energy, species)
 
-        # Check if any of the inputs or defining features have changed by building a
-        # validity key
-        new_validity_key_arg_part = tuple(
-            (arg.tolist(), arg.device, arg.dtype, arg.requires_grad)
-            for arg in (energy, species.num_elementary_charges, species.mass_eV)
-        )
-        new_validity_key_feature_part = tuple()
-        for feature_name in self.defining_features:
-            feature = getattr(self, feature_name)
-            if isinstance(feature, torch.Tensor):
-                new_validity_key_feature_part += (
-                    id(feature),
-                    feature._version,
-                    feature.requires_grad,
-                )
-            else:
-                new_validity_key_feature_part += (feature,)
-        new_validity_key = new_validity_key_arg_part + new_validity_key_feature_part
-
         if not hasattr(self, "_cache"):
             self._cache = {}
         if func.__name__ not in self._cache:
             self._cache[func.__name__] = {}
         cache = self._cache[func.__name__]
 
-        # Recompute the transfer map if the validity keys do not match
-        if new_validity_key != cache.get("validity_key", None):
+        # Build a validity key to check if element features have changed
+        feature_validity_key = tuple()
+        for feature_name in self.defining_features:
+            feature = getattr(self, feature_name)
+            if isinstance(feature, torch.Tensor):
+                feature_validity_key += (
+                    id(feature),
+                    feature._version,
+                    feature.requires_grad,
+                )
+            else:
+                feature_validity_key += (feature,)
+
+        # Recompute the transfer map if element features have changed
+        if feature_validity_key != cache.get("feature_validity_key", None) or any(
+            not (
+                passed.dtype == cached.dtype
+                and passed.device == cached.device
+                and passed.requires_grad == cached.requires_grad
+                and torch.equal(passed, cached)
+            )
+            for passed, cached in zip(
+                (energy, species.num_elementary_charges, species.mass_eV),
+                (
+                    cache.get("energy"),
+                    cache.get("num_elementary_charges"),
+                    cache.get("mass_eV"),
+                ),
+            )
+        ):
             cache["result"] = func(self, energy, species)
-            cache["validity_key"] = new_validity_key
+
+            cache["feature_validity_key"] = feature_validity_key
+            cache["energy"] = energy.clone()
+            cache["num_elementary_charges"] = species.num_elementary_charges.clone()
+            cache["mass_eV"] = species.mass_eV.clone()
 
         return cache["result"]
 
