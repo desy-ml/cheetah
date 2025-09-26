@@ -8,7 +8,11 @@ from scipy import constants
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    compute_relativistic_factors,
+)
 from cheetah.utils.autograd import log1pdiv
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
