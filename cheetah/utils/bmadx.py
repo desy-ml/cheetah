@@ -94,9 +94,7 @@ def bmad_to_cheetah_coords(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Initialize Cheetah coordinates
-    cheetah_coords = torch.ones(
-        (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
-    )
+    cheetah_coords = bmad_coords.new_ones((*bmad_coords.shape[:-1], 7))
     cheetah_coords[..., :6] = bmad_coords.clone()
 
     # Bmad longitudinal coordinates

@@ -58,13 +58,10 @@ class Drift(Element):
     def _compute_second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
-            self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            energy=energy,
-            species=species,
+            self.length, k1=zero, k2=zero, hx=zero, energy=energy, species=species
         )
 
         # Fill the first-order transfer map into the second-order transfer map
