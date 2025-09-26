@@ -276,15 +276,17 @@ class Cavity(Element):
                 )
             )
 
-            r55 = 1.0 + (
-                k
-                * self.length
-                * beta0
-                * effective_voltage
-                / species.mass_eV
-                * torch.sin(phi)
-                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
-                / (beta1 * Ef * (Ei - Ef) ** 2)
+            r55 = 1.0 + torch.where(
+                dE != 0.0,
+                (
+                    k
+                    * self.length
+                    * beta0
+                    * phi.tan()
+                    * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                    / (beta1 * Ef * dE)
+                ),
+                torch.zeros_like(dE),
             )
             r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             r65 = (
