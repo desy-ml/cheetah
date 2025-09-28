@@ -1,0 +1,8 @@
+axes.linewidth: 1.25
+axes.titlesize: "medium"
+figure.constrained_layout.use: True
+savefig.dpi: 300
+savefig.format: "png"
+xtick.minor.visible: True
+ytick.minor.visible: True
+
