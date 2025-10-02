@@ -1,4 +1,5 @@
 import pytest
+import torch
 from scipy.constants import physical_constants
 
 import cheetah
@@ -36,7 +37,9 @@ def test_antiproton_proton_mass_equal():
 def test_custom_particle_species():
     """Test that custom particle species can be defined."""
     muon = cheetah.Species(
-        name="muon", num_elementary_charges=-1, mass_eV=105.6583755e6
+        name="muon",
+        num_elementary_charges=torch.tensor(-1.0),
+        mass_eV=torch.tensor(105.6583755e6),
     )
     assert (
         muon.mass_eV

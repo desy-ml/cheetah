@@ -8,39 +8,37 @@ import cheetah
 
 
 def test_from_twiss():
-    """
-    Test that a beams created from Twiss parameters have the same properties.
-    """
+    """Test that a beams created from Twiss parameters have the same properties."""
     parameter_beam = cheetah.ParameterBeam.from_twiss(
-        beta_x=torch.tensor(5.91253676811640894),
-        alpha_x=torch.tensor(3.55631307633660354),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        beta_y=torch.tensor(5.91253676811640982),
-        alpha_y=torch.tensor(2e-7),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        beta_x=torch.tensor(5.91253676811640894, dtype=torch.float64),
+        alpha_x=torch.tensor(3.55631307633660354, dtype=torch.float64),
+        emittance_x=torch.tensor(3.494768647122823e-09, dtype=torch.float64),
+        beta_y=torch.tensor(5.91253676811640982, dtype=torch.float64),
+        alpha_y=torch.tensor(2e-7, dtype=torch.float64),
+        emittance_y=torch.tensor(3.497810737006068e-09, dtype=torch.float64),
+        energy=torch.tensor(6e6, dtype=torch.float64),
+        dtype=torch.float64,
     )
     particle_beam = cheetah.ParticleBeam.from_twiss(
-        num_particles=torch.tensor(
-            [10_000_000]
-        ),  # Large number of particles reduces noise
-        beta_x=torch.tensor(5.91253676811640894),
-        alpha_x=torch.tensor(3.55631307633660354),
-        emittance_x=torch.tensor(3.494768647122823e-09),
-        beta_y=torch.tensor(5.91253676811640982),
-        alpha_y=torch.tensor(2e-7),
-        emittance_y=torch.tensor(3.497810737006068e-09),
-        energy=torch.tensor(6e6),
+        num_particles=1_000_000,  # Large number of particles reduces noise
+        beta_x=torch.tensor(5.91253676811640894, dtype=torch.float64),
+        alpha_x=torch.tensor(3.55631307633660354, dtype=torch.float64),
+        emittance_x=torch.tensor(3.494768647122823e-09, dtype=torch.float64),
+        beta_y=torch.tensor(5.91253676811640982, dtype=torch.float64),
+        alpha_y=torch.tensor(2e-7, dtype=torch.float64),
+        emittance_y=torch.tensor(3.497810737006068e-09, dtype=torch.float64),
+        energy=torch.tensor(6e6, dtype=torch.float64),
+        dtype=torch.float64,
     )
 
-    assert torch.isclose(parameter_beam.mu_x, particle_beam.mu_x, atol=1e-6)
-    assert torch.isclose(parameter_beam.mu_y, particle_beam.mu_y, atol=1e-6)
-    assert torch.isclose(parameter_beam.sigma_x, particle_beam.sigma_x, rtol=1e-3)
-    assert torch.isclose(parameter_beam.sigma_y, particle_beam.sigma_y, rtol=1e-3)
-    assert torch.isclose(parameter_beam.mu_px, particle_beam.mu_px, atol=1e-6)
-    assert torch.isclose(parameter_beam.mu_py, particle_beam.mu_py, atol=1e-6)
-    assert torch.isclose(parameter_beam.sigma_px, particle_beam.sigma_px, rtol=1e-3)
-    assert torch.isclose(parameter_beam.sigma_py, particle_beam.sigma_py, rtol=1e-3)
+    assert torch.isclose(parameter_beam.mu_x, particle_beam.mu_x)
+    assert torch.isclose(parameter_beam.mu_y, particle_beam.mu_y)
+    assert torch.isclose(parameter_beam.sigma_x, particle_beam.sigma_x)
+    assert torch.isclose(parameter_beam.sigma_y, particle_beam.sigma_y)
+    assert torch.isclose(parameter_beam.mu_px, particle_beam.mu_px)
+    assert torch.isclose(parameter_beam.mu_py, particle_beam.mu_py)
+    assert torch.isclose(parameter_beam.sigma_px, particle_beam.sigma_px)
+    assert torch.isclose(parameter_beam.sigma_py, particle_beam.sigma_py)
     assert torch.isclose(parameter_beam.mu_tau, particle_beam.mu_tau)
     assert torch.isclose(parameter_beam.sigma_tau, particle_beam.sigma_tau)
     assert torch.isclose(parameter_beam.mu_p, particle_beam.mu_p)
@@ -49,7 +47,6 @@ def test_from_twiss():
 
 def test_drift():
     """Test that the drift output for both beam types is roughly the same."""
-
     # Set up lattice
     cheetah_drift = cheetah.Drift(length=torch.tensor(1.0))
 
@@ -95,7 +92,6 @@ def test_drift():
 
 def test_quadrupole():
     """Test that the quadrupole output for both beam types is roughly the same."""
-
     # Set up lattice
     cheetah_quadrupole = cheetah.Quadrupole(
         length=torch.tensor(0.15), k1=torch.tensor(4.2)
@@ -146,7 +142,6 @@ def test_cavity_from_astra():
     Test that the cavity output for both beam types is roughly the same. This test uses
     a beam converted from an ASTRA beam file.
     """
-
     # Set up lattice
     cheetah_cavity = cheetah.Cavity(
         length=torch.tensor(1.0377),

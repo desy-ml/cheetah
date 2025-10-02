@@ -1,25 +1,6 @@
-import pytest
 import torch
 
 import cheetah
-
-
-@pytest.mark.parametrize("is_bpm_active", [True, False])
-@pytest.mark.parametrize("beam_class", [cheetah.ParticleBeam, cheetah.ParameterBeam])
-def test_no_tracking_error(is_bpm_active, beam_class):
-    """Test that tracking a beam through an inactive BPM does not raise an error."""
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.BPM(name="my_bpm"),
-            cheetah.Drift(length=torch.tensor(1.0)),
-        ],
-    )
-    beam = beam_class.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
-
-    segment.my_bpm.is_active = is_bpm_active
-
-    _ = segment.track(beam)
 
 
 def test_reading_dtype_conversion():
@@ -38,3 +19,15 @@ def test_reading_dtype_conversion():
 
     segment = segment.double()
     assert segment.bpm.reading.dtype == torch.float64
+
+
+def test_bpm_misalignment():
+    """Test that the BPM misalignment is correctly applied to the reading."""
+    bpm = cheetah.BPM(name="bpm", is_active=True, misalignment=torch.tensor([0.1, 0.2]))
+    incoming = cheetah.ParameterBeam.from_parameters(
+        mu_x=torch.tensor(0.0), mu_y=torch.tensor(0.0)
+    )
+
+    _ = bpm.track(incoming)
+
+    assert torch.allclose(bpm.reading, -torch.tensor([0.1, 0.2]))

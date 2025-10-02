@@ -1,12 +1,7 @@
-import sys
+from pathlib import Path
 
 import pytest
-
-if sys.platform.startswith("win"):
-    pytest.skip("Skipping Bmad comparison tests on Windows", allow_module_level=True)
-
 import torch
-from pytao import Tao
 from scipy.constants import physical_constants
 
 import cheetah
@@ -17,37 +12,32 @@ atomic_mass_eV = (
 )
 
 
-def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
-    """Helper function to set the initial coordinates of the particle in Tao."""
-    tao.cmd(f"set particle_start x={coordinates[0]}")
-    tao.cmd(f"set particle_start px={coordinates[1]}")
-    tao.cmd(f"set particle_start y={coordinates[2]}")
-    tao.cmd(f"set particle_start py={coordinates[3]}")
-    tao.cmd(f"set particle_start z={coordinates[4]}")
-    tao.cmd(f"set particle_start pz={coordinates[5]}")
-
-
 @pytest.mark.parametrize(
     "species",
     [
-        cheetah.Species("proton"),
-        cheetah.Species("electron"),
-        cheetah.Species("positron"),
-        cheetah.Species("antiproton"),
-        cheetah.Species("deuteron"),
+        cheetah.Species("proton", dtype=torch.float64),
+        cheetah.Species("electron", dtype=torch.float64),
+        cheetah.Species("positron", dtype=torch.float64),
+        cheetah.Species("antiproton", dtype=torch.float64),
+        cheetah.Species("deuteron", dtype=torch.float64),
         cheetah.Species(
-            "#12C+3", num_elementary_charges=3, mass_eV=12 * atomic_mass_eV
+            "#12C+3",
+            num_elementary_charges=torch.tensor(3.0, dtype=torch.float64),
+            mass_eV=torch.tensor(12.0, dtype=torch.float64) * atomic_mass_eV,
+            dtype=torch.float64,
         ),
     ],
+    ids=["proton", "electron", "positron", "antiproton", "deuteron", "12C+3"],
 )
 @pytest.mark.parametrize(
-    ["cheetah_element", "bmad_element_str"],
+    "cheetah_element",
     [
         (
             cheetah.Drift(
-                length=torch.tensor(1.0), tracking_method="bmadx", dtype=torch.double
-            ),
-            "e1: drift, L = 1.0",
+                length=torch.tensor(1.0),
+                tracking_method="drift_kick_drift",
+                dtype=torch.float64,
+            )
         ),
         (
             cheetah.Dipole(
@@ -62,64 +52,37 @@ def tao_set_particle_start(tao: Tao, coordinates: torch.Tensor) -> None:
                 gap_exit=torch.tensor(0.06),
                 fringe_at="both",
                 fringe_type="linear_edge",
-                tracking_method="bmadx",
-                dtype=torch.double,
-            ),
-            "e1: sbend, L = 0.5, angle = 0.2, fringe_at = both_ends, "
-            "fringe_type = linear_edge, E1 = 0.1, E2 = 0.1, FINT = 0.5, HGAP = 0.03, "
-            "FINTX = 0.5, HGAPX = 0.03, ref_tilt = 0.1",
+                tracking_method="drift_kick_drift",
+                dtype=torch.float64,
+            )
         ),
         (
             cheetah.Quadrupole(
                 length=torch.tensor(0.5),
                 k1=torch.tensor(1.0),
-                tracking_method="bmadx",
-                dtype=torch.double,
-            ),
-            "e1: quad, L = 0.5, K1 = 1.0",
+                tracking_method="drift_kick_drift",
+                dtype=torch.float64,
+            )
         ),
     ],
+    ids=["Drift", "Dipole", "Quadrupole"],
 )
-def test_different_species_in_different_elements(
-    tmp_path, species, cheetah_element, bmad_element_str
-):
+def test_different_species_in_different_elements(species, cheetah_element):
     """
     Test that tracking different particle species through different elements in Cheetah
     agrees with Bmad results.
     """
-    bmad_drift_lattice_str = f"""
-    parameter[lattice] = test_drift
-
-    beginning[beta_a] = 10
-    beginning[beta_b] = 10
-
-    beginning[p0c] = 5.0e7
-    parameter[particle] = {species.name}
-    parameter[geometry] = open
-
-    {bmad_element_str}
-
-    lat: line = (e1)
-
-    use, lat
-    """
-    bmad_lattice_path = tmp_path / f"test_drift_{species.name}.bmad"
-    with open(bmad_lattice_path, "w") as f:
-        f.write(bmad_drift_lattice_str)
-
-    tao = Tao(f"-lat {bmad_lattice_path} -noplot")
-
     coordinate_list = [1e-3, 2e-3, -3e-3, -1e-3, 2e-3, -1e-3]
-    coordinates = torch.tensor(coordinate_list, dtype=torch.double)
+    coordinates = torch.tensor(coordinate_list, dtype=torch.float64)
 
-    p0c = torch.tensor(5.0e7, dtype=torch.double)
+    p0c = torch.tensor(5.0e7, dtype=torch.float64)
     mc2 = species.mass_eV
 
     tau, delta, ref_energy = bmad_to_cheetah_z_pz(
         coordinates[4], coordinates[5], p0c, mc2
     )
 
-    cheetah_coordinates = torch.ones((1, 7), dtype=torch.double)
+    cheetah_coordinates = torch.ones((1, 7), dtype=torch.float64)
     cheetah_coordinates[:, :4] = coordinates[:4]
     cheetah_coordinates[:, 4] = tau
     cheetah_coordinates[:, 5] = delta
@@ -128,30 +91,22 @@ def test_different_species_in_different_elements(
         particles=cheetah_coordinates,
         energy=ref_energy,
         species=species,
-        dtype=torch.double,
+        dtype=torch.float64,
     )
 
     # Track with Cheetah using bmadx routines
-    outgoing = cheetah_element(incoming)
+    outgoing = cheetah_element.track(incoming)
     # Convert to Bmad coordinates
     outgoing_bmad_coordinates, _ = cheetah_to_bmad_coords(
         outgoing.particles, ref_energy=outgoing.energy, mc2=outgoing.species.mass_eV
     )
 
-    # Track with Tao
-    tao_set_particle_start(tao, coordinate_list)
-    orbit_out = tao.orbit_at_s(ele=1)
-
-    x_tao = torch.tensor(
-        [
-            orbit_out["x"],
-            orbit_out["px"],
-            orbit_out["y"],
-            orbit_out["py"],
-            orbit_out["z"],
-            orbit_out["pz"],
-        ],
-        dtype=torch.double,
+    # Load Bmad results
+    x_tao = torch.load(
+        Path(__file__).parent
+        / "resources"
+        / "bmad"
+        / f"x_tao_{species.name}_{cheetah_element.__class__.__name__}.pt"
     )
 
     assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)

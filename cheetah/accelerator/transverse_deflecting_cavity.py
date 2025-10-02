@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -7,7 +8,7 @@ from scipy.constants import speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator, bmadx
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -29,7 +30,12 @@ class TransverseDeflectingCavity(Element):
         element when tracking method is set to `"bmadx"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
+
+    supported_tracking_methods = ["drift_kick_drift", "bmadx"]
 
     def __init__(
         self,
@@ -40,42 +46,38 @@ class TransverseDeflectingCavity(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
-        tracking_method: Literal["bmadx"] = "bmadx",
+        tracking_method: Literal["drift_kick_drift", "bmadx"] = "drift_kick_drift",
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, voltage, phase, frequency, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
             "voltage",
-            torch.as_tensor(voltage if voltage is not None else 0.0, **factory_kwargs),
+            voltage if voltage is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
-            "phase",
-            torch.as_tensor(phase if phase is not None else 0.0, **factory_kwargs),
+            "phase", phase if phase is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "frequency",
-            torch.as_tensor(
-                frequency if frequency is not None else 0.0, **factory_kwargs
-            ),
+            frequency if frequency is not None else torch.tensor(0.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.num_steps = num_steps
@@ -97,22 +99,24 @@ class TransverseDeflectingCavity(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if self.tracking_method == "cheetah":
-            raise NotImplementedError(
-                "Cheetah transverse deflecting cavity tracking is not yet implemented."
-            )
+        if self.tracking_method == "drift_kick_drift":
+            return self._track_drift_kick_drift(incoming)
         elif self.tracking_method == "bmadx":
-            assert isinstance(
-                incoming, ParticleBeam
-            ), "Bmad-X tracking is currently only supported for `ParticleBeam`."
-            return self._track_bmadx(incoming)
+            warnings.warn(
+                "The 'bmadx' tracking method is deprecated and will be removed in a"
+                " future release. Please use 'drift_kick_drift' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. "
-                + "Supported methods are 'cheetah' and 'bmadx'."
+                f"Invalid tracking method {self.tracking_method}. For element of"
+                f" type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}."
             )
 
-    def _track_bmadx(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
         Track particles through the TDC element using the Bmad-X tracking method.
 
@@ -120,6 +124,10 @@ class TransverseDeflectingCavity(Element):
             `ParticleBeam`.
         :return: Beam exiting the element.
         """
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+
         # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
@@ -192,16 +200,16 @@ class TransverseDeflectingCavity(Element):
             energy=ref_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
             species=incoming.species,
         )
         return outgoing_beam
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for cavity properly, for now just returns the
-        # element itself
-        return [self]
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
@@ -223,18 +231,4 @@ class TransverseDeflectingCavity(Element):
             "misalignment",
             "tilt",
             "num_steps",
-            "tracking_method",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"voltage={repr(self.voltage)}, "
-            + f"phase={repr(self.phase)}, "
-            + f"frequency={repr(self.frequency)}, "
-            + f"misalignment={repr(self.misalignment)}, "
-            + f"tilt={repr(self.tilt)}, "
-            + f"num_steps={repr(self.num_steps)}, "
-            + f"tracking_method={repr(self.tracking_method)}, "
-            + f"name={repr(self.name)})"
-        )

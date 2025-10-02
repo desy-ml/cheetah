@@ -1,3 +1,4 @@
+import pytest
 import torch
 import torch.autograd.forward_ad as fwAD
 from scipy import constants
@@ -8,7 +9,14 @@ import cheetah
 from cheetah.utils import compute_relativistic_factors
 
 
-def test_cold_uniform_beam_expansion():
+# Run the test below for both the ultra-relativistic case
+# (250 MeV) and the non-relativistic case (1 MeV).
+@pytest.mark.parametrize(
+    "energy",
+    [torch.tensor(2.5e8), torch.tensor(1e6)],
+    ids=["ultra-relativistic", "non-relativistic"],
+)
+def test_cold_uniform_beam_expansion(energy):
     """
     Tests that that a cold uniform beam doubles in size in both dimensions when
     travelling through a drift section with space_charge. (cf ImpactX test:
@@ -18,7 +26,6 @@ def test_cold_uniform_beam_expansion():
     """
     # Simulation parameters
     R0 = torch.tensor(0.001)
-    energy = torch.tensor(2.5e8)
     rest_energy = torch.tensor(
         constants.electron_mass
         * constants.speed_of_light**2
@@ -30,12 +37,12 @@ def test_cold_uniform_beam_expansion():
     beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(100_000),
+        num_particles=100_000,
         total_charge=torch.tensor(1e-8),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -85,12 +92,12 @@ def test_vectorized_cold_uniform_beam_expansion():
     beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(100_000),
+        num_particles=100_000,
         total_charge=torch.tensor(1e-8).repeat(3, 2),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -133,15 +140,16 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         total_charge=torch.tensor([[1e-9, 2e-9], [3e-9, 4e-9], [5e-9, 6e-9]]),
         energy=energy.expand([3, 2]),
         radius_x=R0.expand([3, 2]),
         radius_y=R0.expand([3, 2]),
-        radius_tau=R0.expand([3, 2]) / gamma,
-        # Radius of the beam in s direction in the lab frame
+        radius_tau=R0.expand([3, 2]) / gamma / beta,
+        # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15).expand([3, 2]),
         sigma_py=torch.tensor(1e-15).expand([3, 2]),
         sigma_p=torch.tensor(1e-15).expand([3, 2]),
@@ -169,9 +177,7 @@ def test_incoming_beam_not_modified():
     Tests that the incoming beam is not modified when calling the track method.
     """
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
-        sigma_px=torch.tensor(2e-7),
-        sigma_py=torch.tensor(2e-7),
+        num_particles=10_000, sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
     # Initial beam properties
     incoming_beam_before = incoming_beam.particles
@@ -209,12 +215,12 @@ def test_gradient_value_backward_ad():
     gamma, _, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     incoming_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(100_000),
+        num_particles=100_000,
         total_charge=torch.tensor(1e-8),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -273,12 +279,12 @@ def test_gradient_value_forward_ad():
     gamma, _, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     incoming_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(
-        num_particles=torch.tensor(100_000),
+        num_particles=100_000,
         total_charge=torch.tensor(1e-8),
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma,  # Radius of the beam in s direction in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
@@ -385,7 +391,7 @@ def test_space_charge_with_aperture_cutoff():
         ]
     )
     incoming_beam = cheetah.ParticleBeam.from_parameters(
-        num_particles=torch.tensor(10_000),
+        num_particles=10_000,
         total_charge=torch.tensor(1e-9),
         mu_x=torch.tensor(5e-5),
         sigma_px=torch.tensor(1e-4),

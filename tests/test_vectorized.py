@@ -182,6 +182,7 @@ def test_track_particle_segment_shape_2d(BeamClass):
         assert outgoing.particle_charges.shape == (100_000,)
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_enormous_through_ares_ea():
     """
     Test ARES EA with a huge number of settings. This is a stress test and only run
@@ -211,16 +212,18 @@ def test_enormous_through_ares_ea():
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
-def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+def test_cavity_with_zero_and_non_zero_voltage(BeamClass, cavity_type):
     """
     Tests that if zero and non-zero voltages are passed to a cavity in a single batch,
     there are no errors. This test does NOT check physical correctness.
     """
     cavity = cheetah.Cavity(
         length=torch.tensor(3.0441),
-        voltage=torch.tensor([0.0, 48_198_468.0, 0.0]),
+        voltage=torch.tensor([0.0, 48198468.0, 0.0]),
         phase=torch.tensor(48198468.0),
         frequency=torch.tensor(2.8560e09),
+        cavity_type=cavity_type,
         name="my_test_cavity",
     )
     incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
@@ -333,33 +336,34 @@ def test_vectorized_screen_2d(BeamClass, method):
     assert segment.my_screen.reading.shape == (2, 3, 100, 100)
 
 
-@pytest.mark.parametrize(
-    "ElementClass",
-    [
-        cheetah.Cavity,
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.HorizontalCorrector,
-        cheetah.Quadrupole,
-        cheetah.RBend,
-        cheetah.Sextupole,
-        cheetah.Solenoid,
-        cheetah.TransverseDeflectingCavity,
-        cheetah.Undulator,
-        cheetah.VerticalCorrector,
-    ],
+@pytest.mark.for_every_element(
+    "element_with_length",
+    except_if=lambda test_case: isinstance(
+        test_case,
+        (
+            cheetah.Aperture,
+            cheetah.BPM,
+            cheetah.CustomTransferMap,
+            cheetah.Marker,
+            cheetah.Screen,
+            cheetah.Segment,
+            cheetah.SpaceChargeKick,
+        ),
+    ),
 )
-def test_drift_broadcasting_two_different_inputs(ElementClass):
+def test_broadcasting_two_different_inputs(element_with_length):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `length` attribute.
+
+    Skipped for elements whose response is not influenced by their length.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
-    element = ElementClass(length=torch.tensor([[0.6], [0.5], [0.4]]))
 
-    outgoing = element.track(incoming)
+    element_with_length.length = torch.tensor([[0.6], [0.5], [0.4]])
+    outgoing = element_with_length.track(incoming)
 
     assert outgoing.particles.shape == (3, 2, 100_000, 7)
     assert outgoing.particle_charges.shape == (100_000,)
@@ -375,7 +379,7 @@ def test_drift_broadcasting_two_different_inputs(ElementClass):
         cheetah.TransverseDeflectingCavity,
     ],
 )
-def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
+def test_broadcasting_two_different_inputs_bmadx(ElementClass):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
     input shapes for elements that have a `"bmadx"` tracking method.
@@ -384,7 +388,7 @@ def test_drift_broadcasting_two_different_inputs_bmadx(ElementClass):
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
     element = ElementClass(
-        tracking_method="bmadx", length=torch.tensor([[0.6], [0.5], [0.4]])
+        tracking_method="drift_kick_drift", length=torch.tensor([[0.6], [0.5], [0.4]])
     )
 
     outgoing = element.track(incoming)
@@ -488,12 +492,12 @@ def test_vectorized_aperture_broadcasting(aperture_shape):
     if aperture_shape == "elliptical":
         assert np.allclose(
             outgoing.survival_probabilities.mean(dim=-1)[:, 0],
-            [0.077, 0.945, 0.995],
-            atol=4e-3,  # Last digit off by four
+            [0.0235, 0.42, 0.552],
+            atol=5e-3,  # Last digit off by five
         )
     elif aperture_shape == "rectangular":
         assert np.allclose(
             outgoing.survival_probabilities.mean(dim=-1)[:, 0],
-            [0.079, 0.954, 0.997],
-            atol=4e-3,  # Last digit off by four
+            [0.029, 0.495, 0.629],
+            atol=5e-3,  # Last digit off by five
         )

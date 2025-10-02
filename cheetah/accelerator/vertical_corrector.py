@@ -6,46 +6,52 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Species
 from cheetah.utils import (
     UniqueNameGenerator,
+    cache_transfer_map,
     compute_relativistic_factors,
-    verify_device_and_dtype,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
-class VerticalCorrector(Corrector):
+class VerticalCorrector(Element):
     """
-    Vertical corrector magnet in a particle accelerator.
-    Note: This is modeled as a drift section with
-        a thin-kick in the vertical plane.
+    Verticle corrector magnet in a particle accelerator.
+
+    NOTE: This is modeled as a drift section with a thin-kick in the vertical plane.
 
     :param length: Length in meters.
-    :param vertical_angle: Particle deflection angle in the vertical plane in rad.
+    :param angle: Particle deflection angle in the vertical plane in rad.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
+
+    supported_tracking_methods = ["linear"]
 
     def __init__(
         self,
         length: torch.Tensor,
         angle: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([length, angle], device, dtype)
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, **factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "angle",
-            torch.as_tensor(angle if angle is not None else 0.0, **factory_kwargs),
+            "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-    def transfer_map(self, energy: torch.Tensor, species: Species) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+    @cache_transfer_map
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
@@ -53,7 +59,7 @@ class VerticalCorrector(Corrector):
             self.length.shape, igamma2.shape, self.angle.shape
         )
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 3, 6] = self.angle
@@ -62,30 +68,18 @@ class VerticalCorrector(Corrector):
         return tm
 
     @property
-    def angle(self) -> torch.Tensor:
-        return self.vertical_angle
-
-    @angle.setter
-    def angle(self, value: torch.Tensor) -> None:
-        self.vertical_angle = value
+    def is_skippable(self) -> bool:
+        return True
 
     @property
     def is_active(self) -> bool:
         return torch.any(self.angle != 0).item()
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        num_splits = torch.ceil(torch.max(self.length) / resolution).int()
-        return [
-            VerticalCorrector(
-                self.length / num_splits,
-                self.angle / num_splits,
-                dtype=self.length.dtype,
-                device=self.length.device,
-            )
-            for _ in range(num_splits)
-        ]
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
@@ -100,17 +94,4 @@ class VerticalCorrector(Corrector):
 
     @property
     def defining_features(self) -> list[str]:
-        features_with_both_angles = super().defining_features
-        cleaned_features = [
-            feature
-            for feature in features_with_both_angles
-            if feature not in ["horizontal_angle", "vertical_angle"]
-        ]
-        return cleaned_features + ["length", "angle"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"angle={repr(self.angle)}, "
-            + f"name={repr(self.name)})"
-        )
+        return super().defining_features + ["length", "angle"]

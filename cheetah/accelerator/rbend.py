@@ -3,7 +3,7 @@ from typing import Literal
 import torch
 
 from cheetah.accelerator.dipole import Dipole
-from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -33,6 +33,9 @@ class RBend(Dipole):
     :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
         supports `"linear_edge"`.
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
@@ -49,44 +52,23 @@ class RBend(Dipole):
         fringe_integral_exit: torch.Tensor | None = None,
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
-        tracking_method: Literal["cheetah", "bmadx"] = "cheetah",
+        tracking_method: Literal[
+            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
+        ] = "linear",
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
-        # Set default values needed for conversion from RBend to Dipole
-        device, dtype = verify_device_and_dtype(
-            [
-                length,
-                angle,
-                k1,
-                rbend_e1,
-                rbend_e2,
-                tilt,
-                gap,
-                gap_exit,
-                fringe_integral,
-                fringe_integral_exit,
-            ],
-            device,
-            dtype,
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        angle = (
-            torch.as_tensor(angle, **factory_kwargs)
-            if angle is not None
-            else torch.tensor(0.0, **factory_kwargs)
-        )
+        # Set default values needed for conversion from RBend to Dipole
+        angle = angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         rbend_e1 = (
-            torch.as_tensor(rbend_e1, **factory_kwargs)
-            if rbend_e1 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            rbend_e1 if rbend_e1 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         rbend_e2 = (
-            torch.as_tensor(rbend_e2, **factory_kwargs)
-            if rbend_e2 is not None
-            else torch.tensor(0.0, **factory_kwargs)
+            rbend_e2 if rbend_e2 is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         super().__init__(
@@ -104,8 +86,8 @@ class RBend(Dipole):
             fringe_type=fringe_type,
             tracking_method=tracking_method,
             name=name,
-            device=device,
-            dtype=dtype,
+            sanitize_name=sanitize_name,
+            **factory_kwargs
         )
 
     @property
@@ -123,24 +105,6 @@ class RBend(Dipole):
     @rbend_e2.setter
     def rbend_e2(self, value):
         self.dipole_e2 = value + self.angle / 2
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"angle={repr(self.angle)}, "
-            + f"k1={repr(self.k1)}, "
-            + f"rbend_e1={repr(self.rbend_e1)},"
-            + f"rbend_e2={repr(self.rbend_e2)},"
-            + f"tilt={repr(self.tilt)},"
-            + f"gap={repr(self.gap)},"
-            + f"gap_exit={repr(self.gap_exit)},"
-            + f"fringe_integral={repr(self.fringe_integral)},"
-            + f"fringe_integral_exit={repr(self.fringe_integral_exit)},"
-            + f"fringe_at={repr(self.fringe_at)},"
-            + f"fringe_type={repr(self.fringe_type)},"
-            + f"tracking_method={repr(self.tracking_method)}, "
-            + f"name={repr(self.name)})"
-        )
 
     @property
     def defining_features(self):
