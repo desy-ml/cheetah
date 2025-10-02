@@ -8,6 +8,9 @@
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
 - Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
 
+- `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
+- Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
+
 ### 🚀 Features
 
 - Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu, @jank324, @Hespe)
