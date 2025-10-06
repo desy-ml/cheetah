@@ -1,4 +1,5 @@
 import torch
+
 from cheetah.accelerator.patch import Patch
 from cheetah.particles.particle_beam import ParticleBeam
 
@@ -54,7 +55,6 @@ def test_patch_rotation_matrix():
 
     for pitch, tilt, expected_matrix in zip(pitches, tilts, expected_rotation_matrices):
         patch = Patch(
-            length=torch.tensor(1.0),
             offset=torch.tensor([0.1, 0.2, 0.3]),
             time_offset=torch.tensor(0.5),
             pitch=pitch,
@@ -67,6 +67,22 @@ def test_patch_rotation_matrix():
             rotation_matrix, expected_matrix, atol=1e-6
         ), "Rotation matrix is incorrect"
 
+def test_patch_length_property():
+    """
+    Test the Patch element's length property.
+    """
+    patch = Patch(
+        offset=torch.tensor([0.1, 0.2, 0.3]),
+        time_offset=torch.tensor(0.0),
+        pitch=torch.tensor((0.0, 0.0)),
+        tilt=torch.tensor(0.0),
+        E_tot_offset=torch.tensor(0.0),
+        E_tot_set=torch.tensor(0.0),
+    )
+    expected_length = 0.3  # since no rotation, length should be z-offset
+    assert torch.isclose(
+        patch.length, torch.tensor(expected_length), atol=1e-6
+    ), "Length property is incorrect"
 
 def test_patch_transform_particles():
     """
