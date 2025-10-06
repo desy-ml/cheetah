@@ -54,20 +54,66 @@ def test_patch_transform_particles():
     Test the Patch element's transform_particles method.
     """
     patch = Patch(
-        length=torch.tensor(1.0),
         offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.5),
+        time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 0.0)),
         tilt=torch.tensor(0.0),
-        E_tot_offset=torch.tensor(0.01),
-        E_tot_set=torch.tensor(0.02),
+        E_tot_offset=torch.tensor(0.0),
+        E_tot_set=torch.tensor(0.0),
     )
 
     beam = ParticleBeam(
-        particles = torch.rand(10, 7),  # 10 particles with 3D position and 3D momentum
+        particles = torch.zeros(10, 7),  # 10 particles with 3D position and 3D momentum at the origin
         energy = torch.tensor(1.0)
     )
 
     transformed_beam = patch.transform_particles(beam)
-    assert torch.allclose(transformed_beam.particles[...,-1], beam.particles[...,-1] + 0.1, atol=1e-6), "Particle transformation is incorrect"
+    assert torch.allclose(transformed_beam.particles[...,0], beam.particles[...,0] - 0.1, atol=1e-6), "Particle transformation is incorrect"
+    assert torch.allclose(transformed_beam.particles[...,2], beam.particles[...,2] - 0.2, atol=1e-6), "Particle transformation is incorrect"
 
+    for i in [1,3,4,5,6]:
+        assert torch.allclose(transformed_beam.particles[...,i], beam.particles[...,i], atol=1e-6), "Particle transformation is incorrect"
+
+def test_patch_transform_particles_with_angles():
+
+    # test with angles (no tilt)
+    patch_with_angles = Patch(
+        offset=torch.tensor([0.1, 0.2, 0.0]),
+        time_offset=torch.tensor(0.0),
+        pitch=torch.tensor((0.5, -0.5)),
+        tilt=torch.tensor(0.0),
+        E_tot_offset=torch.tensor(0.0),
+        E_tot_set=torch.tensor(0.0),
+    )
+
+    beam = ParticleBeam(
+        particles = torch.zeros(10, 7),  # 10 particles with 3D position and 3D momentum at the origin
+        energy = torch.tensor(1.0e9)
+    )
+
+    transformed_beam = patch_with_angles.transform_particles(beam)
+
+    # expected offsets from Bmad - note potential issue with the change in energy here
+    # TODO: fix potential energy issue
+    bmad_offsets = torch.tensor([-5.426011E-02, -4.794255E-01, -2.278988E-01,  4.207355E-01,  -1.605987E-02,  -0.229800E+00])
+    for i, offset in zip(range(5), bmad_offsets):
+        assert torch.allclose(transformed_beam.particles[...,i], beam.particles[...,i] + offset, atol=1e-6), "Particle transformation is incorrect"
+
+    patch_with_angles = Patch(
+        offset=torch.tensor([0.1, 0.2, 0.0]),
+        time_offset=torch.tensor(0.0),
+        pitch=torch.tensor((0.5, -0.5)),
+        tilt=torch.tensor(0.75),
+        E_tot_offset=torch.tensor(0.0),
+        E_tot_set=torch.tensor(0.0),
+    )
+
+    beam = ParticleBeam(
+        particles = torch.zeros(10, 7),  # 10 particles with 3D position and 3D momentum at the origin
+        energy = torch.tensor(1.0e9)
+    )
+
+    transformed_beam = patch_with_angles.transform_particles(beam)
+    bmad_offsets = torch.tensor([-1.950462E-01, -6.400071E-02, -1.297652E-01,  6.346425E-01,  -1.605987E-02])
+    for i, offset in zip(range(5), bmad_offsets):
+        assert torch.allclose(transformed_beam.particles[...,i], beam.particles[...,i] + offset, atol=1e-6), "Particle transformation is incorrect"

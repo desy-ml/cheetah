@@ -9,12 +9,12 @@ from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
+
 class Patch(Element):
     """
     Patch element that shifts the reference orbit and time. Note that this element does not
     support batching for the offset, time offset, pitch, tilt, E_tot_offset, and E_tot_set parameters.
 
-    :param length: Length of the patch in meters.
     :param offset:  Exit face offset in (x,y,z) from Entrance in meters.
     :param time_offset: Reference time offset in seconds.
     :param pitch: Exit face orientation (x,y,z) from Entrance in radians.
@@ -29,7 +29,6 @@ class Patch(Element):
     """
     def __init__(
         self,
-        length: torch.Tensor,
         offset: torch.Tensor | None = None,
         time_offset: torch.Tensor | None = None,
         pitch: torch.Tensor | None = None,
@@ -42,13 +41,12 @@ class Patch(Element):
         dtype: torch.dtype | None = None,
     ) -> None:
         device, dtype = verify_device_and_dtype(
-            [length, offset, time_offset, pitch, tilt, E_tot_offset, E_tot_set],
+            [offset, time_offset, pitch, tilt, E_tot_offset, E_tot_set],
             device, dtype
         )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
         self.register_buffer_or_parameter(
             "offset",
             torch.as_tensor(offset if offset is not None else 0.0, **factory_kwargs),
@@ -73,21 +71,29 @@ class Patch(Element):
             torch.as_tensor(E_tot_set if E_tot_set is not None else 0.0, **factory_kwargs),
         )
 
+    @property
+    def length(self) -> torch.Tensor:
+        rotation_matrix = self.rotation_matrix()
+        return rotation_matrix[-1,0] * self.offset[0] + rotation_matrix[-1,1] * self.offset[1] + rotation_matrix[-1,2] * self.offset[2]
+
     def transform_particles(self, incoming: ParticleBeam) -> Beam:
         particles = incoming.particles
 
         # position coordinates
-        entrance_positions = particles[...,:-1:2]
-        entrance_positions[...,-1] *= -1  # Convert to BMAD coordinates
-        entrance_momentum = particles[...,1:-1:2]
+        entrance_position = particles[...,:-1:2]
+        # momentum coordinates
+        rel_p = particles[..., 5] + 1.0  # convert delta to p/p0
+        entrance_momentum = torch.vstack([particles[...,1], particles[...,3], torch.sqrt((rel_p)**2 - particles[...,1]**2 - particles[...,3]**2)]).T
 
         # compute the exit positions and momentum - note these computations follow bmad coordinates
         rotation_matrix = self.rotation_matrix()
-        exit_positions = torch.inverse(rotation_matrix) @ torch.transpose(entrance_positions - self.offset, -1,-2)
-        exit_momentum = torch.inverse(rotation_matrix) @ torch.transpose(entrance_momentum, -1, -2)
+        exit_positions = (rotation_matrix.T @ (entrance_position - self.offset).T).T
+        exit_momentum = (rotation_matrix.T @ entrance_momentum.T).T
 
-        # convert to cheetah coordinates
-        exit_positions[..., -1] *= -1
+        # track particles to the end of the patch
+        exit_positions[...,0] += -exit_positions[...,2] * exit_momentum[...,0] / exit_momentum[...,2]
+        exit_positions[...,1] += -exit_positions[...,2] * exit_momentum[...,1] / exit_momentum[...,2]
+        exit_positions[...,2] += -exit_positions[...,2] * rel_p / exit_momentum[...,2]
 
         # Interleave last dimensions of exit_positions and exit_momentum
         exit_particles = torch.empty(
@@ -99,9 +105,13 @@ class Patch(Element):
         exit_particles[..., 1:-1:2] = exit_momentum
         exit_particles[..., -1] = particles[..., -1]
 
+        # convert momentum back to delta
+        exit_particles[..., -2] -= 1.0
+
         return ParticleBeam(
             particles=exit_particles,
             energy=incoming.energy + self.E_tot_offset,
+            s=self.length + incoming.s,
         )
 
     def rotation_matrix(self) -> torch.Tensor:
