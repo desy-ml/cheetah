@@ -11,8 +11,8 @@ from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matri
 from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
+    cache_transfer_map,
     squash_index_for_unavailable_dims,
-    verify_device_and_dtype,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -59,31 +59,30 @@ class Quadrupole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k1, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "k1", torch.as_tensor(k1 if k1 is not None else 0.0, **factory_kwargs)
+            "k1", k1 if k1 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
@@ -96,13 +95,13 @@ class Quadrupole(Element):
             energy=energy,
         )
 
-        if torch.all(self.misalignment == 0):
-            return R
-        else:
+        if torch.any(self.misalignment != 0):
             R_entry, R_exit = misalignment_matrix(self.misalignment)
             R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
-            return R
 
+        return R
+
+    @cache_transfer_map
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
