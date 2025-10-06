@@ -1,8 +1,28 @@
 import torch
 
+from cheetah.accelerator import Segment, Drift
 from cheetah.accelerator.patch import Patch
 from cheetah.particles.particle_beam import ParticleBeam
 
+
+def test_tracking_in_segment():
+    beam = ParticleBeam(torch.zeros(10, 7), energy=torch.tensor(1.0e9))
+    patch = Patch(
+        offset=torch.tensor([0.1, 0.2, 0.3]),
+        time_offset=torch.tensor(0.0),
+        pitch=torch.tensor((0.0, 0.0)),
+        tilt=torch.tensor(0.0),
+        E_tot_offset=torch.tensor(0.0),
+    )
+
+    segment = Segment(
+        elements=[
+            Drift(length=torch.tensor(1.0)),
+            patch,
+            Drift(length=torch.tensor(1.0)),
+        ],
+    )
+    segment.track(beam)
 
 def test_patch_rotation_matrix():
     """

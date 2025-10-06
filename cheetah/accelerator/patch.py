@@ -180,12 +180,13 @@ class Patch(Element):
         if isinstance(incoming, ParticleBeam):
             return self.transform_particles(incoming)
         else:
-            raise TypeError("Patch element currently only supports ParticleBeam input.")
+            raise TypeError("Patch element currently only supports ParticleBeam input.")        
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
         pass  # Patch element does not have a visual representation
 
+    @property
     def is_skippable(self) -> bool:
         return False  # Patch elements cannot be skipped
