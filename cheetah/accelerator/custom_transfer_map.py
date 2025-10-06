@@ -4,7 +4,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator, verify_device_and_dtype
+from cheetah.utils import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -32,21 +32,17 @@ class CustomTransferMap(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [predefined_transfer_map, length], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         if length is not None:
-            self.length = torch.as_tensor(length, **factory_kwargs)
+            self.length = length
 
         assert (predefined_transfer_map[..., -1, :-2] == 0.0).all() and (
             predefined_transfer_map[..., -1, -1] == 1.0
         ).all(), "The seventh row of the transfer map must be [0, 0, 0, 0, 0, 0, 1]."
         self.register_buffer_or_parameter(
-            "predefined_transfer_map",
-            torch.as_tensor(predefined_transfer_map, **factory_kwargs),
+            "predefined_transfer_map", predefined_transfer_map
         )
 
         assert self.predefined_transfer_map.shape[-2:] == (7, 7)
@@ -75,12 +71,12 @@ class CustomTransferMap(Element):
         first_element_transfer_map = elements[0].first_order_transfer_map(
             incoming_beam.energy, incoming_beam.species
         )
-        device = first_element_transfer_map.device
-        dtype = first_element_transfer_map.dtype
+        factory_kwargs = {
+            "device": first_element_transfer_map.device,
+            "dtype": first_element_transfer_map.dtype,
+        }
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat(
-            (*incoming_beam.energy.shape, 1, 1)
-        )
+        tm = torch.eye(7, **factory_kwargs).repeat((*incoming_beam.energy.shape, 1, 1))
         for element in elements:
             tm = (
                 element.first_order_transfer_map(
@@ -94,9 +90,7 @@ class CustomTransferMap(Element):
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
-        return cls(
-            tm, length=combined_length, device=device, dtype=dtype, name=combined_name
-        )
+        return cls(tm, length=combined_length, name=combined_name, **factory_kwargs)
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
