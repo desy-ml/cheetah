@@ -1,7 +1,7 @@
-
 import torch
 from cheetah.accelerator.patch import Patch
 from cheetah.particles.particle_beam import ParticleBeam
+
 
 def test_patch_rotation_matrix():
     """
@@ -14,26 +14,43 @@ def test_patch_rotation_matrix():
         torch.tensor((0.0, torch.pi / 2.0)),
         torch.tensor((0.0, 0.0)),
     ]
-    tilts = [torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(torch.pi / 2.0)]
+    tilts = [
+        torch.tensor(0.0),
+        torch.tensor(0.0),
+        torch.tensor(0.0),
+        torch.tensor(torch.pi / 2.0),
+    ]
 
     expected_rotation_matrices = [
-        torch.tensor([
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ]), torch.tensor([
-        [0.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0],
-        [-1.0, 0.0, 0.0],
-    ]),torch.tensor([
-        [1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0],
-        [0.0, -1.0, 0.0],
-    ]), torch.tensor([
-        [0.0, -1.0, 0.0],
-        [1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ])]
+        torch.tensor(
+            [
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        ),
+        torch.tensor(
+            [
+                [0.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0],
+                [-1.0, 0.0, 0.0],
+            ]
+        ),
+        torch.tensor(
+            [
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [0.0, -1.0, 0.0],
+            ]
+        ),
+        torch.tensor(
+            [
+                [0.0, -1.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        ),
+    ]
 
     for pitch, tilt, expected_matrix in zip(pitches, tilts, expected_rotation_matrices):
         patch = Patch(
@@ -46,7 +63,9 @@ def test_patch_rotation_matrix():
             E_tot_set=torch.tensor(0.02),
         )
         rotation_matrix = patch.rotation_matrix()
-        assert torch.allclose(rotation_matrix, expected_matrix, atol=1e-6), "Rotation matrix is incorrect"
+        assert torch.allclose(rotation_matrix, expected_matrix, atol=1e-6), (
+            "Rotation matrix is incorrect"
+        )
 
 
 def test_patch_transform_particles():
@@ -63,19 +82,27 @@ def test_patch_transform_particles():
     )
 
     beam = ParticleBeam(
-        particles = torch.zeros(10, 7),  # 10 particles with 3D position and 3D momentum at the origin
-        energy = torch.tensor(1.0)
+        particles=torch.zeros(
+            10, 7
+        ),  # 10 particles with 3D position and 3D momentum at the origin
+        energy=torch.tensor(1.0),
     )
 
     transformed_beam = patch.transform_particles(beam)
-    assert torch.allclose(transformed_beam.particles[...,0], beam.particles[...,0] - 0.1, atol=1e-6), "Particle transformation is incorrect"
-    assert torch.allclose(transformed_beam.particles[...,2], beam.particles[...,2] - 0.2, atol=1e-6), "Particle transformation is incorrect"
+    assert torch.allclose(
+        transformed_beam.particles[..., 0], beam.particles[..., 0] - 0.1, atol=1e-6
+    ), "Particle transformation is incorrect"
+    assert torch.allclose(
+        transformed_beam.particles[..., 2], beam.particles[..., 2] - 0.2, atol=1e-6
+    ), "Particle transformation is incorrect"
 
-    for i in [1,3,4,5,6]:
-        assert torch.allclose(transformed_beam.particles[...,i], beam.particles[...,i], atol=1e-6), "Particle transformation is incorrect"
+    for i in [1, 3, 4, 5, 6]:
+        assert torch.allclose(
+            transformed_beam.particles[..., i], beam.particles[..., i], atol=1e-6
+        ), "Particle transformation is incorrect"
+
 
 def test_patch_transform_particles_with_angles():
-
     # test with angles (no tilt)
     patch_with_angles = Patch(
         offset=torch.tensor([0.1, 0.2, 0.0]),
@@ -87,17 +114,32 @@ def test_patch_transform_particles_with_angles():
     )
 
     beam = ParticleBeam(
-        particles = torch.zeros(10, 7),  # 10 particles with 3D position and 3D momentum at the origin
-        energy = torch.tensor(1.0e9)
+        particles=torch.zeros(
+            10, 7
+        ),  # 10 particles with 3D position and 3D momentum at the origin
+        energy=torch.tensor(1.0e9),
     )
 
     transformed_beam = patch_with_angles.transform_particles(beam)
 
     # expected offsets from Bmad - note potential issue with the change in energy here
     # TODO: fix potential energy issue
-    bmad_offsets = torch.tensor([-5.426011E-02, -4.794255E-01, -2.278988E-01,  4.207355E-01,  -1.605987E-02,  -0.229800E+00])
+    bmad_offsets = torch.tensor(
+        [
+            -5.426011e-02,
+            -4.794255e-01,
+            -2.278988e-01,
+            4.207355e-01,
+            -1.605987e-02,
+            -0.229800e00,
+        ]
+    )
     for i, offset in zip(range(5), bmad_offsets):
-        assert torch.allclose(transformed_beam.particles[...,i], beam.particles[...,i] + offset, atol=1e-6), "Particle transformation is incorrect"
+        assert torch.allclose(
+            transformed_beam.particles[..., i],
+            beam.particles[..., i] + offset,
+            atol=1e-6,
+        ), "Particle transformation is incorrect"
 
     patch_with_angles = Patch(
         offset=torch.tensor([0.1, 0.2, 0.0]),
@@ -109,11 +151,19 @@ def test_patch_transform_particles_with_angles():
     )
 
     beam = ParticleBeam(
-        particles = torch.zeros(10, 7),  # 10 particles with 3D position and 3D momentum at the origin
-        energy = torch.tensor(1.0e9)
+        particles=torch.zeros(
+            10, 7
+        ),  # 10 particles with 3D position and 3D momentum at the origin
+        energy=torch.tensor(1.0e9),
     )
 
     transformed_beam = patch_with_angles.transform_particles(beam)
-    bmad_offsets = torch.tensor([-1.950462E-01, -6.400071E-02, -1.297652E-01,  6.346425E-01,  -1.605987E-02])
+    bmad_offsets = torch.tensor(
+        [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, -1.605987e-02]
+    )
     for i, offset in zip(range(5), bmad_offsets):
-        assert torch.allclose(transformed_beam.particles[...,i], beam.particles[...,i] + offset, atol=1e-6), "Particle transformation is incorrect"
+        assert torch.allclose(
+            transformed_beam.particles[..., i],
+            beam.particles[..., i] + offset,
+            atol=1e-6,
+        ), "Particle transformation is incorrect"
