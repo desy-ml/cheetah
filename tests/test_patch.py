@@ -67,6 +67,7 @@ def test_patch_rotation_matrix():
             rotation_matrix, expected_matrix, atol=1e-6
         ), "Rotation matrix is incorrect"
 
+
 def test_patch_length_property():
     """
     Test the Patch element's length property.
@@ -83,6 +84,7 @@ def test_patch_length_property():
     assert torch.isclose(
         patch.length, torch.tensor(expected_length), atol=1e-6
     ), "Length property is incorrect"
+
 
 def test_patch_transform_particles():
     """
