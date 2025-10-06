@@ -64,9 +64,8 @@ def test_patch_rotation_matrix():
         )
         rotation_matrix = patch.rotation_matrix()
         assert torch.allclose(
-            rotation_matrix, expected_matrix, atol=1e-6), (
-            "Rotation matrix is incorrect"
-        )
+            rotation_matrix, expected_matrix, atol=1e-6
+        ), "Rotation matrix is incorrect"
 
 
 def test_patch_transform_particles():
