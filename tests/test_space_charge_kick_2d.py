@@ -11,6 +11,7 @@ from scipy.constants import speed_of_light
 import cheetah
 from cheetah import Segment
 from cheetah import SpaceChargeKick2D
+from cheetah.utils import compute_relativistic_factors
 
 
 def get_lorentz_factors(rest_energy: float, kin_energy: float) -> tuple[float, float]:
@@ -379,3 +380,25 @@ def test_incoming_beam_not_modified():
     incoming_beam_after = incoming_beam.particles
 
     assert torch.allclose(incoming_beam_before, incoming_beam_after)
+
+
+def test_does_not_break_segment_length():
+    """
+    Test that the computation of a `Segment`'s length does not break when
+    `SpaceChargeKick3D` is used.
+    """
+    section_length = torch.tensor(1.0)
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 6),
+        ]
+    )
+
+    assert segment.length.shape == torch.Size([])
+    assert torch.allclose(segment.length, torch.tensor(1.0))
