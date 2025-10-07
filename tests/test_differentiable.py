@@ -45,9 +45,9 @@ def test_ea_magnets():
 
     ea.AREAMQZM2.k1 = nn.Parameter(ea.AREAMQZM2.k1)
     ea.AREAMQZM1.k1 = nn.Parameter(ea.AREAMQZM1.k1)
-    ea.AREAMCVM1.angle = nn.Parameter(ea.AREAMCVM1.angle)
+    ea.AREAMCVM1.angle = nn.Parameter(ea.AREAMCVM1.horizontal_angle)
     ea.AREAMQZM3.k1 = nn.Parameter(ea.AREAMQZM3.k1)
-    ea.AREAMCHM1.angle = nn.Parameter(ea.AREAMCHM1.angle)
+    ea.AREAMCHM1.angle = nn.Parameter(ea.AREAMCHM1.vertical_angle)
 
     outgoing_beam = ea.track(incoming_beam)
 
