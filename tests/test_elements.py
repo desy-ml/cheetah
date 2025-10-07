@@ -96,7 +96,12 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 @pytest.mark.for_every_element(
     "element",
     xfail_if=lambda element: isinstance(
-        element, (cheetah.SpaceChargeKick3D, cheetah.SpaceChargeKick2D, cheetah.TransverseDeflectingCavity)
+        element,
+        (
+            cheetah.SpaceChargeKick3D,
+            cheetah.SpaceChargeKick2D,
+            cheetah.TransverseDeflectingCavity,
+        ),
     )
     or (
         isinstance(

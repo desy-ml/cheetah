@@ -226,7 +226,6 @@ def test_kv_drift():
         for key2 in ["cov_matrix"]:
             data[key1][key2] = []
 
-
     # Track envelope
     # ----------------------------------------------------------------------------------
     rest_energy = 0.938272029e09  # [eV]
