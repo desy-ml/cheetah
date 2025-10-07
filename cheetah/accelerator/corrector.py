@@ -91,7 +91,7 @@ class Corrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return self.horizontal_angle != 0 or self.vertical_angle != 0
+        return torch.any(self.horizontal_angle != 0 or self.vertical_angle != 0).item()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
