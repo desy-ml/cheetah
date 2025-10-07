@@ -3,7 +3,6 @@ from typing import Optional, Union
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
-from scipy.constants import physical_constants
 from torch import nn
 
 from cheetah.particles.species import Species
@@ -14,10 +13,6 @@ from cheetah.utils.physics import compute_relativistic_factors
 from .element import Element
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-electron_mass_eV = torch.tensor(
-    physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
-)
 
 
 class Corrector(Element):
