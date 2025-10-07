@@ -252,7 +252,7 @@ def test_kv_drift():
     env_lattice = DriftLattice(length=cfg["lattice"]["length"])
     env_positions = np.linspace(0.0, cfg["lattice"]["length"], 500)
     env_tracker = KVEnvelopeTracker(env_lattice, env_positions)
-    env_history = env_tracker.track(env)
+    env_tracker.track(env)
 
     data["env"]["cov_matrix"].append(torch.tensor(env.cov()).float())
 
