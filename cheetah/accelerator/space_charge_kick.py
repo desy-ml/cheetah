@@ -949,13 +949,19 @@ class SpaceChargeKick2D(Element):
         green_func_values[..., :num_grid_points_x, :num_grid_points_y] = G_values
 
         # Reverse x, excluding the first element
-        green_func_values[..., num_grid_points_x + 1 :, :num_grid_points_y] = G_values[..., 1:, :].flip(dims=[-2])
+        green_func_values[..., num_grid_points_x + 1 :, :num_grid_points_y] = G_values[
+            ..., 1:, :
+        ].flip(dims=[-2])
 
         # Reverse y, excluding the first element
-        green_func_values[..., :num_grid_points_x, num_grid_points_y + 1 :] = G_values[..., :, 1:].flip(dims=[-1])
+        green_func_values[..., :num_grid_points_x, num_grid_points_y + 1 :] = G_values[
+            ..., :, 1:
+        ].flip(dims=[-1])
 
         # Reverse x and y
-        green_func_values[..., num_grid_points_x + 1 :, num_grid_points_y + 1 :] = G_values[..., 1:, 1:].flip(dims=[-2, -1])
+        green_func_values[..., num_grid_points_x + 1 :, num_grid_points_y + 1 :] = (
+            G_values[..., 1:, 1:].flip(dims=[-2, -1])
+        )
 
         return green_func_values
 
@@ -969,7 +975,9 @@ class SpaceChargeKick2D(Element):
         """
         Solves the Poisson equation for the given charge density, using FFT convolution.
         """
-        charge_density = self._array_rho(beam, xp_coordinates, cell_size, grid_dimensions)
+        charge_density = self._array_rho(
+            beam, xp_coordinates, cell_size, grid_dimensions
+        )
 
         # Line density
         beam_length = torch.abs(
