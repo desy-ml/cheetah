@@ -5,13 +5,10 @@ import numpy as np
 import torch
 import scipy.integrate
 from scipy import constants
-from scipy.constants import elementary_charge
-from scipy.constants import speed_of_light
 
 import cheetah
 from cheetah import Segment
 from cheetah import SpaceChargeKick2D
-from cheetah.utils import compute_relativistic_factors
 
 
 def get_lorentz_factors(rest_energy: float, kin_energy: float) -> tuple[float, float]:
@@ -280,7 +277,7 @@ def test_kv_drift():
     particles[:, 6] = torch.ones(n)
 
     beam_intensity = torch.tensor(cfg["beam"]["intensity"])
-    beam_charge = elementary_charge * beam_intensity
+    beam_charge = constants.elementary_charge * beam_intensity
     particle_charge = beam_charge / particles.shape[0]
 
     beam = cheetah.ParticleBeam(

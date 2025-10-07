@@ -699,7 +699,8 @@ class SpaceChargeKick2D(Element):
     **momentum** (i.e. divergence and energy spread) of the beam. The positions are
     unmodified; this is meant to be combined with another lattice element (e.g. `Drift`)
     that does modify the positions, but does not take into account space charge. The
-    2D integrated Green function method [1] is used to compute the effect of space charge.
+    2D integrated Green function method [1] is used to compute the effect of space
+    charge.
 
     Overview of the method:
      - Compute the beam charge density on a grid.
