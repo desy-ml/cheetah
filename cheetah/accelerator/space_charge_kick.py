@@ -695,13 +695,11 @@ class SpaceChargeKick3D(Element):
 
 class SpaceChargeKick2D(Element):
     """
-    Applies the effect of space charge over a length `effect_length`, on the
+    Applies the effect of 2D space charge over a length `effect_length`, on the
     **momentum** (i.e. divergence and energy spread) of the beam. The positions are
     unmodified; this is meant to be combined with another lattice element (e.g. `Drift`)
     that does modify the positions, but does not take into account space charge. The
-    2D integrated Green function method
-    (https://doi-org.ornl.idm.oclc.org/10.1016/j.jcp.2004.01.008) is used to
-    compute the effect of space charge.
+    2D integrated Green function method [1] is used to compute the effect of space charge.
 
     Overview of the method:
      - Compute the beam charge density on a grid.
@@ -714,6 +712,10 @@ class SpaceChargeKick2D(Element):
 
      This is a true 2D solver; we assume a uniform density in the longitudinal plane
      (line charges).
+
+    [1] Qiang, Ji, Miguel A. Furman, and Robert D. Ryne. "A parallel particle-in-cell
+        model for beam–beam interaction in high energy ring colliders." Journal of
+        Computational Physics 198.1 (2004): 278-294.
 
     :param effect_length: Length over which the effect is applied in meters.
     :param grid_shape: Number of grid points in (x, y) directions.
