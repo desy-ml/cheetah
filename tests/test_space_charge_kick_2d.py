@@ -348,3 +348,34 @@ def test_vectorized():
     outgoing = segment.track(incoming)
 
     assert outgoing.particles.shape == (3, 2, 10_000, 7)
+
+
+def test_incoming_beam_not_modified():
+    """
+    Tests that the incoming beam is not modified when calling the track method.
+    """
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=10_000, sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
+    )
+    # Initial beam properties
+    incoming_beam_before = incoming_beam.particles
+
+    section_length = torch.tensor(1.0)
+    segment_space_charge = cheetah.Segment(
+        elements=[
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 6),
+        ]
+    )
+    # Calling the track method
+    segment_space_charge.track(incoming_beam)
+
+    # Final beam properties
+    incoming_beam_after = incoming_beam.particles
+
+    assert torch.allclose(incoming_beam_before, incoming_beam_after)
