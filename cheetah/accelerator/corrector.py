@@ -1,13 +1,15 @@
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 from scipy.constants import physical_constants
-from torch import Size, nn
+from torch import nn
 
+from cheetah.particles.species import Species
 from cheetah.utils import UniqueNameGenerator
+from cheetah.utils.cache import cache_transfer_map
+from cheetah.utils.physics import compute_relativistic_factors
 
 from .element import Element
 
@@ -39,11 +41,12 @@ class Corrector(Element):
         horizontal_angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         vertical_angle: Optional[Union[torch.Tensor, nn.Parameter]] = None,
         name: Optional[str] = None,
+        sanitize_name: bool = False,
         device=None,
         dtype=torch.float32,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.register_buffer("length", torch.as_tensor(length, **factory_kwargs))
         self.register_buffer(
@@ -63,16 +66,22 @@ class Corrector(Element):
             ),
         )
 
-    def transfer_map(self, energy: torch.Tensor) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+    @cache_transfer_map
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        gamma = energy / electron_mass_eV.to(device=device, dtype=dtype)
-        igamma2 = torch.zeros_like(gamma)  # TODO: Effect on gradients?
-        igamma2[gamma != 0] = 1 / gamma[gamma != 0] ** 2
-        beta = torch.sqrt(1 - igamma2)
+        _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*self.length.shape, 1, 1))
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape,
+            igamma2.shape,
+            self.horizontal_angle.shape,
+            self.vertical_angle.shape,
+        )
+
+        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 1, 6] = self.horizontal_angle
@@ -81,44 +90,43 @@ class Corrector(Element):
 
         return tm
 
-    def broadcast(self, shape: Size) -> Element:
-        return self.__class__(
-            length=self.length.repeat(shape),
-            horizontal_angle=self.horizontal_angle,
-            vertical_angle=self.vertical_angle,
-            name=self.name,
-        )
-
     @property
     def is_skippable(self) -> bool:
         return True
 
     @property
     def is_active(self) -> bool:
-        return any(self.horizontal_angle != 0, self.vertical_angle != 0)
+        return self.horizontal_angle != 0 or self.vertical_angle != 0
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        split_elements = []
-        remaining = self.length
-        while remaining > 0:
-            length = torch.min(resolution, remaining)
-            element = Corrector(
-                length,
-                self.horizontal_angle * length / self.length,
-                self.vertical_angle * length / self.length,
-            )
-            split_elements.append(element)
-            remaining -= resolution
-        return split_elements
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
 
-    def plot(self, ax: plt.Axes, s: float) -> None:
-        alpha = 1 if self.is_active else 0.2
-        height = (np.sign(self.horizontal_angle[0]) if self.is_active else 1) * (
-            np.sign(self.vertical_angle[0]) if self.is_active else 1
+        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
+        plot_angle_h = (
+            self.horizontal_angle[vector_idx]
+            if self.horizontal_angle.dim() > 0
+            else self.horizontal_angle
+        )
+        plot_angle_v = (
+            self.vertical_angle[vector_idx]
+            if self.vertical_angle.dim() > 0
+            else self.vertical_angle
         )
 
+        alpha = 1 if self.is_active else 0.2
+        height = 0.8 * (torch.sign(plot_angle_h) if self.is_active else 1)
+
         patch = Rectangle(
-            (s, 0), self.length[0], height, color="tab:blue", alpha=alpha, zorder=2
+            (plot_s, 0),
+            plot_length,
+            height,
+            angle=plot_angle_v,
+            color="tab:blue",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
 
@@ -129,11 +137,3 @@ class Corrector(Element):
             "horizontal_angle",
             "vertical_angle",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"horizontal_angle={repr(self.horizontal_angle)}, "
-            + f"vertical_angle={repr(self.vertical_angle)}, "
-            + f"name={repr(self.name)})"
-        )

@@ -51,10 +51,10 @@ def translate_element(row: list[str], header: list[str]) -> dict | None:
         return None
     elif class_name == "MCXG":  # TODO: Check length with Willi
         assert name[6] == "X"
-        horizontal_coil = cheetah.HorizontalCorrector(
+        horizontal_coil = cheetah.Corrector(
             name=name[:6] + "H" + name[6 + 1 :], length=torch.tensor(5e-05)
         )
-        vertical_coil = cheetah.VerticalCorrector(
+        vertical_coil = cheetah.Corrector(
             name=name[:6] + "V" + name[6 + 1 :], length=torch.tensor(5e-05)
         )
         element = cheetah.Segment(elements=[horizontal_coil, vertical_coil], name=name)
@@ -133,9 +133,9 @@ def translate_element(row: list[str], header: list[str]) -> dict | None:
             shape="rectangular",
         )
     elif class_name == "MCHM":
-        element = cheetah.HorizontalCorrector(name=name, length=torch.tensor(0.02))
+        element = cheetah.Corrector(name=name, length=torch.tensor(0.02))
     elif class_name == "MCVM":
-        element = cheetah.VerticalCorrector(name=name, length=torch.tensor(0.02))
+        element = cheetah.Corrector(name=name, length=torch.tensor(0.02))
     elif class_name == "MBHL":
         element = cheetah.Dipole(name=name, length=torch.tensor(0.322))
     elif class_name == "MBHB":

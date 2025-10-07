@@ -47,11 +47,11 @@ segment = cheetah.Segment(
         cheetah.Drift(length=torch.tensor(0.428)),
         cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM2"),
         cheetah.Drift(length=torch.tensor(0.204)),
-        cheetah.VerticalCorrector(length=torch.tensor(0.02), name="AREAMCVM1"),
+        cheetah.Corrector(length=torch.tensor(0.02), name="AREAMCVM1"),
         cheetah.Drift(length=torch.tensor(0.204)),
         cheetah.Quadrupole(length=torch.tensor(0.122), name="AREAMQZM3"),
         cheetah.Drift(length=torch.tensor(0.179)),
-        cheetah.HorizontalCorrector(length=torch.tensor(0.02), name="AREAMCHM1"),
+        cheetah.Corrector(length=torch.tensor(0.02), name="AREAMCHM1"),
         cheetah.Drift(length=torch.tensor(0.45)),
         cheetah.Screen(name="AREABSCR1"),
     ]
@@ -118,7 +118,7 @@ Use `mesh.show` to view the mesh and `mesh.export` to export it to a file.
 
 ```python
 mesh, _ = segment.to_mesh(
-    cuteness={cheetah.HorizontalCorrector: 2.0, cheetah.VerticalCorrector: 2.0}
+    cuteness={cheetah.Corrector: 2.0, cheetah.Corrector: 2.0}
 )
 mesh.show()
 ```

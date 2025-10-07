@@ -35,10 +35,6 @@ Accelerator
     :members:
     :undoc-members:
 
-.. automodule:: accelerator.horizontal_corrector
-    :members:
-    :undoc-members:
-
 .. automodule:: accelerator.marker
     :members:
     :undoc-members:
@@ -76,9 +72,5 @@ Accelerator
     :undoc-members:
 
 .. automodule:: accelerator.undulator
-    :members:
-    :undoc-members:
-
-.. automodule:: accelerator.vertical_corrector
     :members:
     :undoc-members:

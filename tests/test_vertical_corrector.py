@@ -1,6 +1,6 @@
 import torch
 
-from cheetah import Drift, ParameterBeam, ParticleBeam, Segment, VerticalCorrector
+from cheetah import Corrector, Drift, ParameterBeam, ParticleBeam, Segment
 
 
 def test_vertical_corrector_off_on():
@@ -8,7 +8,9 @@ def test_vertical_corrector_off_on():
     Test that a corrector with angle=0 behaves
     still like a drift and that the angle translates properly.
     """
-    corrector = VerticalCorrector(length=torch.tensor([0.3]), angle=torch.tensor([0.0]))
+    corrector = Corrector(
+        length=torch.tensor([0.3]), vertical_angle=torch.tensor([0.0])
+    )
     drift = Drift(length=torch.tensor([1.0]))
     incoming_beam = ParameterBeam.from_twiss(
         energy=torch.tensor([1.8e7]), beta_x=torch.tensor([5]), beta_y=torch.tensor([5])
@@ -28,18 +30,14 @@ def test_vertical_corrector_off_on():
 
 def test_vertical_angle_property():
     try:
-        VerticalCorrector(
-            length=torch.tensor([0.3]), vertical_angle=torch.tensor([0.0])
-        )
+        Corrector(length=torch.tensor([0.3]), vertical_angle=torch.tensor([0.0]))
     except TypeError:
         pass
 
 
 def test_horizontal_angle_property():
     try:
-        VerticalCorrector(
-            length=torch.tensor([0.3]), vertical_angle=torch.tensor([0.0])
-        )
+        Corrector(length=torch.tensor([0.3]), vertical_angle=torch.tensor([0.0]))
     except TypeError:
         pass
 
@@ -54,9 +52,9 @@ def test_corrector_batched_execution():
     ).broadcast(batch_shape)
     segment = Segment(
         [
-            VerticalCorrector(
+            Corrector(
                 length=torch.tensor([0.04, 0.04, 0.04]),
-                angle=torch.tensor([0.001, 0.003, 0.001]),
+                vertical_angle=torch.tensor([0.001, 0.003, 0.001]),
             ),
             Drift(length=torch.tensor([0.5])).broadcast(batch_shape),
         ]

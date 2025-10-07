@@ -9,7 +9,6 @@ from .accelerator import (  # noqa: F401
     Dipole,
     Drift,
     Element,
-    HorizontalCorrector,
     Marker,
     Quadrupole,
     RBend,
@@ -20,7 +19,6 @@ from .accelerator import (  # noqa: F401
     SpaceChargeKick,
     TransverseDeflectingCavity,
     Undulator,
-    VerticalCorrector,
 )
 from .particles import Beam, ParameterBeam, ParticleBeam, Species  # noqa: F401
 from .utils import (  # noqa: F401

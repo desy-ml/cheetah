@@ -69,16 +69,18 @@ def convert_element_to_cheetah(
             sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Hcor):
-        return cheetah.HorizontalCorrector(
+        return cheetah.Corrector(
             length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
+            horizontal_angle=torch.tensor(element.angle, **factory_kwargs),
+            vertical_angle=torch.tensor(0.0, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Vcor):
-        return cheetah.VerticalCorrector(
+        return cheetah.Corrector(
             length=torch.tensor(element.l, **factory_kwargs),
-            angle=torch.tensor(element.angle, **factory_kwargs),
+            horizontal_angle=torch.tensor(0.0, **factory_kwargs),
+            vertical_angle=torch.tensor(element.angle, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )

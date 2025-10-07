@@ -15,7 +15,7 @@ def test_run_and_check_return():
             cheetah.Drift(length=torch.tensor(0.3)),
             cheetah.Quadrupole(length=torch.tensor(0.2)),
             cheetah.Drift(length=torch.tensor(0.1)),
-            cheetah.HorizontalCorrector(length=torch.tensor(0.1)),
+            cheetah.Corrector(length=torch.tensor(0.1)),
             cheetah.Drift(length=torch.tensor(0.3)),
         ],
     )

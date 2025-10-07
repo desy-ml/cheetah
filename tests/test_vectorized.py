@@ -413,16 +413,16 @@ def test_vectorized_parameter_beam_creation():
     assert torch.allclose(beam.sigma_x, torch.tensor([1e-5, 2e-5]))
 
 
-@pytest.mark.parametrize(
-    "ElementClass", [cheetah.HorizontalCorrector, cheetah.VerticalCorrector]
-)
+@pytest.mark.parametrize("ElementClass", [cheetah.Corrector])
 def test_broadcasting_corrector_angles(ElementClass):
     """Test that broadcasting rules are correctly applied to with corrector angles."""
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
     element = ElementClass(
-        length=torch.tensor(0.15), angle=torch.tensor([[1e-5], [2e-5], [3e-5]])
+        length=torch.tensor(0.15),
+        horizontal_angle=torch.tensor([[1e-5], [2e-5], [3e-5]]),
+        vertical_angle=torch.tensor([[1e-5], [2e-5], [3e-5]]),
     )
 
     outgoing = element.track(incoming)

@@ -95,17 +95,23 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
-            return cheetah.HorizontalCorrector(
+            return cheetah.Corrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
-                angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
+                horizontal_angle=torch.tensor(
+                    bmad_parsed.get("kick", 0.0), **factory_kwargs
+                ),
+                vertical_angle=torch.tensor(0.0, **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
-            return cheetah.VerticalCorrector(
+            return cheetah.Corrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
-                angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
+                horizontal_angle=torch.tensor(0.0, **factory_kwargs),
+                vertical_angle=torch.tensor(
+                    bmad_parsed.get("kick", 0.0), **factory_kwargs
+                ),
                 name=name,
                 sanitize_name=sanitize_name,
             )

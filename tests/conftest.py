@@ -42,8 +42,11 @@ ELEMENT_SUBCLASSES_ARGS = {
             "tracking_method": "drift_kick_drift",
         },
     },
-    cheetah.HorizontalCorrector: {
-        "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
+    cheetah.Corrector: {
+        "default": {
+            "length": torch.tensor(1.0),
+            "horizontal_angle": torch.tensor([1.0, -2.0]),
+        }
     },
     cheetah.Marker: {"default": {}},
     cheetah.Quadrupole: {
@@ -105,8 +108,11 @@ ELEMENT_SUBCLASSES_ARGS = {
         "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},
     },
     cheetah.Undulator: {"default": {"length": torch.tensor(1.0)}},
-    cheetah.VerticalCorrector: {
-        "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
+    cheetah.Corrector: {
+        "default": {
+            "length": torch.tensor(1.0),
+            "vertical_angle": torch.tensor([1.0, -2.0]),
+        }
     },
 }
 
