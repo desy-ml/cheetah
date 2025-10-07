@@ -2,13 +2,12 @@ import copy
 import math
 
 import numpy as np
-import torch
 import scipy.integrate
+import torch
 from scipy import constants
 
 import cheetah
-from cheetah import Segment
-from cheetah import SpaceChargeKick2D
+from cheetah import Segment, SpaceChargeKick2D
 
 
 def get_lorentz_factors(rest_energy: float, kin_energy: float) -> tuple[float, float]:
