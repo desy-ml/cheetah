@@ -45,7 +45,7 @@ class Patch(Element):
 
         self.register_buffer_or_parameter(
             "offset",
-            torch.as_tensor(offset if offset is not None else 0.0, **factory_kwargs),
+            torch.as_tensor(offset if offset is not None else [0.0, 0.0, 0.0], **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "time_offset",
@@ -55,7 +55,7 @@ class Patch(Element):
         )
         self.register_buffer_or_parameter(
             "pitch",
-            torch.as_tensor(pitch if pitch is not None else 0.0, **factory_kwargs),
+            torch.as_tensor(pitch if pitch is not None else [0.0, 0.0], **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
@@ -89,20 +89,20 @@ class Patch(Element):
         entrance_position = particles[..., :-1:2]
         # momentum coordinates
         rel_p = particles[..., 5] + 1.0  # convert delta to p/p0
-        entrance_momentum = torch.vstack(
+        entrance_momentum = torch.concatenate(
             [
-                particles[..., 1],
-                particles[..., 3],
+                particles[..., 1].unsqueeze(-1),
+                particles[..., 3].unsqueeze(-1),
                 torch.sqrt(
                     (rel_p) ** 2 - particles[..., 1] ** 2 - particles[..., 3] ** 2
-                ),
-            ]
-        ).T
+                ).unsqueeze(-1),
+            ], dim=-1
+        )
 
         # compute the exit positions and momentum - note these computations follow bmad coordinates
         rotation_matrix = self.rotation_matrix()
-        exit_positions = (rotation_matrix.T @ (entrance_position - self.offset).T).T
-        exit_momentum = (rotation_matrix.T @ entrance_momentum.T).T
+        exit_positions = (rotation_matrix.T @ (entrance_position - self.offset).transpose(-1,-2)).transpose(-1,-2)
+        exit_momentum = (rotation_matrix.T @ entrance_momentum.transpose(-1,-2)).transpose(-1,-2)
 
         # track particles to the end of the patch
         exit_positions[..., 0] += (

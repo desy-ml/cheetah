@@ -10,7 +10,39 @@ def test_tracking_in_segment():
     patch = Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
-        pitch=torch.tensor((0.0, 0.0)),
+        pitch=torch.tensor((0.0, 1.0)),
+        tilt=torch.tensor(0.0),
+        E_tot_offset=torch.tensor(0.0),
+    )
+
+    segment = Segment(
+        elements=[
+            Drift(length=torch.tensor(1.0)),
+            patch,
+            Drift(length=torch.tensor(1.0)),
+        ],
+    )
+    segment.track(beam)
+
+    # test tracking with defaults
+    patch = Patch()
+
+    segment = Segment(
+        elements=[
+            Drift(length=torch.tensor(1.0)),
+            patch,
+            Drift(length=torch.tensor(1.0)),
+        ],
+    )
+    segment.track(beam)
+
+def test_patch_with_vectorization():
+    """ test that patch works with vectorized beams """
+    beam = ParticleBeam(torch.zeros(4, 10, 7), energy=torch.tensor(1.0e9))
+    patch = Patch(
+        offset=torch.tensor([0.1, 0.2, 0.3]),
+        time_offset=torch.tensor(0.0),
+        pitch=torch.tensor((0.0, 1.0)),
         tilt=torch.tensor(0.0),
         E_tot_offset=torch.tensor(0.0),
     )
