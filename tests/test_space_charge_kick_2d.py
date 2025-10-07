@@ -4,6 +4,7 @@ import math
 import numpy as np
 import torch
 import scipy.integrate
+from scipy import constants
 from scipy.constants import elementary_charge
 from scipy.constants import speed_of_light
 
@@ -300,3 +301,50 @@ def test_kv_drift():
         scale_a = torch.sqrt(torch.diag(cov_matrix_a))
         scale_b = torch.sqrt(torch.diag(cov_matrix_b))
         assert torch.all(torch.isclose(scale_a, scale_b, rtol=0.001))
+
+
+def test_vectorized():
+    """
+    Tests that the space charge kick can be applied to a vectorized beam.
+    """
+
+    # Simulation parameters
+    section_length = torch.tensor(0.42)
+    R0 = torch.tensor(0.001)
+    energy = torch.tensor(2.5e8)
+    rest_energy = torch.tensor(
+        constants.electron_mass
+        * constants.speed_of_light**2
+        / constants.elementary_charge
+    )
+    gamma = energy / rest_energy
+    beta = torch.sqrt(1 - 1 / gamma**2)
+
+    incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
+        num_particles=10_000,
+        total_charge=torch.tensor([[1e-9, 2e-9], [3e-9, 4e-9], [5e-9, 6e-9]]),
+        energy=energy.expand([3, 2]),
+        radius_x=R0.expand([3, 2]),
+        radius_y=R0.expand([3, 2]),
+        radius_tau=R0.expand([3, 2]) / gamma / beta,
+        # Duration of the beam in the lab frame
+        sigma_px=torch.tensor(1e-15).expand([3, 2]),
+        sigma_py=torch.tensor(1e-15).expand([3, 2]),
+        sigma_p=torch.tensor(1e-15).expand([3, 2]),
+    )
+
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(section_length / 6),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
+            cheetah.Drift(section_length / 6),
+        ]
+    )
+
+    outgoing = segment.track(incoming)
+
+    assert outgoing.particles.shape == (3, 2, 10_000, 7)
