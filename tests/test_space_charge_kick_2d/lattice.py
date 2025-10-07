@@ -8,10 +8,12 @@ from cheetah import SpaceChargeKick2D
 def slice_segment(segment: Segment, nslice: int) -> Segment:
     slice_length = segment.length / float(nslice)
     elements = segment.split(resolution=slice_length)
-    return Segment(elements)    
+    return Segment(elements)
 
 
-def build_fodo_segment_one_cell(length: float, kq: float, nslice: int = None) -> Segment:
+def build_fodo_segment_one_cell(
+    length: float, kq: float, nslice: int = None
+) -> Segment:
     kq = torch.as_tensor(kq)
     length = torch.as_tensor(length)
 
