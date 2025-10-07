@@ -100,6 +100,7 @@ ELEMENT_SUBCLASSES_ARGS = {
         "default": {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}
     },
     cheetah.SpaceChargeKick3D: {"default": {"effect_length": torch.tensor(1.0)}},
+    cheetah.SpaceChargeKick2D: {"default": {"effect_length": torch.tensor(1.0)}},
     cheetah.TransverseDeflectingCavity: {
         "inactive": {"length": torch.tensor(1.0), "voltage": torch.tensor(0.0)},
         "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},
