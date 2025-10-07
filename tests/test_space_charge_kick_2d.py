@@ -385,7 +385,7 @@ def test_incoming_beam_not_modified():
 def test_does_not_break_segment_length():
     """
     Test that the computation of a `Segment`'s length does not break when
-    `SpaceChargeKick3D` is used.
+    `SpaceChargeKick2D` is used.
     """
     section_length = torch.tensor(1.0)
     segment = cheetah.Segment(
@@ -402,3 +402,63 @@ def test_does_not_break_segment_length():
 
     assert segment.length.shape == torch.Size([])
     assert torch.allclose(segment.length, torch.tensor(1.0))
+
+
+def test_space_charge_with_ares_astra_beam():
+    """
+    Tests running space charge through a 1m drift with an Astra beam from the ARES
+    linac. This test is added because running this code would throw an error:
+    `IndexError: index -38 is out of bounds for dimension 3 with size 32`.
+    """
+    segment = cheetah.Segment(
+        [
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.SpaceChargeKick2D(effect_length=torch.tensor(1.0)),
+        ]
+    )
+    beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
+
+    _ = segment.track(beam)
+
+
+def test_space_charge_with_aperture_cutoff():
+    """
+    Tests that the space charge kick is correctly applied only to surviving particles,
+    by comparing the results with and without an aperture that results in beam losses.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.2)),
+            cheetah.Aperture(
+                x_max=torch.tensor(1e-4),
+                y_max=torch.tensor(1e-4),
+                shape="rectangular",
+                is_active=False,
+                name="aperture",
+            ),
+            cheetah.Drift(length=torch.tensor(0.25)),
+            cheetah.SpaceChargeKick2D(effect_length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.25)),
+        ]
+    )
+    incoming_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=10_000,
+        total_charge=torch.tensor(1e-9),
+        mu_x=torch.tensor(5e-5),
+        sigma_px=torch.tensor(1e-4),
+        sigma_py=torch.tensor(1e-4),
+    )
+
+    # Track with inactive aperture
+    outgoing_beam_without_aperture = segment.track(incoming_beam)
+
+    # Activate the aperture and track the beam
+    segment.aperture.is_active = True
+    outgoing_beam_with_aperture = segment.track(incoming_beam)
+
+    # Check that with particle loss the space charge kick is different
+    assert not torch.allclose(
+        outgoing_beam_with_aperture.particles, outgoing_beam_without_aperture.particles
+    )
+    # Check that the number of surviving particles is less than the initial number
+    assert outgoing_beam_with_aperture.survival_probabilities.sum(dim=-1).max() < 10_000
