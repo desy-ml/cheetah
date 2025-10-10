@@ -7,6 +7,7 @@ from .drift import Drift  # noqa: F401
 from .element import Element  # noqa: F401
 from .horizontal_corrector import HorizontalCorrector  # noqa: F401
 from .marker import Marker  # noqa: F401
+from .multipole import Multipole  # noqa: F401
 from .quadrupole import Quadrupole  # noqa: F401
 from .rbend import RBend  # noqa: F401
 from .screen import Screen  # noqa: F401
