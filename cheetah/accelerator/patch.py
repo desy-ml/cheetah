@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 import torch
 
+from scipy.constants import speed_of_light
+
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam
 from cheetah.particles.particle_beam import ParticleBeam
@@ -35,6 +37,7 @@ class Patch(Element):
         tilt: torch.Tensor | None = None,
         E_tot_offset: torch.Tensor | None = None,
         E_tot_set: torch.Tensor | None = None,
+        drift_to_exit: bool = True,
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -72,67 +75,69 @@ class Patch(Element):
                 E_tot_set if E_tot_set is not None else 0.0, **factory_kwargs
             ),
         )
+        self.drift_to_exit = drift_to_exit
 
     @property
     def length(self) -> torch.Tensor:
-        rotation_matrix = self.rotation_matrix()
+        rotation_matrix_inv = self.rotation_matrix().inverse()
         return (
-            rotation_matrix[-1, 0] * self.offset[0]
-            + rotation_matrix[-1, 1] * self.offset[1]
-            + rotation_matrix[-1, 2] * self.offset[2]
+            rotation_matrix_inv[-1, 0] * self.offset[0]
+            + rotation_matrix_inv[-1, 1] * self.offset[1]
+            + rotation_matrix_inv[-1, 2] * self.offset[2]
         )
 
     def transform_particles(self, incoming: ParticleBeam) -> Beam:
         particles = incoming.particles
+        final_particles = particles.clone()
 
         # position coordinates
         entrance_position = particles[..., :-1:2]
         # momentum coordinates
-        rel_p = particles[..., 5] + 1.0  # convert delta to p/p0
-        entrance_momentum = torch.concatenate(
+        rel_p = particles[..., -2] + 1.0  # convert delta to p/p0
+        p_vec = torch.stack(
             [
-                particles[..., 1].unsqueeze(-1),
-                particles[..., 3].unsqueeze(-1),
+                particles[..., 1],
+                particles[..., 3],
                 torch.sqrt(
                     (rel_p) ** 2 - particles[..., 1] ** 2 - particles[..., 3] ** 2
-                ).unsqueeze(-1),
+                ),
             ], dim=-1
         )
 
         # compute the exit positions and momentum - note these computations follow bmad coordinates
-        rotation_matrix = self.rotation_matrix()
-        exit_positions = (rotation_matrix.T @ (entrance_position - self.offset).transpose(-1,-2)).transpose(-1,-2)
-        exit_momentum = (rotation_matrix.T @ entrance_momentum.transpose(-1,-2)).transpose(-1,-2)
+        rotation_matrix_inv = self.rotation_matrix().inverse()    
+        r_vec = torch.stack((
+            entrance_position[...,0] - self.offset[0],
+            entrance_position[...,1] - self.offset[1],
+            - self.offset[2].expand(entrance_position[...,0].shape)
+        ), dim=-1)
+        r_vec = (rotation_matrix_inv @ r_vec.transpose(-1,-2)).transpose(-1,-2)
+        p_vec = (rotation_matrix_inv @ p_vec.transpose(-1,-2)).transpose(-1,-2)
+
+        final_particles[..., 4] = final_particles[..., 4] + self.time_offset * speed_of_light  # time offset update
+
+        # set final momenta
+        final_particles[..., 1] = p_vec[..., 0]
+        final_particles[..., 3] = p_vec[..., 1]
+
+        # set final positions
+        final_particles[..., 0] = r_vec[..., 0]
+        final_particles[..., 2] = r_vec[..., 1]
 
         # track particles to the end of the patch
-        exit_positions[..., 0] += (
-            -exit_positions[..., 2] * exit_momentum[..., 0] / exit_momentum[..., 2]
-        )
-        exit_positions[..., 1] += (
-            -exit_positions[..., 2] * exit_momentum[..., 1] / exit_momentum[..., 2]
-        )
-        exit_positions[..., 2] += (
-            -exit_positions[..., 2] * rel_p / exit_momentum[..., 2]
-        )
+        if self.drift_to_exit:
+            final_particles[..., 0] = final_particles[..., 0] - (
+                r_vec[..., 2] * p_vec[..., 0] / p_vec[..., 2]
+            )
+            final_particles[..., 2] = final_particles[..., 2] - (
+                r_vec[..., 2] * p_vec[..., 1] / p_vec[..., 2]
+            )
+            final_particles[..., 4] = final_particles[..., 4] + r_vec[..., 2] * rel_p / p_vec[..., 2] + self.length
 
-        # Interleave last dimensions of exit_positions and exit_momentum
-        exit_particles = torch.empty(
-            (
-                *exit_positions.shape[:-1],
-                exit_positions.shape[-1] + exit_momentum.shape[-1] + 1,
-            ),
-            device=exit_positions.device,
-            dtype=exit_positions.dtype,
-        )
-        exit_particles[..., :-1:2] = exit_positions
-        exit_particles[..., 1:-1:2] = exit_momentum
-        exit_particles[..., -1] = particles[..., -1]
 
         # convert momentum back to delta
-        exit_particles[..., -2] -= 1.0
-
         return ParticleBeam(
-            particles=exit_particles,
+            particles=final_particles,
             energy=incoming.energy + self.E_tot_offset,
             s=self.length + incoming.s,
         )
@@ -180,7 +185,7 @@ class Patch(Element):
         if isinstance(incoming, ParticleBeam):
             return self.transform_particles(incoming)
         else:
-            raise TypeError("Patch element currently only supports ParticleBeam input.")
+            raise TypeError("Patch element currently only supports ParticleBeam input.")        
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
