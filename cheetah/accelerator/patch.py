@@ -48,7 +48,9 @@ class Patch(Element):
 
         self.register_buffer_or_parameter(
             "offset",
-            torch.as_tensor(offset if offset is not None else [0.0, 0.0, 0.0], **factory_kwargs),
+            torch.as_tensor(
+                offset if offset is not None else [0.0, 0.0, 0.0], **factory_kwargs
+            ),
         )
         self.register_buffer_or_parameter(
             "time_offset",
@@ -58,7 +60,9 @@ class Patch(Element):
         )
         self.register_buffer_or_parameter(
             "pitch",
-            torch.as_tensor(pitch if pitch is not None else [0.0, 0.0], **factory_kwargs),
+            torch.as_tensor(
+                pitch if pitch is not None else [0.0, 0.0], **factory_kwargs
+            ),
         )
         self.register_buffer_or_parameter(
             "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
@@ -101,20 +105,26 @@ class Patch(Element):
                 torch.sqrt(
                     (rel_p) ** 2 - particles[..., 1] ** 2 - particles[..., 3] ** 2
                 ),
-            ], dim=-1
+            ],
+            dim=-1,
         )
 
         # compute the exit positions and momentum - note these computations follow bmad coordinates
-        rotation_matrix_inv = self.rotation_matrix().inverse()    
-        r_vec = torch.stack((
-            entrance_position[...,0] - self.offset[0],
-            entrance_position[...,1] - self.offset[1],
-            - self.offset[2].expand(entrance_position[...,0].shape)
-        ), dim=-1)
-        r_vec = (rotation_matrix_inv @ r_vec.transpose(-1,-2)).transpose(-1,-2)
-        p_vec = (rotation_matrix_inv @ p_vec.transpose(-1,-2)).transpose(-1,-2)
+        rotation_matrix_inv = self.rotation_matrix().inverse()
+        r_vec = torch.stack(
+            (
+                entrance_position[..., 0] - self.offset[0],
+                entrance_position[..., 1] - self.offset[1],
+                -self.offset[2].expand(entrance_position[..., 0].shape),
+            ),
+            dim=-1,
+        )
+        r_vec = (rotation_matrix_inv @ r_vec.transpose(-1, -2)).transpose(-1, -2)
+        p_vec = (rotation_matrix_inv @ p_vec.transpose(-1, -2)).transpose(-1, -2)
 
-        final_particles[..., 4] = final_particles[..., 4] + self.time_offset * speed_of_light  # time offset update
+        final_particles[..., 4] = (
+            final_particles[..., 4] + self.time_offset * speed_of_light
+        )  # time offset update
 
         # set final momenta
         final_particles[..., 1] = p_vec[..., 0]
@@ -132,8 +142,11 @@ class Patch(Element):
             final_particles[..., 2] = final_particles[..., 2] - (
                 r_vec[..., 2] * p_vec[..., 1] / p_vec[..., 2]
             )
-            final_particles[..., 4] = final_particles[..., 4] + r_vec[..., 2] * rel_p / p_vec[..., 2] + self.length
-
+            final_particles[..., 4] = (
+                final_particles[..., 4]
+                + r_vec[..., 2] * rel_p / p_vec[..., 2]
+                + self.length
+            )
 
         # convert momentum back to delta
         return ParticleBeam(
@@ -185,7 +198,7 @@ class Patch(Element):
         if isinstance(incoming, ParticleBeam):
             return self.transform_particles(incoming)
         else:
-            raise TypeError("Patch element currently only supports ParticleBeam input.")        
+            raise TypeError("Patch element currently only supports ParticleBeam input.")
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
