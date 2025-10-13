@@ -1,5 +1,5 @@
-from matplotlib import pyplot as plt
 import torch
+from matplotlib import pyplot as plt
 
 from scipy.constants import speed_of_light
 

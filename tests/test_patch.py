@@ -1,6 +1,6 @@
 import torch
 
-from cheetah.accelerator import Segment, Drift
+from cheetah.accelerator import Drift, Segment
 from cheetah.accelerator.patch import Patch
 from cheetah.particles.particle_beam import ParticleBeam
 
