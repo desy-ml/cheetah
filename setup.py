@@ -29,7 +29,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=[package for package in find_packages() if package.startswith("cheetah")],
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     install_requires=[
         "matplotlib>=3.5",
         "numpy>=1.21.3",

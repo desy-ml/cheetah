@@ -907,10 +907,7 @@ class Segment(Element):
             ]
             element_repr_list.insert(2, " ⋮")
 
-            # Using `format` since Python 3.10 does not permit backslashes in f-strings
-            elements_repr = "ModuleList(\n  {0}\n)".format(
-                "\n  ".join(element_repr_list)
-            )
+            elements_repr = f"ModuleList(\n  {'\n  '.join(element_repr_list)}\n)"
 
         return (
             f"{self.__class__.__name__}(elements={elements_repr}, "
