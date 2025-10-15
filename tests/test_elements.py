@@ -138,7 +138,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     """
     Test that `Element` subclasses work correctly on various devices and with various
-    dtypes if tracked with a `ParticleBeam`.
+    dtypes if tracked with a `ParameterBeam`.
     """
     segment = cheetah.Segment(
         elements=[

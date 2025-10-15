@@ -156,6 +156,8 @@ class Patch(Element):
             energy=incoming.energy + self.E_tot_offset,
             s=self.length + incoming.s,
             species=incoming.species,
+            dtype=particles.dtype,
+            device=particles.device,
         )
 
     def rotation_matrix(self) -> torch.Tensor:
