@@ -1,9 +1,9 @@
 from . import converters  # noqa: F401
 from ._version import __version__  # noqa: F401
-from .accelerator import Cavity  # noqa: F401
-from .accelerator import (
+from .accelerator import (  # noqa: F401
     BPM,
     Aperture,
+    Cavity,
     CustomTransferMap,
     Dipole,
     Drift,
@@ -24,7 +24,7 @@ from .accelerator import (
 )
 from .particles import Beam, ParameterBeam, ParticleBeam, Species  # noqa: F401
 from .utils import DirtyNameWarning  # noqa: F401
-from .utils import (
+from .utils import (  # noqa: F401
     DefaultParameterWarning,
     NoBeamPropertiesInLatticeWarning,
     NotUnderstoodPropertyWarning,
