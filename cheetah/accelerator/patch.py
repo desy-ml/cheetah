@@ -1,6 +1,5 @@
 import torch
 from matplotlib import pyplot as plt
-
 from scipy.constants import speed_of_light
 
 from cheetah.accelerator.element import Element
@@ -153,6 +152,7 @@ class Patch(Element):
             particles=final_particles,
             energy=incoming.energy + self.E_tot_offset,
             s=self.length + incoming.s,
+            species=incoming.species,
         )
 
     def rotation_matrix(self) -> torch.Tensor:

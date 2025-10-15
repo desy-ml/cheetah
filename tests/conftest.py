@@ -108,6 +108,10 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.VerticalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
+    cheetah.Patch: {
+        "default": {},
+        "with_offsets": {"offset": torch.tensor([1.0, -1.0, 0.5])},
+    },
 }
 
 
