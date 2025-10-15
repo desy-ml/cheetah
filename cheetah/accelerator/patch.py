@@ -12,9 +12,9 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 class Patch(Element):
     """
-    Patch element that shifts the reference orbit 
+    Patch element that shifts the reference orbit
     and time. Note that this element does not
-    support batching for the offset, time offset, 
+    support batching for the offset, time offset,
     pitch, tilt, E_tot_offset, and E_tot_set parameters.
 
     :param offset:  Exit face offset in (x,y,z) from Entrance in meters.
@@ -110,7 +110,7 @@ class Patch(Element):
             dim=-1,
         )
 
-        # compute the exit positions and momentum 
+        # compute the exit positions and momentum
         # - note these computations follow bmad coordinates
         rotation_matrix_inv = self.rotation_matrix().inverse()
         r_vec = torch.stack(
