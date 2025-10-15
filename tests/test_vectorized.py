@@ -348,7 +348,7 @@ def test_vectorized_screen_2d(BeamClass, method):
             cheetah.Screen,
             cheetah.Segment,
             cheetah.SpaceChargeKick,
-            cheetah.Patch
+            cheetah.Patch,
         ),
     ),
 )
