@@ -1,6 +1,12 @@
 {
-  "spellright.language": ["en_GB"],
-  "spellright.documentTypes": ["markdown", "latex", "plaintext"],
+  "spellright.language": [
+    "en_GB"
+  ],
+  "spellright.documentTypes": [
+    "markdown",
+    "latex",
+    "plaintext"
+  ],
   "python.linting.flake8Enabled": true,
   "python.linting.enabled": true,
   "[python]": {
@@ -12,5 +18,8 @@
   "python.testing.pytestEnabled": true,
   "python-envs.defaultEnvManager": "ms-python.python:conda",
   "python-envs.defaultPackageManager": "ms-python.python:conda",
-  "python-envs.pythonProjects": []
+  "python-envs.pythonProjects": [],
+  "python.testing.pytestArgs": [
+    "tests"
+  ]
 }
