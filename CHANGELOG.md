@@ -6,8 +6,6 @@
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
 - Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
-- Adds the following plotting functionalities for beams with batch dimensions: plot average 1d projection histogram with lower and upper bounds, plot average 2d projection histogram with lower and upper bounds, triangle plot with the above functionalities. (see #583) (@jp-ga)
-
 
 ### 🚀 Features
 
@@ -20,6 +18,7 @@
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
 - Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558) (@jank324, @Hespe)
+- Adds the following plotting functionalities for beams with batch dimensions: plot average 1d projection histogram with lower and upper bounds, plot average 2d projection histogram with lower and upper bounds, triangle plot with the above functionalities. (see #583) (@jp-ga)
 
 ### 🐛 Bug fixes
 
