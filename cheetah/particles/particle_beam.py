@@ -1432,6 +1432,8 @@ class ParticleBeam(Beam):
                     upper_bound.T / upper_bound.max(),
                     **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
                 )
+        else:
+            raise ValueError("style must be either 'histogram' or 'contour'.")
 
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[x_dimension]}")
         ax.set_ylabel(f"{self.PRETTY_DIMENSION_LABELS[y_dimension]}")
@@ -1452,8 +1454,6 @@ class ParticleBeam(Beam):
         dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 100,
         bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
-        style: Literal["histogram", "contour"] = "histogram",
-        confidence_contours: tuple[float] | None = None,
         plot_1d_kws: dict | None = None,
         plot_2d_kws: dict | None = None,
         uncertainty_type: Literal["percentile", "std_error"] = "percentile",
@@ -1589,8 +1589,6 @@ class ParticleBeam(Beam):
             self.plot_2d_distribution(
                 x_dimension=dimensions[i],
                 y_dimension=dimensions[j],
-                style=style,
-                confidence_contours=confidence_contours,
                 bins=bins,
                 bin_ranges=(bin_ranges[i], bin_ranges[j]),
                 ax=axs[j, i],
