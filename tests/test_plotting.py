@@ -159,3 +159,25 @@ def test_plot_particle_beam_point_cloud():
 
     # Run the plotting to see if it raises an exception
     _ = beam.plot_point_cloud()
+
+
+@pytest.mark.parametrize("style", ["histogram", "contour"])
+def test_ensemble_plotting(style):
+    tensor_kwargs = dict(dtype=torch.float32)
+    n_runs = 10
+    dim = 6
+    n_samples = 10000
+    cov = torch.diag(torch.tensor((1, 1, 9, 9, 1, 1), **tensor_kwargs)) * 1e-6
+    mean = torch.zeros(dim, **tensor_kwargs)
+    mvnorm = torch.distributions.MultivariateNormal(mean, covariance_matrix=cov)
+    coords = mvnorm.sample((n_runs, n_samples))
+    coords = torch.cat(
+        (coords, torch.ones(n_runs, n_samples, 1, **tensor_kwargs)), dim=-1
+    )
+    beam_ensemble = cheetah.ParticleBeam(
+        particles=coords, energy=torch.tensor(40.0e6, **tensor_kwargs)
+    )
+    # Run the plotting to see if it raises an exception
+    _ = beam_ensemble.plot_distribution(
+        bin_ranges="unit_same", plot_2d_kws={"style": style}
+    )
