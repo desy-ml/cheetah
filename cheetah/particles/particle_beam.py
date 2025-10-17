@@ -90,7 +90,7 @@ class ParticleBeam(Beam):
                 particle_charges
                 if particle_charges is not None
                 else torch.full(
-                    particles.shape[:-1],
+                    (particles.shape[-2],),
                     self.species.charge_coulomb,
                     **factory_kwargs,
                 )
@@ -101,7 +101,7 @@ class ParticleBeam(Beam):
             (
                 survival_probabilities
                 if survival_probabilities is not None
-                else torch.ones(particles.shape[:-1], **factory_kwargs)
+                else torch.ones(particles.shape[-2], **factory_kwargs)
             ),
         )
         self.register_buffer(
