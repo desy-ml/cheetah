@@ -9,6 +9,10 @@ from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
+from cheetah.particles.ensemble_utils import (
+    compute_statistics_1d,
+    compute_statistics_2d,
+)
 from cheetah.particles.species import Species
 from cheetah.utils import (
     elementwise_linspace,
@@ -1237,44 +1241,65 @@ class ParticleBeam(Beam):
         bin_range: tuple[float] | None = None,
         smoothing: float = 0.0,
         plot_kws: dict | None = None,
+        uncertainty_type: Literal["percentile", "std_error"] = "percentile",
+        confidence_level: float = 0.9,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
-        Plot a 1D histogram of the given dimension of the particle distribution.
+        Plot a 1D histogram of the given phase-space dimension.
 
-        :param dimension: Name of the dimension to plot. Should be one of
-            `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param bins: Number of bins to use for the histogram.
-        :param bin_range: Range of the bins to use for the histogram.
-        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
+        :param dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p').
+        :param bins: Number of histogram bins.
+        :param bin_range: Tuple (min, max) specifying the histogram range, or
+            None to infer from the data.
+        :param smoothing: Std. dev. of the Gaussian kernel used to smooth the
             histogram.
-        :param plot_kws: Additional keyword arguments to be passed to `plot` function of
-            matplotlib used to plot the histogram data.
-        :param ax: Matplotlib axes object to use for plotting.
-        :return: Matplotlib axes object with the plot.
+        :param plot_kws: Additional keyword arguments forwarded to
+            matplotlib.axes.Axes.plot.
+        :param uncertainty_type: Method to compute uncertainty bands for
+            vectorized beams; either 'percentile' or 'std_error'.
+        :param confidence_level: Confidence level used when computing
+            uncertainty bands.
+        :param ax: Matplotlib Axes to draw on. If None a new axes is created.
+        :return: Matplotlib Axes containing the plotted histogram.
         """
         if ax is None:
             _, ax = plt.subplots()
 
-        x_array = getattr(self, dimension).cpu().detach().numpy()
-        histogram, edges = np.histogram(x_array, bins=bins, range=bin_range)
-        centers = (edges[:-1] + edges[1:]) / 2
+        if self.particles.dim() == 2:
+            x_array = getattr(self, dimension).cpu().detach().numpy()
+            histogram, edges = np.histogram(x_array, bins=bins, range=bin_range)
+            centers = (edges[:-1] + edges[1:]) / 2
 
-        if smoothing:
-            histogram = gaussian_filter(histogram, smoothing)
+            if smoothing:
+                histogram = gaussian_filter(histogram, smoothing)
 
-        ax.plot(
-            centers,
-            histogram / histogram.max(),
-            **{"color": "black"} | (plot_kws or {}),
-        )
-        ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
+        elif self.particles.dim() > 2:
+            x_array = getattr(self, dimension).flatten(start_dim=0, end_dim=-2)
+            centers, histogram, lower_bound, upper_bound = compute_statistics_1d(
+                x=getattr(self, dimension),
+                bins=bins,
+                bin_range=bin_range,
+                smoothing=smoothing,
+                confidence_level=confidence_level,
+                uncertainty_type=uncertainty_type,
+            )
+            centers = centers.numpy()
+            ax.fill_between(
+                centers,
+                lower_bound,
+                upper_bound,
+                color="C1",
+                alpha=0.5,
+            )
+
+        ax.plot(centers, histogram, **(plot_kws or {}))
 
         # Handle units
-        if dimension in ("x", "y", "tau"):
-            base_unit = "m"
+        ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
 
         if dimension in ("x", "y", "tau"):
+            base_unit = "m"
             format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
 
         return ax
@@ -1284,65 +1309,129 @@ class ParticleBeam(Beam):
         x_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         style: Literal["histogram", "contour"] = "histogram",
+        confidence_contours: tuple[float] | None = None,
         bins: int = 100,
         bin_ranges: tuple[tuple[float]] | None = None,
         histogram_smoothing: float = 0.0,
-        contour_smoothing: float = 3.0,
+        contour_smoothing: float = 1.0,
         pcolormesh_kws: dict | None = None,
         contour_kws: dict | None = None,
+        uncertainty_type: Literal["percentile", "std_error"] = "percentile",
+        confidence_level: float = 0.9,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
-        Plot a 2D histogram of the given dimensions of the particle distribution.
+        Plot a 2D projection of the particle distribution for two phase-space
+        dimensions.
 
-        :param x_dimension: Name of the x dimension to plot. Should be one of
-            `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param y_dimension: Name of the y dimension to plot. Should be one of
-            `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param style: Style of the plot. Should be one of `('histogram', 'contour')`.
-        :param bins: Number of bins to use for the histogram in both dimensions.
-        :param bin_ranges: Ranges of the bins to use for the histogram in each
-            dimension.
-        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
-            histogram.
-        :param pcolormesh_kws: Additional keyword arguments to be passed to `pcolormesh`
-            function of matplotlib used to plot the histogram data.
-        :param contour_kws: Additional keyword arguments to be passed to `contour`
-            function of matplotlib used to plot the histogram data.
-        :param ax: Matplotlib axes object to use for plotting.
-        :return: Matplotlib axes object with the plot.
+        :param x_dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p') to use for the
+            x-axis.
+        :param y_dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p') to use for the
+            y-axis.
+        :param style: Visualization style, either 'histogram' (colored 2D histogram)
+            or 'contour' (normalized contour levels with greyscale pcolormesh).
+        :param bins: Number of bins in each dimension for the histogram (int or pair).
+        :param bin_ranges: Pair of (min, max) ranges for the x and y histograms, or
+            None to infer ranges from the data. When provided it should be
+            ((xmin, xmax), (ymin, ymax)).
+        :param histogram_smoothing: Std. dev. of the Gaussian kernel applied to smooth
+            the 2D histogram before plotting.
+        :param contour_smoothing: Std. dev. of the Gaussian kernel applied to the
+            contour data (applied after histogram_smoothing).
+        :param pcolormesh_kws: Additional keyword arguments forwarded to
+            matplotlib.pcolormesh.
+        :param contour_kws: Additional keyword arguments forwarded to
+            matplotlib.contour.
+        :param uncertainty_type: Method to compute uncertainty bands for vectorized
+            beams; either 'percentile' or 'std_error'. Only used when the beam has
+            a batch/vector dimension.
+        :param confidence_level: Confidence level used when computing uncertainty
+            bands.
+        :param ax: Matplotlib Axes to draw on. If None a new axes is created.
+        :return: Matplotlib Axes containing the rendered 2D projection.
         """
         if ax is None:
             _, ax = plt.subplots()
 
-        histogram, x_edges, y_edges = np.histogram2d(
-            getattr(self, x_dimension).cpu().detach().numpy(),
-            getattr(self, y_dimension).cpu().detach().numpy(),
-            bins=bins,
-            range=bin_ranges,
-        )
-        x_centers = (x_edges[:-1] + x_edges[1:]) / 2
-        y_centers = (y_edges[:-1] + y_edges[1:]) / 2
-
-        # Post-process and plot
-        smoothed_histogram = gaussian_filter(histogram, histogram_smoothing)
-        clipped_histogram = np.where(smoothed_histogram > 1, smoothed_histogram, np.nan)
-        if style == "histogram":
-            ax.pcolormesh(
-                x_edges,
-                y_edges,
-                clipped_histogram.T / smoothed_histogram.max(),
-                **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
+        if self.particles.dim() == 2:
+            histogram, x_edges, y_edges = np.histogram2d(
+                getattr(self, x_dimension).cpu().detach().numpy(),
+                getattr(self, y_dimension).cpu().detach().numpy(),
+                bins=bins,
+                range=bin_ranges,
             )
-        elif style == "contour":
-            contour_histogram = gaussian_filter(histogram, contour_smoothing)
+            x_centers = (x_edges[:-1] + x_edges[1:]) / 2
+            y_centers = (y_edges[:-1] + y_edges[1:]) / 2
 
+            # Post-process and plot
+            smoothed_histogram = gaussian_filter(histogram, histogram_smoothing)
+            contour_histogram = gaussian_filter(smoothed_histogram, contour_smoothing)
+        elif self.particles.dim() > 2:
+            x_array = getattr(self, x_dimension).flatten(start_dim=0, end_dim=-2)
+            y_array = getattr(self, y_dimension).flatten(start_dim=0, end_dim=-2)
+            x_centers, y_centers, smoothed_histogram, lower_bound, upper_bound = (
+                compute_statistics_2d(
+                    x=x_array,
+                    y=y_array,
+                    bins=(bins, bins),
+                    bin_ranges=bin_ranges,
+                    smoothing=histogram_smoothing,
+                    uncertainty_type=uncertainty_type,
+                    confidence_level=confidence_level,
+                )
+            )
+            contour_histogram = gaussian_filter(smoothed_histogram, contour_smoothing)
+            lower_bound = gaussian_filter(lower_bound, contour_smoothing)
+            upper_bound = gaussian_filter(upper_bound, contour_smoothing)
+            x_centers = x_centers.numpy()
+            y_centers = y_centers.numpy()
+
+        if style == "histogram":
+            clipped_histogram = np.where(
+                smoothed_histogram > 1, smoothed_histogram, np.nan
+            )
+            ax.pcolormesh(
+                x_centers,
+                y_centers,
+                clipped_histogram.T,
+                **(pcolormesh_kws or {}),
+            )
+            if self.particles.dim() > 2 and confidence_contours is not None:
+                normalized_confidence_width = contour_histogram / (
+                    upper_bound - lower_bound + 1e-12
+                )
+                ax.contour(
+                    x_centers,
+                    y_centers,
+                    normalized_confidence_width.T,
+                    **dict(levels=confidence_contours, colors="white", alpha=0.5),
+                )
+        elif style == "contour":
+            ax.pcolormesh(
+                x_centers,
+                y_centers,
+                smoothed_histogram.T,
+                cmap="Greys",
+            )
             ax.contour(
                 x_centers,
                 y_centers,
                 contour_histogram.T / contour_histogram.max(),
-                **{"levels": 3} | (contour_kws or {}),
+                **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
             )
+            if self.particles.dim() > 2:
+                ax.contour(
+                    x_centers,
+                    y_centers,
+                    lower_bound.T / lower_bound.max(),
+                    **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
+                )
+                ax.contour(
+                    x_centers,
+                    y_centers,
+                    upper_bound.T / upper_bound.max(),
+                    **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
+                )
 
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[x_dimension]}")
         ax.set_ylabel(f"{self.PRETTY_DIMENSION_LABELS[y_dimension]}")
@@ -1350,14 +1439,10 @@ class ParticleBeam(Beam):
         # Handle units
         if x_dimension in ("x", "y", "tau"):
             x_base_unit = "m"
-
-        if y_dimension in ("x", "y", "tau"):
-            y_base_unit = "m"
-
-        if x_dimension in ("x", "y", "tau"):
             format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
 
         if y_dimension in ("x", "y", "tau"):
+            y_base_unit = "m"
             format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
 
         return ax
@@ -1367,30 +1452,52 @@ class ParticleBeam(Beam):
         dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 100,
         bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
+        style: Literal["histogram", "contour"] = "histogram",
+        confidence_contours: tuple[float] | None = None,
         plot_1d_kws: dict | None = None,
         plot_2d_kws: dict | None = None,
-        axs: list[plt.Axes] | None = None,
+        uncertainty_type: Literal["percentile", "std_error"] = "percentile",
+        confidence_level: float = 0.9,
+        axs: np.ndarray | None = None,
     ) -> tuple[plt.Figure, np.ndarray]:
         """
-        Plot of coordinates projected into 2D planes.
+        Create a matrix plot of 1D and 2D projections for requested phase-space
+        dimensions.
 
-        :param dimensions: Tuple of dimensions to plot. Should be a subset of
-            `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param contour: If `True`, overlay contour lines on the 2D histogram plots.
-        :param bins: Number of bins to use for the histograms.
-        :param bin_ranges: Ranges of the bins to use for the histograms. If set to
-            `"unit_same"`, the same range is used for all dimensions that share the same
-            unit. If set to `None`, ranges are determined automatically.
-        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
-            histograms.
-        :param plot_1d_kws: Additional keyword arguments to be passed to
-            `ParticleBeam.plot_1d_distribution` for plotting 1D histograms.
-        :param plot_2d_kws: Additional keyword arguments to be passed to
-            `ParticleBeam.plot_2d_distribution` for plotting 2D histograms.
-        :param axs: List of Matplotlib axes objects to use for plotting. If set to
-            `None`, a new figure is created. Must have the shape `(len(dimensions),
-            len(dimensions))`.
-        :return: Matplotlib figure and axes objects with the plot.
+        :param dimensions: Sequence of dimension names to include. Each element
+            must be one of ``'x'``, ``'px'``, ``'y'``, ``'py'``, ``'tau'``, ``'p'``.
+        :param bins: Number of bins to use for both 1D and 2D histograms.
+        :param bin_ranges: Specification of bin ranges. Accepted forms:
+            - ``None``: automatically determined per-dimension from the data.
+            - ``"unit_same"``: same range for spatial dims (``'x'``, ``'y'``, ``'tau'``)
+              and a common range for unitless dims (``'px'``, ``'py'``, ``'p'``).
+            - single ``(min, max)`` pair: apply same range to all dimensions.
+            - sequence of ``(min, max)`` pairs: one pair per dimension.
+        :param style: Style for off-diagonal plots. ``'histogram'`` (2D histogram)
+            or ``'contour'`` (normalized contour levels).
+        :param plot_1d_kws: Extra keyword arguments forwarded to
+            :meth:`plot_1d_distribution` for diagonal plots.
+        :param plot_2d_kws: Extra keyword arguments forwarded to
+            :meth:`plot_2d_distribution` for off-diagonal plots.
+        :param uncertainty_type: Method to compute uncertainty bands when the
+            beam is vectorized; either ``'percentile'`` or ``'std_error'``.
+        :param confidence_level: Confidence level used when computing uncertainty
+            bands.
+        :param axs: Optional pre-created axes array with shape ``(N, N)``. If
+            ``None``, a new figure and axes grid are created.
+
+        :returns: Tuple ``(fig, axs)`` where ``fig`` is a matplotlib Figure and
+            ``axs`` is a NumPy array of Axes with shape ``(N, N)``.
+
+        .. note::
+            - When the beam is vectorized (batch/vector dim > 0) the function
+              computes uncertainty bands for 1D and 2D projections and overlays them.
+            - The layout uses a lower-triangle orientation for pair plots: element
+              at row ``i``, column ``j`` (with ``i > j``) shows dimension ``j`` on
+              the x-axis and dimension ``i`` on the y-axis.
+            - If ``axs`` is provided it must have shape ``(N, N)``. If not provided,
+              a new figure is created with a square layout sized about 2 inches
+              per dimension.
         """
         if axs is None:
             fig, axs = plt.subplots(
@@ -1407,7 +1514,7 @@ class ParticleBeam(Beam):
 
         # Determine bin ranges for all plots in the grid at once
         full_tensor = (
-            torch.stack([getattr(self, dimension) for dimension in dimensions], dim=-2)
+            torch.stack([getattr(self, dimension) for dimension in dimensions], dim=0)
             .cpu()
             .detach()
             .numpy()
@@ -1415,12 +1522,12 @@ class ParticleBeam(Beam):
         if bin_ranges is None:
             bin_ranges = [
                 (
-                    full_tensor[i, :].min()
-                    - (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
-                    full_tensor[i, :].max()
-                    + (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
+                    full_tensor[i].min()
+                    - (full_tensor[i].max() - full_tensor[i].min()) / 10,
+                    full_tensor[i].max()
+                    + (full_tensor[i].max() - full_tensor[i].min()) / 10,
                 )
-                for i in range(full_tensor.shape[-2])
+                for i in range(full_tensor.shape[0])
             ]
         if bin_ranges == "unit_same":
             spacial_idxs = [
@@ -1429,17 +1536,11 @@ class ParticleBeam(Beam):
                 if dimension in ["x", "y", "tau"]
             ]
             spacial_bin_range = (
-                full_tensor[spacial_idxs, :].min()
-                - (
-                    full_tensor[spacial_idxs, :].max()
-                    - full_tensor[spacial_idxs, :].min()
-                )
+                full_tensor[spacial_idxs].min()
+                - (full_tensor[spacial_idxs].max() - full_tensor[spacial_idxs].min())
                 / 10,
-                full_tensor[spacial_idxs, :].max()
-                + (
-                    full_tensor[spacial_idxs, :].max()
-                    - full_tensor[spacial_idxs, :].min()
-                )
+                full_tensor[spacial_idxs].max()
+                + (full_tensor[spacial_idxs].max() - full_tensor[spacial_idxs].min())
                 / 10,
             )
             unitless_idxs = [
@@ -1448,17 +1549,11 @@ class ParticleBeam(Beam):
                 if dimension in ["px", "py", "p"]
             ]
             unitless_bin_range = (
-                full_tensor[unitless_idxs, :].min()
-                - (
-                    full_tensor[unitless_idxs, :].max()
-                    - full_tensor[unitless_idxs, :].min()
-                )
+                full_tensor[unitless_idxs].min()
+                - (full_tensor[unitless_idxs].max() - full_tensor[unitless_idxs].min())
                 / 10,
-                full_tensor[unitless_idxs, :].max()
-                + (
-                    full_tensor[unitless_idxs, :].max()
-                    - full_tensor[unitless_idxs, :].min()
-                )
+                full_tensor[unitless_idxs].max()
+                + (full_tensor[unitless_idxs].max() - full_tensor[unitless_idxs].min())
                 / 10,
             )
             bin_range_dict = {
@@ -1484,6 +1579,8 @@ class ParticleBeam(Beam):
                 bins=bins,
                 bin_range=bin_range,
                 ax=ax,
+                uncertainty_type=uncertainty_type,
+                confidence_level=confidence_level,
                 **(plot_1d_kws or {}),
             )
 
@@ -1492,9 +1589,13 @@ class ParticleBeam(Beam):
             self.plot_2d_distribution(
                 x_dimension=dimensions[i],
                 y_dimension=dimensions[j],
+                style=style,
+                confidence_contours=confidence_contours,
                 bins=bins,
                 bin_ranges=(bin_ranges[i], bin_ranges[j]),
                 ax=axs[j, i],
+                uncertainty_type=uncertainty_type,
+                confidence_level=confidence_level,
                 **(plot_2d_kws or {}),
             )
 
