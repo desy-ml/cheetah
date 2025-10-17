@@ -1468,11 +1468,11 @@ class ParticleBeam(Beam):
             must be one of ``'x'``, ``'px'``, ``'y'``, ``'py'``, ``'tau'``, ``'p'``.
         :param bins: Number of bins to use for both 1D and 2D histograms.
         :param bin_ranges: Specification of bin ranges. Accepted forms:
-            - ``None``: automatically determined per-dimension from the data.
-            - ``unit_same``: same range for spatial dims ('x', 'y', 'tau')
-              and a common range for unitless dims ('px', 'py', 'p').
-            - single ``(min, max)`` pair: apply same range to all dimensions.
-            - sequence of ``(min, max)`` pairs: one pair per dimension.
+            ``None``: automatically determined per-dimension from the data.
+            `unit_same``: same range for spatial dims ('x', 'y', 'tau')
+            and a common range for unitless dims ('px', 'py', 'p').
+            single ``(min, max)`` pair: apply same range to all dimensions.
+            sequence of ``(min, max)`` pairs: one pair per dimension.
         :param style: Style for off-diagonal plots. ``'histogram'`` (2D histogram)
             or ``'contour'`` (normalized contour levels).
         :param plot_1d_kws: Extra keyword arguments forwarded to
