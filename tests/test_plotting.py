@@ -162,7 +162,7 @@ def test_plot_particle_beam_point_cloud():
 
 
 @pytest.mark.parametrize("style", ["histogram", "contour"])
-def test_ensemble_plotting(style):
+def test_plot_vectorized_distribution(style):
     """
     Test that plotting the distribution of a vectorised `ParticleBeam` does not raise an
     exception.
