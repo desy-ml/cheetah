@@ -11,11 +11,11 @@ def compute_mean_and_bounds(
     confidence_level: float = 0.9,
 ):
     """
-    Compute elementwise mean and two-sided confidence bounds over an
-    ensemble of histograms.
+    Compute elementwise mean and two-sided confidence bounds over an ensemble of
+    histograms.
 
-    :param histograms: Ensemble of histograms with shape (n_draws, ...).
-        Computations are performed across the first dimension (dim=0).
+    :param histograms: Ensemble of histograms with shape (n_draws, ...). Computations
+        are performed across the first dimension (dim=0).
     :param uncertainty_type: Method used to compute the uncertainty
         bounds. One of "percentile" or "std_error". "percentile" uses
         empirical two-sided percentiles at (1 - confidence_level)/2 and
@@ -198,21 +198,15 @@ def compute_statistics_1d(
         - upper_bound: Upper bound of the two-sided confidence interval
           (same shape as mean_hist).
     """
-    hist, bin_edges = vectorized_histogram_1d(
-        x,
-        bins=bins,
-        bin_range=bin_range,
-    )
+    histogram, bin_edges = vectorized_histogram_1d(x, bins=bins, bin_range=bin_range)
 
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
     if smoothing:
-        hist = vectorized_gaussian_filter_1d(hist, sigma=smoothing)
+        histogram = vectorized_gaussian_filter_1d(histogram, sigma=smoothing)
 
     mean_hist, lower_bound, upper_bound = compute_mean_and_bounds(
-        hist,
-        confidence_level=confidence_level,
-        uncertainty_type=uncertainty_type,
+        histogram, confidence_level=confidence_level, uncertainty_type=uncertainty_type
     )
 
     return (bin_centers, mean_hist, lower_bound, upper_bound)
@@ -308,10 +302,8 @@ def vectorized_gaussian_filter_2d(
 
     :param x: Input tensor of shape (B, H, W).
     :param sigma: Standard deviation of the Gaussian kernel in bins.
-    :param truncate: Truncate the filter at this many standard
-        deviations. Default is 4.0.
-    :returns: Smoothed tensor of shape (B, H, W) with same dtype and
-        device as the input.
+    :param truncate: Truncate the filter at this many standard deviations.
+    :returns: Smoothed tensor of shape (B, H, W).
     """
     if x.dim() == 2:
         x = x.unsqueeze(0)  # (1, H, W)

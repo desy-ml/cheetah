@@ -1265,18 +1265,19 @@ class ParticleBeam(Beam):
         if ax is None:
             _, ax = plt.subplots()
 
+        x_array = getattr(self, dimension)
+
         if self.particles.dim() == 2:
-            x_array = getattr(self, dimension).cpu().detach().numpy()
-            histogram, edges = np.histogram(x_array, bins=bins, range=bin_range)
+            histogram, edges = np.histogram(
+                x_array.cpu().detach().numpy(), bins=bins, range=bin_range
+            )
             centers = (edges[:-1] + edges[1:]) / 2
 
             if smoothing:
                 histogram = gaussian_filter(histogram, smoothing)
-
         elif self.particles.dim() > 2:
-            x_array = getattr(self, dimension).flatten(start_dim=0, end_dim=-2)
             centers, histogram, lower_bound, upper_bound = compute_statistics_1d(
-                x=getattr(self, dimension),
+                x=x_array.flatten(start_dim=0, end_dim=-2),
                 bins=bins,
                 bin_range=bin_range,
                 smoothing=smoothing,
@@ -1284,13 +1285,7 @@ class ParticleBeam(Beam):
                 uncertainty_type=uncertainty_type,
             )
             centers = centers.numpy()
-            ax.fill_between(
-                centers,
-                lower_bound,
-                upper_bound,
-                color="C1",
-                alpha=0.5,
-            )
+            ax.fill_between(centers, lower_bound, upper_bound, color="C1", alpha=0.5)
 
         ax.plot(centers, histogram, **(plot_kws or {}))
 
