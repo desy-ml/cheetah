@@ -907,7 +907,12 @@ class Segment(Element):
             ]
             element_repr_list.insert(2, " ⋮")
 
-            elements_repr = f"ModuleList(\n  {'\n  '.join(element_repr_list)}\n)"
+            # Using `format` since Python<=3.11 does not permit backslashes in nested
+            # f-strings: https://stackoverflow.com/questions/67680296/syntaxerror-f-string-expression-part-cannot-include-a-backslash   # noqa: E501
+            # TODO: Switch to f-string when Python>=3.12 is the minimum requirement
+            elements_repr = "ModuleList(\n  {0}\n)".format(
+                "\n  ".join(element_repr_list)
+            )
 
         return (
             f"{self.__class__.__name__}(elements={elements_repr}, "
