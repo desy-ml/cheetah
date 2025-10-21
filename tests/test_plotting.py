@@ -171,7 +171,7 @@ def test_ensemble_plotting(style):
     num_particles = 10_000
 
     mean = torch.zeros(6)
-    cov = torch.diag(torch.tensor([1, 1, 9, 9, 1, 1])) * 1e-6
+    cov = torch.diag(torch.tensor([1e-6, 1e-6, 9e-6, 9e-6, 1e-6, 1e-6]))
     distribution = torch.distributions.MultivariateNormal(mean, cov)
 
     coordinates_6d = distribution.sample((num_beams, num_particles))
