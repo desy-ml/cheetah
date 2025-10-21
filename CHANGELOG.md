@@ -18,7 +18,7 @@
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
 - Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558) (@jank324, @Hespe)
-- Add the following plotting functionalities for beams with batch dimensions: plot average 1d projection histogram with lower and upper bounds, plot average 2d projection histogram with lower and upper bounds, triangle plot with the above functionalities. (see #583) (@jp-ga, @jank324)
+- Add the following plotting functionalities for beams with batch dimensions: plot average 1D projection histogram with lower and upper bounds, plot average 2D projection histogram with lower and upper bounds, triangle plot with the above functionalities. (see #583) (@jp-ga, @jank324)
 
 ### 🐛 Bug fixes
 
