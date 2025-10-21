@@ -1240,9 +1240,9 @@ class ParticleBeam(Beam):
         bins: int = 100,
         bin_range: tuple[float] | None = None,
         smoothing: float = 0.0,
-        plot_kws: dict | None = None,
         uncertainty_type: Literal["percentile", "std_error"] = "percentile",
         confidence_level: float = 0.9,
+        plot_kws: dict | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
@@ -1250,16 +1250,15 @@ class ParticleBeam(Beam):
 
         :param dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p').
         :param bins: Number of histogram bins.
-        :param bin_range: Tuple (min, max) specifying the histogram range, or
-            None to infer from the data.
-        :param smoothing: Std. dev. of the Gaussian kernel used to smooth the
+        :param bin_range: Tuple (min, max) specifying the histogram range, or `None` to
+            infer from the data.
+        :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
             histogram.
+        :param uncertainty_type: Method to compute uncertainty bands for vectorized
+            beams; either `"percentile"` or `"std_error"`.
+        :param confidence_level: Confidence level used when computing uncertainty bands.
         :param plot_kws: Additional keyword arguments forwarded to
-            matplotlib.axes.Axes.plot.
-        :param uncertainty_type: Method to compute uncertainty bands for
-            vectorized beams; either 'percentile' or 'std_error'.
-        :param confidence_level: Confidence level used when computing
-            uncertainty bands.
+            `matplotlib.axes.Axes.plot`.
         :param ax: Matplotlib Axes to draw on. If None a new axes is created.
         :return: Matplotlib Axes containing the plotted histogram.
         """
@@ -1314,10 +1313,10 @@ class ParticleBeam(Beam):
         bin_ranges: tuple[tuple[float]] | None = None,
         histogram_smoothing: float = 0.0,
         contour_smoothing: float = 1.0,
-        pcolormesh_kws: dict | None = None,
-        contour_kws: dict | None = None,
         uncertainty_type: Literal["percentile", "std_error"] = "percentile",
         confidence_level: float = 0.9,
+        pcolormesh_kws: dict | None = None,
+        contour_kws: dict | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
@@ -1338,15 +1337,14 @@ class ParticleBeam(Beam):
             the 2D histogram before plotting.
         :param contour_smoothing: Std. dev. of the Gaussian kernel applied to the
             contour data (applied after histogram_smoothing).
-        :param pcolormesh_kws: Additional keyword arguments forwarded to
-            matplotlib.pcolormesh.
-        :param contour_kws: Additional keyword arguments forwarded to
-            matplotlib.contour.
         :param uncertainty_type: Method to compute uncertainty bands for vectorized
-            beams; either 'percentile' or 'std_error'. Only used when the beam has
-            a batch/vector dimension.
-        :param confidence_level: Confidence level used when computing uncertainty
-            bands.
+            beams; either 'percentile' or 'std_error'. Only used when the beam has a
+            vector dimension.
+        :param confidence_level: Confidence level used when computing uncertainty bands.
+        :param pcolormesh_kws: Additional keyword arguments forwarded to
+            `matplotlib.pcolormesh`.
+        :param contour_kws: Additional keyword arguments forwarded to
+            `matplotlib.contour`.
         :param ax: Matplotlib Axes to draw on. If None a new axes is created.
         :return: Matplotlib Axes containing the rendered 2D projection.
         """
@@ -1454,10 +1452,10 @@ class ParticleBeam(Beam):
         dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 100,
         bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
-        plot_1d_kws: dict | None = None,
-        plot_2d_kws: dict | None = None,
         uncertainty_type: Literal["percentile", "std_error"] = "percentile",
         confidence_level: float = 0.9,
+        plot_1d_kws: dict | None = None,
+        plot_2d_kws: dict | None = None,
         axs: np.ndarray | None = None,
     ) -> tuple[plt.Figure, np.ndarray]:
         """
@@ -1475,29 +1473,27 @@ class ParticleBeam(Beam):
             sequence of ``(min, max)`` pairs: one pair per dimension.
         :param style: Style for off-diagonal plots. ``'histogram'`` (2D histogram)
             or ``'contour'`` (normalized contour levels).
+        :param uncertainty_type: Method to compute uncertainty bands when the beam is
+            vectorised; either `"percentile"` or `"std_error"`.
+        :param confidence_level: Confidence level used when computing uncertainty bands.
         :param plot_1d_kws: Extra keyword arguments forwarded to
             :meth:`plot_1d_distribution` for diagonal plots.
         :param plot_2d_kws: Extra keyword arguments forwarded to
             :meth:`plot_2d_distribution` for off-diagonal plots.
-        :param uncertainty_type: Method to compute uncertainty bands when the
-            beam is vectorized; either ``'percentile'`` or ``'std_error'``.
-        :param confidence_level: Confidence level used when computing uncertainty
-            bands.
         :param axs: Optional pre-created axes array with shape ``(N, N)``. If
-            ``None``, a new figure and axes grid are created.
-
-        :returns: Tuple ``(fig, axs)`` where ``fig`` is a matplotlib Figure and
-            ``axs`` is a NumPy array of Axes with shape ``(N, N)``.
+            `None`, a new figure and axes grid are created.
+        :returns: Tuple ``(fig, axs)`` where ``fig`` is a matplotlib Figure and `axs` is
+            a NumPy array of Axes with shape ``(N, N)``.
 
         .. note::
-            - When the beam is vectorized (batch/vector dim > 0) the function
-              computes uncertainty bands for 1D and 2D projections and overlays them.
-            - The layout uses a lower-triangle orientation for pair plots: element
-              at row ``i``, column ``j`` (with ``i > j``) shows dimension ``j`` on
-              the x-axis and dimension ``i`` on the y-axis.
-            - If ``axs`` is provided it must have shape ``(N, N)``. If not provided,
-              a new figure is created with a square layout sized about 2 inches
-              per dimension.
+            - When the beam is vectorized (batch/vector dim > 0) the function computes
+              uncertainty bands for 1D and 2D projections and overlays them.
+            - The layout uses a lower-triangle orientation for pair plots: element at
+              row ``i``, column ``j`` (with ``i > j``) shows dimension ``j`` on the
+              x-axis and dimension ``i`` on the y-axis.
+            - If ``axs`` is provided it must have shape ``(N, N)``. If not provided, a
+              new figure is created with a square layout sized about 2 inches per
+              dimension.
         """
         if axs is None:
             fig, axs = plt.subplots(
