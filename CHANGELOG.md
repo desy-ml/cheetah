@@ -26,6 +26,7 @@
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
 - Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
 - Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
+- RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
 
 ### 🐆 Other
 
