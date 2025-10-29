@@ -1398,7 +1398,7 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 x_centers,
                 y_centers,
-                smoothed_histogram.T,
+                smoothed_histogram.mT,
                 cmap="Greys",
             )
             ax.contour(

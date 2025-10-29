@@ -34,10 +34,11 @@ def compute_statistics_1d(
         return (bin_centers, histogram, None, None)
     else:
         mean_histogram, lower_bound, upper_bound = compute_mean_and_bounds(
-            histogram.to(inputs.dtype), errorbar=errorbar
+            histogram.to(inputs.dtype).flatten(start_dim=0, end_dim=-2),
+            errorbar=errorbar,
         )
 
-    return (bin_centers, mean_histogram, lower_bound, upper_bound)
+        return (bin_centers, mean_histogram, lower_bound, upper_bound)
 
 
 def compute_statistics_2d(
@@ -69,11 +70,13 @@ def compute_statistics_2d(
     x_centers = (x_edges[:-1] + x_edges[1:]) / 2
     y_centers = (y_edges[:-1] + y_edges[1:]) / 2
 
-    mean_histogram, lower_bound, upper_bound = compute_mean_and_bounds(
-        histogram.to(x.dtype), errorbar=errorbar
-    )
-
-    return x_centers, y_centers, mean_histogram, lower_bound, upper_bound
+    if len(x.shape) == 1:
+        return x_centers, y_centers, histogram, None, None
+    else:
+        mean_histogram, lower_bound, upper_bound = compute_mean_and_bounds(
+            histogram.to(x.dtype).flatten(start_dim=0, end_dim=-3), errorbar=errorbar
+        )
+        return x_centers, y_centers, mean_histogram, lower_bound, upper_bound
 
 
 def vectorized_histogram_1d(
@@ -110,7 +113,7 @@ def vectorized_histogram_1d(
     num_vector_elements = inputs.shape[0]
 
     bin_edges = torch.linspace(*bin_range, bins + 1, **factory_kwargs)
-    bin_indicies = torch.bucketize(inputs, bin_edges) - 1
+    bin_indicies = torch.bucketize(inputs.contiguous(), bin_edges) - 1
 
     # Flatten batch with offsets
     vector_offsets = (
@@ -181,8 +184,8 @@ def vectorized_histogram_2d(
     bin_edges_y = torch.linspace(
         bin_ranges[1][0], bin_ranges[1][1], bins[1] + 1, **factory_kwargs
     )
-    bin_indicies_x = torch.bucketize(x_flat, bin_edges_x) - 1
-    bin_indicies_y = torch.bucketize(y_flat, bin_edges_y) - 1
+    bin_indicies_x = torch.bucketize(x_flat.contiguous(), bin_edges_x) - 1
+    bin_indicies_y = torch.bucketize(y_flat.contiguous(), bin_edges_y) - 1
 
     # Flatten 2-dimensional bin indices to 1 dimension
     bin_indicies_flat = bin_indicies_x * bins[1] + bin_indicies_y
@@ -226,26 +229,20 @@ def compute_mean_and_bounds(
     else:
         error_method, error_level = errorbar
 
-    # Flatten the vector dimensions for the following computations
-    x_flattened = inputs.flatten(
-        start_dim=0, end_dim=-2
-    )  # (num_vector_elements, num_samples)
-    num_vector_elements = inputs.shape[0]
-
-    mean = x_flattened.mean(dim=0)
+    mean = inputs.mean(dim=0)
 
     if error_method == "sd":
         if error_level is None:
             error_level = 3.0
 
-        std_dev = x_flattened.std(dim=0)
+        std_dev = inputs.std(dim=0)
         lower_bound = mean - error_level * std_dev
         upper_bound = mean + error_level * std_dev
     elif error_method == "se":
         if error_level is None:
             error_level = 3.0
 
-        std_error = x_flattened.std(dim=0) / math.sqrt(num_vector_elements)
+        std_error = inputs.std(dim=0) / math.sqrt(inputs.shape[0])
         lower_bound = mean - error_level * std_error
         upper_bound = mean + error_level * std_error
     elif error_method == "pi":
@@ -253,8 +250,8 @@ def compute_mean_and_bounds(
             error_level = 95.0
 
         alpha = 1 - error_level / 100
-        lower_bound = x_flattened.quantile(alpha / 2, dim=0)
-        upper_bound = x_flattened.quantile(1 - alpha / 2, dim=0)
+        lower_bound = inputs.quantile(alpha / 2, dim=0)
+        upper_bound = inputs.quantile(1 - alpha / 2, dim=0)
     else:
         raise ValueError(
             f"Invalid error method: {error_method}. Must be 'sd', 'se', 'pi' or 'jp'."
