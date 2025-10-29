@@ -1240,9 +1240,9 @@ class ParticleBeam(Beam):
         bins: int = 100,
         bin_range: tuple[float] | None = None,
         smoothing: float = 0.0,
-        uncertainty_type: Literal["percentile", "std_error"] = "percentile",
-        confidence_level: float = 0.9,
+        errorbar: tuple[str, int | float] | str = ("pi", 95),
         plot_kws: dict | None = None,
+        fill_between_kws: dict | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
@@ -1254,39 +1254,36 @@ class ParticleBeam(Beam):
             infer from the data.
         :param smoothing: Standard deviation of the Gaussian kernel used to smooth the
             histogram.
-        :param uncertainty_type: Method to compute uncertainty bands for vectorized
-            beams; either `"percentile"` or `"std_error"`.
-        :param confidence_level: Confidence level used when computing uncertainty bands.
+        :param errorbar: Method to compute uncertainty bands over vectorised beams.
+            Pass either a method string or a tuple `(method, level)`. Available methods
+            are "sd", "se", "pi" and "jp".
         :param plot_kws: Additional keyword arguments forwarded to
             `matplotlib.axes.Axes.plot`.
+        :param fill_between_kws: Additional keyword arguments forwarded to
+            `matplotlib.axes.Axes.fill_between`.
         :param ax: Matplotlib Axes to draw on. If None a new axes is created.
         :return: Matplotlib Axes containing the plotted histogram.
         """
         if ax is None:
             _, ax = plt.subplots()
 
-        x_array = getattr(self, dimension)
+        centers, histogram, lower_bound, upper_bound = compute_statistics_1d(
+            inputs=getattr(self, dimension),
+            bins=bins,
+            bin_range=bin_range,
+            errorbar=errorbar,
+        )
 
-        if self.particles.dim() == 2:
-            histogram, edges = np.histogram(
-                x_array.cpu().detach().numpy(), bins=bins, range=bin_range
+        if smoothing:
+            histogram = gaussian_filter(histogram, smoothing)
+
+        if upper_bound is not None and lower_bound is not None:
+            ax.fill_between(
+                centers,
+                lower_bound,
+                upper_bound,
+                **(fill_between_kws or {"color": "C1", "alpha": 0.5}),
             )
-            centers = (edges[:-1] + edges[1:]) / 2
-
-            if smoothing:
-                histogram = gaussian_filter(histogram, smoothing)
-        elif self.particles.dim() > 2:
-            centers, histogram, lower_bound, upper_bound = compute_statistics_1d(
-                x=x_array.flatten(start_dim=0, end_dim=-2),
-                bins=bins,
-                bin_range=bin_range,
-                smoothing=smoothing,
-                confidence_level=confidence_level,
-                uncertainty_type=uncertainty_type,
-            )
-            centers = centers.numpy()
-            ax.fill_between(centers, lower_bound, upper_bound, color="C1", alpha=0.5)
-
         ax.plot(centers, histogram, **(plot_kws or {}))
 
         # Handle units
@@ -1294,7 +1291,9 @@ class ParticleBeam(Beam):
 
         if dimension in ("x", "y", "tau"):
             base_unit = "m"
-            format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
+            format_axis_with_prefixed_unit(
+                ax.xaxis, base_unit, centers.numpy()
+            )  # Take `.numpy()` because `np.max` somehow acts up on `torch.Tensor`s
 
         return ax
 
@@ -1308,8 +1307,7 @@ class ParticleBeam(Beam):
         bin_ranges: tuple[tuple[float]] | None = None,
         histogram_smoothing: float = 0.0,
         contour_smoothing: float = 1.0,
-        uncertainty_type: Literal["percentile", "std_error"] = "percentile",
-        confidence_level: float = 0.9,
+        errorbar: tuple[str, int | float] | str = ("pi", 95),
         pcolormesh_kws: dict | None = None,
         contour_kws: dict | None = None,
         ax: plt.Axes | None = None,
@@ -1332,10 +1330,9 @@ class ParticleBeam(Beam):
             the 2D histogram before plotting.
         :param contour_smoothing: Std. dev. of the Gaussian kernel applied to the
             contour data (applied after histogram_smoothing).
-        :param uncertainty_type: Method to compute uncertainty bands for vectorized
-            beams; either 'percentile' or 'std_error'. Only used when the beam has a
-            vector dimension.
-        :param confidence_level: Confidence level used when computing uncertainty bands.
+        :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
+            either a method string or a tuple `(method, level)`. Available methods are
+            "sd", "se", "pi" and "jp".
         :param pcolormesh_kws: Additional keyword arguments forwarded to
             `matplotlib.pcolormesh`.
         :param contour_kws: Additional keyword arguments forwarded to
@@ -1368,9 +1365,7 @@ class ParticleBeam(Beam):
                     y=y_array,
                     bins=(bins, bins),
                     bin_ranges=bin_ranges,
-                    smoothing=histogram_smoothing,
-                    uncertainty_type=uncertainty_type,
-                    confidence_level=confidence_level,
+                    errorbar=errorbar,
                 )
             )
             contour_histogram = gaussian_filter(smoothed_histogram, contour_smoothing)
@@ -1447,8 +1442,7 @@ class ParticleBeam(Beam):
         dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 100,
         bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
-        uncertainty_type: Literal["percentile", "std_error"] = "percentile",
-        confidence_level: float = 0.9,
+        errorbar: tuple[str, int | float] | str = ("pi", 95),
         plot_1d_kws: dict | None = None,
         plot_2d_kws: dict | None = None,
         axs: np.ndarray | None = None,
@@ -1468,9 +1462,9 @@ class ParticleBeam(Beam):
             sequence of ``(min, max)`` pairs: one pair per dimension.
         :param style: Style for off-diagonal plots. ``'histogram'`` (2D histogram)
             or ``'contour'`` (normalized contour levels).
-        :param uncertainty_type: Method to compute uncertainty bands when the beam is
-            vectorised; either `"percentile"` or `"std_error"`.
-        :param confidence_level: Confidence level used when computing uncertainty bands.
+        :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
+            either a method string or a tuple `(method, level)`. Available methods
+            are "sd", "se", "pi" and "jp".
         :param plot_1d_kws: Extra keyword arguments forwarded to
             :meth:`plot_1d_distribution` for diagonal plots.
         :param plot_2d_kws: Extra keyword arguments forwarded to
@@ -1570,8 +1564,7 @@ class ParticleBeam(Beam):
                 bins=bins,
                 bin_range=bin_range,
                 ax=ax,
-                uncertainty_type=uncertainty_type,
-                confidence_level=confidence_level,
+                errorbar=errorbar,
                 **(plot_1d_kws or {}),
             )
 
@@ -1583,8 +1576,7 @@ class ParticleBeam(Beam):
                 bins=bins,
                 bin_ranges=(bin_ranges[i], bin_ranges[j]),
                 ax=axs[j, i],
-                uncertainty_type=uncertainty_type,
-                confidence_level=confidence_level,
+                errorbar=errorbar,
                 **(plot_2d_kws or {}),
             )
 
