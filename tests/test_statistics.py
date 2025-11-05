@@ -1,10 +1,16 @@
+import pytest
 import torch
 
 from cheetah.utils import (
+    distribution_histogram_and_confidence_1d,
+    distribution_histogram_and_confidence_2d,
+    histograms_mean_and_confidence,
     match_distribution_moments,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_variance,
+    vectorized_histogram_1d,
+    vectorized_histogram_2d,
 )
 
 
@@ -156,3 +162,156 @@ def test_match_distribution_moments():
     # Check if moments match
     assert torch.allclose(transformed_mu, target_mu)
     assert torch.allclose(transformed_cov, target_cov)
+
+
+@pytest.mark.parametrize("errorbar", ["sd", "se", "pi"])
+@pytest.mark.parametrize("histogram_dimensions", [1, 2])
+def test_histogram_and_confidence_1d(errorbar, histogram_dimensions):
+    """
+    Test that the output shapes of `histograms_mean_and_confidence` are correct, and
+    that lower and upper bounds are below and above the mean, respectively.
+    """
+    num_histograms = 100
+    histogram_shape = (20,) if histogram_dimensions == 1 else (20, 30)
+    histograms = torch.rand(num_histograms, *histogram_shape)
+
+    mean_histogram, lower_bound, upper_bound = histograms_mean_and_confidence(
+        histograms, errorbar=errorbar
+    )
+
+    assert mean_histogram.shape == histogram_shape
+    assert lower_bound.shape == histogram_shape
+    assert upper_bound.shape == histogram_shape
+
+    assert (lower_bound <= mean_histogram).all()
+    assert (upper_bound >= mean_histogram).all()
+
+
+@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+def test_vectorized_histogram_1d(vector_shape):
+    """Test that the output shape of `vectorized_histogram_1d` is correct."""
+    num_distribution_samples = 100
+    num_bins = 15
+
+    distribution_shape = (
+        (vector_shape + (num_distribution_samples,))
+        if vector_shape is not None
+        else (num_distribution_samples,)
+    )
+    distribution = torch.rand(*distribution_shape)
+
+    histogram, bin_edges = vectorized_histogram_1d(distribution, bins=num_bins)
+
+    expected_histogram_shape = (
+        (*vector_shape, num_bins) if vector_shape is not None else (num_bins,)
+    )
+
+    assert histogram.shape == expected_histogram_shape
+    assert bin_edges.shape == (num_bins + 1,)
+
+
+@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+def test_vectorized_histogram_2d(vector_shape):
+    """Test that the output shape of `vectorized_histogram_2d` is correct."""
+    num_distribution_samples = 100
+    num_bins = (15, 20)
+
+    distribution_shape = (
+        (vector_shape + (num_distribution_samples,))
+        if vector_shape is not None
+        else (num_distribution_samples,)
+    )
+    x_distribution = torch.rand(*distribution_shape)
+    y_distribution = torch.rand(*distribution_shape)
+
+    histogram, bin_edges_x, bin_edges_y = vectorized_histogram_2d(
+        x_distribution, y_distribution, bins=num_bins
+    )
+
+    expected_histogram_shape = (
+        (*vector_shape, num_bins[0], num_bins[1])
+        if vector_shape is not None
+        else (num_bins[0], num_bins[1])
+    )
+
+    assert histogram.shape == expected_histogram_shape
+    assert bin_edges_x.shape == (num_bins[0] + 1,)
+    assert bin_edges_y.shape == (num_bins[1] + 1,)
+
+
+@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+def test_distribution_histogram_and_confidence_1d(vector_shape):
+    """
+    Test that the output shapes of `distribution_histogram_and_confidence_1d` are
+    correct, and that lower and upper bounds are below and above the mean, respectively.
+    """
+    num_distribution_samples = 100
+    num_bins = 20
+
+    distribution_shape = (
+        (vector_shape + (num_distribution_samples,))
+        if vector_shape is not None
+        else (num_distribution_samples,)
+    )
+    distribution = torch.rand(*distribution_shape)
+
+    bin_centers, mean_histogram, lower_bound, upper_bound = (
+        distribution_histogram_and_confidence_1d(
+            distribution, bins=num_bins, errorbar="sd"
+        )
+    )
+
+    expected_histogram_shape = (
+        (*vector_shape, num_bins) if vector_shape is not None else (num_bins,)
+    )
+
+    assert bin_centers.shape == (num_bins,)
+    assert mean_histogram.shape == expected_histogram_shape
+    assert lower_bound.shape == expected_histogram_shape
+    assert upper_bound.shape == expected_histogram_shape
+
+    assert (lower_bound <= mean_histogram).all()
+    assert (upper_bound >= mean_histogram).all()
+
+
+@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+def test_distribution_histogram_and_confidence_2d(vector_shape):
+    """
+    Test that the output shapes of `distribution_histogram_and_confidence_2d` are
+    correct, and that lower and upper bounds are below and above the mean, respectively.
+    """
+    num_distribution_samples = 100
+    num_bins = (15, 20)
+
+    distribution_shape = (
+        (vector_shape + (num_distribution_samples,))
+        if vector_shape is not None
+        else (num_distribution_samples,)
+    )
+    x_distribution = torch.rand(*distribution_shape)
+    y_distribution = torch.rand(*distribution_shape)
+
+    (
+        bin_centers_x,
+        bin_centers_y,
+        mean_histogram,
+        lower_bound,
+        upper_bound,
+    ) = distribution_histogram_and_confidence_2d(
+        x_distribution, y_distribution, bins=num_bins, errorbar="sd"
+    )
+
+    expected_histogram_shape = (
+        (*vector_shape, num_bins[0], num_bins[1])
+        if vector_shape is not None
+        else (num_bins[0], num_bins[1])
+    )
+
+    assert bin_centers_x.shape == (num_bins[0],)
+    assert bin_centers_y.shape == (num_bins[1],)
+    assert mean_histogram.shape == expected_histogram_shape
+    assert lower_bound.shape == expected_histogram_shape
+    assert upper_bound.shape == expected_histogram_shape
+
+    assert (lower_bound <= mean_histogram).all()
+    assert (upper_bound >= mean_histogram).all()
