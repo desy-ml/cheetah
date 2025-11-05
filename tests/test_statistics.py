@@ -187,7 +187,9 @@ def test_histogram_and_confidence_1d(errorbar, histogram_dimensions):
     assert (upper_bound >= mean_histogram).all()
 
 
-@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+@pytest.mark.parametrize(
+    "vector_shape", [None, (4,), (3, 2)], ids=["(,)", "(4,)", "(3,2)"]
+)
 def test_vectorized_histogram_1d(vector_shape):
     """Test that the output shape of `vectorized_histogram_1d` is correct."""
     num_distribution_samples = 100
@@ -210,7 +212,9 @@ def test_vectorized_histogram_1d(vector_shape):
     assert bin_edges.shape == (num_bins + 1,)
 
 
-@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+@pytest.mark.parametrize(
+    "vector_shape", [None, (4,), (3, 2)], ids=["(,)", "(4,)", "(3,2)"]
+)
 def test_vectorized_histogram_2d(vector_shape):
     """Test that the output shape of `vectorized_histogram_2d` is correct."""
     num_distribution_samples = 100
@@ -239,7 +243,9 @@ def test_vectorized_histogram_2d(vector_shape):
     assert bin_edges_y.shape == (num_bins[1] + 1,)
 
 
-@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+@pytest.mark.parametrize(
+    "vector_shape", [None, (4,), (3, 2)], ids=["(,)", "(4,)", "(3,2)"]
+)
 def test_distribution_histogram_and_confidence_1d(vector_shape):
     """
     Test that the output shapes of `distribution_histogram_and_confidence_1d` are
@@ -274,7 +280,9 @@ def test_distribution_histogram_and_confidence_1d(vector_shape):
     assert (upper_bound >= mean_histogram).all()
 
 
-@pytest.mark.parametrize("vector_shape", [None, (4,), (3, 2)])
+@pytest.mark.parametrize(
+    "vector_shape", [None, (4,), (3, 2)], ids=["(,)", "(4,)", "(3,2)"]
+)
 def test_distribution_histogram_and_confidence_2d(vector_shape):
     """
     Test that the output shapes of `distribution_histogram_and_confidence_2d` are
