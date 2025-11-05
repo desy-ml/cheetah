@@ -145,17 +145,20 @@ def match_distribution_moments(
 
 
 def distribution_histogram_and_confidence_1d(
-    inputs: torch.Tensor,
+    a: torch.Tensor,
     bins: int = 100,
     bin_range: tuple[float] | None = None,
     errorbar: tuple[str, int | float] | str = ("pi", 95),
 ) -> tuple[torch.Tensor]:
     """
-    Compute the mean 1D histogram and a two-sided confidence interval for a
-    1-dimensional distribution or multiple vectorised samples of the latter.
+    Compute the mean histogram and confidence interval over vectorised samples of a
+    1-dimensional distribution.
 
-    :param inputs: Input samples. Accepts a 1D tensor of shape (num_samples,) or a
-        vectorised from with shape (..., num_samples).
+    Also works for non-vectorised inputs, in which case the histogram is computed and
+    `None` is returned for the confidence bounds.
+
+    :param a: Input distribution. Can be a single distribution of shape (num_samples,)
+        or a vectorisation of multiple distributions of shape (..., num_samples).
     :param bins: Number of histogram bins.
     :param bin_range: Tuple (min, max) specifying the histogram range, or `None` to
         infer from the data.
@@ -165,18 +168,15 @@ def distribution_histogram_and_confidence_1d(
     :return: Tuple (bin_centers, mean_histogram, lower_bound, upper_bound) with vector
         dimensions reduced.
     """
-    histogram, bin_edges = vectorized_histogram_1d(
-        inputs, bins=bins, bin_range=bin_range
-    )
+    histogram, bin_edges = vectorized_histogram_1d(a, bins=bins, bin_range=bin_range)
 
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-    if len(inputs.shape) == 1:
+    if len(a.shape) == 1:
         return (bin_centers, histogram, None, None)
     else:
-        mean_histogram, lower_bound, upper_bound = mean_and_confidence(
-            histogram.to(inputs.dtype).flatten(start_dim=0, end_dim=-2),
-            errorbar=errorbar,
+        mean_histogram, lower_bound, upper_bound = histograms_mean_and_confidence(
+            histogram.to(a.dtype).flatten(start_dim=0, end_dim=-2), errorbar=errorbar
         )
 
         return (bin_centers, mean_histogram, lower_bound, upper_bound)
@@ -190,19 +190,26 @@ def distribution_histogram_and_confidence_2d(
     errorbar: tuple[str, int | float] | str = ("pi", 95),
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    Compute the mean 2D histogram and uncertainty bounds for paired samples.
+    Compute the mean histogram and confidence interval over vectorised samples of a
+    2-dimensional distribution.
 
-    :param x: Values for the x dimension for each sample in the ensemble of shape (B, N)
-        or (N,).
-    :param y: Values for the y dimension for each sample in the ensemble of shape (B, N)
-        or (N,).
-    :param bins: Number of histogram bins for x and y as (nx, ny).
-    :param bin_ranges: Ranges for the histogram axes as
-        ((x_min, x_max), (y_min, y_max)). If None, ranges are inferred from the data.
+    Also works for non-vectorised inputs, in which case the histogram is computed and
+    `None` is returned for the confidence bounds.
+
+    :param x: x coordinates of the distribution to be histogrammed. Can be a single
+        distribution of shape (num_samples,) or a vectorisation of multiple
+        distributions of shape (..., num_samples).
+    :param y: y coordinates of the distribution to be histogrammed. Can be a single
+        distribution of shape (num_samples,) or a vectorisation of multiple
+        distributions of shape (..., num_samples).
+    :param bins: Tuple (nx, ny) specifying the number of histogram bins for x and y.
+    :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the histogram
+        ranges for x and y, or `None` to infer from the data.
     :param errorbar: Method to compute uncertainty over vectorised beams. Pass either a
         method string or a tuple `(method, level)`. Available methods are "sd", "se",
         "pi" and "jp".
-    :returns: Tuple (x_centers, y_centers, mean_histogram, lower_bound, upper_bound).
+    :returns: Tuple (bin_centers_x, bin_centers_y, mean_histogram, lower_bound,
+        upper_bound) with vector dimensions reduced.
     """
     histogram, x_edges, y_edges = vectorized_histogram_2d(
         x, y, bins=bins, bin_ranges=bin_ranges
@@ -214,7 +221,7 @@ def distribution_histogram_and_confidence_2d(
     if len(x.shape) == 1:
         return x_centers, y_centers, histogram, None, None
     else:
-        mean_histogram, lower_bound, upper_bound = mean_and_confidence(
+        mean_histogram, lower_bound, upper_bound = histograms_mean_and_confidence(
             histogram.to(x.dtype).flatten(start_dim=0, end_dim=-3), errorbar=errorbar
         )
         return x_centers, y_centers, mean_histogram, lower_bound, upper_bound
@@ -350,8 +357,8 @@ def vectorized_histogram_2d(
     return histogram, bin_edges_x, bin_edges_y
 
 
-def mean_and_confidence(
-    inputs: torch.Tensor, errorbar: tuple[str, int | float] | str = ("pi", 95)
+def histograms_mean_and_confidence(
+    histograms: torch.Tensor, errorbar: tuple[str, int | float] | str = ("pi", 95)
 ):
     """
     Compute elementwise mean and two-sided confidence bounds over an ensemble of
@@ -370,20 +377,20 @@ def mean_and_confidence(
     else:
         error_method, error_level = errorbar
 
-    mean = inputs.mean(dim=0)
+    mean = histograms.mean(dim=0)
 
     if error_method == "sd":
         if error_level is None:
             error_level = 3.0
 
-        std_dev = inputs.std(dim=0)
+        std_dev = histograms.std(dim=0)
         lower_bound = mean - error_level * std_dev
         upper_bound = mean + error_level * std_dev
     elif error_method == "se":
         if error_level is None:
             error_level = 3.0
 
-        std_error = inputs.std(dim=0) / math.sqrt(inputs.shape[0])
+        std_error = histograms.std(dim=0) / math.sqrt(histograms.shape[0])
         lower_bound = mean - error_level * std_error
         upper_bound = mean + error_level * std_error
     elif error_method == "pi":
@@ -391,13 +398,11 @@ def mean_and_confidence(
             error_level = 95.0
 
         alpha = 1 - error_level / 100
-        lower_bound = inputs.quantile(alpha / 2, dim=0)
-        upper_bound = inputs.quantile(1 - alpha / 2, dim=0)
+        lower_bound = histograms.quantile(alpha / 2, dim=0)
+        upper_bound = histograms.quantile(1 - alpha / 2, dim=0)
     else:
         raise ValueError(
             f"Invalid error method: {error_method}. Must be 'sd', 'se', 'pi' or 'jp'."
         )
-
-    return mean, lower_bound, upper_bound
 
     return mean, lower_bound, upper_bound

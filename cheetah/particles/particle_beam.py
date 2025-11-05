@@ -1267,7 +1267,7 @@ class ParticleBeam(Beam):
 
         centers, histogram, lower_bound, upper_bound = (
             distribution_histogram_and_confidence_1d(
-                inputs=getattr(self, dimension),
+                a=getattr(self, dimension),
                 bins=bins,
                 bin_range=bin_range,
                 errorbar=errorbar,

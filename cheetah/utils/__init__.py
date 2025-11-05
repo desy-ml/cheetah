@@ -11,8 +11,8 @@ from .plot import (  # noqa: F401
 from .statistics import (  # noqa: F401
     distribution_histogram_and_confidence_1d,
     distribution_histogram_and_confidence_2d,
+    histograms_mean_and_confidence,
     match_distribution_moments,
-    mean_and_confidence,
     unbiased_weighted_covariance,
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
