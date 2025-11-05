@@ -9,12 +9,10 @@ from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
 
 from cheetah.particles.beam import Beam
-from cheetah.particles.ensemble_utils import (
-    compute_statistics_1d,
-    compute_statistics_2d,
-)
 from cheetah.particles.species import Species
 from cheetah.utils import (
+    distribution_histogram_and_confidence_1d,
+    distribution_histogram_and_confidence_2d,
     elementwise_linspace,
     format_axis_with_prefixed_unit,
     match_distribution_moments,
@@ -1267,11 +1265,13 @@ class ParticleBeam(Beam):
         if ax is None:
             _, ax = plt.subplots()
 
-        centers, histogram, lower_bound, upper_bound = compute_statistics_1d(
-            inputs=getattr(self, dimension),
-            bins=bins,
-            bin_range=bin_range,
-            errorbar=errorbar,
+        centers, histogram, lower_bound, upper_bound = (
+            distribution_histogram_and_confidence_1d(
+                inputs=getattr(self, dimension),
+                bins=bins,
+                bin_range=bin_range,
+                errorbar=errorbar,
+            )
         )
 
         if smoothing:
@@ -1360,7 +1360,7 @@ class ParticleBeam(Beam):
             x_array = getattr(self, x_dimension).flatten(start_dim=0, end_dim=-2)
             y_array = getattr(self, y_dimension).flatten(start_dim=0, end_dim=-2)
             x_centers, y_centers, smoothed_histogram, lower_bound, upper_bound = (
-                compute_statistics_2d(
+                distribution_histogram_and_confidence_2d(
                     x=x_array,
                     y=y_array,
                     bins=(bins, bins),
