@@ -362,12 +362,16 @@ def histograms_mean_and_confidence(
     Compute elementwise mean and two-sided confidence bounds over an ensemble of
     histograms.
 
-    :param inputs: Ensemble of histograms with shape (n_draws, ...). Computations are
-        performed across the first dimension (dim=0).
+    NOTE: This function assumes exactly one vector dimension. If you have multiple
+        vector dimensions, you must flatten them before passing to this function.
+
+    :param histograms: Tensor of multiple histograms with shape
+        (vector_size, *single_histogram_shape).
     :param errorbar: Method to compute uncertainty over vectorised beams. Pass either a
         method string or a tuple `(method, level)`. Available methods are "sd", "se",
         "pi" and "jp".
-    :return: Tuple (mean, lower_bound, upper_bound).
+    :return: Tuple of the mean histogram, lower bound and upper bound, with each the
+        vector dimensions reduced.
     """
     if isinstance(errorbar, str):
         error_method = errorbar
