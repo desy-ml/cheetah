@@ -228,44 +228,41 @@ def distribution_histogram_and_confidence_2d(
 
 
 def vectorized_histogram_1d(
-    inputs: torch.Tensor, bins: int = 100, bin_range: tuple[float] | None = None
+    a: torch.Tensor, bins: int = 100, bin_range: tuple[float] | None = None
 ) -> tuple[torch.Tensor]:
     """
-    Compute a 1-dimensional histogram for each 1D entry in a vectorised tensor of shape
-    (..., num_samples).
+    Compute a histogram for a 1-dimensional distribution or multiple vectorised
+    histograms for vectorised distributions.
 
-    :note: Uses `torch.bincount` with offsets.
-
-    :param inputs: Input tensor of shape (..., num_samples).
+    :param a: Input distribution. Can be a single distribution of shape (num_samples,)
+        or a vectorisation of multiple distributions of shape (..., num_samples).
     :param bins: Number of histogram bins.
-        :param bin_range: Tuple (min, max) specifying the histogram range, or `None` to
-            infer from the data.
+    :param bin_range: Tuple (min, max) specifying the histogram range, or `None` to
+        infer from the data.
     :return: Tuple (histogram, bin_edges) with `histogram` the bin counts of shape
-        (..., bins) and `bin_edges` a 1D tensor of shape (bins + 1,).
+        (..., bins) and `bin_edges` a 1-dimensional tensor of shape (bins + 1,).
     """
-    factory_kwargs = {"device": inputs.device, "dtype": inputs.dtype}
+    factory_kwargs = {"device": a.device, "dtype": a.dtype}
 
     if bin_range is None:
-        bin_range = (inputs.min(), inputs.max())
+        bin_range = (a.min(), a.max())
 
     # If the input is not vectorised, make it vectorised with vector size 1
-    was_input_vectorized = inputs.dim() > 1
+    was_input_vectorized = a.dim() > 1
     if not was_input_vectorized:
-        inputs = inputs.unsqueeze(0)  # (1, num_samples)
+        a = a.unsqueeze(0)  # (1, num_samples)
 
     # Flatten the vector dimensions for the following computations
-    original_vector_shape = inputs.shape[:-1]
-    inputs = inputs.flatten(
-        start_dim=0, end_dim=-2
-    )  # (num_vector_elements, num_samples)
-    num_vector_elements = inputs.shape[0]
+    original_vector_shape = a.shape[:-1]
+    a = a.flatten(start_dim=0, end_dim=-2)  # (num_vector_elements, num_samples)
+    num_vector_elements = a.shape[0]
 
     bin_edges = torch.linspace(*bin_range, bins + 1, **factory_kwargs)
-    bin_indicies = torch.bucketize(inputs.contiguous(), bin_edges) - 1
+    bin_indicies = torch.bucketize(a.contiguous(), bin_edges) - 1
 
     # Flatten batch with offsets
     vector_offsets = (
-        torch.arange(num_vector_elements, device=inputs.device) * bins
+        torch.arange(num_vector_elements, device=a.device) * bins
     )  # (num_vector_elements,)
     bin_indicies_flat = (
         bin_indicies + vector_offsets.unsqueeze(-1)
@@ -291,20 +288,21 @@ def vectorized_histogram_2d(
     bin_ranges: tuple[tuple[float]] | None = None,
 ) -> tuple[torch.Tensor]:
     """
-    Compute a 2-dimensional histogram for each pair of 2D entries in vectorised tensors.
+    Compute a histogram for a 2-dimensional distribution or multiple vectorised
+    histograms for vectorised distributions.
 
-    :note: Uses `torch.bincount` with offsets.
-
-    :param x: Values for the x dimension for each sample in the ensemble of shape (B, N)
-        or (N,).
-    :param y: Values for the y dimension for each sample in the ensemble of shape (B, N)
-        or (N,).
-    :param bins: Number of histogram bins for x and y as (nx, ny).
-    :param bin_ranges: Ranges for the histogram axes as
-        ((x_min, x_max), (y_min, y_max)). If None, ranges are inferred from the data.
-    :return: Tuple (histogram, x_edges, y_edges) with `histogram` the bin counts of
-        shape (B, nx, ny) or (nx, ny) and `x_edges`, `y_edges` 1D tensors of shape
-        (nx + 1,) and (ny + 1,), respectively.
+    :param x: x coordinates of the distribution to be histogrammed. Can be a single
+        distribution of shape (num_samples,) or a vectorisation of multiple
+        distributions of shape (..., num_samples).
+    :param y: y coordinates of the distribution to be histogrammed. Can be a single
+        distribution of shape (num_samples,) or a vectorisation of multiple
+        distributions of shape (..., num_samples).
+    :param bins: Tuple (nx, ny) specifying the number of histogram bins for x and y.
+    :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the histogram
+        ranges for x and y, or `None` to infer from the data.
+    :return: Tuple (histogram, bin_edges_x, bin_edges_y) with `histogram` the bin counts
+        of shape (..., nx, ny) or (nx, ny) and `bin_edges_x`, `bin_edges_y`
+        1-dimensional tensors of shape (nx + 1,) and (ny + 1,), respectively.
     """
     factory_kwargs = {"device": x.device, "dtype": x.dtype}
 
