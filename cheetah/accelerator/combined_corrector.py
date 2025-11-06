@@ -71,7 +71,10 @@ class CombinedCorrector(Element):
         _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(
-            self.length.shape, igamma2.shape, self.angle.shape
+            self.length.shape,
+            igamma2.shape,
+            self.horizontal_angle.shape,
+            self.vertical_angle.shape,
         )
 
         tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
@@ -89,7 +92,10 @@ class CombinedCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.angle != 0).item()
+        return (
+            torch.any(self.horizontal_angle != 0).item()
+            or torch.any(self.vertical_angle != 0).item()
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
