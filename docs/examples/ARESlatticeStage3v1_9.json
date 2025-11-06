@@ -1,8 +1,8 @@
 {
     "version": "cheetah-0.7",
-    "title": "ARES Lattice JSON",
+    "title": "ARES LatticeJSON",
     "info": "Save and reload test for Cheetah using the ARES lattice",
-    "root": "ARES_lattice",
+    "root": "unnamed_element_1",
     "elements": {
         "ARLISOLG1": ["Marker", {}],
         "Drift_ARLISOLG1": ["Drift", {"tracking_method": "linear", "length": 0.19599999487400055}],
