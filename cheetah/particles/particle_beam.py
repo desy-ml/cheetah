@@ -1569,7 +1569,7 @@ class ParticleBeam(Beam):
             self.plot_2d_distribution(
                 x_dimension=dimensions[i],
                 y_dimension=dimensions[j],
-                bins=bins,
+                bins=(bins, bins),
                 bin_ranges=(bin_ranges[i], bin_ranges[j]),
                 ax=axs[j, i],
                 errorbar=errorbar,
