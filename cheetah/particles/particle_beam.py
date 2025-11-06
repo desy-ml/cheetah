@@ -1309,7 +1309,7 @@ class ParticleBeam(Beam):
         errorbar: tuple[str, int | float] | str = ("pi", 95),
         pcolormesh_kws: dict | None = None,
         contour_kws: dict | None = None,
-        confidence_contours_kws: dict | None = None,
+        confidence_contour_kws: dict | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
@@ -1359,20 +1359,20 @@ class ParticleBeam(Beam):
 
         # Post-process and plot
         smoothed_histogram = gaussian_filter(mean_histogram, histogram_smoothing)
-        clipped_histogram = np.where(smoothed_histogram > 1, smoothed_histogram, np.nan)
 
-        if contour_smoothing:
-            contour_histogram = gaussian_filter(clipped_histogram, contour_smoothing)
-
-            if lower_bound is not None and upper_bound is not None:
-                lower_bound = gaussian_filter(lower_bound, contour_smoothing)
-                upper_bound = gaussian_filter(upper_bound, contour_smoothing)
+        contour_histogram = smoothed_histogram.copy()
+        smoothed_contour_histogram = gaussian_filter(
+            contour_histogram, contour_smoothing
+        )
+        if lower_bound is not None and upper_bound is not None:
+            smoothed_lower_bound = gaussian_filter(lower_bound, contour_smoothing)
+            smoothed_upper_bound = gaussian_filter(upper_bound, contour_smoothing)
 
         if style == "histogram":
             ax.pcolormesh(
                 bin_centers_x,
                 bin_centers_y,
-                clipped_histogram.T,
+                smoothed_histogram.T,
                 **({"cmap": "rainbow"}.update(pcolormesh_kws or {})),
             )
 
@@ -1381,55 +1381,61 @@ class ParticleBeam(Beam):
                 and lower_bound is not None
                 and upper_bound is not None
             ):
-                normalized_confidence_width = contour_histogram / (
+                normalized_confidence_width = smoothed_contour_histogram / (
                     upper_bound - lower_bound + 1e-12
                 )
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
-                    normalized_confidence_width.T,
+                    normalized_confidence_width.mT,
                     levels=confidence_contours,
                     **(
                         {"colors": "white", "alpha": 0.5}.update(
-                            confidence_contours_kws or {}
+                            confidence_contour_kws or {}
                         )
                     ),
                 )
         elif style == "contour":
-            ax.pcolormesh(bin_centers_x, bin_centers_y, mean_histogram.mT, cmap="Greys")
+            ax.pcolormesh(
+                bin_centers_x, bin_centers_y, smoothed_histogram.mT, cmap="Greys"
+            )
             ax.contour(
                 bin_centers_x,
                 bin_centers_y,
-                contour_histogram.T / contour_histogram.max(),
-                **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
+                smoothed_contour_histogram.mT / smoothed_contour_histogram.max(),
+                **({"levels": [0.1, 0.5, 0.9]}.update(contour_kws or {})),
             )
-            if self.particles.dim() > 2:
+            if lower_bound is not None and upper_bound is not None:
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
-                    lower_bound.T / lower_bound.max(),
-                    **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
+                    smoothed_lower_bound.mT / smoothed_lower_bound.max(),
+                    **(
+                        {"levels": [0.1, 0.5, 0.9]}.update(confidence_contour_kws or {})
+                    ),
                 )
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
-                    upper_bound.T / upper_bound.max(),
-                    **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
+                    smoothed_upper_bound.mT / smoothed_upper_bound.max(),
+                    **(
+                        {"levels": [0.1, 0.5, 0.9]}.update(confidence_contour_kws or {})
+                    ),
                 )
         else:
             raise ValueError("style must be either 'histogram' or 'contour'.")
 
+        # Handle units
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[x_dimension]}")
         ax.set_ylabel(f"{self.PRETTY_DIMENSION_LABELS[y_dimension]}")
 
-        # Handle units
         if x_dimension in ("x", "y", "tau"):
             x_base_unit = "m"
-            format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, bin_centers_x)
+            format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, bin_centers_x.numpy())
 
         if y_dimension in ("x", "y", "tau"):
             y_base_unit = "m"
-            format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, bin_centers_y)
+            format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, bin_centers_y.numpy())
 
         return ax
 
