@@ -1306,7 +1306,7 @@ class ParticleBeam(Beam):
         bins: tuple[int, int] | int = (100, 100),
         bin_ranges: tuple[tuple[float, float], tuple[float, float]] | None = None,
         histogram_smoothing: float = 0.0,
-        contour_smoothing: float = 1.0,
+        contour_smoothing: float = 3.0,
         errorbar: tuple[str, int | float] | str = ("pi", 95),
         pcolormesh_kws: dict | None = None,
         contour_kws: dict | None = None,
