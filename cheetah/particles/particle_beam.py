@@ -1529,11 +1529,17 @@ class ParticleBeam(Beam):
                 if dimension in ["px", "py", "p"]
             ]
             unitless_bin_range = (
-                full_tensor[unitless_idxs].min()
-                - (full_tensor[unitless_idxs].max() - full_tensor[unitless_idxs].min())
+                full_tensor[unitless_idxs, :].min()
+                - (
+                    full_tensor[unitless_idxs, :].max()
+                    - full_tensor[unitless_idxs, :].min()
+                )
                 / 10,
-                full_tensor[unitless_idxs].max()
-                + (full_tensor[unitless_idxs].max() - full_tensor[unitless_idxs].min())
+                full_tensor[unitless_idxs, :].max()
+                + (
+                    full_tensor[unitless_idxs, :].max()
+                    - full_tensor[unitless_idxs, :].min()
+                )
                 / 10,
             )
             bin_range_dict = {
