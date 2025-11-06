@@ -1488,7 +1488,7 @@ class ParticleBeam(Beam):
 
         # Determine bin ranges for all plots in the grid at once
         full_tensor = (
-            torch.stack([getattr(self, dimension) for dimension in dimensions], dim=0)
+            torch.stack([getattr(self, dimension) for dimension in dimensions], dim=-2)
             .cpu()
             .detach()
             .numpy()
@@ -1501,7 +1501,7 @@ class ParticleBeam(Beam):
                     full_tensor[i].max()
                     + (full_tensor[i].max() - full_tensor[i].min()) / 10,
                 )
-                for i in range(full_tensor.shape[0])
+                for i in range(full_tensor.shape[-2])
             ]
         if bin_ranges == "unit_same":
             spacial_idxs = [
