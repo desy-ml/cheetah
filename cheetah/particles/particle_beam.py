@@ -1303,8 +1303,8 @@ class ParticleBeam(Beam):
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         style: Literal["histogram", "contour"] = "histogram",
         confidence_contours: tuple[float] | None = None,
-        bins: int = 100,
-        bin_ranges: tuple[tuple[float]] | None = None,
+        bins: tuple[int, int] | int = (100, 100),
+        bin_ranges: tuple[tuple[float, float], tuple[float, float]] | None = None,
         histogram_smoothing: float = 0.0,
         contour_smoothing: float = 1.0,
         errorbar: tuple[str, int | float] | str = ("pi", 95),
@@ -1320,16 +1320,18 @@ class ParticleBeam(Beam):
             x-axis.
         :param y_dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p') to use for the
             y-axis.
-        :param style: Visualization style, either 'histogram' (colored 2D histogram)
-            or 'contour' (normalized contour levels with greyscale pcolormesh).
-        :param bins: Number of bins in each dimension for the histogram (int or pair).
-        :param bin_ranges: Pair of (min, max) ranges for the x and y histograms, or
-            None to infer ranges from the data. When provided it should be
-            ((xmin, xmax), (ymin, ymax)).
-        :param histogram_smoothing: Std. dev. of the Gaussian kernel applied to smooth
-            the 2D histogram before plotting.
-        :param contour_smoothing: Std. dev. of the Gaussian kernel applied to the
-            contour data (applied after histogram_smoothing).
+        :param style: Visualisation style, either 'histogram' (colored 2-dimensional
+            histogram) or 'contour' (normalised contour levels with grayscale
+            pcolormesh).
+        :param confidence_contours: If provided, draw contour lines at these confidence
+            levels (between 0 and 1) over the histogram style plot for vectorised beams.
+        :param bins: Tuple (nx, ny) specifying the number of histogram bins for x and y.
+        :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the
+            histogram ranges for x and y, or `None` to infer from the data.
+        :param histogram_smoothing: Standard deviation of the Gaussian kernel applied
+            to smooth the histogram for plotting.
+        :param contour_smoothing: Standard deviation of the Gaussian kernel applied to
+            the contour data (applied after histogram_smoothing).
         :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
             either a method string or a tuple `(method, level)`. Available methods are
             "sd", "se", "pi" and "jp".
@@ -1344,22 +1346,22 @@ class ParticleBeam(Beam):
             _, ax = plt.subplots()
 
         if self.particles.dim() == 2:
-            histogram, x_edges, y_edges = np.histogram2d(
+            histogram, bin_edges_x, bin_edges_y = np.histogram2d(
                 getattr(self, x_dimension).cpu().detach().numpy(),
                 getattr(self, y_dimension).cpu().detach().numpy(),
                 bins=bins,
                 range=bin_ranges,
             )
-            x_centers = (x_edges[:-1] + x_edges[1:]) / 2
-            y_centers = (y_edges[:-1] + y_edges[1:]) / 2
+            bin_centers_x = (bin_edges_x[:-1] + bin_edges_x[1:]) / 2
+            bin_centers_y = (bin_edges_y[:-1] + bin_edges_y[1:]) / 2
 
             # Post-process and plot
-            smoothed_histogram = gaussian_filter(histogram, histogram_smoothing)
-            contour_histogram = gaussian_filter(smoothed_histogram, contour_smoothing)
+            mean_histogram = gaussian_filter(histogram, histogram_smoothing)
+            contour_histogram = gaussian_filter(mean_histogram, contour_smoothing)
         elif self.particles.dim() > 2:
             x_array = getattr(self, x_dimension).flatten(start_dim=0, end_dim=-2)
             y_array = getattr(self, y_dimension).flatten(start_dim=0, end_dim=-2)
-            x_centers, y_centers, smoothed_histogram, lower_bound, upper_bound = (
+            bin_centers_x, bin_centers_y, mean_histogram, lower_bound, upper_bound = (
                 distribution_histogram_and_confidence_2d(
                     x=x_array,
                     y=y_array,
@@ -1368,19 +1370,17 @@ class ParticleBeam(Beam):
                     errorbar=errorbar,
                 )
             )
-            contour_histogram = gaussian_filter(smoothed_histogram, contour_smoothing)
+            contour_histogram = gaussian_filter(mean_histogram, contour_smoothing)
             lower_bound = gaussian_filter(lower_bound, contour_smoothing)
             upper_bound = gaussian_filter(upper_bound, contour_smoothing)
-            x_centers = x_centers.numpy()
-            y_centers = y_centers.numpy()
+            bin_centers_x = bin_centers_x.numpy()
+            bin_centers_y = bin_centers_y.numpy()
 
         if style == "histogram":
-            clipped_histogram = np.where(
-                smoothed_histogram > 1, smoothed_histogram, np.nan
-            )
+            clipped_histogram = np.where(mean_histogram > 1, mean_histogram, np.nan)
             ax.pcolormesh(
-                x_centers,
-                y_centers,
+                bin_centers_x,
+                bin_centers_y,
                 clipped_histogram.T,
                 **(pcolormesh_kws or {}),
             )
@@ -1389,34 +1389,29 @@ class ParticleBeam(Beam):
                     upper_bound - lower_bound + 1e-12
                 )
                 ax.contour(
-                    x_centers,
-                    y_centers,
+                    bin_centers_x,
+                    bin_centers_y,
                     normalized_confidence_width.T,
                     **dict(levels=confidence_contours, colors="white", alpha=0.5),
                 )
         elif style == "contour":
-            ax.pcolormesh(
-                x_centers,
-                y_centers,
-                smoothed_histogram.mT,
-                cmap="Greys",
-            )
+            ax.pcolormesh(bin_centers_x, bin_centers_y, mean_histogram.mT, cmap="Greys")
             ax.contour(
-                x_centers,
-                y_centers,
+                bin_centers_x,
+                bin_centers_y,
                 contour_histogram.T / contour_histogram.max(),
                 **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
             )
             if self.particles.dim() > 2:
                 ax.contour(
-                    x_centers,
-                    y_centers,
+                    bin_centers_x,
+                    bin_centers_y,
                     lower_bound.T / lower_bound.max(),
                     **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
                 )
                 ax.contour(
-                    x_centers,
-                    y_centers,
+                    bin_centers_x,
+                    bin_centers_y,
                     upper_bound.T / upper_bound.max(),
                     **{"levels": [0.1, 0.5, 0.9]} | (contour_kws or {}),
                 )
@@ -1429,11 +1424,11 @@ class ParticleBeam(Beam):
         # Handle units
         if x_dimension in ("x", "y", "tau"):
             x_base_unit = "m"
-            format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
+            format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, bin_centers_x)
 
         if y_dimension in ("x", "y", "tau"):
             y_base_unit = "m"
-            format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
+            format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, bin_centers_y)
 
         return ax
 
