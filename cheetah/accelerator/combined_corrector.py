@@ -17,7 +17,8 @@ class CombinedCorrector(Element):
     """
     Combined horizontal and vertical corrector magnet in a particle accelerator.
 
-    NOTE: This is modeled as a drift section with thin-kicks in both the horizontal and vertical planes.
+    NOTE: This is modeled as a drift section with thin-kicks in both the horizontal and
+        vertical planes.
 
     :param length: Length in meters.
     :param horizontal_angle: Particle deflection angle in the horizontal plane in rad.
