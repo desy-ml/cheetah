@@ -1303,7 +1303,7 @@ class ParticleBeam(Beam):
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         style: Literal["histogram", "contour"] = "histogram",
         confidence_contours: tuple[float] | None = None,
-        bins: tuple[int, int] | int = (100, 100),
+        bins: tuple[int, int] = (100, 100),
         bin_ranges: tuple[tuple[float, float], tuple[float, float]] | None = None,
         histogram_smoothing: float = 0.0,
         contour_smoothing: float = 3.0,

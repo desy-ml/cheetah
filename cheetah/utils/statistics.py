@@ -285,8 +285,8 @@ def vectorized_histogram_1d(
 def vectorized_histogram_2d(
     x: torch.Tensor,
     y: torch.Tensor,
-    bins: tuple[int] = (100, 100),
-    bin_ranges: tuple[tuple[float]] | None = None,
+    bins: tuple[int, int] = (100, 100),
+    bin_ranges: tuple[tuple[float, float], tuple[float, float]] | None = None,
 ) -> tuple[torch.Tensor]:
     """
     Compute a histogram for a 2-dimensional distribution or multiple vectorised
