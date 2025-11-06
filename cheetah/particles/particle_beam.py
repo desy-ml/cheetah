@@ -1281,7 +1281,7 @@ class ParticleBeam(Beam):
                 bin_centers,
                 lower_bound,
                 upper_bound,
-                **({"color": "C1", "alpha": 0.5}.update(fill_between_kws or {})),
+                **({"color": "C1", "alpha": 0.5} | (fill_between_kws or {})),
             )
         ax.plot(bin_centers, smoothed_histogram, **(plot_kws or {}))
 
@@ -1373,7 +1373,7 @@ class ParticleBeam(Beam):
                 bin_centers_x,
                 bin_centers_y,
                 smoothed_histogram.mT,
-                **({"cmap": "rainbow"}.update(pcolormesh_kws or {})),
+                **({"cmap": "rainbow"} | (pcolormesh_kws or {})),
             )
 
             if (
@@ -1390,9 +1390,8 @@ class ParticleBeam(Beam):
                     normalized_confidence_width.mT,
                     levels=confidence_contours,
                     **(
-                        {"colors": "white", "alpha": 0.5}.update(
-                            confidence_contour_kws or {}
-                        )
+                        {"colors": "white", "alpha": 0.5}
+                        | (confidence_contour_kws or {})
                     ),
                 )
         elif style == "contour":
@@ -1403,24 +1402,20 @@ class ParticleBeam(Beam):
                 bin_centers_x,
                 bin_centers_y,
                 smoothed_contour_histogram.mT / smoothed_contour_histogram.max(),
-                **({"levels": [0.1, 0.5, 0.9]}.update(contour_kws or {})),
+                **({"levels": [0.1, 0.5, 0.9]} | (contour_kws or {})),
             )
             if lower_bound is not None and upper_bound is not None:
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
                     smoothed_lower_bound.mT / smoothed_lower_bound.max(),
-                    **(
-                        {"levels": [0.1, 0.5, 0.9]}.update(confidence_contour_kws or {})
-                    ),
+                    **({"levels": [0.1, 0.5, 0.9]} | (confidence_contour_kws or {})),
                 )
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
                     smoothed_upper_bound.mT / smoothed_upper_bound.max(),
-                    **(
-                        {"levels": [0.1, 0.5, 0.9]}.update(confidence_contour_kws or {})
-                    ),
+                    **({"levels": [0.1, 0.5, 0.9]} | (confidence_contour_kws or {})),
                 )
         else:
             raise ValueError("style must be either 'histogram' or 'contour'.")
