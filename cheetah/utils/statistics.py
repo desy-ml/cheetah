@@ -258,7 +258,8 @@ def vectorized_histogram_1d(
     num_vector_elements = a.shape[0]
 
     bin_edges = torch.linspace(*bin_range, bins + 1, **factory_kwargs)
-    bin_indicies = torch.bucketize(a.contiguous(), bin_edges) - 1
+    boundaries = bin_edges[1:-1]
+    bin_indicies = torch.bucketize(a.contiguous(), boundaries)
 
     # Flatten batch with offsets
     vector_offsets = (
@@ -322,7 +323,7 @@ def vectorized_histogram_2d(
     original_vector_shape = x.shape[:-1]
     x_flat = x.flatten(start_dim=0, end_dim=-2)  # (num_vector_elements, num_samples)
     y_flat = y.flatten(start_dim=0, end_dim=-2)  # (num_vector_elements, num_samples)
-    num_vector_elements = x.shape[0]
+    num_vector_elements = x_flat.shape[0]
 
     bin_edges_x = torch.linspace(
         bin_ranges[0][0], bin_ranges[0][1], bins[0] + 1, **factory_kwargs
@@ -330,8 +331,10 @@ def vectorized_histogram_2d(
     bin_edges_y = torch.linspace(
         bin_ranges[1][0], bin_ranges[1][1], bins[1] + 1, **factory_kwargs
     )
-    bin_indicies_x = torch.bucketize(x_flat.contiguous(), bin_edges_x) - 1
-    bin_indicies_y = torch.bucketize(y_flat.contiguous(), bin_edges_y) - 1
+    boundaries_x = bin_edges_x[1:-1]
+    boundaries_y = bin_edges_y[1:-1]
+    bin_indicies_x = torch.bucketize(x_flat.contiguous(), boundaries_x)
+    bin_indicies_y = torch.bucketize(y_flat.contiguous(), boundaries_y)
 
     # Flatten 2-dimensional bin indices to 1 dimension
     bin_indicies_flat = bin_indicies_x * bins[1] + bin_indicies_y
