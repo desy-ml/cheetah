@@ -1310,10 +1310,11 @@ class ParticleBeam(Beam):
         errorbar: tuple[str, int | float] | str = ("pi", 95),
         pcolormesh_kws: dict | None = None,
         contour_kws: dict | None = None,
+        confidence_contours_kws: dict | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
-        Plot a 2D projection of the particle distribution for two phase-space
+        Plot a 2-dimensional projection of the particle distribution for two phase-space
         dimensions.
 
         :param x_dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p') to use for the
@@ -1339,6 +1340,8 @@ class ParticleBeam(Beam):
             `matplotlib.pcolormesh`.
         :param contour_kws: Additional keyword arguments forwarded to
             `matplotlib.contour`.
+        :param confidence_contour_kws: Additional keyword arguments forwarded to
+            `matplotlib.contour` when drawing confidence contours.
         :param ax: Matplotlib Axes to draw on. If None a new axes is created.
         :return: Matplotlib Axes containing the rendered 2D projection.
         """
@@ -1355,6 +1358,9 @@ class ParticleBeam(Beam):
             )
         )
 
+        if histogram_smoothing:
+            mean_histogram = gaussian_filter(mean_histogram, histogram_smoothing)
+
         if contour_smoothing:
             contour_histogram = gaussian_filter(mean_histogram, contour_smoothing)
 
@@ -1363,14 +1369,18 @@ class ParticleBeam(Beam):
                 upper_bound = gaussian_filter(upper_bound, contour_smoothing)
 
         if style == "histogram":
-            clipped_histogram = np.where(mean_histogram > 1, mean_histogram, np.nan)
             ax.pcolormesh(
                 bin_centers_x,
                 bin_centers_y,
-                clipped_histogram.T,
-                **(pcolormesh_kws or {}),
+                mean_histogram.T,
+                **({"cmap": "rainbow"}.update(pcolormesh_kws or {})),
             )
-            if self.particles.dim() > 2 and confidence_contours is not None:
+
+            if (
+                confidence_contours is not None
+                and lower_bound is not None
+                and upper_bound is not None
+            ):
                 normalized_confidence_width = contour_histogram / (
                     upper_bound - lower_bound + 1e-12
                 )
@@ -1378,7 +1388,12 @@ class ParticleBeam(Beam):
                     bin_centers_x,
                     bin_centers_y,
                     normalized_confidence_width.T,
-                    **dict(levels=confidence_contours, colors="white", alpha=0.5),
+                    levels=confidence_contours,
+                    **(
+                        {"colors": "white", "alpha": 0.5}.update(
+                            confidence_contours_kws or {}
+                        )
+                    ),
                 )
         elif style == "contour":
             ax.pcolormesh(bin_centers_x, bin_centers_y, mean_histogram.mT, cmap="Greys")
