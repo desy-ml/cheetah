@@ -1244,7 +1244,7 @@ class ParticleBeam(Beam):
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
-        Plot a 1D histogram of the given phase-space dimension.
+        Plot a 1-dimensional histogram of the given phase-space dimension.
 
         :param dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p').
         :param bins: Number of histogram bins.
@@ -1265,7 +1265,7 @@ class ParticleBeam(Beam):
         if ax is None:
             _, ax = plt.subplots()
 
-        centers, histogram, lower_bound, upper_bound = (
+        bin_centers, histogram, lower_bound, upper_bound = (
             distribution_histogram_and_confidence_1d(
                 a=getattr(self, dimension),
                 bins=bins,
@@ -1279,12 +1279,12 @@ class ParticleBeam(Beam):
 
         if upper_bound is not None and lower_bound is not None:
             ax.fill_between(
-                centers,
+                bin_centers,
                 lower_bound,
                 upper_bound,
-                **(fill_between_kws or {"color": "C1", "alpha": 0.5}),
+                **({"color": "C1", "alpha": 0.5}.update(fill_between_kws or {})),
             )
-        ax.plot(centers, histogram, **(plot_kws or {}))
+        ax.plot(bin_centers, histogram, **(plot_kws or {}))
 
         # Handle units
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
@@ -1292,7 +1292,7 @@ class ParticleBeam(Beam):
         if dimension in ("x", "y", "tau"):
             base_unit = "m"
             format_axis_with_prefixed_unit(
-                ax.xaxis, base_unit, centers.numpy()
+                ax.xaxis, base_unit, bin_centers.numpy()
             )  # Take `.numpy()` because `np.max` somehow acts up on `torch.Tensor`s
 
         return ax
