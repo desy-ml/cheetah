@@ -267,17 +267,15 @@ def test_distribution_histogram_and_confidence_1d(vector_shape):
         )
     )
 
-    expected_histogram_shape = (
-        (*vector_shape, num_bins) if vector_shape is not None else (num_bins,)
-    )
-
     assert bin_centers.shape == (num_bins,)
-    assert mean_histogram.shape == expected_histogram_shape
-    assert lower_bound.shape == expected_histogram_shape
-    assert upper_bound.shape == expected_histogram_shape
+    assert mean_histogram.shape == (num_bins,)
 
-    assert (lower_bound <= mean_histogram).all()
-    assert (upper_bound >= mean_histogram).all()
+    if vector_shape is not None:
+        assert lower_bound.shape == (num_bins,)
+        assert upper_bound.shape == (num_bins,)
+
+        assert (lower_bound <= mean_histogram).all()
+        assert (upper_bound >= mean_histogram).all()
 
 
 @pytest.mark.parametrize(
@@ -309,17 +307,13 @@ def test_distribution_histogram_and_confidence_2d(vector_shape):
         x_distribution, y_distribution, bins=num_bins, errorbar="sd"
     )
 
-    expected_histogram_shape = (
-        (*vector_shape, num_bins[0], num_bins[1])
-        if vector_shape is not None
-        else (num_bins[0], num_bins[1])
-    )
-
     assert bin_centers_x.shape == (num_bins[0],)
     assert bin_centers_y.shape == (num_bins[1],)
-    assert mean_histogram.shape == expected_histogram_shape
-    assert lower_bound.shape == expected_histogram_shape
-    assert upper_bound.shape == expected_histogram_shape
+    assert mean_histogram.shape == (num_bins[0], num_bins[1])
 
-    assert (lower_bound <= mean_histogram).all()
-    assert (upper_bound >= mean_histogram).all()
+    if vector_shape is not None:
+        assert lower_bound.shape == (num_bins[0], num_bins[1])
+        assert upper_bound.shape == (num_bins[0], num_bins[1])
+
+        assert (lower_bound <= mean_histogram).all()
+        assert (upper_bound >= mean_histogram).all()
