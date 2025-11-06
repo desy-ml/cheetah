@@ -1372,7 +1372,7 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 bin_centers_x,
                 bin_centers_y,
-                smoothed_histogram.T,
+                smoothed_histogram.mT,
                 **({"cmap": "rainbow"}.update(pcolormesh_kws or {})),
             )
 
@@ -1443,48 +1443,35 @@ class ParticleBeam(Beam):
         self,
         dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
         bins: int = 100,
-        bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
+        bin_ranges: (
+            Literal["unit_same"] | tuple[float] | list[tuple[float]] | None
+        ) = None,
         errorbar: tuple[str, int | float] | str = ("pi", 95),
         plot_1d_kws: dict | None = None,
         plot_2d_kws: dict | None = None,
-        axs: np.ndarray | None = None,
+        axs: list[plt.Axes] | None = None,
     ) -> tuple[plt.Figure, np.ndarray]:
         """
-        Create a matrix plot of 1D and 2D projections for requested phase-space
-        dimensions.
+        Create a matrix plot of 1-dimensional and 2-dimensional projections for the
+        requested phase space dimensions.
 
-        :param dimensions: Sequence of dimension names to include. Each element
-            must be one of ``'x'``, ``'px'``, ``'y'``, ``'py'``, ``'tau'``, ``'p'``.
-        :param bins: Number of bins to use for both 1D and 2D histograms.
-        :param bin_ranges: Specification of bin ranges. Accepted forms:
-            ``None``: automatically determined per-dimension from the data.
-            `unit_same``: same range for spatial dims ('x', 'y', 'tau')
-            and a common range for unitless dims ('px', 'py', 'p').
-            single ``(min, max)`` pair: apply same range to all dimensions.
-            sequence of ``(min, max)`` pairs: one pair per dimension.
-        :param style: Style for off-diagonal plots. ``'histogram'`` (2D histogram)
-            or ``'contour'`` (normalized contour levels).
+        :param dimensions: Tuple of dimensions to plot. Should be a subset of
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param bins: Number of bins to use for the histograms.
+        :param bin_ranges: Ranges of the bins to use for the histograms. If set to
+            `"unit_same"`, the same range is used for all dimensions that share the same
+            unit. If set to `None`, ranges are determined automatically.
         :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
             either a method string or a tuple `(method, level)`. Available methods
             are "sd", "se", "pi" and "jp".
-        :param plot_1d_kws: Extra keyword arguments forwarded to
-            :meth:`plot_1d_distribution` for diagonal plots.
-        :param plot_2d_kws: Extra keyword arguments forwarded to
-            :meth:`plot_2d_distribution` for off-diagonal plots.
-        :param axs: Optional pre-created axes array with shape ``(N, N)``. If
-            `None`, a new figure and axes grid are created.
-        :returns: Tuple ``(fig, axs)`` where ``fig`` is a matplotlib Figure and `axs` is
-            a NumPy array of Axes with shape ``(N, N)``.
-
-        .. note::
-            - When the beam is vectorized (batch/vector dim > 0) the function computes
-              uncertainty bands for 1D and 2D projections and overlays them.
-            - The layout uses a lower-triangle orientation for pair plots: element at
-              row ``i``, column ``j`` (with ``i > j``) shows dimension ``j`` on the
-              x-axis and dimension ``i`` on the y-axis.
-            - If ``axs`` is provided it must have shape ``(N, N)``. If not provided, a
-              new figure is created with a square layout sized about 2 inches per
-              dimension.
+        :param plot_1d_kws: Additional keyword arguments to be passed to
+            `ParticleBeam.plot_1d_distribution` for plotting 1-dimensional histograms.
+        :param plot_2d_kws: Additional keyword arguments to be passed to
+            `ParticleBeam.plot_2d_distribution` for plotting 2-dimensional histograms.
+        :param axs: List of Matplotlib axes objects to use for plotting. If set to
+            `None`, a new figure is created. Must have the shape
+            `(len(dimensions), len(dimensions))`.
+        :return: Matplotlib figure and axes objects with the plot.
         """
         if axs is None:
             fig, axs = plt.subplots(
