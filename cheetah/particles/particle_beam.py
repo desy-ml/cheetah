@@ -1345,36 +1345,22 @@ class ParticleBeam(Beam):
         if ax is None:
             _, ax = plt.subplots()
 
-        if self.particles.dim() == 2:
-            histogram, bin_edges_x, bin_edges_y = np.histogram2d(
-                getattr(self, x_dimension).cpu().detach().numpy(),
-                getattr(self, y_dimension).cpu().detach().numpy(),
+        bin_centers_x, bin_centers_y, mean_histogram, lower_bound, upper_bound = (
+            distribution_histogram_and_confidence_2d(
+                x=getattr(self, x_dimension),
+                y=getattr(self, y_dimension),
                 bins=bins,
-                range=bin_ranges,
+                bin_ranges=bin_ranges,
+                errorbar=errorbar,
             )
-            bin_centers_x = (bin_edges_x[:-1] + bin_edges_x[1:]) / 2
-            bin_centers_y = (bin_edges_y[:-1] + bin_edges_y[1:]) / 2
+        )
 
-            # Post-process and plot
-            mean_histogram = gaussian_filter(histogram, histogram_smoothing)
+        if contour_smoothing:
             contour_histogram = gaussian_filter(mean_histogram, contour_smoothing)
-        elif self.particles.dim() > 2:
-            x_array = getattr(self, x_dimension).flatten(start_dim=0, end_dim=-2)
-            y_array = getattr(self, y_dimension).flatten(start_dim=0, end_dim=-2)
-            bin_centers_x, bin_centers_y, mean_histogram, lower_bound, upper_bound = (
-                distribution_histogram_and_confidence_2d(
-                    x=x_array,
-                    y=y_array,
-                    bins=(bins, bins),
-                    bin_ranges=bin_ranges,
-                    errorbar=errorbar,
-                )
-            )
-            contour_histogram = gaussian_filter(mean_histogram, contour_smoothing)
-            lower_bound = gaussian_filter(lower_bound, contour_smoothing)
-            upper_bound = gaussian_filter(upper_bound, contour_smoothing)
-            bin_centers_x = bin_centers_x.numpy()
-            bin_centers_y = bin_centers_y.numpy()
+
+            if lower_bound is not None and upper_bound is not None:
+                lower_bound = gaussian_filter(lower_bound, contour_smoothing)
+                upper_bound = gaussian_filter(upper_bound, contour_smoothing)
 
         if style == "histogram":
             clipped_histogram = np.where(mean_histogram > 1, mean_histogram, np.nan)
