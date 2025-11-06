@@ -1274,8 +1274,7 @@ class ParticleBeam(Beam):
             )
         )
 
-        if smoothing:
-            histogram = gaussian_filter(histogram, smoothing)
+        smoothed_histogram = gaussian_filter(histogram, smoothing)
 
         if upper_bound is not None and lower_bound is not None:
             ax.fill_between(
@@ -1284,7 +1283,7 @@ class ParticleBeam(Beam):
                 upper_bound,
                 **({"color": "C1", "alpha": 0.5}.update(fill_between_kws or {})),
             )
-        ax.plot(bin_centers, histogram, **(plot_kws or {}))
+        ax.plot(bin_centers, smoothed_histogram, **(plot_kws or {}))
 
         # Handle units
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
@@ -1358,11 +1357,12 @@ class ParticleBeam(Beam):
             )
         )
 
-        if histogram_smoothing:
-            mean_histogram = gaussian_filter(mean_histogram, histogram_smoothing)
+        # Post-process and plot
+        smoothed_histogram = gaussian_filter(mean_histogram, histogram_smoothing)
+        clipped_histogram = np.where(smoothed_histogram > 1, smoothed_histogram, np.nan)
 
         if contour_smoothing:
-            contour_histogram = gaussian_filter(mean_histogram, contour_smoothing)
+            contour_histogram = gaussian_filter(clipped_histogram, contour_smoothing)
 
             if lower_bound is not None and upper_bound is not None:
                 lower_bound = gaussian_filter(lower_bound, contour_smoothing)
@@ -1372,7 +1372,7 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 bin_centers_x,
                 bin_centers_y,
-                mean_histogram.T,
+                clipped_histogram.T,
                 **({"cmap": "rainbow"}.update(pcolormesh_kws or {})),
             )
 
