@@ -1496,10 +1496,10 @@ class ParticleBeam(Beam):
         if bin_ranges is None:
             bin_ranges = [
                 (
-                    full_tensor[i].min()
-                    - (full_tensor[i].max() - full_tensor[i].min()) / 10,
-                    full_tensor[i].max()
-                    + (full_tensor[i].max() - full_tensor[i].min()) / 10,
+                    full_tensor[i, :].min()
+                    - (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
+                    full_tensor[i, :].max()
+                    + (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
                 )
                 for i in range(full_tensor.shape[-2])
             ]
@@ -1510,11 +1510,17 @@ class ParticleBeam(Beam):
                 if dimension in ["x", "y", "tau"]
             ]
             spacial_bin_range = (
-                full_tensor[spacial_idxs].min()
-                - (full_tensor[spacial_idxs].max() - full_tensor[spacial_idxs].min())
+                full_tensor[spacial_idxs, :].min()
+                - (
+                    full_tensor[spacial_idxs, :].max()
+                    - full_tensor[spacial_idxs, :].min()
+                )
                 / 10,
-                full_tensor[spacial_idxs].max()
-                + (full_tensor[spacial_idxs].max() - full_tensor[spacial_idxs].min())
+                full_tensor[spacial_idxs, :].max()
+                + (
+                    full_tensor[spacial_idxs, :].max()
+                    - full_tensor[spacial_idxs, :].min()
+                )
                 / 10,
             )
             unitless_idxs = [
