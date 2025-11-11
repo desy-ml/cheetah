@@ -73,7 +73,17 @@ def test_rpn_nested_var_lookup():
     """
     Test that an RPN expression with nested variable lookups is correctly evaluated.
     """
-    expression = "a b[test] -"
+    expression = "a b[test] - b[boop] *"
     context = {"a": 10, "b": {"beep": 10, "boop": 100, "test": 5}, "test": 3}
 
-    assert rpn.evaluate_expression(expression, context) == 5
+    assert rpn.evaluate_expression(expression, context) == 500
+
+
+def test_rpn_nested_var_lookup_2():
+    """
+    Test that an RPN expression with nested variable lookups is correctly evaluated.
+    """
+    expression = "b[test] b[boop] *"
+    context = {"a": 10, "b": {"beep": 10, "boop": 100, "test": 5}, "test": 3}
+
+    assert rpn.evaluate_expression(expression, context) == 500
