@@ -345,10 +345,10 @@ def test_vectorized_screen_2d(BeamClass, method):
             cheetah.BPM,
             cheetah.CustomTransferMap,
             cheetah.Marker,
+            cheetah.Patch,
             cheetah.Screen,
             cheetah.Segment,
             cheetah.SpaceChargeKick,
-            cheetah.Patch,
         ),
     ),
 )
