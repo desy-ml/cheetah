@@ -1372,7 +1372,7 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 bin_centers_x,
                 bin_centers_y,
-                smoothed_histogram.mT,
+                smoothed_histogram.T,
                 **({"cmap": "rainbow"} | (pcolormesh_kws or {})),
             )
 
@@ -1396,7 +1396,7 @@ class ParticleBeam(Beam):
                 )
         elif style == "contour":
             ax.pcolormesh(
-                bin_centers_x, bin_centers_y, smoothed_histogram.mT, cmap="Greys"
+                bin_centers_x, bin_centers_y, smoothed_histogram.T, cmap="Greys"
             )
             ax.contour(
                 bin_centers_x,
