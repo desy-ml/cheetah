@@ -145,32 +145,26 @@ class Patch(Element):
         """
         Computes the rotation matrix for the patch element based on its pitch and tilt.
         """
-        factory_kwargs = {"device": self.pitch.device, "dtype": self.pitch.dtype}
+        rotation_y = self.pitch.new_zeros((*self.pitch.shape[:-1], 3, 3))
+        rotation_y[..., 0, 0] = self.pitch[..., 0].cos()
+        rotation_y[..., 0, 2] = self.pitch[..., 0].sin()
+        rotation_y[..., 1, 1] = 1.0
+        rotation_y[..., 2, 0] = -self.pitch[..., 0].sin()
+        rotation_y[..., 2, 2] = self.pitch[..., 0].cos()
 
-        rotation_y = torch.tensor(
-            [
-                [self.pitch[0].cos(), 0.0, self.pitch[0].sin()],
-                [0.0, 1.0, 0.0],
-                [-self.pitch[0].sin(), 0.0, self.pitch[0].cos()],
-            ],
-            **factory_kwargs,
-        )
-        rotation_neg_x = torch.tensor(
-            [
-                [1.0, 0.0, 0.0],
-                [0.0, self.pitch[1].cos(), self.pitch[1].sin()],
-                [0.0, -self.pitch[1].sin(), self.pitch[1].cos()],
-            ],
-            **factory_kwargs,
-        )
-        rotation_z = torch.tensor(
-            [
-                [self.tilt.cos(), -self.tilt.sin(), 0.0],
-                [self.tilt.sin(), self.tilt.cos(), 0.0],
-                [0.0, 0.0, 1.0],
-            ],
-            **factory_kwargs,
-        )
+        rotation_neg_x = self.pitch.new_zeros((*self.pitch.shape[:-1], 3, 3))
+        rotation_neg_x[..., 0, 0] = 1.0
+        rotation_neg_x[..., 1, 1] = self.pitch[..., 1].cos()
+        rotation_neg_x[..., 1, 2] = self.pitch[..., 1].sin()
+        rotation_neg_x[..., 2, 1] = -self.pitch[..., 1].sin()
+        rotation_neg_x[..., 2, 2] = self.pitch[..., 1].cos()
+
+        rotation_z = self.pitch.new_zeros((*self.tilt.shape, 3, 3))
+        rotation_z[..., 0, 0] = self.tilt.cos()
+        rotation_z[..., 0, 1] = -self.tilt.sin()
+        rotation_z[..., 1, 0] = self.tilt.sin()
+        rotation_z[..., 1, 1] = self.tilt.cos()
+        rotation_z[..., 2, 2] = 1.0
 
         return rotation_y @ rotation_neg_x @ rotation_z
 
