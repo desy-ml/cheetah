@@ -118,10 +118,15 @@ class CombinedCorrector(Element):
         plot_angle = torch.sqrt(plot_horizontal_angle**2 + plot_vertical_angle**2)
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle if self.is_active else 1)
 
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:blue", alpha=alpha, zorder=2
+            (plot_s, -height / 2),
+            plot_length,
+            height / 2,
+            color="tab:blue",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
 
