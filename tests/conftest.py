@@ -46,6 +46,10 @@ ELEMENT_SUBCLASSES_ARGS = {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
     cheetah.Marker: {"default": {}},
+    cheetah.Patch: {
+        "default": {},
+        "with_offsets": {"offset": torch.tensor([1.0, -1.0, 0.5])},
+    },
     cheetah.Quadrupole: {
         "linear": {
             "length": torch.tensor(1.0),
@@ -107,10 +111,6 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Undulator: {"default": {"length": torch.tensor(1.0)}},
     cheetah.VerticalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
-    },
-    cheetah.Patch: {
-        "default": {},
-        "with_offsets": {"offset": torch.tensor([1.0, -1.0, 0.5])},
     },
 }
 
