@@ -93,7 +93,7 @@ class Patch(Element):
             [
                 incoming.px,
                 incoming.py,
-                (rel_p.pow(2) - incoming.px.pow(2) - incoming.py.pow(2)).sqrt(),
+                (rel_p.square() - incoming.px.square() - incoming.py.square()).sqrt(),
             ],
             dim=-1,
         )
