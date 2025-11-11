@@ -116,7 +116,7 @@ def test_patch_rotation_matrix():
             energy_offset=torch.tensor(0.01),
             energy_setpoint=torch.tensor(0.02),
         )
-        rotation_matrix = patch.rotation_matrix()
+        rotation_matrix = patch._rotation_matrix()
         assert torch.allclose(
             rotation_matrix, expected_matrix, atol=1e-6
         ), "Rotation matrix is incorrect"

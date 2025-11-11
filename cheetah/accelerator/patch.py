@@ -109,7 +109,7 @@ class Patch(Element):
 
         # Compute the exit positions and momentum
         # NOTE: These computations follow Bmad coordinates
-        rotation_matrix_inverse = self.rotation_matrix().inverse()
+        rotation_matrix_inverse = self._rotation_matrix().inverse()
         r_vec = torch.stack(
             (
                 entrance_position[..., 0] - self.offset[0],
@@ -157,7 +157,7 @@ class Patch(Element):
             device=particles.device,
         )
 
-    def rotation_matrix(self) -> torch.Tensor:
+    def _rotation_matrix(self) -> torch.Tensor:
         """
         Computes the rotation matrix for the patch element based on its pitch and tilt.
         """
@@ -192,7 +192,7 @@ class Patch(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        rotation_matrix_inverse = self.rotation_matrix().inverse()
+        rotation_matrix_inverse = self._rotation_matrix().inverse()
         return (rotation_matrix_inverse[-1, 0:3] * self.offset).sum()
 
     @property
