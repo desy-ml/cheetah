@@ -87,11 +87,9 @@ class Patch(Element):
             raise TypeError("Patch element currently only supports ParticleBeam input.")
 
     def transform_particles(self, incoming: ParticleBeam) -> Beam:
-        outgoing_particles = incoming.particles.clone()
-
         # Momentum coordinates
         rel_p = incoming.p + 1.0  # Convert delta to p / p0
-        p_vec = torch.stack(
+        particle_momenta = torch.stack(
             [
                 incoming.px,
                 incoming.py,
@@ -107,7 +105,7 @@ class Patch(Element):
         # Compute the exit positions and momentum
         # NOTE: These computations follow Bmad coordinates
         rotation_matrix_inverse = self._rotation_matrix().inverse()
-        r_vec = torch.stack(
+        particle_positions = torch.stack(
             (
                 incoming.x - self.offset[0],
                 incoming.y - self.offset[1],
@@ -115,31 +113,26 @@ class Patch(Element):
             ),
             dim=-1,
         )
-        r_vec = (rotation_matrix_inverse @ r_vec.mT).mT
-        p_vec = (rotation_matrix_inverse @ p_vec.mT).mT
+        particle_positions = (rotation_matrix_inverse @ particle_positions.mT).mT
+        particle_momenta = (rotation_matrix_inverse @ particle_momenta.mT).mT
 
-        outgoing_particles = torch.stack(
-            [
-                r_vec[..., 0],
-                p_vec[..., 0],
-                r_vec[..., 1],
-                p_vec[..., 1],
-                incoming.particles[..., 4] + self.time_offset * speed_of_light,
-                incoming.particles[..., 5],
-                incoming.particles[..., 6],
-            ]
-        ).mT
+        outgoing_particles = incoming.particles.clone()
+        outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
+        outgoing_particles[..., [1, 3]] = particle_momenta[..., [0, 1]]
+        outgoing_particles[..., 4] = (
+            incoming.particles[..., 4] + self.time_offset * speed_of_light
+        )
 
         # Track particles to the end of the patch
         if self.drift_to_exit:
             outgoing_particles[..., [0, 2]] = outgoing_particles[..., [0, 2]] - (
-                r_vec[..., 2].unsqueeze(-1)
-                * p_vec[..., [0, 1]]
-                / p_vec[..., 2].unsqueeze(-1)
+                particle_positions[..., 2].unsqueeze(-1)
+                * particle_momenta[..., [0, 1]]
+                / particle_momenta[..., 2].unsqueeze(-1)
             )
             outgoing_particles[..., 4] = (
                 outgoing_particles[..., 4]
-                + r_vec[..., 2] * rel_p / p_vec[..., 2]
+                + particle_positions[..., 2] * rel_p / particle_momenta[..., 2]
                 + self.length
             )
 
