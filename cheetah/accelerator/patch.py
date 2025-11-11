@@ -12,22 +12,20 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 class Patch(Element):
     """
-    Patch element that shifts the reference orbit
-    and time. Note that this element does not
-    support batching for the offset, time offset,
-    pitch, tilt, E_tot_offset, and E_tot_set parameters.
+    Patch element that shifts the reference orbit and time. Note that this element does
+    not support batching for the `offset`, `time_offset`, `pitch`, `tilt`,
+    `E_tot_offset`, and `E_tot_set` parameters.
 
-    :param offset:  Exit face offset in (x,y,z) from Entrance in meters.
+    :param offset: Exit face offset in (x, y, z) from the entrance in meters.
     :param time_offset: Reference time offset in seconds.
-    :param pitch: Exit face orientation (x,y,z) from Entrance in radians.
+    :param pitch: Exit face orientation (x, y, z) from the entrance in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
-    :param E_tot_offset: Energy offset in (eV).
-    :param E_tot_set: Energy setpoint in (eV).
+    :param E_tot_offset: Energy offset in eV.
+    :param E_tot_set: Energy setpoint in eV.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
-
     """
 
     def __init__(
