@@ -76,7 +76,7 @@ class Solenoid(Element):
             self.length.shape, self.k.shape, energy.shape
         )
 
-        r56 = self.length / (1 - gamma**2)
+        r56 = self.length / (1 - gamma.square())
 
         R = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         R[..., 0, 0] = c**2
