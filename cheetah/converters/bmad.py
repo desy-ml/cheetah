@@ -249,14 +249,7 @@ def convert_element(
         elif bmad_parsed["element_type"] == "patch":
             validate_understood_properties(
                 shared_properties
-                + [
-                    "x_offset",
-                    "y_offset",
-                    "z_offset",
-                    "tilt",
-                    "x_pitch",
-                    "y_pitch",
-                ],
+                + ["x_offset", "y_offset", "z_offset", "tilt", "x_pitch", "y_pitch"],
                 bmad_parsed,
             )
             return cheetah.Patch(
@@ -271,10 +264,7 @@ def convert_element(
                     **factory_kwargs,
                 ),
                 pitch=torch.tensor(
-                    [
-                        bmad_parsed.get("x_pitch", 0.0),
-                        bmad_parsed.get("y_pitch", 0.0),
-                    ],
+                    [bmad_parsed.get("x_pitch", 0.0), bmad_parsed.get("y_pitch", 0.0)],
                     **factory_kwargs,
                 ),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
