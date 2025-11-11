@@ -14,10 +14,11 @@
 - Documented PyTorch `compile` for improved speed (see #390) (@ax3l)
 - Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
 - Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
-- First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532) (@jank324)
+- First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532, #565) (@jank324)
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
 - Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558, #556) (@jank324, @Hespe)
+- New `CombinedCorrector` element that combines the functionality of `HorizontalCorrector` and `VerticalCorrector` (see #589) (@jank324, @amylizzle)
 
 ### 🐛 Bug fixes
 
@@ -34,6 +35,7 @@
 - Fix false dtype in `Screen` documentation (see #544) (@jp-ga)
 - Fix an issue where running the plot tests on Windows (most notably on the recently upgraded GitHub Actions Windows runners) would sporadically fail with a `_tkinter.TclError: Can't find a usable init.tcl in the following directories` error, by forcing the matplotlib backend to `Agg` when running tests on Windows. (see #567) (@jank324)
 - Temporarily removed `flake8-black` from `format` Action because it causes issues with the latest `black` version. This has since been reinstated. (see #569, #575) (@jank324)
+- Fix typo in README (see #581) (@jank324)
 
 ### 🌟 First Time Contributors
 

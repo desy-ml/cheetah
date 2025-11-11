@@ -8,7 +8,12 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, squash_index_for_unavailable_dims
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    cache_transfer_map,
+    squash_index_for_unavailable_dims,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -77,7 +82,8 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         R = base_rmatrix(
@@ -95,7 +101,8 @@ class Quadrupole(Element):
 
         return R
 
-    def _compute_second_order_transfer_map(
+    @cache_transfer_map
+    def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         T = base_ttensor(

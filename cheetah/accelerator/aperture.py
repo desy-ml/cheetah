@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import PhysicsWarning, UniqueNameGenerator
+from cheetah.utils import PhysicsWarning, UniqueNameGenerator, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -69,7 +69,8 @@ class Aperture(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.x_max.device, "dtype": self.x_max.dtype}

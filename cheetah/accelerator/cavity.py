@@ -9,7 +9,11 @@ from scipy import constants
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    compute_relativistic_factors,
+)
 from cheetah.utils.autograd import log1pdiv
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -73,7 +77,8 @@ class Cavity(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return torch.where(
