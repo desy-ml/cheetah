@@ -32,7 +32,7 @@ def base_rmatrix(
     tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero
 
-    _, _, beta = compute_relativistic_factors(energy, species.mass_eV)
+    _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
     kx2 = k1 + hx**2
     ky2 = -k1
@@ -50,7 +50,7 @@ def base_rmatrix(
         hx.square()
         * torch.where(kx2 != 0, (length - sx) / kx2, length.pow(3) / 6)
         / beta.square()
-    )
+    ) - length / beta.square() * igamma2
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
