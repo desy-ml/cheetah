@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -399,7 +399,8 @@ class Dipole(Element):
 
         return px_f, py_f
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
@@ -431,7 +432,8 @@ class Dipole(Element):
 
         return R
 
-    def _compute_second_order_transfer_map(
+    @cache_transfer_map
+    def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
