@@ -89,20 +89,19 @@ class Patch(Element):
             raise TypeError("Patch element currently only supports ParticleBeam input.")
 
     def transform_particles(self, incoming: ParticleBeam) -> Beam:
-        particles = incoming.particles
-        final_particles = particles.clone()
+        outgoing_particles = incoming.particles.clone()
 
-        # Position coordinates
-        entrance_position = particles[..., :-1:2]
         # Momentum coordinates
-        rel_p = particles[..., -2] + 1.0  # Convert delta to p / p0
+        rel_p = incoming.p + 1.0  # Convert delta to p / p0
         p_vec = torch.stack(
             [
-                particles[..., 1],
-                particles[..., 3],
-                torch.sqrt(
-                    rel_p.pow(2) - particles[..., 1].pow(2) - particles[..., 3].pow(2)
-                ),
+                incoming.px,
+                incoming.py,
+                (
+                    rel_p.pow(2)
+                    - incoming.particles[..., 1].pow(2)
+                    - incoming.particles[..., 3].pow(2)
+                ).sqrt(),
             ],
             dim=-1,
         )
@@ -112,49 +111,45 @@ class Patch(Element):
         rotation_matrix_inverse = self._rotation_matrix().inverse()
         r_vec = torch.stack(
             (
-                entrance_position[..., 0] - self.offset[0],
-                entrance_position[..., 1] - self.offset[1],
-                -self.offset[2].expand(entrance_position[..., 0].shape),
+                incoming.x - self.offset[0],
+                incoming.y - self.offset[1],
+                -self.offset[2].expand(incoming.x.shape),
             ),
             dim=-1,
         )
         r_vec = (rotation_matrix_inverse @ r_vec.mT).mT
         p_vec = (rotation_matrix_inverse @ p_vec.mT).mT
 
-        final_particles[..., 4] = (
-            final_particles[..., 4] + self.time_offset * speed_of_light
-        )  # Time offset update
-
-        # Set final momenta
-        final_particles[..., 1] = p_vec[..., 0]
-        final_particles[..., 3] = p_vec[..., 1]
-
-        # Set final positions
-        final_particles[..., 0] = r_vec[..., 0]
-        final_particles[..., 2] = r_vec[..., 1]
+        outgoing_particles = torch.stack(
+            [
+                r_vec[..., 0],
+                p_vec[..., 0],
+                r_vec[..., 1],
+                p_vec[..., 1],
+                incoming.particles[..., 4] + self.time_offset * speed_of_light,
+                incoming.particles[..., 5],
+                incoming.particles[..., 6],
+            ]
+        )
 
         # Track particles to the end of the patch
         if self.drift_to_exit:
-            final_particles[..., 0] = final_particles[..., 0] - (
-                r_vec[..., 2] * p_vec[..., 0] / p_vec[..., 2]
+            outgoing_particles[..., [0, 2]] = outgoing_particles[..., [0, 2]] - (
+                r_vec[..., 2] * p_vec[..., [0, 1]] / p_vec[..., 2]
             )
-            final_particles[..., 2] = final_particles[..., 2] - (
-                r_vec[..., 2] * p_vec[..., 1] / p_vec[..., 2]
-            )
-            final_particles[..., 4] = (
-                final_particles[..., 4]
+            outgoing_particles[..., 4] = (
+                outgoing_particles[..., 4]
                 + r_vec[..., 2] * rel_p / p_vec[..., 2]
                 + self.length
             )
 
-        # Convert momentum back to delta
         return ParticleBeam(
-            particles=final_particles,
+            particles=outgoing_particles,
             energy=incoming.energy + self.energy_offset,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
             species=incoming.species,
-            dtype=particles.dtype,
-            device=particles.device,
         )
 
     def _rotation_matrix(self) -> torch.Tensor:
