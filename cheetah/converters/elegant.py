@@ -81,7 +81,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
             )
-        elif parsed["element_type"] == "kick":
+        elif parsed["element_type"] in ["kick", "kicker"]:
             validate_understood_properties(
                 shared_properties + ["l", "hkick", "vkick"], parsed
             )
