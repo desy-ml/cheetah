@@ -320,5 +320,5 @@ def sinc(x):
 
 
 def cosc(x):
-    """cosc(x) = (cos(x)-1)/x**2 = -1/2 [sinc(x/2)]**2"""
+    """cosc(x) = (cos(x)-1)/x^2 = -1/2 [sinc(x/2)]^2"""
     return -0.5 * sinc(x / 2).square()

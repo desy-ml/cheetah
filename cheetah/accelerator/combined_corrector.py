@@ -83,7 +83,7 @@ class CombinedCorrector(Element):
         tm[..., 1, 6] = self.horizontal_angle
         tm[..., 2, 3] = self.length
         tm[..., 3, 6] = self.vertical_angle
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
+        tm[..., 4, 5] = -self.length / beta.square() * igamma2
 
         return tm
 
