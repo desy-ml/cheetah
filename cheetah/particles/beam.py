@@ -432,7 +432,7 @@ class Beam(ABC, nn.Module):
         Projected emittance of the beam in x direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return (self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,).sqrt()
+        return (self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2).sqrt()
 
     @property
     def emittance_x(self) -> torch.Tensor:
