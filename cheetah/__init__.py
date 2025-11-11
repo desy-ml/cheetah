@@ -23,9 +23,9 @@ from .accelerator import (  # noqa: F401
     VerticalCorrector,
 )
 from .particles import Beam, ParameterBeam, ParticleBeam, Species  # noqa: F401
-from .utils import DirtyNameWarning  # noqa: F401
 from .utils import (  # noqa: F401
     DefaultParameterWarning,
+    DirtyNameWarning,
     NoBeamPropertiesInLatticeWarning,
     NotUnderstoodPropertyWarning,
     NoVisualizationWarning,
