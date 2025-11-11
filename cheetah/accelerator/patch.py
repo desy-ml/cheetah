@@ -128,12 +128,14 @@ class Patch(Element):
                 incoming.particles[..., 5],
                 incoming.particles[..., 6],
             ]
-        )
+        ).mT
 
         # Track particles to the end of the patch
         if self.drift_to_exit:
             outgoing_particles[..., [0, 2]] = outgoing_particles[..., [0, 2]] - (
-                r_vec[..., 2] * p_vec[..., [0, 1]] / p_vec[..., 2]
+                r_vec[..., 2].unsqueeze(-1)
+                * p_vec[..., [0, 1]]
+                / p_vec[..., 2].unsqueeze(-1)
             )
             outgoing_particles[..., 4] = (
                 outgoing_particles[..., 4]
