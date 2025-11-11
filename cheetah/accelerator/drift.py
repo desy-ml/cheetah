@@ -78,7 +78,7 @@ class Drift(Element):
 
     def track(self, incoming: Beam) -> Beam:
         """
-        Track particles through the dipole element.
+        Track particles through the drift element.
 
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.

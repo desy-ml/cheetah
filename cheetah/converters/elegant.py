@@ -222,7 +222,8 @@ def convert_element(
                 return cheetah.BPM(name=name, sanitize_name=sanitize_name)
         elif parsed["element_type"] == "ematrix":
             validate_understood_properties(
-                shared_properties + ["l", "order", "c[1-6]", "r[1-6][1-6]"],
+                shared_properties
+                + ["l", "order", "c[1-6]", "r[1-6][1-6]", "t[1-6][1-6][1-6]"],
                 parsed,
             )
 
@@ -246,12 +247,37 @@ def convert_element(
             # Ensure the affine component is passed along
             R[6, 6] = 1.0
 
-            return cheetah.CustomTransferMap(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                predefined_transfer_map=R,
-                name=name,
-                sanitize_name=sanitize_name,
-            )
+            if parsed.get("order", 2) == 2:
+                T = torch.zeros((7, 7, 7), **factory_kwargs)
+                T[:6, :6, :6] = torch.tensor(
+                    [
+                        [
+                            [
+                                parsed.get(f"t{i + 1}{j + 1}{k + 1}", 0.0)
+                                for k in range(6)
+                            ]
+                            for j in range(6)
+                        ]
+                        for i in range(6)
+                    ],
+                    **factory_kwargs,
+                )
+                T[:, 6, :] = R
+                return cheetah.CustomTransferMap(
+                    length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                    predefined_transfer_map=T,
+                    tracking_method="second_order",
+                    name=name,
+                    sanitize_name=sanitize_name,
+                )
+            else:
+                return cheetah.CustomTransferMap(
+                    length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                    predefined_transfer_map=R,
+                    tracking_method="linear",
+                    name=name,
+                    sanitize_name=sanitize_name,
+                )
         elif parsed["element_type"] == "rfca":
             validate_understood_properties(
                 shared_properties + ["l", "phase", "volt", "freq"], parsed
