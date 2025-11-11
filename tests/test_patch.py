@@ -12,7 +12,7 @@ def test_tracking_in_segment():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 1.0)),
         tilt=torch.tensor(0.0),
-        E_tot_offset=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
     )
 
     segment = Segment(
@@ -45,7 +45,7 @@ def test_patch_with_vectorization():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 1.0)),
         tilt=torch.tensor(0.0),
-        E_tot_offset=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
     )
 
     segment = Segment(
@@ -113,8 +113,8 @@ def test_patch_rotation_matrix():
             time_offset=torch.tensor(0.5),
             pitch=pitch,
             tilt=tilt,
-            E_tot_offset=torch.tensor(0.01),
-            E_tot_set=torch.tensor(0.02),
+            energy_offset=torch.tensor(0.01),
+            energy_setpoint=torch.tensor(0.02),
         )
         rotation_matrix = patch.rotation_matrix()
         assert torch.allclose(
@@ -131,8 +131,8 @@ def test_patch_length_property():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 0.0)),
         tilt=torch.tensor(0.0),
-        E_tot_offset=torch.tensor(0.0),
-        E_tot_set=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
+        energy_setpoint=torch.tensor(0.0),
     )
     expected_length = 0.3  # since no rotation, length should be z-offset
     assert torch.isclose(
@@ -149,8 +149,8 @@ def test_patch_transform_particles():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 0.0)),
         tilt=torch.tensor(0.0),
-        E_tot_offset=torch.tensor(0.0),
-        E_tot_set=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
+        energy_setpoint=torch.tensor(0.0),
     )
 
     beam = ParticleBeam(
@@ -180,8 +180,8 @@ def test_jacobian():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.75),
-        E_tot_offset=torch.tensor(0.0),
-        E_tot_set=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
+        energy_setpoint=torch.tensor(0.0),
     )
     energy = torch.tensor(1.0e9)
 
@@ -251,8 +251,8 @@ def test_patch_transform_particles_with_angles():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.0),
-        E_tot_offset=torch.tensor(0.0),
-        E_tot_set=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
+        energy_setpoint=torch.tensor(0.0),
     )
 
     assert torch.allclose(
@@ -291,8 +291,8 @@ def test_patch_transform_particles_with_angles():
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.75),
-        E_tot_offset=torch.tensor(0.0),
-        E_tot_set=torch.tensor(0.0),
+        energy_offset=torch.tensor(0.0),
+        energy_setpoint=torch.tensor(0.0),
     )
 
     beam = ParticleBeam(

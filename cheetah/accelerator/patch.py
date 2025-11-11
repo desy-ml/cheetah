@@ -14,14 +14,14 @@ class Patch(Element):
     """
     Patch element that shifts the reference orbit and time. Note that this element does
     not support batching for the `offset`, `time_offset`, `pitch`, `tilt`,
-    `E_tot_offset`, and `E_tot_set` parameters.
+    `energy_offset`, and `energy_setpoint` parameters.
 
     :param offset: Exit face offset in (x, y, z) from the entrance in meters.
     :param time_offset: Reference time offset in seconds.
     :param pitch: Exit face orientation (x, y, z) from the entrance in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
-    :param E_tot_offset: Energy offset in eV.
-    :param E_tot_set: Energy setpoint in eV.
+    :param energy_offset: Energy offset in eV.
+    :param energy_setpoint: Energy setpoint in eV.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -34,8 +34,8 @@ class Patch(Element):
         time_offset: torch.Tensor | None = None,
         pitch: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
-        E_tot_offset: torch.Tensor | None = None,
-        E_tot_set: torch.Tensor | None = None,
+        energy_offset: torch.Tensor | None = None,
+        energy_setpoint: torch.Tensor | None = None,
         drift_to_exit: bool = True,
         name: str | None = None,
         sanitize_name: bool = False,
@@ -69,15 +69,16 @@ class Patch(Element):
             "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
-            "E_tot_offset",
+            "energy_offset",
             torch.as_tensor(
-                E_tot_offset if E_tot_offset is not None else 0.0, **factory_kwargs
+                energy_offset if energy_offset is not None else 0.0, **factory_kwargs
             ),
         )
         self.register_buffer_or_parameter(
-            "E_tot_set",
+            "energy_setpoint",
             torch.as_tensor(
-                E_tot_set if E_tot_set is not None else 0.0, **factory_kwargs
+                energy_setpoint if energy_setpoint is not None else 0.0,
+                **factory_kwargs
             ),
         )
 
@@ -149,7 +150,7 @@ class Patch(Element):
         # convert momentum back to delta
         return ParticleBeam(
             particles=final_particles,
-            energy=incoming.energy + self.E_tot_offset,
+            energy=incoming.energy + self.energy_offset,
             s=self.length + incoming.s,
             species=incoming.species,
             dtype=particles.dtype,
