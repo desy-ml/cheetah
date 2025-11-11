@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
@@ -21,6 +22,8 @@ class Element(ABC, nn.Module):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
@@ -155,7 +158,7 @@ class Element(ABC, nn.Module):
         if isinstance(incoming, ParameterBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_cov = tm @ incoming.cov @ tm.mT
             new_s = incoming.s + self.length
             return ParameterBeam(
                 new_mu,
@@ -167,7 +170,7 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-            new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_particles = incoming.particles @ tm.mT
             new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
@@ -256,8 +259,17 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Check if attribute even exists needed because `__setattr__` can be called
+        # during the initialisation of the object.
+        if hasattr(self, "defining_features") and name in self.defining_features:
+            self._cached_first_order_transfer_map = None
+            self._cached_second_order_transfer_map = None
+
+        return super().__setattr__(name, value)
+
     def register_buffer_or_parameter(
-        self, name: str, value: torch.Tensor | nn.Parameter
+        self, name: str, value: torch.Tensor | nn.Parameter, persistent: bool = True
     ) -> None:
         """
         Register a buffer or parameter with the given name and value. Automatically
@@ -267,14 +279,15 @@ class Element(ABC, nn.Module):
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
         :param default: Default value of the buffer.
+        :param persistent: Whether the buffer or parameter should be persistent. NOTE:
+            This is only relevant for buffers, as parameters are always persistent.
         """
         if isinstance(value, nn.Parameter):
             self.register_parameter(name, value)
         else:
-            self.register_buffer(name, value)
+            self.register_buffer(name, value, persistent)
 
     @property
-    @abstractmethod
     def defining_features(self) -> list[str]:
         """
         List of features that define the element. Used to compare elements for equality
@@ -283,7 +296,11 @@ class Element(ABC, nn.Module):
         NOTE: When overriding this property, make sure to call the super method and
         extend the list it returns.
         """
-        return ["name"]
+        return (
+            ["name"]
+            if len(self.supported_tracking_methods) == 1
+            else ["name", "tracking_method"]
+        )
 
     @property
     def defining_tensors(self) -> list[str]:
@@ -378,12 +395,12 @@ class Element(ABC, nn.Module):
         # Import only here because most people will not need it
         import trimesh
 
-        from cheetah.utils import cache
+        from cheetah.utils import assets
 
         snake_case_class_name = "".join(
             "_" + c.lower() if c.isupper() else c for c in self.__class__.__name__
         ).lstrip("_")
-        mesh = cache.load_3d_asset(
+        mesh = assets.load_3d_asset(
             f"{snake_case_class_name}.glb",
             show_download_progress=show_download_progress,
         )
@@ -431,4 +448,8 @@ class Element(ABC, nn.Module):
         return mesh, output_transform
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"
+        feature_list = [
+            f"{feature}={repr(getattr(self, feature))}"
+            for feature in self.defining_features
+        ]
+        return f"{self.__class__.__name__}({', '.join(feature_list)})"

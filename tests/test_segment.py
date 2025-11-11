@@ -223,3 +223,42 @@ def test_setting_tracking_method(target_tracking_method):
             else original_tracking_methods[element.name]
         )
         assert element.tracking_method == correct_tracking_method
+
+
+def test_element_names_correct():
+    """
+    Test that the `element_names` convenience method returns the expected element names.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    assert segment.element_names == [f"drift_{i}" for i in range(10)]
+
+
+def test_element_index_correct():
+    """Test that the `element_index` method returns the correct element index."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    assert segment.element_index("drift_3") == 3
+
+
+def test_element_index_raises_for_none():
+    """Test that the `element_index` method raises a ValueError for None."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        segment.element_index("some_nonexistent_element")

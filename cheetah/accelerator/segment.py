@@ -57,6 +57,27 @@ class Segment(Element):
             else:
                 self.__dict__[element.name] = element
 
+    @property
+    def element_names(self) -> list[str]:
+        """
+        Ordered list of names of the elements in the segment.
+
+        :return: Ordered list of names of the elements in the segment.
+        """
+        return [element.name for element in self.elements]
+
+    def element_index(self, element_name: str) -> int:
+        """
+        Get the index of the first occurrence of an element in the segment by its name.
+
+        :param element_name: Name of the element to get the index for.
+        :return: Index of the first element in the segment with the passed name.
+        """
+        try:
+            return self.element_names.index(element_name)
+        except ValueError:
+            raise ValueError(f"Element '{element_name}' not found in segment.")
+
     def subcell(
         self,
         start: str | None = None,
@@ -399,18 +420,17 @@ class Segment(Element):
         dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
-        Read a Cheetah segment from an elegant lattice file.
+        Read a Cheetah segment from an Elegant lattice file.
 
-        :param bmad_lattice_file_path: Path to the Bmad lattice file.
-        :param name: Name of the root element
+        :param elegant_lattice_file_path: Path to the Elegant lattice file.
+        :param name: Name of the root element.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
             `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
-        :return: Cheetah `Segment` representing the elegant lattice.
+        :return: Cheetah `Segment` representing the Elegant lattice.
         """
-
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice_to_cheetah(
             elegant_lattice_file_path, name, sanitize_names, device, dtype
@@ -877,7 +897,22 @@ class Segment(Element):
         return super().defining_features + ["elements"]
 
     def __repr__(self) -> str:
+        num_elements = len(self.elements)
+        if num_elements <= 5:
+            elements_repr = repr(self.elements)
+        else:
+            element_repr_list = [
+                f"({i}): {repr(self.elements[i])}"
+                for i in [0, 1, num_elements - 2, num_elements - 1]
+            ]
+            element_repr_list.insert(2, " ⋮")
+
+            # Using `format` since Python 3.10 does not permit backslashes in f-strings
+            elements_repr = "ModuleList(\n  {0}\n)".format(
+                "\n  ".join(element_repr_list)
+            )
+
         return (
-            f"{self.__class__.__name__}(elements={repr(self.elements)}, "
+            f"{self.__class__.__name__}(elements={elements_repr}, "
             + f"name={repr(self.name)})"
         )

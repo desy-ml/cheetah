@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
-from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
+from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
 
 
 class Sextupole(Element):
@@ -41,35 +41,35 @@ class Sextupole(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k2, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "k2", torch.as_tensor(k2 if k2 is not None else 0.0, **factory_kwargs)
+            "k2", k2 if k2 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.tracking_method = tracking_method
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return drift_matrix(length=self.length, species=species, energy=energy)
 
+    @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
         T = base_ttensor(
             length=self.length,
@@ -142,12 +142,3 @@ class Sextupole(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "k2", "misalignment", "tilt"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            f"k2={repr(self.k2)}, "
-            f"misalignment={repr(self.misalignment)}, "
-            f"tilt={repr(self.tilt)}, "
-            f"name={repr(self.name)})"
-        )

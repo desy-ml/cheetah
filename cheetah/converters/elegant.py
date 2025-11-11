@@ -20,10 +20,10 @@ def convert_element(
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
-    """Convert a parsed elegant element dict to a cheetah Element.
+    """Convert a parsed Elegant element dict to a cheetah Element.
 
     :param name: Name of the (top-level) element to convert.
-    :param context: Context dictionary parsed from elegant lattice file(s).
+    :param context: Context dictionary parsed from Elegant lattice file(s).
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
@@ -227,7 +227,10 @@ def convert_element(
                 parsed,
             )
 
-            # Initially zero in elegant by convention
+            if parsed.get("order", 1) != 1:
+                raise ValueError("Only first order modelling is supported")
+
+            # Initially zero in Elegant by convention
             R = torch.zeros((7, 7), **factory_kwargs)
             # Add linear component
             R[:6, :6] = torch.tensor(
@@ -391,7 +394,7 @@ def convert_element(
             )
     else:
         raise ValueError(
-            f"Unknown elegant element type for {name = }"  # noqa: E202, E251
+            f"Unknown Elegant element type for {name = }"  # noqa: E202, E251
         )
 
 
@@ -403,9 +406,9 @@ def convert_lattice_to_cheetah(
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
     """
-    Convert a elegant lattice file to a Cheetah `Segment`.
+    Convert a Elegant lattice file to a Cheetah `Segment`.
 
-    :param elegant_lattice_file_path: Path to the elegant lattice file.
+    :param elegant_lattice_file_path: Path to the Elegant lattice file.
     :param name: Name of the root element.
     :param sanitize_names: Whether to sanitise the names of the elements as well as the
         name of the segment to be valid Python variable names. This is needed if you
@@ -415,7 +418,7 @@ def convert_lattice_to_cheetah(
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
         of PyTorch is used.
-    :return: Cheetah `Segment` representing the elegant lattice.
+    :return: Cheetah `Segment` representing the Elegant lattice.
     """
 
     # Read and clean the lattice file(s)

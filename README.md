@@ -12,7 +12,7 @@
 
 <img src="https://github.com/desy-ml/cheetah/raw/master/images/logo.png" align="right" width="25%"/>
 
-Cheetah is a high-speed differentiable beam dynamics code specifically design to support machine learning applications for particle accelerators.
+Cheetah is a high-speed differentiable beam dynamics code specifically designed to support machine learning applications for particle accelerators.
 
 Its speed helps generate data fast, for example for extremely data-hungry reinforcement learning algorithms, while its differentiability can be used for a variety of applications, including accelerator tuning, system identification and physics-informed prior means for Bayesian optimisation. Its native integration with machine learning toolchains around PyTorch also makes Cheetah an ideal candidate for coupling of physics-based and neural network beam dynamics models that remain fast and differentiable.
 
@@ -195,6 +195,7 @@ The following people have contributed to the development of Cheetah:
 - Juan Pablo Gonzalez-Aguilera (@jp-ga)
 - Ryan Roussel (@roussel-ryan)
 - Auralee Edelen (@lee-edelen)
+- Zihan Zhu (@zihan-zh)
 - Christian Contreras-Campana (@chrisjcc)
 - Sucheth Shenoy (@SuchethShenoy)
 - Amelia Pollard (@amylizzle)

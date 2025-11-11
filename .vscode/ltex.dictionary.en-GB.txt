@@ -49,3 +49,5 @@ beamlines
 @SuchethShenoy
 Sucheth
 Shenoy
+EuXFEL
+dtype

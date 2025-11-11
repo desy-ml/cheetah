@@ -177,6 +177,7 @@ def convert_element(
                     * torch.pi
                 ),
                 frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
+                cavity_type=bmad_parsed["cavity_type"],
                 name=name,
                 sanitize_name=sanitize_name,
             )

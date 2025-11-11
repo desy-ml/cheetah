@@ -4,7 +4,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Species
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    compute_relativistic_factors,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -38,21 +42,21 @@ class Undulator(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.is_active = is_active
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         _, igamma2, _ = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(self.length.shape, igamma2.shape)
 
-        tm = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = self.length * igamma2
@@ -81,11 +85,4 @@ class Undulator(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"is_active={repr(self.is_active)}, "
-            + f"name={repr(self.name)})"
-        )
+        return super().defining_features + ["length", "is_active"]

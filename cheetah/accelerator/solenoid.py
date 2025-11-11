@@ -7,8 +7,8 @@ from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
+    cache_transfer_map,
     compute_relativistic_factors,
-    verify_device_and_dtype,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -43,30 +43,28 @@ class Solenoid(Element):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k, misalignment], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "k", torch.as_tensor(k if k is not None else 0.0, **factory_kwargs)
+            "k", k if k is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
         c = torch.cos(self.length * self.k)
@@ -82,7 +80,7 @@ class Solenoid(Element):
             gamma != 0, self.length / (1 - gamma**2), torch.zeros_like(self.length)
         )
 
-        R = torch.eye(7, device=device, dtype=dtype).repeat((*vector_shape, 1, 1))
+        R = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         R[..., 0, 0] = c**2
         R[..., 0, 1] = c * s_k
         R[..., 0, 2] = s * c
@@ -121,15 +119,13 @@ class Solenoid(Element):
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
         split_length = self.length / num_splits
-        device = self.length.device
-        dtype = self.length.dtype
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
         return [
             Solenoid(
                 length=split_length,
                 k=self.k,
                 misalignment=self.misalignment,
-                device=device,
-                dtype=dtype,
+                **factory_kwargs,
             )
             for _ in range(num_splits)
         ]
@@ -153,11 +149,3 @@ class Solenoid(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "k", "misalignment"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            + f"k={repr(self.k)}, "
-            + f"misalignment={repr(self.misalignment)}, "
-            + f"name={repr(self.name)})"
-        )
