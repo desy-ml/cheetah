@@ -257,7 +257,7 @@ class Cavity(Element):
 
             r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
             r12 = (
-                torch.sinc(alpha / torch.pi)
+                (alpha / torch.pi).sinc()
                 * log1pdiv(delta_energy / energy)
                 * self.length
             )
