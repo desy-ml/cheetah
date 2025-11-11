@@ -78,7 +78,7 @@ class Patch(Element):
             "energy_setpoint",
             torch.as_tensor(
                 energy_setpoint if energy_setpoint is not None else 0.0,
-                **factory_kwargs
+                **factory_kwargs,
             ),
         )
 
@@ -92,24 +92,24 @@ class Patch(Element):
         particles = incoming.particles
         final_particles = particles.clone()
 
-        # position coordinates
+        # Position coordinates
         entrance_position = particles[..., :-1:2]
-        # momentum coordinates
-        rel_p = particles[..., -2] + 1.0  # convert delta to p/p0
+        # Momentum coordinates
+        rel_p = particles[..., -2] + 1.0  # Convert delta to p / p0
         p_vec = torch.stack(
             [
                 particles[..., 1],
                 particles[..., 3],
                 torch.sqrt(
-                    (rel_p) ** 2 - particles[..., 1] ** 2 - particles[..., 3] ** 2
+                    rel_p.pow(2) - particles[..., 1].pow(2) - particles[..., 3].pow(2)
                 ),
             ],
             dim=-1,
         )
 
-        # compute the exit positions and momentum
-        # - note these computations follow bmad coordinates
-        rotation_matrix_inv = self.rotation_matrix().inverse()
+        # Compute the exit positions and momentum
+        # NOTE: These computations follow Bmad coordinates
+        rotation_matrix_inverse = self.rotation_matrix().inverse()
         r_vec = torch.stack(
             (
                 entrance_position[..., 0] - self.offset[0],
@@ -118,22 +118,22 @@ class Patch(Element):
             ),
             dim=-1,
         )
-        r_vec = (rotation_matrix_inv @ r_vec.transpose(-1, -2)).transpose(-1, -2)
-        p_vec = (rotation_matrix_inv @ p_vec.transpose(-1, -2)).transpose(-1, -2)
+        r_vec = (rotation_matrix_inverse @ r_vec.mT).mT
+        p_vec = (rotation_matrix_inverse @ p_vec.mT).mT
 
         final_particles[..., 4] = (
             final_particles[..., 4] + self.time_offset * speed_of_light
-        )  # time offset update
+        )  # Time offset update
 
-        # set final momenta
+        # Set final momenta
         final_particles[..., 1] = p_vec[..., 0]
         final_particles[..., 3] = p_vec[..., 1]
 
-        # set final positions
+        # Set final positions
         final_particles[..., 0] = r_vec[..., 0]
         final_particles[..., 2] = r_vec[..., 1]
 
-        # track particles to the end of the patch
+        # Track particles to the end of the patch
         if self.drift_to_exit:
             final_particles[..., 0] = final_particles[..., 0] - (
                 r_vec[..., 2] * p_vec[..., 0] / p_vec[..., 2]
@@ -147,11 +147,11 @@ class Patch(Element):
                 + self.length
             )
 
-        # convert momentum back to delta
+        # Convert momentum back to delta
         return ParticleBeam(
             particles=final_particles,
             energy=incoming.energy + self.energy_offset,
-            s=self.length + incoming.s,
+            s=incoming.s + self.length,
             species=incoming.species,
             dtype=particles.dtype,
             device=particles.device,
@@ -159,51 +159,41 @@ class Patch(Element):
 
     def rotation_matrix(self) -> torch.Tensor:
         """
-        Returns the rotation matrix for the patch element based on its pitch and tilt.
+        Computes the rotation matrix for the patch element based on its pitch and tilt.
         """
-        pitch = self.pitch
-        tilt = self.tilt
+        factory_kwargs = {"device": self.pitch.device, "dtype": self.pitch.dtype}
 
         rotation_y = torch.tensor(
             [
-                [torch.cos(pitch[0]), 0.0, torch.sin(pitch[0])],
+                [self.pitch[0].cos(), 0.0, self.pitch[0].sin()],
                 [0.0, 1.0, 0.0],
-                [-torch.sin(pitch[0]), 0.0, torch.cos(pitch[0])],
+                [-self.pitch[0].sin(), 0.0, self.pitch[0].cos()],
             ],
-            device=pitch.device,
-            dtype=pitch.dtype,
+            **factory_kwargs,
         )
-
         rotation_neg_x = torch.tensor(
             [
                 [1.0, 0.0, 0.0],
-                [0.0, torch.cos(pitch[1]), torch.sin(pitch[1])],
-                [0.0, -torch.sin(pitch[1]), torch.cos(pitch[1])],
+                [0.0, self.pitch[1].cos(), self.pitch[1].sin()],
+                [0.0, -self.pitch[1].sin(), self.pitch[1].cos()],
             ],
-            device=pitch.device,
-            dtype=pitch.dtype,
+            **factory_kwargs,
         )
-
         rotation_z = torch.tensor(
             [
-                [torch.cos(tilt), -torch.sin(tilt), 0.0],
-                [torch.sin(tilt), torch.cos(tilt), 0.0],
+                [self.tilt.cos(), -self.tilt.sin(), 0.0],
+                [self.tilt.sin(), self.tilt.cos(), 0.0],
                 [0.0, 0.0, 1.0],
             ],
-            device=tilt.device,
-            dtype=tilt.dtype,
+            **factory_kwargs,
         )
 
         return rotation_y @ rotation_neg_x @ rotation_z
 
     @property
     def length(self) -> torch.Tensor:
-        rotation_matrix_inv = self.rotation_matrix().inverse()
-        return (
-            rotation_matrix_inv[-1, 0] * self.offset[0]
-            + rotation_matrix_inv[-1, 1] * self.offset[1]
-            + rotation_matrix_inv[-1, 2] * self.offset[2]
-        )
+        rotation_matrix_inverse = self.rotation_matrix().inverse()
+        return (rotation_matrix_inverse[-1, 0:3] * self.offset).sum()
 
     @property
     def is_skippable(self) -> bool:
