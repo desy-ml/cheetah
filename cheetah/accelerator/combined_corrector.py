@@ -105,17 +105,6 @@ class CombinedCorrector(Element):
 
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
-        plot_horizontal_angle = (
-            self.horizontal_angle[vector_idx]
-            if self.horizontal_angle.dim() > 0
-            else self.horizontal_angle
-        )
-        plot_vertical_angle = (
-            self.vertical_angle[vector_idx]
-            if self.vertical_angle.dim() > 0
-            else self.vertical_angle
-        )
-        plot_angle = torch.sqrt(plot_horizontal_angle**2 + plot_vertical_angle**2)
 
         alpha = 1 if self.is_active else 0.2
 
