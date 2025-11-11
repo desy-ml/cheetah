@@ -14,9 +14,6 @@ class Patch(Element):
     """
     Patch element that shifts the reference orbit and time.
 
-    Note: This element does not support vectorisation of the `offset`, `time_offset`,
-    `pitch`, `tilt`, `energy_offset`, and `energy_setpoint` properties.
-
     :param offset: Exit face offset in (x, y, z) from the entrance in meters.
     :param time_offset: Reference time offset in seconds.
     :param pitch: Exit face orientation (x, y, z) from the entrance in radians.
