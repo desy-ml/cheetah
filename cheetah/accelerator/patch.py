@@ -45,6 +45,8 @@ class Patch(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
+        self.drift_to_exit = drift_to_exit
+
         self.register_buffer_or_parameter(
             "offset",
             torch.as_tensor(
@@ -78,16 +80,12 @@ class Patch(Element):
                 E_tot_set if E_tot_set is not None else 0.0, **factory_kwargs
             ),
         )
-        self.drift_to_exit = drift_to_exit
 
-    @property
-    def length(self) -> torch.Tensor:
-        rotation_matrix_inv = self.rotation_matrix().inverse()
-        return (
-            rotation_matrix_inv[-1, 0] * self.offset[0]
-            + rotation_matrix_inv[-1, 1] * self.offset[1]
-            + rotation_matrix_inv[-1, 2] * self.offset[2]
-        )
+    def track(self, incoming: Beam) -> Beam:
+        if isinstance(incoming, ParticleBeam):
+            return self.transform_particles(incoming)
+        else:
+            raise TypeError("Patch element currently only supports ParticleBeam input.")
 
     def transform_particles(self, incoming: ParticleBeam) -> Beam:
         particles = incoming.particles
@@ -197,17 +195,20 @@ class Patch(Element):
 
         return rotation_y @ rotation_neg_x @ rotation_z
 
-    def track(self, incoming: Beam) -> Beam:
-        if isinstance(incoming, ParticleBeam):
-            return self.transform_particles(incoming)
-        else:
-            raise TypeError("Patch element currently only supports ParticleBeam input.")
+    @property
+    def length(self) -> torch.Tensor:
+        rotation_matrix_inv = self.rotation_matrix().inverse()
+        return (
+            rotation_matrix_inv[-1, 0] * self.offset[0]
+            + rotation_matrix_inv[-1, 1] * self.offset[1]
+            + rotation_matrix_inv[-1, 2] * self.offset[2]
+        )
+
+    @property
+    def is_skippable(self) -> bool:
+        return False  # Patch elements cannot be skipped
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
         pass  # Patch element does not have a visual representation
-
-    @property
-    def is_skippable(self) -> bool:
-        return False  # Patch elements cannot be skipped
