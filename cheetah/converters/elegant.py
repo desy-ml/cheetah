@@ -81,19 +81,23 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
             )
+        elif parsed["element_type"] in ["kick", "kicker"]:
+            validate_understood_properties(
+                shared_properties + ["l", "hkick", "vkick"], parsed
+            )
+            return cheetah.CombinedCorrector(
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                horizontal_angle=torch.tensor(
+                    parsed.get("hkick", 0.0), **factory_kwargs
+                ),
+                vertical_angle=torch.tensor(parsed.get("vkick", 0.0), **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+            )
         elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(shared_properties, parsed)
             return cheetah.Marker(
                 name=name, sanitize_name=sanitize_name, **factory_kwargs
-            )
-        elif parsed["element_type"] == "kick":
-            validate_understood_properties(shared_properties + ["l"], parsed)
-
-            # TODO Find proper element class
-            return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                sanitize_name=sanitize_name,
             )
         elif parsed["element_type"] in ["drift", "drif"]:
             validate_understood_properties(shared_properties + ["l"], parsed)

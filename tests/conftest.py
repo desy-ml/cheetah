@@ -13,6 +13,13 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Aperture: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.Cavity: {"default": {"length": torch.tensor(1.0)}},
+    cheetah.CombinedCorrector: {
+        "default": {
+            "length": torch.tensor(1.0),
+            "horizontal_angle": torch.tensor([1.0, -2.0]),
+            "vertical_angle": torch.tensor([1.0, -2.0]),
+        }
+    },
     cheetah.CustomTransferMap: {"identity": {"predefined_transfer_map": torch.eye(7)}},
     cheetah.Dipole: {
         "linear": {
