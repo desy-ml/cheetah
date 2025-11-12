@@ -1,68 +1,34 @@
+import pytest
 import torch
 
 import cheetah
 
 
-def test_patch_rotation_matrix():
-    """Test the Patch element functionality."""
-
-    pitches = [
-        torch.tensor((0.0, 0.0)),
-        torch.tensor((torch.pi / 2.0, 0.0)),
-        torch.tensor((0.0, torch.pi / 2.0)),
-        torch.tensor((0.0, 0.0)),
-    ]
-    tilts = [
-        torch.tensor(0.0),
-        torch.tensor(0.0),
-        torch.tensor(0.0),
-        torch.tensor(torch.pi / 2.0),
-    ]
-
-    expected_rotation_matrices = [
-        torch.tensor(
-            [
-                [1.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0],
-                [0.0, 0.0, 1.0],
-            ]
+@pytest.mark.parametrize(
+    "pitch, tilt, correct_rotation_matrix",
+    [
+        (torch.tensor((0.0, 0.0)), torch.tensor(0.0), torch.eye(3)),
+        (
+            torch.tensor((torch.pi / 2.0, 0.0)),
+            torch.tensor(0.0),
+            torch.tensor([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
         ),
-        torch.tensor(
-            [
-                [0.0, 0.0, 1.0],
-                [0.0, 1.0, 0.0],
-                [-1.0, 0.0, 0.0],
-            ]
+        (
+            torch.tensor((0.0, torch.pi / 2.0)),
+            torch.tensor(0.0),
+            torch.tensor([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]]),
         ),
-        torch.tensor(
-            [
-                [1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0],
-                [0.0, -1.0, 0.0],
-            ]
+        (
+            torch.tensor((0.0, 0.0)),
+            torch.tensor(torch.pi / 2.0),
+            torch.tensor([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
         ),
-        torch.tensor(
-            [
-                [0.0, -1.0, 0.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0],
-            ]
-        ),
-    ]
-
-    for pitch, tilt, expected_matrix in zip(pitches, tilts, expected_rotation_matrices):
-        patch = cheetah.Patch(
-            offset=torch.tensor([0.1, 0.2, 0.3]),
-            time_offset=torch.tensor(0.5),
-            pitch=pitch,
-            tilt=tilt,
-            energy_offset=torch.tensor(0.01),
-            energy_setpoint=torch.tensor(0.02),
-        )
-        rotation_matrix = patch._rotation_matrix()
-        assert torch.allclose(
-            rotation_matrix, expected_matrix, atol=1e-6
-        ), "Rotation matrix is incorrect"
+    ],
+)
+def test_patch_rotation_matrix(pitch, tilt, correct_rotation_matrix):
+    """Test that the `Patch` element's rotation matrix is computed correctly."""
+    patch = cheetah.Patch(pitch=pitch, tilt=tilt)
+    assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix, atol=1e-6)
 
 
 def test_patch_length_property():
