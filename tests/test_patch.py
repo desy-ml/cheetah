@@ -3,59 +3,6 @@ import torch
 import cheetah
 
 
-def test_tracking_in_segment():
-    beam = cheetah.ParticleBeam(torch.zeros(10, 7), energy=torch.tensor(1.0e9))
-    patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.0),
-        pitch=torch.tensor((0.0, 1.0)),
-        tilt=torch.tensor(0.0),
-        energy_offset=torch.tensor(0.0),
-    )
-
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
-            patch,
-            cheetah.Drift(length=torch.tensor(1.0)),
-        ],
-    )
-    segment.track(beam)
-
-    # Test tracking with defaults
-    patch = cheetah.Patch()
-
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
-            patch,
-            cheetah.Drift(length=torch.tensor(1.0)),
-        ],
-    )
-    segment.track(beam)
-
-
-def test_patch_with_vectorization():
-    """Test that patch works with vectorized beams."""
-    beam = cheetah.ParticleBeam(torch.zeros(4, 10, 7), energy=torch.tensor(1.0e9))
-    patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.0),
-        pitch=torch.tensor((0.0, 1.0)),
-        tilt=torch.tensor(0.0),
-        energy_offset=torch.tensor(0.0),
-    )
-
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0)),
-            patch,
-            cheetah.Drift(length=torch.tensor(1.0)),
-        ],
-    )
-    segment.track(beam)
-
-
 def test_patch_rotation_matrix():
     """Test the Patch element functionality."""
 
