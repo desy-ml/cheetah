@@ -61,7 +61,7 @@ def test_transform_particles():
         energy=torch.tensor(1.0),
     )
 
-    transformed_beam = patch.transform_particles(beam)
+    transformed_beam = patch._transform_particles(beam)
     assert torch.allclose(
         transformed_beam.particles[..., 0], beam.particles[..., 0] - 0.1, atol=1e-6
     ), "Particle transformation is incorrect"
@@ -132,7 +132,7 @@ def test_transform_particles_with_angles():
         energy=torch.tensor(1.0e7),
     )
 
-    transformed_beam = patch_with_angles.transform_particles(beam)
+    transformed_beam = patch_with_angles._transform_particles(beam)
 
     # Expected offsets from Bmad - note potential issue with the change in energy here
     # TODO: fix potential energy issue
@@ -162,7 +162,7 @@ def test_transform_particles_with_angles():
         energy=torch.tensor(1.0e9),
     )
 
-    transformed_beam = patch_with_angles.transform_particles(beam)
+    transformed_beam = patch_with_angles._transform_particles(beam)
     bmad_offsets = torch.tensor(
         [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, 1.605987e-02]
     )

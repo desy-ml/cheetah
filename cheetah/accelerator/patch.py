@@ -82,11 +82,11 @@ class Patch(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if isinstance(incoming, ParticleBeam):
-            return self.transform_particles(incoming)
+            return self._transform_particles(incoming)
         else:
             raise TypeError("Patch element currently only supports ParticleBeam input.")
 
-    def transform_particles(self, incoming: ParticleBeam) -> Beam:
+    def _transform_particles(self, incoming: ParticleBeam) -> Beam:
         # Momentum coordinates
         rel_p = incoming.p + 1.0  # Convert delta to p / p0
         particle_momenta = torch.stack(
