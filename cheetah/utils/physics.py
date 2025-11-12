@@ -14,6 +14,6 @@ def compute_relativistic_factors(
     """
     gamma = energy / particle_mass_eV
     igamma2 = torch.where(gamma == 0.0, 0.0, gamma.square().reciprocal())
-    beta = torch.sqrt(1 - igamma2)
+    beta = (1 - igamma2).sqrt()
 
     return gamma, igamma2, beta

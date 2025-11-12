@@ -433,9 +433,9 @@ class Beam(ABC, nn.Module):
         Projected emittance of the beam in x direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return torch.sqrt(
-            self.sigma_x.square() * self.sigma_px.square() - self.cov_xpx.square(),
-        )
+        return (
+            self.sigma_x.square() * self.sigma_px.square() - self.cov_xpx.square()
+        ).sqrt()
 
     @property
     def emittance_x(self) -> torch.Tensor:
@@ -443,14 +443,18 @@ class Beam(ABC, nn.Module):
         Uncoupled betatron emittance of the beam in x direction in m.
         This is computed with the dispersion correction.
         """
-
-        return torch.sqrt(
-            (self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square())
-            * (self.sigma_px.square() - self.cov_pxp.square() / self.sigma_p.square())
-            - (
-                self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square()
-            ).square(),
-        )
+        return (
+            (
+                (self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square())
+                * (
+                    self.sigma_px.square()
+                    - self.cov_pxp.square() / self.sigma_p.square()
+                )
+                - (
+                    self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square()
+                ).square()
+            )
+        ).sqrt()
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
@@ -477,9 +481,9 @@ class Beam(ABC, nn.Module):
         """Projected emittance of the beam in y direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return torch.sqrt(
+        return (
             self.sigma_y.square() * self.sigma_py.square() - self.cov_ypy.square()
-        )
+        ).sqrt()
 
     @property
     def emittance_y(self) -> torch.Tensor:
@@ -487,14 +491,13 @@ class Beam(ABC, nn.Module):
         Uncoupled betatron emittance of the beam in y direction in m.
         This is computed with the dispersion correction.
         """
-
-        return torch.sqrt(
+        return (
             (self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square())
             * (self.sigma_py.square() - self.cov_pyp.square() / self.sigma_p.square())
             - (
                 self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
-            ).square(),
-        )
+            ).square()
+        ).sqrt()
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
