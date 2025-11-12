@@ -70,25 +70,22 @@ def test_transform_particles_with_angles():
     # test with angles (no tilt)
     patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.0),
-        energy_offset=torch.tensor(0.0),
-        energy_setpoint=torch.tensor(0.0),
     )
 
     assert torch.allclose(
         patch_with_angles.length, torch.tensor(1.7723379e-01), atol=1e-6
-    ), "Length property is incorrect"
+    )
 
-    beam = cheetah.ParticleBeam(
+    incoming = cheetah.ParticleBeam(
         particles=torch.zeros(
             10, 7
         ),  # 10 particles with 3D position and 3D momentum at the origin
         energy=torch.tensor(1.0e7),
     )
 
-    transformed_beam = patch_with_angles._transform_particles(beam)
+    outgoing = patch_with_angles.track(incoming)
 
     # Expected offsets from Bmad - note potential issue with the change in energy here
     # TODO: fix potential energy issue
@@ -97,35 +94,32 @@ def test_transform_particles_with_angles():
     )
     for i, offset in zip(range(5), bmad_offsets):
         assert torch.allclose(
-            transformed_beam.particles[..., i],
-            beam.particles[..., i] + offset,
+            outgoing.particles[..., i],
+            incoming.particles[..., i] + offset,
             atol=1e-6,
         )
 
     patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.0]),
-        time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.75),
-        energy_offset=torch.tensor(0.0),
-        energy_setpoint=torch.tensor(0.0),
     )
 
-    beam = cheetah.ParticleBeam(
+    incoming = cheetah.ParticleBeam(
         particles=torch.zeros(
             10, 7
         ),  # 10 particles with 3D position and 3D momentum at the origin
         energy=torch.tensor(1.0e9),
     )
 
-    transformed_beam = patch_with_angles._transform_particles(beam)
+    outgoing = patch_with_angles.track(incoming)
     bmad_offsets = torch.tensor(
         [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, 1.605987e-02]
     )
     for i, offset in zip(range(5), bmad_offsets):
         assert torch.allclose(
-            transformed_beam.particles[..., i],
-            beam.particles[..., i] + offset,
+            outgoing.particles[..., i],
+            incoming.particles[..., i] + offset,
             atol=1e-6,
         )
 
