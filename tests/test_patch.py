@@ -25,13 +25,13 @@ import cheetah
         ),
     ],
 )
-def test_patch_rotation_matrix(pitch, tilt, correct_rotation_matrix):
+def test_rotation_matrix(pitch, tilt, correct_rotation_matrix):
     """Test that the `Patch` element's rotation matrix is computed correctly."""
     patch = cheetah.Patch(pitch=pitch, tilt=tilt)
     assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix, atol=1e-6)
 
 
-def test_patch_length_property():
+def test_length():
     """Test the Patch element's length property."""
     patch = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
@@ -47,7 +47,7 @@ def test_patch_length_property():
     ), "Length property is incorrect"
 
 
-def test_patch_transform_particles():
+def test_transform_particles():
     """Test the Patch element's transform_particles method."""
     patch = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
@@ -114,7 +114,7 @@ def test_jacobian():
     ), "Jacobian is incorrect"
 
 
-def test_patch_transform_particles_with_angles():
+def test_transform_particles_with_angles():
     # test with angles (no tilt)
     patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
