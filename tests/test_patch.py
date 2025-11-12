@@ -1,13 +1,11 @@
 import torch
 
-from cheetah.accelerator import Drift, Segment
-from cheetah.accelerator.patch import Patch
-from cheetah.particles.particle_beam import ParticleBeam
+import cheetah
 
 
 def test_tracking_in_segment():
-    beam = ParticleBeam(torch.zeros(10, 7), energy=torch.tensor(1.0e9))
-    patch = Patch(
+    beam = cheetah.ParticleBeam(torch.zeros(10, 7), energy=torch.tensor(1.0e9))
+    patch = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 1.0)),
@@ -15,23 +13,23 @@ def test_tracking_in_segment():
         energy_offset=torch.tensor(0.0),
     )
 
-    segment = Segment(
+    segment = cheetah.Segment(
         elements=[
-            Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
             patch,
-            Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
         ],
     )
     segment.track(beam)
 
     # Test tracking with defaults
-    patch = Patch()
+    patch = cheetah.Patch()
 
-    segment = Segment(
+    segment = cheetah.Segment(
         elements=[
-            Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
             patch,
-            Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
         ],
     )
     segment.track(beam)
@@ -39,8 +37,8 @@ def test_tracking_in_segment():
 
 def test_patch_with_vectorization():
     """Test that patch works with vectorized beams."""
-    beam = ParticleBeam(torch.zeros(4, 10, 7), energy=torch.tensor(1.0e9))
-    patch = Patch(
+    beam = cheetah.ParticleBeam(torch.zeros(4, 10, 7), energy=torch.tensor(1.0e9))
+    patch = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 1.0)),
@@ -48,11 +46,11 @@ def test_patch_with_vectorization():
         energy_offset=torch.tensor(0.0),
     )
 
-    segment = Segment(
+    segment = cheetah.Segment(
         elements=[
-            Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
             patch,
-            Drift(length=torch.tensor(1.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
         ],
     )
     segment.track(beam)
@@ -106,7 +104,7 @@ def test_patch_rotation_matrix():
     ]
 
     for pitch, tilt, expected_matrix in zip(pitches, tilts, expected_rotation_matrices):
-        patch = Patch(
+        patch = cheetah.Patch(
             offset=torch.tensor([0.1, 0.2, 0.3]),
             time_offset=torch.tensor(0.5),
             pitch=pitch,
@@ -122,7 +120,7 @@ def test_patch_rotation_matrix():
 
 def test_patch_length_property():
     """Test the Patch element's length property."""
-    patch = Patch(
+    patch = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 0.0)),
@@ -138,7 +136,7 @@ def test_patch_length_property():
 
 def test_patch_transform_particles():
     """Test the Patch element's transform_particles method."""
-    patch = Patch(
+    patch = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.0, 0.0)),
@@ -147,7 +145,7 @@ def test_patch_transform_particles():
         energy_setpoint=torch.tensor(0.0),
     )
 
-    beam = ParticleBeam(
+    beam = cheetah.ParticleBeam(
         particles=torch.zeros(
             10, 7
         ),  # 10 particles with 3D position and 3D momentum at the origin
@@ -169,7 +167,7 @@ def test_patch_transform_particles():
 
 
 def test_jacobian():
-    patch_with_angles = Patch(
+    patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
@@ -181,7 +179,7 @@ def test_jacobian():
 
     def f(x):
         return patch_with_angles.track(
-            ParticleBeam(particles=x, energy=energy)
+            cheetah.ParticleBeam(particles=x, energy=energy)
         ).particles
 
     with torch.autograd.set_detect_anomaly(True):
@@ -205,7 +203,7 @@ def test_jacobian():
 
 def test_patch_transform_particles_with_angles():
     # test with angles (no tilt)
-    patch_with_angles = Patch(
+    patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
@@ -218,7 +216,7 @@ def test_patch_transform_particles_with_angles():
         patch_with_angles.length, torch.tensor(1.7723379e-01), atol=1e-6
     ), "Length property is incorrect"
 
-    beam = ParticleBeam(
+    beam = cheetah.ParticleBeam(
         particles=torch.zeros(
             10, 7
         ),  # 10 particles with 3D position and 3D momentum at the origin
@@ -239,7 +237,7 @@ def test_patch_transform_particles_with_angles():
             atol=1e-6,
         ), "Particle transformation is incorrect"
 
-    patch_with_angles = Patch(
+    patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.0]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
@@ -248,7 +246,7 @@ def test_patch_transform_particles_with_angles():
         energy_setpoint=torch.tensor(0.0),
     )
 
-    beam = ParticleBeam(
+    beam = cheetah.ParticleBeam(
         particles=torch.zeros(
             10, 7
         ),  # 10 particles with 3D position and 3D momentum at the origin
