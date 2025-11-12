@@ -250,18 +250,18 @@ class ParticleBeam(Beam):
             cov_pyp,
         )
         cov = torch.zeros(*sigma_x.shape, 6, 6, **factory_kwargs)
-        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 0] = sigma_x.square()
         cov[..., 0, 1] = cov_xpx
         cov[..., 1, 0] = cov_xpx
-        cov[..., 1, 1] = sigma_px**2
-        cov[..., 2, 2] = sigma_y**2
+        cov[..., 1, 1] = sigma_px.square()
+        cov[..., 2, 2] = sigma_y.square()
         cov[..., 2, 3] = cov_ypy
         cov[..., 3, 2] = cov_ypy
-        cov[..., 3, 3] = sigma_py**2
-        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 3, 3] = sigma_py.square()
+        cov[..., 4, 4] = sigma_tau.square()
         cov[..., 4, 5] = cov_taup
         cov[..., 5, 4] = cov_taup
-        cov[..., 5, 5] = sigma_p**2
+        cov[..., 5, 5] = sigma_p.square()
         cov[..., 0, 5] = cov_xp
         cov[..., 5, 0] = cov_xp
         cov[..., 1, 5] = cov_pxp
@@ -439,21 +439,27 @@ class ParticleBeam(Beam):
             beta_x * emittance_x + dispersion_x.square() * sigma_p.square()
         ).sqrt()
         sigma_px = (
-            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
+            emittance_x * (1 + alpha_x.square()) / beta_x
+            + dispersion_px.square() * sigma_p.square()
         ).sqrt()
         sigma_y = (
             beta_y * emittance_y + dispersion_y.square() * sigma_p.square()
         ).sqrt()
         sigma_py = (
-            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
+            emittance_y * (1 + alpha_y.square()) / beta_y
+            + dispersion_py.square() * sigma_p.square()
         ).sqrt()
-        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
-        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
+        cov_xpx = (
+            -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p.square()
+        )
+        cov_ypy = (
+            -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p.square()
+        )
 
-        cov_xp = dispersion_x * sigma_p**2
-        cov_pxp = dispersion_px * sigma_p**2
-        cov_yp = dispersion_y * sigma_p**2
-        cov_pyp = dispersion_py * sigma_p**2
+        cov_xp = dispersion_x * sigma_p.square()
+        cov_pxp = dispersion_px * sigma_p.square()
+        cov_yp = dispersion_y * sigma_p.square()
+        cov_pyp = dispersion_py * sigma_p.square()
 
         return cls.from_parameters(
             num_particles=num_particles,
@@ -1183,12 +1189,12 @@ class ParticleBeam(Beam):
             * constants.speed_of_light
         )
         p = (
-            xp_coordinates[..., 1] ** 2
-            + xp_coordinates[..., 3] ** 2
-            + xp_coordinates[..., 5] ** 2
+            xp_coordinates[..., 1].square()
+            + xp_coordinates[..., 3].square()
+            + xp_coordinates[..., 5].square()
         ).sqrt()
         gamma = (
-            1 + (p / (beam.species.mass_kg * constants.speed_of_light)) ** 2
+            1 + (p / (beam.species.mass_kg * constants.speed_of_light)).square()
         ).sqrt()
 
         beam.particles[..., 1] = xp_coordinates[..., 1] / p0.unsqueeze(-1)
@@ -1224,7 +1230,7 @@ class ParticleBeam(Beam):
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
         zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        p = (momentum.square() * 2 - px.square() - py.square()).sqrt()
+        p = (momentum.square() - px.square() - py.square()).sqrt()
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px

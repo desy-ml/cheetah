@@ -63,7 +63,7 @@ class HorizontalCorrector(Element):
         tm[..., 0, 1] = self.length
         tm[..., 1, 6] = self.angle
         tm[..., 2, 3] = self.length
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
+        tm[..., 4, 5] = -self.length / beta.square() * igamma2
 
         return tm
 

@@ -308,13 +308,12 @@ class Dipole(Element):
                 (1 + g.unsqueeze(-1) * x)
                 * self.length.unsqueeze(-1)
                 * bmadx.sinc(self.angle).unsqueeze(-1)
-            )
-            ** 2
+            ).square()
         )
 
         x2_t1 = x * self.angle.cos().unsqueeze(-1) + self.length.unsqueeze(
             -1
-        ) ** 2 * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
+        ).square() * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
 
         x2_t2 = (((self.angle.unsqueeze(-1) + phi1).cos().square()) + gp * alpha).sqrt()
         x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
@@ -326,7 +325,7 @@ class Dipole(Element):
 
         Lcu = (
             x2
-            - self.length.unsqueeze(-1) ** 2
+            - self.length.square().unsqueeze(-1)
             * g.unsqueeze(-1)
             * bmadx.cosc(self.angle.unsqueeze(-1))
             - x * (self.angle.cos().unsqueeze(-1))
