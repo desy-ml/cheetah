@@ -19,9 +19,9 @@ def cheetah_to_bmad_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute p0c and Bmad z, pz
-    p0c = torch.sqrt(ref_energy**2 - mc2**2)
+    p0c = torch.sqrt(ref_energy.square() - mc2.square())
     energy = ref_energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
-    p = torch.sqrt(energy**2 - mc2**2)
+    p = torch.sqrt(energy.square() - mc2.square())
     beta = p / energy
     z = -beta * tau
     pz = (p - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -44,9 +44,9 @@ def bmad_to_cheetah_z_pz(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Compute ref_energy and Cheetah tau, delta
-    ref_energy = torch.sqrt(p0c**2 + mc2**2)
+    ref_energy = torch.sqrt(p0c.square() + mc2.square())
     p = (1 + pz) * p0c.unsqueeze(-1)
-    energy = torch.sqrt(p**2 + mc2**2)
+    energy = torch.sqrt(p.square() + mc2.square())
     beta = p / energy
     tau = -z / beta
     delta = (energy - ref_energy.unsqueeze(-1)) / p0c.unsqueeze(-1)
@@ -194,19 +194,21 @@ def low_energy_z_correction(
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square())
     )
-    beta0 = p0c / torch.sqrt(p0c**2 + mc2**2)
-    e_tot = torch.sqrt(p0c**2 + mc2**2)
+    beta0 = p0c / torch.sqrt(p0c.square() + mc2.square())
+    e_tot = torch.sqrt(p0c.square() + mc2.square())
 
-    evaluation = mc2 * (beta0.unsqueeze(-1) * pz) ** 2
+    evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
     dz = ds.unsqueeze(-1) * pz * (
         1
-        - 3 * (pz * beta0.unsqueeze(-1) ** 2) / 2
-        + pz**2
-        * beta0.unsqueeze(-1) ** 2
-        * (2 * beta0.unsqueeze(-1) ** 2 - (mc2 / e_tot.unsqueeze(-1)) ** 2 / 2)
-    ) * (mc2 / e_tot.unsqueeze(-1)) ** 2 * (evaluation < 3e-7 * e_tot.unsqueeze(-1)) + (
+        - 3 * (pz * beta0.square().unsqueeze(-1)) / 2
+        + pz.square()
+        * beta0.square().unsqueeze(-1)
+        * (2 * beta0.square().unsqueeze(-1) - (mc2 / e_tot.unsqueeze(-1)).square() / 2)
+    ) * (mc2 / e_tot.unsqueeze(-1)).square() * (
+        evaluation < 3e-7 * e_tot.unsqueeze(-1)
+    ) + (
         ds.unsqueeze(-1) * (beta - beta0.unsqueeze(-1)) / beta0.unsqueeze(-1)
     ) * (
         evaluation >= 3e-7 * e_tot.unsqueeze(-1)
@@ -251,8 +253,8 @@ def calculate_quadrupole_coefficients(
     a22 = cx
 
     c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4
-    c2 = -k1 * sx**2 / (2 * rel_p)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p**2)
+    c2 = -k1 * sx.square() / (2 * rel_p)
+    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p.square())
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
@@ -281,13 +283,14 @@ def track_a_drift(
     P = 1.0 + pz_in  # Particle's total momentum over p0
     Px = px_in / P  # Particle's 'x' momentum over p0
     Py = py_in / P  # Particle's 'y' momentum over p0
-    Pxy2 = Px**2 + Py**2  # Particle's transverse mometum^2 over p0^2
+    Pxy2 = Px.square() + Py.square()  # Particle's transverse mometum^2 over p0^2
     Pl = torch.sqrt(1.0 - Pxy2)  # Particle's longitudinal momentum over p0
 
     # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
     dz = length.unsqueeze(-1) * (
         sqrt_one(
-            (mc2**2 * (2 * pz_in + pz_in**2)) / ((p0c.unsqueeze(-1) * P) ** 2 + mc2**2)
+            (mc2.square() * (2 * pz_in + pz_in.square()))
+            / ((p0c.unsqueeze(-1) * P).square() + mc2.square())
         )
         + sqrt_one(-Pxy2) / Pl
     )
@@ -304,7 +307,7 @@ def particle_rf_time(z, pz, p0c, mc2):
     beta = (
         (1 + pz)
         * p0c.unsqueeze(-1)
-        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)) ** 2 + mc2**2)
+        / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square())
     )
     time = -z / (beta * speed_of_light)
 
@@ -317,5 +320,5 @@ def sinc(x):
 
 
 def cosc(x):
-    """cosc(x) = (cos(x)-1)/x**2 = -1/2 [sinc(x/2)]**2"""
-    return -0.5 * sinc(x / 2) ** 2
+    """cosc(x) = (cos(x)-1)/x^2 = -1/2 [sinc(x/2)]^2"""
+    return -0.5 * sinc(x / 2).square()
