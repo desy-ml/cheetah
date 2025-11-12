@@ -100,7 +100,7 @@ def test_transform_particles_with_angles():
             transformed_beam.particles[..., i],
             beam.particles[..., i] + offset,
             atol=1e-6,
-        ), "Particle transformation is incorrect"
+        )
 
     patch_with_angles = cheetah.Patch(
         offset=torch.tensor([0.1, 0.2, 0.0]),
@@ -127,7 +127,7 @@ def test_transform_particles_with_angles():
             transformed_beam.particles[..., i],
             beam.particles[..., i] + offset,
             atol=1e-6,
-        ), "Particle transformation is incorrect"
+        )
 
 
 def test_jacobian():
@@ -160,6 +160,4 @@ def test_jacobian():
         ]
     )
 
-    assert torch.allclose(
-        J[:6, :6], gt_J, atol=5e-4, rtol=1e-4
-    ), "Jacobian is incorrect"
+    assert torch.allclose(J[:6, :6], gt_J, atol=5e-4, rtol=1e-4)
