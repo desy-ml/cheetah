@@ -24,7 +24,7 @@ def test_tracking_in_segment():
     )
     segment.track(beam)
 
-    # test tracking with defaults
+    # Test tracking with defaults
     patch = Patch()
 
     segment = Segment(
@@ -38,7 +38,7 @@ def test_tracking_in_segment():
 
 
 def test_patch_with_vectorization():
-    """test that patch works with vectorized beams"""
+    """Test that patch works with vectorized beams."""
     beam = ParticleBeam(torch.zeros(4, 10, 7), energy=torch.tensor(1.0e9))
     patch = Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
@@ -59,9 +59,7 @@ def test_patch_with_vectorization():
 
 
 def test_patch_rotation_matrix():
-    """
-    Test the Patch element functionality.
-    """
+    """Test the Patch element functionality."""
 
     pitches = [
         torch.tensor((0.0, 0.0)),
@@ -123,9 +121,7 @@ def test_patch_rotation_matrix():
 
 
 def test_patch_length_property():
-    """
-    Test the Patch element's length property.
-    """
+    """Test the Patch element's length property."""
     patch = Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
@@ -141,9 +137,7 @@ def test_patch_length_property():
 
 
 def test_patch_transform_particles():
-    """
-    Test the Patch element's transform_particles method.
-    """
+    """Test the Patch element's transform_particles method."""
     patch = Patch(
         offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
@@ -195,46 +189,11 @@ def test_jacobian():
 
     gt_J = torch.tensor(
         [
-            [
-                0.8337550,
-                0.1918709,
-                0.5583533,
-                0.1284931,
-                0.0000000,
-                0.0000000,
-            ],
-            [
-                0.0000000,
-                0.7987913,
-                0.0000000,
-                0.5981943,
-                0.0000000,
-                -0.0640007,
-            ],
-            [
-                -0.7767232,
-                -0.1787462,
-                1.0371877,
-                0.2386865,
-                0.0000000,
-                0.0000000,
-            ],
-            [
-                0.0000000,
-                -0.4300164,
-                0.0000000,
-                0.6421174,
-                0.0000000,
-                0.6346425,
-            ],
-            [
-                0.5463025,
-                0.1257198,
-                -0.6225084,
-                -0.1432570,
-                1.0000000,
-                0.0004628,
-            ],
+            [0.8337550, 0.1918709, 0.5583533, 0.1284931, 0.0000000, 0.0000000],
+            [0.0000000, 0.7987913, 0.0000000, 0.5981943, 0.0000000, -0.0640007],
+            [-0.7767232, -0.1787462, 1.0371877, 0.2386865, 0.0000000, 0.0000000],
+            [0.0000000, -0.4300164, 0.0000000, 0.6421174, 0.0000000, 0.6346425],
+            [0.5463025, 0.1257198, -0.6225084, -0.1432570, 1.0000000, 0.0004628],
             [0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 1.0000000],
         ]
     )
@@ -268,16 +227,10 @@ def test_patch_transform_particles_with_angles():
 
     transformed_beam = patch_with_angles.transform_particles(beam)
 
-    # expected offsets from Bmad - note potential issue with the change in energy here
+    # Expected offsets from Bmad - note potential issue with the change in energy here
     # TODO: fix potential energy issue
     bmad_offsets = torch.tensor(
-        [
-            -5.426011e-02,
-            -4.794255e-01,
-            -2.278988e-01,
-            4.207355e-01,
-            -5.28948e-02,
-        ]
+        [-5.426011e-02, -4.794255e-01, -2.278988e-01, 4.207355e-01, -5.28948e-02]
     )
     for i, offset in zip(range(5), bmad_offsets):
         assert torch.allclose(
@@ -304,13 +257,7 @@ def test_patch_transform_particles_with_angles():
 
     transformed_beam = patch_with_angles.transform_particles(beam)
     bmad_offsets = torch.tensor(
-        [
-            -1.950462e-01,
-            -6.400071e-02,
-            -1.297652e-01,
-            6.346425e-01,
-            1.605987e-02,
-        ]
+        [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, 1.605987e-02]
     )
     for i, offset in zip(range(5), bmad_offsets):
         assert torch.allclose(
