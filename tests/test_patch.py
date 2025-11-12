@@ -44,35 +44,26 @@ def test_length():
 
 
 def test_transform_particles():
-    """Test the Patch element's transform_particles method."""
-    patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.0),
-        pitch=torch.tensor((0.0, 0.0)),
-        tilt=torch.tensor(0.0),
-        energy_offset=torch.tensor(0.0),
-        energy_setpoint=torch.tensor(0.0),
+    """
+    Test that tracking a beam through a Patch element correctly applies the offset to
+    particles placed at the origin.
+    """
+    # Beam with 10 particles placed at the origin
+    incoming = cheetah.ParticleBeam(
+        particles=torch.zeros(10, 7), energy=torch.tensor(1.0)
     )
 
-    beam = cheetah.ParticleBeam(
-        particles=torch.zeros(
-            10, 7
-        ),  # 10 particles with 3D position and 3D momentum at the origin
-        energy=torch.tensor(1.0),
-    )
+    patch = cheetah.Patch(offset=torch.tensor([0.1, 0.2, 0.3]))
 
-    transformed_beam = patch._transform_particles(beam)
-    assert torch.allclose(
-        transformed_beam.particles[..., 0], beam.particles[..., 0] - 0.1, atol=1e-6
-    ), "Particle transformation is incorrect"
-    assert torch.allclose(
-        transformed_beam.particles[..., 2], beam.particles[..., 2] - 0.2, atol=1e-6
-    ), "Particle transformation is incorrect"
+    outgoing = patch.track(incoming)
 
-    for i in [1, 3, 4, 5, 6]:
-        assert torch.allclose(
-            transformed_beam.particles[..., i], beam.particles[..., i], atol=1e-6
-        ), "Particle transformation is incorrect"
+    assert (outgoing.x == -0.1).all()
+    assert (outgoing.px == incoming.px).all()
+    assert (outgoing.y == -0.2).all()
+    assert (outgoing.py == incoming.py).all()
+    assert (outgoing.tau == incoming.tau).all()
+    assert (outgoing.p == incoming.p).all()
+    assert outgoing.s == 0.3
 
 
 def test_jacobian():
