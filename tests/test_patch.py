@@ -28,23 +28,18 @@ import cheetah
 def test_rotation_matrix(pitch, tilt, correct_rotation_matrix):
     """Test that the `Patch` element's rotation matrix is computed correctly."""
     patch = cheetah.Patch(pitch=pitch, tilt=tilt)
-    assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix, atol=1e-6)
+    assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix)
 
 
 def test_length():
-    """Test the Patch element's length property."""
-    patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.0),
-        pitch=torch.tensor((0.0, 0.0)),
-        tilt=torch.tensor(0.0),
-        energy_offset=torch.tensor(0.0),
-        energy_setpoint=torch.tensor(0.0),
-    )
-    expected_length = 0.3  # since no rotation, length should be z-offset
-    assert torch.isclose(
-        patch.length, torch.tensor(expected_length), atol=1e-6
-    ), "Length property is incorrect"
+    """
+    Test that the Patch element's length property is computed correctly using a simple
+    case with no rotation, where the length should equal the z-offset.
+    """
+    correct_length = 0.3
+    patch = cheetah.Patch(offset=torch.tensor([0.1, 0.2, correct_length]))
+
+    assert torch.isclose(patch.length, torch.tensor(correct_length))
 
 
 def test_transform_particles():
