@@ -85,7 +85,7 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.voltage != 0).item()
+        return (self.voltage != 0).any().item()
 
     @property
     def is_skippable(self) -> bool:
@@ -166,18 +166,18 @@ class TransverseDeflectingCavity(Element):
 
         # TODO: Assigning px to px is really bad practice and should be separated into
         # two separate variables
-        px = px + voltage.unsqueeze(-1) * torch.sin(phase)
+        px = px + voltage.unsqueeze(-1) * phase.sin()
 
         beta_old = (
             (1 + pz)
             * p0c.unsqueeze(-1)
-            / torch.sqrt(((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square())
+            / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
         )
         E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * torch.cos(phase) * k_rf.unsqueeze(
+        E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
             -1
         ) * x * p0c.unsqueeze(-1)
-        pc = torch.sqrt(E_new.square() - mc2.square())
+        pc = (E_new.square() - mc2.square()).sqrt()
         beta = pc / E_new
 
         pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)

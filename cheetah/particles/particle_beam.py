@@ -435,20 +435,20 @@ class ParticleBeam(Beam):
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-        sigma_x = torch.sqrt(
+        sigma_x = (
             beta_x * emittance_x + dispersion_x.square() * sigma_p.square()
-        )
-        sigma_px = torch.sqrt(
+        ).sqrt()
+        sigma_px = (
             emittance_x * (1 + alpha_x.square()) / beta_x
             + dispersion_px.square() * sigma_p.square()
-        )
-        sigma_y = torch.sqrt(
+        ).sqrt()
+        sigma_y = (
             beta_y * emittance_y + dispersion_y.square() * sigma_p.square()
-        )
-        sigma_py = torch.sqrt(
+        ).sqrt()
+        sigma_py = (
             emittance_y * (1 + alpha_y.square()) / beta_y
             + dispersion_py.square() * sigma_p.square()
-        )
+        ).sqrt()
         cov_xpx = (
             -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p.square()
         )
@@ -574,16 +574,16 @@ class ParticleBeam(Beam):
         # r: radius, 3rd root for uniform distribution in sphere volume
         # theta: polar angle, arccos for uniform distribution in sphere surface
         # phi: azimuthal angle, uniform between 0 and 2*pi
-        r = torch.pow(torch.rand(*vector_shape, num_particles, **factory_kwargs), 1 / 3)
-        theta = torch.arccos(
+        r = (torch.rand(*vector_shape, num_particles, **factory_kwargs)).pow(1 / 3)
+        theta = (
             2 * torch.rand(*vector_shape, num_particles, **factory_kwargs) - 1
-        )
+        ).arccos()
         phi = torch.rand(*vector_shape, num_particles, **factory_kwargs) * 2 * torch.pi
 
         # Convert to Cartesian coordinates
-        x = r * torch.sin(theta) * torch.cos(phi)
-        y = r * torch.sin(theta) * torch.sin(phi)
-        tau = r * torch.cos(theta)
+        x = r * theta.sin() * phi.cos()
+        y = r * theta.sin() * phi.sin()
+        tau = r * theta.cos()
 
         # Replace the spatial coordinates with the generated ones.
         # This involves distorting the unit sphere into the desired ellipsoid.
@@ -834,7 +834,7 @@ class ParticleBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         species = Species(particle_group.species, **factory_kwargs)
-        p0c = torch.sqrt(energy.square() - species.mass_eV.square())
+        p0c = (energy.square() - species.mass_eV.square()).sqrt()
 
         x = torch.as_tensor(particle_group.x, **factory_kwargs)
         y = torch.as_tensor(particle_group.y, **factory_kwargs)
@@ -901,8 +901,8 @@ class ParticleBeam(Beam):
 
         px = self.px * self.p0c
         py = self.py * self.p0c
-        p_total = torch.sqrt(self.energies.square() - self.species.mass_eV.square())
-        pz = torch.sqrt(p_total.square() - px.square() - py.square())
+        p_total = (self.energies.square() - self.species.mass_eV.square()).sqrt()
+        pz = (p_total.square() - px.square() - py.square()).sqrt()
         t = self.tau / constants.speed_of_light
         # TODO: To be discussed
         status = self.survival_probabilities > 0.5
@@ -1188,14 +1188,14 @@ class ParticleBeam(Beam):
             * beam.species.mass_kg
             * constants.speed_of_light
         )
-        p = torch.sqrt(
+        p = (
             xp_coordinates[..., 1].square()
             + xp_coordinates[..., 3].square()
             + xp_coordinates[..., 5].square()
-        )
-        gamma = torch.sqrt(
+        ).sqrt()
+        gamma = (
             1 + (p / (beam.species.mass_kg * constants.speed_of_light)).square()
-        )
+        ).sqrt()
 
         beam.particles[..., 1] = xp_coordinates[..., 1] / p0.unsqueeze(-1)
         beam.particles[..., 3] = xp_coordinates[..., 3] / p0.unsqueeze(-1)
@@ -1224,13 +1224,13 @@ class ParticleBeam(Beam):
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
             1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
-        beta = torch.sqrt(1 - 1 / gamma.square())
+        beta = (1 - gamma.square().reciprocal()).sqrt()
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
         zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        p = torch.sqrt(momentum.square() - px.square() - py.square())
+        p = (momentum.square() - px.square() - py.square()).sqrt()
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px
@@ -1567,7 +1567,7 @@ class ParticleBeam(Beam):
     @property
     def total_charge(self) -> torch.Tensor:
         """Total charge of the beam in C, taking into account particle losses."""
-        return torch.sum(self.particle_charges * self.survival_probabilities, dim=-1)
+        return (self.particle_charges * self.survival_probabilities).sum(dim=-1)
 
     @property
     def num_particles(self) -> int:
@@ -1597,8 +1597,8 @@ class ParticleBeam(Beam):
         Mean of the :math:`x` coordinates of the particles, weighted by their
         survival probability.
         """
-        return torch.sum(
-            (self.x * self.survival_probabilities), dim=-1
+        return (self.x * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1625,8 +1625,8 @@ class ParticleBeam(Beam):
         Mean of the :math:`px` coordinates of the particles, weighted by their
         survival probability.
         """
-        return torch.sum(
-            (self.px * self.survival_probabilities), dim=-1
+        return (self.px * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1649,8 +1649,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_y(self) -> float | None:
-        return torch.sum(
-            (self.y * self.survival_probabilities), dim=-1
+        return (self.y * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1669,8 +1669,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_py(self) -> torch.Tensor | None:
-        return torch.sum(
-            (self.py * self.survival_probabilities), dim=-1
+        return (self.py * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1689,8 +1689,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_tau(self) -> torch.Tensor | None:
-        return torch.sum(
-            (self.tau * self.survival_probabilities), dim=-1
+        return (self.tau * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1709,8 +1709,8 @@ class ParticleBeam(Beam):
 
     @property
     def mu_p(self) -> torch.Tensor | None:
-        return torch.sum(
-            (self.p * self.survival_probabilities), dim=-1
+        return (self.p * self.survival_probabilities).sum(
+            dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
@@ -1797,7 +1797,7 @@ class ParticleBeam(Beam):
     @property
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
-        return torch.sqrt(self.energies.square() - self.species.mass_eV.square())
+        return (self.energies.square() - self.species.mass_eV.square()).sqrt()
 
     def clone(self) -> "ParticleBeam":
         return self.__class__(
