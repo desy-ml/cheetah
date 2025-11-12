@@ -295,7 +295,9 @@ class Cavity(Element):
                 ),
                 torch.zeros_like(dE),
             )
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            r56 = (
+                -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
+            )
             r65 = (
                 k
                 * torch.sin(phi)
