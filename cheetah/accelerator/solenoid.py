@@ -70,7 +70,7 @@ class Solenoid(Element):
         c = (self.length * self.k).cos()
         s = (self.length * self.k).sin()
 
-        s_k = torch.where(self.k == 0.0, self.length, s / self.k)
+        s_k = (self.length * self.k / torch.pi).sinc() * self.length
 
         vector_shape = torch.broadcast_shapes(
             self.length.shape, self.k.shape, energy.shape
