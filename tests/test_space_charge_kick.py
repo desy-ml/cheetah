@@ -34,7 +34,7 @@ def test_cold_uniform_beam_expansion(energy):
     elementary_charge = torch.tensor(constants.elementary_charge)
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma**2)
+    beta = torch.sqrt(1 - 1 / gamma.square())
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=100_000,
@@ -89,7 +89,7 @@ def test_vectorized_cold_uniform_beam_expansion():
     elementary_charge = torch.tensor(constants.elementary_charge)
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma**2)
+    beta = torch.sqrt(1 - 1 / gamma.square())
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=100_000,
@@ -140,7 +140,7 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma**2)
+    beta = torch.sqrt(1 - 1 / gamma.square())
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=10_000,

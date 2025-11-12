@@ -196,14 +196,14 @@ class SpaceChargeKick(Element):
         and is more robust to numerical errors.
         """
 
-        r = torch.sqrt(x**2 + y**2 + tau**2)
+        r = torch.sqrt(x.square() + y.square() + tau.square())
         integrated_potential = (
-            -0.5 * tau**2 * torch.atan(x * y / (tau * r))
-            - 0.5 * y**2 * torch.atan(x * tau / (y * r))
-            - 0.5 * x**2 * torch.atan(y * tau / (x * r))
-            + y * tau * torch.asinh(x / torch.sqrt(y**2 + tau**2))
-            + x * tau * torch.asinh(y / torch.sqrt(x**2 + tau**2))
-            + x * y * torch.asinh(tau / torch.sqrt(x**2 + y**2))
+            -0.5 * tau.square() * torch.atan(x * y / (tau * r))
+            - 0.5 * y.square() * torch.atan(x * tau / (y * r))
+            - 0.5 * x.square() * torch.atan(y * tau / (x * r))
+            + y * tau * torch.asinh(x / torch.sqrt(y.square() + tau.square()))
+            + x * tau * torch.asinh(y / torch.sqrt(x.square() + tau.square()))
+            + x * y * torch.asinh(tau / torch.sqrt(x.square() + y.square()))
         )
         return integrated_potential
 
