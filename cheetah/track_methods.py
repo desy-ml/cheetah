@@ -3,7 +3,8 @@
 import torch
 
 from cheetah.particles import Species
-from cheetah.utils import autograd, compute_relativistic_factors
+from cheetah.utils import compute_relativistic_factors
+from cheetah.utils.autograd import si1mdiv
 
 
 def base_rmatrix(
@@ -47,7 +48,7 @@ def base_rmatrix(
     dx = hx * 0.5 * length.square() * r.square().real
 
     r56 = (
-        hx.square() * length.pow(3) * autograd.si1mdiv(kx2) / beta.square()
+        hx.square() * length.pow(3) * si1mdiv(kx2) / beta.square()
     ) - length / beta.square() * igamma2
 
     vector_shape = torch.broadcast_shapes(
