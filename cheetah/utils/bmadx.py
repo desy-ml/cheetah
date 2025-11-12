@@ -202,10 +202,10 @@ def low_energy_z_correction(
     evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
     dz = ds.unsqueeze(-1) * pz * (
         1
-        - 3 * (pz * beta0.unsqueeze(-1).square()) / 2
+        - 3 * (pz * beta0.square().unsqueeze(-1)) / 2
         + pz.square()
-        * beta0.unsqueeze(-1).square()
-        * (2 * beta0.unsqueeze(-1).square() - (mc2 / e_tot.unsqueeze(-1)).square() / 2)
+        * beta0.square().unsqueeze(-1)
+        * (2 * beta0.square().unsqueeze(-1) - (mc2 / e_tot.unsqueeze(-1)).square() / 2)
     ) * (mc2 / e_tot.unsqueeze(-1)).square() * (
         evaluation < 3e-7 * e_tot.unsqueeze(-1)
     ) + (
