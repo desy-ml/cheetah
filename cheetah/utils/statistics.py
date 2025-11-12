@@ -38,10 +38,9 @@ def unbiased_weighted_variance(
     :param dim: Dimension along which to compute the variance.
     :return: Unbiased weighted variance.
     """
-    weighted_mean = (inputs * weights).sum(dim=dim) / weights.sum(dim=dim)
-    correction_factor = weights.sum(dim=dim) - (weights**2).sum(
-        dim=dim
-    ) / weights.sum(dim=dim)
+    sum_of_weights = weights.sum(dim=dim)
+    weighted_mean = (inputs * weights).sum(dim=dim) / sum_of_weights
+    correction_factor = sum_of_weights - (weights**2).sum(dim=dim) / sum_of_weights
     variance = (weights * (inputs - weighted_mean.unsqueeze(-1)) ** 2).sum(
         dim=dim
     ) / correction_factor
