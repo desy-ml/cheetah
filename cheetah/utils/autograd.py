@@ -1,6 +1,16 @@
 import torch
 
 
+def log1pdiv(x: torch.Tensor) -> torch.Tensor:
+    """Calculate log(1+x)/x with proper removal of its singularity at 0."""
+    return Log1PDiv.apply(x)
+
+
+def si1mdiv(x: torch.Tensor) -> torch.Tensor:
+    """Calculate (1 - si(sqrt(x)))/x with proper removal of its singularity at 0."""
+    return Si1MDiv.apply(x)
+
+
 class Log1PDiv(torch.autograd.Function):
     """
     Custom autograd function for the compound expression log(1+x)/x. The singularity at
@@ -35,11 +45,6 @@ class Log1PDiv(torch.autograd.Function):
             torch.where(x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(()))
             * grad_input
         )
-
-
-def log1pdiv(x: torch.Tensor) -> torch.Tensor:
-    """Calculate log(1+x)/x with proper removal of its singularity at 0."""
-    return Log1PDiv.apply(x)
 
 
 class Si1MDiv(torch.autograd.Function):
@@ -81,8 +86,4 @@ class Si1MDiv(torch.autograd.Function):
         sx = (torch.sinc(sqrt_x / torch.pi) - sqrt_x.cos()).real / (2 * x)
 
         return torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120) * grad_input
-
-
-def si1mdiv(x: torch.Tensor) -> torch.Tensor:
-    """Calculate (1 - si(sqrt(x)))/x with proper removal of its singularity at 0."""
-    return Si1MDiv.apply(x)
+        return torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120) * grad_input
