@@ -63,7 +63,7 @@ def _kde_marginal_pdf(
     kernel_values = (
         weights
         * (-0.5 * (residuals / sigma).pow(2)).exp()
-        / (2 * math.pi * sigma**2).sqrt()
+        / (2 * math.pi * sigma.square()).sqrt()
     )
 
     prob_mass = kernel_values.sum(dim=-2)

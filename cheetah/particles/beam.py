@@ -432,7 +432,9 @@ class Beam(ABC, nn.Module):
         Projected emittance of the beam in x direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return (self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2).sqrt()
+        return (
+            self.sigma_x.square() * self.sigma_px.square() - self.cov_xpx.square()
+        ).sqrt()
 
     @property
     def emittance_x(self) -> torch.Tensor:
@@ -443,9 +445,14 @@ class Beam(ABC, nn.Module):
 
         return (
             (
-                (self.sigma_x**2 - self.cov_xp**2 / self.sigma_p**2)
-                * (self.sigma_px**2 - self.cov_pxp**2 / self.sigma_p**2)
-                - (self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p**2) ** 2
+                (self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square())
+                * (
+                    self.sigma_px.square()
+                    - self.cov_pxp.square() / self.sigma_p.square()
+                )
+                - (
+                    self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square()
+                ).square()
             )
         ).sqrt()
 
@@ -472,7 +479,9 @@ class Beam(ABC, nn.Module):
         """Projected emittance of the beam in y direction in m.
         This is determined from the beam sizes without dispersion correction.
         """
-        return (self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2).sqrt()
+        return (
+            self.sigma_y.square() * self.sigma_py.square() - self.cov_ypy.square()
+        ).sqrt()
 
     @property
     def emittance_y(self) -> torch.Tensor:
@@ -482,9 +491,11 @@ class Beam(ABC, nn.Module):
         """
 
         return (
-            (self.sigma_y**2 - self.cov_yp**2 / self.sigma_p**2)
-            * (self.sigma_py**2 - self.cov_pyp**2 / self.sigma_p**2)
-            - (self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p**2) ** 2
+            (self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square())
+            * (self.sigma_py.square() - self.cov_pyp.square() / self.sigma_p.square())
+            - (
+                self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
+            ).square()
         ).sqrt()
 
     @property

@@ -435,11 +435,15 @@ class ParticleBeam(Beam):
             cov_taup if cov_taup is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-        sigma_x = (beta_x * emittance_x + dispersion_x**2 * sigma_p**2).sqrt()
+        sigma_x = (
+            beta_x * emittance_x + dispersion_x.square() * sigma_p.square()
+        ).sqrt()
         sigma_px = (
             emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
         ).sqrt()
-        sigma_y = (beta_y * emittance_y + dispersion_y**2 * sigma_p**2).sqrt()
+        sigma_y = (
+            beta_y * emittance_y + dispersion_y.square() * sigma_p.square()
+        ).sqrt()
         sigma_py = (
             emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
         ).sqrt()
@@ -824,7 +828,7 @@ class ParticleBeam(Beam):
         factory_kwargs = {"device": device, "dtype": dtype}
 
         species = Species(particle_group.species, **factory_kwargs)
-        p0c = (energy**2 - species.mass_eV**2).sqrt()
+        p0c = (energy.square() - species.mass_eV.square()).sqrt()
 
         x = torch.as_tensor(particle_group.x, **factory_kwargs)
         y = torch.as_tensor(particle_group.y, **factory_kwargs)
@@ -891,8 +895,8 @@ class ParticleBeam(Beam):
 
         px = self.px * self.p0c
         py = self.py * self.p0c
-        p_total = (self.energies**2 - self.species.mass_eV**2).sqrt()
-        pz = (p_total**2 - px**2 - py**2).sqrt()
+        p_total = (self.energies.square() - self.species.mass_eV.square()).sqrt()
+        pz = (p_total.square() - px.square() - py.square()).sqrt()
         t = self.tau / constants.speed_of_light
         # TODO: To be discussed
         status = self.survival_probabilities > 0.5
@@ -1214,13 +1218,13 @@ class ParticleBeam(Beam):
         gamma = self.relativistic_gamma.unsqueeze(-1) * (
             1.0 + self.particles[..., 5] * self.relativistic_beta.unsqueeze(-1)
         )
-        beta = (1 - 1 / gamma**2).sqrt()
+        beta = (1 - gamma.square().reciprocal()).sqrt()
         momentum = gamma * self.species.mass_kg * beta * constants.speed_of_light
 
         px = self.particles[..., 1] * p0.unsqueeze(-1)
         py = self.particles[..., 3] * p0.unsqueeze(-1)
         zs = self.particles[..., 4] * -self.relativistic_beta.unsqueeze(-1)
-        p = (momentum**2 - px**2 - py**2).sqrt()
+        p = (momentum.square() * 2 - px.square() - py.square()).sqrt()
 
         xp_coords = self.particles.clone()
         xp_coords[..., 1] = px
@@ -1787,7 +1791,7 @@ class ParticleBeam(Beam):
     @property
     def momenta(self) -> torch.Tensor:
         """Momenta of the individual particles."""
-        return (self.energies**2 - self.species.mass_eV**2).sqrt()
+        return (self.energies.square() - self.species.mass_eV.square()).sqrt()
 
     def clone(self) -> "ParticleBeam":
         return self.__class__(

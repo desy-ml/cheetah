@@ -183,7 +183,7 @@ class Cavity(Element):
                             - 2
                         )
                         / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
-                        * phi.sin() ** 2
+                        * phi.sin().square()
                         - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
                         / (beta1 * gamma1 * (gamma0 - gamma1) ** 2)
                         * phi.cos()
@@ -264,8 +264,8 @@ class Cavity(Element):
                 / energy
                 * log1pdiv(delta_energy / energy)
             )
-            beta0 = (1 - 1 / Ei**2).sqrt()
-            beta1 = (1 - 1 / Ef**2).sqrt()
+            beta0 = (1 - Ei.square().reciprocal()).sqrt()
+            beta1 = (1 - Ef.square().reciprocal()).sqrt()
 
             r11 = alpha.cos() - math.sqrt(2.0) * phi.cos() * alpha.sin()
 
@@ -279,7 +279,7 @@ class Cavity(Element):
             r21 = -(
                 effective_voltage
                 / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
-                * (0.5 + phi.cos() ** 2)
+                * (0.5 + phi.cos().square())
                 * alpha.sin()
             )
 

@@ -295,11 +295,15 @@ class ParameterBeam(Beam):
             beta_y > 0
         ).all(), "Beta function in y direction must be larger than 0 everywhere."
 
-        sigma_x = (emittance_x * beta_x + dispersion_x**2 * sigma_p**2).sqrt()
+        sigma_x = (
+            emittance_x * beta_x + dispersion_x.square() * sigma_p.square()
+        ).sqrt()
         sigma_px = (
             emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
         ).sqrt()
-        sigma_y = (emittance_y * beta_y + dispersion_y**2 * sigma_p**2).sqrt()
+        sigma_y = (
+            emittance_y * beta_y + dispersion_y.square() * sigma_p.square()
+        ).sqrt()
         sigma_py = (
             emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
         ).sqrt()
