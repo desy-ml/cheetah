@@ -67,8 +67,8 @@ class Solenoid(Element):
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
-        c = torch.cos(self.length * self.k)
-        s = torch.sin(self.length * self.k)
+        c = (self.length * self.k).cos()
+        s = (self.length * self.k).sin()
 
         s_k = torch.where(self.k == 0.0, self.length, s / self.k)
 
@@ -106,7 +106,7 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k != 0).item()
+        return (self.k != 0).any().item()
 
     @property
     def is_skippable(self) -> bool:

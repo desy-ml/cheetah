@@ -259,7 +259,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k1 != 0).item()
+        return (self.k1 != 0).any().item()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -300,7 +300,7 @@ class Quadrupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )
