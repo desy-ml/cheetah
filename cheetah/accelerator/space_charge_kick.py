@@ -417,8 +417,8 @@ class SpaceChargeKick(Element):
         inv_cell_size = cell_size.reciprocal()
         igamma2 = torch.zeros_like(beam.relativistic_gamma)
         igamma2[beam.relativistic_gamma != 0] = (
-            beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
-        ).reciprocal()
+            beam.relativistic_gamma[beam.relativistic_gamma != 0].square().reciprocal()
+        )
         potential = self._solve_poisson_equation(
             beam, xp_coordinates, cell_size, grid_dimensions
         )
