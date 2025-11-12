@@ -35,3 +35,11 @@ x.square()   # <-- This is faster (see #556)
 torch.sum(x)
 x.sum()   # <-- This is faster (see #556)
 ```
+
+### Dividing 1 by a tensor
+
+```python
+1 / x
+torch.reciprocal(x)
+x.reciprocal()   # <-- This is fastest (see #563)
+```
