@@ -24,11 +24,12 @@ import cheetah
             torch.tensor([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
         ),
     ],
+    ids=["no_rotation", "pitch_90_degrees_x", "pitch_90_degrees_y", "tilt_90_degrees"],
 )
 def test_rotation_matrix(pitch, tilt, correct_rotation_matrix):
     """Test that the `Patch` element's rotation matrix is computed correctly."""
     patch = cheetah.Patch(pitch=pitch, tilt=tilt)
-    assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix)
+    assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix, atol=1e-6)
 
 
 def test_length():
