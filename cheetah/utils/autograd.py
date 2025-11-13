@@ -82,7 +82,7 @@ class Si1MDiv(torch.autograd.Function):
         x, fx = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-        sx = (torch.sinc(sqrt_x / torch.pi) - sqrt_x.cos()).real / (2 * x)
+        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2 * x)
 
         return grad_output * torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120)
 
@@ -91,7 +91,7 @@ class Si1MDiv(torch.autograd.Function):
         x, fx = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-        sx = (torch.sinc(sqrt_x / torch.pi) - sqrt_x.cos()).real / (2 * x)
+        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2 * x)
 
         return torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120) * grad_input
 
@@ -123,7 +123,7 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        c, g_tilde, fx = ctx.saved_tensors
+        c, g_tilde, _ = ctx.saved_tensors
 
         grad_c = torch.where(
             g_tilde != 0,
@@ -139,3 +139,16 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
         )
 
         return grad_output * grad_c, grad_output * grad_g_tilde
+
+    def jvp(ctx, grad_c, grad_g_tilde):
+        c, g_tilde, fx = ctx.saved_tensors
+
+        return (
+            g_tilde
+            * (
+                (2.0 * c * grad_c + grad_g_tilde)
+                / (2.0 * (c.square() + g_tilde).sqrt())
+                - grad_c
+            )
+            - ((c.square() + g_tilde).sqrt() - c) * grad_g_tilde
+        ) / (g_tilde.square())

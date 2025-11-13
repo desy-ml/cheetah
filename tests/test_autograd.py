@@ -100,8 +100,8 @@ def test_sqrta2minusbdiva():
         func=sqrta2minusbdiva,
         inputs=(c, test_points),
         check_backward_ad=True,
-        # check_forward_ad=True,
+        check_forward_ad=True,
         check_batched_grad=True,
-        # check_batched_forward_grad=True,
+        check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
