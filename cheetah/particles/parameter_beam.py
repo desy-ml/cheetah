@@ -176,18 +176,18 @@ class ParameterBeam(Beam):
             cov_pyp,
         )
         cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
-        cov[..., 0, 0] = sigma_x**2
+        cov[..., 0, 0] = sigma_x.square()
         cov[..., 0, 1] = cov_xpx
         cov[..., 1, 0] = cov_xpx
-        cov[..., 1, 1] = sigma_px**2
-        cov[..., 2, 2] = sigma_y**2
+        cov[..., 1, 1] = sigma_px.square()
+        cov[..., 2, 2] = sigma_y.square()
         cov[..., 2, 3] = cov_ypy
         cov[..., 3, 2] = cov_ypy
-        cov[..., 3, 3] = sigma_py**2
-        cov[..., 4, 4] = sigma_tau**2
+        cov[..., 3, 3] = sigma_py.square()
+        cov[..., 4, 4] = sigma_tau.square()
         cov[..., 4, 5] = cov_taup
         cov[..., 5, 4] = cov_taup
-        cov[..., 5, 5] = sigma_p**2
+        cov[..., 5, 5] = sigma_p.square()
         cov[..., 0, 5] = cov_xp
         cov[..., 5, 0] = cov_xp
         cov[..., 1, 5] = cov_pxp
@@ -288,27 +288,37 @@ class ParameterBeam(Beam):
             else torch.tensor(0.0, **factory_kwargs)
         )
 
-        assert torch.all(
+        assert (
             beta_x > 0
-        ), "Beta function in x direction must be larger than 0 everywhere."
-        assert torch.all(
+        ).all(), "Beta function in x direction must be larger than 0 everywhere."
+        assert (
             beta_y > 0
-        ), "Beta function in y direction must be larger than 0 everywhere."
+        ).all(), "Beta function in y direction must be larger than 0 everywhere."
 
-        sigma_x = torch.sqrt(emittance_x * beta_x + dispersion_x**2 * sigma_p**2)
-        sigma_px = torch.sqrt(
-            emittance_x * (1 + alpha_x**2) / beta_x + dispersion_px**2 * sigma_p**2
+        sigma_x = (
+            emittance_x * beta_x + dispersion_x.square() * sigma_p.square()
+        ).sqrt()
+        sigma_px = (
+            emittance_x * (1 + alpha_x.square()) / beta_x
+            + dispersion_px.square() * sigma_p.square()
+        ).sqrt()
+        sigma_y = (
+            emittance_y * beta_y + dispersion_y.square() * sigma_p.square()
+        ).sqrt()
+        sigma_py = (
+            emittance_y * (1 + alpha_y.square()) / beta_y
+            + dispersion_py.square() * sigma_p.square()
+        ).sqrt()
+        cov_xpx = (
+            -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p.square()
         )
-        sigma_y = torch.sqrt(emittance_y * beta_y + dispersion_y**2 * sigma_p**2)
-        sigma_py = torch.sqrt(
-            emittance_y * (1 + alpha_y**2) / beta_y + dispersion_py**2 * sigma_p**2
+        cov_ypy = (
+            -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p.square()
         )
-        cov_xpx = -emittance_x * alpha_x + dispersion_x * dispersion_px * sigma_p**2
-        cov_ypy = -emittance_y * alpha_y + dispersion_y * dispersion_py * sigma_p**2
-        cov_xp = dispersion_x * sigma_p**2
-        cov_pxp = dispersion_px * sigma_p**2
-        cov_yp = dispersion_y * sigma_p**2
-        cov_pyp = dispersion_py * sigma_p**2
+        cov_xp = dispersion_x * sigma_p.square()
+        cov_pxp = dispersion_px * sigma_p.square()
+        cov_yp = dispersion_y * sigma_p.square()
+        cov_pyp = dispersion_py * sigma_p.square()
 
         return cls.from_parameters(
             sigma_x=sigma_x,
@@ -346,7 +356,7 @@ class ParameterBeam(Beam):
         mu[:6] = torch.as_tensor(parray.rparticles.mean(axis=1), **factory_kwargs)
 
         cov = torch.zeros(7, 7, **factory_kwargs)
-        cov[:6, :6] = torch.cov(torch.as_tensor(parray.rparticles, **factory_kwargs))
+        cov[:6, :6] = torch.as_tensor(parray.rparticles, **factory_kwargs).cov()
 
         energy = 1e9 * torch.as_tensor(parray.E, **factory_kwargs)
         total_charge = torch.as_tensor(parray.q_array, **factory_kwargs).sum()
@@ -378,7 +388,7 @@ class ParameterBeam(Beam):
         mu[:6] = torch.as_tensor(particles.mean(axis=0), **factory_kwargs)
 
         cov = torch.zeros(7, 7, **factory_kwargs)
-        cov[:6, :6] = torch.cov(torch.as_tensor(particles, **factory_kwargs).T)
+        cov[:6, :6] = torch.as_tensor(particles, **factory_kwargs).T.cov()
 
         energy = torch.as_tensor(energy, **factory_kwargs)
         total_charge = torch.as_tensor(particle_charges, **factory_kwargs).sum()
@@ -553,7 +563,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_x(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 0, 0], 1e-20))
+        return self.cov[..., 0, 0].clamp_min(1e-20).sqrt()
 
     @property
     def mu_px(self) -> torch.Tensor:
@@ -561,7 +571,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_px(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 1, 1], 1e-20))
+        return self.cov[..., 1, 1].clamp_min(1e-20).sqrt()
 
     @property
     def mu_y(self) -> torch.Tensor:
@@ -569,7 +579,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_y(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 2, 2], 1e-20))
+        return self.cov[..., 2, 2].clamp_min(1e-20).sqrt()
 
     @property
     def mu_py(self) -> torch.Tensor:
@@ -577,7 +587,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_py(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 3, 3], 1e-20))
+        return self.cov[..., 3, 3].clamp_min(1e-20).sqrt()
 
     @property
     def mu_tau(self) -> torch.Tensor:
@@ -585,7 +595,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_tau(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 4, 4], 1e-20))
+        return self.cov[..., 4, 4].clamp_min(1e-20).sqrt()
 
     @property
     def mu_p(self) -> torch.Tensor:
@@ -593,7 +603,7 @@ class ParameterBeam(Beam):
 
     @property
     def sigma_p(self) -> torch.Tensor:
-        return torch.sqrt(torch.clamp_min(self.cov[..., 5, 5], 1e-20))
+        return self.cov[..., 5, 5].clamp_min(1e-20).sqrt()
 
     @property
     def cov_xpx(self) -> torch.Tensor:
