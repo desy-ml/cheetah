@@ -15,7 +15,7 @@ class SuperimposedElement(Element):
     def __init__(
         self, 
         base_element: Element,
-        superimposed_element: dict[Element, float],
+        superimposed_element: Element,
         name = None, 
         sanitize_name = False
     ):
