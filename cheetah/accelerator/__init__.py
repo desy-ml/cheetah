@@ -17,3 +17,4 @@ from .space_charge_kick import SpaceChargeKick  # noqa: F401
 from .transverse_deflecting_cavity import TransverseDeflectingCavity  # noqa: F401
 from .undulator import Undulator  # noqa: F401
 from .vertical_corrector import VerticalCorrector  # noqa: F401
+from .superimposed import SuperimposedElement  # noqa: F401

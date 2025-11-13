@@ -1,0 +1,51 @@
+{
+    "version": "cheetah-0.7",
+    "title": "FullSegment",
+    "info": "This is a placeholder lattice description",
+    "root": "FullSegment",
+    "elements": {
+        "Drift": [
+            "Drift",
+            {
+                "tracking_method": "linear",
+                "length": 1.0
+            }
+        ],
+        "SuperimposedBPM": [
+            "SuperimposedElement",
+            {
+                "base_element": {
+                    "Quad": [
+                        "Quadrupole",
+                        {
+                            "tracking_method": "linear",
+                            "length": 1.0,
+                            "k1": 1.0,
+                            "misalignment": [
+                                0.0,
+                                0.0
+                            ],
+                            "tilt": 0.0,
+                            "num_steps": 1
+                        }
+                    ]
+                },
+                "superimposed_element": {
+                    "BPM1": [
+                        "BPM",
+                        {
+                            "is_active": false
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "lattices": {
+        "FullSegment": [
+            "Drift",
+            "SuperimposedBPM",
+            "Drift"
+        ]
+    }
+}
