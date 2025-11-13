@@ -1,6 +1,6 @@
 import torch
 
-from cheetah.utils.autograd import log1pdiv, si1mdiv
+from cheetah.utils.autograd import log1pdiv, si1mdiv, sqrta2minusbdiva
 
 
 def test_log1plusxbyx():
@@ -69,5 +69,39 @@ def test_siminus1xbyx():
         check_forward_ad=True,
         check_batched_grad=True,
         check_batched_forward_grad=True,
+        check_grad_dtypes=True,
+    )
+
+
+def test_sqrta2minusbdiva():
+    """
+    Verify that the custom autograd function sqrta2minusbdiva is correctly implementing
+    (sqrt(c^2 + g_tilde) - c) / g_tilde and its derivative, including removing the
+    singularity at g_tilde=0.
+    """
+    test_points = torch.tensor(
+        [-0.1, 0.0, 1.0], dtype=torch.float64, requires_grad=True
+    )
+    c = torch.tensor(0.5, dtype=torch.float64)
+
+    forward = sqrta2minusbdiva(c, test_points)
+    assert not forward.isnan().any()
+    assert torch.allclose(
+        forward,
+        torch.where(
+            test_points != 0,
+            ((c.square() + test_points).sqrt() - c) / test_points,
+            (2 * c).reciprocal(),
+        ),
+    )
+
+    # Check gradient calculation using finite difference methods
+    assert torch.autograd.gradcheck(
+        func=sqrta2minusbdiva,
+        inputs=(c, test_points),
+        check_backward_ad=True,
+        # check_forward_ad=True,
+        check_batched_grad=True,
+        # check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )

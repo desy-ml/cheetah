@@ -9,6 +9,7 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -293,9 +294,6 @@ class Dipole(Element):
         phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
-        gp_safe = torch.where(
-            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
-        )
 
         alpha = (
             2
@@ -319,7 +317,7 @@ class Dipole(Element):
         x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
-        c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
+        c2 = x2_t1 + alpha * sqrta2minusbdiva(x2_t3, gp * alpha)
         temp = (self.angle.unsqueeze(-1) + phi1).abs()
         x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
 
