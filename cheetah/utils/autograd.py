@@ -140,15 +140,21 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
 
         return grad_output * grad_c, grad_output * grad_g_tilde
 
+    @staticmethod
     def jvp(ctx, grad_c, grad_g_tilde):
-        c, g_tilde, fx = ctx.saved_tensors
+        c, g_tilde, _ = ctx.saved_tensors
 
-        return (
-            g_tilde
-            * (
-                (2.0 * c * grad_c + grad_g_tilde)
-                / (2.0 * (c.square() + g_tilde).sqrt())
-                - grad_c
+        return torch.where(
+            g_tilde != 0,
+            (
+                g_tilde
+                * (
+                    (2.0 * c * grad_c + grad_g_tilde)
+                    / (2.0 * (c.square() + g_tilde).sqrt())
+                    - grad_c
+                )
+                - ((c.square() + g_tilde).sqrt() - c) * grad_g_tilde
             )
-            - ((c.square() + g_tilde).sqrt() - c) * grad_g_tilde
-        ) / (g_tilde.square())
+            / (g_tilde.square()),
+            (-grad_g_tilde - 4.0 * c * grad_c) / (8.0 * c.pow(3)),
+        )
