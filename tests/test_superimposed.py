@@ -1,4 +1,4 @@
-from cheetah.accelerator import SuperimposedElement, BPM, Quadrupole, Drift, Segment
+from cheetah.accelerator import SuperimposedElement, BPM, Quadrupole, Drift, Segment, HorizontalCorrector, VerticalCorrector
 from cheetah.latticejson import convert_segment, parse_segment
 from cheetah.particles import ParticleBeam
 import torch
@@ -76,6 +76,46 @@ def test_superimposed_bpm():
         superimposed_segment.superimposed_element.reading,
         torch.zeros(2)
     )
+
+def test_superimposed_segment():
+    # Create a base drift element
+    quad = Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad")
+
+    # Create a BPM element to be superimposed
+    bpm = BPM(name="BPM1", is_active=False)
+    hcorrector = HorizontalCorrector(name="HCOR", angle=torch.tensor(0.001), length=torch.tensor(0.0))
+    vcorrector = VerticalCorrector(name="VCOR", angle=torch.tensor(0.002), length=torch.tensor(0.0))
+
+    # Create a superimposed segment
+    superimposed_segment = SuperimposedElement(
+        base_element=quad,
+        superimposed_element=Segment([bpm, hcorrector, vcorrector]),
+        name="SuperimposedBPM"
+    )
+
+    # make sure the elements are as expected
+    assert isinstance(superimposed_segment.subelements[0], Quadrupole)
+    assert superimposed_segment.subelements[0].name == "Quad#0"
+    assert superimposed_segment.subelements[0].length == quad.length / 2
+    assert isinstance(superimposed_segment.subelements[1], BPM)
+    assert superimposed_segment.subelements[1].name == "BPM1"
+    assert isinstance(superimposed_segment.subelements[2], HorizontalCorrector)
+    assert superimposed_segment.subelements[2].name == "HCOR"
+    assert isinstance(superimposed_segment.subelements[3], VerticalCorrector)
+    assert superimposed_segment.subelements[3].name == "VCOR"
+    assert isinstance(superimposed_segment.subelements[4], Quadrupole)
+    assert superimposed_segment.subelements[4].name == "Quad#1"
+
+    # Create an incoming particle beam
+    incoming_beam = ParticleBeam.from_twiss(
+        beta_x=torch.tensor(10.0),
+        alpha_x=torch.tensor(0.0),
+        beta_y=torch.tensor(10.0),
+        alpha_y=torch.tensor(0.0),
+    )
+
+    # Track the beam through the superimposed segment
+    superimposed_segment.track(incoming_beam)
 
 
 def test_in_lattice():

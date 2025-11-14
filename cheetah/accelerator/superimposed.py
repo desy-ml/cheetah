@@ -84,9 +84,10 @@ class SuperimposedElement(Element):
         base_split[0].name = f"{self.base_element.name}#0"
         base_split[1].name = f"{self.base_element.name}#1"
 
-        elements = [base_split[0], self.superimposed_element, base_split[1]]
-
-        return elements
+        if isinstance(self.superimposed_element, Segment):
+            return torch.nn.ModuleList([base_split[0]])  + self.superimposed_element.elements + torch.nn.ModuleList([base_split[1]])
+        else:
+            return [base_split[0], self.superimposed_element, base_split[1]]
 
     @property
     def is_skippable(self) -> bool:
