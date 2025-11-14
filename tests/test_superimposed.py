@@ -105,6 +105,10 @@ def test_in_lattice():
     # Track the beam through the full segment
     full_segment.track(incoming_beam)
 
+    # test flattening
+    flattened = full_segment.flattened()
+    assert flattened.element_names == ["Drift", "Quad#0", "BPM1", "Quad#1", "Drift"]
+
 
 def test_to_json():
     """
