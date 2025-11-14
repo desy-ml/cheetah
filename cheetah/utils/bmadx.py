@@ -238,12 +238,10 @@ def calculate_quadrupole_coefficients(
         c1, c2, c3: Second order derivatives of z such that
             z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
     """
-    # TODO: Revisit to fix accumulated error due to machine epsilon
-    sqrt_k = (k1.abs() + eps).sqrt()
-    sk_l = sqrt_k * length.unsqueeze(-1)
-
-    cx = sk_l.cos() * (k1 <= 0) + sk_l.cosh() * (k1 > 0)
-    sx = (sk_l.sin() / (sqrt_k)) * (k1 <= 0) + (sk_l.sinh() / (sqrt_k)) * (k1 > 0)
+    # The sign of k1 is flipped compared to track_methods by convention
+    kx = (torch.complex(-k1, torch.zeros_like(k1))).sqrt()
+    cx = (kx * length.unsqueeze(-1)).cos().real
+    sx = ((kx * length.unsqueeze(-1) / torch.pi).sinc() * length.unsqueeze(-1)).real
 
     a11 = cx
     a12 = sx / rel_p

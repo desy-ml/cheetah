@@ -4,6 +4,7 @@ import torch
 
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
+from cheetah.utils.autograd import si1mdiv
 
 
 def base_rmatrix(
@@ -42,10 +43,13 @@ def base_rmatrix(
     cy = (ky * length).cos().real
     sx = ((kx * length / torch.pi).sinc() * length).real
     sy = ((ky * length / torch.pi).sinc() * length).real
-    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
-    r56 = torch.where(kx2 != 0, hx.square() * (length - sx) / kx2 / beta.square(), zero)
 
-    r56 = r56 - length / beta.square() * igamma2
+    r = (0.5 * kx * length / torch.pi).sinc()
+    dx = hx * 0.5 * length.square() * r.square().real
+
+    r56 = (
+        hx.square() * length.pow(3) * si1mdiv(kx2) / beta.square()
+    ) - length / beta.square() * igamma2
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
@@ -66,18 +70,8 @@ def base_rmatrix(
     R[..., 4, 1] = dx / beta
     R[..., 4, 5] = r56
 
-    # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
-    # if hx != 0 or k1 != 0. Note that the first if is here to improve speed when no
-    # rotation needs to be applied accross all vector dimensions. The torch.where is
-    # here to improve numerical stability for the vector elements where no rotation
-    # needs to be applied.
-    if ((tilt != 0) & ((hx != 0) | (k1 != 0))).any():
-        rotation = rotation_matrix(tilt)
-        R = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
-            rotation.mT @ R @ rotation,
-            R,
-        )
+    rotation = rotation_matrix(tilt)
+    R = rotation.mT @ R @ rotation
 
     return R
 
@@ -286,23 +280,11 @@ def base_ttensor(
         - 0.25 / beta * (length + cy * sy)
     )
 
-    # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
-    # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
-    # when no rotation needs to be applied accross all vector dimensions. The
-    # torch.where is here to improve numerical stability for the vector elements where
-    # no rotation needs to be applied.
-    if ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))).any():
-        rotation = rotation_matrix(tilt)
-        T = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0)))
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-            .unsqueeze(-1),
-            torch.einsum(
-                "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
-            ),
-            T,
-        )
+    rotation = rotation_matrix(tilt)
+    T = torch.einsum(
+        "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
+    )
+
     return T
 
 
