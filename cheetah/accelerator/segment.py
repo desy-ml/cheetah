@@ -11,7 +11,6 @@ from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
-from cheetah.accelerator.superimposed import SuperimposedElement
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, Species
@@ -137,7 +136,7 @@ class Segment(Element):
         for element in self.elements:
             if isinstance(element, Segment):
                 flattened_elements += element.flattened().elements
-            elif isinstance(element, SuperimposedElement):
+            elif hasattr(element, "subelements"): # e.g. SuperimposedElement
                 flattened_elements += element.subelements
             else:
                 flattened_elements.append(element)
