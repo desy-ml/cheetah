@@ -147,43 +147,55 @@ class TransverseDeflectingCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        # compute the size of drift steps
+        dl = self.length / self.num_steps
 
-        voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
+        # start by tracking half a dl
+        x, y, z = bmadx.track_a_drift(dl / 2, x, px, y, py, z, pz, p0c, mc2)
+
+        voltage = (self.voltage * -1 * incoming.species.num_elementary_charges / p0c) / self.num_steps
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
-        # Phase that the particle sees
-        phase = (
-            2
-            * torch.pi
-            * (
-                self.phase.unsqueeze(-1)
-                - (
-                    bmadx.particle_rf_time(z, pz, p0c, mc2)
-                    * self.frequency.unsqueeze(-1)
+
+        for i in range(1, self.num_steps + 1):
+            # Phase that the particle sees
+            phase = (
+                2
+                * torch.pi
+                * (
+                    self.phase.unsqueeze(-1) - self.frequency.unsqueeze(-1) * (
+                        bmadx.particle_rf_time(z, pz, p0c, mc2)
+                    )
                 )
             )
-        )
+        
 
-        # TODO: Assigning px to px is really bad practice and should be separated into
-        # two separate variables
-        px = px + voltage.unsqueeze(-1) * phase.sin()
+            # TODO: Assigning px to px is really bad practice and should be separated into
+            # two separate variables
+            px = px + voltage.unsqueeze(-1) * phase.sin()
 
-        beta_old = (
-            (1 + pz)
-            * p0c.unsqueeze(-1)
-            / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
-        )
-        E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
-            -1
-        ) * x * p0c.unsqueeze(-1)
-        pc = (E_new.square() - mc2.square()).sqrt()
-        beta = pc / E_new
+            beta_old = (
+                (1 + pz)
+                * p0c.unsqueeze(-1)
+                / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
+            )
+            E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
+            E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
+                -1
+            ) * x * p0c.unsqueeze(-1)
+            pc = (E_new.square() - mc2.square()).sqrt()
+            beta = pc / E_new
 
-        pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
-        z = z * beta / beta_old
+            pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
+            z = z * beta / beta_old
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+            # if this is the last slice, skip tracking a full dl
+            if i == self.num_steps:
+                break
+            
+            x, y, z = bmadx.track_a_drift(dl, x, px, y, py, z, pz, p0c, mc2)
+
+        # Final half drift
+        x, y, z = bmadx.track_a_drift(dl / 2, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
@@ -204,6 +216,39 @@ class TransverseDeflectingCavity(Element):
             species=incoming.species,
         )
         return outgoing_beam
+    
+    def split(self, resolution: torch.Tensor) -> list[Element]:
+        # require that the num_steps is odd and greater than 1
+        if self.num_steps % 2 != 1 or self.num_steps < 3:
+            raise ValueError(
+                "The number of steps for the transverse deflecting cavity must be"
+                " odd and greater than 1 to split the element."
+            )
+        
+        # only allow splitting into 2 elements for now
+        if int(self.length / resolution) != 2:
+            raise ValueError(
+                "Transverse deflecting cavity can only be split into 2 elements for"
+                " now."
+            )
+        num_splits = 2
+        split_steps = int((self.num_steps - 1) / 2)
+
+        return [
+            TransverseDeflectingCavity(
+                self.length / num_splits,
+                self.voltage / num_splits,
+                self.phase,
+                self.frequency,
+                misalignment=self.misalignment,
+                tilt=self.tilt,
+                num_steps=split_steps,
+                tracking_method=self.tracking_method,
+                dtype=self.length.dtype,
+                device=self.length.device,
+            )
+            for i in range(num_splits)
+        ]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
