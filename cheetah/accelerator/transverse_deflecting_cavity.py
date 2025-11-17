@@ -124,9 +124,9 @@ class TransverseDeflectingCavity(Element):
             `ParticleBeam`.
         :return: Beam exiting the element.
         """
-        assert isinstance(
-            incoming, ParticleBeam
-        ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+        assert isinstance(incoming, ParticleBeam), (
+            "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
+        )
 
         # Compute Bmad coordinates and p0c
         x = incoming.x
@@ -153,7 +153,9 @@ class TransverseDeflectingCavity(Element):
         # start by tracking half a dl
         x, y, z = bmadx.track_a_drift(dl / 2, x, px, y, py, z, pz, p0c, mc2)
 
-        voltage = (self.voltage * -1 * incoming.species.num_elementary_charges / p0c) / self.num_steps
+        voltage = (
+            self.voltage * -1 * incoming.species.num_elementary_charges / p0c
+        ) / self.num_steps
         k_rf = 2 * torch.pi * self.frequency / speed_of_light
 
         for i in range(1, self.num_steps + 1):
@@ -162,12 +164,11 @@ class TransverseDeflectingCavity(Element):
                 2
                 * torch.pi
                 * (
-                    self.phase.unsqueeze(-1) - self.frequency.unsqueeze(-1) * (
-                        bmadx.particle_rf_time(z, pz, p0c, mc2)
-                    )
+                    self.phase.unsqueeze(-1)
+                    - self.frequency.unsqueeze(-1)
+                    * (bmadx.particle_rf_time(z, pz, p0c, mc2))
                 )
             )
-        
 
             # TODO: Assigning px to px is really bad practice and should be separated into
             # two separate variables
@@ -191,7 +192,7 @@ class TransverseDeflectingCavity(Element):
             # if this is the last slice, skip tracking a full dl
             if i == self.num_steps:
                 break
-            
+
             x, y, z = bmadx.track_a_drift(dl, x, px, y, py, z, pz, p0c, mc2)
 
         # Final half drift
@@ -216,7 +217,7 @@ class TransverseDeflectingCavity(Element):
             species=incoming.species,
         )
         return outgoing_beam
-    
+
     def split(self, resolution: torch.Tensor) -> list[Element]:
         # require that the num_steps is odd and greater than 1
         if self.num_steps % 2 != 1 or self.num_steps < 3:
@@ -224,7 +225,7 @@ class TransverseDeflectingCavity(Element):
                 "The number of steps for the transverse deflecting cavity must be"
                 " odd and greater than 1 to split the element."
             )
-        
+
         # only allow splitting into 2 elements for now
         if int(self.length / resolution) != 2:
             raise ValueError(

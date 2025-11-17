@@ -142,17 +142,25 @@ def test_tdc_benchmark():
         length=torch.tensor(0.2),
         voltage=torch.tensor(1.0e6),
         phase=torch.tensor(0.0),
-        frequency=torch.tensor(1.0e9)
+        frequency=torch.tensor(1.0e9),
     )
     test_beam = cheetah.ParticleBeam(
-        torch.tensor([2e-3,3e-3,-3e-3,-1e-3,-2e-3, 2e-3, 1.0]).unsqueeze(0),
-        energy=torch.tensor(4.0e7)
+        torch.tensor([2e-3, 3e-3, -3e-3, -1e-3, -2e-3, 2e-3, 1.0]).unsqueeze(0),
+        energy=torch.tensor(4.0e7),
     )
     assert torch.allclose(
         cavity.track(test_beam).particles.flatten()[:-1],
-        torch.tensor([2.705670627614420e-03, 4.047421479988640e-03, -3.200281391645270e-03,
-        -1.000000000000000e-03, 1.998582178711370e-03, -7.955332028185950e-04],
-       ), atol=1e-2
+        torch.tensor(
+            [
+                2.705670627614420e-03,
+                4.047421479988640e-03,
+                -3.200281391645270e-03,
+                -1.000000000000000e-03,
+                1.998582178711370e-03,
+                -7.955332028185950e-04,
+            ],
+        ),
+        atol=1e-2,
     )
 
 
@@ -174,10 +182,8 @@ def test_transverse_deflecting_cavity_split():
     assert len(segments) == 2
     for segment in segments:
         assert isinstance(segment, cheetah.TransverseDeflectingCavity)
-        assert torch.isclose(
-            segment.length, torch.tensor(0.5), rtol=1e-5
-        )
-        #assert torch.equal(segment.voltage, tdc.voltage)
+        assert torch.isclose(segment.length, torch.tensor(0.5), rtol=1e-5)
+        # assert torch.equal(segment.voltage, tdc.voltage)
         assert torch.equal(segment.phase, tdc.phase)
         assert torch.equal(segment.frequency, tdc.frequency)
         assert segment.num_steps == 5
@@ -202,4 +208,3 @@ def test_transverse_deflecting_cavity_split():
         outgoing_beam_split.particles,
         rtol=1e-2,
     )
-    
