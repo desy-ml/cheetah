@@ -2,27 +2,34 @@ import torch
 
 
 def log1pdiv(x: torch.Tensor) -> torch.Tensor:
-    """Calculate log(1+x)/x with proper removal of its singularity at 0."""
+    """Calculate `log(1 + x) / x` with proper removal of its singularity at 0."""
     return Log1PDiv.apply(x)
 
 
 def si1mdiv(x: torch.Tensor) -> torch.Tensor:
-    """Calculate (1 - si(sqrt(x)))/x with proper removal of its singularity at 0."""
+    """Calculate `(1 - si(sqrt(x))) / x` with proper removal of its singularity at 0."""
     return Si1MDiv.apply(x)
+
+
+def cos1mprodbdiva(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `(1 - cos(sqrt(a) * b)) / a` with proper removal of its singularity at 0.
+    """
+    return Cos1MProdDiv.apply(a, b)
 
 
 def sqrta2minusbdiva(c: torch.Tensor, g_tilde: torch.Tensor) -> torch.Tensor:
     """
-    Calculate (sqrt(c^2 + g_tilde) - c) / g_tilde with proper removal of its singularity
-    at g_tilde=0.
+    Calculate `(sqrt(c^2 + g_tilde) - c) / g_tilde` with proper removal of its
+    singularity at `g_tilde == 0`.
     """
     return SqrtA2MinusBDivA.apply(c, g_tilde)
 
 
 class Log1PDiv(torch.autograd.Function):
     """
-    Custom autograd function for the compound expression log(1+x)/x. The singularity at
-    0 is replaced by its limit.
+    Custom autograd function for the compound expression `log(1 + x) / x`. The
+    singularity at 0 is replaced by its limit.
     """
 
     # Automatically generate a custom vmap implementation
@@ -57,7 +64,7 @@ class Log1PDiv(torch.autograd.Function):
 
 class Si1MDiv(torch.autograd.Function):
     """
-    Custom autograd function for the compound expression (1-si(sqrt(x)))/x. The
+    Custom autograd function for the compound expression `(1 - si(sqrt(x))) / x`. The
     singularity at 0 is replaced by its limit.
     """
 
@@ -96,11 +103,74 @@ class Si1MDiv(torch.autograd.Function):
         return torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120) * grad_input
 
 
+class Cos1MProdDiv(torch.autograd.Function):
+    """
+    Custom autograd function for the compound expression `(1 - cos(sqrt(x) * l)) / x`.
+    The singularity at 0 is replaced by its limit.
+    """
+
+    # Automatically generate a custom vmap implementation
+    generate_vmap_rule = True
+
+    @staticmethod
+    def setup_context(ctx, inputs, output):
+        (a, b) = inputs  # inputs is always passed as a tuple
+
+        ctx.save_for_backward(a, b, output)
+        ctx.save_for_forward(a, b, output)
+
+    @staticmethod
+    def forward(a, b):
+        # Since x may be negative, we use complex arithmetic for the sqrt
+        return torch.where(
+            a != 0,
+            (1 - torch.complex(a, a.new_zeros(())).sqrt() * b).cos().real / a,
+            b.square() / 2.0,
+        )
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        a, b, fx = ctx.saved_tensors
+
+        sqrt_a_mul_b = torch.complex(a, a.new_zeros(())).sqrt() * b
+        grad_a = torch.where(
+            a != 0,
+            (
+                sqrt_a_mul_b.real * sqrt_a_mul_b.sin().real
+                + 2.0 * sqrt_a_mul_b.cos().real
+                - 2.0
+            )
+            / (2.0 * a.square()),
+            -b.pow(4) / 24.0,
+        )
+        grad_b = torch.where(a != 0, sqrt_a_mul_b.sin().real / a.sqrt(), b)
+
+        return grad_output * grad_a, grad_output * grad_b
+
+    @staticmethod
+    def jvp(ctx, grad_a, grad_b):
+        a, b, fx = ctx.saved_tensors
+
+        sqrt_a_mul_b = torch.complex(a, a.new_zeros(())).sqrt() * b
+        grad_a = torch.where(
+            a != 0,
+            (
+                sqrt_a_mul_b * sqrt_a_mul_b.sin().real
+                + 2.0 * sqrt_a_mul_b.cos().real
+                - 2.0
+            )
+            / (2.0 * a.square()),
+            -b.pow(4) / 24.0,
+        )
+        grad_b = torch.where(a != 0, sqrt_a_mul_b.sin().real / a.sqrt(), b)
+        return grad_a * grad_a + grad_b * grad_b
+
+
 class SqrtA2MinusBDivA(torch.autograd.Function):
     """
     Custom autograd function for the compound expression
-    ((sqrt(c^2 + g_tilde) - c) / g_tilde). The singularity at g_tilde=0 is replaced by
-    its limit.
+    `((sqrt(c^2 + g_tilde) - c) / g_tilde)`. The singularity at `g_tilde == 0` is
+    replaced by its limit.
     """
 
     # Automatically generate a custom vmap implementation

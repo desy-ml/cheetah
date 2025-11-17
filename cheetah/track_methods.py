@@ -4,7 +4,7 @@ import torch
 
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
-from cheetah.utils.autograd import si1mdiv
+from cheetah.utils.autograd import cos1mprodbdiva, si1mdiv
 
 
 def base_rmatrix(
@@ -115,7 +115,7 @@ def base_ttensor(
     cy = (ky * length).cos().real
     sx = ((kx * length / torch.pi).sinc() * length).real
     sy = ((ky * length / torch.pi).sinc() * length).real
-    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length.square() / 2.0)
+    dx = cos1mprodbdiva(kx2, length)
 
     d2y = 0.5 * sy.square()
     s2y = sy * cy
