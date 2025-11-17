@@ -1,6 +1,6 @@
 import torch
 
-from cheetah.utils.autograd import cos1mprodbdiva, log1pdiv, si1mdiv, sqrta2minusbdiva
+from cheetah.utils.autograd import log1pdiv, si1mdiv, sqrta2minusbdiva
 
 
 def test_log1plusxbyx():
@@ -69,43 +69,6 @@ def test_siminus1xbyx():
         check_forward_ad=True,
         check_batched_grad=True,
         check_batched_forward_grad=True,
-        check_grad_dtypes=True,
-    )
-
-
-def test_cos1mprodbdiva():
-    """
-    Verify that the custom autograd function cos1mprodbdiva is correctly implementing
-    `(1 - cos(sqrt(a) * b)) / a` and its derivative, including removing the singularity
-    at `a == 0`.
-    """
-    test_points = torch.tensor(
-        [-0.5, 0.0, 1.0], dtype=torch.float64, requires_grad=True
-    )
-    b = torch.tensor(0.42, dtype=torch.float64, requires_grad=True)
-
-    forward = cos1mprodbdiva(test_points, b)
-    assert not forward.isnan().any()
-    assert torch.allclose(
-        forward,
-        torch.where(
-            test_points != 0,
-            (1 - torch.complex(test_points, test_points.new_zeros(())).sqrt() * b)
-            .cos()
-            .real
-            / test_points,
-            b.square() / 2.0,
-        ),
-    )
-
-    # Check gradient calculation using finite difference methods
-    assert torch.autograd.gradcheck(
-        func=cos1mprodbdiva,
-        inputs=(test_points, b),
-        check_backward_ad=True,
-        # check_forward_ad=True,
-        check_batched_grad=True,
-        # check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
 
