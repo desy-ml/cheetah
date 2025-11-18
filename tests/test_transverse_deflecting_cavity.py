@@ -145,7 +145,7 @@ def test_tdc_benchmark():
         frequency=torch.tensor(1.0e9),
     )
     test_beam = cheetah.ParticleBeam(
-        torch.tensor([2e-3, 3e-3, -3e-3, -1e-3, -2e-3, 2e-3, 1.0]).unsqueeze(0),
+        torch.tensor([2.0e-3, 3.0e-3, -3.0e-3, -1.0e-3, -2.0e-3, -2.0e-3, 1.0]).unsqueeze(0),
         energy=torch.tensor(4.0e7),
     )
     assert torch.allclose(
@@ -156,11 +156,37 @@ def test_tdc_benchmark():
                 4.047421479988640e-03,
                 -3.200281391645270e-03,
                 -1.000000000000000e-03,
-                1.998582178711370e-03,
+                -1.998582178711370e-03, # note sign change compared to bmad result
                 -7.955332028185950e-04,
             ],
         ),
-        atol=1e-2,
+        rtol=1e-2,
+    )
+
+    # try with different settings
+    cavity = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(0.2),
+        voltage=torch.tensor(5.0e6),
+        phase=torch.tensor(0.1),
+        frequency=torch.tensor(1.0e9),
+        num_steps=10,
+    )
+    test_beam = cheetah.ParticleBeam(
+        torch.tensor([2.0e-3, 3.0e-3, -3.0e-3, -1.0e-3, -2.0e-3, -2.0e-3, 1.0]).unsqueeze(0),
+        energy=torch.tensor(4.0e7),
+    )
+    assert torch.allclose(
+        cavity.track(test_beam).particles.flatten()[:-1],
+        torch.tensor(
+            [
+                1.034768316565310e-02, 
+                8.052793152747820e-02, 
+                -3.199910443071260e-03,
+                -1.000000000000000e-03, 
+                -1.775277246027420e-03, # note sign change compared to bmad result
+                7.995742714223821e-03],
+        ),
+        rtol=1e-2,
     )
 
 
