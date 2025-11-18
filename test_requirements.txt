@@ -3,3 +3,9 @@ openpmd-beamphysics
 pytest
 pytest-benchmark
 pytest-cov
+pyoptics
+h5py
+numba
+cpymad
+pandas
+xdeps
