@@ -4,7 +4,7 @@ import torch
 
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
-from cheetah.utils.autograd import si1mdiv
+from cheetah.utils.autograd import si1mdiv, sicos1mdiv
 
 
 def base_rmatrix(
@@ -48,7 +48,7 @@ def base_rmatrix(
     dx = hx * 0.5 * length.square() * r.square().real
 
     r56 = (
-        hx.square() * length.pow(3) * si1mdiv(kx2) / beta.square()
+        hx.square() * length.pow(3) * si1mdiv(kx2 * length.square()) / beta.square()
     ) - length / beta.square() * igamma2
 
     vector_shape = torch.broadcast_shapes(
@@ -120,12 +120,11 @@ def base_ttensor(
     dx = 0.5 * length.square() * r.square().real
 
     d2y = 0.5 * sy.square()
-    s2y = sy * cy
     c2y = (2 * ky * length).cos().real
-    fx = torch.where(kx2 != 0, (length - sx) / kx2, length.pow(3) / 6.0)
-    f2y = torch.where(ky2 != 0, (length - s2y) / ky2, length.pow(3) / 6.0)
+    fx = length.pow(3) * si1mdiv(kx2 * length.square())
+    f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
-    j1 = torch.where(kx2 != 0, (length - sx) / kx2, length.pow(3) / 6.0)
+    j1 = fx
     j2 = torch.where(
         kx2 != 0,
         (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2.square()),

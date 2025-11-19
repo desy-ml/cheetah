@@ -1,6 +1,6 @@
 import torch
 
-from cheetah.utils.autograd import log1pdiv, si1mdiv, sqrta2minusbdiva
+from cheetah.utils.autograd import log1pdiv, si1mdiv, sicos1mdiv, sqrta2minusbdiva
 
 
 def test_log1plusxbyx():
@@ -65,6 +65,42 @@ def test_siminus1xbyx():
         func=si1mdiv,
         inputs=test_points,
         rtol=0.01,
+        check_backward_ad=True,
+        check_forward_ad=True,
+        check_batched_grad=True,
+        check_batched_forward_grad=True,
+        check_grad_dtypes=True,
+    )
+
+
+def test_sicos1mdiv():
+    """
+    Verify that the custom autograd function sicos1mdiv is correctly implementing
+    `(1 - si(sqrt(x)) * cos(sqrt(x))) / x` and its derivative, including removing the
+    singularity at 0.
+    """
+    test_points = torch.tensor(
+        [-0.5, 0.0, 1.0], dtype=torch.float64, requires_grad=True
+    )
+    sqrt_points = torch.complex(test_points, test_points.new_zeros(())).sqrt()
+    si_points = (sqrt_points / torch.pi).sinc().real
+    cos_points = sqrt_points.cos().real
+
+    forward = sicos1mdiv(test_points)
+    assert not torch.any(forward.isnan())
+    assert torch.allclose(
+        forward,
+        torch.where(
+            test_points != 0.0,
+            (1 - si_points * cos_points) / test_points,
+            test_points.new_ones(()) / 6.0,
+        ),
+    )
+
+    # Check gradient calculation using finite difference methods
+    assert torch.autograd.gradcheck(
+        func=sicos1mdiv,
+        inputs=test_points,
         check_backward_ad=True,
         check_forward_ad=True,
         check_batched_grad=True,
