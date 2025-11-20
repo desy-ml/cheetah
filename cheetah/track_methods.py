@@ -4,7 +4,12 @@ import torch
 
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
-from cheetah.utils.autograd import si1mdiv, sicos1mdiv, sipsicos3mdiv
+from cheetah.utils.autograd import (
+    si1mdiv,
+    sicos1mdiv,
+    sicoskuddelmuddel15mdiv,
+    sipsicos3mdiv,
+)
 
 
 def base_rmatrix(
@@ -126,18 +131,7 @@ def base_ttensor(
 
     j1 = fx
     j2 = length.pow(3) * sipsicos3mdiv(kx2 * length.square())
-    j3 = torch.where(
-        kx2 != 0,
-        (
-            15.0 * length
-            - 22.5 * sx
-            + 9.0 * sx * cx
-            - 1.5 * sx * cx.square()
-            + kx2 * sx.pow(3)
-        )
-        / (6.0 * kx2.pow(3)),
-        length.pow(7) / 56.0,
-    )
+    j3 = length.pow(7) * sicoskuddelmuddel15mdiv(kx2 * length.square())
     j_denominator = kx2 - 4.0 * ky2
     jc = torch.where(
         j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length.square()
@@ -347,6 +341,11 @@ def misalignment_matrix(
     R_exit[..., 0, 6] = misalignment[..., 0]
     R_exit[..., 2, 6] = misalignment[..., 1]
 
+    R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
+    R_entry[..., 0, 6] = -misalignment[..., 0]
+    R_entry[..., 2, 6] = -misalignment[..., 1]
+
+    return R_entry, R_exit
     R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]

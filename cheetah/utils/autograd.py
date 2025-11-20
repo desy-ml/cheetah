@@ -27,6 +27,15 @@ def sipsicos3mdiv(x: torch.Tensor) -> torch.Tensor:
     return SiPSiCos3MDiv.apply(x)
 
 
+def sicoskuddelmuddel15mdiv(x: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x)) * cos(sqrt(x)) - 1.5
+    * si(sqrt(x)) * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)` with proper removal of
+    its singularity at 0.
+    """
+    return SiCosKuddelMuddel15MDiv.apply(x)
+
+
 def sqrta2minusbdiva(c: torch.Tensor, g_tilde: torch.Tensor) -> torch.Tensor:
     """
     Calculate `(sqrt(c^2 + g_tilde) - c) / g_tilde` with proper removal of its
@@ -250,6 +259,85 @@ class SiPSiCos3MDiv(torch.autograd.Function):
             / (4.0 * x.square()),
             0.05,
         )
+
+        return grad * grad_input
+
+
+class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
+    """
+    Custom autograd function for the compound expression
+    `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x)) * cos(sqrt(x)) - 1.5 * si(sqrt(x))
+    * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)`. The singularity at 0 is replaced by
+    its limit.
+    """
+
+    # Automatically generate a custom vmap implementation
+    generate_vmap_rule = True
+
+    @staticmethod
+    def setup_context(ctx, inputs, output):
+        (x,) = inputs  # inputs is always passed as a tuple
+
+        ctx.save_for_backward(x, output)
+        ctx.save_for_forward(x, output)
+
+    @staticmethod
+    def forward(x):
+        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+
+        cx = sqrt_x.cos().real
+        sx = (sqrt_x / torch.pi).sinc().real
+
+        return torch.where(
+            x != 0,
+            (15.0 - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx.square() + x * sx.pow(3))
+            / (x.pow(3)),
+            1.0 / 56.0,
+        )
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, _ = ctx.saved_tensors
+
+        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+
+        cx = sqrt_x.cos().real
+        sx = (sqrt_x / torch.pi).sinc().real
+
+        grad = (
+            -2.0 * x * sx.pow(3)
+            + sx.square() * (1.5 * x * cx - 1.5 * x * sx)
+            + sx
+            * (-4.5 * x * sx + 4.5 * cx.square() + (1.5 * x * sx - 27.0) * cx + 67.5)
+            - 45.0
+            + 11.25 * sx
+            - 0.75 * cx.pow(3)
+            + (4.5 + 0.75 * sx) * cx.square()
+            + (-11.25 - 4.5 * sx) * cx
+        ) / (x.pow(4))
+
+        return grad_output * grad
+
+    @staticmethod
+    def jvp(ctx, grad_input):
+        x, _ = ctx.saved_tensors
+
+        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+
+        cx = sqrt_x.cos().real
+        sx = (sqrt_x / torch.pi).sinc().real
+
+        grad = (
+            -2.0 * x * sx.pow(3)
+            + sx.square() * (1.5 * x * cx - 1.5 * x * sx)
+            + sx
+            * (-4.5 * x * sx + 4.5 * cx.square() + (1.5 * x * sx - 27.0) * cx + 67.5)
+            - 45.0
+            + 11.25 * sx
+            - -0.75 * cx.pow(3)
+            + (4.5 + 0.75 * sx) * cx.square()
+            + (-11.25 - 4.5 * sx) * cx
+        ) / (x.pow(4))
 
         return grad * grad_input
 
