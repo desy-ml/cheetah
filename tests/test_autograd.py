@@ -1,6 +1,7 @@
 import torch
 
 from cheetah.utils.autograd import (
+    cossqrtmcosdivdiff,
     log1pdiv,
     si1mdiv,
     sicos1mdiv,
@@ -189,6 +190,48 @@ def test_sicoskuddelmuddel15mdiv():
     assert torch.autograd.gradcheck(
         func=sicoskuddelmuddel15mdiv,
         inputs=test_points,
+        check_backward_ad=True,
+        check_forward_ad=True,
+        check_batched_grad=True,
+        check_batched_forward_grad=True,
+        check_grad_dtypes=True,
+    )
+
+
+def test_cossqrtmcosdivdiff():
+    """
+    Verify that the custom autograd function cossqrtmcosdivdiff is correctly
+    implementing `(cos(sqrt(b)) - cos(sqrt(a))) / (a - b)` and its derivative, including
+    removing the singularity at `a == b`.
+    """
+    test_points_a = torch.tensor(
+        [-0.5, 0.0, 1.0, 1.0], dtype=torch.float64, requires_grad=True
+    )
+    test_points_b = torch.tensor(
+        [0.0, 0.0, 1.0, 2.0], dtype=torch.float64, requires_grad=True
+    )
+    sqrt_a_points = torch.complex(test_points_a, test_points_a.new_zeros(())).sqrt()
+    sqrt_b_points = torch.complex(test_points_b, test_points_b.new_zeros(())).sqrt()
+    sa_points = (sqrt_a_points / torch.pi).sinc().real
+    ca_points = sqrt_a_points.cos().real
+    cb_points = sqrt_b_points.cos().real
+    demoninator_points = test_points_a - test_points_b
+
+    forward = cossqrtmcosdivdiff(test_points_a, test_points_b)
+    assert not forward.isnan().any()
+    assert torch.allclose(
+        forward,
+        torch.where(
+            demoninator_points != 0,
+            (cb_points - ca_points) / demoninator_points,
+            0.5 * sa_points,
+        ),
+    )
+    # Check gradient calculation using finite difference methods
+    assert torch.autograd.gradcheck(
+        func=cossqrtmcosdivdiff,
+        inputs=(test_points_a, test_points_b),
+        rtol=0.01,
         check_backward_ad=True,
         check_forward_ad=True,
         check_batched_grad=True,

@@ -36,6 +36,14 @@ def sicoskuddelmuddel15mdiv(x: torch.Tensor) -> torch.Tensor:
     return SiCosKuddelMuddel15MDiv.apply(x)
 
 
+def cossqrtmcosdivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `(cos(sqrt(b)) - cos(sqrt(a))) / (a - b)` with proper removal of its
+    singularity at `a == b`.
+    """
+    return CosSqrtMCosDivDiff.apply(a, b)
+
+
 def sqrta2minusbdiva(c: torch.Tensor, g_tilde: torch.Tensor) -> torch.Tensor:
     """
     Calculate `(sqrt(c^2 + g_tilde) - c) / g_tilde` with proper removal of its
@@ -340,6 +348,81 @@ class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
         ) / (x.pow(4))
 
         return grad * grad_input
+
+
+class CosSqrtMCosDivDiff(torch.autograd.Function):
+    """
+    Custom autograd function for the compound expression
+    `(cos(sqrt(b)) - cos(sqrt(a)) / (a - b)`. The singularity at 0 is replaced by
+    its limit.
+    """
+
+    # Automatically generate a custom vmap implementation
+    generate_vmap_rule = True
+
+    @staticmethod
+    def setup_context(ctx, inputs, output):
+        (a, b) = inputs  # inputs is always passed as a tuple
+
+        ctx.save_for_backward(a, b, output)
+        ctx.save_for_forward(a, b, output)
+
+    @staticmethod
+    def forward(a, b):
+        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
+        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
+
+        sa = (sqrt_a / torch.pi).sinc().real
+        ca = sqrt_a.cos().real
+        cb = sqrt_b.cos().real
+
+        demoninator = a - b
+
+        return torch.where(demoninator != 0, (cb - ca) / demoninator, 0.5 * sa)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        a, b, _ = ctx.saved_tensors
+
+        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
+        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
+        sa = (sqrt_a / torch.pi).sinc().real
+        sb = (sqrt_b / torch.pi).sinc().real
+        ca = sqrt_a.cos().real
+        cb = sqrt_b.cos().real
+        ab = a - b
+        cbca = cb - ca
+        demoninator = ab.square()
+
+        limit = torch.where(a != 0, (ca - sa) / (8.0 * a), -1.0 / 24.0)
+
+        grad_a = torch.where(a != b, (0.5 * sa * ab - cbca) / demoninator, limit)
+        grad_b = torch.where(a != b, -(0.5 * sb * ab - cbca) / demoninator, limit)
+
+        return grad_output * grad_a, grad_output * grad_b
+
+    @staticmethod
+    def jvp(ctx, grad_a, grad_b):
+        a, b, _ = ctx.saved_tensors
+
+        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
+        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
+        sa = (sqrt_a / torch.pi).sinc().real
+        sb = (sqrt_b / torch.pi).sinc().real
+        ca = sqrt_a.cos().real
+        cb = sqrt_b.cos().real
+        ab = a - b
+
+        return torch.where(
+            a != b,
+            ((0.5 * ab * (grad_a * sa - grad_b * sb)) + (grad_a - grad_b) * (ca - cb))
+            / ab.square(),
+            torch.where(
+                b != 0,
+                ((grad_b + grad_a) * cb - (grad_b + grad_a) * sb) / (8.0 * b),
+                -(grad_a + grad_b) / 24.0,
+            ),
+        )
 
 
 class SqrtA2MinusBDivA(torch.autograd.Function):

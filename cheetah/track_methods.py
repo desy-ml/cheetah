@@ -5,6 +5,7 @@ import torch
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
 from cheetah.utils.autograd import (
+    cossqrtmcosdivdiff,
     si1mdiv,
     sicos1mdiv,
     sicoskuddelmuddel15mdiv,
@@ -125,7 +126,6 @@ def base_ttensor(
     dx = 0.5 * length.square() * r.square().real
 
     d2y = 0.5 * sy.square()
-    c2y = (2 * ky * length).cos().real
     fx = length.pow(3) * si1mdiv(kx2 * length.square())
     f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
@@ -133,8 +133,8 @@ def base_ttensor(
     j2 = length.pow(3) * sipsicos3mdiv(kx2 * length.square())
     j3 = length.pow(7) * sicoskuddelmuddel15mdiv(kx2 * length.square())
     j_denominator = kx2 - 4.0 * ky2
-    jc = torch.where(
-        j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length.square()
+    jc = length.square() * cossqrtmcosdivdiff(
+        kx2 * length.square(), ky2 * length.square()
     )
     js = torch.where(
         j_denominator != 0, (cy * sy - sx) / j_denominator, length.pow(3) / 6.0
@@ -350,4 +350,5 @@ def misalignment_matrix(
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
+    return R_entry, R_exit
     return R_entry, R_exit
