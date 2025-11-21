@@ -4,6 +4,13 @@ import torch
 
 from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
+from cheetah.utils.autograd import (
+    cossqrtmcosdivdiff,
+    si1mdiv,
+    sicos1mdiv,
+    sicoskuddelmuddel15mdiv,
+    sipsicos3mdiv,
+)
 
 
 def base_rmatrix(
@@ -42,10 +49,13 @@ def base_rmatrix(
     cy = (ky * length).cos().real
     sx = ((kx * length / torch.pi).sinc() * length).real
     sy = ((ky * length / torch.pi).sinc() * length).real
-    dx = torch.where(kx2 != 0, hx / kx2 * (1.0 - cx), zero)
-    r56 = torch.where(kx2 != 0, hx.square() * (length - sx) / kx2 / beta.square(), zero)
 
-    r56 = r56 - length / beta.square() * igamma2
+    r = (0.5 * kx * length / torch.pi).sinc()
+    dx = hx * 0.5 * length.square() * r.square().real
+
+    r56 = (
+        hx.square() * length.pow(3) * si1mdiv(kx2 * length.square()) / beta.square()
+    ) - length / beta.square() * igamma2
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
@@ -66,18 +76,8 @@ def base_rmatrix(
     R[..., 4, 1] = dx / beta
     R[..., 4, 5] = r56
 
-    # Rotate the R matrix for skew / vertical magnets. The rotation only has an effect
-    # if hx != 0 or k1 != 0. Note that the first if is here to improve speed when no
-    # rotation needs to be applied accross all vector dimensions. The torch.where is
-    # here to improve numerical stability for the vector elements where no rotation
-    # needs to be applied.
-    if ((tilt != 0) & ((hx != 0) | (k1 != 0))).any():
-        rotation = rotation_matrix(tilt)
-        R = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0))).unsqueeze(-1).unsqueeze(-1),
-            rotation.mT @ R @ rotation,
-            R,
-        )
+    rotation = rotation_matrix(tilt)
+    R = rotation.mT @ R @ rotation
 
     return R
 
@@ -121,35 +121,20 @@ def base_ttensor(
     cy = (ky * length).cos().real
     sx = ((kx * length / torch.pi).sinc() * length).real
     sy = ((ky * length / torch.pi).sinc() * length).real
-    dx = torch.where(kx != 0, (1.0 - cx) / kx2, length.square() / 2.0)
+
+    r = (0.5 * kx * length / torch.pi).sinc()
+    dx = 0.5 * length.square() * r.square().real
 
     d2y = 0.5 * sy.square()
-    s2y = sy * cy
-    c2y = (2 * ky * length).cos().real
-    fx = torch.where(kx2 != 0, (length - sx) / kx2, length.pow(3) / 6.0)
-    f2y = torch.where(ky2 != 0, (length - s2y) / ky2, length.pow(3) / 6.0)
+    fx = length.pow(3) * si1mdiv(kx2 * length.square())
+    f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
-    j1 = torch.where(kx2 != 0, (length - sx) / kx2, length.pow(3) / 6.0)
-    j2 = torch.where(
-        kx2 != 0,
-        (3.0 * length - 4.0 * sx + sx * cx) / (2 * kx2.square()),
-        length.pow(5) / 20.0,
-    )
-    j3 = torch.where(
-        kx2 != 0,
-        (
-            15.0 * length
-            - 22.5 * sx
-            + 9.0 * sx * cx
-            - 1.5 * sx * cx.square()
-            + kx2 * sx.pow(3)
-        )
-        / (6.0 * kx2.pow(3)),
-        length.pow(7) / 56.0,
-    )
-    j_denominator = kx2 - 4 * ky2
-    jc = torch.where(
-        j_denominator != 0, (c2y - cx) / j_denominator, 0.5 * length.square()
+    j1 = fx
+    j2 = length.pow(3) * sipsicos3mdiv(kx2 * length.square())
+    j3 = length.pow(7) * sicoskuddelmuddel15mdiv(kx2 * length.square())
+    j_denominator = kx2 - 4.0 * ky2
+    jc = length.square() * cossqrtmcosdivdiff(
+        kx2 * length.square(), ky2 * length.square()
     )
     js = torch.where(
         j_denominator != 0, (cy * sy - sx) / j_denominator, length.pow(3) / 6.0
@@ -161,148 +146,144 @@ def base_ttensor(
         j_denominator != 0, (f2y - fx) / j_denominator, length.pow(5) / 120.0
     )
 
-    khk = k2 + 2 * hx * k1
+    khk = k2 + 2.0 * hx * k1
 
     vector_shape = torch.broadcast_shapes(
         length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
     )
 
     T = torch.zeros((7, 7, 7), **factory_kwargs).repeat(*vector_shape, 1, 1, 1)
-    T[..., 0, 0, 0] = -1 / 6 * khk * (sx.square() + dx) - 0.5 * hx * kx2 * sx.square()
-    T[..., 0, 0, 1] = 2 * (-1 / 6 * khk * sx * dx + 0.5 * hx * sx * cx)
-    T[..., 0, 1, 1] = -1 / 6 * khk * dx.square() + 0.5 * hx * dx * cx
-    T[..., 0, 0, 5] = 2 * (
-        -hx / 12 / beta * khk * (3 * sx * j1 - dx.square())
+    T[..., 0, 0, 0] = (
+        -1.0 / 6.0 * khk * (sx.square() + dx) - 0.5 * hx * kx2 * sx.square()
+    )
+    T[..., 0, 0, 1] = 2.0 * (-1.0 / 6.0 * khk * sx * dx + 0.5 * hx * sx * cx)
+    T[..., 0, 1, 1] = -1.0 / 6.0 * khk * dx.square() + 0.5 * hx * dx * cx
+    T[..., 0, 0, 5] = 2.0 * (
+        -hx / 12.0 / beta * khk * (3.0 * sx * j1 - dx.square())
         + 0.5 * hx.square() / beta * sx.square()
         + 0.25 / beta * k1 * length * sx
     )
-    T[..., 0, 1, 5] = 2 * (
-        -hx / 12 / beta * khk * (sx * dx.square() - 2 * cx * j2)
+    T[..., 0, 1, 5] = 2.0 * (
+        -hx / 12.0 / beta * khk * (sx * dx.square() - 2.0 * cx * j2)
         + 0.25 * hx.square() / beta * (sx * dx + cx * j1)
         - 0.25 / beta * (sx + length * cx)
     )
     T[..., 0, 5, 5] = (
-        -(hx.square()) / 6 / beta.square() * khk * (dx.square() * dx - 2 * sx * j2)
+        -(hx.square()) / 6.0 / beta.square() * khk * (dx.square() * dx - 2.0 * sx * j2)
         + 0.5 * hx.pow(3) / beta.square() * sx * j1
         - 0.5 * hx / beta.square() * length * sx
         - 0.5 * hx / (beta.square()) * igamma2 * dx
     )
     T[..., 0, 2, 2] = k1 * k2 * jd + 0.5 * (k2 + hx * k1) * dx
-    T[..., 0, 2, 3] = 2 * (0.5 * k2 * js)
+    T[..., 0, 2, 3] = 2.0 * (0.5 * k2 * js)
     T[..., 0, 3, 3] = k2 * jd - 0.5 * hx * dx
-    T[..., 1, 0, 0] = -1 / 6 * khk * sx * (1 + 2 * cx)
-    T[..., 1, 0, 1] = 2 * (-1 / 6 * khk * dx * (1 + 2 * cx))
-    T[..., 1, 1, 1] = -1 / 3 * khk * sx * dx - 0.5 * hx * sx
-    T[..., 1, 0, 5] = 2 * (
-        -hx / 12 / beta * khk * (3 * cx * j1 + sx * dx)
+    T[..., 1, 0, 0] = -1.0 / 6.0 * khk * sx * (1.0 + 2.0 * cx)
+    T[..., 1, 0, 1] = 2.0 * (-1.0 / 6.0 * khk * dx * (1.0 + 2.0 * cx))
+    T[..., 1, 1, 1] = -1.0 / 3.0 * khk * sx * dx - 0.5 * hx * sx
+    T[..., 1, 0, 5] = 2.0 * (
+        -hx / 12.0 / beta * khk * (3.0 * cx * j1 + sx * dx)
         - 0.25 / beta * k1 * (sx - length * cx)
     )
-    T[..., 1, 1, 5] = 2 * (
-        -hx / 12 / beta * khk * (3 * sx * j1 + dx.square())
+    T[..., 1, 1, 5] = 2.0 * (
+        -hx / 12.0 / beta * khk * (3.0 * sx * j1 + dx.square())
         + 0.25 / beta * k1 * length * sx
     )
     T[..., 1, 5, 5] = (
-        -(hx.square()) / 6 / beta.square() * khk * (sx * dx.square() - 2 * cx * j2)
+        -(hx.square()) / 6.0 / beta.square() * khk * (sx * dx.square() - 2.0 * cx * j2)
         - 0.5 * hx / beta.square() * k1 * (cx * j1 - sx * dx)
         - 0.5 * hx / beta.square() * igamma2 * sx
     )
     T[..., 1, 2, 2] = k1 * k2 * js + 0.5 * (k2 + hx * k1) * sx
-    T[..., 1, 2, 3] = 2 * (0.5 * k2 * jc)
+    T[..., 1, 2, 3] = 2.0 * (0.5 * k2 * jc)
     T[..., 1, 3, 3] = k2 * js - 0.5 * hx * sx
-    T[..., 2, 0, 2] = 2 * (
-        0.5 * k2 * (cy * jc - 2 * k1 * sy * js) + 0.5 * hx * k1 * sx * sy
+    T[..., 2, 0, 2] = 2.0 * (
+        0.5 * k2 * (cy * jc - 2.0 * k1 * sy * js) + 0.5 * hx * k1 * sx * sy
     )
-    T[..., 2, 0, 3] = 2 * (0.5 * k2 * (sy * jc - 2 * cy * js) + 0.5 * hx * sx * cy)
-    T[..., 2, 1, 2] = 2 * (
-        0.5 * k2 * (cy * js - 2 * k1 * sy * jd) + 0.5 * hx * k1 * dx * sy
+    T[..., 2, 0, 3] = 2.0 * (0.5 * k2 * (sy * jc - 2.0 * cy * js) + 0.5 * hx * sx * cy)
+    T[..., 2, 1, 2] = 2.0 * (
+        0.5 * k2 * (cy * js - 2.0 * k1 * sy * jd) + 0.5 * hx * k1 * dx * sy
     )
-    T[..., 2, 1, 3] = 2 * (0.5 * k2 * (sy * js - 2 * cy * jd) + 0.5 * hx * dx * cy)
-    T[..., 2, 2, 5] = 2 * (
-        0.5 * hx / beta * k2 * (cy * jd - 2 * k1 * sy * jf)
+    T[..., 2, 1, 3] = 2.0 * (0.5 * k2 * (sy * js - 2.0 * cy * jd) + 0.5 * hx * dx * cy)
+    T[..., 2, 2, 5] = 2.0 * (
+        0.5 * hx / beta * k2 * (cy * jd - 2.0 * k1 * sy * jf)
         + 0.5 * hx.square() / beta * k1 * j1 * sy
         - 0.25 / beta * k1 * length * sy
     )
-    T[..., 2, 3, 5] = 2 * (
-        0.5 * hx / beta * k2 * (sy * jd - 2 * cy * jf)
+    T[..., 2, 3, 5] = 2.0 * (
+        0.5 * hx / beta * k2 * (sy * jd - 2.0 * cy * jf)
         + 0.5 * hx.square() / beta * j1 * cy
         - 0.25 / beta * (sy + length * cy)
     )
-    T[..., 3, 0, 2] = 2 * (
-        0.5 * k1 * k2 * (2 * cy * js - sy * jc) + 0.5 * (k2 + hx * k1) * sx * cy
+    T[..., 3, 0, 2] = 2.0 * (
+        0.5 * k1 * k2 * (2.0 * cy * js - sy * jc) + 0.5 * (k2 + hx * k1) * sx * cy
     )
-    T[..., 3, 0, 3] = 2 * (
-        0.5 * k2 * (2 * k1 * sy * js - cy * jc) + 0.5 * (k2 + hx * k1) * sx * sy
+    T[..., 3, 0, 3] = 2.0 * (
+        0.5 * k2 * (2.0 * k1 * sy * js - cy * jc) + 0.5 * (k2 + hx * k1) * sx * sy
     )
-    T[..., 3, 1, 2] = 2 * (
-        0.5 * k1 * k2 * (2 * cy * jd - sy * js) + 0.5 * (k2 + hx * k1) * dx * cy
+    T[..., 3, 1, 2] = 2.0 * (
+        0.5 * k1 * k2 * (2.0 * cy * jd - sy * js) + 0.5 * (k2 + hx * k1) * dx * cy
     )
-    T[..., 3, 1, 3] = 2 * (
-        0.5 * k2 * (2 * k1 * sy * jd - cy * js) + 0.5 * (k2 + hx * k1) * dx * sy
+    T[..., 3, 1, 3] = 2.0 * (
+        0.5 * k2 * (2.0 * k1 * sy * jd - cy * js) + 0.5 * (k2 + hx * k1) * dx * sy
     )
-    T[..., 3, 2, 5] = 2 * (
-        0.5 * hx / beta * k1 * k2 * (2 * cy * jf - sy * jd)
+    T[..., 3, 2, 5] = 2.0 * (
+        0.5 * hx / beta * k1 * k2 * (2.0 * cy * jf - sy * jd)
         + 0.5 * hx / beta * (k2 + hx * k1) * j1 * cy
         + 0.25 / beta * k1 * (sy - length * cy)
     )
-    T[..., 3, 3, 5] = 2 * (
-        0.5 * hx / beta * k2 * (2 * k1 * sy * jf - cy * jd)
+    T[..., 3, 3, 5] = 2.0 * (
+        0.5 * hx / beta * k2 * (2.0 * k1 * sy * jf - cy * jd)
         + 0.5 * hx / beta * (k2 + hx * k1) * j1 * sy
         - 0.25 / beta * k1 * length * sy
     )
-    T[..., 4, 0, 0] = -1 * (
-        hx / 12 / beta * khk * (sx * dx + 3 * j1)
+    T[..., 4, 0, 0] = -1.0 * (
+        hx / 12.0 / beta * khk * (sx * dx + 3.0 * j1)
         - 0.25 / beta * k1 * (length - sx * cx)
     )
-    T[..., 4, 0, 1] = -2 * (
-        hx / 12 / beta * khk * dx.square() + 0.25 / beta * k1 * sx.square()
+    T[..., 4, 0, 1] = -2.0 * (
+        hx / 12.0 / beta * khk * dx.square() + 0.25 / beta * k1 * sx.square()
     )
-    T[..., 4, 1, 1] = -1 * (
-        hx / 6 / beta * khk * j2 - 0.5 / beta * sx - 0.25 / beta * k1 * (j1 - sx * dx)
+    T[..., 4, 1, 1] = -1.0 * (
+        hx / 6.0 / beta * khk * j2 - 0.5 / beta * sx - 0.25 / beta * k1 * (j1 - sx * dx)
     )
-    T[..., 4, 0, 5] = -2 * (
-        hx.square() / 12 / beta.square() * khk * (3 * dx * j1 - 4 * j2)
-        + 0.25 * hx / beta.square() * k1 * j1 * (1 + cx)
+    T[..., 4, 0, 5] = -2.0 * (
+        hx.square() / 12.0 / beta.square() * khk * (3.0 * dx * j1 - 4.0 * j2)
+        + 0.25 * hx / beta.square() * k1 * j1 * (1.0 + cx)
         + 0.5 * hx / beta.square() * igamma2 * sx
     )
-    T[..., 4, 1, 5] = -2 * (
-        hx.square() / 12 / beta.square() * khk * (dx * dx.square() - 2 * sx * j2)
+    T[..., 4, 1, 5] = -2.0 * (
+        hx.square() / 12.0 / beta.square() * khk * (dx * dx.square() - 2.0 * sx * j2)
         + 0.25 * hx / beta.square() * k1 * sx * j1
         + 0.5 * hx / beta.square() * igamma2 * dx
     )
-    T[..., 4, 5, 5] = -1 * (
-        hx.pow(3) / 6 / beta.pow(3) * khk * (3 * j3 - 2 * dx * j2)
-        + hx.square() / 6 / beta.pow(3) * k1 * (sx * dx.square() - j2 * (1 + 2 * cx))
+    T[..., 4, 5, 5] = -1.0 * (
+        hx.pow(3) / 6.0 / beta.pow(3) * khk * (3.0 * j3 - 2.0 * dx * j2)
+        + hx.square()
+        / 6.0
+        / beta.pow(3)
+        * k1
+        * (sx * dx.square() - j2 * (1.0 + 2.0 * cx))
         + 1.5 / beta.pow(3) * igamma2 * (hx.square() * j1 - length)
     )
-    T[..., 4, 2, 2] = -1 * (
+    T[..., 4, 2, 2] = -1.0 * (
         -hx / beta * k1 * k2 * jf
         - 0.5 * hx / beta * (k2 + hx * k1) * j1
         + 0.25 / beta * k1 * (length - cy * sy)
     )
-    T[..., 4, 2, 3] = -2 * (-0.5 * hx / beta * k2 * jd - 0.25 / beta * k1 * sy.square())
-    T[..., 4, 3, 3] = -1 * (
+    T[..., 4, 2, 3] = -2.0 * (
+        -0.5 * hx / beta * k2 * jd - 0.25 / beta * k1 * sy.square()
+    )
+    T[..., 4, 3, 3] = -1.0 * (
         -hx / beta * k2 * jf
         + 0.5 * hx.square() / beta * j1
         - 0.25 / beta * (length + cy * sy)
     )
 
-    # Rotate the T tensor for skew / vertical magnets. The rotation only has an effect
-    # if hx != 0, k1 != 0 or k2 != 0. Note that the first if is here to improve speed
-    # when no rotation needs to be applied accross all vector dimensions. The
-    # torch.where is here to improve numerical stability for the vector elements where
-    # no rotation needs to be applied.
-    if ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0))).any():
-        rotation = rotation_matrix(tilt)
-        T = torch.where(
-            ((tilt != 0) & ((hx != 0) | (k1 != 0) | (k2 != 0)))
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-            .unsqueeze(-1),
-            torch.einsum(
-                "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
-            ),
-            T,
-        )
+    rotation = rotation_matrix(tilt)
+    T = torch.einsum(
+        "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
+    )
+
     return T
 
 
@@ -364,4 +345,10 @@ def misalignment_matrix(
     R_entry[..., 0, 6] = -misalignment[..., 0]
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
+    return R_entry, R_exit
+    R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
+    R_entry[..., 0, 6] = -misalignment[..., 0]
+    R_entry[..., 2, 6] = -misalignment[..., 1]
+
+    return R_entry, R_exit
     return R_entry, R_exit
