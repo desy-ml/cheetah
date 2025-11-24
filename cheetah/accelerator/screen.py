@@ -288,7 +288,7 @@ class Screen(Element):
                     weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
                 )
-                image = image_transposed.mT
+                image = image_transposed
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
@@ -317,7 +317,7 @@ class Screen(Element):
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
                     weights=broadcasted_weights,
-                )
+                ).mT
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
