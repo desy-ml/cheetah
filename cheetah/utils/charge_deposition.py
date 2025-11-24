@@ -8,142 +8,105 @@ def deposit_charge_cic_2d(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Deposit particle charge onto a 2D grid using the Cloud-In-Cell (CIC) method,
-    supporting arbitrary leading batch dimensions.
+    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
 
     Parameters
     ----------
-    x1 : torch.Tensor, shape (..., N)
-        Particle x-positions.
+    x1 : (..., N)
+        Particle x positions.
+    x2 : (..., N)
+        Particle y positions.
 
-    x2 : torch.Tensor, shape (..., N)
-        Particle y-positions.
+    bins1 : (Nx,)
+        1D array of x-bin edges or centers (assumed uniform spacing).
+    bins2 : (Ny,)
+        1D array of y-bin edges or centers (assumed uniform spacing).
 
-    bins1 : torch.Tensor, shape (Nx,)
-        Bin centers or edges along x.
-
-    bins2 : torch.Tensor, shape (Ny,)
-        Bin centers or edges along y.
-
-    weights : torch.Tensor, shape (..., N)
-        Particle weights (e.g., charge).
+    weights : (..., N), optional
+        Particle charge weights. If None, all particles have weight=1.
 
     Returns
     -------
-    charge_grid : torch.Tensor, shape (..., Nx, Ny)
-        Deposited charge density in the 2D grid.
+    charge_grid : (..., Nx, Ny)
+        Charge density on the grid.
     """
 
     device = x1.device
     dtype = x1.dtype
 
-    batch_shape = x1.shape[:-1]  # all leading dims
+    # --- grid dimensions ---
+    Nx = bins1.numel()
+    Ny = bins2.numel()
 
-    # ---------------------------------------------------------
-    # Form meshgrid from bins
-    # ---------------------------------------------------------
-    grid_x, grid_y = torch.meshgrid(bins1, bins2, indexing='ij')  # (Nx, Ny)
-    grid_shape = grid_x.shape  # (Nx, Ny)
-    Nx, Ny = grid_shape
+    # --- infer dx, dy (assume uniform) ---
+    dx = bins1[1] - bins1[0]
+    dy = bins2[1] - bins2[0]
 
-    # Grid origin (lower left corner)
-    grid_origin = torch.stack([grid_x[0, 0], grid_y[0, 0]]).to(device=device, dtype=dtype)
-
-    # Uniform cell size
-    cell_size = torch.stack([
-        grid_x[1, 0] - grid_x[0, 0],
-        grid_y[0, 1] - grid_y[0, 0],
-    ]).to(device=device, dtype=dtype)
-    inv_cell_size = 1.0 / cell_size  # (2,)
-
-    # ---------------------------------------------------------
-    # Build stacked particle positions
-    # ---------------------------------------------------------
-    # (..., N, 2)
-    particle_positions = torch.stack([x1, x2], dim=-1)
-
-    # ---------------------------------------------------------
-    # Normalize positions into cell coordinates
-    # ---------------------------------------------------------
-    # (..., N, 2)
-    normalized = (particle_positions - grid_origin) * inv_cell_size
-
-    # Lower-left cell integer index
-    cell_idx = normalized.floor().to(torch.int)  # (..., N, 2)
-
-    # 4 CIC neighbor offsets
-    offsets = torch.tensor(
-        [[0,0],[0,1],[1,0],[1,1]],
-        device=device,
-        dtype=torch.int
-    )  # (4,2)
-
-    # ---------------------------------------------------------
-    # Surrounding cell indices
-    # ---------------------------------------------------------
-    # (..., N, 4, 2)
-    neigh_idx = cell_idx.unsqueeze(-2) + offsets.unsqueeze(0).unsqueeze(0)
-
-    # ---------------------------------------------------------
-    # Compute CIC weights
-    # ---------------------------------------------------------
-    # (..., N, 4, 2)
-    delta = normalized.unsqueeze(-2) - neigh_idx
-    w = 1.0 - delta.abs()
-
-    # (..., N, 4)
-    cell_weights = w.prod(dim=-1)
-
-    # ---------------------------------------------------------
-    # Flatten everything for scatter_add_
-    # ---------------------------------------------------------
-    # weights: (..., N)
-    # cell_weights: (..., N, 4)
-    # values_flat: (..., 4*N)
     if weights is None:
         weights = torch.ones_like(x1)
 
-    values_flat = (cell_weights * weights.unsqueeze(-1)).reshape(*weights.shape[:-1], -1)
+    # Expand bins to match batch dims
+    # Normalize particle coordinates to grid index space
+    #   u1, u2 represent positions in grid coordinates
+    u1 = (x1 - bins1[0]) / dx
+    u2 = (x2 - bins2[0]) / dy
 
-    # neigh_idx: (..., N, 4, 2)
-    idx = neigh_idx.reshape(*weights.shape[:-1], -1, 2)  # (..., 4*N, 2)
-    idx_x = idx[..., 0]  # (..., 4*N)
-    idx_y = idx[..., 1]  # (..., 4*N)
+    # Left cell index
+    i1 = torch.floor(u1).to(torch.int64)
+    i2 = torch.floor(u2).to(torch.int64)
 
-    # Valid mask inside grid range
-    valid = (
-        (idx_x >= 0) & (idx_x < grid_shape[0]) &
-        (idx_y >= 0) & (idx_y < grid_shape[1])
-    )
+    # Distances to right cell
+    wx = u1 - i1
+    wy = u2 - i2
 
-    # Apply mask while keeping batch dims
-    idx_x = idx_x.masked_select(valid).reshape(*batch_shape, -1)
-    idx_y = idx_y.masked_select(valid).reshape(*batch_shape, -1)
-    values_flat = values_flat.masked_select(valid).reshape(*batch_shape, -1)
+    # 4 CIC weights (bilinear interpolation)
+    w11 = (1 - wx) * (1 - wy)   # (i1,   i2)
+    w21 = wx       * (1 - wy)   # (i1+1, i2)
+    w12 = (1 - wx) * wy         # (i1,   i2+1)
+    w22 = wx       * wy         # (i1+1, i2+1)
 
-    # ---------------------------------------------------------
-    # Convert 2D cell indices -> 1D flat index
-    # ---------------------------------------------------------
-    flat_index = idx_x * Ny + idx_y  # (..., K)
+    # Prepare (i,j) index pairs for 4 corners
+    # shape: (..., N)
+    i1_clamp = i1.clamp(0, Nx - 1)
+    i2_clamp = i2.clamp(0, Ny - 1)
+    i1p      = (i1 + 1).clamp(0, Nx - 1)
+    i2p      = (i2 + 1).clamp(0, Ny - 1)
 
-    # ---------------------------------------------------------
-    # Allocate output grid
-    # ---------------------------------------------------------
-    charge_grid = torch.zeros(
-        (*batch_shape, Nx * Ny),
-        device=device,
-        dtype=dtype
-    )
+    # ======= GPU-OPTIMIZED FLAT INDEXING ========
+    # Convert 2D (i,j) → 1D index = i * Ny + j
+    idx11 = i1_clamp * Ny + i2_clamp
+    idx21 = i1p      * Ny + i2_clamp
+    idx12 = i1_clamp * Ny + i2p
+    idx22 = i1p      * Ny + i2p
 
-    # ---------------------------------------------------------
-    # Scatter-add into flat grid
-    # ---------------------------------------------------------
-    charge_grid.index_add_(dim=-1, index=flat_index, source=values_flat)
+    # Flatten batch dims and particle dim together
+    batch_shape = x1.shape[:-1]
+    B = int(torch.tensor(batch_shape).prod()) if batch_shape else 1
+    N = x1.shape[-1]
 
-    # Reshape to (..., Nx, Ny)
-    charge_grid = charge_grid.reshape(*batch_shape, Nx, Ny)
+    def flatten(t):
+        return t.reshape(B, N)
 
-    # Normalize by cell area
-    inv_area = inv_cell_size[0] * inv_cell_size[1]
+    idx_all = torch.cat([
+        flatten(idx11), flatten(idx21),
+        flatten(idx12), flatten(idx22)
+    ], dim=1)  # shape (B, 4N)
 
-    return charge_grid * inv_area
+    vals_all = torch.cat([
+        flatten(w11 * weights),
+        flatten(w21 * weights),
+        flatten(w12 * weights),
+        flatten(w22 * weights),
+    ], dim=1)  # shape (B, 4N)
+
+    # Output buffer
+    charge = torch.zeros((B, Nx * Ny), dtype=dtype, device=device)
+
+    # Vectorized batched index_add_
+    # Loop only over batch dimensions (tiny), not particles.
+    for b in range(B):
+        charge[b].index_add_(0, idx_all[b], vals_all[b])
+
+    # Reshape back to original batch dims
+    out_shape = (*batch_shape, Nx, Ny)
+    return charge.reshape(out_shape)
