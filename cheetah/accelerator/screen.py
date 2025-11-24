@@ -7,7 +7,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, kde_histogram_2d
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map, kde_histogram_2d, deposit_charge_cic_2d
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -48,7 +48,7 @@ class Screen(Element):
         pixel_size: torch.Tensor | None = None,
         binning: int = 1,
         misalignment: torch.Tensor | None = None,
-        method: Literal["histogram", "kde"] = "histogram",
+        method: Literal["histogram", "kde", "charge_deposition"] = "histogram",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
         is_active: bool = False,
@@ -66,7 +66,8 @@ class Screen(Element):
         assert method in [
             "histogram",
             "kde",
-        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
+            "charge_deposition",
+        ], f"Invalid method {method}. Must be either 'histogram', 'kde', or 'charge_deposition'."
 
         self.register_buffer_or_parameter(
             "pixel_size",
@@ -303,6 +304,20 @@ class Screen(Element):
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
                 ).mT
+            elif self.method == "charge_deposition":
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
+                )
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
+                image = deposit_charge_cic_2d(
+                    x1=broadcasted_x,
+                    x2=broadcasted_y,
+                    bins1=self.pixel_bin_centers[0],
+                    bins2=self.pixel_bin_centers[1],
+                    weights=broadcasted_weights,
+                )
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 

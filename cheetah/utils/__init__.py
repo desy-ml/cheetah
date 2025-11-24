@@ -26,3 +26,4 @@ from .warnings import (  # noqa: F401
     PhysicsWarning,
     UnknownElementWarning,
 )
+from .charge_deposition import deposit_charge_cic_2d  # noqa: F401
