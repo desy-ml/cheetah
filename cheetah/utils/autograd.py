@@ -44,6 +44,14 @@ def cossqrtmcosdivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     return CosSqrtMCosDivDiff.apply(a, b)
 
 
+def simsidivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `(si(sqrt(a)) - si(sqrt(b))) / (b - a)` with proper removal of its
+    singularity at `a == b`.
+    """
+    return SiMSiDivDiff.apply(a, b)
+
+
 def sqrta2minusbdiva(c: torch.Tensor, g_tilde: torch.Tensor) -> torch.Tensor:
     """
     Calculate `(sqrt(c^2 + g_tilde) - c) / g_tilde` with proper removal of its
@@ -422,6 +430,125 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
                 ((grad_b + grad_a) * cb - (grad_b + grad_a) * sb) / (8.0 * b),
                 -(grad_a + grad_b) / 24.0,
             ),
+        )
+
+
+class SiMSiDivDiff(torch.autograd.Function):
+    """
+    Custom autograd function for the compound expression
+    `(si(sqrt(a)) - si(sqrt(b))) / (b - a)`. The singularity at`a == b` is replaced by
+    its limit.
+    """
+
+    # Automatically generate a custom vmap implementation
+    generate_vmap_rule = True
+
+    @staticmethod
+    def setup_context(ctx, inputs, output):
+        (a, b) = inputs
+
+        ctx.save_for_backward(a, b, output)
+        ctx.save_for_forward(a, b, output)
+
+    @staticmethod
+    def forward(a, b):
+        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
+        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
+
+        sa = (sqrt_a / torch.pi).sinc().real
+        sb = (sqrt_b / torch.pi).sinc().real
+        cb = sqrt_b.cos().real
+
+        return torch.where(
+            a != b, (sa - sb) / (b - a), torch.where(b != 0, 0.5 * (sb - cb) / b, 1 / 6)
+        )
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        a, b, _ = ctx.saved_tensors
+
+        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
+        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
+
+        sa = (sqrt_a / torch.pi).sinc().real
+        sb = (sqrt_b / torch.pi).sinc().real
+        ca = sqrt_a.cos().real
+        cb = sqrt_b.cos().real
+
+        ba = b - a
+
+        a0_b0_limit = -1.0 / 120.0
+        aeqb_limit = torch.where(
+            b != 0, (3.0 * cb + (b - 3.0) * sb) / (8.0 * b.square()), a0_b0_limit
+        )
+        aneqb_a0_limit = (1.0 - b / 6.0 - sb) / b.square()
+        aneqb_b0_limit = (1.0 - a / 6.0 - sa) / a.square()
+
+        grad_a = torch.where(
+            (a != b).logical_and(a != 0),
+            (ca - sa) / (2.0 * a * ba) + (sa - sb) / ba.square(),
+            torch.where(a != b, aneqb_a0_limit, aeqb_limit),
+        )
+        grad_b = torch.where(
+            (a != b).logical_and(b != 0),
+            -(cb - sb) / (2.0 * b * ba) + (sb - sa) / ba.square(),
+            torch.where(a != b, aneqb_b0_limit, aeqb_limit),
+        )
+
+        return grad_output * grad_a, grad_output * grad_b
+
+    @staticmethod
+    def jvp(ctx, grad_a, grad_b):
+        a, b, _ = ctx.saved_tensors
+
+        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
+        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
+
+        sa = (sqrt_a / torch.pi).sinc().real
+        sb = (sqrt_b / torch.pi).sinc().real
+        nsa = (sqrt_a / 2.0).sin().real
+        nsb = (sqrt_b / 2.0).sin().real
+        ca = sqrt_a.cos().real
+        cb = sqrt_b.cos().real
+
+        ba = b - a
+
+        aneqb_a0_limit = (  # At this point we know b != 0
+            1.5 * grad_b - grad_a
+        ) * sb / b.square() + (
+            6.0 * grad_b * nsb.square() + (6.0 - b) * grad_a - 9.0 * grad_b
+        ) / (
+            6.0 * b.square()
+        )
+        aneqb_b0_limit = (  # At this point we know a != 0
+            1.5 * grad_a - grad_b
+        ) * sa / a.square() + (
+            6.0 * grad_a * nsa.square() + (6.0 - a) * grad_b - 9.0 * grad_a
+        ) / (
+            6.0 * a.square()
+        )
+        a0_xor_b0_limit = torch.where(  # At this point we know only one of a or b is 0
+            a == 0, aneqb_a0_limit, aneqb_b0_limit
+        )
+        a0_and_b0_limit = -(grad_a + grad_b) / 120.0
+        a0_or_b0_limit = torch.where(
+            (a == 0).logical_and(b == 0), a0_and_b0_limit, a0_xor_b0_limit
+        )
+        aeqb_limit = (  # At this point we know a != 0 and b != 0
+            (grad_b + grad_a) * ((b - 3.0) * sb + 3.0 * cb) / (8.0 * b.square())
+        )
+        aeqb_or_a0_or_b0_limit = torch.where(
+            (b != 0).logical_and(a != 0), aeqb_limit, a0_or_b0_limit
+        )
+
+        return torch.where(
+            (a != b).logical_and(a != 0).logical_and(b != 0),
+            (
+                (sa - sb) * (grad_a - grad_b)
+                + 0.5 * ba * ((ca - sa) * grad_a / a + (sb - cb) * grad_b / b)
+            )
+            / ba.square(),
+            aeqb_or_a0_or_b0_limit,
         )
 
 

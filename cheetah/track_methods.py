@@ -9,6 +9,7 @@ from cheetah.utils.autograd import (
     si1mdiv,
     sicos1mdiv,
     sicoskuddelmuddel15mdiv,
+    simsidivdiff,
     sipsicos3mdiv,
 )
 
@@ -136,9 +137,7 @@ def base_ttensor(
     jc = length.square() * cossqrtmcosdivdiff(
         kx2 * length.square(), ky2 * length.square()
     )
-    js = torch.where(
-        j_denominator != 0, (cy * sy - sx) / j_denominator, length.pow(3) / 6.0
-    )
+    js = length.pow(3) * simsidivdiff(kx2 * length.square(), ky2 * length.square())
     jd = torch.where(
         j_denominator != 0, (d2y - dx) / j_denominator, length.pow(4) / 24.0
     )
