@@ -506,8 +506,6 @@ class SiMSiDivDiff(torch.autograd.Function):
 
         sa = (sqrt_a / torch.pi).sinc().real
         sb = (sqrt_b / torch.pi).sinc().real
-        nsa = (sqrt_a / 2.0).sin().real
-        nsb = (sqrt_b / 2.0).sin().real
         ca = sqrt_a.cos().real
         cb = sqrt_b.cos().real
 
@@ -516,14 +514,14 @@ class SiMSiDivDiff(torch.autograd.Function):
         aneqb_a0_limit = (  # At this point we know b != 0
             1.5 * grad_b - grad_a
         ) * sb / b.square() + (
-            6.0 * grad_b * nsb.square() + (6.0 - b) * grad_a - 9.0 * grad_b
+            6.0 * grad_b * (1.0 - cb) / 2.0 + (6.0 - b) * grad_a - 9.0 * grad_b
         ) / (
             6.0 * b.square()
         )
         aneqb_b0_limit = (  # At this point we know a != 0
             1.5 * grad_a - grad_b
         ) * sa / a.square() + (
-            6.0 * grad_a * nsa.square() + (6.0 - a) * grad_b - 9.0 * grad_a
+            6.0 * grad_a * (1.0 - ca) / 2.0 + (6.0 - a) * grad_b - 9.0 * grad_a
         ) / (
             6.0 * a.square()
         )
