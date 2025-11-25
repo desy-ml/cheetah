@@ -51,6 +51,11 @@ def deposit_charge_cic_2d(
     u1 = (x1 - bins1[0]) / dx
     u2 = (x2 - bins2[0]) / dy
 
+    # for particles outside the grid, their contributions will be clamped later
+    # set weights to zero for those particles
+    outside_mask = (u1 < 0) | (u1 > Nx - 1) | (u2 < 0) | (u2 > Ny - 1)
+    weights = weights.mul(~outside_mask)
+
     # Left cell index
     i1 = torch.floor(u1).to(torch.int64)
     i2 = torch.floor(u2).to(torch.int64)
