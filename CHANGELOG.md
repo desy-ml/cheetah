@@ -6,6 +6,7 @@
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
 - Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
+- Add support for Python 3.14, and remove support for Python 3.10, as well as increase the minimum required versions for some dependencies. (see #582) (@jank324)
 
 ### 🚀 Features
 
