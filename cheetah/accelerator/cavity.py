@@ -277,18 +277,14 @@ class Cavity(Element):
 
             r22 = Ei / Ef * (alpha.cos() + math.sqrt(2.0) * phi.cos() * alpha.sin())
 
-            r55 = 1.0 + torch.where(
-                dE != 0.0,
-                (
-                    k
-                    * self.length
-                    * beta0
-                    * phi.tan()
-                    * (Ei * Ef * (beta0 * beta1 - 1) + 1)
-                    / (beta1 * Ef * dE)
-                ),
-                torch.zeros_like(dE),
-            )
+            r55 = (
+                k
+                * self.length
+                * beta0
+                * phi.tan()
+                * (Ei * Ef * (beta0 * beta1 - 1) + 1)
+                / (beta1 * Ef * dE)
+            ).where(dE != 0.0, torch.zeros_like(dE))
             r56 = (
                 -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             )

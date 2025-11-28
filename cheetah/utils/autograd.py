@@ -89,22 +89,21 @@ class Log1PDiv(torch.autograd.Function):
 
     @staticmethod
     def forward(x):
-        return torch.where(x != 0, x.log1p() / x, x.new_ones(()))
+        return (x.log1p() / x).where(x != 0, x.new_ones(()))
 
     @staticmethod
     def backward(ctx, grad_output):
         x, fx = ctx.saved_tensors
-        return grad_output * torch.where(
-            x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(())
+        return grad_output * (((1 + x).reciprocal() - fx) / x).where(
+            x != 0, -0.5 * x.new_ones(())
         )
 
     @staticmethod
     def jvp(ctx, grad_input):
         x, fx = ctx.saved_tensors
-        return (
-            torch.where(x != 0, ((1 + x).reciprocal() - fx) / x, -0.5 * x.new_ones(()))
-            * grad_input
-        )
+        return (((1 + x).reciprocal() - fx) / x).where(
+            x != 0, -0.5 * x.new_ones(())
+        ) * grad_input
 
 
 class Si1MDiv(torch.autograd.Function):
@@ -127,25 +126,25 @@ class Si1MDiv(torch.autograd.Function):
     def forward(x):
         # Since x may be negative, we use complex arithmetic for the sqrt
         sx = (torch.complex(x, x.new_zeros(())).sqrt() / torch.pi).sinc().real
-        return torch.where(x != 0, (1 - sx) / x, x.new_ones(()) / 6.0)
+        return ((1.0 - sx) / x).where(x != 0, x.new_ones(()) / 6.0)
 
     @staticmethod
     def backward(ctx, grad_output):
         x, fx = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2 * x)
+        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2.0 * x)
 
-        return grad_output * torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120)
+        return grad_output * ((sx - fx) / x).where(x != 0, -x.new_ones(()) / 120.0)
 
     @staticmethod
     def jvp(ctx, grad_input):
         x, fx = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2 * x)
+        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2.0 * x)
 
-        return torch.where(x != 0, (sx - fx) / x, -x.new_ones(()) / 120) * grad_input
+        return ((sx - fx) / x).where(x != 0, -x.new_ones(()) / 120.0) * grad_input
 
 
 class SiCos1MDiv(torch.autograd.Function):
@@ -173,7 +172,7 @@ class SiCos1MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        return torch.where(x != 0, (1 - sx * cx) / x, x.new_ones(()) / 6.0)
+        return ((1.0 - sx * cx) / x).where(x != 0, x.new_ones(()) / 6.0)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -184,12 +183,10 @@ class SiCos1MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        grad = torch.where(
-            x != 0,
+        grad = (
             (sx * (x * sx + 2.0 * cx) - 2.0 - cx.square() + sx * cx)
-            / (2.0 * x.square()),
-            -2.0 / 15.0,
-        )
+            / (2.0 * x.square())
+        ).where(x != 0, -2.0 / 15.0)
 
         return grad_output * grad
 
@@ -202,12 +199,10 @@ class SiCos1MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        grad = torch.where(
-            x != 0,
+        grad = (
             (sx * (x * sx + 2.0 * cx) - 2.0 - cx.square() + sx * cx)
-            / (2.0 * x.square()),
-            -2.0 / 15.0,
-        )
+            / (2.0 * x.square())
+        ).where(x != 0, -2.0 / 15.0)
 
         return grad * grad_input
 
@@ -237,9 +232,7 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        return torch.where(
-            x != 0, (3.0 - 4.0 * sx + sx * cx) / (2.0 * x), x.new_zeros(())
-        )
+        return ((3.0 - 4.0 * sx + sx * cx) / (2.0 * x)).where(x != 0, x.new_zeros(()))
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -250,8 +243,7 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        grad = torch.where(
-            x != 0,
+        grad = (
             (
                 -sx * (x * sx + 2.0 * cx - 8.0)
                 - 6.0
@@ -259,9 +251,8 @@ class SiPSiCos3MDiv(torch.autograd.Function):
                 + cx.square()
                 - (4.0 + sx) * cx
             )
-            / (4.0 * x.square()),
-            0.05,
-        )
+            / (4.0 * x.square())
+        ).where(x != 0, 0.05)
 
         return grad_output * grad
 
@@ -274,8 +265,7 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        grad = torch.where(
-            x != 0,
+        grad = (
             (
                 -sx * (x * sx + 2.0 * cx - 8.0)
                 - 6.0
@@ -283,9 +273,8 @@ class SiPSiCos3MDiv(torch.autograd.Function):
                 + cx.square()
                 - (4.0 + sx) * cx
             )
-            / (4.0 * x.square()),
-            0.05,
-        )
+            / (4.0 * x.square())
+        ).where(x != 0, 0.05)
 
         return grad * grad_input
 
@@ -318,12 +307,10 @@ class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        return torch.where(
-            x != 0,
+        return (
             (15.0 - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx.square() + x * sx.pow(3))
-            / (x.pow(3)),
-            1.0 / 56.0,
-        )
+            / x.pow(3)
+        ).where(x != 0, 1.0 / 56.0)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -398,9 +385,7 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
         ca = sqrt_a.cos().real
         cb = sqrt_b.cos().real
 
-        demoninator = a - b
-
-        return torch.where(demoninator != 0, (cb - ca) / demoninator, 0.5 * sa)
+        return ((cb - ca) / (a - b)).where(a != b, 0.5 * sa)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -416,10 +401,10 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
         cbca = cb - ca
         demoninator = ab.square()
 
-        limit = torch.where(a != 0, (ca - sa) / (8.0 * a), -1.0 / 24.0)
+        limit = ((ca - sa) / (8.0 * a)).where(a != 0, -1.0 / 24.0)
 
-        grad_a = torch.where(a != b, (0.5 * sa * ab - cbca) / demoninator, limit)
-        grad_b = torch.where(a != b, -(0.5 * sb * ab - cbca) / demoninator, limit)
+        grad_a = ((0.5 * sa * ab - cbca) / demoninator).where(a != b, limit)
+        grad_b = (-(0.5 * sb * ab - cbca) / demoninator).where(a != b, limit)
 
         return grad_output * grad_a, grad_output * grad_b
 
@@ -435,14 +420,13 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
         cb = sqrt_b.cos().real
         ab = a - b
 
-        return torch.where(
-            a != b,
+        return (
             ((0.5 * ab * (grad_a * sa - grad_b * sb)) + (grad_a - grad_b) * (ca - cb))
-            / ab.square(),
-            torch.where(
-                b != 0,
-                ((grad_b + grad_a) * cb - (grad_b + grad_a) * sb) / (8.0 * b),
-                -(grad_a + grad_b) / 24.0,
+            / ab.square()
+        ).where(
+            a != b,
+            (((grad_b + grad_a) * cb - (grad_b + grad_a) * sb) / (8.0 * b)).where(
+                b != 0, -(grad_a + grad_b) / 24.0
             ),
         )
 
@@ -473,8 +457,8 @@ class SiMSiDivDiff(torch.autograd.Function):
         sb = (sqrt_b / torch.pi).sinc().real
         cb = sqrt_b.cos().real
 
-        return torch.where(
-            a != b, (sa - sb) / (b - a), torch.where(b != 0, 0.5 * (sb - cb) / b, 1 / 6)
+        return ((sa - sb) / (b - a)).where(
+            a != b, (0.5 * (sb - cb) / b).where(b != 0, 1.0 / 6.0)
         )
 
     @staticmethod
@@ -492,21 +476,17 @@ class SiMSiDivDiff(torch.autograd.Function):
         ba = b - a
 
         a0_b0_limit = -1.0 / 120.0
-        aeqb_limit = torch.where(
-            b != 0, (3.0 * cb + (b - 3.0) * sb) / (8.0 * b.square()), a0_b0_limit
+        aeqb_limit = ((3.0 * cb + (b - 3.0) * sb) / (8.0 * b.square())).where(
+            b != 0, a0_b0_limit
         )
         aneqb_a0_limit = (1.0 - b / 6.0 - sb) / b.square()
         aneqb_b0_limit = (1.0 - a / 6.0 - sa) / a.square()
 
-        grad_a = torch.where(
-            (a != b).logical_and(a != 0),
-            (ca - sa) / (2.0 * a * ba) + (sa - sb) / ba.square(),
-            torch.where(a != b, aneqb_a0_limit, aeqb_limit),
+        grad_a = ((ca - sa) / (2.0 * a * ba) + (sa - sb) / ba.square()).where(
+            (a != b).logical_and(a != 0), aneqb_a0_limit.where(a != b, aeqb_limit)
         )
-        grad_b = torch.where(
-            (a != b).logical_and(b != 0),
-            -(cb - sb) / (2.0 * b * ba) + (sb - sa) / ba.square(),
-            torch.where(a != b, aneqb_b0_limit, aeqb_limit),
+        grad_b = (-(cb - sb) / (2.0 * b * ba) + (sb - sa) / ba.square()).where(
+            (a != b).logical_and(b != 0), aneqb_b0_limit.where(a != b, aeqb_limit)
         )
 
         return grad_output * grad_a, grad_output * grad_b
@@ -539,28 +519,28 @@ class SiMSiDivDiff(torch.autograd.Function):
         ) / (
             6.0 * a.square()
         )
-        a0_xor_b0_limit = torch.where(  # At this point we know only one of a or b is 0
-            a == 0, aneqb_a0_limit, aneqb_b0_limit
+        a0_xor_b0_limit = (  # At this point we know only one of a or b is 0
+            aneqb_a0_limit.where(a == 0, aneqb_b0_limit)
         )
         a0_and_b0_limit = -(grad_a + grad_b) / 120.0
-        a0_or_b0_limit = torch.where(
-            (a == 0).logical_and(b == 0), a0_and_b0_limit, a0_xor_b0_limit
+        a0_or_b0_limit = a0_and_b0_limit.where(
+            (a == 0).logical_and(b == 0), a0_xor_b0_limit
         )
         aeqb_limit = (  # At this point we know a != 0 and b != 0
             (grad_b + grad_a) * ((b - 3.0) * sb + 3.0 * cb) / (8.0 * b.square())
         )
-        aeqb_or_a0_or_b0_limit = torch.where(
-            (b != 0).logical_and(a != 0), aeqb_limit, a0_or_b0_limit
+        aeqb_or_a0_or_b0_limit = aeqb_limit.where(
+            (b != 0).logical_and(a != 0), a0_or_b0_limit
         )
 
-        return torch.where(
-            (a != b).logical_and(a != 0).logical_and(b != 0),
+        return (
             (
                 (sa - sb) * (grad_a - grad_b)
                 + 0.5 * ba * ((ca - sa) * grad_a / a + (sb - cb) * grad_b / b)
             )
-            / ba.square(),
-            aeqb_or_a0_or_b0_limit,
+            / ba.square()
+        ).where(
+            (a != b).logical_and(a != 0).logical_and(b != 0), aeqb_or_a0_or_b0_limit
         )
 
 
@@ -590,11 +570,11 @@ class Si2MSi2DivDiff(torch.autograd.Function):
         sb = (sqrt_b / torch.pi).sinc().real
         cb = sqrt_b.cos().real
 
-        aeqb_limit = torch.where(
-            b != 0, (1.0 - cb.square() - b * sb * cb) / b.square(), 1.0 / 3.0
+        aeqb_limit = ((1 - cb.square() - b * sb * cb) / b.square()).where(
+            b != 0, 1.0 / 3.0
         )
 
-        return torch.where(a != b, (sb.square() - sa.square()) / (a - b), aeqb_limit)
+        return ((sb.square() - sa.square()) / (a - b)).where(a != b, aeqb_limit)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -613,25 +593,19 @@ class Si2MSi2DivDiff(torch.autograd.Function):
         a0_limit = (b - 1 / 3 * b.square() + cb.square() - 1.0) / b.pow(3)
         b0_limit = (a - 1 / 3 * a.square() + ca.square() - 1.0) / a.pow(3)
         aeqbeq0_limit = -2.0 / 45.0
-        aeqb_limit = torch.where(
-            b != 0,
+        aeqb_limit = (
             (5.0 * b * sb * cb - (b - 2.0) * (2.0 * cb.square() - 1.0) - 2.0)
-            / (4 * b.pow(3)),
-            aeqbeq0_limit,
-        )
-        aeqb_or_a0_limit = torch.where(a == b, aeqb_limit, a0_limit)
-        aeqb_or_b0_limit = torch.where(a == b, aeqb_limit, b0_limit)
+            / (4.0 * b.pow(3))
+        ).where(b != 0, aeqbeq0_limit)
+        aeqb_or_a0_limit = aeqb_limit.where(a == b, a0_limit)
+        aeqb_or_b0_limit = aeqb_limit.where(a == b, b0_limit)
 
-        grad_a = torch.where(
-            (a != b).logical_and(a != 0),
-            (-ab * sa * (ca - sa) / a + sa.square() - sb.square()) / ab.square(),
-            aeqb_or_a0_limit,
-        )
-        grad_b = torch.where(
-            (a != b).logical_and(b != 0),
-            (ab * sb * (cb - sb) / b + sb.square() - sa.square()) / ab.square(),
-            aeqb_or_b0_limit,
-        )
+        grad_a = (
+            (-ab * sa * (ca - sa) / a + sa.square() - sb.square()) / ab.square()
+        ).where((a != b).logical_and(a != 0), aeqb_or_a0_limit)
+        grad_b = (
+            (ab * sb * (cb - sb) / b + sb.square() - sa.square()) / ab.square()
+        ).where((a != b).logical_and(b != 0), aeqb_or_b0_limit)
 
         return grad_output * grad_a, grad_output * grad_b
 
@@ -655,28 +629,22 @@ class Si2MSi2DivDiff(torch.autograd.Function):
 
         # a0_limit = torch.nan
         # b0_limit = torch.nan
-        # a0_or_b0_limit = torch.where(a == 0, a0_limit, b0_limit)
+        # a0_or_b0_limit = a0_limit.where(a == 0, b0_limit)
         aeqbeq0_limit = -2.0 / 45.0 * (grad_a + grad_b)
-        aeqb_limit = torch.where(
-            b != 0,
+        aeqb_limit = (
             (sb * cb * 5.0 - cb.square() + (b - 4.0) * sb.square())
             * (grad_a + grad_b)
-            / (4.0 * b.square()),
-            aeqbeq0_limit,
-        )
-        # aeqb_or_a0_or_b0_limit = torch.where(a == b, aeqb_limit, a0_or_b0_limit)
+            / (4.0 * b.square())
+        ).where(b != 0, aeqbeq0_limit)
+        # aeqb_or_a0_or_b0_limit = aeqb_limit.where(a == 0, a0_or_b0_limit)
 
-        return torch.where(
-            # (a != b).logical_and(a != 0).logical_and(b != 0),
-            a != b,
+        return (
             (
                 (sa.square() - sb.square()) * (grad_a - grad_b)
                 + ab * (sb * grad_b * (cb - sb) / b - sa * grad_a * (ca - sa) / a)
             )
-            / ab.square(),
-            # aeqb_or_a0_or_b0_limit,
-            aeqb_limit,
-        )
+            / ab.square()
+        ).where(a != b, aeqb_limit)
 
 
 class SqrtA2MinusBDivA(torch.autograd.Function):
@@ -698,28 +666,21 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
 
     @staticmethod
     def forward(c, g_tilde):
-        return torch.where(
-            g_tilde != 0,
-            ((c.square() + g_tilde).sqrt() - c) / g_tilde,
-            (2 * c).reciprocal(),
+        return (((c.square() + g_tilde).sqrt() - c) / g_tilde).where(
+            g_tilde != 0, (2.0 * c).reciprocal()
         )
 
     @staticmethod
     def backward(ctx, grad_output):
         c, g_tilde, _ = ctx.saved_tensors
 
-        grad_c = torch.where(
-            g_tilde != 0,
-            (c / (c.square() + g_tilde).sqrt() - 1) / g_tilde,
-            -(2.0 * c.square()).reciprocal(),
+        grad_c = ((c / (c.square() + g_tilde).sqrt() - 1) / g_tilde).where(
+            g_tilde != 0, -(2.0 * c.square()).reciprocal()
         )
-
-        grad_g_tilde = torch.where(
-            g_tilde != 0,
+        grad_g_tilde = (
             ((-2.0 * c.square() - g_tilde) / (c.square() + g_tilde).sqrt() + 2.0 * c)
-            / (2.0 * g_tilde.square()),
-            -(8.0 * c.pow(3)).reciprocal(),
-        )
+            / (2.0 * g_tilde.square())
+        ).where(g_tilde != 0, -(8.0 * c.pow(3)).reciprocal())
 
         return grad_output * grad_c, grad_output * grad_g_tilde
 
@@ -727,8 +688,7 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
     def jvp(ctx, grad_c, grad_g_tilde):
         c, g_tilde, _ = ctx.saved_tensors
 
-        return torch.where(
-            g_tilde != 0,
+        return (
             (
                 g_tilde
                 * (
@@ -738,6 +698,5 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
                 )
                 - ((c.square() + g_tilde).sqrt() - c) * grad_g_tilde
             )
-            / (g_tilde.square()),
-            (-grad_g_tilde - 4.0 * c * grad_c) / (8.0 * c.pow(3)),
-        )
+            / (g_tilde.square())
+        ).where(g_tilde != 0, (-grad_g_tilde - 4.0 * c * grad_c) / (8.0 * c.pow(3)))

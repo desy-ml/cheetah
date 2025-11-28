@@ -135,8 +135,7 @@ def base_ttensor(
     # for `j3` as `sicoskuddelmuddel15mdiv`, but it was found that no proper limit
     # exists. Instead, a different model will have to be found in the future that
     # avoids these issues altogether.
-    j3 = torch.where(
-        kx2 != 0,
+    j3 = (
         (
             15.0 * length
             - 22.5 * sx
@@ -144,9 +143,8 @@ def base_ttensor(
             - 1.5 * sx * cx.square()
             + kx2 * sx.pow(3)
         )
-        / (6.0 * kx2.pow(3)),
-        length.pow(7) / 56.0,
-    )
+        / (6.0 * kx2.pow(3))
+    ).where(kx2 != 0, length.pow(7) / 56.0)
     j_denominator = kx2 - 4.0 * ky2
     jc = length.square() * cossqrtmcosdivdiff(
         kx2 * length.square(), ky2 * length.square()
@@ -156,12 +154,8 @@ def base_ttensor(
     # for `jd` as `si2msi2divdiff`, but it was found that no proper limit exists.
     # Instead, a different model will have to be found in the future that avoids these
     # issues altogether.
-    jd = torch.where(
-        j_denominator != 0, (d2y - dx) / j_denominator, length.pow(4) / 24.0
-    )
-    jf = torch.where(
-        j_denominator != 0, (f2y - fx) / j_denominator, length.pow(5) / 120.0
-    )
+    jd = ((d2y - dx) / j_denominator).where(j_denominator != 0, length.pow(4) / 24.0)
+    jf = ((f2y - fx) / j_denominator).where(j_denominator != 0, length.pow(5) / 120.0)
 
     khk = k2 + 2.0 * hx * k1
 
