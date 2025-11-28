@@ -92,21 +92,17 @@ class Log1PDiv(torch.autograd.Function):
 
     @staticmethod
     def forward(x):
-        return (x.log1p() / x).where(x != 0, x.new_ones(()))
+        return (x.log1p() / x).where(x != 0, 1.0)
 
     @staticmethod
     def backward(ctx, grad_output):
         x, fx = ctx.saved_tensors
-        return grad_output * (((1 + x).reciprocal() - fx) / x).where(
-            x != 0, -0.5 * x.new_ones(())
-        )
+        return grad_output * (((1.0 + x).reciprocal() - fx) / x).where(x != 0, -0.5)
 
     @staticmethod
     def jvp(ctx, grad_input):
         x, fx = ctx.saved_tensors
-        return (((1 + x).reciprocal() - fx) / x).where(
-            x != 0, -0.5 * x.new_ones(())
-        ) * grad_input
+        return (((1.0 + x).reciprocal() - fx) / x).where(x != 0, -0.5) * grad_input
 
 
 class Si1MDiv(torch.autograd.Function):
@@ -129,7 +125,7 @@ class Si1MDiv(torch.autograd.Function):
     def forward(x):
         # Since x may be negative, we use complex arithmetic for the sqrt
         sx = (torch.complex(x, x.new_zeros(())).sqrt() / torch.pi).sinc().real
-        return ((1.0 - sx) / x).where(x != 0, x.new_ones(()) / 6.0)
+        return ((1.0 - sx) / x).where(x != 0, 1.0 / 6.0)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -138,7 +134,7 @@ class Si1MDiv(torch.autograd.Function):
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
         sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2.0 * x)
 
-        return grad_output * ((sx - fx) / x).where(x != 0, -x.new_ones(()) / 120.0)
+        return grad_output * ((sx - fx) / x).where(x != 0, -1.0 / 120.0)
 
     @staticmethod
     def jvp(ctx, grad_input):
@@ -147,7 +143,7 @@ class Si1MDiv(torch.autograd.Function):
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
         sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2.0 * x)
 
-        return ((sx - fx) / x).where(x != 0, -x.new_ones(()) / 120.0) * grad_input
+        return ((sx - fx) / x).where(x != 0, -1.0 / 120.0) * grad_input
 
 
 class SiCos1MDiv(torch.autograd.Function):
@@ -175,7 +171,7 @@ class SiCos1MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        return ((1.0 - sx * cx) / x).where(x != 0, x.new_ones(()) / 6.0)
+        return ((1.0 - sx * cx) / x).where(x != 0, 1.0 / 6.0)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -235,7 +231,7 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        return ((3.0 - 4.0 * sx + sx * cx) / (2.0 * x)).where(x != 0, x.new_zeros(()))
+        return ((3.0 - 4.0 * sx + sx * cx) / (2.0 * x)).where(x != 0, 0.0)
 
     @staticmethod
     def backward(ctx, grad_output):
