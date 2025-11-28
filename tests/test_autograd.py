@@ -4,6 +4,7 @@ from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     log1pdiv,
     si1mdiv,
+    si2msi2divdiff,
     sicos1mdiv,
     sicoskuddelmuddel15mdiv,
     simsidivdiff,
@@ -165,6 +166,36 @@ def test_simsidivdiff():
     # Check gradient calculation using finite difference methods
     assert torch.autograd.gradcheck(
         func=simsidivdiff,
+        inputs=(test_points_a, test_points_b),
+        rtol=0.01,
+        check_backward_ad=True,
+        check_forward_ad=True,
+        check_batched_grad=True,
+        check_batched_forward_grad=True,
+        check_grad_dtypes=True,
+    )
+
+
+def test_si2msi2divdiff():
+    """
+    Verify that the custom autograd function si2msi2divdiff is correctly implementing
+    `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)` and its derivative, including removing
+    the singularity at `a == b`.
+    """
+    test_points_a = torch.tensor(
+        [0.0, 0.0, -0.5, 0.1, 0.0, 1.0, 1.0, 2.0],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+    test_points_b = torch.tensor(
+        [-0.5, 0.1, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+
+    # Check gradient calculation using finite difference methods
+    assert torch.autograd.gradcheck(
+        func=si2msi2divdiff,
         inputs=(test_points_a, test_points_b),
         rtol=0.01,
         check_backward_ad=True,
