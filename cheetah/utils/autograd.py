@@ -32,6 +32,9 @@ def sicoskuddelmuddel15mdiv(x: torch.Tensor) -> torch.Tensor:
     Calculate `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x)) * cos(sqrt(x)) - 1.5
     * si(sqrt(x)) * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)` with proper removal of
     its singularity at 0.
+
+    # NOTE: Currently unused, but kept for possible future use. See comment on
+    # `track_methods.py` -> `base_ttensor` -> `j3`.
     """
     return SiCosKuddelMuddel15MDiv.apply(x)
 
@@ -293,6 +296,9 @@ class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
     `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x)) * cos(sqrt(x)) - 1.5 * si(sqrt(x))
     * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)`. The singularity at 0 is replaced by
     its limit.
+
+    # NOTE: Currently unused, but kept for possible future use. See comment on
+    # `track_methods.py` -> `base_ttensor` -> `j3`.
     """
 
     # Automatically generate a custom vmap implementation

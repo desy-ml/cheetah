@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from cheetah.utils.autograd import (
@@ -101,6 +102,12 @@ def test_sipsicos3mdiv():
     )
 
 
+@pytest.mark.xfail(
+    reason=(
+        "No proper limit exists for sicoskuddelmuddel15mdiv. A different model will "
+        "have to be found in the future that avoids these issues altogether."
+    )
+)
 def test_sicoskuddelmuddel15mdiv():
     """
     Verify that the custom autograd function `sicoskuddelmuddel15mdiv` correctly
@@ -176,6 +183,12 @@ def test_simsidivdiff():
     )
 
 
+@pytest.mark.xfail(
+    reason=(
+        "No proper limit exists for si2msi2divdiff at a == 0 and b == 0. A different "
+        "model will have to be found in the future that avoids these isues altogether."
+    )
+)
 def test_si2msi2divdiff():
     """
     Verify that the custom autograd function si2msi2divdiff is correctly implementing

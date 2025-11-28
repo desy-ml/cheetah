@@ -7,9 +7,7 @@ from cheetah.utils import compute_relativistic_factors
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     si1mdiv,
-    si2msi2divdiff,
     sicos1mdiv,
-    sicoskuddelmuddel15mdiv,
     simsidivdiff,
     sipsicos3mdiv,
 )
@@ -127,21 +125,39 @@ def base_ttensor(
     r = (0.5 * kx * length / torch.pi).sinc()
     dx = 0.5 * length.square() * r.square().real
 
+    d2y = 0.5 * sy.square()
     fx = length.pow(3) * si1mdiv(kx2 * length.square())
     f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
     j1 = fx
     j2 = length.pow(3) * sipsicos3mdiv(kx2 * length.square())
-    j3 = length.pow(7) * sicoskuddelmuddel15mdiv(kx2 * length.square())
+    # NOTE: Previously, an effort has been made to implement a custom autograd function
+    # for `j3` as `sicoskuddelmuddel15mdiv`, but it was found that no proper limit
+    # exists. Instead, a different model will have to be found in the future that
+    # avoids these issues altogether.
+    j3 = torch.where(
+        kx2 != 0,
+        (
+            15.0 * length
+            - 22.5 * sx
+            + 9.0 * sx * cx
+            - 1.5 * sx * cx.square()
+            + kx2 * sx.pow(3)
+        )
+        / (6.0 * kx2.pow(3)),
+        length.pow(7) / 56.0,
+    )
     j_denominator = kx2 - 4.0 * ky2
     jc = length.square() * cossqrtmcosdivdiff(
         kx2 * length.square(), ky2 * length.square()
     )
     js = length.pow(3) * simsidivdiff(kx2 * length.square(), ky2 * length.square())
-    jd = (
-        length.pow(4)
-        / 8.0
-        * si2msi2divdiff(4.0 * kx2 * length.square(), ky2 * length.square())
+    # NOTE: Previously, an effort has been made to implement a custom autograd function
+    # for `jd` as `si2msi2divdiff`, but it was found that no proper limit exists.
+    # Instead, a different model will have to be found in the future that avoids these
+    # issues altogether.
+    jd = torch.where(
+        j_denominator != 0, (d2y - dx) / j_denominator, length.pow(4) / 24.0
     )
     jf = torch.where(
         j_denominator != 0, (f2y - fx) / j_denominator, length.pow(5) / 120.0
