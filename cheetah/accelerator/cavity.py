@@ -140,42 +140,52 @@ class Cavity(Element):
 
         dgamma = self.voltage / incoming.species.mass_eV
 
-        T566 = (
-            self.length
-            * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
-            / (2.0 * beta0 * beta1.pow(3) * gamma0 * (gamma0 - gamma1) * gamma1.pow(3))
-        )
-        T556 = (
-            beta0
-            * k
-            * self.length
-            * dgamma
-            * gamma0
-            * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
-            * phi.sin()
-            / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).square())
-        )
-        T555 = (
-            beta0.square()
-            * k.square()
-            * self.length
-            * dgamma
-            / 2.0
-            * (
-                dgamma
-                * (
-                    2.0 * gamma0 * gamma1.pow(3) * (beta0 * beta1.pow(3) - 1.0)
-                    + gamma0.square()
-                    + 3.0 * gamma1.square()
-                    - 2.0
+        # TODO: Branch stays in for now because no proper limit exists and would
+        # probably require a different model altogether.
+        if (delta_energy > 0).any():
+            T566 = (
+                self.length
+                * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
+                / (
+                    2.0
+                    * beta0
+                    * beta1.pow(3)
+                    * gamma0
+                    * (gamma0 - gamma1)
+                    * gamma1.pow(3)
                 )
-                / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
-                * phi.sin().square()
-                - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
-                / (beta1 * gamma1 * (gamma0 - gamma1).square())
-                * phi.cos()
             )
-        )
+            T556 = (
+                beta0
+                * k
+                * self.length
+                * dgamma
+                * gamma0
+                * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
+                * phi.sin()
+                / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).square())
+            )
+            T555 = (
+                beta0.square()
+                * k.square()
+                * self.length
+                * dgamma
+                / 2.0
+                * (
+                    dgamma
+                    * (
+                        2.0 * gamma0 * gamma1.pow(3) * (beta0 * beta1.pow(3) - 1.0)
+                        + gamma0.square()
+                        + 3.0 * gamma1.square()
+                        - 2.0
+                    )
+                    / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
+                    * phi.sin().square()
+                    - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
+                    / (beta1 * gamma1 * (gamma0 - gamma1).square())
+                    * phi.cos()
+                )
+            )
 
         if isinstance(incoming, ParameterBeam):
             outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
@@ -269,6 +279,8 @@ class Cavity(Element):
 
             r22 = Ei / Ef * (alpha.cos() + math.sqrt(2.0) * phi.cos() * alpha.sin())
 
+            # TODO: Branch stays in for now because no proper limit exists and would
+            # probably require a different model altogether.
             r55 = 1.0 + (
                 k
                 * self.length
