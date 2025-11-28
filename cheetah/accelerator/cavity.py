@@ -277,7 +277,7 @@ class Cavity(Element):
 
             r22 = Ei / Ef * (alpha.cos() + math.sqrt(2.0) * phi.cos() * alpha.sin())
 
-            r55 = (
+            r55 = 1.0 + (
                 k
                 * self.length
                 * beta0
