@@ -103,113 +103,105 @@ class Cavity(Element):
         T556 = torch.full_like(self.length, 0.0)
         T555 = torch.full_like(self.length, 0.0)
 
-        if (incoming.energy + delta_energy > 0).any():
-            k = 2 * torch.pi * self.frequency / constants.speed_of_light
-            outgoing_energy = incoming.energy + delta_energy
-            gamma1, _, beta1 = compute_relativistic_factors(
-                outgoing_energy, incoming.species.mass_eV
+        k = 2.0 * torch.pi * self.frequency / constants.speed_of_light
+        outgoing_energy = incoming.energy + delta_energy
+        gamma1, _, beta1 = compute_relativistic_factors(
+            outgoing_energy, incoming.species.mass_eV
+        )
+
+        if isinstance(incoming, ParameterBeam):
+            outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
+                outgoing_energy * beta1
+            ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
+                (-incoming.mu[..., 4] * beta0 * k + phi).cos() - phi.cos()
+            )
+            outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
+        else:  # ParticleBeam
+            outgoing_particles[..., 5] = incoming.particles[
+                ..., 5
+            ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
+                outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
+            ) + self.voltage.unsqueeze(
+                -1
+            ) * beta0.unsqueeze(
+                -1
+            ) / (
+                outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
+            ) * (
+                (
+                    -1.0
+                    * incoming.particles[..., 4]
+                    * beta0.unsqueeze(-1)
+                    * k.unsqueeze(-1)
+                    + phi.unsqueeze(-1)
+                ).cos()
+                - phi.cos().unsqueeze(-1)
             )
 
-            if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
-                    outgoing_energy * beta1
-                ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
-                    (-incoming.mu[..., 4] * beta0 * k + phi).cos() - phi.cos()
-                )
-                outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
-            else:  # ParticleBeam
-                outgoing_particles[..., 5] = incoming.particles[
-                    ..., 5
-                ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
-                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) + self.voltage.unsqueeze(
-                    -1
-                ) * beta0.unsqueeze(
-                    -1
-                ) / (
-                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) * (
-                    (
-                        -1
-                        * incoming.particles[..., 4]
-                        * beta0.unsqueeze(-1)
-                        * k.unsqueeze(-1)
-                        + phi.unsqueeze(-1)
-                    ).cos()
-                    - phi.cos().unsqueeze(-1)
-                )
+        dgamma = self.voltage / incoming.species.mass_eV
 
-            dgamma = self.voltage / incoming.species.mass_eV
-            if (delta_energy > 0).any():
-                T566 = (
-                    self.length
-                    * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
-                    / (
-                        2
-                        * beta0
-                        * beta1.pow(3)
-                        * gamma0
-                        * (gamma0 - gamma1)
-                        * gamma1.pow(3)
-                    )
+        T566 = (
+            self.length
+            * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
+            / (2.0 * beta0 * beta1.pow(3) * gamma0 * (gamma0 - gamma1) * gamma1.pow(3))
+        )
+        T556 = (
+            beta0
+            * k
+            * self.length
+            * dgamma
+            * gamma0
+            * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
+            * phi.sin()
+            / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).square())
+        )
+        T555 = (
+            beta0.square()
+            * k.square()
+            * self.length
+            * dgamma
+            / 2.0
+            * (
+                dgamma
+                * (
+                    2.0 * gamma0 * gamma1.pow(3) * (beta0 * beta1.pow(3) - 1.0)
+                    + gamma0.square()
+                    + 3.0 * gamma1.square()
+                    - 2.0
                 )
-                T556 = (
-                    beta0
-                    * k
-                    * self.length
-                    * dgamma
-                    * gamma0
-                    * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
-                    * phi.sin()
-                    / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).square())
-                )
-                T555 = (
-                    beta0.square()
-                    * k.square()
-                    * self.length
-                    * dgamma
-                    / 2.0
-                    * (
-                        dgamma
-                        * (
-                            2 * gamma0 * gamma1.pow(3) * (beta0 * beta1.pow(3) - 1)
-                            + gamma0.square()
-                            + 3 * gamma1.square()
-                            - 2
-                        )
-                        / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
-                        * phi.sin().square()
-                        - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
-                        / (beta1 * gamma1 * (gamma0 - gamma1).square())
-                        * phi.cos()
-                    )
-                )
+                / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
+                * phi.sin().square()
+                - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
+                / (beta1 * gamma1 * (gamma0 - gamma1).square())
+                * phi.cos()
+            )
+        )
 
-            if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
-                    T566 * incoming.mu[..., 5].square()
-                    + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
-                    + T555 * incoming.mu[..., 4].square()
-                )
-                outgoing_cov[..., 4, 4] = (
-                    T566 * incoming.cov[..., 5, 5].square()
-                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
-                    + T555 * incoming.cov[..., 4, 4].square()
-                )
-                outgoing_cov[..., 4, 5] = (
-                    T566 * incoming.cov[..., 5, 5].square()
-                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
-                    + T555 * incoming.cov[..., 4, 4].square()
-                )
-                outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
-            else:  # ParticleBeam
-                outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
-                    T566.unsqueeze(-1) * incoming.particles[..., 5].square()
-                    + T556.unsqueeze(-1)
-                    * incoming.particles[..., 4]
-                    * incoming.particles[..., 5]
-                    + T555.unsqueeze(-1) * incoming.particles[..., 4].square()
-                )
+        if isinstance(incoming, ParameterBeam):
+            outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
+                T566 * incoming.mu[..., 5].square()
+                + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
+                + T555 * incoming.mu[..., 4].square()
+            )
+            outgoing_cov[..., 4, 4] = (
+                T566 * incoming.cov[..., 5, 5].square()
+                + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                + T555 * incoming.cov[..., 4, 4].square()
+            )
+            outgoing_cov[..., 4, 5] = (
+                T566 * incoming.cov[..., 5, 5].square()
+                + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                + T555 * incoming.cov[..., 4, 4].square()
+            )
+            outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
+        else:  # ParticleBeam
+            outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
+                T566.unsqueeze(-1) * incoming.particles[..., 5].square()
+                + T556.unsqueeze(-1)
+                * incoming.particles[..., 4]
+                * incoming.particles[..., 5]
+                + T555.unsqueeze(-1) * incoming.particles[..., 4].square()
+            )
 
         if isinstance(incoming, ParameterBeam):
             outgoing = ParameterBeam(
