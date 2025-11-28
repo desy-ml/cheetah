@@ -59,6 +59,9 @@ def si2msi2divdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """
     Calculate `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)` with proper removal of its
     singularity at `a == b`.
+
+    NOTE: Forward mode AD currently doesn't work properly for a==0 or b==0, and might
+        return weird gradients in those cases.
     """
     return Si2MSi2DivDiff.apply(a, b)
 
@@ -549,6 +552,9 @@ class Si2MSi2DivDiff(torch.autograd.Function):
     Custom autograd function for the compound expression
     `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)`. The singularity at`a == b` is replaced
     by its limit.
+
+    NOTE: Forward mode AD currently doesn't work properly for a==0 or b==0, and might
+        return weird gradients in those cases.
     """
 
     # Automatically generate a custom vmap implementation

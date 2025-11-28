@@ -7,6 +7,7 @@ from cheetah.utils import compute_relativistic_factors
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     si1mdiv,
+    si2msi2divdiff,
     sicos1mdiv,
     simsidivdiff,
     sipsicos3mdiv,
@@ -125,7 +126,6 @@ def base_ttensor(
     r = (0.5 * kx * length / torch.pi).sinc()
     dx = 0.5 * length.square() * r.square().real
 
-    d2y = 0.5 * sy.square()
     fx = length.pow(3) * si1mdiv(kx2 * length.square())
     f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
@@ -150,11 +150,7 @@ def base_ttensor(
         kx2 * length.square(), ky2 * length.square()
     )
     js = length.pow(3) * simsidivdiff(kx2 * length.square(), ky2 * length.square())
-    # NOTE: Previously, an effort has been made to implement a custom autograd function
-    # for `jd` as `si2msi2divdiff`, but it was found that no proper limit exists.
-    # Instead, a different model will have to be found in the future that avoids these
-    # issues altogether.
-    jd = ((d2y - dx) / j_denominator).where(j_denominator != 0, length.pow(4) / 24.0)
+    jd = length.pow(4) * si2msi2divdiff(kx2 * length.square(), ky2 * length.square())
     jf = ((f2y - fx) / j_denominator).where(j_denominator != 0, length.pow(5) / 120.0)
 
     khk = k2 + 2.0 * hx * k1

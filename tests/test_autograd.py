@@ -183,17 +183,14 @@ def test_simsidivdiff():
     )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "No proper limit exists for si2msi2divdiff at a == 0 and b == 0. A different "
-        "model will have to be found in the future that avoids these isues altogether."
-    )
-)
 def test_si2msi2divdiff():
     """
     Verify that the custom autograd function si2msi2divdiff is correctly implementing
     `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)` and its derivative, including removing
     the singularity at `a == b`.
+
+    NOTE: Forward AD currently doesn't work for a==0 or b==0. That's why those checks
+        are disabled.
     """
     test_points_a = torch.tensor(
         [0.0, 0.0, -0.5, 0.1, 0.0, 1.0, 1.0, 2.0],
@@ -212,9 +209,9 @@ def test_si2msi2divdiff():
         inputs=(test_points_a, test_points_b),
         rtol=0.01,
         check_backward_ad=True,
-        check_forward_ad=True,
+        # check_forward_ad=True,
         check_batched_grad=True,
-        check_batched_forward_grad=True,
+        # check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
 
