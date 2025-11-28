@@ -353,9 +353,3 @@ def misalignment_matrix(
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
     return R_entry, R_exit
-    R_entry = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
-    R_entry[..., 0, 6] = -misalignment[..., 0]
-    R_entry[..., 2, 6] = -misalignment[..., 1]
-
-    return R_entry, R_exit
-    return R_entry, R_exit
