@@ -96,6 +96,11 @@ def base_ttensor(
     Create a second order universal transfer map for a beamline element. Uses MAD
     convention.
 
+    NOTE: It is possible that gradient components are missing when computing the
+        over second order T tensors or beams tracked with them in very few highly
+        specific scenarios. Even when it happens, it is unlikely to have a meaningful
+        impact. This comment is left here to make sure this caveat is known.
+
     :param length: Length of the element in m.
     :param k1: Quadrupole strength in 1/m**2.
     :param k2: Sextupole strength in 1/m**3.

@@ -22,6 +22,11 @@ class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
 
+    NOTE: When computing the gradient on cavities with exactly zero energy gain, it is
+        possible that some gradient components are lost. This is unlikely to cause
+        (therefore do not hesitate to have cavities with zero voltage in your lattice),
+        but this note is here to make you aware of this possibility.
+
     :param length: Length in meters.
     :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
         voltage. Positive voltage will accelerate electron-like particles.
