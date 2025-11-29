@@ -56,11 +56,11 @@ def test_cold_uniform_beam_expansion(energy):
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -109,11 +109,11 @@ def test_vectorized_cold_uniform_beam_expansion():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -154,11 +154,11 @@ def test_vectorized():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -182,11 +182,11 @@ def test_incoming_beam_not_modified():
     segment_space_charge = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -235,11 +235,11 @@ def test_gradient_value_backward_ad():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(segment_length / 6),
-            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.SpaceChargeKick3D(segment_length / 3),
             cheetah.Drift(segment_length / 3),
-            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.SpaceChargeKick3D(segment_length / 3),
             cheetah.Drift(segment_length / 3),
-            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.SpaceChargeKick3D(segment_length / 3),
             cheetah.Drift(segment_length / 6),
         ]
     )
@@ -303,11 +303,11 @@ def test_gradient_value_forward_ad():
         segment = cheetah.Segment(
             elements=[
                 cheetah.Drift(segment_length / 6),
-                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.SpaceChargeKick3D(segment_length / 3),
                 cheetah.Drift(segment_length / 3),
-                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.SpaceChargeKick3D(segment_length / 3),
                 cheetah.Drift(segment_length / 3),
-                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.SpaceChargeKick3D(segment_length / 3),
                 cheetah.Drift(segment_length / 6),
             ]
         )
@@ -330,17 +330,17 @@ def test_gradient_value_forward_ad():
 def test_does_not_break_segment_length():
     """
     Test that the computation of a `Segment`'s length does not break when
-    `SpaceChargeKick` is used.
+    `SpaceChargeKick3D` is used.
     """
     section_length = torch.tensor(1.0)
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick3D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -358,7 +358,7 @@ def test_space_charge_with_ares_astra_beam():
     segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(1.0)),
+            cheetah.SpaceChargeKick3D(effect_length=torch.tensor(1.0)),
         ]
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
@@ -382,7 +382,7 @@ def test_space_charge_with_aperture_cutoff():
                 name="aperture",
             ),
             cheetah.Drift(length=torch.tensor(0.25)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5)),
+            cheetah.SpaceChargeKick3D(effect_length=torch.tensor(0.5)),
             cheetah.Drift(length=torch.tensor(0.25)),
         ]
     )
