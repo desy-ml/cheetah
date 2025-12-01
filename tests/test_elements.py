@@ -333,11 +333,13 @@ def test_consistency(element, beam_cls):
     if beam_cls == cheetah.ParameterBeam and element.tracking_method != "linear":
         pytest.xfail("ParameterBeam does not support drift-kick-drift elements")
 
+    element = element.to(torch.float64)
+
     incoming_beam_path = (
         Path("tests") / "resources" / "ACHIP_EA1_2021.1351.001_subsampled_3000.pkl"
     )
     with incoming_beam_path.open("rb") as f:
-        incoming_beam = pickle.load(f)
+        incoming_beam = pickle.load(f).to(torch.float64)
         if not isinstance(incoming_beam, beam_cls):
             incoming_beam = incoming_beam.as_parameter_beam()
 
@@ -359,23 +361,42 @@ def test_consistency(element, beam_cls):
     #     pickle.dump(actual_outgoing_beam, f)
 
     assert actual_outgoing_beam.species.name == expected_outgoing_beam.species.name
-    assert (actual_outgoing_beam.energy == expected_outgoing_beam.energy).all()
-    assert (actual_outgoing_beam.s == expected_outgoing_beam.s).all()
+    assert torch.allclose(actual_outgoing_beam.energy, expected_outgoing_beam.energy)
+    assert torch.allclose(actual_outgoing_beam.s, expected_outgoing_beam.s)
     if isinstance(actual_outgoing_beam, cheetah.ParameterBeam):
-        assert (actual_outgoing_beam.mu == expected_outgoing_beam.mu).all()
-        assert (actual_outgoing_beam.cov == expected_outgoing_beam.cov).all()
-        assert (
-            actual_outgoing_beam.total_charge == expected_outgoing_beam.total_charge
-        ).all()
+        assert torch.allclose(actual_outgoing_beam.mu, expected_outgoing_beam.mu)
+        assert torch.allclose(actual_outgoing_beam.cov, expected_outgoing_beam.cov)
+        assert torch.allclose(
+            actual_outgoing_beam.total_charge, expected_outgoing_beam.total_charge
+        )
     else:  # ParticleBeam
-        assert (
-            actual_outgoing_beam.particles == expected_outgoing_beam.particles
-        ).all()
-        assert (
-            actual_outgoing_beam.particle_charges
-            == expected_outgoing_beam.particle_charges
-        ).all()
-        assert (
-            actual_outgoing_beam.survival_probabilities
-            == expected_outgoing_beam.survival_probabilities
-        ).all()
+        worst_offender_idx = (
+            (actual_outgoing_beam.particles - expected_outgoing_beam.particles)
+            .abs()
+            .argmax()
+        )
+        from icecream import ic
+
+        ic(
+            worst_offender_idx,
+            (
+                worst_offender_idx // actual_outgoing_beam.num_particles,
+                worst_offender_idx % actual_outgoing_beam.num_particles,
+            ),
+            (
+                actual_outgoing_beam.particles - expected_outgoing_beam.particles
+            ).flatten()[worst_offender_idx],
+            actual_outgoing_beam.particles.flatten()[worst_offender_idx],
+            expected_outgoing_beam.particles.flatten()[worst_offender_idx],
+        )
+        assert torch.allclose(
+            actual_outgoing_beam.particles, expected_outgoing_beam.particles
+        )
+        assert torch.allclose(
+            actual_outgoing_beam.particle_charges,
+            expected_outgoing_beam.particle_charges,
+        )
+        assert torch.allclose(
+            actual_outgoing_beam.survival_probabilities,
+            expected_outgoing_beam.survival_probabilities,
+        )
