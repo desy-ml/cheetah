@@ -370,25 +370,6 @@ def test_consistency(element, beam_cls):
             actual_outgoing_beam.total_charge, expected_outgoing_beam.total_charge
         )
     else:  # ParticleBeam
-        worst_offender_idx = (
-            (actual_outgoing_beam.particles - expected_outgoing_beam.particles)
-            .abs()
-            .argmax()
-        )
-        from icecream import ic
-
-        ic(
-            worst_offender_idx,
-            (
-                worst_offender_idx // actual_outgoing_beam.num_particles,
-                worst_offender_idx % actual_outgoing_beam.num_particles,
-            ),
-            (
-                actual_outgoing_beam.particles - expected_outgoing_beam.particles
-            ).flatten()[worst_offender_idx],
-            actual_outgoing_beam.particles.flatten()[worst_offender_idx],
-            expected_outgoing_beam.particles.flatten()[worst_offender_idx],
-        )
         assert torch.allclose(
             actual_outgoing_beam.particles, expected_outgoing_beam.particles
         )
