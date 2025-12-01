@@ -1,3 +1,6 @@
+import pickle
+from pathlib import Path
+
 import pytest
 import torch
 
@@ -313,3 +316,66 @@ def test_transfer_map_cache_invalidation_species():
     updated_transfer_map = quadrupole.first_order_transfer_map(energy, updated_species)
 
     assert not torch.equal(original_transfer_map, updated_transfer_map)
+
+
+@pytest.mark.for_every_element("element")
+@pytest.mark.parametrize("beam_cls", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+def test_consistency(element, beam_cls):
+    """
+    Test that tracking results are consistent with a previous version of Cheetah.
+
+    NOTE: To generate new ground truth expected outputs, uncomment the relevant blocks
+        below, and run `pytest -k test_consistency`. Please undo the commenting change
+        before committing. Please do NOT commit changes to the ground truth expected
+        outputs for elements that did not have intentional changes to their tracking
+        behaviour.
+    """
+    if beam_cls == cheetah.ParameterBeam and element.tracking_method != "linear":
+        pytest.xfail("ParameterBeam does not support drift-kick-drift elements")
+
+    incoming_beam_path = (
+        Path("tests") / "resources" / "ACHIP_EA1_2021.1351.001_subsampled_3000.pkl"
+    )
+    with incoming_beam_path.open("rb") as f:
+        incoming_beam = pickle.load(f)
+        if not isinstance(incoming_beam, beam_cls):
+            incoming_beam = incoming_beam.as_parameter_beam()
+
+    expected_outgoing_beam_path = (
+        Path("tests")
+        / "resources"
+        / "consistency_expected_outgoing"
+        / f"{element.__class__.__name__}_{beam_cls.__name__}_{element.name}.pkl"
+    )
+    # NOTE: Comment out the following block to generate ground truth expected outputs
+    with expected_outgoing_beam_path.open("rb") as f:
+        expected_outgoing_beam = pickle.load(f)
+
+    actual_outgoing_beam = element.track(incoming_beam)
+
+    # NOTE: Uncomment the following block to generate ground truth expected outputs
+    # expected_outgoing_beam_path.parent.mkdir(parents=True, exist_ok=True)
+    # with expected_outgoing_beam_path.open("wb") as f:
+    #     pickle.dump(actual_outgoing_beam, f)
+
+    assert actual_outgoing_beam.species.name == expected_outgoing_beam.species.name
+    assert (actual_outgoing_beam.energy == expected_outgoing_beam.energy).all()
+    assert (actual_outgoing_beam.s == expected_outgoing_beam.s).all()
+    if isinstance(actual_outgoing_beam, cheetah.ParameterBeam):
+        assert (actual_outgoing_beam.mu == expected_outgoing_beam.mu).all()
+        assert (actual_outgoing_beam.cov == expected_outgoing_beam.cov).all()
+        assert (
+            actual_outgoing_beam.total_charge == expected_outgoing_beam.total_charge
+        ).all()
+    else:  # ParticleBeam
+        assert (
+            actual_outgoing_beam.particles == expected_outgoing_beam.particles
+        ).all()
+        assert (
+            actual_outgoing_beam.particle_charges
+            == expected_outgoing_beam.particle_charges
+        ).all()
+        assert (
+            actual_outgoing_beam.survival_probabilities
+            == expected_outgoing_beam.survival_probabilities
+        ).all()
