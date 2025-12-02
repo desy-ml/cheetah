@@ -8,7 +8,7 @@ import cheetah
 
 def feature2nontorch(value: Any) -> Any:
     """
-    If necesary, convert an the value of a feature of a `cheetah.Element` to a non-torch
+    If necessary, convert an the value of a feature of a `cheetah.Element` to a non-torch
     type that can be saved to LatticeJSON.
 
     :param value: Value of the feature that might be in some kind of PyTorch format,
