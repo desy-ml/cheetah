@@ -156,11 +156,9 @@ def base_ttensor(
     )
 
     T = torch.zeros((7, 7, 7), **factory_kwargs).repeat(*vector_shape, 1, 1, 1)
-    T[..., 0, 0, 0] = (
-        -1.0 / 6.0 * khk * (sx.square() + dx) - 0.5 * hx * kx2 * sx.square()
-    )
-    T[..., 0, 0, 1] = 2.0 * (-1.0 / 6.0 * khk * sx * dx + 0.5 * hx * sx * cx)
-    T[..., 0, 1, 1] = -1.0 / 6.0 * khk * dx.square() + 0.5 * hx * dx * cx
+    T[..., 0, 0, 0] = -khk * (sx.square() + dx) / 6.0 - 0.5 * hx * kx2 * sx.square()
+    T[..., 0, 0, 1] = 2.0 * (-khk * sx * dx / 6.0 + 0.5 * hx * sx * cx)
+    T[..., 0, 1, 1] = -khk * dx.square() / 6.0 + 0.5 * hx * dx * cx
     T[..., 0, 0, 5] = 2.0 * (
         -hx / 12.0 / beta * khk * (3.0 * sx * j1 - dx.square())
         + 0.5 * hx.square() / beta * sx.square()
@@ -180,9 +178,9 @@ def base_ttensor(
     T[..., 0, 2, 2] = k1 * k2 * jd + 0.5 * (k2 + hx * k1) * dx
     T[..., 0, 2, 3] = 2.0 * (0.5 * k2 * js)
     T[..., 0, 3, 3] = k2 * jd - 0.5 * hx * dx
-    T[..., 1, 0, 0] = -1.0 / 6.0 * khk * sx * (1.0 + 2.0 * cx)
-    T[..., 1, 0, 1] = 2.0 * (-1.0 / 6.0 * khk * dx * (1.0 + 2.0 * cx))
-    T[..., 1, 1, 1] = -1.0 / 3.0 * khk * sx * dx - 0.5 * hx * sx
+    T[..., 1, 0, 0] = -khk * sx * (1.0 + 2.0 * cx) / 6.0
+    T[..., 1, 0, 1] = -2.0 * khk * dx * (1.0 + 2.0 * cx) / 6.0
+    T[..., 1, 1, 1] = -khk * sx * dx / 3.0 - 0.5 * hx * sx
     T[..., 1, 0, 5] = 2.0 * (
         -hx / 12.0 / beta * khk * (3.0 * cx * j1 + sx * dx)
         - 0.25 / beta * k1 * (sx - length * cx)
