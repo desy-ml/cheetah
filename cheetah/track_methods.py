@@ -19,7 +19,6 @@ def base_rmatrix(
     k1: torch.Tensor,
     hx: torch.Tensor,
     species: Species,
-    tilt: torch.Tensor | None = None,
     energy: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
@@ -29,7 +28,6 @@ def base_rmatrix(
     :param k1: Quadrupole strength in 1/m**2.
     :param hx: Curvature (1/radius) of the element in 1/m.
     :param species: Particle species of the beam.
-    :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
     :return: First order transfer map for the element.
     """
@@ -37,7 +35,6 @@ def base_rmatrix(
 
     zero = torch.tensor(0.0, **factory_kwargs)
 
-    tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
@@ -59,7 +56,7 @@ def base_rmatrix(
     ) - length / beta.square() * igamma2
 
     vector_shape = torch.broadcast_shapes(
-        length.shape, k1.shape, hx.shape, tilt.shape, energy.shape
+        length.shape, k1.shape, hx.shape, energy.shape
     )
 
     R = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
@@ -77,9 +74,6 @@ def base_rmatrix(
     R[..., 4, 1] = dx / beta
     R[..., 4, 5] = r56
 
-    rotation = rotation_matrix(tilt)
-    R = rotation.mT @ R @ rotation
-
     return R
 
 
@@ -89,7 +83,6 @@ def base_ttensor(
     k2: torch.Tensor,
     hx: torch.Tensor,
     species: Species,
-    tilt: torch.Tensor | None = None,
     energy: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
@@ -106,7 +99,6 @@ def base_ttensor(
     :param k2: Sextupole strength in 1/m**3.
     :param hx: Curvature (1/radius) of the element in 1/m.
     :param species: Particle species of the beam.
-    :param tilt: Roation of the element relative to the longitudinal axis in rad.
     :param energy: Beam energy in eV.
     :return: Second order transfer map for the element.
     """
@@ -114,7 +106,6 @@ def base_ttensor(
 
     zero = torch.tensor(0.0, **factory_kwargs)
 
-    tilt = tilt if tilt is not None else zero
     energy = energy if energy is not None else zero
 
     _, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
@@ -161,7 +152,7 @@ def base_ttensor(
     khk = k2 + 2.0 * hx * k1
 
     vector_shape = torch.broadcast_shapes(
-        length.shape, k1.shape, k2.shape, hx.shape, tilt.shape, energy.shape
+        length.shape, k1.shape, k2.shape, hx.shape, energy.shape
     )
 
     T = torch.zeros((7, 7, 7), **factory_kwargs).repeat(*vector_shape, 1, 1, 1)
@@ -291,11 +282,6 @@ def base_ttensor(
         - 0.25 / beta * (length + cy * sy)
     )
 
-    rotation = rotation_matrix(tilt)
-    T = torch.einsum(
-        "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
-    )
-
     return T
 
 
@@ -358,3 +344,43 @@ def misalignment_matrix(
     R_entry[..., 2, 6] = -misalignment[..., 1]
 
     return R_entry, R_exit
+
+
+def combined_rotation_misalignment_matrix(
+    angle: torch.Tensor, misalignment: torch.Tensor
+) -> torch.Tensor:
+    """
+    Apply misalignment and then rotation in the x-y plane.
+
+    :param angle: Rotation angle in rad, for example `angle = np.pi/2` for vertical =
+        dipole.
+    :param misalignment: Misalignment vector [dx, dy] in m.
+    :return: Combined rotation and misalignment matrix.
+    """
+    cs = angle.cos()
+    sn = angle.sin()
+
+    vector_shape = torch.broadcast_shapes(angle.shape, misalignment.shape[:-1])
+    tm_entry = torch.eye(7, dtype=angle.dtype, device=angle.device).repeat(
+        *vector_shape, 1, 1
+    )
+
+    # Rotation
+    tm_entry[..., 0, 0] = cs
+    tm_entry[..., 0, 2] = sn
+    tm_entry[..., 1, 1] = cs
+    tm_entry[..., 1, 3] = sn
+    tm_entry[..., 2, 0] = -sn
+    tm_entry[..., 2, 2] = cs
+    tm_entry[..., 3, 1] = -sn
+    tm_entry[..., 3, 3] = cs
+
+    # Save for exit
+    tm_exit = tm_entry.clone().mT
+
+    # Misalignment
+    tm_entry[..., 0, 6] = -misalignment[..., 0] * cs - misalignment[..., 1] * sn
+    tm_entry[..., 2, 6] = misalignment[..., 0] * sn - misalignment[..., 1] * cs
+    tm_exit[..., [0, 2], 6] = misalignment
+
+    return tm_entry, tm_exit
