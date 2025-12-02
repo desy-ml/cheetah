@@ -572,7 +572,7 @@ class Si2MSi2DivDiff(torch.autograd.Function):
         sb = (sqrt_b / torch.pi).sinc().real
         cb = sqrt_b.cos().real
 
-        aeqb_limit = ((1 - cb.square() - b * sb * cb) / b.square()).where(
+        aeqb_limit = ((1.0 - cb.square() - b * sb * cb) / b.square()).where(
             b != 0, 1.0 / 3.0
         )
 
