@@ -1313,12 +1313,12 @@ class ParticleBeam(Beam):
         x_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         style: Literal["histogram", "contour"] = "histogram",
-        confidence_contours: tuple[float] | None = None,
         bins: tuple[int, int] = (100, 100),
         bin_ranges: tuple[tuple[float, float], tuple[float, float]] | None = None,
         histogram_smoothing: float = 0.0,
-        contour_smoothing: float = 3.0,
+        confidence_contours: tuple[float] | None = None,
         errorbar: tuple[str, int | float] | str = ("pi", 95),
+        contour_smoothing: float = 3.0,
         pcolormesh_kws: dict | None = None,
         contour_kws: dict | None = None,
         confidence_contour_kws: dict | None = None,
@@ -1328,25 +1328,25 @@ class ParticleBeam(Beam):
         Plot a 2-dimensional projection of the particle distribution for two phase-space
         dimensions.
 
-        :param x_dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p') to use for the
-            x-axis.
-        :param y_dimension: One of ('x', 'px', 'y', 'py', 'tau', 'p') to use for the
-            y-axis.
+        :param x_dimension: Name of the dimension plotted on the x-axis. Should be one
+            of `('x', 'px', 'y', 'py', 'tau', 'p')`.
+        :param y_dimension: Name of the dimension plotted on the y-axis. Should be one
+            of `('x', 'px', 'y', 'py', 'tau', 'p')`.
         :param style: Visualisation style, either 'histogram' (colored 2-dimensional
             histogram) or 'contour' (normalised contour levels with grayscale
-            pcolormesh).
-        :param confidence_contours: If provided, draw contour lines at these confidence
-            levels (between 0 and 1) over the histogram style plot for vectorised beams.
+            `pcolormesh`).
         :param bins: Tuple (nx, ny) specifying the number of histogram bins for x and y.
         :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the
             histogram ranges for x and y, or `None` to infer from the data.
         :param histogram_smoothing: Standard deviation of the Gaussian kernel applied
             to smooth the histogram for plotting.
-        :param contour_smoothing: Standard deviation of the Gaussian kernel applied to
-            the contour data (applied after histogram_smoothing).
+        :param confidence_contours: If provided, draw contour lines at these confidence
+            levels (between 0 and 1) over the histogram style plot for vectorised beams.
         :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
             either a method string or a tuple `(method, level)`. Available methods are
             "sd", "se", "pi" and "jp".
+        :param contour_smoothing: Standard deviation of the Gaussian kernel applied to
+            the contour data (applied after histogram_smoothing).
         :param pcolormesh_kws: Additional keyword arguments forwarded to
             `matplotlib.pcolormesh`.
         :param contour_kws: Additional keyword arguments forwarded to
