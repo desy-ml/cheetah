@@ -1332,8 +1332,8 @@ class ParticleBeam(Beam):
             of `('x', 'px', 'y', 'py', 'tau', 'p')`.
         :param y_dimension: Name of the dimension plotted on the y-axis. Should be one
             of `('x', 'px', 'y', 'py', 'tau', 'p')`.
-        :param style: Visualisation style, either 'histogram' (colored 2-dimensional
-            histogram) or 'contour' (normalised contour levels with grayscale
+        :param style: Visualisation style, either 'histogram' (coloured 2-dimensional
+            histogram) or 'contour' (normalised contour levels with greyscale
             `pcolormesh`).
         :param bins: Tuple (nx, ny) specifying the number of histogram bins for x and y.
         :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the
@@ -1353,8 +1353,9 @@ class ParticleBeam(Beam):
             `matplotlib.contour`.
         :param confidence_contour_kws: Additional keyword arguments forwarded to
             `matplotlib.contour` when drawing confidence contours.
-        :param ax: Matplotlib Axes to draw on. If None a new axes is created.
-        :return: Matplotlib Axes containing the rendered 2D projection.
+        :param ax: Matplotlib axes object to use for plotting. If `None` a new axes is
+            created.
+        :return: Matplotlib axes containing the plotted histogram.
         """
         if ax is None:
             _, ax = plt.subplots()
