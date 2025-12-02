@@ -25,16 +25,19 @@ ELEMENT_SUBCLASSES_ARGS = {
         "linear": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
             "tracking_method": "linear",
         },
         "second_order": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
             "tracking_method": "second_order",
         },
         "drift_kick_drift": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
             "tracking_method": "drift_kick_drift",
         },
     },
@@ -57,16 +60,22 @@ ELEMENT_SUBCLASSES_ARGS = {
         "linear": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
+            "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "linear",
         },
         "second_order": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
+            "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "second_order",
         },
         "drift_kick_drift": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
+            "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "drift_kick_drift",
         },
     },
@@ -74,16 +83,19 @@ ELEMENT_SUBCLASSES_ARGS = {
         "linear": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
             "tracking_method": "linear",
         },
         "second_order": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
             "tracking_method": "second_order",
         },
         "drift_kick_drift": {
             "length": torch.tensor(1.0),
             "angle": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
             "tracking_method": "drift_kick_drift",
         },
     },
@@ -95,16 +107,24 @@ ELEMENT_SUBCLASSES_ARGS = {
         "linear": {
             "length": torch.tensor(1.0),
             "k2": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
+            "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "linear",
         },
         "second_order": {
             "length": torch.tensor(1.0),
             "k2": torch.tensor([1.0, -2.0]),
+            "tilt": torch.tensor(0.42),
+            "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "second_order",
         },
     },
     cheetah.Solenoid: {
-        "default": {"length": torch.tensor(1.0), "k": torch.tensor([1.0, -2.0])}
+        "default": {
+            "length": torch.tensor(1.0),
+            "k": torch.tensor([1.0, -2.0]),
+            "misalignment": torch.tensor([0.01, -0.02]),
+        }
     },
     cheetah.SpaceChargeKick: {"default": {"effect_length": torch.tensor(1.0)}},
     cheetah.TransverseDeflectingCavity: {
@@ -163,7 +183,6 @@ def seed_random_generators(request):
     Manually seed all torch random generators. This ensures that test failures are
     determinstic and not appearing randomly between runs.
     """
-
     # Determine seed from command line option
     seed = request.config.getoption("--seed")
 
@@ -248,6 +267,8 @@ def for_every_element(
         if subclass in ELEMENT_SUBCLASSES_ARGS:
             subclass_test_cases = ELEMENT_SUBCLASSES_ARGS[subclass]
             for label, test_case_args in subclass_test_cases.items():
+                test_case_args.update({"name": label})
+
                 # The clone prevents tests from modifying the test cases, which is
                 # especially relevant for `Segment`. This is necessary since the
                 # subclass constructors reference their arguments instead of copying.

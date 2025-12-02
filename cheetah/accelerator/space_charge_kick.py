@@ -526,10 +526,10 @@ class SpaceChargeKick(Element):
             idx_tau.clamp(min=0, max=grid_shape[2] - 1),
         )
 
-        Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
-        Fy_values = torch.where(valid_mask, grad_y[force_indices], 0)
-        Fz_values = torch.where(
-            valid_mask, grad_z[force_indices], 0
+        Fx_values = grad_x[force_indices].where(valid_mask, 0)
+        Fy_values = grad_y[force_indices].where(valid_mask, 0)
+        Fz_values = grad_z[force_indices].where(
+            valid_mask, 0
         )  # (..., 8 * num_particles)
 
         # Compute interpolated forces

@@ -7,7 +7,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
+from cheetah.track_methods import (
+    base_rmatrix,
+    base_ttensor,
+    combined_rotation_misalignment_matrix,
+)
 from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
@@ -91,13 +95,13 @@ class Quadrupole(Element):
             k1=self.k1,
             hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
-        if torch.any(self.misalignment != 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        R = R_exit @ R @ R_entry
 
         return R
 
@@ -110,7 +114,6 @@ class Quadrupole(Element):
             k1=self.k1,
             k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
             hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            tilt=self.tilt,
             energy=energy,
             species=species,
         )
@@ -121,16 +124,16 @@ class Quadrupole(Element):
             k1=self.k1,
             hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
-        # Apply misalignments to the entire second-order transfer map
-        if not (self.misalignment == 0).all():
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        # Apply misalignments and rotation to the entire second-order transfer map
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
