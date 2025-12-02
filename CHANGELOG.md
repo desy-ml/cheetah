@@ -20,7 +20,7 @@
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
 - Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558, #555, #556, #563) (@jank324, @Hespe)
 - New `CombinedCorrector` element that combines the functionality of `HorizontalCorrector` and `VerticalCorrector` (see #589) (@jank324, @amylizzle)
-- Add the following plotting functionalities for beams with batch dimensions: plot average 1D projection histogram with lower and upper bounds, plot average 2D projection histogram with lower and upper bounds, triangle plot with the above functionalities. (see #583) (@jp-ga, @jank324)
+- Add mean and uncertainty plotting functionalities to `ParticleBeam` plotting over vectorised beams (see #583) (@jp-ga, @jank324)
 
 ### 🐛 Bug fixes
 
