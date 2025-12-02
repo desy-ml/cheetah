@@ -117,7 +117,7 @@ class Quadrupole(Element):
             k2=zero,
             hx=zero,
             energy=energy,
-            species=species
+            species=species,
         )
 
         # Fill the first-order transfer map into the second-order transfer map
