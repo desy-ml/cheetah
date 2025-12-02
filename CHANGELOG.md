@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.7.6 [🚧 Work in Progress]
+## v0.8.0 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
