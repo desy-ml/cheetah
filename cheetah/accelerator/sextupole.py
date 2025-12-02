@@ -75,6 +75,8 @@ class Sextupole(Element):
 
     @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
             length=self.length,
             k1=zero,
