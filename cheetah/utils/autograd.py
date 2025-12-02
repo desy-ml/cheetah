@@ -652,8 +652,7 @@ class Si2MSi2DivDiff(torch.autograd.Function):
 class SqrtA2MinusBDivA(torch.autograd.Function):
     """
     Custom autograd function for the compound expression
-    `((sqrt(c^2 + g_tilde) - c) / g_tilde)`. The singularity at `g_tilde == 0` is
-    replaced by its limit.
+    `((sqrt(a^2 + b) - a) / b)`. The singularity at `b == 0` is replaced by its limit.
     """
 
     # Automatically generate a custom vmap implementation
@@ -661,44 +660,41 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        (c, g_tilde) = inputs
+        (a, b) = inputs
 
-        ctx.save_for_backward(c, g_tilde, output)
-        ctx.save_for_forward(c, g_tilde, output)
+        ctx.save_for_backward(a, b, output)
+        ctx.save_for_forward(a, b, output)
 
     @staticmethod
-    def forward(c, g_tilde):
-        return (((c.square() + g_tilde).sqrt() - c) / g_tilde).where(
-            g_tilde != 0, (2.0 * c).reciprocal()
-        )
+    def forward(a, b):
+        return (((a.square() + b).sqrt() - a) / b).where(b != 0, (2.0 * a).reciprocal())
 
     @staticmethod
     def backward(ctx, grad_output):
-        c, g_tilde, _ = ctx.saved_tensors
+        a, b, _ = ctx.saved_tensors
 
-        grad_c = ((c / (c.square() + g_tilde).sqrt() - 1) / g_tilde).where(
-            g_tilde != 0, -(2.0 * c.square()).reciprocal()
+        grad_a = ((a / (a.square() + b).sqrt() - 1) / b).where(
+            b != 0, -(2.0 * a.square()).reciprocal()
         )
-        grad_g_tilde = (
-            ((-2.0 * c.square() - g_tilde) / (c.square() + g_tilde).sqrt() + 2.0 * c)
-            / (2.0 * g_tilde.square())
-        ).where(g_tilde != 0, -(8.0 * c.pow(3)).reciprocal())
+        grad_b = (
+            ((-2.0 * a.square() - b) / (a.square() + b).sqrt() + 2.0 * a)
+            / (2.0 * b.square())
+        ).where(b != 0, -(8.0 * a.pow(3)).reciprocal())
 
-        return grad_output * grad_c, grad_output * grad_g_tilde
+        return grad_output * grad_a, grad_output * grad_b
 
     @staticmethod
-    def jvp(ctx, grad_c, grad_g_tilde):
-        c, g_tilde, _ = ctx.saved_tensors
+    def jvp(ctx, grad_a, grad_b):
+        a, b, _ = ctx.saved_tensors
 
         return (
             (
-                g_tilde
+                b
                 * (
-                    (2.0 * c * grad_c + grad_g_tilde)
-                    / (2.0 * (c.square() + g_tilde).sqrt())
-                    - grad_c
+                    (2.0 * a * grad_a + grad_b) / (2.0 * (a.square() + b).sqrt())
+                    - grad_a
                 )
-                - ((c.square() + g_tilde).sqrt() - c) * grad_g_tilde
+                - ((a.square() + b).sqrt() - a) * grad_b
             )
-            / (g_tilde.square())
-        ).where(g_tilde != 0, (-grad_g_tilde - 4.0 * c * grad_c) / (8.0 * c.pow(3)))
+            / (b.square())
+        ).where(b != 0, (-grad_b - 4.0 * a * grad_a) / (8.0 * a.pow(3)))
