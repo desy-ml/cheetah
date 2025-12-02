@@ -66,12 +66,12 @@ def si2msi2divdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     return Si2MSi2DivDiff.apply(a, b)
 
 
-def sqrta2minusbdiva(c: torch.Tensor, g_tilde: torch.Tensor) -> torch.Tensor:
+def sqrta2minusbdiva(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """
-    Calculate `(sqrt(c^2 + g_tilde) - c) / g_tilde` with proper removal of its
-    singularity at `g_tilde == 0`.
+    Calculate `(sqrt(a^2 + b) - a) / b` with proper removal of its singularity at
+    `b == 0`.
     """
-    return SqrtA2MinusBDivA.apply(c, g_tilde)
+    return SqrtA2MinusBDivA.apply(a, b)
 
 
 class Log1PDiv(torch.autograd.Function):
