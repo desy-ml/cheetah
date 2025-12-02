@@ -100,7 +100,7 @@ class Solenoid(Element):
         R = R.real
 
         R_entry, R_exit = misalignment_matrix(self.misalignment)
-        R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        R = R_exit @ R @ R_entry
 
         return R
 
