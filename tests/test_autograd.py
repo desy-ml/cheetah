@@ -186,8 +186,8 @@ def test_simsidivdiff():
 def test_si2msi2divdiff():
     """
     Verify that the custom autograd function `si2msi2divdiff` correctly implements the
-    derivative of `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)` and its derivative,
-    including removing the singularity at `a == b`.
+    derivative of `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)`, including removing the
+    singularity at `a == b`.
 
     NOTE: Forward AD currently doesn't work for a==0 or b==0. That's why those checks
         are disabled.
