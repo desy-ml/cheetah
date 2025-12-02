@@ -1270,8 +1270,9 @@ class ParticleBeam(Beam):
             `matplotlib.axes.Axes.plot`.
         :param fill_between_kws: Additional keyword arguments forwarded to
             `matplotlib.axes.Axes.fill_between`.
-        :param ax: Matplotlib Axes to draw on. If None a new axes is created.
-        :return: Matplotlib Axes containing the plotted histogram.
+        :param ax: Matplotlib axes object to use for plotting. If `None` a new axes is
+            created.
+        :return: Matplotlib axes containing the plotted histogram.
         """
         if ax is None:
             _, ax = plt.subplots()
