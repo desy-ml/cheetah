@@ -164,8 +164,8 @@ def distribution_histogram_and_confidence_1d(
     :param bin_range: Tuple (min, max) specifying the histogram range, or `None` to
         infer from the data.
     :param errorbar: Method to compute uncertainty over vectorised beams. Pass either a
-        method string or a tuple `(method, level)`. Available methods are "sd", "se",
-        "pi" and "jp".
+        method string or a tuple `(method, level)`. Available methods are "sd", "se" and
+        "pi".
     :return: Tuple (bin_centers, mean_histogram, lower_bound, upper_bound) with vector
         dimensions reduced.
     """
@@ -207,8 +207,8 @@ def distribution_histogram_and_confidence_2d(
     :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the histogram
         ranges for x and y, or `None` to infer from the data.
     :param errorbar: Method to compute uncertainty over vectorised beams. Pass either a
-        method string or a tuple `(method, level)`. Available methods are "sd", "se",
-        "pi" and "jp".
+        method string or a tuple `(method, level)`. Available methods are "sd", "se" and
+        "pi".
     :returns: Tuple (bin_centers_x, bin_centers_y, mean_histogram, lower_bound,
         upper_bound) with vector dimensions reduced.
     """
@@ -372,8 +372,8 @@ def histograms_mean_and_confidence(
     :param histograms: Tensor of multiple histograms with shape
         (vector_size, *single_histogram_shape).
     :param errorbar: Method to compute uncertainty over vectorised beams. Pass either a
-        method string or a tuple `(method, level)`. Available methods are "sd", "se",
-        "pi" and "jp".
+        method string or a tuple `(method, level)`. Available methods are "sd", "se" and
+        "pi".
     :return: Tuple of the mean histogram, lower bound and upper bound, with each the
         vector dimensions reduced.
     """
@@ -408,7 +408,7 @@ def histograms_mean_and_confidence(
         upper_bound = histograms.quantile(1 - alpha / 2, dim=0)
     else:
         raise ValueError(
-            f"Invalid error method: {error_method}. Must be 'sd', 'se', 'pi' or 'jp'."
+            f"Invalid error method: {error_method}. Must be 'sd', 'se' and 'pi'."
         )
 
     return mean, lower_bound, upper_bound

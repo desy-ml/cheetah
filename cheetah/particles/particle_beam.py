@@ -1265,7 +1265,7 @@ class ParticleBeam(Beam):
             histogram.
         :param errorbar: Method to compute uncertainty bands over vectorised beams.
             Pass either a method string or a tuple `(method, level)`. Available methods
-            are "sd", "se", "pi" and "jp".
+            are "sd", "se" and "pi".
         :param plot_kws: Additional keyword arguments forwarded to
             `matplotlib.axes.Axes.plot`.
         :param fill_between_kws: Additional keyword arguments forwarded to
@@ -1344,7 +1344,7 @@ class ParticleBeam(Beam):
             levels (between 0 and 1) over the histogram style plot for vectorised beams.
         :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
             either a method string or a tuple `(method, level)`. Available methods are
-            "sd", "se", "pi" and "jp".
+            "sd", "se" and "pi".
         :param contour_smoothing: Standard deviation of the Gaussian kernel applied to
             the contour data (applied after histogram_smoothing).
         :param pcolormesh_kws: Additional keyword arguments forwarded to
@@ -1471,7 +1471,7 @@ class ParticleBeam(Beam):
             unit. If set to `None`, ranges are determined automatically.
         :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
             either a method string or a tuple `(method, level)`. Available methods
-            are "sd", "se", "pi" and "jp".
+            are "sd", "se" and "pi".
         :param plot_1d_kws: Additional keyword arguments to be passed to
             `ParticleBeam.plot_1d_distribution` for plotting 1-dimensional histograms.
         :param plot_2d_kws: Additional keyword arguments to be passed to
