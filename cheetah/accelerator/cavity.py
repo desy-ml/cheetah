@@ -134,10 +134,7 @@ class Cavity(Element):
                 outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
             ) * (
                 (
-                    -1.0
-                    * incoming.particles[..., 4]
-                    * beta0.unsqueeze(-1)
-                    * k.unsqueeze(-1)
+                    -incoming.particles[..., 4] * beta0.unsqueeze(-1) * k.unsqueeze(-1)
                     + phi.unsqueeze(-1)
                 ).cos()
                 - phi.cos().unsqueeze(-1)
