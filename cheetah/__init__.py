@@ -4,6 +4,7 @@ from .accelerator import (  # noqa: F401
     BPM,
     Aperture,
     Cavity,
+    CombinedCorrector,
     CustomTransferMap,
     Dipole,
     Drift,
