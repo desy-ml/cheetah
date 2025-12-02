@@ -6,7 +6,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
+from cheetah.track_methods import (
+    base_ttensor,
+    combined_rotation_misalignment_matrix,
+    drift_matrix,
+)
 from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
 
 
@@ -77,7 +81,6 @@ class Sextupole(Element):
             k2=self.k2,
             hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
@@ -86,12 +89,13 @@ class Sextupole(Element):
             length=self.length, species=species, energy=energy
         )
 
-        # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        # Apply misalignments and rotation to the entire second-order transfer map
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
@@ -108,7 +112,7 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k2 != 0.0).item()
+        return (self.k2 != 0.0).any().item()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -133,7 +137,7 @@ class Sextupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k2) if self.is_active else 1)
+        height = 0.8 * (plot_k2.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
         )

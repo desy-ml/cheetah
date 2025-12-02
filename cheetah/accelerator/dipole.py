@@ -9,6 +9,7 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -128,7 +129,7 @@ class Dipole(Element):
 
     @property
     def hx(self) -> torch.Tensor:
-        return torch.where(self.length == 0.0, 0.0, self.angle / self.length)
+        return self.angle / self.length  # Zero length not caught because not physical
 
     @property
     def dipole_e1(self) -> torch.Tensor:
@@ -152,7 +153,7 @@ class Dipole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.angle != 0).item()
+        return (self.angle != 0).any().item()
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -289,18 +290,15 @@ class Dipole(Element):
         :param mc2: Particle mass [eV/c^2].
         :return: x, px, y, py, z, pz final Bmad cannonical coordinates.
         """
-        px_norm = torch.sqrt((1 + pz) ** 2 - py**2)  # For simplicity
-        phi1 = torch.arcsin(px / px_norm)
+        px_norm = ((1 + pz).square() - py.square()).sqrt()  # For simplicity
+        phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
-        gp_safe = torch.where(
-            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
-        )
 
         alpha = (
             2
             * (1 + g.unsqueeze(-1) * x)
-            * torch.sin(self.angle.unsqueeze(-1) + phi1)
+            * (self.angle.unsqueeze(-1) + phi1).sin()
             * self.length.unsqueeze(-1)
             * bmadx.sinc(self.angle).unsqueeze(-1)
             - gp
@@ -308,51 +306,50 @@ class Dipole(Element):
                 (1 + g.unsqueeze(-1) * x)
                 * self.length.unsqueeze(-1)
                 * bmadx.sinc(self.angle).unsqueeze(-1)
-            )
-            ** 2
+            ).square()
         )
 
-        x2_t1 = x * torch.cos(self.angle.unsqueeze(-1)) + self.length.unsqueeze(
+        x2_t1 = x * self.angle.cos().unsqueeze(-1) + self.length.unsqueeze(
             -1
-        ) ** 2 * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
+        ).square() * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
 
-        x2_t2 = torch.sqrt(
-            (torch.cos(self.angle.unsqueeze(-1) + phi1) ** 2) + gp * alpha
-        )
-        x2_t3 = torch.cos(self.angle.unsqueeze(-1) + phi1)
+        x2_t2 = (((self.angle.unsqueeze(-1) + phi1).cos().square()) + gp * alpha).sqrt()
+        x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
-        c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
-        temp = torch.abs(self.angle.unsqueeze(-1) + phi1)
-        x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
+        c2 = x2_t1 + alpha * sqrta2minusbdiva(x2_t3, gp * alpha)
+        temp = (self.angle.unsqueeze(-1) + phi1).abs()
+        x2 = c1.where(
+            temp < torch.pi / 2, c2
+        )  # Branch allowed because both sides contain the same inputs
 
         Lcu = (
             x2
-            - self.length.unsqueeze(-1) ** 2
+            - self.length.square().unsqueeze(-1)
             * g.unsqueeze(-1)
             * bmadx.cosc(self.angle.unsqueeze(-1))
-            - x * torch.cos(self.angle.unsqueeze(-1))
+            - x * (self.angle.cos().unsqueeze(-1))
         )
 
-        Lcv = -self.length.unsqueeze(-1) * bmadx.sinc(
-            self.angle.unsqueeze(-1)
-        ) - x * torch.sin(self.angle.unsqueeze(-1))
+        Lcv = -self.length.unsqueeze(-1) * bmadx.sinc(self.angle.unsqueeze(-1)) - x * (
+            self.angle.sin().unsqueeze(-1)
+        )
 
         theta_p = 2 * (
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2 - torch.arctan2(Lcv, Lcu)
         )
 
-        Lc = torch.sqrt(Lcu**2 + Lcv**2)
+        Lc = (Lcu.square() + Lcv.square()).sqrt()
         Lp = Lc / bmadx.sinc(theta_p / 2)
 
         P = p0c.unsqueeze(-1) * (1 + pz)  # In eV
-        E = torch.sqrt(P**2 + mc2**2)  # In eV
-        E0 = torch.sqrt(p0c**2 + mc2**2)  # In eV
+        E = (P.square() + mc2.square()).sqrt()  # In eV
+        E0 = (p0c.square() + mc2.square()).sqrt()  # In eV
         beta = P / E
         beta0 = p0c / E0
 
         x_f = x2
-        px_f = px_norm * torch.sin(self.angle.unsqueeze(-1) + phi1 - theta_p)
+        px_f = px_norm * (self.angle.unsqueeze(-1) + phi1 - theta_p).sin()
         y_f = y + py * Lp / px_norm
         z_f = (
             z
@@ -389,10 +386,8 @@ class Dipole(Element):
             self.gap * (location == "entrance") + self.gap_exit * (location == "exit")
         )
 
-        hx = g * torch.tan(e)
-        hy = -g * torch.tan(
-            e - 2 * f_int * h_gap * g * (1 + torch.sin(e) ** 2) / torch.cos(e)
-        )
+        hx = g * e.tan()
+        hy = -g * (e - 2 * f_int * h_gap * g * (1 + e.sin().square()) / e.cos()).tan()
         px_f = px + x * hx.unsqueeze(-1)
         py_f = py + y * hy.unsqueeze(-1)
 
@@ -402,32 +397,23 @@ class Dipole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
-
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if torch.any(self.length != 0.0):  # Bending magnet with finite length
-            R = base_rmatrix(
-                length=self.length,
-                k1=self.k1,
-                hx=self.hx,
-                species=species,
-                energy=energy,
-            )  # Tilt is applied after adding edges
-        else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
-            R[..., 0, 1] = self.length
-            R[..., 2, 6] = self.angle
-            R[..., 2, 3] = self.length
+        R = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=self.hx,
+            species=species,
+            energy=energy,
+        )  # Tilt is applied after adding edges
 
         # Apply fringe fields
         R = R_exit @ R @ R_enter
 
         # Apply rotation for tilted magnets
-        if torch.any(self.tilt != 0):
-            rotation = rotation_matrix(self.tilt)
-            R = rotation.mT @ R @ rotation
+        rotation = rotation_matrix(self.tilt)
+        R = rotation.mT @ R @ rotation
 
         return R
 
@@ -435,37 +421,22 @@ class Dipole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
-
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if torch.any(self.length != 0.0):  # Bending magnet with finite length
-            T = base_ttensor(
-                length=self.length,
-                k1=self.k1,
-                k2=torch.tensor(0.0, **factory_kwargs),
-                hx=self.hx,
-                species=species,
-                energy=energy,
-            )
+        T = base_ttensor(
+            length=self.length,
+            k1=self.k1,
+            k2=self.length.new_zeros(()),
+            hx=self.hx,
+            species=species,
+            energy=energy,
+        )
 
-            # Fill the first-order transfer map into the second-order transfer map
-            T[..., :, 6, :] = base_rmatrix(
-                length=self.length,
-                k1=self.k1,
-                hx=self.hx,
-                species=species,
-                energy=energy,
-            )
-        else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
-            R[..., 0, 1] = self.length
-            R[..., 2, 6] = self.angle
-            R[..., 2, 3] = self.length
-
-            T = torch.zeros((*self.length.shape, 7, 7), **factory_kwargs)
-            T[..., :, 6, :] = R
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = base_rmatrix(
+            length=self.length, k1=self.k1, hx=self.hx, species=species, energy=energy
+        )
 
         # Apply fringe fields
         T = torch.einsum(
@@ -473,11 +444,10 @@ class Dipole(Element):
         )
 
         # Apply rotation for tilted magnets
-        if torch.any(self.tilt != 0):
-            rotation = rotation_matrix(self.tilt)
-            T = torch.einsum(
-                "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
-            )
+        rotation = rotation_matrix(self.tilt)
+        T = torch.einsum(
+            "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
+        )
 
         return T
 
@@ -485,18 +455,18 @@ class Dipole(Element):
         """Linear transfer map for the entrance face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / torch.cos(self._e1)
+        sec_e = self._e1.cos().reciprocal()
         phi = (
             self.fringe_integral
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self._e1) ** 2)
+            * (1 + self._e1.sin().square())
         )
 
         tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
-        tm[..., 1, 0] = self.hx * torch.tan(self._e1)
-        tm[..., 3, 2] = -self.hx * torch.tan(self._e1 - phi)
+        tm[..., 1, 0] = self.hx * self._e1.tan()
+        tm[..., 3, 2] = -self.hx * (self._e1 - phi).tan()
 
         return tm
 
@@ -504,18 +474,18 @@ class Dipole(Element):
         """Linear transfer map for the exit face of the dipole magnet."""
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        sec_e = 1.0 / torch.cos(self._e2)
+        sec_e = self._e2.cos().reciprocal()
         phi = (
             self.fringe_integral_exit
             * self.hx
             * self.gap
             * sec_e
-            * (1 + torch.sin(self._e2) ** 2)
+            * (1 + self._e2.sin().square())
         )
 
         tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
-        tm[..., 1, 0] = self.hx * torch.tan(self._e2)
-        tm[..., 3, 2] = -self.hx * torch.tan(self._e2 - phi)
+        tm[..., 1, 0] = self.hx * self._e2.tan()
+        tm[..., 3, 2] = -self.hx * (self._e2 - phi).tan()
 
         return tm
 
@@ -529,7 +499,7 @@ class Dipole(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2

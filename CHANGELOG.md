@@ -6,6 +6,7 @@
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
 - Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
+- Add support for Python 3.14, and remove support for Python 3.10, as well as increase the minimum required versions for some dependencies. (see #582) (@jank324)
 
 ### 🚀 Features
 
@@ -17,7 +18,8 @@
 - First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532, #565) (@jank324)
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
-- Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558) (@jank324, @Hespe)
+- Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558, #555, #556, #563) (@jank324, @Hespe)
+- New `CombinedCorrector` element that combines the functionality of `HorizontalCorrector` and `VerticalCorrector` (see #589) (@jank324, @amylizzle)
 - Add the following plotting functionalities for beams with batch dimensions: plot average 1D projection histogram with lower and upper bounds, plot average 2D projection histogram with lower and upper bounds, triangle plot with the above functionalities. (see #583) (@jp-ga, @jank324)
 
 ### 🐛 Bug fixes
@@ -27,6 +29,7 @@
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
 - Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
 - Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
+- Fix issue where branching in the computations could "hide" gradients w.r.t. to some inputs under certain conditions, leading to incorrect gradient computations. (see #553) (@jank324, @Hespe)
 
 ### 🐆 Other
 

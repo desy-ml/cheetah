@@ -8,7 +8,6 @@ from scipy import constants
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix
 from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
@@ -22,6 +21,11 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class Cavity(Element):
     """
     Accelerating cavity in a particle accelerator.
+
+    NOTE: When computing the gradient on cavities with exactly zero energy gain, it is
+        possible that some gradient components are lost. This is unlikely to cause
+        (therefore do not hesitate to have cavities with zero voltage in your lattice),
+        but this note is here to make you aware of this possibility.
 
     :param length: Length in meters.
     :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
@@ -71,7 +75,7 @@ class Cavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.voltage != 0).item()
+        return (self.voltage != 0).any().item()
 
     @property
     def is_skippable(self) -> bool:
@@ -81,25 +85,14 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return torch.where(
-            (self.voltage != 0).unsqueeze(-1).unsqueeze(-1),
-            self._cavity_rmatrix(energy, species),
-            base_rmatrix(
-                length=self.length,
-                k1=torch.zeros_like(self.length),
-                hx=torch.zeros_like(self.length),
-                species=species,
-                tilt=torch.zeros_like(self.length),
-                energy=energy,
-            ),
-        )
+        return self._cavity_rmatrix(energy, species)
 
     def track(self, incoming: Beam) -> Beam:
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
 
-        phi = torch.deg2rad(self.phase)
+        phi = self.phase.deg2rad()
 
         tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
@@ -108,113 +101,119 @@ class Cavity(Element):
         else:  # ParticleBeam
             outgoing_particles = incoming.particles @ tm.mT
         delta_energy = (
-            self.voltage * torch.cos(phi) * incoming.species.num_elementary_charges * -1
+            self.voltage * phi.cos() * incoming.species.num_elementary_charges * -1
         )
 
-        T566 = 1.5 * self.length * igamma2 / beta0**3
+        T566 = 1.5 * self.length * igamma2 / beta0.pow(3)
         T556 = torch.full_like(self.length, 0.0)
         T555 = torch.full_like(self.length, 0.0)
 
-        if torch.any(incoming.energy + delta_energy > 0):
-            k = 2 * torch.pi * self.frequency / constants.speed_of_light
-            outgoing_energy = incoming.energy + delta_energy
-            gamma1, _, beta1 = compute_relativistic_factors(
-                outgoing_energy, incoming.species.mass_eV
+        k = 2.0 * torch.pi * self.frequency / constants.speed_of_light
+        outgoing_energy = incoming.energy + delta_energy
+        gamma1, _, beta1 = compute_relativistic_factors(
+            outgoing_energy, incoming.species.mass_eV
+        )
+
+        if isinstance(incoming, ParameterBeam):
+            outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
+                outgoing_energy * beta1
+            ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
+                (-incoming.mu[..., 4] * beta0 * k + phi).cos() - phi.cos()
+            )
+            outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
+        else:  # ParticleBeam
+            outgoing_particles[..., 5] = incoming.particles[
+                ..., 5
+            ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
+                outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
+            ) + self.voltage.unsqueeze(
+                -1
+            ) * beta0.unsqueeze(
+                -1
+            ) / (
+                outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
+            ) * (
+                (
+                    -incoming.particles[..., 4] * beta0.unsqueeze(-1) * k.unsqueeze(-1)
+                    + phi.unsqueeze(-1)
+                ).cos()
+                - phi.cos().unsqueeze(-1)
             )
 
-            if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
-                    outgoing_energy * beta1
-                ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
-                    torch.cos(-incoming.mu[..., 4] * beta0 * k + phi) - torch.cos(phi)
-                )
-                outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
-            else:  # ParticleBeam
-                outgoing_particles[..., 5] = incoming.particles[
-                    ..., 5
-                ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
-                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) + self.voltage.unsqueeze(
-                    -1
-                ) * beta0.unsqueeze(
-                    -1
-                ) / (
-                    outgoing_energy.unsqueeze(-1) * beta1.unsqueeze(-1)
-                ) * (
-                    torch.cos(
-                        -1
-                        * incoming.particles[..., 4]
-                        * beta0.unsqueeze(-1)
-                        * k.unsqueeze(-1)
-                        + phi.unsqueeze(-1)
-                    )
-                    - torch.cos(phi).unsqueeze(-1)
-                )
+        dgamma = self.voltage / incoming.species.mass_eV
 
-            dgamma = self.voltage / incoming.species.mass_eV
-            if torch.any(delta_energy > 0):
-                T566 = (
-                    self.length
-                    * (beta0**3 * gamma0**3 - beta1**3 * gamma1**3)
-                    / (2 * beta0 * beta1**3 * gamma0 * (gamma0 - gamma1) * gamma1**3)
-                )
-                T556 = (
-                    beta0
-                    * k
-                    * self.length
-                    * dgamma
+        # TODO: Branch stays in for now because no proper limit exists and would
+        # probably require a different model altogether.
+        if (delta_energy > 0).any():
+            T566 = (
+                self.length
+                * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
+                / (
+                    2.0
+                    * beta0
+                    * beta1.pow(3)
                     * gamma0
-                    * (beta1**3 * gamma1**3 + beta0 * (gamma0 - gamma1**3))
-                    * torch.sin(phi)
-                    / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 2)
+                    * (gamma0 - gamma1)
+                    * gamma1.pow(3)
                 )
-                T555 = (
-                    beta0**2
-                    * k**2
-                    * self.length
-                    * dgamma
-                    / 2.0
+            )
+            T556 = (
+                beta0
+                * k
+                * self.length
+                * dgamma
+                * gamma0
+                * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
+                * phi.sin()
+                / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).square())
+            )
+            T555 = (
+                beta0.square()
+                * k.square()
+                * self.length
+                * dgamma
+                / 2.0
+                * (
+                    dgamma
                     * (
-                        dgamma
-                        * (
-                            2 * gamma0 * gamma1**3 * (beta0 * beta1**3 - 1)
-                            + gamma0**2
-                            + 3 * gamma1**2
-                            - 2
-                        )
-                        / (beta1**3 * gamma1**3 * (gamma0 - gamma1) ** 3)
-                        * torch.sin(phi) ** 2
-                        - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
-                        / (beta1 * gamma1 * (gamma0 - gamma1) ** 2)
-                        * torch.cos(phi)
+                        2.0 * gamma0 * gamma1.pow(3) * (beta0 * beta1.pow(3) - 1.0)
+                        + gamma0.square()
+                        + 3.0 * gamma1.square()
+                        - 2.0
                     )
+                    / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
+                    * phi.sin().square()
+                    - (gamma1 * gamma0 * (beta1 * beta0 - 1.0) + 1.0)
+                    / (beta1 * gamma1 * (gamma0 - gamma1).square())
+                    * phi.cos()
                 )
+            )
 
-            if isinstance(incoming, ParameterBeam):
-                outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
-                    T566 * incoming.mu[..., 5] ** 2
-                    + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
-                    + T555 * incoming.mu[..., 4] ** 2
-                )
-                outgoing_cov[..., 4, 4] = (
-                    T566 * incoming.cov[..., 5, 5] ** 2
-                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
-                    + T555 * incoming.cov[..., 4, 4] ** 2
-                )
-                outgoing_cov[..., 4, 5] = (
-                    T566 * incoming.cov[..., 5, 5] ** 2
-                    + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
-                    + T555 * incoming.cov[..., 4, 4] ** 2
-                )
-                outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
-            else:  # ParticleBeam
-                outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
-                    T566.unsqueeze(-1) * incoming.particles[..., 5] ** 2
-                    + T556.unsqueeze(-1)
-                    * incoming.particles[..., 4]
-                    * incoming.particles[..., 5]
-                    + T555.unsqueeze(-1) * incoming.particles[..., 4] ** 2
-                )
+        if isinstance(incoming, ParameterBeam):
+            outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
+                T566 * incoming.mu[..., 5].square()
+                + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
+                + T555 * incoming.mu[..., 4].square()
+            )
+            outgoing_cov[..., 4, 4] = (
+                T566 * incoming.cov[..., 5, 5].square()
+                + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                + T555 * incoming.cov[..., 4, 4].square()
+            )
+            outgoing_cov[..., 4, 5] = (
+                T566 * incoming.cov[..., 5, 5].square()
+                + T556 * incoming.cov[..., 4, 5] * incoming.cov[..., 5, 5]
+                + T555 * incoming.cov[..., 4, 4].square()
+            )
+            outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
+        else:  # ParticleBeam
+            outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
+                T566.unsqueeze(-1) * incoming.particles[..., 5].square()
+                + T556.unsqueeze(-1)
+                * incoming.particles[..., 4]
+                * incoming.particles[..., 5]
+                + T555.unsqueeze(-1) * incoming.particles[..., 4].square()
+            )
 
         if isinstance(incoming, ParameterBeam):
             outgoing = ParameterBeam(
@@ -246,9 +245,9 @@ class Cavity(Element):
         assert torch.all(energy > 0), "Initial energy must be larger than 0"
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        phi = torch.deg2rad(self.phase)
+        phi = self.phase.deg2rad()
         effective_voltage = -self.voltage * species.num_elementary_charges
-        delta_energy = effective_voltage * torch.cos(phi)
+        delta_energy = effective_voltage * phi.cos()
 
         Ei = energy / species.mass_eV
         dE = delta_energy / species.mass_eV
@@ -264,67 +263,48 @@ class Cavity(Element):
                 / energy
                 * log1pdiv(delta_energy / energy)
             )
-            beta0 = torch.sqrt(1 - 1 / Ei**2)
-            beta1 = torch.sqrt(1 - 1 / Ef**2)
+            beta0 = (1 - Ei.square().reciprocal()).sqrt()
+            beta1 = (1 - Ef.square().reciprocal()).sqrt()
 
-            r11 = torch.cos(alpha) - math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
-
-            # In Ocelot r12 is defined as below only if abs(Ep) > 10, and self.length
-            # otherwise. This is implemented differently here to achieve results
-            # closer to Bmad.
+            r11 = alpha.cos() - math.sqrt(2.0) * phi.cos() * alpha.sin()
             r12 = (
-                math.sqrt(8.0)
-                * energy
-                / effective_voltage
-                * torch.sin(alpha)
+                (alpha / torch.pi).sinc()
+                * log1pdiv(delta_energy / energy)
                 * self.length
             )
-
             r21 = -(
                 effective_voltage
                 / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
-                * (0.5 + torch.cos(phi) ** 2)
-                * torch.sin(alpha)
+                * (0.5 + phi.cos().square())
+                * alpha.sin()
             )
 
-            r22 = (
-                Ei
-                / Ef
-                * (
-                    torch.cos(alpha)
-                    + math.sqrt(2.0) * torch.cos(phi) * torch.sin(alpha)
-                )
-            )
+            r22 = Ei / Ef * (alpha.cos() + math.sqrt(2.0) * phi.cos() * alpha.sin())
 
+            # TODO: Branch stays in for now because no proper limit exists and would
+            # probably require a different model altogether.
             r55 = 1.0 + (
                 k
                 * self.length
                 * beta0
-                * effective_voltage
-                / species.mass_eV
-                * torch.sin(phi)
+                * phi.tan()
                 * (Ei * Ef * (beta0 * beta1 - 1) + 1)
-                / (beta1 * Ef * (Ei - Ef) ** 2)
+                / (beta1 * Ef * dE)
+            ).where(dE != 0.0, 0.0)
+            r56 = (
+                -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             )
-            r56 = -self.length / (Ef**2 * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            r65 = (
-                k
-                * torch.sin(phi)
-                * effective_voltage
-                / (beta1 * (energy + delta_energy))
-            )
+            r65 = k * phi.sin() * effective_voltage / (beta1 * (energy + delta_energy))
             r66 = Ei / Ef * beta0 / beta1
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
-            f = Ei / dE * torch.log(1 + (dE / Ei))
-
             vector_shape = torch.broadcast_shapes(
-                self.length.shape, f.shape, Ei.shape, Ef.shape
+                self.length.shape, dE.shape, Ei.shape, Ef.shape
             )
 
             M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_body[..., 0, 1] = self.length * f
+            M_body[..., 0, 1] = self.length * log1pdiv(dE / Ei)
             M_body[..., 1, 1] = Ei / Ef
 
             M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
