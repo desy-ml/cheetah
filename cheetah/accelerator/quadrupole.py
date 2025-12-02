@@ -7,8 +7,17 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, squash_index_for_unavailable_dims
+from cheetah.track_methods import (
+    base_rmatrix,
+    base_ttensor,
+    combined_rotation_misalignment_matrix,
+)
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    cache_transfer_map,
+    squash_index_for_unavailable_dims,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -77,7 +86,8 @@ class Quadrupole(Element):
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         R = base_rmatrix(
@@ -85,17 +95,18 @@ class Quadrupole(Element):
             k1=self.k1,
             hx=self.length.new_zeros(()),
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
-        if torch.any(self.misalignment != 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        R = R_exit @ R @ R_entry
 
         return R
 
-    def _compute_second_order_transfer_map(
+    @cache_transfer_map
+    def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         zero = self.length.new_zeros(())
@@ -105,9 +116,8 @@ class Quadrupole(Element):
             k1=self.k1,
             k2=zero,
             hx=zero,
-            tilt=self.tilt,
             energy=energy,
-            species=species,
+            species=species
         )
 
         # Fill the first-order transfer map into the second-order transfer map
@@ -116,16 +126,16 @@ class Quadrupole(Element):
             k1=self.k1,
             hx=zero,
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
-        # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        # Apply misalignments and rotation to the entire second-order transfer map
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
@@ -209,12 +219,12 @@ class Quadrupole(Element):
 
             z = (
                 z
-                + dzx[0] * x**2
+                + dzx[0] * x.square()
                 + dzx[1] * x * px
-                + dzx[2] * px**2
-                + dzy[0] * y**2
+                + dzx[2] * px.square()
+                + dzy[0] * y.square()
                 + dzy[1] * y * py
-                + dzy[2] * py**2
+                + dzy[2] * py.square()
             )
 
             x_next = tx[0][0] * x + tx[0][1] * px
@@ -256,7 +266,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k1 != 0).item()
+        return (self.k1 != 0).any().item()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -297,7 +307,7 @@ class Quadrupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )

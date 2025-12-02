@@ -48,7 +48,10 @@ def test_drift(tracking_method):
 
 
 @pytest.mark.parametrize("tracking_method", ["linear", "second_order"])
-def test_dipole(tracking_method):
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_dipole(tracking_method, default_torch_dtype):
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
     through an Ocelot `Bend` element.
@@ -86,36 +89,10 @@ def test_dipole(tracking_method):
     )
 
 
-def test_dipole_with_float64():
-    """
-    Test that the tracking results through a Cheetah `Dipole` element match those
-    through an Ocelot `Bend` element using float64 precision.
-    """
-    # Cheetah
-    incoming_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
-    )
-    cheetah_dipole = cheetah.Dipole(
-        length=torch.tensor(0.1), angle=torch.tensor(0.1)
-    ).to(torch.float64)
-    outgoing_beam = cheetah_dipole.track(incoming_beam)
-
-    # Ocelot
-    incoming_p_array = ocelot.astraBeam2particleArray(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
-    )
-    ocelot_bend = ocelot.Bend(l=0.1, angle=0.1)
-    lattice = ocelot.MagneticLattice([ocelot_bend])
-    navigator = ocelot.Navigator(lattice)
-    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
-
-    assert np.allclose(
-        outgoing_beam.particles[:, :6].cpu().numpy(),
-        outgoing_p_array.rparticles.transpose(),
-    )
-
-
-def test_dipole_with_fringe_field():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_dipole_with_fringe_field(default_torch_dtype):
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
     through an Ocelot `Bend` element when there are fringe fields.
@@ -147,7 +124,10 @@ def test_dipole_with_fringe_field():
     )
 
 
-def test_dipole_with_fringe_field_and_tilt():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_dipole_with_fringe_field_and_tilt(default_torch_dtype):
     """
     Test that the tracking results through a Cheetah `Dipole` element match those
     through an Ocelot `Bend` element when there are fringe fields and tilt, and the
@@ -305,7 +285,10 @@ def test_solenoid():
 
 
 @pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
-def test_ares_ea():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_ares_ea(default_torch_dtype):
     """
     Test that the tracking results through a Experimental Area (EA) lattice of the ARES
     accelerator at DESY match those using Ocelot.
@@ -405,7 +388,10 @@ def test_astra_import():
 
 
 @pytest.mark.parametrize("tracking_method", ["cheetah", "second_order"])
-def test_quadrupole(tracking_method):
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_quadrupole(tracking_method, default_torch_dtype):
     """
     Test if the tracking results through a Cheetah `Quadrupole` element match those
     through an Ocelot `Quadrupole` element.
@@ -445,7 +431,6 @@ def test_quadrupole(tracking_method):
     navigator = ocelot.Navigator(lattice)
     _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
 
-    # Split in order to allow for different tolerances for each particle dimension
     assert np.allclose(
         outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
@@ -455,7 +440,10 @@ def test_quadrupole(tracking_method):
     )
 
 
-def test_tilted_quadrupole():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_tilted_quadrupole(default_torch_dtype):
     """
     Test if the tracking results through a tilted Cheetah `Quadrupole` element match
     those through a tilted Ocelot `Quadrupole` element.
@@ -496,7 +484,10 @@ def test_tilted_quadrupole():
     )
 
 
-def test_sbend():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_sbend(default_torch_dtype):
     """
     Test if the tracking results through a Cheetah `Dipole` element match those through
     an Ocelot `SBend` element.
@@ -537,7 +528,10 @@ def test_sbend():
     )
 
 
-def test_rbend():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_rbend(default_torch_dtype):
     """
     Test if the tracking results through a Cheetah `RBend` element match those through
     an Ocelot `RBend` element.
@@ -583,7 +577,10 @@ def test_rbend():
     )
 
 
-def test_convert_rbend():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_convert_rbend(default_torch_dtype):
     """
     Test if the tracking results through a ocelot-converted Cheetah segment match
     those through an Ocelot section with an `RBend` element.
@@ -621,7 +618,10 @@ def test_convert_rbend():
     )
 
 
-def test_asymmetric_bend():
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_asymmetric_bend(default_torch_dtype):
     """Test the case that bend fringe fields are asymmetric."""
     # Ocelot
     incoming_p_array = ocelot.astraBeam2particleArray(

@@ -7,7 +7,7 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, kde_histogram_2d
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map, kde_histogram_2d
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -151,7 +151,8 @@ class Screen(Element):
             (self.pixel_bin_edges[1][1:] + self.pixel_bin_edges[1][:-1]) / 2,
         )
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {
