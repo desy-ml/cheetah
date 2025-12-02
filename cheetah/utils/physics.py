@@ -14,6 +14,6 @@ def compute_relativistic_factors(
     """
     gamma = energy / particle_mass_eV
     igamma2 = gamma.square().reciprocal()
-    beta = (1 - igamma2).sqrt()
+    beta = (1.0 - igamma2).sqrt()
 
     return gamma, igamma2, beta
