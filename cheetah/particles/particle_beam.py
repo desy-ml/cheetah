@@ -1257,7 +1257,7 @@ class ParticleBeam(Beam):
         Plot a 1-dimensional histogram of the given phase-space dimension.
 
         :param dimension: Name of the dimension to plot. Should be one of
-             `('x', 'px', 'y', 'py', 'tau', 'p')`.
+            `('x', 'px', 'y', 'py', 'tau', 'p')`.
         :param bins: Number of histogram bins.
         :param bin_range: Tuple (min, max) specifying the histogram range, or `None` to
             infer from the data.
