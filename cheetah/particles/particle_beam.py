@@ -1320,7 +1320,7 @@ class ParticleBeam(Beam):
         errorbar: tuple[str, int | float] | str = ("pi", 95),
         contour_smoothing: float = 3.0,
         pcolormesh_kws: dict | None = None,
-        contour_kws: dict | None = None,
+        distribution_contour_kws: dict | None = None,
         confidence_contour_kws: dict | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
@@ -1349,8 +1349,8 @@ class ParticleBeam(Beam):
             the contour data (applied after histogram_smoothing).
         :param pcolormesh_kws: Additional keyword arguments forwarded to
             `matplotlib.pcolormesh`.
-        :param contour_kws: Additional keyword arguments forwarded to
-            `matplotlib.contour`.
+        :param distribution_contour_kws: Additional keyword arguments forwarded to
+            `matplotlib.contour` when drawing distribution contours.
         :param confidence_contour_kws: Additional keyword arguments forwarded to
             `matplotlib.contour` when drawing confidence contours.
         :param ax: Matplotlib axes object to use for plotting. If `None` a new axes is
@@ -1415,7 +1415,7 @@ class ParticleBeam(Beam):
                 bin_centers_x,
                 bin_centers_y,
                 smoothed_contour_histogram.mT / smoothed_contour_histogram.max(),
-                **({"levels": [0.1, 0.5, 0.9]} | (contour_kws or {})),
+                **({"levels": [0.1, 0.5, 0.9]} | (distribution_contour_kws or {})),
             )
             if lower_bound is not None and upper_bound is not None:
                 ax.contour(
