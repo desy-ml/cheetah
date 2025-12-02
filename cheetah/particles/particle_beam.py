@@ -1318,7 +1318,7 @@ class ParticleBeam(Beam):
         histogram_smoothing: float = 0.0,
         confidence_contours: tuple[float] | None = None,
         errorbar: tuple[str, int | float] | str = ("pi", 95),
-        contour_smoothing: float = 3.0,
+        contour_smoothing: float = 1.0,
         pcolormesh_kws: dict | None = None,
         distribution_contour_kws: dict | None = None,
         confidence_contour_kws: dict | None = None,
@@ -1417,7 +1417,11 @@ class ParticleBeam(Beam):
                 smoothed_contour_histogram.mT / smoothed_contour_histogram.max(),
                 **({"levels": [0.1, 0.5, 0.9]} | (distribution_contour_kws or {})),
             )
-            if lower_bound is not None and upper_bound is not None:
+            if (
+                confidence_contours is not None
+                and lower_bound is not None
+                and upper_bound is not None
+            ):
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
