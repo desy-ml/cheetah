@@ -183,7 +183,7 @@ class Cavity(Element):
                     )
                     / (beta1.pow(3) * gamma1.pow(3) * (gamma0 - gamma1).pow(3))
                     * phi.sin().square()
-                    - (gamma1 * gamma0 * (beta1 * beta0 - 1) + 1)
+                    - (gamma1 * gamma0 * (beta1 * beta0 - 1.0) + 1.0)
                     / (beta1 * gamma1 * (gamma0 - gamma1).square())
                     * phi.cos()
                 )
