@@ -1572,8 +1572,8 @@ class ParticleBeam(Beam):
                 dimension=dimension,
                 bins=bins,
                 bin_range=bin_range,
-                ax=ax,
                 errorbar=errorbar,
+                ax=ax,
                 **(plot_1d_kws or {}),
             )
 
@@ -1584,8 +1584,8 @@ class ParticleBeam(Beam):
                 y_dimension=dimensions[j],
                 bins=(bins, bins),
                 bin_ranges=(bin_ranges[i], bin_ranges[j]),
-                ax=axs[j, i],
                 errorbar=errorbar,
+                ax=axs[j, i],
                 **(plot_2d_kws or {}),
             )
 
