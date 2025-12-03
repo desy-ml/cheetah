@@ -100,16 +100,13 @@ class TransverseDeflectingCavity(Element):
         """
         if self.tracking_method == "drift_kick_drift":
             return self._track_drift_kick_drift(incoming)
-        elif self.tracking_method == "bmadx":
-            raise NotImplementedError(
-                "The 'bmadx' tracking method has been deprecated and is no longer"
-                " supported. Please use 'drift_kick_drift' instead."
-            )
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. For element of"
-                f" type {self.__class__.__name__}, supported methods are "
-                f"{self.supported_tracking_methods}."
+                f"Invalid tracking method {self.tracking_method}. For element of type "
+                f"{self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}. NOTE: 'cheetah' and 'bmadx'"
+                " tracking methods have been deprecated and are no longer supported."
+                "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
