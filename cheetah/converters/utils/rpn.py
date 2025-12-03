@@ -1,4 +1,5 @@
 import math
+import re
 from typing import Any
 
 
@@ -12,7 +13,7 @@ def evaluate_expression(expression: str, context: dict | None = None) -> Any:
 
     stack = []
     stripped = expression.strip()
-    for token in stripped.split():
+    for token in list(filter(None, re.split(r"(\+|\-|\*|/|\^)|\s", stripped))):
         match token:
             case "+":
                 try:

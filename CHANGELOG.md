@@ -44,6 +44,7 @@ This major release comes with significant overhauls of some core components of C
 - Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
 - Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
 - Fix issue where branching in the computations could "hide" gradients w.r.t. to some inputs under certain conditions, leading to incorrect gradient computations. (see #553) (@jank324, @Hespe)
+- RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
 
 ### 🐆 Other
 
