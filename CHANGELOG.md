@@ -1,15 +1,19 @@
 # Changelog
 
-## v0.7.6 [🚧 Work in Progress]
+## v0.8.0 [🚧 Work in Progress]
+
+This major release comes with significant overhauls of some core components of Cheetah. Highlights include an overhaul of the tracking system to support second-order tracking and transfer map/tensor caching; clearer tracking methods names; improved reliability of the gradients computed through Cheetah; a more PyTorch-like typing behaviour; and overall speed improvements of up to 7x in some cases.
 
 ### 🚨 Breaking Changes
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
 - Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
+- Add support for Python 3.14, and remove support for Python 3.10, as well as increase the minimum required versions for some dependencies. (see #582) (@jank324)
+- The tracking system has been widely overhauled. As part of this overhaul we renamed the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` have been fully deprecated and will no longer work. Cheetah will raise an informative error for a number of releases to give users time to adapt their code. (see #476, #596) (@jank324, @Hespe, @cr-xu)
 
 ### 🚀 Features
 
-- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu, @jank324, @Hespe)
+- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. (see #476) (@cr-xu, @jank324, @Hespe)
 - `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
 - Documented PyTorch `compile` for improved speed (see #390) (@ax3l)
 - Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
@@ -17,7 +21,8 @@
 - First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532, #565) (@jank324)
 - Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
-- Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558) (@jank324, @Hespe)
+- Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558, #555, #556, #563, #561) (@jank324, @Hespe)
+- New `CombinedCorrector` element that combines the functionality of `HorizontalCorrector` and `VerticalCorrector` (see #589) (@jank324, @amylizzle)
 
 ### 🐛 Bug fixes
 
@@ -26,6 +31,7 @@
 - Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
 - Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
 - Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
+- Fix issue where branching in the computations could "hide" gradients w.r.t. to some inputs under certain conditions, leading to incorrect gradient computations. (see #553) (@jank324, @Hespe)
 
 ### 🐆 Other
 

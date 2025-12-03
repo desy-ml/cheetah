@@ -1,4 +1,3 @@
-import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -7,7 +6,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.track_methods import base_rmatrix, base_ttensor, misalignment_matrix
+from cheetah.track_methods import (
+    base_rmatrix,
+    base_ttensor,
+    combined_rotation_misalignment_matrix,
+)
 from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
@@ -28,7 +31,7 @@ class Quadrupole(Element):
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians. pi/4 for
         skew-quadrupole.
     :param num_steps: Number of drift-kick-drift steps to use for tracking through the
-        element when tracking method is set to `"bmadx"`.
+        element when tracking method is set to `"drift_kick_drift"`.
     :param tracking_method: Method to use for tracking through the element.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
@@ -36,13 +39,7 @@ class Quadrupole(Element):
         access the element in a segment.
     """
 
-    supported_tracking_methods = [
-        "linear",
-        "cheetah",
-        "second_order",
-        "drift_kick_drift",
-        "bmadx",
-    ]
+    supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
     def __init__(
         self,
@@ -52,7 +49,7 @@ class Quadrupole(Element):
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
         tracking_method: Literal[
-            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
+            "linear", "second_order", "drift_kick_drift"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
@@ -89,15 +86,15 @@ class Quadrupole(Element):
         R = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=self.length.new_zeros(()),
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
-        if torch.any(self.misalignment != 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            R = torch.einsum("...ij,...jk,...kl->...il", R_exit, R, R_entry)
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        R = R_exit @ R @ R_entry
 
         return R
 
@@ -105,12 +102,13 @@ class Quadrupole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
             length=self.length,
             k1=self.k1,
-            k2=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
-            tilt=self.tilt,
+            k2=zero,
+            hx=zero,
             energy=energy,
             species=species,
         )
@@ -119,18 +117,18 @@ class Quadrupole(Element):
         T[..., :, 6, :] = base_rmatrix(
             length=self.length,
             k1=self.k1,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=zero,
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
-        # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        # Apply misalignments and rotation to the entire second-order transfer map
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
@@ -143,31 +141,17 @@ class Quadrupole(Element):
         """
         if self.tracking_method == "linear":
             return super()._track_first_order(incoming)
-        elif self.tracking_method == "cheetah":
-            warnings.warn(
-                "The 'cheetah' tracking method is deprecated and will be removed in a"
-                "future release. Please use 'linear' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super()._track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
             return self._track_drift_kick_drift(incoming)
-        elif self.tracking_method == "bmadx":
-            warnings.warn(
-                "The 'bmadx' tracking method is deprecated and will be removed in a"
-                " future release. Please use 'drift_kick_drift' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. For element of"
-                f" type {self.__class__.__name__}, supported methods are "
-                f"{self.supported_tracking_methods}."
+                f"Invalid tracking method {self.tracking_method}. For element of type "
+                f"{self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}. NOTE: 'cheetah' and 'bmadx'"
+                " tracking methods have been deprecated and are no longer supported."
+                "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
@@ -214,12 +198,12 @@ class Quadrupole(Element):
 
             z = (
                 z
-                + dzx[0] * x**2
+                + dzx[0] * x.square()
                 + dzx[1] * x * px
-                + dzx[2] * px**2
-                + dzy[0] * y**2
+                + dzx[2] * px.square()
+                + dzy[0] * y.square()
                 + dzy[1] * y * py
-                + dzy[2] * py**2
+                + dzy[2] * py.square()
             )
 
             x_next = tx[0][0] * x + tx[0][1] * px
@@ -237,7 +221,7 @@ class Quadrupole(Element):
         )
 
         # pz is unaffected by tracking, therefore needs to match vector dimensions
-        pz = pz * torch.ones_like(x)
+        pz, _ = torch.broadcast_tensors(pz, x)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -257,11 +241,11 @@ class Quadrupole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method in ["linear", "cheetah"]
+        return self.tracking_method == "linear"
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k1 != 0).item()
+        return (self.k1 != 0).any().item()
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -302,7 +286,7 @@ class Quadrupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k1) if self.is_active else 1)
+        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
         )
