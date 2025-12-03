@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.8.0 [🚧 Work in Progress]
+## v0.8.1 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.8.0](https://github.com/desy-ml/cheetah/releases/tag/v0.8.0) (2025-12-03)
 
 This major release comes with significant overhauls of some core components of Cheetah. Highlights include an overhaul of the tracking system to support second-order tracking and transfer map/tensor caching; clearer tracking methods names; improved reliability of the gradients computed through Cheetah; a more PyTorch-like typing behaviour; and overall speed improvements of up to 7x in some cases.
 
