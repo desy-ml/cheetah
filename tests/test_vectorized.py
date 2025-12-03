@@ -382,7 +382,7 @@ def test_broadcasting_two_different_inputs(element_with_length):
 def test_broadcasting_two_different_inputs_bmadx(ElementClass):
     """
     Test that broadcasting rules are correctly applied to a elements with two different
-    input shapes for elements that have a `"bmadx"` tracking method.
+    input shapes for elements that have a `"drift_kick_drift"` tracking method.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])

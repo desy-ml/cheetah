@@ -1,4 +1,3 @@
-import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -24,19 +23,13 @@ class Drift(Element):
         access the element in a segment.
     """
 
-    supported_tracking_methods = [
-        "linear",
-        "cheetah",
-        "second_order",
-        "drift_kick_drift",
-        "bmadx",
-    ]
+    supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
     def __init__(
         self,
         length: torch.Tensor,
         tracking_method: Literal[
-            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
+            "linear", "second_order", "drift_kick_drift"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
@@ -82,31 +75,17 @@ class Drift(Element):
         """
         if self.tracking_method == "linear":
             return super()._track_first_order(incoming)
-        elif self.tracking_method == "cheetah":
-            warnings.warn(
-                "The 'cheetah' tracking method is deprecated and will be removed in a"
-                "future version. Please use 'linear' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super()._track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
             return self._track_drift_kick_drift(incoming)
-        elif self.tracking_method == "bmadx":
-            warnings.warn(
-                "The 'bmadx' tracking method is deprecated and will be removed in a"
-                " future version. Please use 'drift_kick_drift' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. For element of"
-                f" type {self.__class__.__name__}, supported methods are "
-                f"{self.supported_tracking_methods}."
+                f"Invalid tracking method {self.tracking_method}. For element of type "
+                f"{self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}. NOTE: 'cheetah' and 'bmadx'"
+                " tracking methods have been deprecated and are no longer supported."
+                "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
@@ -161,7 +140,7 @@ class Drift(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method in ["linear", "cheetah"]
+        return self.tracking_method == "linear"
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
