@@ -223,10 +223,8 @@ class Screen(Element):
 
         read_beam = self.get_read_beam()
         if read_beam is None:
-            image = torch.zeros(
-                (int(self.effective_resolution[1]), int(self.effective_resolution[0])),
-                device=self.misalignment.device,
-                dtype=self.misalignment.dtype,
+            image = self.misalignment.new_zeros(
+                (int(self.effective_resolution[1]), int(self.effective_resolution[0]))
             )
         elif isinstance(read_beam, ParameterBeam):
             if torch.numel(read_beam.mu[..., 0]) > 1:
