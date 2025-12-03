@@ -162,7 +162,6 @@ class Dipole(Element):
                 "The 'cheetah' tracking method has been deprecated and is no longer"
                 " supported. Please use 'linear' instead."
             )
-            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super()._track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
