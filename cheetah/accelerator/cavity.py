@@ -105,8 +105,8 @@ class Cavity(Element):
         )
 
         T566 = 1.5 * self.length * igamma2 / beta0.pow(3)
-        T556 = torch.full_like(self.length, 0.0)
-        T555 = torch.full_like(self.length, 0.0)
+        T556 = self.length.new_zeros(())
+        T555 = self.length.new_zeros(())
 
         k = 2.0 * torch.pi * self.frequency / constants.speed_of_light
         outgoing_energy = incoming.energy + delta_energy
