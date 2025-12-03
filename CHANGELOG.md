@@ -2,6 +2,8 @@
 
 ## v0.8.0 [🚧 Work in Progress]
 
+This major release comes with significant overhauls of some core components of Cheetah. Highlights included an overhaul of the tracking system to support second-order tracking and transfer map/tensor caching; clearer tracking methods names; improved reliability of the gradients computed through Cheetah; a more PyTorch-like typing behaviour; and overall speed improvements of up to 7x in some cases.
+
 ### 🚨 Breaking Changes
 
 - `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
