@@ -584,28 +584,70 @@ class Segment(Element):
             else broadcasted_results[0]
         )
 
+    def get_attr_from_every_element(
+        self,
+        attr_name: str,
+        filter_type: type[Element] | tuple[type[Element]] | None = None,
+        filter_name: str | None = None,
+        is_recursive: bool = True,
+    ) -> list[Any]:
+        """
+        Get an attribute from every element in the segment filtered by type and/or name.
+        :param attr_name: Name of the attribute to retrieve from each element.
+        :param filter_type: Type of the elements to get the attribute from.
+        :param filter_name: Name of the elements to get the attribute from.
+        :param is_recursive: If `True`, this method is applied to nested `Segment`s as
+            well. If `False`, only the elements directly in the top-level `Segment` are
+            considered.
+        :return: List of attribute values from the filtered elements.
+        """
+        attrs = []
+        for element in self.elements:
+            if (filter_type is None or isinstance(element, filter_type)) and (
+                filter_name is None or element.name in filter_name
+            ):
+                attrs.append(getattr(element, attr_name))
+            elif is_recursive and isinstance(element, Segment):
+                attrs.extend(
+                    element.get_attr_from_every_element(
+                        attr_name,
+                        filter_type=filter_type,
+                        filter_name=filter_name,
+                        is_recursive=True,
+                    )
+                )
+        return attrs
+
     def set_attrs_on_every_element(
         self,
         filter_type: type[Element] | tuple[type[Element]] | None = None,
+        filter_name: str | tuple[str] | None = None,
         is_recursive: bool = True,
         **kwargs: dict[str, Any],
     ) -> None:
         """
-        Set attributes on every element of a specific type in the segment.
+        Set attributes on every element type in the segment filtered by type and/or
+        name.
 
         :param filter_type: Type of the elements to set the attributes for.
-        :param is_recursive: If `True`, the this method is applied to nested `Segment`s
-            as well. If `False`, only the elements directly in the top-level `Segment`
-            are considered.
+        :param filter_name: Name of the element to set the attributes for.
+        :param is_recursive: If `True`, this method is applied to nested `Segment`s as
+            well. If `False`, only the elements directly in the top-level `Segment` are
+            considered.
         :param kwargs: Attributes to set and their values.
         """
         for element in self.elements:
-            if filter_type is None or isinstance(element, filter_type):
+            if (filter_type is None or isinstance(element, filter_type)) and (
+                filter_name is None or element.name in filter_name
+            ):
                 for key, value in kwargs.items():
                     setattr(element, key, value)
             elif is_recursive and isinstance(element, Segment):
                 element.set_attrs_on_every_element(
-                    filter_type=filter_type, is_recursive=True, **kwargs
+                    filter_type=filter_type,
+                    filter_name=filter_name,
+                    is_recursive=True,
+                    **kwargs,
                 )
 
     def plot(
