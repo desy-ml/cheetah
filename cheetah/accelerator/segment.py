@@ -631,7 +631,7 @@ class Segment(Element):
 
         :param filter_type: Type of the elements to set the attributes for.
         :param filter_name: Name of the element to set the attributes for.
-        :param is_recursive: If `True`,  this method is applied to nested `Segment`s as
+        :param is_recursive: If `True`, this method is applied to nested `Segment`s as
             well. If `False`, only the elements directly in the top-level `Segment` are
             considered.
         :param kwargs: Attributes to set and their values.
