@@ -594,7 +594,7 @@ class Segment(Element):
         Get an attribute from every element type in the segment filtered by type and/or
         name.
         :param filter_type: Type of the elements to get the attribute from.
-        :param filter_name: Names of the elements to get the attribute from.
+        :param filter_name: Name of a single element or a tuple of names to filter by.
         :param is_recursive: If `True`, this method is applied to nested `Segment`s as
             well. If `False`, only the elements directly in the top-level `Segment` are
             considered.
@@ -630,7 +630,7 @@ class Segment(Element):
         name.
 
         :param filter_type: Type of the elements to set the attributes for.
-        :param filter_name: Names of the elements to set the attributes for.
+        :param filter_name: Name of a single element or a tuple of names to filter by.
         :param is_recursive: If `True`,  this method is applied to nested `Segment`s as
             well. If `False`, only the elements directly in the top-level `Segment` are
             considered.
