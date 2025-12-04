@@ -586,29 +586,31 @@ class Segment(Element):
 
     def get_attr_from_every_element(
         self,
+        attr_name: str,
         filter_type: type[Element] | tuple[type[Element]] | None = None,
         filter_name: str | None = None,
         is_recursive: bool = True,
     ) -> list[Any]:
         """
-        Get an attribute from every element type in the segment filtered by type and/or
-        name.
+        Get an attribute from every element in the segment filtered by type and/or name.
+        :param attr_name: Name of the attribute to retrieve from each element.
         :param filter_type: Type of the elements to get the attribute from.
         :param filter_name: Name of the elements to get the attribute from.
         :param is_recursive: If `True`, this method is applied to nested `Segment`s as
             well. If `False`, only the elements directly in the top-level `Segment` are
             considered.
-        :return: List of attributes from the filtered elements.
+        :return: List of attribute values from the filtered elements.
         """
         attrs = []
         for element in self.elements:
             if (filter_type is None or isinstance(element, filter_type)) and (
                 filter_name is None or element.name in filter_name
             ):
-                attrs.append(element)
+                attrs.append(getattr(element, attr_name))
             elif is_recursive and isinstance(element, Segment):
                 attrs.extend(
                     element.get_attr_from_every_element(
+                        attr_name,
                         filter_type=filter_type,
                         filter_name=filter_name,
                         is_recursive=True,
