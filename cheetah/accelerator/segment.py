@@ -603,7 +603,7 @@ class Segment(Element):
         attrs = []
         for element in self.elements:
             if (filter_type is None or isinstance(element, filter_type)) and (
-                filter_name is None or element.name == filter_name
+                filter_name is None or element.name in filter_name
             ):
                 attrs.append(element)
             elif is_recursive and isinstance(element, Segment):
@@ -636,7 +636,7 @@ class Segment(Element):
         """
         for element in self.elements:
             if (filter_type is None or isinstance(element, filter_type)) and (
-                filter_name is None or element.name == filter_name
+                filter_name is None or element.name in filter_name
             ):
                 for key, value in kwargs.items():
                     setattr(element, key, value)
