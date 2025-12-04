@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Add `filter_name` argument to the attribute setting convenience function of Segment, so it's possible to filter not only by type but also by name. (see #598) (@jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
