@@ -86,6 +86,164 @@ def test_attr_setting_by_element_type_convenience_method(is_recursive):
             raise ValueError(f"Unexpected element type: {type(element)}")
 
 
+@pytest.mark.parametrize("is_recursive", [True, False])
+def test_attr_setting_by_element_name_convenience_method(is_recursive):
+    """
+    Test that the convenience method for setting attributes by element name works as
+    expected.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_0"),
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_1"),
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_2"),
+            cheetah.Segment(
+                name="subsegment",
+                elements=[
+                    cheetah.Drift(length=torch.tensor(0.4), name="drift_0"),
+                    cheetah.Drift(length=torch.tensor(0.4), name="drift_3"),
+                ],
+            ),
+            cheetah.Quadrupole(length=torch.tensor(0.6), name="quad_0"),
+        ]
+    )
+
+    # Filter by a single name using a string
+    segment.set_attrs_on_every_element(
+        filter_name="drift_0", is_recursive=is_recursive, length=torch.tensor(4.2)
+    )
+
+    # Check that only elements with name "drift_0" were modified
+    assert segment.drift_0.length == 4.2
+    assert segment.drift_1.length == 0.5
+    assert segment.drift_2.length == 0.5
+    assert segment.quad_0.length == 0.6
+    # Check subsegment elements
+    subsegment = segment.subsegment
+    if is_recursive:
+        assert subsegment.drift_0.length == 4.2
+    else:
+        assert subsegment.drift_0.length == 0.4
+    assert subsegment.drift_3.length == 0.4
+
+
+@pytest.mark.parametrize("is_recursive", [True, False])
+def test_attr_setting_by_element_name_tuple_convenience_method(is_recursive):
+    """
+    Test that the convenience method for setting attributes by element name works with
+    a tuple of names.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_0"),
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_1"),
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_2"),
+            cheetah.Segment(
+                name="subsegment",
+                elements=[
+                    cheetah.Drift(length=torch.tensor(0.4), name="drift_0"),
+                    cheetah.Drift(length=torch.tensor(0.4), name="drift_3"),
+                ],
+            ),
+            cheetah.Quadrupole(length=torch.tensor(0.6), name="quad_0"),
+        ]
+    )
+
+    # Filter by multiple names using a tuple
+    segment.set_attrs_on_every_element(
+        filter_name=("drift_0", "drift_1"),
+        is_recursive=is_recursive,
+        length=torch.tensor(4.2),
+    )
+
+    # Check that only elements with name "drift_0" or "drift_1" were modified
+    assert segment.drift_0.length == 4.2
+    assert segment.drift_1.length == 4.2
+    assert segment.drift_2.length == 0.5
+    assert segment.quad_0.length == 0.6
+    # Check subsegment elements
+    subsegment = segment.subsegment
+    if is_recursive:
+        assert subsegment.drift_0.length == 4.2
+    else:
+        assert subsegment.drift_0.length == 0.4
+    assert subsegment.drift_3.length == 0.4
+
+
+@pytest.mark.parametrize("is_recursive", [True, False])
+def test_attr_getting_by_element_name_convenience_method(is_recursive):
+    """
+    Test that the convenience method for getting attributes by element name works as
+    expected.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_0"),
+            cheetah.Drift(length=torch.tensor(0.6), name="drift_1"),
+            cheetah.Drift(length=torch.tensor(0.7), name="drift_2"),
+            cheetah.Segment(
+                name="subsegment",
+                elements=[
+                    cheetah.Drift(length=torch.tensor(0.8), name="drift_0"),
+                    cheetah.Drift(length=torch.tensor(0.9), name="drift_3"),
+                ],
+            ),
+            cheetah.Quadrupole(length=torch.tensor(1.0), name="quad_0"),
+        ]
+    )
+
+    # Filter by a single name
+    lengths = segment.get_attr_from_every_element(
+        "length", filter_name="drift_0", is_recursive=is_recursive
+    )
+
+    if is_recursive:
+        assert len(lengths) == 2
+        assert lengths[0] == 0.5
+        assert lengths[1] == 0.8
+    else:
+        assert len(lengths) == 1
+        assert lengths[0] == 0.5
+
+
+@pytest.mark.parametrize("is_recursive", [True, False])
+def test_attr_getting_by_element_name_tuple_convenience_method(is_recursive):
+    """
+    Test that the convenience method for getting attributes by element name works with
+    a tuple of names.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="drift_0"),
+            cheetah.Drift(length=torch.tensor(0.6), name="drift_1"),
+            cheetah.Drift(length=torch.tensor(0.7), name="drift_2"),
+            cheetah.Segment(
+                name="subsegment",
+                elements=[
+                    cheetah.Drift(length=torch.tensor(0.8), name="drift_0"),
+                    cheetah.Drift(length=torch.tensor(0.9), name="drift_3"),
+                ],
+            ),
+            cheetah.Quadrupole(length=torch.tensor(1.0), name="quad_0"),
+        ]
+    )
+
+    # Filter by multiple names using a tuple
+    lengths = segment.get_attr_from_every_element(
+        "length", filter_name=("drift_0", "drift_1"), is_recursive=is_recursive
+    )
+
+    if is_recursive:
+        assert len(lengths) == 3
+        assert lengths[0] == 0.5
+        assert lengths[1] == 0.6
+        assert lengths[2] == 0.8
+    else:
+        assert len(lengths) == 2
+        assert lengths[0] == 0.5
+        assert lengths[1] == 0.6
+
+
 def test_elementwise_longitudinal_beam_generator():
     """
     Test that the longitudinal beam generator works as expected and generates the
