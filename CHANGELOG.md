@@ -7,6 +7,7 @@
 ### 🚀 Features
 
 - Add `filter_name` argument to the attribute setting convenience function of Segment, so it's possible to filter not only by type but also by name. (see #598) (@jank324)
+- New `get_attr_from_every_element` method on `Segment` to retrieve attributes from all elements, with optional filtering by type and/or name. (see #598) (@jank324)
 
 ### 🐛 Bug fixes
 
