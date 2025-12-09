@@ -715,22 +715,22 @@ class Segment(Element):
     def plot_overview(
         self,
         incoming: Beam,
-        fig: matplotlib.figure.Figure | None = None,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
+        fig: matplotlib.figure.Figure | None = None,
     ) -> None:
         """
         Plot an overview of the segment with the lattice along with the beam position
         and size.
 
         :param incoming: Entering beam for which the position and size are shown.
-        :param fig: Figure to plot the overview into.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param fig: Figure to plot the overview into.
         :return: Figure with the plotted overview.
         """
         if fig is None:
@@ -802,9 +802,10 @@ class Segment(Element):
         self,
         incoming: Beam,
         attr_names: tuple[str, ...] | str,
-        figsize=(8, 4),
         resolution: float | None = None,
         vector_idx: tuple | None = None,
+        figsize=(8, 4),
+        fig: matplotlib.figure.Figure | None = None,
     ) -> None:
         """
         Plot beam attributes in a plot over a plot of the lattice.
@@ -813,15 +814,18 @@ class Segment(Element):
             trajectory is computed.
         :param attr_names: Metrics to compute. Can be a single metric or a tuple of
             metrics. Supported metrics are any property of beam class of `incoming`.
-        :param figsize: Size of the figure.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param figsize: Size of the figure.
+        :param fig: Figure to plot into.
+        :return: Figure with the plotted beam attributes over the lattice.
         """
-        fig = plt.figure(figsize=figsize)
+        if fig is None:
+            fig = plt.figure(figsize=figsize)
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
@@ -834,12 +838,23 @@ class Segment(Element):
         )
         self.plot(s=0.0, ax=axs[1])
 
-        plt.tight_layout()
+        return fig
 
     def plot_twiss(
         self, incoming: Beam, vector_idx: tuple | None = None, ax: Any | None = None
     ) -> plt.Axes:
-        """Plot twiss parameters along the segment."""
+        """
+        Plot twiss parameters along the segment.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param ax: Axes to plot into.
+        :return: Axes with the plotted Twiss parameters.
+        """
         ax = self.plot_beam_attrs(
             incoming,
             ("beta_x", "beta_y"),
@@ -863,16 +878,30 @@ class Segment(Element):
 
         return ax
 
-    def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
-        """Plot twiss parameters in a plot over a plot of the lattice."""
-        fig = plt.figure(figsize=figsize)
+    def plot_twiss_over_lattice(
+        self,
+        incoming: Beam,
+        figsize=(8, 4),
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> None:
+        """
+        Plot twiss parameters in a plot over a plot of the lattice.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param figsize: Size of the figure.
+        :param fig: Figure to plot into.
+        :return: Figure with the plotted Twiss parameters over the lattice.
+        """
+        if fig is None:
+            fig = plt.figure(figsize=figsize)
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
         self.plot_twiss(incoming, ax=axs[0])
         self.plot(s=0.0, ax=axs[1])
 
-        plt.tight_layout()
+        return fig
 
     def to_mesh(
         self, cuteness: float | dict = 1.0, show_download_progress: bool = True
