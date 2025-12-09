@@ -31,8 +31,6 @@ def base_rmatrix(
     :param energy: Beam energy in eV.
     :return: First order transfer map for the element.
     """
-    factory_kwargs = {"device": length.device, "dtype": length.dtype}
-
     zero = length.new_zeros(())
 
     energy = energy if energy is not None else zero
