@@ -1377,12 +1377,13 @@ class ParticleBeam(Beam):
                 **({"cmap": "rainbow"} | (pcolormesh_kws or {})),
             )
         elif style == "contour":
-            ax.contour(
+            contour_set_of_mean = ax.contour(
                 bin_centers_x,
                 bin_centers_y,
-                smoothed_histogram.T / smoothed_histogram.max(),
-                **({"levels": [0.1, 0.5, 0.9]} | (distribution_contour_kws or {})),
+                smoothed_histogram.T,
+                **({"levels": 3} | (distribution_contour_kws or {})),
             )
+
             if lower_bound is not None and upper_bound is not None:
                 smoothed_lower_bound = gaussian_filter(lower_bound, smoothing)
                 smoothed_upper_bound = gaussian_filter(upper_bound, smoothing)
@@ -1390,18 +1391,18 @@ class ParticleBeam(Beam):
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
-                    smoothed_lower_bound.mT / smoothed_lower_bound.max(),
+                    smoothed_lower_bound.mT,
                     **(
-                        {"levels": [0.1, 0.5, 0.9], "linestyles": "--"}
+                        {"levels": contour_set_of_mean.levels, "linestyles": "--"}
                         | (confidence_contour_kws or {})
                     ),
                 )
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
-                    smoothed_upper_bound.mT / smoothed_upper_bound.max(),
+                    smoothed_upper_bound.mT,
                     **(
-                        {"levels": [0.1, 0.5, 0.9], "linestyles": "--"}
+                        {"levels": contour_set_of_mean.levels, "linestyles": "--"}
                         | (confidence_contour_kws or {})
                     ),
                 )
