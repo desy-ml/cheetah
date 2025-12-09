@@ -1317,10 +1317,8 @@ class ParticleBeam(Beam):
         style: Literal["histogram", "contour"] = "histogram",
         bins: tuple[int, int] = (100, 100),
         bin_ranges: tuple[tuple[float, float], tuple[float, float]] | None = None,
-        histogram_smoothing: float = 0.0,
-        confidence_contours: tuple[float] | None = None,
         errorbar: tuple[str, int | float] | str = ("pi", 95),
-        contour_smoothing: float = 1.0,
+        smoothing: float = 0.0,
         pcolormesh_kws: dict | None = None,
         distribution_contour_kws: dict | None = None,
         confidence_contour_kws: dict | None = None,
@@ -1340,15 +1338,11 @@ class ParticleBeam(Beam):
         :param bins: Tuple (nx, ny) specifying the number of histogram bins for x and y.
         :param bin_ranges: Tuple ((x_min, x_max), (y_min, y_max)) specifying the
             histogram ranges for x and y, or `None` to infer from the data.
-        :param histogram_smoothing: Standard deviation of the Gaussian kernel applied
-            to smooth the histogram for plotting.
-        :param confidence_contours: If provided, draw contour lines at these confidence
-            levels (between 0 and 1) over the histogram style plot for vectorised beams.
         :param errorbar: Method to compute uncertainty bands over vectorised beams. Pass
             either a method string or a tuple `(method, level)`. Available methods are
             "sd", "se" and "pi".
-        :param contour_smoothing: Standard deviation of the Gaussian kernel applied to
-            the contour data (applied after histogram_smoothing).
+        :param smoothing: Standard deviation of the Gaussian kernel applied to smooth
+            the histogram.
         :param pcolormesh_kws: Additional keyword arguments forwarded to
             `matplotlib.pcolormesh`.
         :param distribution_contour_kws: Additional keyword arguments forwarded to
@@ -1373,15 +1367,7 @@ class ParticleBeam(Beam):
         )
 
         # Post-process and plot
-        smoothed_histogram = gaussian_filter(mean_histogram, histogram_smoothing)
-
-        contour_histogram = smoothed_histogram.copy()
-        smoothed_contour_histogram = gaussian_filter(
-            contour_histogram, contour_smoothing
-        )
-        if lower_bound is not None and upper_bound is not None:
-            smoothed_lower_bound = gaussian_filter(lower_bound, contour_smoothing)
-            smoothed_upper_bound = gaussian_filter(upper_bound, contour_smoothing)
+        smoothed_histogram = gaussian_filter(mean_histogram, smoothing)
 
         if style == "histogram":
             ax.pcolormesh(
@@ -1390,37 +1376,17 @@ class ParticleBeam(Beam):
                 smoothed_histogram.T,
                 **({"cmap": "rainbow"} | (pcolormesh_kws or {})),
             )
-
-            if (
-                confidence_contours is not None
-                and lower_bound is not None
-                and upper_bound is not None
-            ):
-                normalized_confidence_width = smoothed_contour_histogram / (
-                    smoothed_upper_bound - smoothed_lower_bound + 1e-12
-                )
-                ax.contour(
-                    bin_centers_x,
-                    bin_centers_y,
-                    normalized_confidence_width.mT,
-                    levels=confidence_contours,
-                    **(
-                        {"colors": "white", "alpha": 0.5}
-                        | (confidence_contour_kws or {})
-                    ),
-                )
         elif style == "contour":
             ax.contour(
                 bin_centers_x,
                 bin_centers_y,
-                smoothed_contour_histogram.mT / smoothed_contour_histogram.max(),
+                smoothed_histogram.T / smoothed_histogram.max(),
                 **({"levels": [0.1, 0.5, 0.9]} | (distribution_contour_kws or {})),
             )
-            if (
-                confidence_contours is not None
-                and lower_bound is not None
-                and upper_bound is not None
-            ):
+            if lower_bound is not None and upper_bound is not None:
+                smoothed_lower_bound = gaussian_filter(lower_bound, smoothing)
+                smoothed_upper_bound = gaussian_filter(upper_bound, smoothing)
+
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
