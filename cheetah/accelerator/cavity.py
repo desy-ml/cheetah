@@ -307,10 +307,14 @@ class Cavity(Element):
             M_body[..., 0, 1] = self.length * log1pdiv(dE / Ei)
             M_body[..., 1, 1] = Ei / Ef
 
-            M_f_entry = torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            M_f_entry = (
+                torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            )
             M_f_entry[..., 1, 0] = -Ep / (2 * Ei)
 
-            M_f_exit = torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            M_f_exit = (
+                torch.eye(2, **factory_kwargs).expand(*vector_shape, 2, 2).clone()
+            )
             M_f_exit[..., 1, 0] = Ep / (2 * Ef)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
