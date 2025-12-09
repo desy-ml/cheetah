@@ -651,18 +651,16 @@ class Segment(Element):
 
     def plot_mean_and_std(
         self,
-        axx: plt.Axes,
-        axy: plt.Axes,
         incoming: Beam,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
+        axx: plt.Axes | None = None,
+        axy: plt.Axes | None = None,
     ) -> None:
         """
         Plot the mean (i.e. beam position) and standard deviation (i.e. beam size) of
         the beam along the segment view in x- and y-direction.
 
-        :param axx: Axes to plot the particle traces into viewed in x-direction.
-        :param axy: Axes to plot the particle traces into viewed in y-direction.
         :param incoming: Entering beam for which the position and size are shown
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
@@ -670,7 +668,15 @@ class Segment(Element):
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param axx: Axes to plot the particle traces into viewed in x-direction. If
+            `None`, new axes are created for both `axx` and `axy`.
+        :param axy: Axes to plot the particle traces into viewed in y-direction. If
+            `None`, new axes are created for both `axx` and `axy`.
+        :return: Figure with the plotted mean and standard deviation.
         """
+        if axx is None or axy is None:
+            fig, (axx, axy) = plt.subplots(2, 1, sharex=True)
+
         reference_segment = self.clone()  # Prevent side effects when plotting
 
         ss, x_means, x_stds, y_means, y_stds = (
@@ -703,6 +709,8 @@ class Segment(Element):
         axx.set_ylabel("x (m)")
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
+
+        return fig
 
     def plot_overview(
         self,
