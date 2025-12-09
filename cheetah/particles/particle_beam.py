@@ -1397,7 +1397,7 @@ class ParticleBeam(Beam):
                 and upper_bound is not None
             ):
                 normalized_confidence_width = smoothed_contour_histogram / (
-                    upper_bound - lower_bound + 1e-12
+                    smoothed_upper_bound - smoothed_lower_bound + 1e-12
                 )
                 ax.contour(
                     bin_centers_x,
