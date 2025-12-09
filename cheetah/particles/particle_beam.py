@@ -1297,7 +1297,7 @@ class ParticleBeam(Beam):
             )
 
         smoothed_histogram = gaussian_filter(histogram, smoothing)
-        ax.plot(bin_centers, smoothed_histogram, **(plot_kws or {}))
+        ax.plot(bin_centers, smoothed_histogram, **({"color": "C0"} | (plot_kws or {})))
 
         # Handle units
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
