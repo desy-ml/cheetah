@@ -723,6 +723,7 @@ class Segment(Element):
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :return: Figure with the plotted overview.
         """
         if fig is None:
             fig = plt.figure()
@@ -738,9 +739,9 @@ class Segment(Element):
             vector_idx=vector_idx,
         )
 
-        self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
+        _ = self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
 
-        plt.tight_layout()
+        return fig
 
     def plot_beam_attrs(
         self,
