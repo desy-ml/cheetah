@@ -1373,14 +1373,14 @@ class ParticleBeam(Beam):
             ax.pcolormesh(
                 bin_centers_x,
                 bin_centers_y,
-                smoothed_histogram.T,
+                smoothed_histogram.mT,
                 **({"cmap": "rainbow"} | (pcolormesh_kws or {})),
             )
         elif style == "contour":
             contour_set_of_mean = ax.contour(
                 bin_centers_x,
                 bin_centers_y,
-                smoothed_histogram.T,
+                smoothed_histogram.mT,
                 **({"levels": 3} | (distribution_contour_kws or {})),
             )
 
