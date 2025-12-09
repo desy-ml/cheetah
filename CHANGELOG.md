@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- All plotting functions in `Segment` now accept an optional axes or figure object. If they are passed on, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
