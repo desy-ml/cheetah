@@ -1286,15 +1286,17 @@ class ParticleBeam(Beam):
             )
         )
 
-        smoothed_histogram = gaussian_filter(histogram, smoothing)
-
         if upper_bound is not None and lower_bound is not None:
+            smoothed_lower_bound = gaussian_filter(lower_bound, smoothing)
+            smoothed_upper_bound = gaussian_filter(upper_bound, smoothing)
             ax.fill_between(
                 bin_centers,
-                lower_bound,
-                upper_bound,
+                smoothed_lower_bound,
+                smoothed_upper_bound,
                 **({"color": "C1", "alpha": 0.5} | (fill_between_kws or {})),
             )
+
+        smoothed_histogram = gaussian_filter(histogram, smoothing)
         ax.plot(bin_centers, smoothed_histogram, **(plot_kws or {}))
 
         # Handle units
