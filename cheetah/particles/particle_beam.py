@@ -1428,13 +1428,19 @@ class ParticleBeam(Beam):
                     bin_centers_x,
                     bin_centers_y,
                     smoothed_lower_bound.mT / smoothed_lower_bound.max(),
-                    **({"levels": [0.1, 0.5, 0.9]} | (confidence_contour_kws or {})),
+                    **(
+                        {"levels": [0.1, 0.5, 0.9], "linestyles": "--"}
+                        | (confidence_contour_kws or {})
+                    ),
                 )
                 ax.contour(
                     bin_centers_x,
                     bin_centers_y,
                     smoothed_upper_bound.mT / smoothed_upper_bound.max(),
-                    **({"levels": [0.1, 0.5, 0.9]} | (confidence_contour_kws or {})),
+                    **(
+                        {"levels": [0.1, 0.5, 0.9], "linestyles": "--"}
+                        | (confidence_contour_kws or {})
+                    ),
                 )
         else:
             raise ValueError("style must be either 'histogram' or 'contour'.")
