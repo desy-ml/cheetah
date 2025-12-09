@@ -62,12 +62,12 @@ def _kde_marginal_pdf(
     residuals = values - bins
     kernel_values = (
         weights
-        * torch.exp(-0.5 * (residuals / sigma).pow(2))
-        / torch.sqrt(2 * math.pi * sigma**2)
+        * (-0.5 * (residuals / sigma).square()).exp()
+        / (2 * math.pi * sigma.square()).sqrt()
     )
 
-    prob_mass = torch.sum(kernel_values, dim=-2)
-    normalization = torch.sum(prob_mass, dim=-1).unsqueeze(-1) + epsilon
+    prob_mass = kernel_values.sum(dim=-2)
+    normalization = prob_mass.sum(dim=-1).unsqueeze(-1) + epsilon
     prob_mass = prob_mass / normalization
 
     return prob_mass, kernel_values
@@ -101,10 +101,9 @@ def _kde_joint_pdf_2d(
             + f"Got {type(kernel_values2)}"
         )
 
-    joint_kernel_values = kernel_values1.transpose(-2, -1) @ kernel_values2
+    joint_kernel_values = kernel_values1.mT @ kernel_values2
     normalization = (
-        torch.sum(joint_kernel_values, dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1)
-        + epsilon
+        joint_kernel_values.sum(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1) + epsilon
     )
     pdf = joint_kernel_values / normalization
 

@@ -4,7 +4,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Species
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    compute_relativistic_factors,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -43,7 +47,8 @@ class VerticalCorrector(Element):
             "angle", angle if angle is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
@@ -58,7 +63,7 @@ class VerticalCorrector(Element):
         tm[..., 0, 1] = self.length
         tm[..., 2, 3] = self.length
         tm[..., 3, 6] = self.angle
-        tm[..., 4, 5] = -self.length / beta**2 * igamma2
+        tm[..., 4, 5] = -self.length / beta.square() * igamma2
 
         return tm
 
@@ -68,7 +73,7 @@ class VerticalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.angle != 0).item()
+        return (self.angle != 0).any().item()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -80,7 +85,7 @@ class VerticalCorrector(Element):
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_angle) if self.is_active else 1)
+        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
 
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:cyan", alpha=alpha, zorder=2

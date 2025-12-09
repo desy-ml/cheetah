@@ -259,7 +259,7 @@ class Segment(Element):
             elements=[
                 element
                 for element in self.elements
-                if torch.any(element.length > 0.0)
+                if (element.length > 0.0).any()
                 or (hasattr(element, "is_active") and element.is_active)
                 or element.name in except_for
             ],
@@ -288,7 +288,7 @@ class Segment(Element):
                 (
                     element
                     if (hasattr(element, "is_active") and element.is_active)
-                    or torch.all(element.length == 0.0)
+                    or (element.length == 0.0).all()
                     or element.name in except_for
                     else Drift(
                         element.length,
@@ -907,7 +907,9 @@ class Segment(Element):
             ]
             element_repr_list.insert(2, " ⋮")
 
-            # Using `format` since Python 3.10 does not permit backslashes in f-strings
+            # Using `format` since Python<=3.11 does not permit backslashes in nested
+            # f-strings: https://stackoverflow.com/questions/67680296/syntaxerror-f-string-expression-part-cannot-include-a-backslash   # noqa: E501
+            # TODO: Switch to f-string when Python>=3.12 is the minimum requirement
             elements_repr = "ModuleList(\n  {0}\n)".format(
                 "\n  ".join(element_repr_list)
             )

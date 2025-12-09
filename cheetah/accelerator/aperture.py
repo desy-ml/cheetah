@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
-from cheetah.utils import PhysicsWarning, UniqueNameGenerator
+from cheetah.utils import PhysicsWarning, UniqueNameGenerator, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -69,7 +69,8 @@ class Aperture(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    def _compute_first_order_transfer_map(
+    @cache_transfer_map
+    def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.x_max.device, "dtype": self.x_max.dtype}
@@ -88,7 +89,7 @@ class Aperture(Element):
             )
             return incoming
 
-        assert torch.all(self.x_max >= 0) and torch.all(self.y_max >= 0)
+        assert (self.x_max >= 0).all() and (self.y_max >= 0).all()
         assert self.shape in [
             "rectangular",
             "elliptical",
@@ -107,8 +108,8 @@ class Aperture(Element):
             )
         elif self.shape == "elliptical":
             survived_mask = (
-                incoming.x**2 / self.x_max.unsqueeze(-1) ** 2
-                + incoming.y**2 / self.y_max.unsqueeze(-1) ** 2
+                incoming.x.square() / self.x_max.square().unsqueeze(-1)
+                + incoming.y.square() / self.y_max.square().unsqueeze(-1)
             ) <= 1.0
 
         return ParticleBeam(
