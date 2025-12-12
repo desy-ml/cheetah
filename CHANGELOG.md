@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
