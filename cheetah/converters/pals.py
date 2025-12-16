@@ -1,285 +1,302 @@
+"""
+Cheetah to PALS converter module.
+
+This module provides functions to convert Cheetah lattice elements and segments
+to the PALS (Particle Accelerator Lattice Standard) format.
+
+Based on the PALS specification: https://pals-project.readthedocs.io/
+"""
+import json
+import warnings
+from pathlib import Path
+from typing import Any, Dict, Union
+
+import torch
 import yaml
-import numpy as np
-from typing import Dict, Any, List, Union
 
-class CheetahToPALSTranslator:
-    """
-    Translator to convert Cheetah lattice JSON files to PALS format.
-    
-    Based on the PALS specification: https://pals-project.readthedocs.io/
-    """
-    
-    def __init__(self):
-        # Map Cheetah element types to PALS element kinds
-        self.element_mapping = {
-            'Drift': 'Drift',
-            'Quadrupole': 'Quadrupole',
-            'Dipole': 'RBend',  # Assuming rectangular bends by default
-            'BPM': 'Instrument',  # BPMs are diagnostic instruments
-            'Marker': 'Marker',
-            'Screen': 'Instrument',  # Screens are diagnostic instruments
-            'Aperture': 'Mask',  # Apertures are typically masks/collimators
-            'HorizontalCorrector': 'Kicker',  # Corrector magnets are kickers
-            'VerticalCorrector': 'Kicker',
-            'TransverseDeflectingCavity': 'RFCavity',  # RF cavity variant
-        }
-    
-    def convert_segment_to_pals(self, segment, lattice_name="Converted_Lattice"):
-        """
-        Convert a Cheetah Segment to PALS format.
-        
-        Args:
-            segment: Cheetah Segment object
-            lattice_name: Name for the PALS lattice
-            
-        Returns:
-            dict: PALS-formatted lattice dictionary
-        """
-        pals_elements = []
-        
-        # Add BeginningEle element (required as first element in PALS)
-        pals_elements.append({
-            'beginning': {
-                'kind': 'BeginningEle'
-            }
-        })
-        
-        # Convert each element in the segment
-        for i, element in enumerate(segment.elements):
-            pals_element = self._convert_element(element, i)
-            if pals_element:
-                pals_elements.append(pals_element)
-        
-        # Add final marker (required as last element in PALS)
-        pals_elements.append({
-            'end_marker': {
-                'kind': 'Marker'
-            }
-        })
-        
-        # Create the beamline
-        beamline_name = f"{lattice_name}_line"
-        beamline = {
-            beamline_name: {
-                'kind': 'BeamLine',
-                'line': [list(elem.keys())[0] for elem in pals_elements]
-            }
-        }
-        
-        # Create the main lattice structure
-        lattice = {
-            'Lattice': {
-                'name': lattice_name,
-                'branches': [beamline_name]
-            }
-        }
-        
-        # Combine all elements
-        pals_dict = {}
-        for elem in pals_elements:
-            pals_dict.update(elem)
-        pals_dict.update(beamline)
-        pals_dict.update(lattice)
-        
-        return pals_dict
-    
-    def _convert_element(self, element, index: int) -> Dict[str, Any]:
-        """
-        Convert a single Cheetah element to PALS format.
-        
-        Args:
-            element: Cheetah element object
-            index: Element index for naming
-            
-        Returns:
-            dict: PALS element dictionary
-        """
-        element_type = type(element).__name__
-        
-        if element_type not in self.element_mapping:
-            print(f"Warning: Unsupported element type {element_type}, skipping...")
-            return None
-        
-        pals_kind = self.element_mapping[element_type]
-        
-        # Generate element name
-        if hasattr(element, 'name') and element.name:
-            element_name = element.name
-        else:
-            element_name = f"{element_type.lower()}_{index}"
-        
-        # Base element structure
-        pals_element = {
-            'kind': pals_kind
-        }
-        
-        # Add length if element has it
-        if hasattr(element, 'length') and element.length is not None:
-            length_val = float(element.length.item()) if hasattr(element.length, 'item') else float(element.length)
-            pals_element['length'] = length_val
-        
-        # Add element-specific parameters
-        if element_type == 'Quadrupole':
-            pals_element.update(self._convert_quadrupole(element))
-        elif element_type == 'Dipole':
-            pals_element.update(self._convert_dipole(element))
-        elif element_type in ['HorizontalCorrector', 'VerticalCorrector']:
-            pals_element.update(self._convert_corrector(element))
-        elif element_type == 'TransverseDeflectingCavity':
-            pals_element.update(self._convert_cavity(element))
-        elif element_type == 'BPM':
-            pals_element.update(self._convert_bpm(element))
-        elif element_type == 'Screen':
-            pals_element.update(self._convert_screen(element))
-        elif element_type == 'Aperture':
-            pals_element.update(self._convert_aperture(element))
-        
-        # Add metadata
-        meta_p = {
-            'description': f"Converted from Cheetah {element_type}"
-        }
-        if hasattr(element, 'name') and element.name:
-            meta_p['alias'] = element.name
-        
-        pals_element['MetaP'] = meta_p
-        
-        return {element_name: pals_element}
-    
-    def _convert_quadrupole(self, element) -> Dict[str, Any]:
-        """Convert Cheetah Quadrupole to PALS format."""
-        params = {}
-        
-        # Magnetic multipole parameters
-        if hasattr(element, 'k1') and element.k1 is not None:
-            k1_val = float(element.k1.item()) if hasattr(element.k1, 'item') else float(element.k1)
-            length_val = float(element.length.item()) if hasattr(element.length, 'item') else float(element.length)
-            
-            params['MagneticMultipoleP'] = {
-                'Kn1L': k1_val * length_val  # PALS uses integrated strength
-            }
-        
-        return params
-    
-    def _convert_dipole(self, element) -> Dict[str, Any]:
-        """Convert Cheetah Dipole to PALS format."""
-        params = {}
-        
-        # Bend parameters
-        if hasattr(element, 'angle') and element.angle is not None:
-            angle_val = float(element.angle.item()) if hasattr(element.angle, 'item') else float(element.angle)
-            params['BendP'] = {
-                'angle_ref': angle_val
-            }
-        
-        # Add magnetic multipole if there are higher order terms
-        if hasattr(element, 'k1') and element.k1 is not None:
-            k1_val = float(element.k1.item()) if hasattr(element.k1, 'item') else float(element.k1)
-            length_val = float(element.length.item()) if hasattr(element.length, 'item') else float(element.length)
-            if k1_val != 0:
-                params['MagneticMultipoleP'] = {
-                    'Kn1L': k1_val * length_val
-                }
-        
-        return params
-    
-    def _convert_corrector(self, element) -> Dict[str, Any]:
-        """Convert Cheetah Corrector to PALS format."""
-        params = {}
-        
-        # Determine if horizontal or vertical corrector
-        element_type = type(element).__name__
-        
-        if hasattr(element, 'kick') and element.kick is not None:
-            kick_val = float(element.kick.item()) if hasattr(element.kick, 'item') else float(element.kick)
-            
-            # Kicker parameters (simplified)
-            if element_type == 'HorizontalCorrector':
-                params['KickerP'] = {
-                    'hkick': kick_val
-                }
-            else:  # VerticalCorrector
-                params['KickerP'] = {
-                    'vkick': kick_val
-                }
-        
-        return params
-    
-    def _convert_cavity(self, element) -> Dict[str, Any]:
-        """Convert Cheetah TransverseDeflectingCavity to PALS format."""
-        params = {}
-        
-        # RF parameters
-        rf_params = {}
-        
-        if hasattr(element, 'voltage') and element.voltage is not None:
-            voltage_val = float(element.voltage.item()) if hasattr(element.voltage, 'item') else float(element.voltage)
-            rf_params['voltage'] = voltage_val
-        
-        if hasattr(element, 'phase') and element.phase is not None:
-            phase_val = float(element.phase.item()) if hasattr(element.phase, 'item') else float(element.phase)
-            rf_params['phi'] = phase_val
-        
-        if hasattr(element, 'frequency') and element.frequency is not None:
-            freq_val = float(element.frequency.item()) if hasattr(element.frequency, 'item') else float(element.frequency)
-            rf_params['frequency'] = freq_val
-        
-        if rf_params:
-            params['RFP'] = rf_params
-        
-        return params
-    
-    def _convert_bpm(self, element) -> Dict[str, Any]:
-        """Convert Cheetah BPM to PALS format."""
-        # BPMs typically don't have parameters beyond position
-        return {}
-    
-    def _convert_screen(self, element) -> Dict[str, Any]:
-        """Convert Cheetah Screen to PALS format."""
-        # Screens typically don't have specific parameters
-        return {}
-    
-    def _convert_aperture(self, element) -> Dict[str, Any]:
-        """Convert Cheetah Aperture to PALS format."""
-        params = {}
-        
-        # Aperture parameters
-        aperture_params = {}
-        
-        if hasattr(element, 'x_max') and element.x_max is not None:
-            x_max_val = float(element.x_max.item()) if hasattr(element.x_max, 'item') else float(element.x_max)
-            aperture_params['x_limit'] = [-x_max_val, x_max_val]
-        
-        if hasattr(element, 'y_max') and element.y_max is not None:
-            y_max_val = float(element.y_max.item()) if hasattr(element.y_max, 'item') else float(element.y_max)
-            aperture_params['y_limit'] = [-y_max_val, y_max_val]
-        
-        if aperture_params:
-            params['ApertureP'] = aperture_params
-        
-        return params
-    
-    def save_to_yaml(self, pals_dict: Dict[str, Any], filename: str):
-        """
-        Save PALS dictionary to YAML file.
-        
-        Args:
-            pals_dict: PALS lattice dictionary
-            filename: Output filename (should end with .pals.yaml)
-        """
-        with open(filename, 'w') as f:
-            yaml.dump(pals_dict, f, default_flow_style=False, sort_keys=False)
-    
-    def save_to_json(self, pals_dict: Dict[str, Any], filename: str):
-        """
-        Save PALS dictionary to JSON file.
-        
-        Args:
-            pals_dict: PALS lattice dictionary  
-            filename: Output filename (should end with .pals.json)
-        """
-        import json
-        with open(filename, 'w') as f:
-            json.dump(pals_dict, f, indent=2)
+import cheetah
+from cheetah.utils import UnknownElementWarning
 
-# Create translator instance
-translator = CheetahToPALSTranslator()
+
+def convert_element_to_pals(
+    element: "cheetah.Element",
+    name: str = None,
+) -> Dict[str, Any]:
+    """
+    Convert a Cheetah element to PALS format.
+    
+    :param element: Cheetah element to convert.
+    :param name: Name for the element. If None, uses element.name or generates one.
+    :return: Dictionary representing the element in PALS format.
+    """
+    element_type = type(element).__name__
+    
+    # Map Cheetah element types to PALS element kinds
+    element_mapping = {
+        'Drift': 'Drift',
+        'Quadrupole': 'Quadrupole',
+        'Dipole': 'RBend',
+        'RBend': 'RBend',
+        'BPM': 'Instrument',
+        'Marker': 'Marker',
+        'Screen': 'Instrument',
+        'Aperture': 'Mask',
+        'HorizontalCorrector': 'Kicker',
+        'VerticalCorrector': 'Kicker',
+        'TransverseDeflectingCavity': 'RFCavity',
+        'Cavity': 'RFCavity',
+        'Solenoid': 'Solenoid',
+        'Sextupole': 'Sextupole',
+    }
+    
+    if element_type not in element_mapping:
+        warnings.warn(
+            f"Element type '{element_type}' is not supported in PALS conversion. "
+            "Converting to Marker element.",
+            UnknownElementWarning,
+        )
+        element_mapping[element_type] = 'Marker'
+    
+    pals_kind = element_mapping[element_type]
+    
+    # Generate element name
+    element_name = name or getattr(element, 'name', None) or f"{element_type.lower()}_0"
+    
+    # Base element structure
+    pals_element = {'kind': pals_kind}
+    
+    # Add length if element has it
+    if hasattr(element, 'length') and element.length is not None:
+        length_val = _extract_tensor_value(element.length)
+        pals_element['length'] = length_val
+    
+    # Add element-specific parameters based on type
+    if element_type == 'Quadrupole':
+        pals_element.update(_convert_quadrupole_params(element))
+    elif element_type in ['Dipole', 'RBend']:
+        pals_element.update(_convert_dipole_params(element))
+    elif element_type in ['HorizontalCorrector', 'VerticalCorrector']:
+        pals_element.update(_convert_corrector_params(element))
+    elif element_type in ['TransverseDeflectingCavity', 'Cavity']:
+        pals_element.update(_convert_cavity_params(element))
+    elif element_type == 'Aperture':
+        pals_element.update(_convert_aperture_params(element))
+    elif element_type == 'Solenoid':
+        pals_element.update(_convert_solenoid_params(element))
+    elif element_type == 'Sextupole':
+        pals_element.update(_convert_sextupole_params(element))
+    
+    return {element_name: pals_element}
+
+
+def convert_segment_to_pals(
+    segment: "cheetah.Segment",
+    lattice_name: str = "Converted_Lattice",
+) -> Dict[str, Any]:
+    """
+    Convert a Cheetah Segment to PALS format.
+    
+    :param segment: Cheetah Segment object to convert.
+    :param lattice_name: Name for the PALS lattice.
+    :return: Dictionary representing the lattice in PALS format.
+    """
+    pals_elements = {}
+    element_names = []
+    
+    # Add BeginningEle element (required as first element in PALS)
+    beginning_name = 'beginning'
+    pals_elements[beginning_name] = {'kind': 'BeginningEle'}
+    element_names.append(beginning_name)
+    
+    # Convert each element in the segment
+    for i, element in enumerate(segment.elements):
+        # Generate unique name if element doesn't have one
+        base_name = getattr(element, 'name', None) or f"{type(element).__name__.lower()}_{i}"
+        
+        # Ensure unique names
+        element_name = base_name
+        counter = 1
+        while element_name in pals_elements:
+            element_name = f"{base_name}_{counter}"
+            counter += 1
+        
+        pals_element_dict = convert_element_to_pals(element, element_name)
+        pals_elements.update(pals_element_dict)
+        element_names.append(element_name)
+    
+    # Add final marker (required as last element in PALS)
+    end_marker_name = 'end_marker'
+    pals_elements[end_marker_name] = {'kind': 'Marker'}
+    element_names.append(end_marker_name)
+    
+    # Create the beamline
+    beamline_name = f"{lattice_name}_line"
+    pals_elements[beamline_name] = {
+        'kind': 'BeamLine',
+        'line': element_names
+    }
+    
+    # Create the main lattice structure
+    pals_elements['Lattice'] = {
+        'name': lattice_name,
+        'branches': [beamline_name]
+    }
+    
+    return pals_elements
+
+
+def _extract_tensor_value(tensor_value: Union[torch.Tensor, float, int]) -> float:
+    """Extract float value from tensor or numeric type."""
+    if hasattr(tensor_value, 'item'):
+        return float(tensor_value.item())
+    else:
+        return float(tensor_value)
+
+
+def _convert_quadrupole_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Quadrupole parameters to PALS format."""
+    params = {}
+    
+    if hasattr(element, 'k1') and element.k1 is not None:
+        k1_val = _extract_tensor_value(element.k1)
+        length_val = _extract_tensor_value(element.length)
+        
+        params['MagneticMultipoleP'] = {
+            'Kn1L': k1_val * length_val  # PALS uses integrated strength
+        }
+    
+    return params
+
+
+def _convert_dipole_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Dipole parameters to PALS format."""
+    params = {}
+    
+    # Bend parameters
+    if hasattr(element, 'angle') and element.angle is not None:
+        angle_val = _extract_tensor_value(element.angle)
+        params['BendP'] = {'angle_ref': angle_val}
+    
+    # Add magnetic multipole if there are higher order terms
+    if hasattr(element, 'k1') and element.k1 is not None:
+        k1_val = _extract_tensor_value(element.k1)
+        if k1_val != 0:
+            length_val = _extract_tensor_value(element.length)
+            if 'MagneticMultipoleP' not in params:
+                params['MagneticMultipoleP'] = {}
+            params['MagneticMultipoleP']['Kn1L'] = k1_val * length_val
+    
+    return params
+
+
+def _convert_corrector_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Corrector parameters to PALS format."""
+    params = {}
+    element_type = type(element).__name__
+    
+    if hasattr(element, 'angle') and element.angle is not None:
+        angle_val = _extract_tensor_value(element.angle)
+        
+        if element_type == 'HorizontalCorrector':
+            params['KickerP'] = {'hkick': angle_val}
+        else:  # VerticalCorrector
+            params['KickerP'] = {'vkick': angle_val}
+    
+    return params
+
+
+def _convert_cavity_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Cavity parameters to PALS format."""
+    params = {}
+    rf_params = {}
+    
+    if hasattr(element, 'voltage') and element.voltage is not None:
+        rf_params['voltage'] = _extract_tensor_value(element.voltage)
+    
+    if hasattr(element, 'phase') and element.phase is not None:
+        rf_params['phi'] = _extract_tensor_value(element.phase)
+    
+    if hasattr(element, 'frequency') and element.frequency is not None:
+        rf_params['frequency'] = _extract_tensor_value(element.frequency)
+    
+    if rf_params:
+        params['RFP'] = rf_params
+    
+    return params
+
+
+def _convert_aperture_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Aperture parameters to PALS format."""
+    params = {}
+    aperture_params = {}
+    
+    if hasattr(element, 'x_max') and element.x_max is not None:
+        x_max_val = _extract_tensor_value(element.x_max)
+        aperture_params['x_limit'] = [-x_max_val, x_max_val]
+    
+    if hasattr(element, 'y_max') and element.y_max is not None:
+        y_max_val = _extract_tensor_value(element.y_max)
+        aperture_params['y_limit'] = [-y_max_val, y_max_val]
+    
+    if aperture_params:
+        params['ApertureP'] = aperture_params
+    
+    return params
+
+
+def _convert_solenoid_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Solenoid parameters to PALS format."""
+    params = {}
+    
+    if hasattr(element, 'k') and element.k is not None:
+        k_val = _extract_tensor_value(element.k)
+        length_val = _extract_tensor_value(element.length)
+        
+        params['SolenoidP'] = {
+            'KsL': k_val * length_val  # Integrated solenoid strength
+        }
+    
+    return params
+
+
+def _convert_sextupole_params(element) -> Dict[str, Any]:
+    """Convert Cheetah Sextupole parameters to PALS format."""
+    params = {}
+    
+    if hasattr(element, 'k2') and element.k2 is not None:
+        k2_val = _extract_tensor_value(element.k2)
+        length_val = _extract_tensor_value(element.length)
+        
+        params['MagneticMultipoleP'] = {
+            'Kn2L': k2_val * length_val  # Integrated sextupole strength
+        }
+    
+    return params
+
+
+def save_pals_to_yaml(
+    pals_dict: Dict[str, Any],
+    filename: Union[str, Path],
+) -> None:
+    """
+    Save PALS dictionary to YAML file.
+    
+    :param pals_dict: PALS lattice dictionary.
+    :param filename: Output filename (should end with .pals.yaml).
+    """
+    with open(filename, 'w') as f:
+        yaml.dump(pals_dict, f, default_flow_style=False, sort_keys=False)
+
+
+def save_pals_to_json(
+    pals_dict: Dict[str, Any],
+    filename: Union[str, Path],
+) -> None:
+    """
+    Save PALS dictionary to JSON file.
+    
+    :param pals_dict: PALS lattice dictionary.
+    :param filename: Output filename (should end with .pals.json).
+    """
+    with open(filename, 'w') as f:
+        json.dump(pals_dict, f, indent=2)
