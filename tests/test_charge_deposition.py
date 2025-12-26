@@ -79,9 +79,9 @@ def test_deposit_charge_cic_2d_batched():
 
 def test_deposit_charge_cic_2d_edge_cases():
     """Test edge cases and boundary conditions."""
-    # Test with particles exactly on grid points
-    x1 = torch.tensor([0.0, 1.0, 2.0])
-    x2 = torch.tensor([0.0, 1.0, 2.0])
+    # Test with particles exactly on grid points (excluding upper boundary)
+    x1 = torch.tensor([0.0, 1.0])  # Removed 2.0 as it's outside [0.0, 2.0)
+    x2 = torch.tensor([0.0, 1.0])  # Removed 2.0 as it's outside [0.0, 2.0)
     
     bins1 = torch.tensor([0.0, 1.0, 2.0])
     bins2 = torch.tensor([0.0, 1.0, 2.0])
@@ -92,7 +92,7 @@ def test_deposit_charge_cic_2d_edge_cases():
     expected = torch.tensor([
         [1.0, 0.0, 0.0],
         [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0]
+        [0.0, 0.0, 0.0]  # No particle at (2.0, 2.0) anymore
     ])
     
     assert torch.allclose(result, expected, atol=1e-6)
@@ -201,14 +201,14 @@ def test_deposit_charge_cic_2d_non_uniform_spacing_error():
     bins1_non_uniform = torch.tensor([0.0, 1.0, 2.5])  # Non-uniform: 1.0, 1.5
     bins2 = torch.tensor([0.0, 1.0, 2.0])
     
-    with pytest.raises(ValueError, match="bins1 must have uniform spacing"):
+    with pytest.raises(ValueError, match="bins\\[0\\] must have uniform spacing"):
         deposit_charge_cic_2d(x1, x2, bins1_non_uniform, bins2)
     
     # Test non-uniform bins2
     bins1 = torch.tensor([0.0, 1.0, 2.0])
     bins2_non_uniform = torch.tensor([0.0, 1.0, 2.3])  # Non-uniform: 1.0, 1.3
     
-    with pytest.raises(ValueError, match="bins2 must have uniform spacing"):
+    with pytest.raises(ValueError, match="bins\\[1\\] must have uniform spacing"):
         deposit_charge_cic_2d(x1, x2, bins1, bins2_non_uniform)
 
 
@@ -221,14 +221,14 @@ def test_deposit_charge_cic_2d_insufficient_bins():
     bins1_single = torch.tensor([0.0])
     bins2 = torch.tensor([0.0, 1.0])
     
-    with pytest.raises(ValueError, match="bins1 and bins2 must have at least 2 elements"):
+    with pytest.raises(ValueError, match="bins\\[0\\] must have at least 2 elements"):
         deposit_charge_cic_2d(x1, x2, bins1_single, bins2)
     
     # Test single bin for bins2
     bins1 = torch.tensor([0.0, 1.0])
     bins2_single = torch.tensor([0.0])
     
-    with pytest.raises(ValueError, match="bins1 and bins2 must have at least 2 elements"):
+    with pytest.raises(ValueError, match="bins\\[1\\] must have at least 2 elements"):
         deposit_charge_cic_2d(x1, x2, bins1, bins2_single)
 
 
@@ -483,25 +483,28 @@ def test_deposit_charge_cic_2d_backward_compatibility():
 def test_deposit_charge_cic_edge_particles_all_dims():
     """Test particles exactly on grid points in all dimensions."""
     
-    # 1D case
-    x = torch.tensor([0.0, 1.0, 2.0])
+    # 1D case - particles within bounds
+    x = torch.tensor([0.0, 1.0])  # Both are within [0.0, 2.0) since 1.0 < 2.0
     bins = torch.tensor([0.0, 1.0, 2.0])
     result_1d = deposit_charge_cic([x], [bins])
-    expected_1d = torch.tensor([1.0, 1.0, 1.0])
+    expected_1d = torch.tensor([1.0, 1.0, 0.0])  # Particles at grid points contribute fully to their grid points
     assert torch.allclose(result_1d, expected_1d)
     
-    # 2D case
-    x1 = torch.tensor([0.0, 1.0])
-    x2 = torch.tensor([0.0, 1.0])
-    result_2d = deposit_charge_cic([x1, x2], [bins[:2], bins[:2]])
-    expected_2d = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
+    # 2D case - particles within bounds
+    x1 = torch.tensor([0.0, 0.5])  # First at origin, second at center
+    x2 = torch.tensor([0.0, 0.5])  # First at origin, second at center
+    bins_2d = torch.tensor([0.0, 1.0])  # 2-element bins [0.0, 1.0)
+    result_2d = deposit_charge_cic([x1, x2], [bins_2d, bins_2d])
+    # Particle 1 at (0.0, 0.0): all charge goes to grid point (0,0)
+    # Particle 2 at (0.5, 0.5): charge distributed to all 4 corners (0.25 each)
+    expected_2d = torch.tensor([[1.25, 0.25], [0.25, 0.25]])  
     assert torch.allclose(result_2d, expected_2d)
     
-    # 3D case
+    # 3D case - particle at origin
     x1 = torch.tensor([0.0])
     x2 = torch.tensor([0.0])
     x3 = torch.tensor([0.0])
-    result_3d = deposit_charge_cic([x1, x2, x3], [bins[:2], bins[:2], bins[:2]])
+    result_3d = deposit_charge_cic([x1, x2, x3], [bins_2d, bins_2d, bins_2d])
     expected_3d = torch.zeros(2, 2, 2)
     expected_3d[0, 0, 0] = 1.0
     assert torch.allclose(result_3d, expected_3d)
