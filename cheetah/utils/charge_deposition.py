@@ -38,9 +38,21 @@ def deposit_charge_cic_2d(
     Nx = bins1.numel()
     Ny = bins2.numel()
 
-    # --- infer dx, dy (assume uniform) ---
+    # --- validate uniform spacing ---
+    if Nx < 2 or Ny < 2:
+        raise ValueError("bins1 and bins2 must have at least 2 elements")
+    
     dx = bins1[1] - bins1[0]
     dy = bins2[1] - bins2[0]
+    
+    # Check for uniform spacing with relative tolerance
+    dx_diffs = torch.diff(bins1)
+    if not torch.allclose(dx_diffs, dx, rtol=1e-6):
+        raise ValueError("bins1 must have uniform spacing")
+
+    dy_diffs = torch.diff(bins2)
+    if not torch.allclose(dy_diffs, dy, rtol=1e-6):
+        raise ValueError("bins2 must have uniform spacing")
 
     if weights is None:
         weights = torch.ones_like(x1)
