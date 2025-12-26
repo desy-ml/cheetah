@@ -1,4 +1,3 @@
-import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -9,6 +8,7 @@ from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -19,7 +19,7 @@ class Dipole(Element):
 
     :param length: Length in meters.
     :param angle: Deflection angle in rad.
-    :param k1: Focussing strength in 1/m^-2. Only used with `"cheetah"` tracking method.
+    :param k1: Focussing strength in 1/m^-2. Only used with `"linear"` tracking method.
     :param dipole_e1: The angle of inclination of the entrance face in rad.
     :param dipole_e2: The angle of inclination of the exit face in rad.
     :param tilt: Tilt of the magnet in x-y plane [rad].
@@ -46,13 +46,7 @@ class Dipole(Element):
         access the element in a segment.
     """
 
-    supported_tracking_methods = [
-        "linear",
-        "cheetah",
-        "second_order",
-        "drift_kick_drift",
-        "bmadx",
-    ]
+    supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
     def __init__(
         self,
@@ -69,7 +63,7 @@ class Dipole(Element):
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal[
-            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
+            "linear", "second_order", "drift_kick_drift"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
@@ -128,7 +122,7 @@ class Dipole(Element):
 
     @property
     def hx(self) -> torch.Tensor:
-        return torch.where(self.length == 0.0, 0.0, self.angle / self.length)
+        return self.angle / self.length  # Zero length not caught because not physical
 
     @property
     def dipole_e1(self) -> torch.Tensor:
@@ -148,7 +142,7 @@ class Dipole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return self.tracking_method in ["linear", "cheetah"]
+        return self.tracking_method == "linear"
 
     @property
     def is_active(self) -> bool:
@@ -163,31 +157,17 @@ class Dipole(Element):
         """
         if self.tracking_method == "linear":
             return super()._track_first_order(incoming)
-        elif self.tracking_method == "cheetah":
-            warnings.warn(
-                "The 'cheetah' tracking method is deprecated and will be removed in a"
-                "future release. Please use 'linear' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return super()._track_first_order(incoming)
         elif self.tracking_method == "second_order":
             return super()._track_second_order(incoming)
         elif self.tracking_method == "drift_kick_drift":
             return self._track_drift_kick_drift(incoming)
-        elif self.tracking_method == "bmadx":
-            warnings.warn(
-                "The 'bmadx' tracking method is deprecated and will be removed in a"
-                "future release. Please use 'drift_kick_drift' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
-                f"Invalid tracking method {self.tracking_method}. For element of"
-                f" type {self.__class__.__name__}, supported methods are "
-                f"{self.supported_tracking_methods}."
+                f"Invalid tracking method {self.tracking_method}. For element of type "
+                f"{self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}. NOTE: 'cheetah' and 'bmadx'"
+                " tracking methods have been deprecated and are no longer supported."
+                "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
@@ -208,6 +188,9 @@ class Dipole(Element):
         # throughout the function makes it even harder, is bad practice and should
         # really be fixed!
 
+        # Zero constant for later use to save on tensor allocations
+        zero = self.tilt.new_zeros(())
+
         # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
@@ -220,15 +203,7 @@ class Dipole(Element):
         z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
 
         # Begin Bmad-X tracking
-        x, px, y, py = bmadx.offset_particle_set(
-            torch.zeros_like(self.tilt),
-            torch.zeros_like(self.tilt),
-            self.tilt,
-            x,
-            px,
-            y,
-            py,
-        )
+        x, px, y, py = bmadx.offset_particle_set(zero, zero, self.tilt, x, px, y, py)
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
@@ -236,15 +211,7 @@ class Dipole(Element):
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
 
-        x, px, y, py = bmadx.offset_particle_unset(
-            torch.zeros_like(self.tilt),
-            torch.zeros_like(self.tilt),
-            self.tilt,
-            x,
-            px,
-            y,
-            py,
-        )
+        x, px, y, py = bmadx.offset_particle_unset(zero, zero, self.tilt, x, px, y, py)
         # End of Bmad-X tracking
 
         # Convert back to Cheetah coordinates
@@ -293,9 +260,6 @@ class Dipole(Element):
         phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
-        gp_safe = torch.where(
-            gp != 0, gp, torch.tensor(1e-12, dtype=gp.dtype, device=gp.device)
-        )
 
         alpha = (
             2
@@ -319,9 +283,11 @@ class Dipole(Element):
         x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
-        c2 = x2_t1 + (x2_t2 - x2_t3) / gp_safe
+        c2 = x2_t1 + alpha * sqrta2minusbdiva(x2_t3, gp * alpha)
         temp = (self.angle.unsqueeze(-1) + phi1).abs()
-        x2 = c1 * (temp < torch.pi / 2) + c2 * (temp >= torch.pi / 2)
+        x2 = c1.where(
+            temp < torch.pi / 2, c2
+        )  # Branch allowed because both sides contain the same inputs
 
         Lcu = (
             x2
@@ -397,32 +363,23 @@ class Dipole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
-
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if (self.length != 0.0).any():  # Bending magnet with finite length
-            R = base_rmatrix(
-                length=self.length,
-                k1=self.k1,
-                hx=self.hx,
-                species=species,
-                energy=energy,
-            )  # Tilt is applied after adding edges
-        else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
-            R[..., 0, 1] = self.length
-            R[..., 2, 6] = self.angle
-            R[..., 2, 3] = self.length
+        R = base_rmatrix(
+            length=self.length,
+            k1=self.k1,
+            hx=self.hx,
+            species=species,
+            energy=energy,
+        )  # Tilt is applied after adding edges
 
         # Apply fringe fields
         R = R_exit @ R @ R_enter
 
         # Apply rotation for tilted magnets
-        if (self.tilt != 0).any():
-            rotation = rotation_matrix(self.tilt)
-            R = rotation.mT @ R @ rotation
+        rotation = rotation_matrix(self.tilt)
+        R = rotation.mT @ R @ rotation
 
         return R
 
@@ -430,37 +387,22 @@ class Dipole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
-
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
 
-        if (self.length != 0.0).any():  # Bending magnet with finite length
-            T = base_ttensor(
-                length=self.length,
-                k1=self.k1,
-                k2=torch.tensor(0.0, **factory_kwargs),
-                hx=self.hx,
-                species=species,
-                energy=energy,
-            )
+        T = base_ttensor(
+            length=self.length,
+            k1=self.k1,
+            k2=self.length.new_zeros(()),
+            hx=self.hx,
+            species=species,
+            energy=energy,
+        )
 
-            # Fill the first-order transfer map into the second-order transfer map
-            T[..., :, 6, :] = base_rmatrix(
-                length=self.length,
-                k1=self.k1,
-                hx=self.hx,
-                species=species,
-                energy=energy,
-            )
-        else:  # Reduce to Thin-Corrector
-            R = torch.eye(7, **factory_kwargs).repeat((*self.length.shape, 1, 1))
-            R[..., 0, 1] = self.length
-            R[..., 2, 6] = self.angle
-            R[..., 2, 3] = self.length
-
-            T = torch.zeros((*self.length.shape, 7, 7), **factory_kwargs)
-            T[..., :, 6, :] = R
+        # Fill the first-order transfer map into the second-order transfer map
+        T[..., :, 6, :] = base_rmatrix(
+            length=self.length, k1=self.k1, hx=self.hx, species=species, energy=energy
+        )
 
         # Apply fringe fields
         T = torch.einsum(
@@ -468,11 +410,10 @@ class Dipole(Element):
         )
 
         # Apply rotation for tilted magnets
-        if (self.tilt != 0).any():
-            rotation = rotation_matrix(self.tilt)
-            T = torch.einsum(
-                "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
-            )
+        rotation = rotation_matrix(self.tilt)
+        T = torch.einsum(
+            "...ji,...jkl,...kn,...lm->...inm", rotation, T, rotation, rotation
+        )
 
         return T
 

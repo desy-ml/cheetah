@@ -8,8 +8,8 @@ import cheetah
 
 def feature2nontorch(value: Any) -> Any:
     """
-    if necesary, convert an the value of a feature of a `cheetah.Element` to a non-torch
-    type that can be saved to LatticeJSON.
+    If necessary, convert an the value of a feature of a `cheetah.Element` to a
+    non-torch type that can be saved to LatticeJSON.
 
     :param value: Value of the feature that might be in some kind of PyTorch format,
         such as `torch.Tensor` or `torch.nn.Parameter`.
@@ -93,7 +93,7 @@ def save_cheetah_model(
         title = segment.name if segment.name is not None else "Unnamed Lattice"
 
     metadata = {
-        "version": "cheetah-0.7",
+        "version": "cheetah-0.8",
         "title": title,
         "info": info,
         "root": segment.name if segment.name is not None else "cell",
