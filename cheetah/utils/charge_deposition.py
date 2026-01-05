@@ -1,17 +1,13 @@
 import torch
 from typing import Sequence
 
-
 def deposit_charge_cic(
     positions: Sequence[torch.Tensor],
     bins: Sequence[torch.Tensor],
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Fully vectorized Cloud-in-Cell (CIC) charge deposition in 1D, 2D, or 3D.
-    
-    High-performance GPU-optimized implementation where all operations 
-    are fully vectorized using PyTorch tensor operations.
+    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D, 2D, or 3D.
 
     Parameters
     ----------
@@ -19,7 +15,7 @@ def deposit_charge_cic(
         List/tuple of particle position tensors, each of shape (..., N).
         Length determines dimensionality (1D, 2D, or 3D).
     bins : sequence of torch.Tensor
-        List/tuple of 1D arrays defining bin edges for each dimension.
+        List/tuple of 1D arrays defining bin edges or centers for each dimension.
         Must have uniform spacing. Length must match positions.
     weights : (..., N), optional
         Particle charge weights. If None, all particles have weight=1.
@@ -28,15 +24,6 @@ def deposit_charge_cic(
     -------
     charge_grid : (..., N1, N2, ..., Nd)
         Charge density on the d-dimensional grid, where d is len(positions).
-        
-    Notes
-    -----
-    This implementation uses fully vectorized tensor operations for maximum 
-    performance. Key optimizations include:
-    - Precomputed corner offsets for all dimensions
-    - Vectorized multi-dimensional to flat index conversion
-    - Optimized memory access patterns with minimal intermediate tensors
-    - Efficient batched grid accumulation
     """
     # Validate inputs
     if not positions:
@@ -89,11 +76,13 @@ def deposit_charge_cic(
         weights = weights * (~outside_mask).float()
 
     # Normalize particle coordinates to grid index space
+    normalized_coords = []
     grid_indices = []
     fractional_parts = []
     
     for pos, bin_array, spacing in zip(positions, bins, spacings):
         u = (pos - bin_array[0]) / spacing
+        normalized_coords.append(u)
         
         # Left cell index
         i = torch.floor(u).to(torch.int64)
@@ -103,102 +92,76 @@ def deposit_charge_cic(
         w = u - i
         fractional_parts.append(w)
 
-    # Precomputed corner offsets for different dimensions
-    corner_offsets_dict = {
-        1: torch.tensor([[0], [1]], device=device, dtype=torch.long),
-        2: torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], device=device, dtype=torch.long),
-        3: torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1],
-                        [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]], device=device, dtype=torch.long)
-    }
+    # Generate all corner combinations and their weights
+    num_corners = 2 ** ndim
+    corner_indices = []
+    corner_weights = []
     
-    if ndim not in corner_offsets_dict:
-        raise ValueError(f"Precomputed offsets not available for {ndim}D. Only 1D, 2D, and 3D are supported.")
-    
-    corner_offsets = corner_offsets_dict[ndim]  # Shape: (num_corners, ndim)
-    num_corners = corner_offsets.shape[0]
-    
-    # Stack grid indices and fractional parts for vectorized operations
-    grid_indices_stacked = torch.stack(grid_indices, dim=-1)  # (..., N, ndim)
-    fractional_parts_stacked = torch.stack(fractional_parts, dim=-1)  # (..., N, ndim)
-    
-    # Calculate all corner indices at once using broadcasting
-    # grid_indices_stacked: (..., N, ndim) -> (..., N, 1, ndim)
-    # corner_offsets: (num_corners, ndim) -> (1, 1, num_corners, ndim)
-    corner_indices_all = (grid_indices_stacked.unsqueeze(-2) + 
-                         corner_offsets.unsqueeze(-3))  # (..., N, num_corners, ndim)
-    
-    # Clamp to valid grid bounds
-    grid_sizes_tensor = torch.tensor(grid_sizes, device=device, dtype=torch.long)
-    corner_indices_all = corner_indices_all.clamp(
-        min=torch.zeros_like(grid_sizes_tensor),
-        max=grid_sizes_tensor - 1
-    )
-    
-    # Calculate weights using vectorized operations
-    # For each corner, weight = product over dims of (frac if offset=1, else 1-frac)
-    # corner_offsets: (num_corners, ndim)
-    # fractional_parts_stacked: (..., N, ndim) -> (..., N, 1, ndim)
-    frac_expanded = fractional_parts_stacked.unsqueeze(-2)  # (..., N, 1, ndim)
-    
-    # Calculate weight factors for all corners at once
-    # Where offset=1, use frac; where offset=0, use 1-frac
-    weight_factors = torch.where(
-        corner_offsets.bool(),  # (num_corners, ndim)
-        frac_expanded,          # (..., N, 1, ndim) 
-        1 - frac_expanded       # (..., N, 1, ndim)
-    )  # (..., N, num_corners, ndim)
-    
-    # Product over dimensions to get final weights per corner
-    corner_weights_all = weight_factors.prod(dim=-1)  # (..., N, num_corners)
-    
-    # Apply particle weights
-    if weights is not None:
-        corner_weights_all = corner_weights_all * weights.unsqueeze(-1)  # (..., N, num_corners)
-    
-    # FULLY VECTORIZED: Multi-dimensional to flat index conversion
-    # Calculate strides for vectorized conversion
-    strides = torch.ones(ndim, device=device, dtype=torch.long)
-    for dim in range(1, ndim):
-        strides[dim] = strides[dim-1] * grid_sizes[dim-1]
-    
-    # Vectorized flat index calculation for all corners at once
-    # corner_indices_all shape: (..., N, num_corners, ndim)
-    # strides shape: (ndim,)
-    flat_indices_all = torch.sum(corner_indices_all * strides.unsqueeze(-2), dim=-1)  # (..., N, num_corners)
-    
-    # Prepare for batched operations
+    for corner in range(num_corners):
+        # Determine which corners to use based on binary representation
+        corner_offsets = []
+        weight_factors = []
+        
+        for dim in range(ndim):
+            if (corner >> dim) & 1:  # Use right cell in this dimension
+                corner_offsets.append(1)
+                weight_factors.append(fractional_parts[dim])
+            else:  # Use left cell in this dimension
+                corner_offsets.append(0)
+                weight_factors.append(1 - fractional_parts[dim])
+        
+        # Calculate indices for this corner
+        corner_idx_list = []
+        for dim in range(ndim):
+            base_idx = grid_indices[dim]
+            offset_idx = (base_idx + corner_offsets[dim]).clamp(0, grid_sizes[dim] - 1)
+            corner_idx_list.append(offset_idx)
+        
+        # Calculate weight for this corner
+        corner_weight = weights
+        for weight_factor in weight_factors:
+            corner_weight = corner_weight * weight_factor
+        
+        corner_indices.append(corner_idx_list)
+        corner_weights.append(corner_weight)
+
+    # Convert multi-dimensional indices to flat indices
+    def multi_to_flat_index(idx_list):
+        flat_idx = idx_list[0]
+        stride = 1
+        for dim in range(1, ndim):
+            stride *= grid_sizes[dim - 1]
+            flat_idx = flat_idx + idx_list[dim] * stride
+        return flat_idx
+
+    # Flatten batch dims and particle dim together
     batch_shape = first_pos.shape[:-1]
     B = int(torch.tensor(batch_shape).prod()) if batch_shape else 1
     N = first_pos.shape[-1]
+
+    def flatten_tensor(t):
+        return t.reshape(B, N)
+
+    # Prepare all indices and weights for batch processing
+    all_flat_indices = []
+    all_weights = []
     
-    # Reshape to batch format: [B, N, num_corners]
-    flat_indices_reshaped = flat_indices_all.reshape(B, N, num_corners)
-    corner_weights_reshaped = corner_weights_all.reshape(B, N, num_corners)
-    
-    # Transpose and flatten for concatenation: [B, num_corners * N]
-    idx_all = flat_indices_reshaped.transpose(1, 2).reshape(B, num_corners * N)
-    vals_all = corner_weights_reshaped.transpose(1, 2).reshape(B, num_corners * N)
+    for corner_idx_list, corner_weight in zip(corner_indices, corner_weights):
+        flat_idx = multi_to_flat_index(corner_idx_list)
+        all_flat_indices.append(flatten_tensor(flat_idx))
+        all_weights.append(flatten_tensor(corner_weight))
+
+    # Concatenate all indices and weights
+    idx_all = torch.cat(all_flat_indices, dim=1)  # shape (B, num_corners * N)
+    vals_all = torch.cat(all_weights, dim=1)      # shape (B, num_corners * N)
 
     # Output buffer
     total_grid_size = int(torch.tensor(grid_sizes).prod())
     charge = torch.zeros((B, total_grid_size), dtype=dtype, device=device)
 
-    # Vectorized grid accumulation
-    if B == 1:
-        # Single batch - use simple index_add_
-        charge[0].index_add_(0, idx_all[0], vals_all[0])
-    else:
-        # Multiple batches - vectorized approach
-        batch_indices = torch.arange(B, device=device).unsqueeze(1).expand(-1, idx_all.shape[1])
-        flat_batch_indices = batch_indices.reshape(-1)
-        flat_grid_indices = idx_all.reshape(-1)
-        flat_values = vals_all.reshape(-1)
-        
-        # Combined batch+grid indices for scatter_add
-        combined_indices = flat_batch_indices * total_grid_size + flat_grid_indices
-        charge_flat = charge.reshape(-1)
-        charge_flat.index_add_(0, combined_indices, flat_values)
-        charge = charge_flat.reshape(B, total_grid_size)
+    # Vectorized batched index_add_
+    for b in range(B):
+        charge[b].index_add_(0, idx_all[b], vals_all[b])
 
     # Reshape back to original batch dims + grid dims
     out_shape = (*batch_shape, *grid_sizes)
@@ -208,8 +171,6 @@ def deposit_charge_cic(
     for spacing in spacings:
         cell_volume *= spacing
     inv_cell_volume = 1.0 / cell_volume
-    
-    # Multiply by inverse cell volume to get charge density
     charge = charge * inv_cell_volume
 
     return charge.reshape(out_shape)
