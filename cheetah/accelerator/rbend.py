@@ -20,18 +20,19 @@ class RBend(Dipole):
     :param gap: The magnet gap in meters. Note that in MAD and ELEGANT: HGAP = gap/2.
     :param gap_exit: The magnet gap at the exit in meters. Note that in MAD and
         ELEGANT: HGAP = gap/2. Only set if different from `gap`. Only used with
-        `"bmadx"` tracking method.
+        `"drift_kick_drift"` tracking method.
     :param fringe_integral: Fringe field integral (of the enterance face).
     :param fringe_integral_exit: Fringe field integral of the exit face. Only set if
-        different from `fringe_integral`. Only used with `"bmadx"` tracking method.
-    :param fringe_at: Where to apply the fringe fields for `"bmadx"` tracking. The
-        available options are:
+        different from `fringe_integral`. Only used with `"drift_kick_drift"` tracking
+        method.
+    :param fringe_at: Where to apply the fringe fields for `"drift_kick_drift"`
+        tracking. The available options are:
         - "neither": Do not apply fringe fields.
         - "entrance": Apply fringe fields at the entrance end.
         - "exit": Apply fringe fields at the exit end.
         - "both": Apply fringe fields at both ends.
-    :param fringe_type: Type of fringe field for `"bmadx"` tracking. Currently only
-        supports `"linear_edge"`.
+    :param fringe_type: Type of fringe field for `"drift_kick_drift"` tracking.
+        Currently only supports `"linear_edge"`.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -53,7 +54,7 @@ class RBend(Dipole):
         fringe_at: Literal["neither", "entrance", "exit", "both"] = "both",
         fringe_type: Literal["linear_edge"] = "linear_edge",
         tracking_method: Literal[
-            "linear", "cheetah", "second_order", "drift_kick_drift", "bmadx"
+            "linear", "second_order", "drift_kick_drift"
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,

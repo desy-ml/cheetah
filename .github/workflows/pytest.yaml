@@ -11,17 +11,17 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         options: [""]
         include:
           - os: ubuntu-latest
-            python-version: "3.10"
+            python-version: "3.11"
             options: "-c test_minimum_requirements_constraints.txt"
           - os: macos-latest
-            python-version: "3.13"
+            python-version: "3.14"
             options: ""
           - os: windows-latest
-            python-version: "3.13"
+            python-version: "3.14"
             options: ""
     runs-on: ${{ matrix.os }}
 

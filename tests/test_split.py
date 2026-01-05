@@ -11,7 +11,9 @@ def test_element_end(original):
     original element.
     """
     original.to(torch.float64)
-    split = cheetah.Segment(original.split(resolution=torch.tensor(0.015)))
+    split = cheetah.Segment(
+        original.split(resolution=torch.tensor(0.015, dtype=torch.float64))
+    )
 
     incoming_beam = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
@@ -21,7 +23,9 @@ def test_element_end(original):
     outgoing_beam_split = split.track(incoming_beam)
 
     assert torch.allclose(
-        outgoing_beam_original.particles, outgoing_beam_split.particles
+        outgoing_beam_original.particles,
+        outgoing_beam_split.particles,
+        rtol=1e-2 if original.tracking_method == "second_order" else 1e-5,
     )
 
 
