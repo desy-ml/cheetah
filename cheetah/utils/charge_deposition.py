@@ -15,7 +15,7 @@ def deposit_charge_cic(
         List/tuple of particle position tensors, each of shape (..., N).
         Length determines dimensionality (1D, 2D, or 3D).
     bins : sequence of torch.Tensor
-        List/tuple of 1D arrays defining bin edges or centers for each dimension.
+        List/tuple of 1D arrays defining bin edges for each dimension.
         Must have uniform spacing. Length must match positions.
     weights : (..., N), optional
         Particle charge weights. If None, all particles have weight=1.
@@ -203,6 +203,48 @@ def deposit_charge_cic_1d(
     """
     return deposit_charge_cic([x], [bins], weights)
 
+def deposit_charge_cic_2d(
+    x1: torch.Tensor,
+    x2: torch.Tensor,
+    bins1: torch.Tensor,
+    bins2: torch.Tensor,
+    weights: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """
+    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
+    
+    This is a convenience wrapper around deposit_charge_cic for 2D cases.
+    Particles outside the grid bounds have their weights set to zero.
+
+    Parameters
+    ----------
+    x1 : (..., N)
+        Particle x positions.
+    x2 : (..., N)
+        Particle y positions.
+    bins1 : (Nx,)
+        1D array of x-bin edges or centers (must have uniform spacing).
+    bins2 : (Ny,)
+        1D array of y-bin edges or centers (must have uniform spacing).
+    weights : (..., N), optional
+        Particle charge weights. If None, all particles have weight=1.
+
+    Returns
+    -------
+    charge_grid : (..., Nx, Ny)
+        Charge density on the 2D grid.
+    """
+    charge_density = deposit_charge_cic(
+        [x1, x2],
+        [bins1, bins2],
+        weights,
+    )
+    # transpose to ( ..., Nx, Ny ) 
+    # use negative indices to support arbitrary batch dims
+    charge_density = charge_density.transpose(-1, -2)
+
+    return charge_density
+
 
 def deposit_charge_cic_3d(
     x1: torch.Tensor,
@@ -241,37 +283,13 @@ def deposit_charge_cic_3d(
     charge_grid : (..., Nx, Ny, Nz)
         Charge density on the 3D grid.
     """
-    return deposit_charge_cic([x1, x2, x3], [bins1, bins2, bins3], weights)
+    charge_density = deposit_charge_cic(
+        [x1, x2, x3],
+        [bins1, bins2, bins3],
+        weights,
+    )
+    # transpose to ( ..., Nx, Ny, Nz )
+    # use negative indices to support arbitrary batch dims
+    charge_density = charge_density.transpose(-1, -3)
 
-def deposit_charge_cic_2d(
-    x1: torch.Tensor,
-    x2: torch.Tensor,
-    bins1: torch.Tensor,
-    bins2: torch.Tensor,
-    weights: torch.Tensor | None = None,
-) -> torch.Tensor:
-    """
-    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
-    
-    This is a convenience wrapper around deposit_charge_cic for 2D cases.
-    Particles outside the grid bounds have their weights set to zero.
-
-    Parameters
-    ----------
-    x1 : (..., N)
-        Particle x positions.
-    x2 : (..., N)
-        Particle y positions.
-    bins1 : (Nx,)
-        1D array of x-bin edges or centers (must have uniform spacing).
-    bins2 : (Ny,)
-        1D array of y-bin edges or centers (must have uniform spacing).
-    weights : (..., N), optional
-        Particle charge weights. If None, all particles have weight=1.
-
-    Returns
-    -------
-    charge_grid : (..., Nx, Ny)
-        Charge density on the 2D grid.
-    """
-    return deposit_charge_cic([x1, x2], [bins1, bins2], weights)
+    return charge_density
