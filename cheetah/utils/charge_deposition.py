@@ -164,7 +164,7 @@ def deposit_charge_cic(
         charge[b].index_add_(0, idx_all[b], vals_all[b])
 
     # Reshape back to original batch dims + grid dims
-    out_shape = (*batch_shape, *grid_sizes)
+    out_shape = (*batch_shape, *grid_sizes[::-1])
 
     # Calculate inverse cell volume
     cell_volume = 1.0
@@ -239,11 +239,8 @@ def deposit_charge_cic_2d(
         [bins1, bins2],
         weights,
     )
-    # transpose to ( ..., Nx, Ny ) 
-    # use negative indices to support arbitrary batch dims
-    charge_density = charge_density.transpose(-1, -2)
 
-    return charge_density
+    return charge_density.mT
 
 
 def deposit_charge_cic_3d(
@@ -288,8 +285,5 @@ def deposit_charge_cic_3d(
         [bins1, bins2, bins3],
         weights,
     )
-    # transpose to ( ..., Nx, Ny, Nz )
-    # use negative indices to support arbitrary batch dims
-    charge_density = charge_density.transpose(-1, -3)
 
-    return charge_density
+    return charge_density.mT
