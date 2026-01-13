@@ -159,3 +159,31 @@ def test_plot_particle_beam_point_cloud():
 
     # Run the plotting to see if it raises an exception
     _ = beam.plot_point_cloud()
+
+
+@pytest.mark.parametrize("style", ["histogram", "contour"])
+def test_plot_vectorized_distribution(style):
+    """
+    Test that plotting the distribution of a vectorised `ParticleBeam` does not raise an
+    exception.
+    """
+    num_beams = 10
+    num_particles = 10_000
+
+    mean = torch.zeros(6)
+    cov = torch.diag(torch.tensor([1e-6, 1e-6, 9e-6, 9e-6, 1e-6, 1e-6]))
+    distribution = torch.distributions.MultivariateNormal(mean, cov)
+
+    coordinates_6d = distribution.sample((num_beams, num_particles))
+    coordinates_7d = torch.cat(
+        (coordinates_6d, torch.ones(num_beams, num_particles, 1)), dim=-1
+    )
+
+    beam_ensemble = cheetah.ParticleBeam(
+        particles=coordinates_7d, energy=torch.tensor(40.0e6)
+    )
+
+    # Run the plotting to see if it raises an exception
+    _ = beam_ensemble.plot_distribution(
+        bin_ranges="unit_same", plot_2d_kws={"style": style}
+    )

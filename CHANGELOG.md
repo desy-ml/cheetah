@@ -39,6 +39,7 @@ This major release comes with significant overhauls of some core components of C
 - `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
 - Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558, #555, #556, #563, #561) (@jank324, @Hespe)
 - New `CombinedCorrector` element that combines the functionality of `HorizontalCorrector` and `VerticalCorrector` (see #589) (@jank324, @amylizzle)
+- Add mean and uncertainty plotting functionalities to `ParticleBeam` plotting over vectorised beams (see #584) (@jp-ga, @jank324)
 
 ### 🐛 Bug fixes
 
