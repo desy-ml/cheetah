@@ -30,11 +30,19 @@ def convert_element(element: "cheetah.Element"):
     :param element: Cheetah element
     :return: Tuple of element name, element class, and element parameters
     """
-    params = {
-        feature: feature2nontorch(getattr(element, feature))
-        for feature in element.defining_features
-        if feature != "name"
-    }
+    if isinstance(element, cheetah.SuperimposedElement):
+        params = {
+            "base_element": {element.base_element.name : convert_element(element.base_element)[1:]},
+            "superimposed_element": {
+                element.superimposed_element.name : convert_element(element.superimposed_element)[1:]
+                }
+        }
+    else:
+        params = {
+            feature: feature2nontorch(getattr(element, feature))
+            for feature in element.defining_features
+            if feature != "name"
+        }
 
     return element.name, element.__class__.__name__, params
 
@@ -59,9 +67,9 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
 
             elements.update(segment_elements)
             lattices.update(segment_lattices)
+
         else:
             element_name, element_class, element_params = convert_element(element)
-
             elements[element_name] = [element_class, element_params]
 
         cell.append(element_name)
@@ -170,12 +178,34 @@ def parse_element(
     element_class = getattr(cheetah, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
 
-    converted_params = {
-        key: nontorch2feature(value, device=device, dtype=dtype)
-        for key, value in params.items()
-    }
+    if element_class == cheetah.SuperimposedElement:
+        base_element_dict = params["base_element"]
+        superimposed_element_dict = params["superimposed_element"]
 
-    return element_class(name=name, **converted_params)
+        base_element = parse_element(
+            list(base_element_dict.keys())[0], 
+            {"elements": base_element_dict}, 
+            device=device, 
+            dtype=dtype
+        )
+        superimposed_element = parse_element(
+            list(superimposed_element_dict.keys())[0], 
+            {"elements": superimposed_element_dict}, 
+            device=device, 
+            dtype=dtype
+        )
+
+        return cheetah.SuperimposedElement(
+            name=name,
+            base_element=base_element,
+            superimposed_element=superimposed_element
+        )
+    else:
+        converted_params = {
+            key: nontorch2feature(value, device=device, dtype=dtype)
+            for key, value in params.items()
+        }
+        return element_class(name=name, **converted_params)
 
 
 def parse_segment(
