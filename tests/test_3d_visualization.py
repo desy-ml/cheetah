@@ -21,6 +21,6 @@ def test_run_and_check_return():
     )
     mesh, output_transform = segment.to_mesh()
 
-    assert isinstance(mesh, trimesh.Trimesh)
+    assert isinstance(mesh, trimesh.Scene)
     assert isinstance(output_transform, np.ndarray)
     assert output_transform.shape == (4, 4)
