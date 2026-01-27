@@ -8,7 +8,12 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
+from cheetah.utils import (
+    BadVisualizationWarning,
+    DirtyNameWarning,
+    NoVisualizationWarning,
+    UniqueNameGenerator,
+)
 from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -425,6 +430,13 @@ class Element(ABC, nn.Module):
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
+        else:
+            warnings.warn(
+                f"Element {self.name} of type {self.__class__.__name__} has zero "
+                f"length. The mesh will not be scaled to the correct length.",
+                category=BadVisualizationWarning,
+                stacklevel=2,
+            )
 
         # Apply scaling to make the mesh look cuter
         scale_factor_for_cuteness = 1.0

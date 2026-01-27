@@ -61,4 +61,11 @@ class NoVisualizationWarning(Warning):
     be converted to a 3D mesh.
     """
 
+
+class BadVisualizationWarning(Warning):
+    """
+    Warning raised when an element cannot accurately be visualized, e.g. because its
+    parametes are invalid for visualization.
+    """
+
     ...

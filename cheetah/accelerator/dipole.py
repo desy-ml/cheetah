@@ -484,14 +484,14 @@ class Dipole(Element):
 
         # Rotate the mesh by half the bending angle
         mesh_rotation = trimesh.transformations.rotation_matrix(
-            self.angle.item() / 2.0, [0, 1, 0], [0, 0, 0]
+            -self.angle.item() / 2.0, [0, 1, 0], [0, 0, 0]
         )
         mesh.apply_transform(mesh_rotation)
 
         # Rotate the output transform by the full bending angle
         output_transform = (
             trimesh.transformations.rotation_matrix(
-                self.angle.item(), [0, 1, 0], [0, 0, 0]
+                -self.angle.item(), [0, 1, 0], [0, 0, 0]
             )
             @ output_transform
         )

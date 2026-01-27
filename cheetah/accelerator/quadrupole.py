@@ -307,7 +307,7 @@ class Quadrupole(Element):
 
         # Rotate according to tilt
         rotation_matrix = trimesh.transformations.rotation_matrix(
-            self.tilt.item(), [0, 0, 1], [0, 0, 0]
+            -self.tilt.item(), [0, 0, 1], [0, 0, 0]
         )
         mesh.apply_transform(rotation_matrix)
 
