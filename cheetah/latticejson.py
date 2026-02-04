@@ -93,7 +93,7 @@ def save_cheetah_model(
         title = segment.name if segment.name is not None else "Unnamed Lattice"
 
     metadata = {
-        "version": "cheetah-0.7",
+        "version": "cheetah-0.8",
         "title": title,
         "info": info,
         "root": segment.name if segment.name is not None else "cell",

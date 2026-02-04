@@ -75,11 +75,13 @@ class Sextupole(Element):
 
     @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
             length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=zero,
             k2=self.k2,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=zero,
             species=species,
             energy=energy,
         )

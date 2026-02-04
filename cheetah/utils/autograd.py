@@ -370,7 +370,7 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        (a, b) = inputs  # inputs is always passed as a tuple
+        a, b = inputs  # inputs is always passed as a tuple
 
         ctx.save_for_backward(a, b, output)
         ctx.save_for_forward(a, b, output)
@@ -442,7 +442,7 @@ class SiMSiDivDiff(torch.autograd.Function):
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        (a, b) = inputs
+        a, b = inputs
 
         ctx.save_for_backward(a, b, output)
         ctx.save_for_forward(a, b, output)
@@ -558,7 +558,7 @@ class Si2MSi2DivDiff(torch.autograd.Function):
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        (a, b) = inputs
+        a, b = inputs
 
         ctx.save_for_backward(a, b, output)
         ctx.save_for_forward(a, b, output)
@@ -660,7 +660,7 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        (a, b) = inputs
+        a, b = inputs
 
         ctx.save_for_backward(a, b, output)
         ctx.save_for_forward(a, b, output)
