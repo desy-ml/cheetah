@@ -6,11 +6,15 @@
 
 ### 🚀 Features
 
+- Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
 - All plotting functions in `Segment` now accept an optional axes or figure object. If they are passed on, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
 
 ### 🐛 Bug fixes
 
 ### 🐆 Other
+
+- The copyright years were updated to 2026 (see #608) (@jank324)
+- Fix format issue caused by new `black` version (see #611) (@jank324)
 
 ### 🌟 First Time Contributors
 
