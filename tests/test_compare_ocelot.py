@@ -387,7 +387,7 @@ def test_astra_import():
     assert np.isclose(beam.energy.cpu().numpy(), (p_array.E * 1e9))
 
 
-@pytest.mark.parametrize("tracking_method", ["cheetah", "second_order"])
+@pytest.mark.parametrize("tracking_method", ["linear", "second_order"])
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
 )
