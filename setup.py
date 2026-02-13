@@ -38,6 +38,7 @@ setup(
     ],
     extras_require={
         "openpmd": ["openpmd-beamphysics"],
+        "sdds": ["soliday.sdds"],
         "3d-visualization": ["trimesh>=4.4.0", "requests>=2.32.2", "tqdm>=4.66.0"],
     },
 )

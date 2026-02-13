@@ -794,6 +794,35 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
+    def from_elegant(
+        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    ) -> "ParticleBeam":
+        """Load an Elegant particle distribution as a Cheetah Beam.
+
+        :param path: Path to the Elegant SDDS file containing the particle distribution.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
+        """
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
+
+        from cheetah.converters.elegant import from_elegant_beam
+
+        particles, energy, particle_charges = from_elegant_beam(path, **factory_kwargs)
+
+        species = Species("electron", **factory_kwargs)
+
+        return cls(
+            particles=particles,
+            energy=energy,
+            particle_charges=particle_charges,
+            species=species,
+            **factory_kwargs,
+        )
+
+    @classmethod
     def from_openpmd_file(
         cls,
         path: str,
