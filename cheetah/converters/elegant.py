@@ -477,9 +477,14 @@ def from_elegant_beam(
         1, 2, 0
     )
 
-    p_central = torch.tensor(
-        sdds_data.getParameterValueList("pCentral"), **factory_kwargs
-    )  # (n_pages,)
+    # Check if ref momentum is provided in the SDDS file
+    if "pCentral" in sdds_data.parameterName:
+        p_central = torch.tensor(
+            sdds_data.getParameterValueList("pCentral"), **factory_kwargs
+        )  # (n_pages,)
+    else:
+        # Use the momentum from the first particle, which is by default the ref particle
+        p_central = pinit_array[..., 0, 5]  # (n_pages,)
     ref_momentum_eV = p_central * electron_mass_eV  # Convert to eV
 
     # Convert the Elegant coordinates to Cheetah coordinates
@@ -492,7 +497,7 @@ def from_elegant_beam(
     particles[..., 6] = 1.0
 
     # Check whether charge is present in the SDDS file
-    if "q" in sdds_data.columnNames:
+    if "q" in sdds_data.columnName:
         q_array = torch.tensor(sdds_data.getColumnValueLists("q"), **factory_kwargs)  #
     else:
         q_array = torch.ones(
