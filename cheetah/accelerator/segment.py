@@ -880,13 +880,20 @@ class Segment(Element):
         return ax
 
     def plot_twiss_over_lattice(
-        self, incoming: Beam, fig: matplotlib.figure.Figure | None = None
+        self,
+        incoming: Beam,
+        vector_idx: tuple | None = None,
+        fig: matplotlib.figure.Figure | None = None,
     ) -> matplotlib.figure.Figure:
         """
         Plot Twiss parameters in a plot over a plot of the lattice.
 
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
         :param fig: Figure to plot into. Can be used, for example to pass a figure with
             a desired custom `figsize`. If `None`, a new figure with default size is
             created.
@@ -897,8 +904,8 @@ class Segment(Element):
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
-        self.plot_twiss(incoming, ax=axs[0])
-        self.plot(s=0.0, ax=axs[1])
+        self.plot_twiss(incoming, vector_idx=vector_idx, ax=axs[0])
+        self.plot(s=0.0, vector_idx=vector_idx, ax=axs[1])
 
         return fig
 
