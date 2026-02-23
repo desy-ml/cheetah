@@ -656,7 +656,7 @@ class Segment(Element):
         vector_idx: tuple | None = None,
         axx: plt.Axes | None = None,
         axy: plt.Axes | None = None,
-    ) -> None:
+    ) -> tuple[plt.Axes, plt.Axes]:
         """
         Plot the mean (i.e. beam position) and standard deviation (i.e. beam size) of
         the beam along the segment view in x- and y-direction.
@@ -672,10 +672,11 @@ class Segment(Element):
             `None`, new axes are created for both `axx` and `axy`.
         :param axy: Axes to plot the particle traces into viewed in y-direction. If
             `None`, new axes are created for both `axx` and `axy`.
-        :return: Figure with the plotted mean and standard deviation.
+        :return: Both axes with the plotted mean and standard deviation of the beam
+            along the segment.
         """
         if axx is None or axy is None:
-            fig, (axx, axy) = plt.subplots(2, 1, sharex=True)
+            _, (axx, axy) = plt.subplots(2, 1, sharex=True)
 
         reference_segment = self.clone()  # Prevent side effects when plotting
 
@@ -710,7 +711,7 @@ class Segment(Element):
         axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
 
-        return fig
+        return axx, axy
 
     def plot_overview(
         self,
