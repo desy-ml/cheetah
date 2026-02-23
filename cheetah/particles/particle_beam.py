@@ -795,9 +795,9 @@ class ParticleBeam(Beam):
 
     @classmethod
     def from_elegant(
-        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+        cls, file_path: Path | str, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParticleBeam":
-        """Load an Elegant particle distribution as a Cheetah Beam.
+        """Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
 
         :param path: Path to the Elegant SDDS file containing the particle distribution.
         :param device: Device that the beam creates its tensors on.

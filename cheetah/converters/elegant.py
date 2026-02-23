@@ -431,7 +431,7 @@ def convert_lattice_to_cheetah(
 
 
 def from_elegant_beam(
-    file_path: str,
+    file_path: Path,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -442,8 +442,8 @@ def from_elegant_beam(
         If `None`, the current default device of PyTorch is used.
     :param dtype: Data type to use for the beam distribution.
         If `None`, the current default dtype of PyTorch is used.
-    :return: A tuple containing the particle distribution tensor,
-        the reference energy in eV, and the charge array.
+    :return: A tuple containing the particles tensor,
+        the reference energy in eV, and the tensor of particle charges.
     """
 
     device = device or torch.get_default_device()
@@ -489,10 +489,10 @@ def from_elegant_beam(
 
     # Convert the Elegant coordinates to Cheetah coordinates
     cheetah_coordinates = convert_elegant_coordinates_to_cheetah(pinit_array, p_central)
-    ref_energy_eV = torch.sqrt(ref_momentum_eV**2 + electron_mass_eV**2)
+    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
-    # add a seventh column for cheetah coordinates
-    particles = torch.zeros((cheetah_coordinates.shape[:-1] + (7,)), dtype=dtype)
+    # Add seventh column for Cheetah coordinates
+    particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[-1], 7))
     particles[..., :6] = cheetah_coordinates  # copy the first 6 columns
     particles[..., 6] = 1.0
 
@@ -508,7 +508,7 @@ def from_elegant_beam(
 
 
 def convert_elegant_coordinates_to_cheetah(
-    elegant_dist: torch.Tensor, p_central: torch.Tensor
+    elegant_coordinates: torch.Tensor, p_central: torch.Tensor
 ) -> torch.Tensor:
     r"""Convert Elegant coordinates to Cheetah coordinates.
 
@@ -524,25 +524,24 @@ def convert_elegant_coordinates_to_cheetah(
 
     p_central = p_central.unsqueeze(-1)  # Ensure p_central has the correct shape
     ref_momentum_eV = p_central * electron_mass_eV
-    ref_energy_eV = torch.sqrt(ref_momentum_eV**2 + electron_mass_eV**2)
+    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
     momentum_eV = elegant_dist[..., 5] * electron_mass_eV
-    energy_eV = torch.sqrt(momentum_eV**2 + electron_mass_eV**2)
-    delta_p = (elegant_dist[..., 5] - p_central) / p_central  # (p-p0)/p0
-
-    xprime = elegant_dist[..., 1]
-    yprime = elegant_dist[..., 3]
+    energy_eV = (momentum_eV**2 + electron_mass_eV**2).sqrt()
+    delta_p = (elegant_dist[..., 5] - p_central) / p_central  # (p - p0) / p0
 
     cheetah_coordinates = torch.zeros_like(elegant_dist)
     cheetah_coordinates[..., 0] = elegant_dist[..., 0]  # x
     cheetah_coordinates[..., 2] = elegant_dist[..., 2]  # y
 
+    xprime = elegant_dist[..., 1]
+    yprime = elegant_dist[..., 3]
     cheetah_coordinates[..., 1] = (
-        xprime * (1 + delta_p) / torch.sqrt(1 + xprime**2 + yprime**2)
+        xprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square()).sqrt()
     )  # px = P_x / p_0
     cheetah_coordinates[..., 3] = (
-        yprime * (1 + delta_p) / torch.sqrt(1 + xprime**2 + yprime**2)
-    )
+        yprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square())
+    ).sqrt()
 
     cheetah_coordinates[..., 4] = (
         elegant_dist[..., 4] * speed_of_light
