@@ -668,15 +668,17 @@ class Segment(Element):
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
-        :param axx: Axes to plot the particle traces into viewed in x-direction. If
-            `None`, new axes are created for both `axx` and `axy`.
-        :param axy: Axes to plot the particle traces into viewed in y-direction. If
-            `None`, new axes are created for both `axx` and `axy`.
+        :param axx: Axes to plot the particle traces into viewed in x-direction. Must
+            be provided together with `axy`, or both must be `None` to create new axes.
+        :param axy: Axes to plot the particle traces into viewed in y-direction. Must
+            be provided together with `axx`, or both must be `None` to create new axes.
         :return: Both axes with the plotted mean and standard deviation of the beam
             along the segment.
         """
-        if axx is None or axy is None:
+        if axx is None and axy is None:
             _, (axx, axy) = plt.subplots(2, 1, sharex=True)
+        elif (axx is None) != (axy is None):
+            raise ValueError("Either provide both axx and axy, or neither.")
 
         reference_segment = self.clone()  # Prevent side effects when plotting
 
@@ -708,7 +710,6 @@ class Segment(Element):
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
-        axx.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
 
         return axx, axy
@@ -837,7 +838,7 @@ class Segment(Element):
             vector_idx=vector_idx,
             ax=axs[0],
         )
-        self.plot(s=0.0, ax=axs[1])
+        self.plot(s=0.0, ax=axs[1], vector_idx=vector_idx)
 
         return fig
 
