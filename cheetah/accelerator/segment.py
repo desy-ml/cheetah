@@ -805,9 +805,9 @@ class Segment(Element):
         attr_names: tuple[str, ...] | str,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-        figsize=(8, 4),
+        figsize: tuple[float, float] = (8, 4),
         fig: matplotlib.figure.Figure | None = None,
-    ) -> None:
+    ) -> matplotlib.figure.Figure:
         """
         Plot beam attributes in a plot over a plot of the lattice.
 
@@ -884,9 +884,9 @@ class Segment(Element):
         incoming: Beam,
         figsize=(8, 4),
         fig: matplotlib.figure.Figure | None = None,
-    ) -> None:
+    ) -> matplotlib.figure.Figure:
         """
-        Plot twiss parameters in a plot over a plot of the lattice.
+        Plot Twiss parameters in a plot over a plot of the lattice.
 
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
