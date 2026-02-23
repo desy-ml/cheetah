@@ -7,11 +7,11 @@
 ### 🚀 Features
 
 - Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
-- Made 3D rendering use the `Scene` class instead of `Mesh` concatenation for efficiency in large models (see #610) (@amylizzle)
-- Fixed rotation orientation of dipoles and quadrupoles when rendering 3D model (see #610) (@amylizzle)
-- 3D rendering now warns about 0 length elements not being rendered to-scale (see #610) (@amylizzle)
+- Improve efficiency of 3D rendering large by using the `Scene` class instead of `Mesh` concatenation (see #610) (@amylizzle)
+- New warning about elements with a length of 0.0 not being 3D rendered to-scale (see #610) (@amylizzle)
 
 ### 🐛 Bug fixes
+- Fixed rotation orientation of dipoles and quadrupoles when rendering 3D models (see #610) (@amylizzle)
 
 ### 🐆 Other
 
