@@ -838,7 +838,7 @@ class Segment(Element):
             vector_idx=vector_idx,
             ax=axs[0],
         )
-        self.plot(s=0.0, ax=axs[1])
+        self.plot(s=0.0, ax=axs[1], vector_idx=vector_idx)
 
         return fig
 
