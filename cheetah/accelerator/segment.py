@@ -719,7 +719,7 @@ class Segment(Element):
         resolution: float | None = None,
         vector_idx: tuple | None = None,
         fig: matplotlib.figure.Figure | None = None,
-    ) -> None:
+    ) -> matplotlib.figure.Figure:
         """
         Plot an overview of the segment with the lattice along with the beam position
         and size.
