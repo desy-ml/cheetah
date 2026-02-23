@@ -805,7 +805,6 @@ class Segment(Element):
         attr_names: tuple[str, ...] | str,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-        figsize: tuple[float, float] = (8, 4),
         fig: matplotlib.figure.Figure | None = None,
     ) -> matplotlib.figure.Figure:
         """
@@ -821,12 +820,13 @@ class Segment(Element):
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
-        :param figsize: Size of the figure.
-        :param fig: Figure to plot into.
+        :param fig: Figure to plot into. Can be used, for example to pass a figure with
+            a desired custom `figsize`. If `None`, a new figure with default size is
+            created.
         :return: Figure with the plotted beam attributes over the lattice.
         """
         if fig is None:
-            fig = plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
@@ -880,22 +880,20 @@ class Segment(Element):
         return ax
 
     def plot_twiss_over_lattice(
-        self,
-        incoming: Beam,
-        figsize=(8, 4),
-        fig: matplotlib.figure.Figure | None = None,
+        self, incoming: Beam, fig: matplotlib.figure.Figure | None = None
     ) -> matplotlib.figure.Figure:
         """
         Plot Twiss parameters in a plot over a plot of the lattice.
 
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
-        :param figsize: Size of the figure.
-        :param fig: Figure to plot into.
+        :param fig: Figure to plot into. Can be used, for example to pass a figure with
+            a desired custom `figsize`. If `None`, a new figure with default size is
+            created.
         :return: Figure with the plotted Twiss parameters over the lattice.
         """
         if fig is None:
-            fig = plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
