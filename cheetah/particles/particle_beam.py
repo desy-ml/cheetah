@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -795,7 +796,10 @@ class ParticleBeam(Beam):
 
     @classmethod
     def from_elegant(
-        cls, file_path: Path | str, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        file_path: Path | str,
+        device: torch.device = None,
+        dtype: torch.dtype = None,
     ) -> "ParticleBeam":
         """Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
 
@@ -808,9 +812,13 @@ class ParticleBeam(Beam):
             "dtype": dtype or torch.get_default_dtype(),
         }
 
-        from cheetah.converters.elegant import from_elegant_beam
+        from cheetah.converters import elegant
 
-        particles, energy, particle_charges = from_elegant_beam(path, **factory_kwargs)
+        path = Path(file_path) if isinstance(file_path, str) else file_path
+
+        particles, energy, particle_charges = elegant.convert_beam(
+            path, **factory_kwargs
+        )
 
         species = Species("electron", **factory_kwargs)
 

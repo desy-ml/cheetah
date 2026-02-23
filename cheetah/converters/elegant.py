@@ -16,7 +16,6 @@ from cheetah.utils import NoBeamPropertiesInLatticeWarning, UnknownElementWarnin
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
 
-# Convert Elegant Lattice Files to Cheetah Segments
 def convert_element(
     name: str,
     context: dict,
@@ -427,10 +426,7 @@ def convert_lattice_to_cheetah(
     return convert_element(name, context, sanitize_names, device, dtype)
 
 
-# Convert Elegant Beam Distributions Stored in SDDS Format to Cheetah ParticleBeams
-
-
-def from_elegant_beam(
+def convert_beam(
     file_path: Path,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
@@ -460,6 +456,96 @@ def from_elegant_beam(
         )
     sdds_data = sdds.load(file_path)
     # Check if the SDDS file has the elegant beam convention
+    check_sdds_follow_elegant_beam_convention(sdds_data)
+
+    # (6, n_pages, n_particles) -> (n_pages, n_particles, 6)
+    elegant_coordinates = torch.tensor(
+        sdds_data.columnData[:6], **factory_kwargs
+    ).permute(1, 2, 0)
+
+    # Check if ref momentum is provided in the SDDS file. If not, use the momentum of
+    # the first particle as the reference momentum, which is the default ref particle.
+    p_central = (
+        torch.tensor(sdds_data.getParameterValueList("pCentral"), **factory_kwargs)
+        if "pCentral" in sdds_data.parameterName
+        else elegant_coordinates[..., 0, 5]
+    )
+    ref_momentum_eV = p_central * electron_mass_eV  # Convert to eV
+
+    cheetah_coordinates = convert_elegant_coordinates_to_cheetah(
+        elegant_coordinates, p_central
+    )
+    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
+
+    # Add seventh column for Cheetah coordinates
+    particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[-1], 7))
+    particles[..., :6] = cheetah_coordinates  # copy the first 6 columns
+    particles[..., 6] = 1.0
+
+    # Check whether charge is present in the SDDS file, otherwise default to 1
+    q_array = (
+        torch.tensor(sdds_data.getColumnValueLists("q"), **factory_kwargs)
+        if "q" in sdds_data.columnName
+        else torch.ones(particles.shape[:-1], **factory_kwargs)
+    )
+
+    return particles, ref_energy_eV, q_array
+
+
+def convert_elegant_coordinates_to_cheetah(
+    elegant_coordinates: torch.Tensor, p_central: torch.Tensor
+) -> torch.Tensor:
+    r"""Convert Elegant coordinates to Cheetah coordinates.
+
+    :param elegant_coordinates: The input tensor in Elegant coordinates.
+            dim: (..., n_particles, 6) with columns: [x, x', y, y', t, p]
+    :param p_central: The reference momentum in :math:`\beta * \gamma` units.
+            dim: (...,)
+    :return: A tensor containing the coordinates in Cheetah format.
+            dim: (..., n_particles, 6)
+    """
+
+    p_central = p_central.unsqueeze(-1)  # Ensure p_central has the correct shape
+    ref_momentum_eV = p_central * electron_mass_eV
+    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
+
+    momentum_eV = elegant_coordinates[..., 5] * electron_mass_eV
+    energy_eV = (momentum_eV**2 + electron_mass_eV**2).sqrt()
+    delta_p = (elegant_coordinates[..., 5] - p_central) / p_central  # (p - p0) / p0
+
+    cheetah_coordinates = torch.zeros_like(elegant_coordinates)
+    cheetah_coordinates[..., 0] = elegant_coordinates[..., 0]  # x
+    cheetah_coordinates[..., 2] = elegant_coordinates[..., 2]  # y
+
+    xprime = elegant_coordinates[..., 1]
+    yprime = elegant_coordinates[..., 3]
+    cheetah_coordinates[..., 1] = (
+        xprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square()).sqrt()
+    )  # px = P_x / p_0
+    cheetah_coordinates[..., 3] = (
+        yprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square())
+    ).sqrt()
+
+    cheetah_coordinates[..., 4] = (
+        elegant_coordinates[..., 4] * speed_of_light
+    )  # \tau = c * \Delta t
+    cheetah_coordinates[..., 5] = (
+        energy_eV - ref_energy_eV
+    ) / ref_momentum_eV  # pz = P_z / p_0
+
+    return cheetah_coordinates
+
+
+def check_sdds_follow_elegant_beam_convention(
+    sdds_data: "sdds.SDDS",  # noqa: F821
+) -> None:
+    """Check if the SDDS data follows the Elegant beam convention.
+    Expect the first six columns to be [x, x', y, y', t, p]
+    Throws a ValueError if the SDDS data does not follow the Elegant beam convention.
+
+    :param sdds_data: The SDDS data to check.
+    """
+
     if sdds_data.columnName[:6] == ["r", "pz", "pr", "pphi", "t", "q"]:
         raise ValueError(
             "The beam distribution is stored in the spiffe format, which is not "
@@ -471,83 +557,4 @@ def from_elegant_beam(
             "Elegant beam convention. Please ensure the SDDS file is in the correct "
             "format."
         )
-
-    # (6, n_pages, n_particles) -> (n_pages, n_particles, 6)
-    pinit_array = torch.tensor(sdds_data.columnData[:6], **factory_kwargs).permute(
-        1, 2, 0
-    )
-
-    # Check if ref momentum is provided in the SDDS file
-    if "pCentral" in sdds_data.parameterName:
-        p_central = torch.tensor(
-            sdds_data.getParameterValueList("pCentral"), **factory_kwargs
-        )  # (n_pages,)
-    else:
-        # Use the momentum from the first particle, which is by default the ref particle
-        p_central = pinit_array[..., 0, 5]  # (n_pages,)
-    ref_momentum_eV = p_central * electron_mass_eV  # Convert to eV
-
-    # Convert the Elegant coordinates to Cheetah coordinates
-    cheetah_coordinates = convert_elegant_coordinates_to_cheetah(pinit_array, p_central)
-    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
-
-    # Add seventh column for Cheetah coordinates
-    particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[-1], 7))
-    particles[..., :6] = cheetah_coordinates  # copy the first 6 columns
-    particles[..., 6] = 1.0
-
-    # Check whether charge is present in the SDDS file
-    if "q" in sdds_data.columnName:
-        q_array = torch.tensor(sdds_data.getColumnValueLists("q"), **factory_kwargs)  #
-    else:
-        q_array = torch.ones(
-            particles.shape[:-1], **factory_kwargs
-        )  # Default to 1 if not provided
-
-    return particles, ref_energy_eV, q_array
-
-
-def convert_elegant_coordinates_to_cheetah(
-    elegant_coordinates: torch.Tensor, p_central: torch.Tensor
-) -> torch.Tensor:
-    r"""Convert Elegant coordinates to Cheetah coordinates.
-
-    Args:
-        elegant_dist (torch.Tensor): The input tensor in Elegant coordinates.
-            dim: (..., n_particles, 6) where the columns represent: [x, x', y, y', t, p]
-        p_central (torch.Tensor): The reference momentum in
-            :math:`\beta * \gamma` units.
-            dim: (...,)
-    Returns:
-        torch.Tensor: The converted tensor in Cheetah coordinates.
-    """
-
-    p_central = p_central.unsqueeze(-1)  # Ensure p_central has the correct shape
-    ref_momentum_eV = p_central * electron_mass_eV
-    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
-
-    momentum_eV = elegant_dist[..., 5] * electron_mass_eV
-    energy_eV = (momentum_eV**2 + electron_mass_eV**2).sqrt()
-    delta_p = (elegant_dist[..., 5] - p_central) / p_central  # (p - p0) / p0
-
-    cheetah_coordinates = torch.zeros_like(elegant_dist)
-    cheetah_coordinates[..., 0] = elegant_dist[..., 0]  # x
-    cheetah_coordinates[..., 2] = elegant_dist[..., 2]  # y
-
-    xprime = elegant_dist[..., 1]
-    yprime = elegant_dist[..., 3]
-    cheetah_coordinates[..., 1] = (
-        xprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square()).sqrt()
-    )  # px = P_x / p_0
-    cheetah_coordinates[..., 3] = (
-        yprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square())
-    ).sqrt()
-
-    cheetah_coordinates[..., 4] = (
-        elegant_dist[..., 4] * speed_of_light
-    )  # \tau = c * \Delta t
-    cheetah_coordinates[..., 5] = (
-        energy_eV - ref_energy_eV
-    ) / ref_momentum_eV  # pz = P_z / p_0
-
-    return cheetah_coordinates
+    return

@@ -3,4 +3,3 @@ openpmd-beamphysics
 pytest
 pytest-benchmark
 pytest-cov
-soliday.sdds>=5.7.0
