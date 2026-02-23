@@ -454,7 +454,7 @@ def convert_beam(
             "The soliday.sdds package is required to convert Elegant beam."
             "Please install it via pip (`pip install soliday.sdds`) and try again."
         )
-    sdds_data = sdds.load(file_path)
+    sdds_data = sdds.load(file_path.as_posix())
     # Check if the SDDS file has the elegant beam convention
     check_sdds_follow_elegant_beam_convention(sdds_data)
 
@@ -478,7 +478,7 @@ def convert_beam(
     ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
     # Add seventh column for Cheetah coordinates
-    particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[-1], 7))
+    particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[:-1], 7))
     particles[..., :6] = cheetah_coordinates  # copy the first 6 columns
     particles[..., 6] = 1.0
 
@@ -523,8 +523,8 @@ def convert_elegant_coordinates_to_cheetah(
         xprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square()).sqrt()
     )  # px = P_x / p_0
     cheetah_coordinates[..., 3] = (
-        yprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square())
-    ).sqrt()
+        yprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square().sqrt())
+    )
 
     cheetah_coordinates[..., 4] = (
         elegant_coordinates[..., 4] * speed_of_light
