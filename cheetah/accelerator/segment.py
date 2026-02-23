@@ -845,7 +845,7 @@ class Segment(Element):
         self, incoming: Beam, vector_idx: tuple | None = None, ax: Any | None = None
     ) -> plt.Axes:
         """
-        Plot twiss parameters along the segment.
+        Plot Twiss parameters along the segment.
 
         :param incoming: Beam that is entering the segment from upstream for which the
             trajectory is computed.
