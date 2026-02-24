@@ -32,7 +32,7 @@ setup(
     python_requires=">=3.11",
     install_requires=[
         "matplotlib>=3.5",
-        "numpy>=1.23.3",
+        "numpy>=2.0.0",
         "scipy>=1.10.1",
         "torch[opt-einsum]>=2.3",
     ],
