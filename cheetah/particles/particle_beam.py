@@ -766,12 +766,12 @@ class ParticleBeam(Beam):
         cls, path: str, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
+        from cheetah.converters.astra import from_astrabeam
+
         factory_kwargs = {
             "device": device or torch.get_default_device(),
             "dtype": dtype or torch.get_default_dtype(),
         }
-
-        from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
 
@@ -807,19 +807,19 @@ class ParticleBeam(Beam):
         :param device: Device that the beam creates its tensors on.
         :param dtype: Data type of the tensors created by the beam.
         """
+        from cheetah.converters import elegant
+
         factory_kwargs = {
             "device": device or torch.get_default_device(),
             "dtype": dtype or torch.get_default_dtype(),
         }
 
-        from cheetah.converters import elegant
-
-        path = Path(file_path) if isinstance(file_path, str) else file_path
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
 
         particles, energy, particle_charges = elegant.convert_beam(
-            path, **factory_kwargs
+            file_path, **factory_kwargs
         )
-
         species = Species("electron", **factory_kwargs)
 
         return cls(
