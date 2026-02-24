@@ -7,7 +7,7 @@
 ### 🚀 Features
 
 - Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
-- All plotting functions in `Segment` now accept an optional axes or figure object. If they are passed on, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+- All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed on, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
 
 ### 🐛 Bug fixes
 
