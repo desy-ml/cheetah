@@ -533,8 +533,8 @@ def elegant_to_cheetah_coordinates(
         x_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square()).sqrt()
     )  # px = P_x / p_0
     cheetah_coordinates[..., 3] = (
-        y_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square().sqrt())
-    )
+        y_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square()).sqrt()
+    )  # py = P_y / p_0
 
     cheetah_coordinates[..., 4] = (
         elegant_coordinates[..., 4] * speed_of_light
