@@ -11,6 +11,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix issue, where the first example in the gradient-based optimisation notebook from the docs would not run because the `k1` of the quadrupoles was set to `0.0`, which causes the gradients to be undefined (see #588, #603) (@jank324, @cr-xu)
+
 ### 🐆 Other
 
 - The copyright years were updated to 2026 (see #608) (@jank324)
