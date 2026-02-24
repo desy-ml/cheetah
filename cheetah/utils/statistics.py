@@ -408,7 +408,7 @@ def histograms_mean_and_confidence(
         upper_bound = histograms.quantile(1 - alpha / 2, dim=0)
     else:
         raise ValueError(
-            f"Invalid error method: {error_method}. Must be 'sd', 'se' and 'pi'."
+            f"Invalid error method: {error_method}. Must be 'sd', 'se', or 'pi'."
         )
 
     return mean, lower_bound, upper_bound
