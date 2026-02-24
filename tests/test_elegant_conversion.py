@@ -312,7 +312,7 @@ def test_lattice_default_dtype(default_torch_dtype):
 def test_particle_beam_import():
     """Test that Elegant SDDS beams are correctly loaded into particle beams."""
     beam = cheetah.ParticleBeam.from_elegant(
-        "ACHIP_EA1_2021.1351.001.sdds", dtype=torch.float64
+        "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=torch.float64
     )
 
     # True values taken from version of Cheetah that is belived to be correct (v0.5.19)
@@ -342,7 +342,7 @@ def test_particle_beam_dtype(requested_dtype: torch.dtype):
     with different dtypes.
     """
     beam = cheetah.ParticleBeam.from_elegant(
-        "ACHIP_EA1_2021.1351.001.sdds", dtype=requested_dtype
+        "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=requested_dtype
     )
 
     correct_dtype = (
@@ -351,7 +351,7 @@ def test_particle_beam_dtype(requested_dtype: torch.dtype):
 
     assert beam.particles.dtype == correct_dtype
     assert beam.energy.dtype == correct_dtype
-    assert beam.particle_charge.dtype == correct_dtype
+    assert beam.particle_charges.dtype == correct_dtype
     assert beam.survival_probabilities.dtype == correct_dtype
     assert beam.s.dtype == correct_dtype
     assert beam.species.num_elementary_charges.dtype == correct_dtype

@@ -489,19 +489,14 @@ def convert_beam(
     cheetah_coordinates = elegant_to_cheetah_coordinates(elegant_coordinates, p_central)
     reference_energy_eV = (reference_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
-    # Add seventh column for Cheetah coordinates
-    particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[:-1], 7))
-    particles[..., :6] = cheetah_coordinates  # copy the first 6 columns
-    particles[..., 6] = 1.0
-
     # Check whether charge is present in the SDDS file, otherwise default to 1
     particle_charges = (
         torch.tensor(sdds_data.getColumnValueLists("q"), **factory_kwargs)
         if "q" in sdds_data.columnName
-        else torch.ones(particles.shape[:-1], **factory_kwargs)
+        else torch.ones(cheetah_coordinates.shape[:-1], **factory_kwargs)
     )
 
-    return particles, reference_energy_eV, particle_charges
+    return cheetah_coordinates, reference_energy_eV, particle_charges
 
 
 def elegant_to_cheetah_coordinates(
