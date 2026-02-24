@@ -349,15 +349,10 @@ def test_particle_beam_dtype(requested_dtype: torch.dtype):
         requested_dtype if requested_dtype is not None else torch.get_default_dtype()
     )
 
-    assert beam.mu_x.dtype == correct_dtype
-    assert beam.mu_px.dtype == correct_dtype
-    assert beam.mu_y.dtype == correct_dtype
-    assert beam.mu_py.dtype == correct_dtype
-    assert beam.sigma_x.dtype == correct_dtype
-    assert beam.sigma_px.dtype == correct_dtype
-    assert beam.sigma_y.dtype == correct_dtype
-    assert beam.sigma_py.dtype == correct_dtype
-    assert beam.sigma_tau.dtype == correct_dtype
-    assert beam.sigma_p.dtype == correct_dtype
+    assert beam.particles.dtype == correct_dtype
     assert beam.energy.dtype == correct_dtype
-    assert beam.total_charge.dtype == correct_dtype
+    assert beam.particle_charge.dtype == correct_dtype
+    assert beam.survival_probabilities.dtype == correct_dtype
+    assert beam.s.dtype == correct_dtype
+    assert beam.species.num_elementary_charges.dtype == correct_dtype
+    assert beam.species.mass_eV.dtype == correct_dtype
