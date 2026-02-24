@@ -436,46 +436,58 @@ def convert_beam(
     Read the beam distribution from an Elegant SDDS file.
 
     :param file_path: Path to the SDDS file containing the Elegant beam distribution.
-    :param device: Device to use for the beam distribution.
-        If `None`, the current default device of PyTorch is used.
-    :param dtype: Data type to use for the beam distribution.
-        If `None`, the current default dtype of PyTorch is used.
-    :return: A tuple containing the particles tensor,
-        the reference energy in eV, and the tensor of particle charges.
+    :param device: Device to use for the beam distribution. If `None`, the current
+        default device of PyTorch is used.
+    :param dtype: Data type to use for the beam distribution. If `None`, the current
+        default dtype of PyTorch is used.
+    :return: A tuple containing the particles tensor, the reference energy in eV, and
+        the tensor of particle charges.
     """
-
-    device = device or torch.get_default_device()
-    dtype = dtype or torch.get_default_dtype()
-
-    factory_kwargs = {"device": device, "dtype": dtype}
-    # return None
     try:
         import sdds
     except ImportError:
         raise ImportError(
-            "The soliday.sdds package is required to convert Elegant beam."
-            "Please install it via pip (`pip install soliday.sdds`) and try again."
+            "The soliday.sdds package is required to convert Elegant beam. Please "
+            "install it via pip (`pip install soliday.sdds`) and try again."
         )
+
+    factory_kwargs = {
+        "device": device or torch.get_default_device(),
+        "dtype": dtype or torch.get_default_dtype(),
+    }
+
     sdds_data = sdds.load(file_path.as_posix())
-    # Check if the SDDS file has the elegant beam convention
-    check_sdds_follow_elegant_beam_convention(sdds_data)
+
+    is_elegant = sdds_data.columnName[:6] == ["x", "xp", "y", "yp", "t", "p"]
+    is_spiffe = sdds_data.columnName[:6] == ["r", "pz", "pr", "pphi", "t", "q"]
+    if is_spiffe:
+        raise ValueError(
+            "The beam distribution is stored in the spiffe format, which is not "
+            "currently supported. Use spiffe2elegant to conver the beam first."
+        )
+    elif not is_elegant:
+        raise ValueError(
+            "The first six columns of the SDDS file do not match the expected Elegant "
+            "beam convention. Please ensure the SDDS file is in the correct format."
+        )
 
     # (6, num_pages, num_particles) -> (num_pages, num_particles, 6)
     elegant_coordinates = torch.tensor(
         sdds_data.columnData[:6], **factory_kwargs
     ).permute(1, 2, 0)
 
-    # Check if ref momentum is provided in the SDDS file. If not, use the momentum of
-    # the first particle as the reference momentum, which is the default ref particle.
+    # Check if reference momentum is provided in the SDDS file. If not, use the momentum
+    # of the first particle as the reference momentum, which is the default reference
+    # particle.
     p_central = (
         torch.tensor(sdds_data.getParameterValueList("pCentral"), **factory_kwargs)
         if "pCentral" in sdds_data.parameterName
         else elegant_coordinates[..., 0, 5]
     )
-    ref_momentum_eV = p_central * electron_mass_eV  # Convert to eV
+    reference_momentum_eV = p_central * electron_mass_eV  # Convert to eV
 
     cheetah_coordinates = elegant_to_cheetah_coordinates(elegant_coordinates, p_central)
-    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
+    reference_energy_eV = (reference_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
     # Add seventh column for Cheetah coordinates
     particles = cheetah_coordinates.new_zeros((*cheetah_coordinates.shape[:-1], 7))
@@ -483,13 +495,13 @@ def convert_beam(
     particles[..., 6] = 1.0
 
     # Check whether charge is present in the SDDS file, otherwise default to 1
-    q_array = (
+    particle_charges = (
         torch.tensor(sdds_data.getColumnValueLists("q"), **factory_kwargs)
         if "q" in sdds_data.columnName
         else torch.ones(particles.shape[:-1], **factory_kwargs)
     )
 
-    return particles, ref_energy_eV, q_array
+    return particles, reference_energy_eV, particle_charges
 
 
 def elegant_to_cheetah_coordinates(
@@ -498,23 +510,25 @@ def elegant_to_cheetah_coordinates(
     r"""
     Convert Elegant coordinates to Cheetah coordinates.
 
-    :param elegant_coordinates: The input tensor in Elegant coordinates.
-            dim: (..., n_particles, 6) with columns: [x, x', y, y', t, p]
+    :param elegant_coordinates: Elegant coordinates of shape (..., num_particles, 6)
+        with columns: [x, x', y, y', t, p].
     :param p_central: The reference momentum in :math:`\beta * \gamma` units.
-            dim: (...,)
-    :return: A tensor containing the coordinates in Cheetah format.
-            dim: (..., n_particles, 6)
+    :return: Cheetah coordinates of shape (..., num_particles, 7).
     """
-
-    p_central = p_central.unsqueeze(-1)  # Ensure p_central has the correct shape
-    ref_momentum_eV = p_central * electron_mass_eV
-    ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
+    reference_momentum_eV = p_central * electron_mass_eV
+    reference_energy_eV = (reference_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
     momentum_eV = elegant_coordinates[..., 5] * electron_mass_eV
     energy_eV = (momentum_eV**2 + electron_mass_eV**2).sqrt()
-    delta_p = (elegant_coordinates[..., 5] - p_central) / p_central  # (p - p0) / p0
+    delta_p = (
+        elegant_coordinates[..., 5] - p_central.unsqueeze(-1)
+    ) / p_central.unsqueeze(
+        -1
+    )  # (p - p0) / p0
 
-    cheetah_coordinates = torch.zeros_like(elegant_coordinates)
+    cheetah_coordinates = elegant_coordinates.new_ones(
+        (*elegant_coordinates.shape[:-1], 7)
+    )
     cheetah_coordinates[..., 0] = elegant_coordinates[..., 0]  # x
     cheetah_coordinates[..., 2] = elegant_coordinates[..., 2]  # y
 
@@ -531,32 +545,7 @@ def elegant_to_cheetah_coordinates(
         elegant_coordinates[..., 4] * speed_of_light
     )  # \tau = c * \Delta t
     cheetah_coordinates[..., 5] = (
-        energy_eV - ref_energy_eV
-    ) / ref_momentum_eV  # pz = P_z / p_0
+        energy_eV - reference_energy_eV
+    ) / reference_momentum_eV  # pz = P_z / p_0
 
     return cheetah_coordinates
-
-
-def check_sdds_follow_elegant_beam_convention(
-    sdds_data: "sdds.SDDS",  # noqa: F821
-) -> None:
-    """
-    Check if the SDDS data follows the Elegant beam convention.
-
-    Expects the first six columns to be `[x, x', y, y', t, p]`. Throws a `ValueError` if
-    the SDDS data does not follow the Elegant beam convention.
-
-    :param sdds_data: The SDDS data to check.
-    """
-    if sdds_data.columnName[:6] == ["r", "pz", "pr", "pphi", "t", "q"]:
-        raise ValueError(
-            "The beam distribution is stored in the spiffe format, which is not "
-            "currently supported. Use spiffe2elegant to conver the beam first"
-        )
-    elif sdds_data.columnName[:6] != ["x", "xp", "y", "yp", "t", "p"]:
-        raise ValueError(
-            "The first six columns of the SDDS file do not match the expected Elegant "
-            "beam convention. Please ensure the SDDS file is in the correct format."
-        )
-
-    return
