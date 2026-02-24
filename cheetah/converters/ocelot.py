@@ -6,7 +6,7 @@ import cheetah
 from cheetah.utils import DefaultParameterWarning, UnknownElementWarning
 
 
-def convert_element_to_cheetah(
+def convert_element(
     element,
     sanitize_name: bool = False,
     device: torch.device | None = None,

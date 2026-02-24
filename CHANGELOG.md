@@ -7,7 +7,7 @@
 ### 🚀 Features
 
 - Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
-- Converter to load Elegant SDDS beam distributions (see #612) (@cr-xu)
+- Converter to load Elegant SDDS beam distributions (see #612) (@cr-xu, @jank324)
 
 ### 🐛 Bug fixes
 

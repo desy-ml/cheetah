@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
+from cheetah import latticejson
 from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
@@ -317,7 +317,7 @@ class Segment(Element):
         :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return load_cheetah_model(filepath, device=device, dtype=dtype)
+        return latticejson.load_cheetah_model(filepath, device=device, dtype=dtype)
 
     def to_lattice_json(
         self,
@@ -335,7 +335,7 @@ class Segment(Element):
         :param info: Information about the lattice. Defaults to "This is a placeholder
             lattice description".
         """
-        save_cheetah_model(self, filepath, title, info)
+        latticejson.save_cheetah_model(self, filepath, title, info)
 
     @classmethod
     def from_ocelot(
@@ -368,7 +368,7 @@ class Segment(Element):
         from cheetah.converters import ocelot
 
         converted = [
-            ocelot.convert_element_to_cheetah(
+            ocelot.convert_element(
                 element,
                 sanitize_name=sanitize_names,
                 device=device,
@@ -406,7 +406,7 @@ class Segment(Element):
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return bmad.convert_lattice_to_cheetah(
+        return bmad.convert_lattice(
             bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
@@ -432,7 +432,7 @@ class Segment(Element):
         :return: Cheetah `Segment` representing the Elegant lattice.
         """
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
-        return elegant.convert_lattice_to_cheetah(
+        return elegant.convert_lattice(
             elegant_lattice_file_path, name, sanitize_names, device, dtype
         )
 
@@ -450,7 +450,7 @@ class Segment(Element):
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        return nxtables.convert_lattice_to_cheetah(filepath)
+        return nxtables.convert_lattice(filepath)
 
     @property
     def is_skippable(self) -> bool:

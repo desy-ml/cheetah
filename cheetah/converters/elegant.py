@@ -23,7 +23,8 @@ def convert_element(
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
-    """Convert a parsed Elegant element dict to a cheetah Element.
+    """
+    Convert a parsed Elegant element dict to a cheetah Element.
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Elegant lattice file(s).
@@ -379,7 +380,7 @@ def convert_element(
         )
 
 
-def convert_lattice_to_cheetah(
+def convert_lattice(
     elegant_lattice_file_path: Path,
     name: str,
     sanitize_names: bool = False,
@@ -431,7 +432,8 @@ def convert_beam(
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Read the beam distribution from an Elegant SDDS file
+    """
+    Read the beam distribution from an Elegant SDDS file.
 
     :param file_path: Path to the SDDS file containing the Elegant beam distribution.
     :param device: Device to use for the beam distribution.
@@ -458,7 +460,7 @@ def convert_beam(
     # Check if the SDDS file has the elegant beam convention
     check_sdds_follow_elegant_beam_convention(sdds_data)
 
-    # (6, n_pages, n_particles) -> (n_pages, n_particles, 6)
+    # (6, num_pages, num_particles) -> (num_pages, num_particles, 6)
     elegant_coordinates = torch.tensor(
         sdds_data.columnData[:6], **factory_kwargs
     ).permute(1, 2, 0)
@@ -472,9 +474,7 @@ def convert_beam(
     )
     ref_momentum_eV = p_central * electron_mass_eV  # Convert to eV
 
-    cheetah_coordinates = convert_elegant_coordinates_to_cheetah(
-        elegant_coordinates, p_central
-    )
+    cheetah_coordinates = elegant_to_cheetah_coordinates(elegant_coordinates, p_central)
     ref_energy_eV = (ref_momentum_eV**2 + electron_mass_eV**2).sqrt()
 
     # Add seventh column for Cheetah coordinates
@@ -492,10 +492,11 @@ def convert_beam(
     return particles, ref_energy_eV, q_array
 
 
-def convert_elegant_coordinates_to_cheetah(
+def elegant_to_cheetah_coordinates(
     elegant_coordinates: torch.Tensor, p_central: torch.Tensor
 ) -> torch.Tensor:
-    r"""Convert Elegant coordinates to Cheetah coordinates.
+    r"""
+    Convert Elegant coordinates to Cheetah coordinates.
 
     :param elegant_coordinates: The input tensor in Elegant coordinates.
             dim: (..., n_particles, 6) with columns: [x, x', y, y', t, p]
@@ -517,13 +518,13 @@ def convert_elegant_coordinates_to_cheetah(
     cheetah_coordinates[..., 0] = elegant_coordinates[..., 0]  # x
     cheetah_coordinates[..., 2] = elegant_coordinates[..., 2]  # y
 
-    xprime = elegant_coordinates[..., 1]
-    yprime = elegant_coordinates[..., 3]
+    x_prime = elegant_coordinates[..., 1]
+    y_prime = elegant_coordinates[..., 3]
     cheetah_coordinates[..., 1] = (
-        xprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square()).sqrt()
+        x_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square()).sqrt()
     )  # px = P_x / p_0
     cheetah_coordinates[..., 3] = (
-        yprime * (1.0 + delta_p) / (1.0 + xprime.square() + yprime.square().sqrt())
+        y_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square().sqrt())
     )
 
     cheetah_coordinates[..., 4] = (
@@ -539,13 +540,14 @@ def convert_elegant_coordinates_to_cheetah(
 def check_sdds_follow_elegant_beam_convention(
     sdds_data: "sdds.SDDS",  # noqa: F821
 ) -> None:
-    """Check if the SDDS data follows the Elegant beam convention.
-    Expect the first six columns to be [x, x', y, y', t, p]
-    Throws a ValueError if the SDDS data does not follow the Elegant beam convention.
+    """
+    Check if the SDDS data follows the Elegant beam convention.
+
+    Expects the first six columns to be `[x, x', y, y', t, p]`. Throws a `ValueError` if
+    the SDDS data does not follow the Elegant beam convention.
 
     :param sdds_data: The SDDS data to check.
     """
-
     if sdds_data.columnName[:6] == ["r", "pz", "pr", "pphi", "t", "q"]:
         raise ValueError(
             "The beam distribution is stored in the spiffe format, which is not "
@@ -553,8 +555,8 @@ def check_sdds_follow_elegant_beam_convention(
         )
     elif sdds_data.columnName[:6] != ["x", "xp", "y", "yp", "t", "p"]:
         raise ValueError(
-            "The first six columns of the SDDS file do not match the expected "
-            "Elegant beam convention. Please ensure the SDDS file is in the correct "
-            "format."
+            "The first six columns of the SDDS file do not match the expected Elegant "
+            "beam convention. Please ensure the SDDS file is in the correct format."
         )
+
     return
