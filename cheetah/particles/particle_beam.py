@@ -804,7 +804,7 @@ class ParticleBeam(Beam):
         """
         Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
 
-        :param path: Path to the SDDS file from which to load the Elegant beam.
+        :param file_path: Path to the SDDS file from which to load the Elegant beam.
         :param device: Device that the beam creates its tensors on.
         :param dtype: Data type of the tensors created by the beam.
         """
