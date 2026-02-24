@@ -338,8 +338,8 @@ def test_particle_beam_import():
 )
 def test_particle_beam_dtype(requested_dtype: torch.dtype):
     """
-    Test that Elegant SDDS beams are correctly loaded into Cheetah particle beams
-    with different torch dtypes.
+    Test that Elegant SDDS beams are correctly converted to Cheetah `ParticleBeams` with
+    different torch dtypes.
     """
     beam = cheetah.ParticleBeam.from_elegant(
         "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=requested_dtype
