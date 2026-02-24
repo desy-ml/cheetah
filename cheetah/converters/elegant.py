@@ -435,7 +435,7 @@ def convert_beam(
     """
     Read the beam distribution from an Elegant SDDS file.
 
-    :param file_path: Path to the SDDS file containing the Elegant beam distribution.
+    :param path: Path to the SDDS file from which to load the Elegant beam.
     :param device: Device to use for the beam distribution. If `None`, the current
         default device of PyTorch is used.
     :param dtype: Data type to use for the beam distribution. If `None`, the current
@@ -456,7 +456,7 @@ def convert_beam(
         "dtype": dtype or torch.get_default_dtype(),
     }
 
-    sdds_data = sdds.load(file_path.as_posix())
+    sdds_data = sdds.load(str(file_path))
 
     is_elegant = sdds_data.columnName[:6] == ["x", "xp", "y", "yp", "t", "p"]
     is_spiffe = sdds_data.columnName[:6] == ["r", "pz", "pr", "pphi", "t", "q"]
