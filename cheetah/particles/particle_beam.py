@@ -801,9 +801,10 @@ class ParticleBeam(Beam):
         device: torch.device = None,
         dtype: torch.dtype = None,
     ) -> "ParticleBeam":
-        """Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
+        """
+        Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
 
-        :param path: Path to the Elegant SDDS file containing the particle distribution.
+        :param path: Path to the SDDS file from which to load the Elegant beam.
         :param device: Device that the beam creates its tensors on.
         :param dtype: Data type of the tensors created by the beam.
         """
