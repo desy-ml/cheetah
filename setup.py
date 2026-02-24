@@ -37,8 +37,8 @@ setup(
         "torch[opt-einsum]>=2.3",
     ],
     extras_require={
+        "3d-visualization": ["trimesh>=4.4.0", "requests>=2.32.2", "tqdm>=4.66.0"],
         "openpmd": ["openpmd-beamphysics"],
         "sdds": ["soliday.sdds>=5.7.0"],
-        "3d-visualization": ["trimesh>=4.4.0", "requests>=2.32.2", "tqdm>=4.66.0"],
     },
 )
