@@ -8,12 +8,7 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import (
-    BadVisualizationWarning,
-    DirtyNameWarning,
-    NoVisualizationWarning,
-    UniqueNameGenerator,
-)
+from cheetah.utils import DirtyNameWarning, UniqueNameGenerator, VisualizationWarning
 from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -420,7 +415,7 @@ class Element(ABC, nn.Module):
             warnings.warn(
                 f"Could not load 3D mesh for element {self.name} of type "
                 f"{self.__class__.__name__}. The element will not be visualised.",
-                category=NoVisualizationWarning,
+                category=VisualizationWarning,
                 stacklevel=2,
             )
             output_transform = trimesh.transformations.translation_matrix(
@@ -432,15 +427,20 @@ class Element(ABC, nn.Module):
         # positioned correctly after scaling.
 
         # Scale element to the correct length (only if the mesh has a length)
+        # Raise a warning if the element's length is zero and it is not one of the
+        # element types that are expected to have a length of zero, meaning the element
+        # would be scaled incorrectly.
         if abs(self.length.item()) > 0.0:
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
-        else:
+        elif abs(self.length.item()) == 0.0 and "length" in self.defining_features:
             warnings.warn(
-                f"Element {self.name} of type {self.__class__.__name__} has zero "
-                f"length. The mesh will not be scaled to the correct length.",
-                category=BadVisualizationWarning,
+                f"Element {self.name} of type {self.__class__.__name__} has a length of"
+                " zero. The mesh is therefore scaled to a default size and does not "
+                "accurately represent the element's length. If this is intentional, you"
+                " can ignore this warning.",
+                category=VisualizationWarning,
                 stacklevel=2,
             )
 
@@ -470,4 +470,5 @@ class Element(ABC, nn.Module):
             f"{feature}={repr(getattr(self, feature))}"
             for feature in self.defining_features
         ]
+        return f"{self.__class__.__name__}({', '.join(feature_list)})"
         return f"{self.__class__.__name__}({', '.join(feature_list)})"

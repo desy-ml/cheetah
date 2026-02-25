@@ -55,17 +55,12 @@ class DirtyNameWarning(Warning):
     ...
 
 
-class NoVisualizationWarning(Warning):
+class VisualizationWarning(Warning):
     """
-    Warning raised when an element does not have a visualization method, i.e. it cannot
-    be converted to a 3D mesh.
-    """
-
-
-class BadVisualizationWarning(Warning):
-    """
-    Warning raised when an element cannot accurately be visualized, e.g. because its
-    parametes are invalid for visualization.
+    Warning raised when a visualisation might not behave exactly as expected, for
+    example Cheetah is unable to visualise an element and therefore does not visualise,
+    or because an element has a parameter that cannot be visualised correctly, such as a
+    length of zero.
     """
 
     ...
