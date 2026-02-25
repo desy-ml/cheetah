@@ -377,7 +377,10 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.1.1",
+        show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         """
         Return a 3D mesh representation of the element at position `s`.
@@ -389,6 +392,8 @@ class Element(ABC, nn.Module):
             or a dictionary mapping element names and types to their respective
             scaling factors. Names have precedence over types. The `"*"` key can be used
             to specify a default scaling factor.
+        :param asset_version: The branch or tag name for the version of the 3D assets
+            repository to use.
         :param show_download_progress: If `True`, show a progress bar during the
             download of the mesh if it is not cached.
         :return: Tuple of a 3D mesh representation of the element, oriented with the
@@ -407,6 +412,7 @@ class Element(ABC, nn.Module):
         ).lstrip("_")
         mesh = assets.load_3d_asset(
             f"{snake_case_class_name}.glb",
+            branch_or_tag=asset_version,
             show_download_progress=show_download_progress,
         )
 
