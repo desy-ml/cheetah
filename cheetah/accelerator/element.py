@@ -11,6 +11,7 @@ from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import (
     BadVisualizationWarning,
     DirtyNameWarning,
+    NoVisualizationWarning,
     UniqueNameGenerator,
 )
 from cheetah.utils.warnings import PhysicsWarning
@@ -375,15 +376,6 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
-    @property
-    def warn_on_zero_length_mesh(self) -> bool:
-        """
-        Whether to warn if the element has zero length which would prevent the mesh from
-        being scaled to the correct length. This is relevant for elements like markers,
-        bpms and screens.
-        """
-        return True
-
     def to_mesh(
         self,
         cuteness: float | dict = 1.0,
@@ -428,7 +420,7 @@ class Element(ABC, nn.Module):
             warnings.warn(
                 f"Could not load 3D mesh for element {self.name} of type "
                 f"{self.__class__.__name__}. The element will not be visualised.",
-                category=BadVisualizationWarning,
+                category=NoVisualizationWarning,
                 stacklevel=2,
             )
             output_transform = trimesh.transformations.translation_matrix(
@@ -444,7 +436,7 @@ class Element(ABC, nn.Module):
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
-        elif self.warn_on_zero_length_mesh:
+        else:
             warnings.warn(
                 f"Element {self.name} of type {self.__class__.__name__} has zero "
                 f"length. The mesh will not be scaled to the correct length.",

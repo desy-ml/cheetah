@@ -56,10 +56,6 @@ class BPM(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
-    @property
-    def warn_on_zero_length_mesh(self) -> bool:
-        return False
-
     @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
