@@ -15,7 +15,7 @@ def convert_element(
     """
     Translate an Ocelot element to a Cheetah element.
 
-    NOTE: Object not supported by Cheetah are translated to drift sections. Screen
+    NOTE: Objects not supported by Cheetah are translated to drift sections. Screen
         objects are created only from `ocelot.Monitor` objects when the string "BSC" is
         contained in their `id` attribute. Their screen properties are always set to
         default values and most likely need adjusting afterwards. BPM objects are only
