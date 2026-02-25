@@ -8,6 +8,7 @@
 
 - Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
 - Add option to dynamically specify the branch or tag of the `3d-assets` repository to use when generating 3D meshes (see #618) (@jank324)
+- Converter to load Elegant SDDS beam distributions (see #612) (@cr-xu, @jank324)
 - Improve efficiency of 3D rendering large by using the `Scene` class instead of `Mesh` concatenation (see #610) (@amylizzle)
 - New warning about elements with a length of 0.0 not being 3D rendered to-scale (see #610) (@amylizzle)
 
