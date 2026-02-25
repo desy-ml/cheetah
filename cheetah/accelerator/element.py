@@ -378,8 +378,8 @@ class Element(ABC, nn.Module):
     @property
     def warn_on_zero_length_mesh(self) -> bool:
         """
-        Whether to warn if the element has zero length, which would prevent the mesh from 
-        being scaled to the correct length. This is relevant for elements like markers, 
+        Whether to warn if the element has zero length which would prevent the mesh from
+        being scaled to the correct length. This is relevant for elements like markers,
         bpms and screens.
         """
         return True
