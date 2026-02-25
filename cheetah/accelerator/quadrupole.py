@@ -295,7 +295,7 @@ class Quadrupole(Element):
     def to_mesh(
         self,
         cuteness: float | dict = 1.0,
-        asset_version: str = "v1.1.1",
+        asset_version: str = "v1.2.0",
         show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
