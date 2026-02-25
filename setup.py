@@ -31,10 +31,10 @@ setup(
     packages=[package for package in find_packages() if package.startswith("cheetah")],
     python_requires=">=3.11",
     install_requires=[
-        "matplotlib>=3.5",
-        "numpy>=1.23.3",
-        "scipy>=1.10.1",
-        "torch[opt-einsum]>=2.3",
+        "matplotlib>=3.9.0",
+        "numpy>=2.0.0",
+        "scipy>=1.13.0",
+        "torch[opt-einsum]>=2.3.0",
     ],
     extras_require={
         "openpmd": ["openpmd-beamphysics"],
