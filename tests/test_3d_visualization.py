@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import trimesh
-
+import pytest
 import cheetah
 
 
@@ -15,11 +15,20 @@ def test_run_and_check_return():
             cheetah.Drift(length=torch.tensor(0.3)),
             cheetah.Quadrupole(length=torch.tensor(0.2)),
             cheetah.Drift(length=torch.tensor(0.1)),
-            cheetah.HorizontalCorrector(length=torch.tensor(0.1)),
+            cheetah.HorizontalCorrector(name="hcorr1", length=torch.tensor(0)),
             cheetah.Drift(length=torch.tensor(0.3)),
+            cheetah.BPM(name="bpm1"),
+            cheetah.Screen(),
         ],
     )
-    mesh, output_transform = segment.to_mesh()
+
+    with pytest.warns(cheetah.utils.BadVisualizationWarning) as record:
+        mesh, output_transform = segment.to_mesh()
+
+    assert len(record) == 2
+    assert record[0].message.args[0] == "Element hcorr1 of type HorizontalCorrector has zero length. The mesh will not be scaled to the correct length."
+    assert record[1].message.args[0] == "Could not load 3D mesh for element bpm1 of type BPM. The element will not be visualised."
+    
 
     assert isinstance(mesh, trimesh.Scene)
     assert isinstance(output_transform, np.ndarray)
