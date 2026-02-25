@@ -471,4 +471,3 @@ class Element(ABC, nn.Module):
             for feature in self.defining_features
         ]
         return f"{self.__class__.__name__}({', '.join(feature_list)})"
-        return f"{self.__class__.__name__}({', '.join(feature_list)})"
