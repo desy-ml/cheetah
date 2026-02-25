@@ -315,7 +315,7 @@ def test_particle_beam_import():
         "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=torch.float64
     )
 
-    # True values taken from version of Cheetah that is belived to be correct (v0.5.19)
+    # True values taken from version of Cheetah that is believed to be correct (v0.5.19)
     assert beam.num_particles == 100_000
     assert np.allclose(beam.mu_x.cpu().numpy(), 8.24126345833065e-07)
     assert np.allclose(beam.mu_px.cpu().numpy(), 5.988477624896404e-08)
