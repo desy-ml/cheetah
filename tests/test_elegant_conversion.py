@@ -315,7 +315,8 @@ def test_particle_beam_import():
         "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=torch.float64
     )
 
-    # True values taken from version of Cheetah that is believed to be correct (v0.5.19)
+    # These values are the same as those in `test_astra_to_particle_beam` since the
+    # Elegant SDDS file was generated from the Astra beam file used in that test.
     assert beam.num_particles == 100_000
     assert np.allclose(beam.mu_x.cpu().numpy(), 8.24126345833065e-07)
     assert np.allclose(beam.mu_px.cpu().numpy(), 5.988477624896404e-08)
