@@ -866,7 +866,10 @@ class Segment(Element):
         plt.tight_layout()
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.1.1",
+        show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
         import trimesh
@@ -875,7 +878,9 @@ class Segment(Element):
         input_transform = trimesh.transformations.identity_matrix()
         for element in self.elements:
             element_mesh, element_output_transform = element.to_mesh(
-                cuteness=cuteness, show_download_progress=show_download_progress
+                cuteness=cuteness,
+                asset_version=asset_version,
+                show_download_progress=show_download_progress,
             )
 
             if element_mesh is not None:

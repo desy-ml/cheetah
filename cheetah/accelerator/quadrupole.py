@@ -293,13 +293,18 @@ class Quadrupole(Element):
         ax.add_patch(patch)
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.1.1",
+        show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
         import trimesh
 
         mesh, output_transform = super().to_mesh(
-            cuteness=cuteness, show_download_progress=show_download_progress
+            cuteness=cuteness,
+            asset_version=asset_version,
+            show_download_progress=show_download_progress,
         )
 
         # NOTE: The quadrupole's tilt and misalignment have no effect on where the next
