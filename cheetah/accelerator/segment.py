@@ -890,6 +890,7 @@ class Segment(Element):
             scene.add_geometry(element_mesh)
 
         segment_output_transform = input_transform
+
         return scene, segment_output_transform
 
     @property
