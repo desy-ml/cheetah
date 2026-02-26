@@ -430,11 +430,11 @@ class Element(ABC, nn.Module):
         # Raise a warning if the element's length is zero and it is not one of the
         # element types that are expected to have a length of zero, meaning the element
         # would be scaled incorrectly.
-        if abs(self.length.item()) > 0.0:
+        if self.length.abs() > 0.0:
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
-        elif abs(self.length.item()) == 0.0 and "length" in self.defining_features:
+        elif self.length == 0.0 and "length" in self.defining_features:
             warnings.warn(
                 f"Element {self.name} of type {self.__class__.__name__} has a length of"
                 " zero. The mesh is therefore scaled to a default size and does not "
