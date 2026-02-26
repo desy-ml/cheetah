@@ -868,13 +868,13 @@ class Segment(Element):
     def to_mesh(
         self,
         cuteness: float | dict = 1.0,
-        asset_version: str = "v1.1.1",
+        asset_version: str = "v1.2.0",
         show_download_progress: bool = True,
-    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+    ) -> "tuple[trimesh.Scene | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
         import trimesh
 
-        meshes = []
+        scene = trimesh.Scene()
         input_transform = trimesh.transformations.identity_matrix()
         for element in self.elements:
             element_mesh, element_output_transform = element.to_mesh(
@@ -887,15 +887,11 @@ class Segment(Element):
                 element_mesh.apply_transform(input_transform)
             input_transform = input_transform @ element_output_transform
 
-            meshes.append(element_mesh)
+            scene.add_geometry(element_mesh)
 
-        # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
-        # materials. Otherwise you might find that everything becomes glossy. (But
-        # doesn't always work.)
-        segment_mesh = trimesh.util.concatenate(meshes)
         segment_output_transform = input_transform
 
-        return segment_mesh, segment_output_transform
+        return scene, segment_output_transform
 
     @property
     def defining_features(self) -> list[str]:

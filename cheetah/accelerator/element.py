@@ -8,7 +8,7 @@ import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
+from cheetah.utils import DirtyNameWarning, UniqueNameGenerator, VisualizationWarning
 from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -374,7 +374,7 @@ class Element(ABC, nn.Module):
     def to_mesh(
         self,
         cuteness: float | dict = 1.0,
-        asset_version: str = "v1.1.1",
+        asset_version: str = "v1.2.0",
         show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         """
@@ -415,7 +415,7 @@ class Element(ABC, nn.Module):
             warnings.warn(
                 f"Could not load 3D mesh for element {self.name} of type "
                 f"{self.__class__.__name__}. The element will not be visualised.",
-                category=NoVisualizationWarning,
+                category=VisualizationWarning,
                 stacklevel=2,
             )
             output_transform = trimesh.transformations.translation_matrix(
@@ -427,10 +427,22 @@ class Element(ABC, nn.Module):
         # positioned correctly after scaling.
 
         # Scale element to the correct length (only if the mesh has a length)
-        if abs(self.length.item()) > 0.0:
+        # Raise a warning if the element's length is zero and it is not one of the
+        # element types that are expected to have a length of zero, meaning the element
+        # would be scaled incorrectly.
+        if self.length.abs() > 0.0:
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
+        elif self.length == 0.0 and "length" in self.defining_features:
+            warnings.warn(
+                f"Element {self.name} of type {self.__class__.__name__} has a length of"
+                " zero. The mesh is therefore scaled to a default size and does not "
+                "accurately represent the element's length. If this is intentional, you"
+                " can ignore this warning.",
+                category=VisualizationWarning,
+                stacklevel=2,
+            )
 
         # Apply scaling to make the mesh look cuter
         scale_factor_for_cuteness = 1.0
