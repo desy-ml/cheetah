@@ -81,7 +81,7 @@ def download_url_to_file(
 
 
 def load_3d_asset(
-    name: str, branch_or_tag: str = "v1.1.1", show_download_progress: bool = True
+    name: str, branch_or_tag: str = "v1.2.0", show_download_progress: bool = True
 ) -> trimesh.Trimesh | None:
     """
     Get a 3D asset by file name.
