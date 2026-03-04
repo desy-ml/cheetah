@@ -17,6 +17,7 @@
 ### 🐛 Bug fixes
 
 - Fixed rotation orientation of dipoles and quadrupoles when rendering 3D models (see #610) (@amylizzle)
+- Fix bug when reading `null` fields from LatticeJSON files (see #619) (@alekseevpavel04)
 
 ### 🐆 Other
 
@@ -24,6 +25,8 @@
 - Fix format issue caused by new `black` version (see #611) (@jank324)
 
 ### 🌟 First Time Contributors
+
+- @alekseevpavel04
 
 ## [v0.8.0](https://github.com/desy-ml/cheetah/releases/tag/v0.8.0) (2025-12-03)
 
