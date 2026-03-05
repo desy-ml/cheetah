@@ -139,9 +139,10 @@ def test_infix_nested_var_lookup():
     assert infix.evaluate_expression(expression, context) == 5
 
 
-def test_infix_nested_var_lookup_2():
+def test_infix_numeric_subscript_nested_var_lookup():
     """
-    Test that an infix expression with nested variable lookups is correctly evaluated.
+    Test that an infix expression with nested variable lookups where the variable
+    name contains a numeric subscript is correctly evaluated.
     """
     expression = "2*b_0[boop]-b_0[test]"
     context = {"a": 10, "b_0": {"beep": 10, "boop": 100, "test": 5}, "test": 3}

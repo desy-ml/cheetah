@@ -153,8 +153,6 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
             if current_token:
                 if char == "]" and current_key is not None:
                     # This will throw an index error if current key is invalid
-                    if current_key not in context[current_token]:
-                        print(f"Could not find var {current_token}[{current_key}]")
                     tokens.append(context[current_token][current_key])
                     current_token = ""
                     current_key = None
@@ -169,11 +167,6 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
                 if char != "(" and current_token in context:
                     tokens.append(context[current_token])
                 else:
-                    try:
-                        _ = float(current_token)
-                    except ValueError:
-                        if current_token not in context:
-                            print(f"Could not find {current_token} in context")
                     tokens.append(current_token)
                 current_token = ""
             if not char.isspace():

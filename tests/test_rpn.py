@@ -79,9 +79,10 @@ def test_rpn_nested_var_lookup():
     assert rpn.evaluate_expression(expression, context) == 500
 
 
-def test_rpn_nested_var_lookup_2():
+def test_rpn_compound_nested_var_lookup():
     """
-    Test that an RPN expression with nested variable lookups is correctly evaluated.
+    Test that an RPN expression with two nested variable lookups for one operation
+    is correctly evaluated.
     """
     expression = "b[test] b[boop] *"
     context = {"a": 10, "b": {"beep": 10, "boop": 100, "test": 5}, "test": 3}
