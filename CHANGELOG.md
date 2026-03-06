@@ -6,9 +6,12 @@
 
 ### 🚀 Features
 
+- All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+
 ### 🐛 Bug fixes
 
 - RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
+- Fix issue, where the first example in the gradient-based optimisation notebook from the docs would not run because the `k1` of the quadrupoles was set to `0.0`, which causes the gradients to be undefined (see #588, #603) (@jank324, @cr-xu)
 
 ### 🐆 Other
 
