@@ -555,7 +555,7 @@ class SpaceChargeKick3D(Element):
         """
         assert isinstance(
             incoming, ParticleBeam
-        ), "SpaceChargeKick currently only supports tracking particle beams."
+        ), "SpaceChargeKick3D currently only supports tracking ParticleBeam."
 
         # This flattening is a hack to only think about one vector dimension in the
         # following code. It is reversed at the end of the function.
