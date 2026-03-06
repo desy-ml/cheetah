@@ -12,7 +12,7 @@ from cheetah.utils import (
 from cheetah.utils.warnings import PhysicsWarning
 
 
-def test_fodo():
+def test_fodo_import():
     """Test importing a FODO lattice defined in the Elegant file format."""
     file_path = "tests/resources/fodo.lte"
 
@@ -197,7 +197,7 @@ def test_custom_transfer_map_import():
     ],
     ids=["cpu", "cuda", "mps"],
 )
-def test_device_passing(device: torch.device):
+def test_lattice_device(device: torch.device):
     """Test that the device is passed correctly."""
     file_path = "tests/resources/fodo.lte"
 
@@ -237,7 +237,7 @@ def test_device_passing(device: torch.device):
 @pytest.mark.parametrize(
     "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )
-def test_dtype_passing(dtype: torch.dtype):
+def test_lattice_dtype(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
     file_path = "tests/resources/fodo.lte"
 
@@ -280,7 +280,7 @@ def test_dtype_passing(dtype: torch.dtype):
     indirect=True,
     ids=["float32", "float64"],
 )
-def test_default_dtype(default_torch_dtype):
+def test_lattice_default_dtype(default_torch_dtype):
     """Test that the default dtype is used if no explicit type is passed."""
     file_path = "tests/resources/fodo.lte"
 
@@ -307,3 +307,53 @@ def test_default_dtype(default_torch_dtype):
 
     assert converted.s1.length.dtype == default_torch_dtype
     assert converted.s1.k2.dtype == default_torch_dtype
+
+
+def test_particle_beam_import():
+    """Test that Elegant SDDS beams are correctly loaded into particle beams."""
+    beam = cheetah.ParticleBeam.from_elegant(
+        "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=torch.float64
+    )
+
+    # These values are the same as those in `test_astra_to_particle_beam` since the
+    # Elegant SDDS file was generated from the Astra beam file used in that test.
+    assert beam.num_particles == 100_000
+    assert np.allclose(beam.mu_x.cpu().numpy(), 8.24126345833065e-07)
+    assert np.allclose(beam.mu_px.cpu().numpy(), 5.988477624896404e-08)
+    assert np.allclose(beam.mu_y.cpu().numpy(), -1.7276204289373709e-06)
+    assert np.allclose(beam.mu_py.cpu().numpy(), -1.1746412553748087e-07)
+    assert np.allclose(beam.sigma_x.cpu().numpy(), 0.00017489789752289653)
+    assert np.allclose(beam.sigma_px.cpu().numpy(), 3.679402198031312e-06)
+    assert np.allclose(beam.sigma_y.cpu().numpy(), 0.00017519544053357095)
+    assert np.allclose(beam.sigma_py.cpu().numpy(), 3.6941000871593133e-06)
+    assert np.allclose(beam.sigma_tau.cpu().numpy(), 8.011552381503861e-06)
+    assert np.allclose(beam.sigma_p.cpu().numpy(), 0.0022804534528404474)
+    assert np.allclose(beam.energy.cpu().numpy(), 107315902.44394557)
+    assert np.allclose(beam.total_charge.cpu().numpy(), 5.000000000010205e-13)
+
+
+@pytest.mark.parametrize(
+    "requested_dtype",
+    [None, torch.float32, torch.float64],
+    ids=["default", "float32", "float64"],
+)
+def test_particle_beam_dtype(requested_dtype: torch.dtype):
+    """
+    Test that Elegant SDDS beams are correctly converted to Cheetah `ParticleBeams` with
+    different torch dtypes.
+    """
+    beam = cheetah.ParticleBeam.from_elegant(
+        "tests/resources/ACHIP_EA1_2021.1351.001.sdds", dtype=requested_dtype
+    )
+
+    correct_dtype = (
+        requested_dtype if requested_dtype is not None else torch.get_default_dtype()
+    )
+
+    assert beam.particles.dtype == correct_dtype
+    assert beam.energy.dtype == correct_dtype
+    assert beam.particle_charges.dtype == correct_dtype
+    assert beam.survival_probabilities.dtype == correct_dtype
+    assert beam.s.dtype == correct_dtype
+    assert beam.species.num_elementary_charges.dtype == correct_dtype
+    assert beam.species.mass_eV.dtype == correct_dtype
