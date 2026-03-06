@@ -1,17 +1,40 @@
 # Changelog
 
-## v0.8.1 [🚧 Work in Progress]
+## v0.8.2 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
 ### 🚀 Features
 
-- Update to `3d-assets` version 1.1.1 with `RBend` model (see #605) (@jank324)
 - All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
 
 ### 🐛 Bug fixes
 
+- RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
 - Fix issue, where the first example in the gradient-based optimisation notebook from the docs would not run because the `k1` of the quadrupoles was set to `0.0`, which causes the gradients to be undefined (see #588, #603) (@jank324, @cr-xu)
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
+
+### 🚨 Breaking Changes
+
+- `NoVisualizationWarning` was renamed to `VisualizationWarning` to be more general, and can now be thrown for other visualisation issues as well. (see #610) (@amylizzle, @jank324)
+
+### 🚀 Features
+
+- Update to (default) `3d-assets` version 1.2.0 with `RBend` and `CombinedCorrector` models (see #605, #610) (@jank324)
+- Add option to dynamically specify the branch or tag of the `3d-assets` repository to use when generating 3D meshes (see #618) (@jank324)
+- Converter to load Elegant SDDS beam distributions (see #612) (@cr-xu, @jank324)
+- Improve efficiency of 3D rendering of large lattices by using the `Scene` class instead of `Mesh` concatenation (see #610) (@amylizzle)
+- New warning about elements with a length of 0.0 not being 3D rendered to-scale (see #610) (@amylizzle, @jank324)
+
+### 🐛 Bug fixes
+
+- Fixed rotation orientation of dipoles and quadrupoles when rendering 3D models (see #610) (@amylizzle)
+- Fix bug when reading `null` fields from LatticeJSON files (see #619) (@alekseevpavel04)
 
 ### 🐆 Other
 
@@ -19,6 +42,8 @@
 - Fix format issue caused by new `black` version (see #611) (@jank324)
 
 ### 🌟 First Time Contributors
+
+- @alekseevpavel04
 
 ## [v0.8.0](https://github.com/desy-ml/cheetah/releases/tag/v0.8.0) (2025-12-03)
 

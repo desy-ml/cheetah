@@ -6,7 +6,7 @@ import cheetah
 from cheetah.utils import DefaultParameterWarning, UnknownElementWarning
 
 
-def convert_element_to_cheetah(
+def convert_element(
     element,
     sanitize_name: bool = False,
     device: torch.device | None = None,
@@ -15,11 +15,11 @@ def convert_element_to_cheetah(
     """
     Translate an Ocelot element to a Cheetah element.
 
-    NOTE Object not supported by Cheetah are translated to drift sections. Screen
-    objects are created only from `ocelot.Monitor` objects when the string "BSC" is
-    contained in their `id` attribute. Their screen properties are always set to default
-    values and most likely need adjusting afterwards. BPM objects are only created from
-    `ocelot.Monitor` objects when their id has a substring "BPM".
+    NOTE: Objects not supported by Cheetah are translated to drift sections. Screen
+        objects are created only from `ocelot.Monitor` objects when the string "BSC" is
+        contained in their `id` attribute. Their screen properties are always set to
+        default values and most likely need adjusting afterwards. BPM objects are only
+        created from `ocelot.Monitor` objects when their id has a substring "BPM".
 
     :param element: Ocelot element object representing an element of particle
         accelerator.
@@ -33,7 +33,7 @@ def convert_element_to_cheetah(
     except ImportError:
         raise ImportError(
             """To use the ocelot2cheetah lattice converter, Ocelot must be first
-        installed, see https://github.com/ocelot-collab/ocelot """
+        installed, see https://github.com/ocelot-collab/ocelot"""
         )
 
     factory_kwargs = {

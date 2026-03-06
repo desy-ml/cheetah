@@ -162,7 +162,10 @@ class Drift(Element):
         return ax
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Override to return None for the mesh, as drift sections do not have a 3D mesh
         # representation on purpose. If this override were not present, Cheetah would

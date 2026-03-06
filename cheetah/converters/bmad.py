@@ -270,7 +270,7 @@ def convert_element(
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
 
 
-def convert_lattice_to_cheetah(
+def convert_lattice(
     bmad_lattice_file_path: Path,
     environment_variables: dict | None = None,
     sanitize_names: bool = False,
