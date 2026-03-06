@@ -267,7 +267,7 @@ class SpaceChargeKick2D(Element):
         ).abs()
         charge_density = (
             self._array_rho(beam, xp_coordinates, cell_size, grid_dimensions)
-            / beam_length
+            / beam_length[:, None, None]
         )
         charge_density_ft = torch.fft.rfftn(charge_density, dim=[1, 2])
         integrated_green_function = self._integrated_green_function(beam, cell_size)
