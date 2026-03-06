@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking Changes
 
-- The `SpaceChargeKick` elements has been renamed to `SpaceChargeKick3D` in order to reflect the difference to the new `SpaceChargeKick2D` element (see #576) (@austin-hoover, @RemiLehe, @jank324)
+- The `SpaceChargeKick` element has been renamed to `SpaceChargeKick3D` in order to reflect the difference to the new `SpaceChargeKick2D` element (see #576) (@austin-hoover, @RemiLehe, @jank324)
 
 ### 🚀 Features
 
