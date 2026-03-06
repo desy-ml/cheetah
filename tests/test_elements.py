@@ -101,8 +101,8 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     xfail_if=lambda element: isinstance(
         element,
         (
-            cheetah.SpaceChargeKick3D,
             cheetah.SpaceChargeKick2D,
+            cheetah.SpaceChargeKick3D,
             cheetah.TransverseDeflectingCavity,
         ),
     )
