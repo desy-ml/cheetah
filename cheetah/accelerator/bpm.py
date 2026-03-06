@@ -37,12 +37,6 @@ class BPM(Element):
         self.is_active = is_active
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        self.register_buffer(
-            "reading",
-            torch.tensor((torch.nan, torch.nan), **factory_kwargs),
-            persistent=False,
-        )
-
         self.register_buffer_or_parameter(
             "misalignment",
             (
@@ -50,6 +44,12 @@ class BPM(Element):
                 if misalignment is not None
                 else torch.zeros(2, **factory_kwargs)
             ),
+        )
+
+        self.register_buffer(
+            "reading",
+            torch.tensor((torch.nan, torch.nan), **factory_kwargs),
+            persistent=False,
         )
 
     @property

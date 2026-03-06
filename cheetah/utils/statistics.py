@@ -2,7 +2,7 @@ import torch
 
 
 def unbiased_weighted_covariance(
-    input1: torch.Tensor, input2: torch.Tensor, weights: torch.Tensor, dim: int = None
+    inputs1: torch.Tensor, inputs2: torch.Tensor, weights: torch.Tensor, dim: int = None
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted covariance of two tensors.
@@ -13,53 +13,53 @@ def unbiased_weighted_covariance(
     :param dim: Dimension along which to compute the covariance.
     :return: Unbiased weighted covariance of shape (..., 2, 2).
     """
-    weighted_mean1 = torch.sum(input1 * weights, dim=dim) / torch.sum(weights, dim=dim)
-    weighted_mean2 = torch.sum(input2 * weights, dim=dim) / torch.sum(weights, dim=dim)
-    correction_factor = torch.sum(weights, dim=dim) - torch.sum(
-        weights**2, dim=dim
-    ) / torch.sum(weights, dim=dim)
-    covariance = torch.sum(
+    weighted_mean1 = (inputs1 * weights).sum(dim=dim) / weights.sum(dim=dim)
+    weighted_mean2 = (inputs2 * weights).sum(dim=dim) / weights.sum(dim=dim)
+    correction_factor = weights.sum(dim=dim) - weights.square().sum(
+        dim=dim
+    ) / weights.sum(dim=dim)
+    covariance = (
         weights
-        * (input1 - weighted_mean1.unsqueeze(-1))
-        * (input2 - weighted_mean2.unsqueeze(-1)),
-        dim=dim,
-    ) / (correction_factor)
+        * (inputs1 - weighted_mean1.unsqueeze(-1))
+        * (inputs2 - weighted_mean2.unsqueeze(-1))
+    ).sum(dim=dim) / correction_factor
+
     return covariance
 
 
 def unbiased_weighted_variance(
-    input: torch.Tensor, weights: torch.Tensor, dim: int = None
+    inputs: torch.Tensor, weights: torch.Tensor, dim: int = None
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted variance of a tensor.
 
-    :param input: Input tensor.
+    :param inputs: Input tensor.
     :param weights: Weights tensor.
     :param dim: Dimension along which to compute the variance.
     :return: Unbiased weighted variance.
     """
-    weighted_mean = torch.sum(input * weights, dim=dim) / torch.sum(weights, dim=dim)
-    correction_factor = torch.sum(weights, dim=dim) - torch.sum(
-        weights**2, dim=dim
-    ) / torch.sum(weights, dim=dim)
-    variance = torch.sum(
-        weights * (input - weighted_mean.unsqueeze(-1)) ** 2, dim=dim
-    ) / (correction_factor)
+    sum_of_weights = weights.sum(dim=dim)
+    weighted_mean = (inputs * weights).sum(dim=dim) / sum_of_weights
+    correction_factor = sum_of_weights - weights.square().sum(dim=dim) / sum_of_weights
+    variance = (weights * (inputs - weighted_mean.unsqueeze(-1)).square()).sum(
+        dim=dim
+    ) / correction_factor
+
     return variance
 
 
 def unbiased_weighted_std(
-    input: torch.Tensor, weights: torch.Tensor, dim: int = None
+    inputs: torch.Tensor, weights: torch.Tensor, dim: int = None
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted standard deviation of a tensor.
 
-    :param input: Input tensor.
+    :param inputs: Input tensor.
     :param weights: Weights tensor.
     :param dim: Dimension along which to compute the standard deviation.
     :return: Unbiased weighted standard deviation.
     """
-    return torch.sqrt(unbiased_weighted_variance(input, weights, dim=dim))
+    return unbiased_weighted_variance(inputs, weights, dim=dim).sqrt()
 
 
 def unbiased_weighted_covariance_matrix(
@@ -73,10 +73,10 @@ def unbiased_weighted_covariance_matrix(
     :return: Unbiased weighted covariance matrix.
     """
     normalized_weights = weights / weights.sum(dim=-1, keepdim=True)
-    correction_factor = 1 - torch.sum(normalized_weights**2, dim=-1)
+    correction_factor = 1 - normalized_weights.square().sum(dim=-1)
 
-    weighted_means = torch.sum(
-        inputs * normalized_weights.unsqueeze(-1), dim=-2, keepdim=True
+    weighted_means = (inputs * normalized_weights.unsqueeze(-1)).sum(
+        dim=-2, keepdim=True
     )
     centered_inputs = inputs - weighted_means
 
@@ -84,6 +84,7 @@ def unbiased_weighted_covariance_matrix(
         (normalized_weights.unsqueeze(-1) * centered_inputs).mT,
         centered_inputs,
     ) / correction_factor.unsqueeze(-1).unsqueeze(-1)
+
     return covariance
 
 
