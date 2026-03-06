@@ -130,9 +130,9 @@ class SpaceChargeKick3D(Element):
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
         # Shape: (..., num_particles, 8, 3)
-        weights = 1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
-        # Shape: (.., num_particles, 8, 3)
-        cell_weights = weights.prod(dim=-1)  # Shape: (.., num_particles, 8)
+        weights = 1.0 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
+        # Shape: (..., num_particles, 8, 3)
+        cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
 
         # Add the charge contributions to the cells
         # Shape: (..., 8 * num_particles)
@@ -381,9 +381,9 @@ class SpaceChargeKick3D(Element):
             integrated_green_function, dim=[1, 2, 3]
         )
         potential_ft = charge_density_ft * integrated_green_function_ft
-        potential = (1.0 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
-            potential_ft, dim=[1, 2, 3]
-        ).real
+        potential = torch.fft.irfftn(potential_ft, dim=[1, 2, 3]).real / (
+            4.0 * torch.pi * epsilon_0
+        )
 
         # Return the physical potential
         return potential[
@@ -481,9 +481,9 @@ class SpaceChargeKick3D(Element):
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
             -3
-        )  # Shape:(.., num_particles, 8, 3)
+        )  # Shape:(..., num_particles, 8, 3)
         weights = (
-            1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
+            1.0 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
         )  # Shape: (..., num_particles, 8, 3)
         cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
 
