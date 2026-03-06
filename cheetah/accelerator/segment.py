@@ -710,6 +710,7 @@ class Segment(Element):
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
+        axy.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
 
         return axx, axy
