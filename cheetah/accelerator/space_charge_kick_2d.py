@@ -262,7 +262,8 @@ class SpaceChargeKick2D(Element):
         """
         # Line density
         beam_length = (
-            (beam.particles[..., 4]).max() - (beam.particles[..., 4]).min()
+            (beam.particles[..., 4]).max(dim=-1).values
+            - (beam.particles[..., 4]).min(dim=-1).values
         ).abs()
         charge_density = (
             self._array_rho(beam, xp_coordinates, cell_size, grid_dimensions)
