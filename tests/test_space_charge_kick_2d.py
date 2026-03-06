@@ -301,10 +301,7 @@ def test_kv_drift():
 
 
 def test_vectorized():
-    """
-    Tests that the space charge kick can be applied to a vectorized beam.
-    """
-
+    """Tests that the space charge kick can be applied to a vectorized beam."""
     # Simulation parameters
     section_length = torch.tensor(0.42)
     R0 = torch.tensor(0.001)
@@ -315,7 +312,7 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
-    beta = torch.sqrt(1 - 1 / gamma**2)
+    beta = (1 - gamma.square().reciprocal()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=10_000,
@@ -348,9 +345,7 @@ def test_vectorized():
 
 
 def test_incoming_beam_not_modified():
-    """
-    Tests that the incoming beam is not modified when calling the track method.
-    """
+    """Tests that the incoming beam is not modified when calling the track method."""
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=10_000, sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )

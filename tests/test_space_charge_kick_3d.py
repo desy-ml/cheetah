@@ -169,9 +169,7 @@ def test_vectorized():
 
 
 def test_incoming_beam_not_modified():
-    """
-    Tests that the incoming beam is not modified when calling the track method.
-    """
+    """Tests that the incoming beam is not modified when calling the track method."""
     incoming_beam = cheetah.ParticleBeam.from_parameters(
         num_particles=10_000, sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
