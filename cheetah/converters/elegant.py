@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 
 import torch
+from scipy.constants import physical_constants, speed_of_light
 
 import cheetah
 from cheetah.converters.utils.fortran_namelist import (
@@ -12,6 +13,8 @@ from cheetah.converters.utils.fortran_namelist import (
 )
 from cheetah.utils import NoBeamPropertiesInLatticeWarning, UnknownElementWarning
 
+electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
+
 
 def convert_element(
     name: str,
@@ -20,7 +23,8 @@ def convert_element(
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
-    """Convert a parsed Elegant element dict to a cheetah Element.
+    """
+    Convert a parsed Elegant element dict to a cheetah Element.
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Elegant lattice file(s).
@@ -81,19 +85,23 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
             )
+        elif parsed["element_type"] in ["kick", "kicker"]:
+            validate_understood_properties(
+                shared_properties + ["l", "hkick", "vkick"], parsed
+            )
+            return cheetah.CombinedCorrector(
+                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
+                horizontal_angle=torch.tensor(
+                    parsed.get("hkick", 0.0), **factory_kwargs
+                ),
+                vertical_angle=torch.tensor(parsed.get("vkick", 0.0), **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+            )
         elif parsed["element_type"] in ["mark", "marker"]:
             validate_understood_properties(shared_properties, parsed)
             return cheetah.Marker(
                 name=name, sanitize_name=sanitize_name, **factory_kwargs
-            )
-        elif parsed["element_type"] == "kick":
-            validate_understood_properties(shared_properties + ["l"], parsed)
-
-            # TODO Find proper element class
-            return cheetah.Drift(
-                length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                sanitize_name=sanitize_name,
             )
         elif parsed["element_type"] in ["drift", "drif"]:
             validate_understood_properties(shared_properties + ["l"], parsed)
@@ -372,7 +380,7 @@ def convert_element(
         )
 
 
-def convert_lattice_to_cheetah(
+def convert_lattice(
     elegant_lattice_file_path: Path,
     name: str,
     sanitize_names: bool = False,
@@ -417,3 +425,122 @@ def convert_lattice_to_cheetah(
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(name, context, sanitize_names, device, dtype)
+
+
+def convert_beam(
+    file_path: Path,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Read the beam distribution from an Elegant SDDS file.
+
+    :param file_path: Path to the SDDS file from which to load the Elegant beam.
+    :param device: Device to use for the beam distribution. If `None`, the current
+        default device of PyTorch is used.
+    :param dtype: Data type to use for the beam distribution. If `None`, the current
+        default dtype of PyTorch is used.
+    :return: A tuple containing the particles tensor, the reference energy in eV, and
+        the tensor of particle charges.
+    """
+    try:
+        import sdds
+    except ImportError:
+        raise ImportError(
+            "The soliday.sdds package is required to convert Elegant beam. Please "
+            "install it via pip (`pip install soliday.sdds`) and try again."
+        )
+
+    factory_kwargs = {
+        "device": device or torch.get_default_device(),
+        "dtype": dtype or torch.get_default_dtype(),
+    }
+
+    sdds_data = sdds.load(str(file_path))
+
+    is_elegant = sdds_data.columnName[:6] == ["x", "xp", "y", "yp", "t", "p"]
+    is_spiffe = sdds_data.columnName[:6] == ["r", "pz", "pr", "pphi", "t", "q"]
+    if is_spiffe:
+        raise ValueError(
+            "The beam distribution is stored in the spiffe format, which is not "
+            "currently supported. Use spiffe2elegant to convert the beam first."
+        )
+    elif not is_elegant:
+        raise ValueError(
+            "The first six columns of the SDDS file do not match the expected Elegant "
+            "beam convention. Please ensure the SDDS file is in the correct format."
+        )
+
+    # (6, num_pages, num_particles) -> (num_pages, num_particles, 6)
+    elegant_coordinates = torch.tensor(
+        sdds_data.columnData[:6], **factory_kwargs
+    ).permute(1, 2, 0)
+
+    # Check if reference momentum is provided in the SDDS file. If not, use the momentum
+    # of the first particle as the reference momentum, which is the default reference
+    # particle.
+    p_central = (
+        torch.tensor(sdds_data.getParameterValueList("pCentral"), **factory_kwargs)
+        if "pCentral" in sdds_data.parameterName
+        else elegant_coordinates[..., 0, 5]
+    )
+    reference_momentum_eV = p_central * electron_mass_eV  # Convert to eV
+
+    cheetah_coordinates = elegant_to_cheetah_coordinates(elegant_coordinates, p_central)
+    reference_energy_eV = (reference_momentum_eV**2 + electron_mass_eV**2).sqrt()
+
+    # Check whether charge is present in the SDDS file, otherwise default to 1
+    particle_charges = (
+        torch.tensor(sdds_data.getColumnValueLists("q"), **factory_kwargs)
+        if "q" in sdds_data.columnName
+        else torch.ones(cheetah_coordinates.shape[:-1], **factory_kwargs)
+    )
+
+    return cheetah_coordinates, reference_energy_eV, particle_charges
+
+
+def elegant_to_cheetah_coordinates(
+    elegant_coordinates: torch.Tensor, p_central: torch.Tensor
+) -> torch.Tensor:
+    r"""
+    Convert Elegant coordinates to Cheetah coordinates.
+
+    :param elegant_coordinates: Elegant coordinates of shape (..., num_particles, 6)
+        with columns: [x, x', y, y', t, p].
+    :param p_central: The reference momentum in :math:`\beta * \gamma` units.
+    :return: Cheetah coordinates of shape (..., num_particles, 7).
+    """
+    reference_momentum_eV = p_central * electron_mass_eV
+    reference_energy_eV = (reference_momentum_eV**2 + electron_mass_eV**2).sqrt()
+
+    momentum_eV = elegant_coordinates[..., 5] * electron_mass_eV
+    energy_eV = (momentum_eV**2 + electron_mass_eV**2).sqrt()
+    delta_p = (
+        elegant_coordinates[..., 5] - p_central.unsqueeze(-1)
+    ) / p_central.unsqueeze(
+        -1
+    )  # (p - p0) / p0
+
+    cheetah_coordinates = elegant_coordinates.new_ones(
+        (*elegant_coordinates.shape[:-1], 7)
+    )
+    cheetah_coordinates[..., 0] = elegant_coordinates[..., 0]  # x
+    cheetah_coordinates[..., 2] = elegant_coordinates[..., 2]  # y
+
+    x_prime = elegant_coordinates[..., 1]
+    y_prime = elegant_coordinates[..., 3]
+    cheetah_coordinates[..., 1] = (
+        x_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square()).sqrt()
+    )  # px = P_x / p_0
+    cheetah_coordinates[..., 3] = (
+        y_prime * (1.0 + delta_p) / (1.0 + x_prime.square() + y_prime.square()).sqrt()
+    )  # py = P_y / p_0
+
+    cheetah_coordinates[..., 4] = (
+        elegant_coordinates[..., 4] * speed_of_light
+    )  # \tau = c * \Delta t
+    cheetah_coordinates[..., 5] = (
+        energy_eV - reference_energy_eV
+    ) / reference_momentum_eV  # pz = P_z / p_0
+
+    return cheetah_coordinates

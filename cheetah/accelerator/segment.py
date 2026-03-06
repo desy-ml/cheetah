@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
+from cheetah import latticejson
 from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
@@ -259,7 +259,7 @@ class Segment(Element):
             elements=[
                 element
                 for element in self.elements
-                if torch.any(element.length > 0.0)
+                if (element.length > 0.0).any()
                 or (hasattr(element, "is_active") and element.is_active)
                 or element.name in except_for
             ],
@@ -288,7 +288,7 @@ class Segment(Element):
                 (
                     element
                     if (hasattr(element, "is_active") and element.is_active)
-                    or torch.all(element.length == 0.0)
+                    or (element.length == 0.0).all()
                     or element.name in except_for
                     else Drift(
                         element.length,
@@ -317,7 +317,7 @@ class Segment(Element):
         :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return load_cheetah_model(filepath, device=device, dtype=dtype)
+        return latticejson.load_cheetah_model(filepath, device=device, dtype=dtype)
 
     def to_lattice_json(
         self,
@@ -335,7 +335,7 @@ class Segment(Element):
         :param info: Information about the lattice. Defaults to "This is a placeholder
             lattice description".
         """
-        save_cheetah_model(self, filepath, title, info)
+        latticejson.save_cheetah_model(self, filepath, title, info)
 
     @classmethod
     def from_ocelot(
@@ -368,7 +368,7 @@ class Segment(Element):
         from cheetah.converters import ocelot
 
         converted = [
-            ocelot.convert_element_to_cheetah(
+            ocelot.convert_element(
                 element,
                 sanitize_name=sanitize_names,
                 device=device,
@@ -406,7 +406,7 @@ class Segment(Element):
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return bmad.convert_lattice_to_cheetah(
+        return bmad.convert_lattice(
             bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
@@ -432,7 +432,7 @@ class Segment(Element):
         :return: Cheetah `Segment` representing the Elegant lattice.
         """
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
-        return elegant.convert_lattice_to_cheetah(
+        return elegant.convert_lattice(
             elegant_lattice_file_path, name, sanitize_names, device, dtype
         )
 
@@ -450,7 +450,7 @@ class Segment(Element):
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        return nxtables.convert_lattice_to_cheetah(filepath)
+        return nxtables.convert_lattice(filepath)
 
     @property
     def is_skippable(self) -> bool:
@@ -866,31 +866,32 @@ class Segment(Element):
         plt.tight_layout()
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
-    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
+    ) -> "tuple[trimesh.Scene | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
         import trimesh
 
-        meshes = []
+        scene = trimesh.Scene()
         input_transform = trimesh.transformations.identity_matrix()
         for element in self.elements:
             element_mesh, element_output_transform = element.to_mesh(
-                cuteness=cuteness, show_download_progress=show_download_progress
+                cuteness=cuteness,
+                asset_version=asset_version,
+                show_download_progress=show_download_progress,
             )
 
             if element_mesh is not None:
                 element_mesh.apply_transform(input_transform)
             input_transform = input_transform @ element_output_transform
 
-            meshes.append(element_mesh)
+            scene.add_geometry(element_mesh)
 
-        # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
-        # materials. Otherwise you might find that everything becomes glossy. (But
-        # doesn't always work.)
-        segment_mesh = trimesh.util.concatenate(meshes)
         segment_output_transform = input_transform
 
-        return segment_mesh, segment_output_transform
+        return scene, segment_output_transform
 
     @property
     def defining_features(self) -> list[str]:
@@ -907,7 +908,9 @@ class Segment(Element):
             ]
             element_repr_list.insert(2, " ⋮")
 
-            # Using `format` since Python 3.10 does not permit backslashes in f-strings
+            # Using `format` since Python<=3.11 does not permit backslashes in nested
+            # f-strings: https://stackoverflow.com/questions/67680296/syntaxerror-f-string-expression-part-cannot-include-a-backslash   # noqa: E501
+            # TODO: Switch to f-string when Python>=3.12 is the minimum requirement
             elements_repr = "ModuleList(\n  {0}\n)".format(
                 "\n  ".join(element_repr_list)
             )

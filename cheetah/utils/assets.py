@@ -81,17 +81,19 @@ def download_url_to_file(
 
 
 def load_3d_asset(
-    name: str, show_download_progress: bool = True
+    name: str, branch_or_tag: str = "v1.2.0", show_download_progress: bool = True
 ) -> trimesh.Trimesh | None:
     """
     Get a 3D asset by file name.
 
     :param name: The name of the asset file (e.g., "Quadrupole.glb").
+    :param branch_or_tag: The branch or tag name for the version of the 3D assets
+        repository.
     :param show_download_progress: If True and the asset is not cached, show a progress
         bar during the download.
     :return: A trimesh.Trimesh object representing the 3D asset.
     """
-    assets_dir = get_cheetah_cache_dir() / "assets" / "3d"
+    assets_dir = get_cheetah_cache_dir() / "3d-assets" / branch_or_tag
     asset_path = assets_dir / name
 
     if not asset_path.exists():
@@ -99,7 +101,7 @@ def load_3d_asset(
         #     owner="desy-ml", repository="3d-assets"
         # )
         asset_repository_url = get_repository_raw_url(
-            owner="desy-ml", repository="3d-assets", branch_or_tag="v1.0.2"
+            owner="desy-ml", repository="3d-assets", branch_or_tag=branch_or_tag
         )
         asset_url = f"{asset_repository_url}/{name}"
         try:
