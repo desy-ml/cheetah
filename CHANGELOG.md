@@ -4,7 +4,11 @@
 
 ### 🚨 Breaking Changes
 
+- The `SpaceChargeKick` elements has been renamed to `SpaceChargeKick3D` in order to reflect the difference to the new `SpaceChargeKick2D` element (see #576) (@austin-hoover, @RemiLehe, @jank324)
+
 ### 🚀 Features
+
+- Add a `SpaceChargeKick2D` element that applies a space charge kick using the 2D integrated Green function method (see #576) (@austin-hoover, @RemiLehe, @jank324)
 
 ### 🐛 Bug fixes
 
