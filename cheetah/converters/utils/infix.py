@@ -9,8 +9,11 @@ operators = {
     "^": {"precedence": 3, "inputs": 2, "func": lambda a, b: a**b},
     "sqrt": {"precedence": 4, "inputs": 1, "func": lambda a: math.sqrt(a)},
     "sin": {"precedence": 4, "inputs": 1, "func": lambda a: math.sin(a)},
+    "asin": {"precedence": 4, "inputs": 1, "func": lambda a: math.asin(a)},
     "cos": {"precedence": 4, "inputs": 1, "func": lambda a: math.cos(a)},
+    "acos": {"precedence": 4, "inputs": 1, "func": lambda a: math.acos(a)},
     "tan": {"precedence": 4, "inputs": 1, "func": lambda a: math.tan(a)},
+    "atan": {"precedence": 4, "inputs": 1, "func": lambda a: math.atan(a)},
     "abs": {"precedence": 4, "inputs": 1, "func": lambda a: abs(a)},
     "log": {"precedence": 4, "inputs": 1, "func": lambda a: math.log(a)},
 }

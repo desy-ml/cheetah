@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
