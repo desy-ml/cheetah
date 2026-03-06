@@ -677,7 +677,7 @@ class Segment(Element):
         """
         if axx is None and axy is None:
             _, (axx, axy) = plt.subplots(2, 1, sharex=True)
-        elif (axx is None) != (axy is None):
+        elif axx is None or axy is None:
             raise ValueError("Either provide both axx and axy, or neither.")
 
         reference_segment = self.clone()  # Prevent side effects when plotting
