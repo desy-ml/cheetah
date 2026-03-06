@@ -651,18 +651,16 @@ class Segment(Element):
 
     def plot_mean_and_std(
         self,
-        axx: plt.Axes,
-        axy: plt.Axes,
         incoming: Beam,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-    ) -> None:
+        axx: plt.Axes | None = None,
+        axy: plt.Axes | None = None,
+    ) -> tuple[plt.Axes, plt.Axes]:
         """
         Plot the mean (i.e. beam position) and standard deviation (i.e. beam size) of
         the beam along the segment view in x- and y-direction.
 
-        :param axx: Axes to plot the particle traces into viewed in x-direction.
-        :param axy: Axes to plot the particle traces into viewed in y-direction.
         :param incoming: Entering beam for which the position and size are shown
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
@@ -670,7 +668,18 @@ class Segment(Element):
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param axx: Axes to plot the particle traces into viewed in x-direction. Must
+            be provided together with `axy`, or both must be `None` to create new axes.
+        :param axy: Axes to plot the particle traces into viewed in y-direction. Must
+            be provided together with `axx`, or both must be `None` to create new axes.
+        :return: Both axes with the plotted mean and standard deviation of the beam
+            along the segment.
         """
+        if axx is None and axy is None:
+            _, (axx, axy) = plt.subplots(2, 1, sharex=True)
+        elif axx is None or axy is None:
+            raise ValueError("Either provide both axx and axy, or neither.")
+
         reference_segment = self.clone()  # Prevent side effects when plotting
 
         ss, x_means, x_stds, y_means, y_stds = (
@@ -701,28 +710,31 @@ class Segment(Element):
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
-        axx.set_xlabel("s (m)")
+        axy.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
+
+        return axx, axy
 
     def plot_overview(
         self,
         incoming: Beam,
-        fig: matplotlib.figure.Figure | None = None,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-    ) -> None:
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> matplotlib.figure.Figure:
         """
         Plot an overview of the segment with the lattice along with the beam position
         and size.
 
         :param incoming: Entering beam for which the position and size are shown.
-        :param fig: Figure to plot the overview into.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param fig: Figure to plot the overview into.
+        :return: Figure with the plotted overview.
         """
         if fig is None:
             fig = plt.figure()
@@ -738,9 +750,9 @@ class Segment(Element):
             vector_idx=vector_idx,
         )
 
-        self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
+        _ = self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
 
-        plt.tight_layout()
+        return fig
 
     def plot_beam_attrs(
         self,
@@ -793,10 +805,10 @@ class Segment(Element):
         self,
         incoming: Beam,
         attr_names: tuple[str, ...] | str,
-        figsize=(8, 4),
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-    ) -> None:
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> matplotlib.figure.Figure:
         """
         Plot beam attributes in a plot over a plot of the lattice.
 
@@ -804,15 +816,19 @@ class Segment(Element):
             trajectory is computed.
         :param attr_names: Metrics to compute. Can be a single metric or a tuple of
             metrics. Supported metrics are any property of beam class of `incoming`.
-        :param figsize: Size of the figure.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param fig: Figure to plot into. Can be used, for example to pass a figure with
+            a desired custom `figsize`. If `None`, a new figure with default size is
+            created.
+        :return: Figure with the plotted beam attributes over the lattice.
         """
-        fig = plt.figure(figsize=figsize)
+        if fig is None:
+            fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
@@ -823,14 +839,25 @@ class Segment(Element):
             vector_idx=vector_idx,
             ax=axs[0],
         )
-        self.plot(s=0.0, ax=axs[1])
+        self.plot(s=0.0, ax=axs[1], vector_idx=vector_idx)
 
-        plt.tight_layout()
+        return fig
 
     def plot_twiss(
         self, incoming: Beam, vector_idx: tuple | None = None, ax: Any | None = None
     ) -> plt.Axes:
-        """Plot twiss parameters along the segment."""
+        """
+        Plot Twiss parameters along the segment.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param ax: Axes to plot into.
+        :return: Axes with the plotted Twiss parameters.
+        """
         ax = self.plot_beam_attrs(
             incoming,
             ("beta_x", "beta_y"),
@@ -854,16 +881,35 @@ class Segment(Element):
 
         return ax
 
-    def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
-        """Plot twiss parameters in a plot over a plot of the lattice."""
-        fig = plt.figure(figsize=figsize)
+    def plot_twiss_over_lattice(
+        self,
+        incoming: Beam,
+        vector_idx: tuple | None = None,
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> matplotlib.figure.Figure:
+        """
+        Plot Twiss parameters in a plot over a plot of the lattice.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param fig: Figure to plot into. Can be used, for example to pass a figure with
+            a desired custom `figsize`. If `None`, a new figure with default size is
+            created.
+        :return: Figure with the plotted Twiss parameters over the lattice.
+        """
+        if fig is None:
+            fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
-        self.plot_twiss(incoming, ax=axs[0])
-        self.plot(s=0.0, ax=axs[1])
+        self.plot_twiss(incoming, vector_idx=vector_idx, ax=axs[0])
+        self.plot(s=0.0, vector_idx=vector_idx, ax=axs[1])
 
-        plt.tight_layout()
+        return fig
 
     def to_mesh(
         self,
