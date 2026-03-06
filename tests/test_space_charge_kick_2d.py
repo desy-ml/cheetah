@@ -110,7 +110,7 @@ class KVEnvelope:
         return copy.deepcopy(self)
 
     def cov(self) -> np.ndarray:
-        (cx, cxp, cy, cyp) = self.params
+        cx, cxp, cy, cyp = self.params
 
         cov_matrix = np.zeros((4, 4))
         cov_matrix[0, 0] = 0.25 * cx**2
