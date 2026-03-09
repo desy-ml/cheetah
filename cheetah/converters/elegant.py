@@ -304,7 +304,8 @@ def convert_element(
             )
         elif parsed["element_type"] in ["sben", "csbend"]:
             validate_understood_properties(
-                shared_properties + ["l", "angle", "k1", "e1", "e2", "tilt"],
+                shared_properties
+                + ["l", "angle", "k1", "e1", "e2", "tilt", "hgap", "fint"],
                 parsed,
             )
             return cheetah.Dipole(
@@ -314,6 +315,8 @@ def convert_element(
                 dipole_e1=torch.tensor(parsed.get("e1", 0.0), **factory_kwargs),
                 dipole_e2=torch.tensor(parsed.get("e2", 0.0), **factory_kwargs),
                 tilt=torch.tensor(parsed.get("tilt", 0.0), **factory_kwargs),
+                gap=torch.tensor(2 * parsed.get("hgap", 0.0), **factory_kwargs),
+                fringe_integral=torch.tensor(parsed.get("fint", 0.5), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
             )

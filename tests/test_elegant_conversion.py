@@ -37,7 +37,12 @@ def test_fodo_import():
                 cheetah.Drift(name="d1", length=torch.tensor(1.0)),
                 cheetah.Marker(name="m1"),
                 cheetah.Dipole(
-                    name="b1", length=torch.tensor(0.3), dipole_e1=torch.tensor(0.25)
+                    name="b1",
+                    length=torch.tensor(0.3),
+                    angle=torch.tensor(0.25),
+                    dipole_e1=torch.tensor(0.25),
+                    gap=torch.tensor(0.04),
+                    fringe_integral=torch.tensor(0.5),
                 ),
                 cheetah.Drift(name="d1", length=torch.tensor(1.0)),
                 cheetah.Quadrupole(
@@ -93,6 +98,11 @@ def test_fodo_import():
 
     assert torch.isclose(converted.b1.length, correct_lattice.b1.length)
     assert torch.isclose(converted.b1.dipole_e1, correct_lattice.b1.dipole_e1)
+    assert torch.isclose(converted.b1.angle, correct_lattice.b1.angle)
+    assert torch.isclose(converted.b1.gap, correct_lattice.b1.gap)
+    assert torch.isclose(
+        converted.b1.fringe_integral, correct_lattice.b1.fringe_integral
+    )
     assert torch.isclose(converted.csrbend.length, correct_lattice.csrbend.length)
     assert torch.isclose(converted.csrbend.angle, correct_lattice.csrbend.angle)
     assert torch.isclose(converted.csrbend.dipole_e2, correct_lattice.csrbend.dipole_e2)
@@ -217,6 +227,8 @@ def test_lattice_device(device: torch.device):
 
     assert converted.b1.length.device.type == device.type
     assert converted.b1.dipole_e1.device.type == device.type
+    assert converted.b1.angle.device.type == device.type
+    assert converted.b1.gap.device.type == device.type
     assert converted.csrbend.length.device.type == device.type
     assert converted.csrbend.angle.device.type == device.type
     assert converted.csrbend.dipole_e2.device.type == device.type
@@ -257,6 +269,8 @@ def test_lattice_dtype(dtype: torch.dtype):
 
     assert converted.b1.length.dtype == dtype
     assert converted.b1.dipole_e1.dtype == dtype
+    assert converted.b1.angle.dtype == dtype
+    assert converted.b1.gap.dtype == dtype
     assert converted.csrbend.length.dtype == dtype
     assert converted.csrbend.angle.dtype == dtype
     assert converted.csrbend.dipole_e2.dtype == dtype
@@ -300,6 +314,8 @@ def test_lattice_default_dtype(default_torch_dtype):
 
     assert converted.b1.length.dtype == default_torch_dtype
     assert converted.b1.dipole_e1.dtype == default_torch_dtype
+    assert converted.b1.angle.dtype == default_torch_dtype
+    assert converted.b1.gap.dtype == default_torch_dtype
     assert converted.csrbend.length.dtype == default_torch_dtype
     assert converted.csrbend.angle.dtype == default_torch_dtype
     assert converted.csrbend.dipole_e2.dtype == default_torch_dtype
