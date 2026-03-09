@@ -430,7 +430,7 @@ class Dipole(Element):
             * (1 + self._e1.sin().square())
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * self._e1.tan()
         tm[..., 3, 2] = -self.hx * (self._e1 - phi).tan()
 
@@ -449,7 +449,7 @@ class Dipole(Element):
             * (1 + self._e2.sin().square())
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat(*phi.shape, 1, 1)
+        tm = torch.eye(7, **factory_kwargs).expand(*phi.shape, 7, 7).clone()
         tm[..., 1, 0] = self.hx * self._e2.tan()
         tm[..., 3, 2] = -self.hx * (self._e2 - phi).tan()
 
