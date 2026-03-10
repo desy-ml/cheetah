@@ -313,8 +313,8 @@ def test_lattice_default_dtype(default_torch_dtype):
     assert converted.d2.length.dtype == default_torch_dtype
 
     assert converted.b1.length.dtype == default_torch_dtype
-    assert converted.b1.dipole_e1.dtype == default_torch_dtype
     assert converted.b1.angle.dtype == default_torch_dtype
+    assert converted.b1.dipole_e1.dtype == default_torch_dtype
     assert converted.b1.gap.dtype == default_torch_dtype
     assert converted.csrbend.length.dtype == default_torch_dtype
     assert converted.csrbend.angle.dtype == default_torch_dtype
