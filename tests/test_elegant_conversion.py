@@ -97,8 +97,8 @@ def test_fodo_import():
     assert torch.isclose(converted.d2.length, correct_lattice.d2.length)
 
     assert torch.isclose(converted.b1.length, correct_lattice.b1.length)
-    assert torch.isclose(converted.b1.dipole_e1, correct_lattice.b1.dipole_e1)
     assert torch.isclose(converted.b1.angle, correct_lattice.b1.angle)
+    assert torch.isclose(converted.b1.dipole_e1, correct_lattice.b1.dipole_e1)
     assert torch.isclose(converted.b1.gap, correct_lattice.b1.gap)
     assert torch.isclose(
         converted.b1.fringe_integral, correct_lattice.b1.fringe_integral
