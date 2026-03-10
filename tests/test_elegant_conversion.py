@@ -268,8 +268,8 @@ def test_lattice_dtype(dtype: torch.dtype):
     assert converted.d2.length.dtype == dtype
 
     assert converted.b1.length.dtype == dtype
+    assert converted.b1.anlge.dtype == dtype
     assert converted.b1.dipole_e1.dtype == dtype
-    assert converted.b1.angle.dtype == dtype
     assert converted.b1.gap.dtype == dtype
     assert converted.csrbend.length.dtype == dtype
     assert converted.csrbend.angle.dtype == dtype
