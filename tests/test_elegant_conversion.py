@@ -226,8 +226,8 @@ def test_lattice_device(device: torch.device):
     assert converted.d2.length.device.type == device.type
 
     assert converted.b1.length.device.type == device.type
-    assert converted.b1.dipole_e1.device.type == device.type
     assert converted.b1.angle.device.type == device.type
+    assert converted.b1.dipole_e1.device.type == device.type
     assert converted.b1.gap.device.type == device.type
     assert converted.csrbend.length.device.type == device.type
     assert converted.csrbend.angle.device.type == device.type
