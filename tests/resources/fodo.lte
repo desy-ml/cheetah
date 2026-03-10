@@ -8,7 +8,7 @@ d1: drift,l=1, nonsense=1; # gap: 42.0
 d2: drift ,l=-2.0 # gap: 10.0
 d3: drift
 
-b1: sben, l=0.3, angle=0.25, e1=0.25, hgap=0.02
+b1: sben, l=0.3,angle=0.25,e1=0.25,hgap=0.02
 csrbend: csrcsbend, l = 0.200981, angle = 0.113612175128842, e2 = 0.113612175128842, k1 = 0;
 
 s1: sext,l=0.2,k2=-87.1;
