@@ -34,7 +34,7 @@ def test_cold_uniform_beam_expansion(energy):
     elementary_charge = torch.tensor(constants.elementary_charge)
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
-    beta = (1 - gamma.square().reciprocal()).sqrt()
+    beta = (1.0 - gamma.square().reciprocal()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=100_000,
@@ -49,26 +49,30 @@ def test_cold_uniform_beam_expansion(energy):
     )
 
     # Compute section length that results in a doubling of the beam size
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
+    kappa = (
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
+    )
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 6),
+            cheetah.Drift(section_length / 6.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 6.0),
         ]
     )
     outgoing = segment.track(incoming)
 
-    assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
-    assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.isclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_x, 2.0 * incoming.sigma_x, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_y, 2.0 * incoming.sigma_y, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_tau, 2.0 * incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized_cold_uniform_beam_expansion():
@@ -87,7 +91,7 @@ def test_vectorized_cold_uniform_beam_expansion():
     elementary_charge = torch.tensor(constants.elementary_charge)
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     gamma = energy / rest_energy
-    beta = (1 - gamma.square().reciprocal()).sqrt()
+    beta = (1.0 - gamma.square().reciprocal()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=100_000,
@@ -102,26 +106,30 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
 
     # Compute section length
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
+    kappa = (
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
+    )
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 6),
+            cheetah.Drift(section_length / 6.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 6.0),
         ]
     )
     outgoing = segment.track(incoming)
 
-    assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_x, 2.0 * incoming.sigma_x, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_y, 2.0 * incoming.sigma_y, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_tau, 2.0 * incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized():
@@ -136,7 +144,7 @@ def test_vectorized():
         / constants.elementary_charge
     )
     gamma = energy / rest_energy
-    beta = (1 - gamma.square().reciprocal()).sqrt()
+    beta = (1.0 - gamma.square().reciprocal()).sqrt()
 
     incoming = cheetah.ParticleBeam.uniform_3d_ellipsoid(
         num_particles=10_000,
@@ -153,13 +161,13 @@ def test_vectorized():
 
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 6),
+            cheetah.Drift(section_length / 6.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 6.0),
         ]
     )
 
@@ -179,13 +187,13 @@ def test_incoming_beam_not_modified():
     section_length = torch.tensor(1.0)
     segment_space_charge = cheetah.Segment(
         elements=[
-            cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 6),
+            cheetah.Drift(section_length / 6.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 6.0),
         ]
     )
     # Calling the track method
@@ -224,7 +232,9 @@ def test_gradient_value_backward_ad():
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     kappa = (
-        1 + (torch.tensor(2.0).sqrt() / 4) * (3 + 2 * torch.tensor(2.0).sqrt()).log()
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
     )
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
@@ -232,13 +242,13 @@ def test_gradient_value_backward_ad():
     segment_length = nn.Parameter(segment_length)
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(segment_length / 6),
-            cheetah.SpaceChargeKick3D(segment_length / 3),
-            cheetah.Drift(segment_length / 3),
-            cheetah.SpaceChargeKick3D(segment_length / 3),
-            cheetah.Drift(segment_length / 3),
-            cheetah.SpaceChargeKick3D(segment_length / 3),
-            cheetah.Drift(segment_length / 6),
+            cheetah.Drift(segment_length / 6.0),
+            cheetah.SpaceChargeKick3D(segment_length / 3.0),
+            cheetah.Drift(segment_length / 3.0),
+            cheetah.SpaceChargeKick3D(segment_length / 3.0),
+            cheetah.Drift(segment_length / 3.0),
+            cheetah.SpaceChargeKick3D(segment_length / 3.0),
+            cheetah.Drift(segment_length / 6.0),
         ]
     )
 
@@ -288,7 +298,9 @@ def test_gradient_value_forward_ad():
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     kappa = (
-        1 + (torch.tensor(2.0).sqrt() / 4) * (3 + 2 * torch.tensor(2.0).sqrt()).log()
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
     )
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
@@ -300,13 +312,13 @@ def test_gradient_value_forward_ad():
 
         segment = cheetah.Segment(
             elements=[
-                cheetah.Drift(segment_length / 6),
-                cheetah.SpaceChargeKick3D(segment_length / 3),
-                cheetah.Drift(segment_length / 3),
-                cheetah.SpaceChargeKick3D(segment_length / 3),
-                cheetah.Drift(segment_length / 3),
-                cheetah.SpaceChargeKick3D(segment_length / 3),
-                cheetah.Drift(segment_length / 6),
+                cheetah.Drift(segment_length / 6.0),
+                cheetah.SpaceChargeKick3D(segment_length / 3.0),
+                cheetah.Drift(segment_length / 3.0),
+                cheetah.SpaceChargeKick3D(segment_length / 3.0),
+                cheetah.Drift(segment_length / 3.0),
+                cheetah.SpaceChargeKick3D(segment_length / 3.0),
+                cheetah.Drift(segment_length / 6.0),
             ]
         )
 
@@ -333,13 +345,13 @@ def test_does_not_break_segment_length():
     section_length = torch.tensor(1.0)
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick3D(section_length / 3),
-            cheetah.Drift(section_length / 6),
+            cheetah.Drift(section_length / 6.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 3.0),
+            cheetah.SpaceChargeKick3D(section_length / 3.0),
+            cheetah.Drift(section_length / 6.0),
         ]
     )
 
