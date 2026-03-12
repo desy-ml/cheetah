@@ -7,6 +7,7 @@
 ### 🚀 Features
 
 - All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+- Implement second-order tracking for `CustomTransferMap` (see #530) (@Hespe)
 
 ### 🐛 Bug fixes
 
