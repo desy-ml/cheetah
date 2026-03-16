@@ -171,34 +171,11 @@ def parse_element(
     element_class = getattr(cheetah, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
 
-    if element_class == cheetah.SuperimposedElement:
-        base_element_dict = params["base_element"]
-        superimposed_element_dict = params["superimposed_element"]
-
-        base_element = parse_element(
-            list(base_element_dict.keys())[0],
-            {"elements": base_element_dict},
-            device=device,
-            dtype=dtype,
-        )
-        superimposed_element = parse_element(
-            list(superimposed_element_dict.keys())[0],
-            {"elements": superimposed_element_dict},
-            device=device,
-            dtype=dtype,
-        )
-
-        return cheetah.SuperimposedElement(
-            name=name,
-            base_element=base_element,
-            superimposed_element=superimposed_element,
-        )
-    else:
-        converted_params = {
-            key: nontorch2feature(value, device=device, dtype=dtype)
-            for key, value in params.items()
-        }
-        return element_class(name=name, **converted_params)
+    converted_params = {
+        key: nontorch2feature(value, device=device, dtype=dtype)
+        for key, value in params.items()
+    }
+    return element_class(name=name, **converted_params)
 
 
 def parse_segment(

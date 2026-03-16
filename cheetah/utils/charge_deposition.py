@@ -1,5 +1,6 @@
-import torch
 from typing import Sequence
+
+import torch
 
 
 def deposit_charge_cic(
@@ -290,4 +291,5 @@ def deposit_charge_cic_3d(
         weights,
     )
 
+    return charge_density.mT
     return charge_density.mT

@@ -1,5 +1,6 @@
 from . import autograd, bmadx  # noqa: F401
 from .cache import cache_transfer_map  # noqa: F401
+from .charge_deposition import deposit_charge_cic_2d  # noqa: F401
 from .device import is_mps_available_and_functional  # noqa: F401
 from .elementwise_linspace import elementwise_linspace  # noqa: F401
 from .kde import kde_histogram_1d, kde_histogram_2d  # noqa: F401
@@ -26,4 +27,3 @@ from .warnings import (  # noqa: F401
     UnknownElementWarning,
     VisualizationWarning,
 )
-from .charge_deposition import deposit_charge_cic_2d  # noqa: F401
