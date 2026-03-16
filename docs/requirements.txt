@@ -2,3 +2,4 @@ furo
 ipykernel
 myst-parser
 nbsphinx
+pandas
