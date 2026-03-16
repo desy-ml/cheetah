@@ -30,7 +30,7 @@ from .utils import (  # noqa: F401
     DirtyNameWarning,
     NoBeamPropertiesInLatticeWarning,
     NotUnderstoodPropertyWarning,
-    NoVisualizationWarning,
     PhysicsWarning,
     UnknownElementWarning,
+    VisualizationWarning,
 )
