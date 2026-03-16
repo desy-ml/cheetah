@@ -29,8 +29,8 @@ class Screen(Element):
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
     :param method: Method used to generate the screen's reading. Can be either
-        "histogram" or "kde", defaults to "histogram". KDE will be slower but allows
-        backward differentiation.
+        "histogram", "kde", or "charge_deposition", defaults to "histogram".
+        KDE and charge_deposition methods allow backward differentiation.
     :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
         Controls the smoothness of the distribution.
     :param is_blocking: If `True` the screen is blocking and will stop the beam.
@@ -43,7 +43,8 @@ class Screen(Element):
         access the element in a segment.
 
     NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method='kde'` instead. Similarly, `ParameterBeam` can also not be vectorised.
+        `method='kde'` or `method='charge_deposition'` instead.
+        Similarly, `ParameterBeam` can also not be vectorised.
         Please use `ParticleBeam` instead.
     """
 
@@ -227,6 +228,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
+        """Get the screen's reading in the (height, width) format."""
         if self.cached_reading is not None:
             return self.cached_reading
 
@@ -294,7 +296,7 @@ class Screen(Element):
                     weight=read_beam.particle_charges.abs()
                     * read_beam.survival_probabilities,
                 )
-                image = image_transposed
+                image = image_transposed.mT
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities

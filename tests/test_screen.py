@@ -7,7 +7,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ocelot_lattice
 
 
-@pytest.mark.parametrize("screen_method", ["histogram", "kde"])
+@pytest.mark.parametrize("screen_method", ["histogram", "kde", "charge_deposition"])
 def test_reading_shows_beam_particle(screen_method):
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
@@ -68,7 +68,7 @@ def test_screen_kde_bandwidth(kde_bandwidth):
     assert torch.any(segment.my_screen.reading > 0.0)
 
 
-@pytest.mark.parametrize("screen_method", ["histogram", "kde"])
+@pytest.mark.parametrize("screen_method", ["histogram", "kde", "charge_deposition"])
 def test_reading_shows_beam_parameter(screen_method):
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
@@ -101,7 +101,7 @@ def test_reading_shows_beam_parameter(screen_method):
 
 
 @pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
-@pytest.mark.parametrize("screen_method", ["histogram", "kde"])
+@pytest.mark.parametrize("screen_method", ["histogram", "kde", "charge_deposition"])
 def test_reading_shows_beam_ares(screen_method):
     """
     Test that a screen has a reading that shows some sign of the beam having hit it.
