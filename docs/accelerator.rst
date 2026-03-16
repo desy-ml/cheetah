@@ -43,10 +43,6 @@ Accelerator
     :members:
     :undoc-members:
 
-.. automodule:: accelerator.patch
-    :members:
-    :undoc-members:
-
 .. automodule:: accelerator.quadrupole
     :members:
     :undoc-members:

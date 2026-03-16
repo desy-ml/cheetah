@@ -30,19 +30,11 @@ def convert_element(element: "cheetah.Element"):
     :param element: Cheetah element
     :return: Tuple of element name, element class, and element parameters
     """
-    if isinstance(element, cheetah.SuperimposedElement):
-        params = {
-            "base_element": {element.base_element.name : convert_element(element.base_element)[1:]},
-            "superimposed_element": {
-                element.superimposed_element.name : convert_element(element.superimposed_element)[1:]
-                }
-        }
-    else:
-        params = {
-            feature: feature2nontorch(getattr(element, feature))
-            for feature in element.defining_features
-            if feature != "name"
-        }
+    params = {
+        feature: feature2nontorch(getattr(element, feature))
+        for feature in element.defining_features
+        if feature != "name"
+    }
 
     return element.name, element.__class__.__name__, params
 
