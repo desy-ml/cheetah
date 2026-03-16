@@ -11,21 +11,20 @@ def deposit_charge_cic(
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D, 2D, or 3D.
 
-    Parameters
-    ----------
-    positions : sequence of torch.Tensor
-        List/tuple of particle position tensors, each of shape (..., N).
-        Length N determines dimensionality (1D, 2D, or 3D).
-    bins : sequence of torch.Tensor
-        List/tuple of 1D arrays defining bin edges for each dimension.
-        Must have uniform spacing. Length must match positions.
-    weights : (..., N), optional
-        Particle charge weights. If None, all particles have weight=1.
-
-    Returns
-    -------
-    charge_grid : (..., N1, N2, ..., Nd)
-        Charge density on the d-dimensional grid, where d is len(positions).
+    :param positions: List or tuple of particle position tensors, each of shape
+        `(..., N)`, leading with optinoal batch dimension.
+        `N` is the number of particles.
+        The length `d` of `positions` determines the dimensionality
+        (1D, 2D, or 3D).
+    :param bins: List or tuple of 1D tensors defining the grid coordinates for each
+        dimension.
+        ((N1,), (N2,), ...) where `Ni` is the number of grid points in dimension `i`.
+        Each grid coordinate tensor must have uniform spacing.
+        Length must match `positions`.
+    :param weights: Particle charge weights of shape `(..., N)`.
+        If `None`, all particles have weight 1.
+    :return: Charge density on the d-dimensional grid with shape
+        `(..., N1, N2, ..., Nd)`, where `d = len(positions)`.
     """
     # Validate inputs
     if not positions:
@@ -188,22 +187,15 @@ def deposit_charge_cic_1d(
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D.
 
-    This is a convenience wrapper around deposit_charge_cic for 1D cases.
+    This is a convenience wrapper around `deposit_charge_cic` for 1D cases.
     Particles outside the grid bounds have their weights set to zero.
 
-    Parameters
-    ----------
-    x : (..., N)
-        Particle positions.
-    bins : (Nx,)
-        1D array of bin edges or centers (must have uniform spacing).
-    weights : (..., N), optional
-        Particle charge weights. If None, all particles have weight=1.
-
-    Returns
-    -------
-    charge_grid : (..., Nx)
-        Charge density on the 1D grid.
+    :param x: Particle positions of shape `(..., N)`.
+    :param bins: 1D tensor of grid coordinates with shape `(Nx,)`. Must have
+        uniform spacing.
+    :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
+        particles have weight 1.
+    :return: Charge density on the 1D grid with shape `(..., Nx)`.
     """
     return deposit_charge_cic([x], [bins], weights)
 
@@ -218,26 +210,18 @@ def deposit_charge_cic_2d(
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
 
-    This is a convenience wrapper around deposit_charge_cic for 2D cases.
+    This is a convenience wrapper around `deposit_charge_cic` for 2D cases.
     Particles outside the grid bounds have their weights set to zero.
 
-    Parameters
-    ----------
-    x1 : (..., N)
-        Particle x positions.
-    x2 : (..., N)
-        Particle y positions.
-    bins1 : (Nx,)
-        1D array of x-bin edges or centers (must have uniform spacing).
-    bins2 : (Ny,)
-        1D array of y-bin edges or centers (must have uniform spacing).
-    weights : (..., N), optional
-        Particle charge weights. If None, all particles have weight=1.
-
-    Returns
-    -------
-    charge_grid : (..., Nx, Ny)
-        Charge density on the 2D grid.
+    :param x1: Particle x positions of shape `(..., N)`.
+    :param x2: Particle y positions of shape `(..., N)`.
+    :param bins1: 1D tensor of x-grid coordinates with shape `(Nx,)`. Must have
+        uniform spacing.
+    :param bins2: 1D tensor of y-grid coordinates with shape `(Ny,)`. Must have
+        uniform spacing.
+    :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
+        particles have weight 1.
+    :return: Charge density on the 2D grid with shape `(..., Nx, Ny)`.
     """
     charge_density = deposit_charge_cic(
         [x1, x2],
@@ -260,30 +244,21 @@ def deposit_charge_cic_3d(
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 3D.
 
-    This is a convenience wrapper around deposit_charge_cic for 3D cases.
+    This is a convenience wrapper around `deposit_charge_cic` for 3D cases.
     Particles outside the grid bounds have their weights set to zero.
 
-    Parameters
-    ----------
-    x1 : (..., N)
-        Particle x positions.
-    x2 : (..., N)
-        Particle y positions.
-    x3 : (..., N)
-        Particle z positions.
-    bins1 : (Nx,)
-        1D array of x-bin edges or centers (must have uniform spacing).
-    bins2 : (Ny,)
-        1D array of y-bin edges or centers (must have uniform spacing).
-    bins3 : (Nz,)
-        1D array of z-bin edges or centers (must have uniform spacing).
-    weights : (..., N), optional
-        Particle charge weights. If None, all particles have weight=1.
-
-    Returns
-    -------
-    charge_grid : (..., Nx, Ny, Nz)
-        Charge density on the 3D grid.
+    :param x1: Particle x positions of shape `(..., N)`.
+    :param x2: Particle y positions of shape `(..., N)`.
+    :param x3: Particle z positions of shape `(..., N)`.
+    :param bins1: 1D tensor of x-grid coordinates with shape `(Nx,)`. Must have
+        uniform spacing.
+    :param bins2: 1D tensor of y-grid coordinates with shape `(Ny,)`. Must have
+        uniform spacing.
+    :param bins3: 1D tensor of z-grid coordinates with shape `(Nz,)`. Must have
+        uniform spacing.
+    :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
+        particles have weight 1.
+    :return: Charge density on the 3D grid with shape `(..., Nx, Ny, Nz)`.
     """
     charge_density = deposit_charge_cic(
         [x1, x2, x3],
