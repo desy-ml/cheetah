@@ -1,6 +1,7 @@
 import torch
 from typing import Sequence
 
+
 def deposit_charge_cic(
     positions: Sequence[torch.Tensor],
     bins: Sequence[torch.Tensor],
@@ -41,9 +42,11 @@ def deposit_charge_cic(
     # Validate all position tensors have the same shape
     for i, pos in enumerate(positions[1:], 1):
         if pos.shape != first_pos.shape:
-            raise ValueError(f"All position tensors must have the same shape. "
-                           f"positions[0] has shape {first_pos.shape}, "
-                           f"positions[{i}] has shape {pos.shape}")
+            raise ValueError(
+                f"All position tensors must have the same shape. "
+                f"positions[0] has shape {first_pos.shape}, "
+                f"positions[{i}] has shape {pos.shape}"
+            )
         if pos.device != device:
             raise ValueError("All tensors must be on the same device")
         if pos.dtype != dtype:
@@ -52,18 +55,18 @@ def deposit_charge_cic(
     # Grid dimensions and spacing validation
     grid_sizes = []
     spacings = []
-    
+
     for i, bin_array in enumerate(bins):
         N = bin_array.numel()
         if N < 2:
             raise ValueError(f"bins[{i}] must have at least 2 elements")
-        
+
         spacing = bin_array[1] - bin_array[0]
         if N > 2:
             diffs = torch.diff(bin_array)
             if not torch.allclose(diffs, spacing, rtol=1e-4):
                 raise ValueError(f"bins[{i}] must have uniform spacing")
-        
+
         grid_sizes.append(N)
         spacings.append(spacing)
 
@@ -79,29 +82,29 @@ def deposit_charge_cic(
     normalized_coords = []
     grid_indices = []
     fractional_parts = []
-    
+
     for pos, bin_array, spacing in zip(positions, bins, spacings):
         u = (pos - bin_array[0]) / spacing
         normalized_coords.append(u)
-        
+
         # Left cell index
         i = torch.floor(u).to(torch.int64)
         grid_indices.append(i)
-        
+
         # Fractional distance to right cell
         w = u - i
         fractional_parts.append(w)
 
     # Generate all corner combinations and their weights
-    num_corners = 2 ** ndim
+    num_corners = 2**ndim
     corner_indices = []
     corner_weights = []
-    
+
     for corner in range(num_corners):
         # Determine which corners to use based on binary representation
         corner_offsets = []
         weight_factors = []
-        
+
         for dim in range(ndim):
             if (corner >> dim) & 1:  # Use right cell in this dimension
                 corner_offsets.append(1)
@@ -109,19 +112,19 @@ def deposit_charge_cic(
             else:  # Use left cell in this dimension
                 corner_offsets.append(0)
                 weight_factors.append(1 - fractional_parts[dim])
-        
+
         # Calculate indices for this corner
         corner_idx_list = []
         for dim in range(ndim):
             base_idx = grid_indices[dim]
             offset_idx = (base_idx + corner_offsets[dim]).clamp(0, grid_sizes[dim] - 1)
             corner_idx_list.append(offset_idx)
-        
+
         # Calculate weight for this corner
         corner_weight = weights
         for weight_factor in weight_factors:
             corner_weight = corner_weight * weight_factor
-        
+
         corner_indices.append(corner_idx_list)
         corner_weights.append(corner_weight)
 
@@ -145,7 +148,7 @@ def deposit_charge_cic(
     # Prepare all indices and weights for batch processing
     all_flat_indices = []
     all_weights = []
-    
+
     for corner_idx_list, corner_weight in zip(corner_indices, corner_weights):
         flat_idx = multi_to_flat_index(corner_idx_list)
         all_flat_indices.append(flatten_tensor(flat_idx))
@@ -153,7 +156,7 @@ def deposit_charge_cic(
 
     # Concatenate all indices and weights
     idx_all = torch.cat(all_flat_indices, dim=1)  # shape (B, num_corners * N)
-    vals_all = torch.cat(all_weights, dim=1)      # shape (B, num_corners * N)
+    vals_all = torch.cat(all_weights, dim=1)  # shape (B, num_corners * N)
 
     # Output buffer
     total_grid_size = int(torch.tensor(grid_sizes).prod())
@@ -183,7 +186,7 @@ def deposit_charge_cic_1d(
 ) -> torch.Tensor:
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D.
-    
+
     This is a convenience wrapper around deposit_charge_cic for 1D cases.
     Particles outside the grid bounds have their weights set to zero.
 
@@ -203,6 +206,7 @@ def deposit_charge_cic_1d(
     """
     return deposit_charge_cic([x], [bins], weights)
 
+
 def deposit_charge_cic_2d(
     x1: torch.Tensor,
     x2: torch.Tensor,
@@ -212,7 +216,7 @@ def deposit_charge_cic_2d(
 ) -> torch.Tensor:
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
-    
+
     This is a convenience wrapper around deposit_charge_cic for 2D cases.
     Particles outside the grid bounds have their weights set to zero.
 
@@ -254,7 +258,7 @@ def deposit_charge_cic_3d(
 ) -> torch.Tensor:
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 3D.
-    
+
     This is a convenience wrapper around deposit_charge_cic for 3D cases.
     Particles outside the grid bounds have their weights set to zero.
 

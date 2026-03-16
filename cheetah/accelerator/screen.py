@@ -7,7 +7,12 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, kde_histogram_2d, deposit_charge_cic_2d
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    deposit_charge_cic_2d,
+    kde_histogram_2d,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -67,7 +72,10 @@ class Screen(Element):
             "histogram",
             "kde",
             "charge_deposition",
-        ], f"Invalid method {method}. Must be either 'histogram', 'kde', or 'charge_deposition'."
+        ], (
+            f"Invalid method {method}. "
+            "Must be either 'histogram', 'kde', or 'charge_deposition'."
+        )
 
         self.register_buffer_or_parameter(
             "pixel_size",
