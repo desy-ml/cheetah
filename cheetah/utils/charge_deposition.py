@@ -15,7 +15,7 @@ def deposit_charge_cic(
     ----------
     positions : sequence of torch.Tensor
         List/tuple of particle position tensors, each of shape (..., N).
-        Length determines dimensionality (1D, 2D, or 3D).
+        Length N determines dimensionality (1D, 2D, or 3D).
     bins : sequence of torch.Tensor
         List/tuple of 1D arrays defining bin edges for each dimension.
         Must have uniform spacing. Length must match positions.
@@ -168,7 +168,7 @@ def deposit_charge_cic(
         charge[b].index_add_(0, idx_all[b], vals_all[b])
 
     # Reshape back to original batch dims + grid dims
-    out_shape = (*batch_shape, *grid_sizes[::-1])
+    out_shape = (*batch_shape, *grid_sizes)
 
     # Calculate inverse cell volume
     cell_volume = 1.0
@@ -245,7 +245,7 @@ def deposit_charge_cic_2d(
         weights,
     )
 
-    return charge_density.mT
+    return charge_density
 
 
 def deposit_charge_cic_3d(
@@ -291,5 +291,4 @@ def deposit_charge_cic_3d(
         weights,
     )
 
-    return charge_density.mT
-    return charge_density.mT
+    return charge_density
