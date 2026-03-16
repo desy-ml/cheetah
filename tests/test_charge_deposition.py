@@ -450,7 +450,6 @@ def test_deposit_charge_cic_charge_loss_outside_bounds():
 def test_deposit_charge_cic_batched():
     """Test batched processing in generalized function."""
     batch_size = 2
-    n_particles = 3
 
     # 2D batched case
     x1 = torch.tensor([[0.5, 1.5, 0.8], [1.2, 0.3, 1.7]])
