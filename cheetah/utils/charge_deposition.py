@@ -12,7 +12,7 @@ def deposit_charge_cic(
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D, 2D, or 3D.
 
     :param positions: List or tuple of particle position tensors, each of shape
-        `(..., N)`, leading with optinoal batch dimension.
+        `(..., N)`, leading with optional batch dimension.
         `N` is the number of particles.
         The length `d` of `positions` determines the dimensionality
         (1D, 2D, or 3D).
@@ -79,13 +79,12 @@ def deposit_charge_cic(
         weights = weights * (~outside_mask).float()
 
     # Normalize particle coordinates to grid index space
-    normalized_coords = []
     grid_indices = []
     fractional_parts = []
 
     for pos, bin_array, spacing in zip(positions, bins, spacings):
+        # Normalized coordinate in grid index space
         u = (pos - bin_array[0]) / spacing
-        normalized_coords.append(u)
 
         # Left cell index
         i = torch.floor(u).to(torch.int64)
@@ -175,9 +174,7 @@ def deposit_charge_cic(
 
     # Reshape back to original batch dims + grid dims
     out_shape = (*batch_shape, *grid_sizes[::-1])
-    charge = charge.reshape(
-        out_shape
-    )  # Reshape is row-majored, so grid dims are reversed
+    charge = charge.reshape(out_shape)  # Grid dims are reversed by the reshape
 
     batch_ndim = len(batch_shape)
     spatial_axes = list(range(batch_ndim, batch_ndim + ndim))
@@ -230,13 +227,11 @@ def deposit_charge_cic_2d(
         particles have weight 1.
     :return: Charge density on the 2D grid with shape `(..., Nx, Ny)`.
     """
-    charge_density = deposit_charge_cic(
+    return deposit_charge_cic(
         [x1, x2],
         [bins1, bins2],
         weights,
     )
-
-    return charge_density
 
 
 def deposit_charge_cic_3d(
@@ -267,10 +262,8 @@ def deposit_charge_cic_3d(
         particles have weight 1.
     :return: Charge density on the 3D grid with shape `(..., Nx, Ny, Nz)`.
     """
-    charge_density = deposit_charge_cic(
+    return deposit_charge_cic(
         [x1, x2, x3],
         [bins1, bins2, bins3],
         weights,
     )
-
-    return charge_density
