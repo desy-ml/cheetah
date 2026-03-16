@@ -166,9 +166,6 @@ def deposit_charge_cic(
     for b in range(B):
         charge[b].index_add_(0, idx_all[b], vals_all[b])
 
-    # Reshape back to original batch dims + grid dims
-    out_shape = (*batch_shape, *grid_sizes)
-
     # Calculate inverse cell volume
     cell_volume = 1.0
     for spacing in spacings:
@@ -176,7 +173,17 @@ def deposit_charge_cic(
     inv_cell_volume = 1.0 / cell_volume
     charge = charge * inv_cell_volume
 
-    return charge.reshape(out_shape)
+    # Reshape back to original batch dims + grid dims
+    out_shape = (*batch_shape, *grid_sizes[::-1])
+    charge = charge.reshape(
+        out_shape
+    )  # Reshape is row-majored, so grid dims are reversed
+
+    batch_ndim = len(batch_shape)
+    spatial_axes = list(range(batch_ndim, batch_ndim + ndim))
+
+    # Permute to put spatial axes in the correct order
+    return charge.permute(*range(batch_ndim), *reversed(spatial_axes))
 
 
 def deposit_charge_cic_1d(
