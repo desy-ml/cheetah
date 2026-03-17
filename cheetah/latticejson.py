@@ -59,7 +59,6 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
 
             elements.update(segment_elements)
             lattices.update(segment_lattices)
-
         else:
             element_name, element_class, element_params = convert_element(element)
             elements[element_name] = [element_class, element_params]

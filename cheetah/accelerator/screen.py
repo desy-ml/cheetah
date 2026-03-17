@@ -75,7 +75,7 @@ class Screen(Element):
             "charge_deposition",
         ], (
             f"Invalid method {method}. "
-            "Must be either 'histogram', 'kde', or 'charge_deposition'."
+            "Must be 'histogram', 'kde', or 'charge_deposition'."
         )
 
         self.register_buffer_or_parameter(
@@ -228,7 +228,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
-        """Get the screen's reading in the (height, width) format."""
+        """Image reading of the screen with shape `(..., height, width)."""
         if self.cached_reading is not None:
             return self.cached_reading
 
