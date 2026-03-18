@@ -473,25 +473,30 @@ class Dipole(Element):
         ax.add_patch(patch)
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
         import trimesh
 
         mesh, output_transform = super().to_mesh(
-            cuteness=cuteness, show_download_progress=show_download_progress
+            cuteness=cuteness,
+            asset_version=asset_version,
+            show_download_progress=show_download_progress,
         )
 
         # Rotate the mesh by half the bending angle
         mesh_rotation = trimesh.transformations.rotation_matrix(
-            self.angle.item() / 2.0, [0, 1, 0], [0, 0, 0]
+            -self.angle.item() / 2.0, [0, 1, 0], [0, 0, 0]
         )
         mesh.apply_transform(mesh_rotation)
 
         # Rotate the output transform by the full bending angle
         output_transform = (
             trimesh.transformations.rotation_matrix(
-                self.angle.item(), [0, 1, 0], [0, 0, 0]
+                -self.angle.item(), [0, 1, 0], [0, 0, 0]
             )
             @ output_transform
         )

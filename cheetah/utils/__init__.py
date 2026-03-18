@@ -27,7 +27,7 @@ from .warnings import (  # noqa: F401
     DirtyNameWarning,
     NoBeamPropertiesInLatticeWarning,
     NotUnderstoodPropertyWarning,
-    NoVisualizationWarning,
     PhysicsWarning,
     UnknownElementWarning,
+    VisualizationWarning,
 )
