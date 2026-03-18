@@ -184,9 +184,7 @@ def deposit_charge_cic(
 
 
 def deposit_charge_cic_1d(
-    x: torch.Tensor,
-    bins: torch.Tensor,
-    weights: torch.Tensor | None = None,
+    x: torch.Tensor, bins: torch.Tensor, weights: torch.Tensor | None = None
 ) -> torch.Tensor:
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D.
@@ -227,11 +225,7 @@ def deposit_charge_cic_2d(
         particles have weight 1.
     :return: Charge density on the 2D grid with shape `(..., Nx, Ny)`.
     """
-    return deposit_charge_cic(
-        [x1, x2],
-        [bins1, bins2],
-        weights,
-    )
+    return deposit_charge_cic([x1, x2], [bins1, bins2], weights)
 
 
 def deposit_charge_cic_3d(
@@ -262,8 +256,4 @@ def deposit_charge_cic_3d(
         particles have weight 1.
     :return: Charge density on the 3D grid with shape `(..., Nx, Ny, Nz)`.
     """
-    return deposit_charge_cic(
-        [x1, x2, x3],
-        [bins1, bins2, bins3],
-        weights,
-    )
+    return deposit_charge_cic([x1, x2, x3], [bins1, bins2, bins3], weights)

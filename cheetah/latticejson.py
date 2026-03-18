@@ -61,6 +61,7 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
             lattices.update(segment_lattices)
         else:
             element_name, element_class, element_params = convert_element(element)
+
             elements[element_name] = [element_class, element_params]
 
         cell.append(element_name)
@@ -174,6 +175,7 @@ def parse_element(
         key: nontorch2feature(value, device=device, dtype=dtype)
         for key, value in params.items()
     }
+
     return element_class(name=name, **converted_params)
 
 
