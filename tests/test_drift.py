@@ -83,7 +83,8 @@ def test_length_as_parameter():
     outgoing_parameter = drift_parameter.track(incoming)
 
     # Check that all properties of the two outgoing beams are same
-    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+    beam_attributes = [attr for attr in outgoing.defining_features if attr != "species"]
+    for attribute in beam_attributes:
         assert torch.allclose(
             getattr(outgoing, attribute), getattr(outgoing_parameter, attribute)
         )
@@ -105,7 +106,8 @@ def test_inversion_with_negative_length():
     outgoing = segment.track(incoming)
 
     # Check that all properties of the two beams are same
-    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+    beam_attributes = [attr for attr in outgoing.defining_features if attr != "species"]
+    for attribute in beam_attributes:
         assert torch.allclose(
             getattr(incoming, attribute), getattr(outgoing, attribute)
         )
