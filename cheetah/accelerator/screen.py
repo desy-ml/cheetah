@@ -29,8 +29,8 @@ class Screen(Element):
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
     :param method: Method used to generate the screen's reading. Can be either
-        "histogram", "kde", or "charge_deposition", defaults to "histogram".
-        KDE and charge_deposition methods allow backward differentiation.
+        "histogram", "kde", or "cloud_in_cell", defaults to "histogram".
+        KDE and cloud_in_cell methods allow backward differentiation.
     :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
         Controls the smoothness of the distribution.
     :param is_blocking: If `True` the screen is blocking and will stop the beam.
@@ -43,7 +43,7 @@ class Screen(Element):
         access the element in a segment.
 
     NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method='kde'` or `method='charge_deposition'` instead.
+        `method='kde'` or `method='cloud_in_cell'` instead.
         Similarly, `ParameterBeam` can also not be vectorised.
         Please use `ParticleBeam` instead.
     """
@@ -54,7 +54,7 @@ class Screen(Element):
         pixel_size: torch.Tensor | None = None,
         binning: int = 1,
         misalignment: torch.Tensor | None = None,
-        method: Literal["histogram", "kde", "charge_deposition"] = "histogram",
+        method: Literal["histogram", "kde", "cloud_in_cell"] = "histogram",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
         is_active: bool = False,
@@ -72,10 +72,10 @@ class Screen(Element):
         assert method in [
             "histogram",
             "kde",
-            "charge_deposition",
+            "cloud_in_cell",
         ], (
             f"Invalid method {method}. "
-            "Must be 'histogram', 'kde', or 'charge_deposition'."
+            "Must be 'histogram', 'kde', or 'cloud_in_cell'."
         )
 
         self.register_buffer_or_parameter(
@@ -312,7 +312,7 @@ class Screen(Element):
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
                 ).mT
-            elif self.method == "charge_deposition":
+            elif self.method == "cloud_in_cell":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
                 )

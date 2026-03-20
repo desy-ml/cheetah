@@ -7,7 +7,7 @@
 ### 🚀 Features
 
 - All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
-- Add new Cloud-In-Cell (CIC) method for n-D charge deposition. Add new `charge_deposition` method for `Screen` that is differentiable and faster than `kde` method. (see #625) (@roussel-ryan, @cr-xu)
+- Add new Cloud-In-Cell (CIC) method for n-D charge deposition. Add new `cloud_in_cell` method for `Screen` that is differentiable and faster than `kde` method. (see #625) (@roussel-ryan, @cr-xu)
 
 ### 🐛 Bug fixes
 
