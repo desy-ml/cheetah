@@ -91,7 +91,10 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     outgoing_beam = segment.track(incoming_beam)
 
     # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+    beam_attributes = [
+        attr for attr in outgoing_beam.defining_features if attr != "species"
+    ]
+    for attribute in beam_attributes:
         assert getattr(outgoing_beam, attribute).device.type == device.type
         assert getattr(outgoing_beam, attribute).dtype == dtype
 
@@ -160,7 +163,10 @@ def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     outgoing_beam = segment.track(incoming_beam)
 
     # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+    beam_attributes = [
+        attr for attr in outgoing_beam.defining_features if attr != "species"
+    ]
+    for attribute in beam_attributes:
         assert getattr(outgoing_beam, attribute).device.type == device.type
         assert getattr(outgoing_beam, attribute).dtype == dtype
 

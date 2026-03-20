@@ -28,8 +28,9 @@ def test_beam_buffer_contents_and_location(BeamClass):
     """
     beam = BeamClass.from_parameters(species=cheetah.Species("positron"))
     clone = beam.clone()
+    beam_attributes = [attr for attr in beam.defining_features if attr != "species"]
 
-    for attribute in beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+    for attribute in beam_attributes:
         beam_attribute = getattr(beam, attribute)
         cloned_attribute = getattr(clone, attribute)
 

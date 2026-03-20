@@ -11,7 +11,7 @@ def test_change_beam_attribute_dtype(BeamClass):
     transitively tests that all attributes are registered as PyTorch buffers.
     """
     beam = BeamClass.from_parameters()
-    beam_attributes = beam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+    beam_attributes = [attr for attr in beam.defining_features if attr != "species"]
 
     # Ensure all attributes have the same dtype initially
     for attribute in beam_attributes:
@@ -30,7 +30,7 @@ def test_transformed_beam_dtype(BeamClass):
     beam = BeamClass.from_parameters(
         mu_x=torch.tensor(1e-5, dtype=torch.float64), dtype=torch.float64
     )
-    beam_attributes = beam.UNVECTORIZED_NUM_ATTR_DIMS.keys()
+    beam_attributes = [attr for attr in beam.defining_features if attr != "species"]
 
     # Verify the dtype is kept
     transformed_beam = beam.transformed_to(

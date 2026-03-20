@@ -573,7 +573,7 @@ class Segment(Element):
         broadcasted_results = tuple(
             torch.stack(
                 torch.broadcast_tensors(*attr_tensor),
-                dim=-(incoming.UNVECTORIZED_NUM_ATTR_DIMS[attr_name] + 1),
+                dim=-(incoming.UNVECTORIZED_NUM_ATTR_DIMS.get(attr_name, 0) + 1),
             )
             for attr_tensor, attr_name in zip(results, attr_name_tuple)
         )
