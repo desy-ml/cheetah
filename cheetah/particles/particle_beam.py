@@ -1,4 +1,5 @@
 import itertools
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -765,12 +766,12 @@ class ParticleBeam(Beam):
         cls, path: str, device: torch.device = None, dtype: torch.dtype = None
     ) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
+        from cheetah.converters.astra import from_astrabeam
+
         factory_kwargs = {
             "device": device or torch.get_default_device(),
             "dtype": dtype or torch.get_default_dtype(),
         }
-
-        from cheetah.converters.astra import from_astrabeam
 
         particles, energy, particle_charges = from_astrabeam(path)
 
@@ -787,6 +788,43 @@ class ParticleBeam(Beam):
 
         return cls(
             particles=particles_7d,
+            energy=energy,
+            particle_charges=particle_charges,
+            species=species,
+            **factory_kwargs,
+        )
+
+    @classmethod
+    def from_elegant(
+        cls,
+        file_path: Path | str,
+        device: torch.device = None,
+        dtype: torch.dtype = None,
+    ) -> "ParticleBeam":
+        """
+        Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
+
+        :param file_path: Path to the SDDS file from which to load the Elegant beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
+        """
+        from cheetah.converters import elegant
+
+        factory_kwargs = {
+            "device": device or torch.get_default_device(),
+            "dtype": dtype or torch.get_default_dtype(),
+        }
+
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+
+        particles, energy, particle_charges = elegant.convert_beam(
+            file_path, **factory_kwargs
+        )
+        species = Species("electron", **factory_kwargs)
+
+        return cls(
+            particles=particles,
             energy=energy,
             particle_charges=particle_charges,
             species=species,

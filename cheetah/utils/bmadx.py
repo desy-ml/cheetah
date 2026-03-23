@@ -94,9 +94,7 @@ def bmad_to_cheetah_coords(
     # TODO This can probably be moved to the `ParticleBeam` class at some point
 
     # Initialize Cheetah coordinates
-    cheetah_coords = torch.ones(
-        (*bmad_coords.shape[:-1], 7), dtype=bmad_coords.dtype, device=bmad_coords.device
-    )
+    cheetah_coords = bmad_coords.new_ones((*bmad_coords.shape[:-1], 7))
     cheetah_coords[..., :6] = bmad_coords.clone()
 
     # Bmad longitudinal coordinates
@@ -238,12 +236,10 @@ def calculate_quadrupole_coefficients(
         c1, c2, c3: Second order derivatives of z such that
             z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
     """
-    # TODO: Revisit to fix accumulated error due to machine epsilon
-    sqrt_k = (k1.abs() + eps).sqrt()
-    sk_l = sqrt_k * length.unsqueeze(-1)
-
-    cx = sk_l.cos() * (k1 <= 0) + sk_l.cosh() * (k1 > 0)
-    sx = (sk_l.sin() / (sqrt_k)) * (k1 <= 0) + (sk_l.sinh() / (sqrt_k)) * (k1 > 0)
+    # The sign of k1 is flipped compared to track_methods by convention
+    kx = (torch.complex(-k1, torch.zeros_like(k1))).sqrt()
+    cx = (kx * length.unsqueeze(-1)).cos().real
+    sx = ((kx * length.unsqueeze(-1) / torch.pi).sinc() * length.unsqueeze(-1)).real
 
     a11 = cx
     a12 = sx / rel_p
