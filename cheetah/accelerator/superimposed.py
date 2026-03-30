@@ -1,5 +1,6 @@
-from matplotlib import pyplot as plt
 import torch
+from matplotlib import pyplot as plt
+
 from cheetah.accelerator import Segment
 from cheetah.accelerator.element import Element
 from cheetah.particles.beam import Beam
@@ -8,25 +9,25 @@ from cheetah.particles.species import Species
 
 class SuperimposedElement(Element):
     """
-    A segment that represents a superimposed structure in an accelerator, 
+    A segment that represents a superimposed structure in an accelerator,
     ie. where one element is placed over another at the center of the base element.
-    
-    """
-    def __init__(
-        self, 
-        base_element: Element,
-        superimposed_element: Element,
-        name = None, 
-        sanitize_name = False
-    ):
 
+    """
+
+    def __init__(
+        self,
+        base_element: Element,
+        superimposed_element: Segment,
+        name=None,
+        sanitize_name=False,
+    ):
         """
         Parameters
         ----------
         base_element : Element
             The base element over which other elements are superimposed.
         superimposed_element : Element
-            Element to be superimposed at the center of the base element.
+            Segment of elements to be superimposed at the center of base element
         name : str, optional
             The name of the segment. If None, a default name is generated.
         sanitize_name : bool, optional
@@ -36,7 +37,18 @@ class SuperimposedElement(Element):
         super().__init__(name=name, sanitize_name=sanitize_name)
 
         self.base_element = base_element
-        self.superimposed_element = superimposed_element
+        if isinstance(superimposed_element, Segment):
+            self.superimposed_element = superimposed_element
+        elif isinstance(superimposed_element, Element):
+            self.superimposed_element = Segment(elements=[superimposed_element])
+        else:
+            raise TypeError(
+                f"superimposed_element must be a Segment or Element subclass, "
+                f"got {type(superimposed_element).__name__}"
+            )
+        # self.name = (self.base_element.name
+        #             if self.base_element.name
+        #             is not None else self.name)
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
@@ -65,7 +77,7 @@ class SuperimposedElement(Element):
             for todo in todos:
                 incoming = todo.track(incoming)
 
-            return incoming            
+            return incoming
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
@@ -79,15 +91,22 @@ class SuperimposedElement(Element):
             return None
 
     @property
-    def subelements(self) -> torch.nn.ModuleList:
+    def subelements(self) -> list[Element]:
         base_split = self.base_element.split(self.base_element.length / 2)
         base_split[0].name = f"{self.base_element.name}#0"
         base_split[1].name = f"{self.base_element.name}#1"
 
         if isinstance(self.superimposed_element, Segment):
-            return torch.nn.ModuleList([base_split[0]])  + self.superimposed_element.elements + torch.nn.ModuleList([base_split[1]])
+            return (
+                torch.nn.ModuleList([base_split[0]])
+                + self.superimposed_element.elements
+                + torch.nn.ModuleList([base_split[1]])
+            )
         else:
-            return torch.nn.ModuleList([base_split[0], self.superimposed_element, base_split[1]])
+            raise TypeError(
+                f"superimposed_element must be a Segment or Element subclass, "
+                f"got {type(self.superimposed_element).__name__}"
+            )
 
     @property
     def is_skippable(self) -> bool:
@@ -96,15 +115,17 @@ class SuperimposedElement(Element):
     @property
     def length(self) -> float:
         return self.base_element.length
-    
+
     def split(self, resolution):
-        raise NotImplementedError("Splitting a SuperimposedElement is not supported yet.")
-    
+        raise NotImplementedError(
+            "Splitting a SuperimposedElement is not supported yet."
+        )
+
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
         return self.base_element.plot(s, vector_idx=vector_idx, ax=ax)
-    
+
     @property
     def defining_features(self) -> list[str]:
         return ["base_element", "superimposed_element"]

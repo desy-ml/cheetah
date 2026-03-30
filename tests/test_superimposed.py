@@ -1,7 +1,9 @@
-from cheetah.accelerator import SuperimposedElement, BPM, Quadrupole, Drift, Segment
+import torch
+
+from cheetah.accelerator import BPM, Drift, Quadrupole, Segment, SuperimposedElement
 from cheetah.latticejson import convert_segment, parse_segment
 from cheetah.particles import ParticleBeam
-import torch
+
 
 def test_superimposed_bpm():
     """
@@ -16,9 +18,7 @@ def test_superimposed_bpm():
 
     # Create a superimposed segment
     superimposed_segment = SuperimposedElement(
-        base_element=quad,
-        superimposed_element=bpm,
-        name="SuperimposedBPM"
+        base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
     )
 
     # make sure the elements are as expected
@@ -48,7 +48,8 @@ def test_superimposed_bpm():
     # check the names of the elements in the superimposed segment
     assert superimposed_segment.subelements[0].k1 == quad.k1
 
-    # check to make sure setting the strength of the quadrupole in the superimposed segment works
+    # check to make sure setting the strength of the quadrupole in
+    # the superimposed segment works
     superimposed_segment.base_element.k1 = torch.tensor(2.0)
     assert superimposed_segment.subelements[0].k1 == torch.tensor(2.0)
     assert superimposed_segment.subelements[2].k1 == torch.tensor(2.0)
@@ -61,7 +62,8 @@ def test_superimposed_bpm():
     tm_expected = quad.first_order_transfer_map(energy, species)
     assert torch.allclose(tm, tm_expected)
 
-    # set the quadrupole strength through the superimposed segment and ensure it propagates
+    # set the quadrupole strength through the superimposed segment
+    # and ensure it propagates
     superimposed_segment.base_element.k1 = torch.tensor(3.0)
     quad.k1 = torch.tensor(3.0)
 
@@ -73,8 +75,7 @@ def test_superimposed_bpm():
     superimposed_segment.superimposed_element.is_active = True
     superimposed_segment.track(incoming_beam)
     assert torch.allclose(
-        superimposed_segment.superimposed_element.reading,
-        torch.zeros(2)
+        superimposed_segment.superimposed_element.reading, torch.zeros(2)
     )
 
 
@@ -84,15 +85,9 @@ def test_in_lattice():
     bpm = BPM(name="BPM1", is_active=False)
 
     superimposed_segment = SuperimposedElement(
-        base_element=quad,
-        superimposed_element=bpm,
-        name="SuperimposedBPM"
+        base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
     )
-    full_segment = Segment([
-        drift,
-        superimposed_segment,
-        drift
-    ])
+    full_segment = Segment([drift, superimposed_segment, drift])
     assert full_segment.element_names == ["Drift", "SuperimposedBPM", "Drift"]
 
     # Create an incoming particle beam
@@ -119,33 +114,19 @@ def test_to_json():
     bpm = BPM(name="BPM1", is_active=False)
 
     superimposed_element = SuperimposedElement(
-        base_element=quad,
-        superimposed_element=bpm,
-        name="SuperimposedBPM"
+        base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
     )
-    full_segment = Segment([
-        drift,
-        superimposed_element,
-        drift
-    ], name="FullSegment")
+    full_segment = Segment([drift, superimposed_element, drift], name="FullSegment")
 
     # test conversion to dict
     elements, lattices = convert_segment(full_segment)
-    segment_dict = {
-        "elements": elements,
-        "lattices": lattices
-    }
-    
+    segment_dict = {"elements": elements, "lattices": lattices}
+
     # test conversion back to segment
-    reconstructed_segment = parse_segment(
-        "FullSegment",
-        segment_dict
+    reconstructed_segment = parse_segment("FullSegment", segment_dict)
+    assert (
+        reconstructed_segment.SuperimposedBPM.base_element.k1
+        == superimposed_element.base_element.k1
     )
-    assert reconstructed_segment.SuperimposedBPM.base_element.k1 == superimposed_element.base_element.k1
 
     full_segment.to_lattice_json("full_segment.json")
-
-
-
-
-
