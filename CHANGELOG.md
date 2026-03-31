@@ -4,9 +4,12 @@
 
 ### 🚨 Breaking Changes
 
+- The `SpaceChargeKick` element has been renamed to `SpaceChargeKick3D` in order to reflect the difference to the new `SpaceChargeKick2D` element (see #576) (@austin-hoover, @RemiLehe, @jank324)
+
 ### 🚀 Features
 
 - All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+- Add a `SpaceChargeKick2D` element that applies a space charge kick using the 2D integrated Green function method (see #576) (@austin-hoover, @RemiLehe, @jank324)
 
 ### 🐛 Bug fixes
 
