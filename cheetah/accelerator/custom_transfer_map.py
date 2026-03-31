@@ -1,3 +1,5 @@
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
@@ -21,12 +23,13 @@ class CustomTransferMap(Element):
         access the element in a segment.
     """
 
-    supported_tracking_methods = ["linear"]
+    supported_tracking_methods = ["linear", "second_order"]
 
     def __init__(
         self,
         predefined_transfer_map: torch.Tensor,
         length: torch.Tensor | None = None,
+        tracking_method: Literal["linear", "second_order"] = "linear",
         name: torch.Tensor | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -35,17 +38,26 @@ class CustomTransferMap(Element):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
+        self.tracking_method = tracking_method
         if length is not None:
             self.length = length
 
-        assert (predefined_transfer_map[..., -1, :-2] == 0.0).all() and (
-            predefined_transfer_map[..., -1, -1] == 1.0
-        ).all(), "The seventh row of the transfer map must be [0, 0, 0, 0, 0, 0, 1]."
+        if self.tracking_method == "second_order":
+            assert predefined_transfer_map.shape[-3:] == (7, 7, 7)
+            assert (
+                (predefined_transfer_map[..., -1, :, :-1] == 0.0).all()
+                and (predefined_transfer_map[..., -1, :-1, -1] == 0.0).all()
+                and (predefined_transfer_map[..., -1, -1, -1] == 1.0).all()
+            ), "The final plane of the output dimension must only contain a single 1."
+        else:
+            assert predefined_transfer_map.shape[-2:] == (7, 7)
+            assert (predefined_transfer_map[..., -1, :-1] == 0.0).all() and (
+                predefined_transfer_map[..., -1, -1] == 1.0
+            ).all(), "The final row of the transfer map must be [0, 0, 0, 0, 0, 0, 1]."
+
         self.register_buffer_or_parameter(
             "predefined_transfer_map", predefined_transfer_map
         )
-
-        assert self.predefined_transfer_map.shape[-2:] == (7, 7)
 
     @classmethod
     def from_merging_elements(
@@ -92,18 +104,61 @@ class CustomTransferMap(Element):
 
         return cls(tm, length=combined_length, name=combined_name, **factory_kwargs)
 
+    def track(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the custom transfer map.
+
+        :param incoming: Beam entering the element.
+        :return: Beam exiting the element.
+        """
+        if self.tracking_method == "linear":
+            return super()._track_first_order(incoming)
+        elif self.tracking_method == "second_order":
+            return super()._track_second_order(incoming)
+        else:
+            raise ValueError(
+                f"Invalid tracking method {self.tracking_method}. For element of"
+                f" type {self.__class__.__name__}, supported methods are "
+                f"{self.supported_tracking_methods}."
+            )
+
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return self.predefined_transfer_map
+        if self.tracking_method == "linear":
+            return self.predefined_transfer_map
+        else:
+            transfer_map = self.predefined_transfer_map[..., :, 6, :]
+            transfer_map[..., :6, :] += self.predefined_transfer_map[..., :6, :, 6]
+
+            return transfer_map
+
+    def second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        if self.tracking_method == "second_order":
+            return self.predefined_transfer_map
+        else:
+            transfer_map = torch.zeros(
+                (*self.predefined_transfer_map.shape[:-2], 7, 7, 7),
+                device=self.predefined_transfer_map.device,
+                dtype=self.predefined_transfer_map.dtype,
+            )
+            transfer_map[..., :, 6, :] = self.predefined_transfer_map
+
+            return transfer_map
 
     @property
     def is_skippable(self) -> bool:
-        return True
+        return self.tracking_method == "linear"
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "predefined_transfer_map"]
+        return super().defining_features + [
+            "length",
+            "predefined_transfer_map",
+            "tracking_method",
+        ]
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
