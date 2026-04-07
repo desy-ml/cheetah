@@ -72,10 +72,10 @@ def test_superimposed_bpm():
     assert torch.allclose(tm, tm_expected)
 
     # set the BPM to active and ensure tracking still works
-    superimposed_segment.superimposed_element.is_active = True
+    superimposed_segment.superimposed_element.elements[0].is_active = True
     superimposed_segment.track(incoming_beam)
     assert torch.allclose(
-        superimposed_segment.superimposed_element.reading, torch.zeros(2)
+        superimposed_segment.superimposed_element.elements[0].reading, torch.zeros(2)
     )
 
 
