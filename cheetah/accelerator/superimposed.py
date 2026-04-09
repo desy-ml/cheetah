@@ -46,9 +46,8 @@ class SuperimposedElement(Element):
                 f"superimposed_element must be a Segment or Element subclass, "
                 f"got {type(superimposed_element).__name__}"
             )
-        # self.name = (self.base_element.name
-        #             if self.base_element.name
-        #             is not None else self.name)
+
+        self._buffers["length"] = self.base_element._buffers["length"]
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
@@ -92,29 +91,43 @@ class SuperimposedElement(Element):
 
     @property
     def subelements(self) -> list[Element]:
-        base_split = self.base_element.split(self.base_element.length / 2)
-        base_split[0].name = f"{self.base_element.name}#0"
-        base_split[1].name = f"{self.base_element.name}#1"
+        half_length = self.length / 2
+        base = self.base_element
+
+        kwargs = {
+            feature: getattr(base, feature)
+            for feature in base.defining_features
+            if feature != "length" and feature != "name"
+        }
+
+        first = type(base)(
+            length=half_length,
+            name=f"{base.name}#0",
+            sanitize_name=False,
+            dtype=base.length.dtype,
+            device=base.length.device,
+            **kwargs,
+        )
+        second = type(base)(
+            length=half_length,
+            name=f"{base.name}#1",
+            sanitize_name=False,
+            dtype=base.length.dtype,
+            device=base.length.device,
+            **kwargs,
+        )
 
         if isinstance(self.superimposed_element, Segment):
-            return (
-                torch.nn.ModuleList([base_split[0]])
-                + self.superimposed_element.elements
-                + torch.nn.ModuleList([base_split[1]])
-            )
-        else:
-            raise TypeError(
-                f"superimposed_element must be a Segment or Element subclass, "
-                f"got {type(self.superimposed_element).__name__}"
-            )
+            return [first, *self.superimposed_element.elements, second]
+
+        raise TypeError(
+            f"superimposed_element must be a Segment or Element subclass, "
+            f"got {type(self.superimposed_element).__name__}"
+        )
 
     @property
     def is_skippable(self) -> bool:
         return all([el.is_skippable for el in self.subelements])
-
-    @property
-    def length(self) -> float:
-        return self.base_element.length
 
     def split(self, resolution):
         raise NotImplementedError(
