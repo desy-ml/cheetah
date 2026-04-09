@@ -40,7 +40,10 @@ class SuperimposedElement(Element):
         if isinstance(superimposed_element, Segment):
             self.superimposed_element = superimposed_element
         elif isinstance(superimposed_element, Element):
-            self.superimposed_element = Segment(elements=[superimposed_element])
+            self.superimposed_element = Segment(
+                elements=[superimposed_element],
+                name=f"{superimposed_element.name}_segment",
+            )
         else:
             raise TypeError(
                 f"superimposed_element must be a Segment or Element subclass, "
