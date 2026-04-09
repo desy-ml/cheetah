@@ -47,7 +47,15 @@ class SuperimposedElement(Element):
                 f"got {type(superimposed_element).__name__}"
             )
 
-        self._buffers["length"] = self.base_element._buffers["length"]
+    # self._buffers["length"] = self.base_element._buffers["length"]
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+
+        if name == "length" and hasattr(self, "base_element"):
+            base = getattr(self, "base_element", None)
+            if base is not None:
+                base.length = self.length
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
@@ -91,7 +99,7 @@ class SuperimposedElement(Element):
 
     @property
     def subelements(self) -> list[Element]:
-        half_length = self.length / 2
+        half_length = self.base_element.length / 2
         base = self.base_element
 
         kwargs = {
