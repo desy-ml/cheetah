@@ -5,6 +5,9 @@ from cheetah.accelerator import Segment
 from cheetah.accelerator.element import Element
 from cheetah.particles.beam import Beam
 from cheetah.particles.species import Species
+from cheetah.utils.unique_name_generator import UniqueNameGenerator
+
+generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
 class SuperimposedElement(Element):
@@ -147,4 +150,4 @@ class SuperimposedElement(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return ["base_element", "superimposed_element"]
+        return super().defining_features + ["base_element", "superimposed_element"]
