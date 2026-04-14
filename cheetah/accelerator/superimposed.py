@@ -140,11 +140,6 @@ class SuperimposedElement(Element):
     def is_skippable(self) -> bool:
         return all([el.is_skippable for el in self.subelements])
 
-    # def split(self, resolution):
-    #    raise NotImplementedError(
-    #        "Splitting a SuperimposedElement is not supported yet."
-    #    )
-
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
