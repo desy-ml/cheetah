@@ -95,13 +95,12 @@ class SuperimposedElement(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        if self.is_skippable:
-            tm = torch.eye(7, device=energy.device, dtype=energy.dtype)
-            for element in self.subelements:
-                tm = element.first_order_transfer_map(energy, species) @ tm
-            return tm
-        else:
-            return None
+        tm = torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
+            (*energy.shape, 1, 1)
+        )
+        for element in self.subelements:
+            tm = element.first_order_transfer_map(energy, species) @ tm
+        return tm
 
     @property
     def subelements(self) -> list[Element]:
