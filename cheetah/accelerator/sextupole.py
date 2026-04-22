@@ -6,7 +6,11 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
+from cheetah.track_methods import (
+    base_ttensor,
+    combined_rotation_misalignment_matrix,
+    drift_matrix,
+)
 from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
 
 
@@ -71,13 +75,14 @@ class Sextupole(Element):
 
     @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
             length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=zero,
             k2=self.k2,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=zero,
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
@@ -86,12 +91,13 @@ class Sextupole(Element):
             length=self.length, species=species, energy=energy
         )
 
-        # Apply misalignments to the entire second-order transfer map
-        if not (self.misalignment == 0).all():
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        # Apply misalignments and rotation to the entire second-order transfer map
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
