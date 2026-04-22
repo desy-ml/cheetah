@@ -4,6 +4,7 @@ from scipy.constants import speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam
+from cheetah.particles.parameter_beam import ParameterBeam
 from cheetah.particles.particle_beam import ParticleBeam
 from cheetah.utils import UniqueNameGenerator
 
@@ -83,8 +84,8 @@ class Patch(Element):
     def track(self, incoming: Beam) -> Beam:
         if isinstance(incoming, ParticleBeam):
             return self._transform_particles(incoming)
-        else:
-            raise TypeError("Patch element currently only supports ParticleBeam input.")
+        elif isinstance(incoming, ParameterBeam):
+            return self._transform_parameters(incoming)
 
     def _transform_particles(self, incoming: ParticleBeam) -> Beam:
         # Momentum coordinates
@@ -137,6 +138,61 @@ class Patch(Element):
             energy=incoming.energy + self.energy_offset,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + self.length,
+            species=incoming.species,
+        )
+
+    def _transform_parameters(self, incoming: ParameterBeam) -> ParameterBeam:
+        """
+        Transform a ParameterBeam through the Patch element.
+
+        The Patch applies linear transformations to the 7D phase space vector.
+        For Gaussian beams, the mean and covariance transform as:
+            mu' = A @ mu + b
+            cov' = A @ cov @ A^T
+        """
+        # Get the rotation matrix (applies to positions and momenta)
+        rotation_matrix = self._rotation_matrix()  # Shape: (..., 3, 3)
+
+        # Build the full 7x7 transformation matrix for phase space
+        # The 7th dimension (always 1) doesn't transform
+        batch_shape = rotation_matrix.shape[:-2]  # Get batch shape from rotation matrix
+        A = torch.eye(7, dtype=incoming.mu.dtype, device=incoming.mu.device)
+        A = A.expand(*batch_shape, 7, 7).clone()  # Shape: (..., 7, 7)
+        position_idx = torch.tensor([0, 2, 4], device=incoming.mu.device)  # x, y, tau
+        momentum_idx = torch.tensor([1, 3, 5], device=incoming.mu.device)  # px, py, p
+        for i in range(len(position_idx)):
+            for j in range(len(momentum_idx)):
+                A[..., position_idx[i], position_idx[j]] = rotation_matrix[..., i, j]
+                A[..., momentum_idx[i], momentum_idx[j]] = rotation_matrix[..., i, j]
+
+        # Build the offset vector [dx, dpx, dy, dpy, d_tau, dp, 0]
+        b = torch.zeros(7, dtype=incoming.mu.dtype, device=incoming.mu.device)
+        b = b.expand(*batch_shape, 7).clone()
+        b[..., 0] = -self.offset[0]  # x offset
+        b[..., 2] = -self.offset[1]  # y offset
+        b[..., 4] = (
+            self.time_offset * speed_of_light
+        )  # time offset to longitudinal offset
+        # Energy offset: convert to dimensionless momentum offset
+        b[..., 5] = self.energy_offset / incoming.energy
+
+        # Transform mean and covariance using linear transformation
+        mu_transformed = torch.matmul(A, incoming.mu.unsqueeze(-1)).squeeze(-1) + b
+        cov_transformed = torch.matmul(
+            torch.matmul(A, incoming.cov), A.transpose(-2, -1)
+        )
+
+        # Handle drift to exit (longitudinal drift)
+        if self.drift_to_exit:
+            # Add the drift length as an offset in tau (longitudinal position)
+            mu_transformed[..., 4] = mu_transformed[..., 4] + self.length
+
+        return ParameterBeam(
+            mu=mu_transformed,
+            cov=cov_transformed,
+            energy=incoming.energy + self.energy_offset,
+            total_charge=incoming.total_charge,
             s=incoming.s + self.length,
             species=incoming.species,
         )
