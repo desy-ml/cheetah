@@ -63,8 +63,8 @@ def test_2d_basic(device, dtype):
     assert torch.allclose(result, expected)
 
 
-def test_deposit_charge_cic_2d_with_weights():
-    """Test CIC charge deposition with custom weights."""
+def test_2d_with_weights():
+    """Test Cloud-in-Cell charge deposition with custom particle weights."""
     x1 = torch.tensor([0.5, 1.5])
     x2 = torch.tensor([0.5, 1.5])
     weights = torch.tensor([2.0, 3.0])
@@ -84,27 +84,32 @@ def test_deposit_charge_cic_2d_with_weights():
         ]
     )
 
-    assert torch.allclose(result, expected, atol=1e-6)
+    assert torch.allclose(result, expected)
 
 
-def test_deposit_charge_cic_2d_batched():
-    """Test batched CIC charge deposition."""
-    batch_size = 2
-
+def test_2d_vectorized():
+    """
+    Basic test of Cloud-in-Cell charge deposition with a vectorised input distribution,
+    i.e. multiple input distributions, and check that the output matches the output of
+    processing each vector element separately in a non-vectorised manner.
+    """
     x1 = torch.tensor([[0.5, 1.5, 0.8], [1.2, 0.3, 1.7]])
     x2 = torch.tensor([[0.5, 1.5, 0.8], [1.2, 0.3, 1.7]])
 
     bins1 = torch.tensor([0.0, 1.0, 2.0])
     bins2 = torch.tensor([0.0, 1.0, 2.0])
 
-    result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
+    vectorized_result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
 
-    assert result.shape == (2, 3, 3)
+    looped_result = torch.stack(
+        [
+            cloud_in_cell_charge_deposition_2d(x1[i], x2[i], bins1, bins2)
+            for i in range(x1.shape[0])
+        ]
+    )
 
-    # Test that each batch is processed correctly
-    for b in range(batch_size):
-        batch_result = cloud_in_cell_charge_deposition_2d(x1[b], x2[b], bins1, bins2)
-        assert torch.allclose(result[b], batch_result, atol=1e-6)
+    assert vectorized_result.shape == (2, 3, 3)
+    assert torch.allclose(vectorized_result, looped_result)
 
 
 def test_deposit_charge_cic_2d_edge_cases():
