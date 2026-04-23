@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from cheetah.utils import is_mps_available_and_functional
 from cheetah.utils.cloud_in_cell import (
     cloud_in_cell_charge_deposition,
     cloud_in_cell_charge_deposition_1d,
@@ -10,16 +11,38 @@ from cheetah.utils.cloud_in_cell import (
 
 
 @pytest.mark.parametrize(
-    "device", ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
+    "device, dtype",
+    [
+        (torch.device("cpu"), torch.float32),
+        (torch.device("cpu"), torch.float64),
+        pytest.param(
+            torch.device("cuda"),
+            torch.float32,
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            torch.float32,
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+    ids=["cpu-float32", "cpu-float64", "cuda-float32", "mps-float32"],
 )
-def test_deposit_charge_cic_2d_basic(device):
-    """Test basic functionality of 2D CIC charge deposition."""
+def test_2d_basic(device, dtype):
+    """
+    Test basic functionality of 2D Cloud-in-Cell charge deposition on a simple test case
+    with a known expected result and for different device and dtype combinations.
+    """
     # Simple test case with known expected result
-    x1 = torch.tensor([0.5, 1.5], device=device, dtype=torch.float32)
-    x2 = torch.tensor([0.5, 1.5], device=device, dtype=torch.float32)
+    x1 = torch.tensor([0.5, 1.5], device=device, dtype=dtype)
+    x2 = torch.tensor([0.5, 1.5], device=device, dtype=dtype)
 
-    bins1 = torch.tensor([0.0, 1.0, 2.0], device=device)
-    bins2 = torch.tensor([0.0, 1.0, 2.0], device=device)
+    bins1 = torch.tensor([0.0, 1.0, 2.0], device=device, dtype=dtype)
+    bins2 = torch.tensor([0.0, 1.0, 2.0], device=device, dtype=dtype)
 
     result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
 
@@ -33,10 +56,11 @@ def test_deposit_charge_cic_2d_basic(device):
             [0.0, 0.25, 0.25],
         ],
         device=device,
+        dtype=dtype,
     )
 
     assert result.shape == (3, 3)
-    assert torch.allclose(result, expected, atol=1e-6)
+    assert torch.allclose(result, expected)
 
 
 def test_deposit_charge_cic_2d_with_weights():
