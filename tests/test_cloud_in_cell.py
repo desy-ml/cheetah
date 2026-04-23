@@ -112,11 +112,14 @@ def test_2d_vectorized():
     assert torch.allclose(vectorized_result, looped_result)
 
 
-def test_deposit_charge_cic_2d_edge_cases():
-    """Test edge cases and boundary conditions."""
+def test_2d_bin_edges():
+    """
+    Test behaviour of 2D Cloud-in-Cell charge deposition for particles placed exactly on
+    bin edges.
+    """
     # Test with particles exactly on grid points (excluding upper boundary)
-    x1 = torch.tensor([0.0, 1.0])  # Removed 2.0 as it's outside [0.0, 2.0)
-    x2 = torch.tensor([0.0, 1.0])  # Removed 2.0 as it's outside [0.0, 2.0)
+    x1 = torch.tensor([0.0, 1.0])  # Removed 2.0 as it is outside [0.0, 2.0)
+    x2 = torch.tensor([0.0, 1.0])  # Removed 2.0 as it is outside [0.0, 2.0)
 
     bins1 = torch.tensor([0.0, 1.0, 2.0])
     bins2 = torch.tensor([0.0, 1.0, 2.0])
@@ -132,12 +135,14 @@ def test_deposit_charge_cic_2d_edge_cases():
         ]
     )
 
-    assert torch.allclose(result, expected, atol=1e-6)
+    assert torch.allclose(result, expected)
 
 
-def test_deposit_charge_cic_2d_outside_bounds():
-    """Test behavior with particles outside grid bounds."""
-    # Particles outside the grid should have their weights set to zero
+def test_2d_outside_bounds():
+    """
+    Test behaviour with particles outside of grid bounds. Particles outside the grid
+    should have their weights set to zero.
+    """
     x1 = torch.tensor([-0.5, 1.0, 2.5])  # First and last outside grid bounds [0, 2]
     x2 = torch.tensor([0.5, 1.0, 1.5])
     weights = torch.tensor([1.0, 2.0, 3.0])
@@ -149,19 +154,17 @@ def test_deposit_charge_cic_2d_outside_bounds():
 
     # Should not raise errors
     assert result.shape == (3, 3)
-    assert not torch.isnan(result).any()
-    assert not torch.isinf(result).any()
+    assert not result.isnan().any()
+    assert not result.isinf().any()
 
-    # Only the middle particle (inside bounds) should contribute
-    # Total deposited charge should be less than total input charge
-    assert result.sum() == 2.0  # Only the middle particle with weight 2.0
-    # Charge conservation violated due to outside particles
+    # Only the middle particle (inside bounds) should contribute, so total deposited
+    # charge should be less than total input charge.
+    assert result.sum() == 2.0
     assert result.sum() < weights.sum()
 
 
 def test_deposit_charge_cic_2d_charge_zeroing():
     """Test that particles outside grid bounds have their charge set to zero."""
-    # Create particles both inside and outside bounds
     x1 = torch.tensor([0.5, 1.5, -0.5, 2.5, 1.0])  # 3rd and 4th outside
     x2 = torch.tensor([0.5, 1.5, 0.5, 1.5, -0.5])  # 5th outside
     weights = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
@@ -173,7 +176,7 @@ def test_deposit_charge_cic_2d_charge_zeroing():
 
     # Only particles 1, 2 should contribute (weights 1.0, 2.0)
     expected_charge = 1.0 + 2.0  # 3.0
-    assert torch.allclose(result.sum(), torch.tensor(expected_charge), atol=1e-6)
+    assert torch.allclose(result.sum(), torch.tensor(expected_charge))
 
     # Verify specific outside particles contribute nothing
     x1_outside_only = torch.tensor([-1.0, 3.0])
