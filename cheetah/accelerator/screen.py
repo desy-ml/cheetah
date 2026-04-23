@@ -10,7 +10,7 @@ from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
-    deposit_charge_cic_2d,
+    cloud_in_cell_charge_deposition_2d,
     kde_histogram_2d,
 )
 
@@ -319,7 +319,7 @@ class Screen(Element):
                 broadcasted_x, broadcasted_y, broadcasted_weights = (
                     torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
                 )
-                image = deposit_charge_cic_2d(
+                image = cloud_in_cell_charge_deposition_2d(
                     x1=broadcasted_x,
                     x2=broadcasted_y,
                     bins1=self.pixel_bin_centers[0],

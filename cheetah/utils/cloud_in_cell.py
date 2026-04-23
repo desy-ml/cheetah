@@ -3,7 +3,7 @@ from typing import Sequence
 import torch
 
 
-def deposit_charge_cic(
+def cloud_in_cell_charge_deposition(
     positions: Sequence[torch.Tensor],
     bins: Sequence[torch.Tensor],
     weights: torch.Tensor | None = None,
@@ -183,13 +183,13 @@ def deposit_charge_cic(
     return charge.permute(*range(batch_ndim), *reversed(spatial_axes))
 
 
-def deposit_charge_cic_1d(
+def cloud_in_cell_charge_deposition_1d(
     x: torch.Tensor, bins: torch.Tensor, weights: torch.Tensor | None = None
 ) -> torch.Tensor:
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D.
 
-    This is a convenience wrapper around `deposit_charge_cic` for 1D cases.
+    This is a convenience wrapper around `cloud_in_cell_charge_deposition` for 1D cases.
     Particles outside the grid bounds have their weights set to zero.
 
     :param x: Particle positions of shape `(..., N)`.
@@ -199,10 +199,10 @@ def deposit_charge_cic_1d(
         particles have weight 1.
     :return: Charge density on the 1D grid with shape `(..., Nx)`.
     """
-    return deposit_charge_cic([x], [bins], weights)
+    return cloud_in_cell_charge_deposition([x], [bins], weights)
 
 
-def deposit_charge_cic_2d(
+def cloud_in_cell_charge_deposition_2d(
     x1: torch.Tensor,
     x2: torch.Tensor,
     bins1: torch.Tensor,
@@ -212,7 +212,7 @@ def deposit_charge_cic_2d(
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
 
-    This is a convenience wrapper around `deposit_charge_cic` for 2D cases.
+    This is a convenience wrapper around `cloud_in_cell_charge_deposition` for 2D cases.
     Particles outside the grid bounds have their weights set to zero.
 
     :param x1: Particle x positions of shape `(..., N)`.
@@ -225,10 +225,10 @@ def deposit_charge_cic_2d(
         particles have weight 1.
     :return: Charge density on the 2D grid with shape `(..., Nx, Ny)`.
     """
-    return deposit_charge_cic([x1, x2], [bins1, bins2], weights)
+    return cloud_in_cell_charge_deposition([x1, x2], [bins1, bins2], weights)
 
 
-def deposit_charge_cic_3d(
+def cloud_in_cell_charge_deposition_3d(
     x1: torch.Tensor,
     x2: torch.Tensor,
     x3: torch.Tensor,
@@ -240,7 +240,7 @@ def deposit_charge_cic_3d(
     """
     Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 3D.
 
-    This is a convenience wrapper around `deposit_charge_cic` for 3D cases.
+    This is a convenience wrapper around `cloud_in_cell_charge_deposition` for 3D cases.
     Particles outside the grid bounds have their weights set to zero.
 
     :param x1: Particle x positions of shape `(..., N)`.
@@ -256,4 +256,4 @@ def deposit_charge_cic_3d(
         particles have weight 1.
     :return: Charge density on the 3D grid with shape `(..., Nx, Ny, Nz)`.
     """
-    return deposit_charge_cic([x1, x2, x3], [bins1, bins2, bins3], weights)
+    return cloud_in_cell_charge_deposition([x1, x2, x3], [bins1, bins2, bins3], weights)

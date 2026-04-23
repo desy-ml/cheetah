@@ -1,10 +1,10 @@
 from . import autograd, bmadx  # noqa: F401
 from .cache import cache_transfer_map  # noqa: F401
-from .charge_deposition import (  # noqa: F401
-    deposit_charge_cic,
-    deposit_charge_cic_1d,
-    deposit_charge_cic_2d,
-    deposit_charge_cic_3d,
+from .cloud_in_cell import (  # noqa: F401
+    cloud_in_cell_charge_deposition,
+    cloud_in_cell_charge_deposition_1d,
+    cloud_in_cell_charge_deposition_2d,
+    cloud_in_cell_charge_deposition_3d,
 )
 from .device import is_mps_available_and_functional  # noqa: F401
 from .elementwise_linspace import elementwise_linspace  # noqa: F401
