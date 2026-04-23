@@ -61,6 +61,8 @@ def test_2d_basic(device, dtype):
 
     assert result.shape == (3, 3)
     assert torch.allclose(result, expected)
+    assert result.dtype == dtype
+    assert result.device == device
 
 
 def test_2d_with_weights():
@@ -138,10 +140,11 @@ def test_2d_bin_edges():
     assert torch.allclose(result, expected)
 
 
-def test_2d_outside_bounds():
+def test_2d_some_outside_bounds():
     """
-    Test behaviour with particles outside of grid bounds. Particles outside the grid
-    should have their weights set to zero.
+    Test behaviour of 2D Cloud-in-Cell charge deposition with some particles outside of
+    grid bounds. The sum of the deposited should match the sum of the weights of the
+    particles and be less than the total input charge.
     """
     x1 = torch.tensor([-0.5, 1.0, 2.5])  # First and last outside grid bounds [0, 2]
     x2 = torch.tensor([0.5, 1.0, 1.5])
@@ -163,34 +166,28 @@ def test_2d_outside_bounds():
     assert result.sum() < weights.sum()
 
 
-def test_deposit_charge_cic_2d_charge_zeroing():
-    """Test that particles outside grid bounds have their charge set to zero."""
-    x1 = torch.tensor([0.5, 1.5, -0.5, 2.5, 1.0])  # 3rd and 4th outside
-    x2 = torch.tensor([0.5, 1.5, 0.5, 1.5, -0.5])  # 5th outside
-    weights = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
+def test_2d_all_outside_bounds():
+    """
+    Test behaviour of 2D Cloud-in-Cell charge deposition with all particles outside of
+    grid bounds. The sum of the deposited charge should be zero.
+    """
+    x1 = torch.tensor([-0.5, 2.5, 1.0])  # 1st and 2nd outside
+    x2 = torch.tensor([0.5, 1.5, -0.5])  # 3rd outside
+    weights = torch.tensor([3.0, 4.0, 5.0])
 
     bins1 = torch.tensor([0.0, 1.0, 2.0])
     bins2 = torch.tensor([0.0, 1.0, 2.0])
 
     result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2, weights)
 
-    # Only particles 1, 2 should contribute (weights 1.0, 2.0)
-    expected_charge = 1.0 + 2.0  # 3.0
-    assert torch.allclose(result.sum(), torch.tensor(expected_charge))
-
-    # Verify specific outside particles contribute nothing
-    x1_outside_only = torch.tensor([-1.0, 3.0])
-    x2_outside_only = torch.tensor([0.5, 1.5])
-    weights_outside = torch.tensor([10.0, 20.0])
-
-    result_outside = cloud_in_cell_charge_deposition_2d(
-        x1_outside_only, x2_outside_only, bins1, bins2, weights_outside
-    )
-    assert result_outside.sum() == 0.0  # All charge should be lost
+    assert result.sum() == 0.0
 
 
-def test_deposit_charge_cic_2d_conservation():
-    """Test charge conservation."""
+def test_2d_charge_conservation():
+    """
+    Test charge conservation, i.e. total deposited charge should equal sum of weights
+    for particles within bounds.
+    """
     x1 = torch.tensor([0.3, 1.7, 0.9, 1.1])
     x2 = torch.tensor([0.4, 1.6, 0.8, 1.2])
     weights = torch.tensor([1.0, 2.0, 0.5, 1.5])
@@ -200,29 +197,11 @@ def test_deposit_charge_cic_2d_conservation():
 
     result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2, weights)
 
-    # Total deposited charge should equal sum of weights
-    total_charge = result.sum()
-    expected_total = weights.sum()
-
-    assert torch.allclose(total_charge, expected_total, atol=1e-6)
+    assert result.sum() == weights.sum()
 
 
-def test_deposit_charge_cic_2d_dtype_consistency():
-    """Test that output dtype matches input dtype."""
-    for dtype in [torch.float32, torch.float64]:
-        x1 = torch.tensor([0.5, 1.5], dtype=dtype)
-        x2 = torch.tensor([0.5, 1.5], dtype=dtype)
-
-        bins1 = torch.tensor([0.0, 1.0, 2.0], dtype=dtype)
-        bins2 = torch.tensor([0.0, 1.0, 2.0], dtype=dtype)
-
-        result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
-
-        assert result.dtype == dtype
-
-
-def test_deposit_charge_cic_2d_empty_input():
-    """Test behavior with empty particle arrays."""
+def test_2d_empty_input():
+    """Test that with empty inputs, the output is a zero grid of the correct shape."""
     x1 = torch.empty((0,))
     x2 = torch.empty((0,))
 
@@ -230,17 +209,17 @@ def test_deposit_charge_cic_2d_empty_input():
     bins2 = torch.tensor([0.0, 1.0, 2.0])
 
     result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
-
     expected = torch.zeros(3, 3)
+
     assert torch.allclose(result, expected)
 
 
-def test_deposit_charge_cic_2d_non_uniform_spacing_error():
+def test_2d_non_uniform_spacing_error():
     """Test that non-uniform bin spacing raises an error."""
     x1 = torch.tensor([0.5, 1.5])
     x2 = torch.tensor([0.5, 1.5])
 
-    # Non-uniform spacing should raise ValueError
+    # Test non-uniform bins1
     bins1_non_uniform = torch.tensor([0.0, 1.0, 2.5])  # Non-uniform: 1.0, 1.5
     bins2 = torch.tensor([0.0, 1.0, 2.0])
 
@@ -255,24 +234,24 @@ def test_deposit_charge_cic_2d_non_uniform_spacing_error():
         cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2_non_uniform)
 
 
-def test_deposit_charge_cic_2d_insufficient_bins():
-    """Test that insufficient number of bins raises an error."""
+def test_2d_insufficient_bins_error():
+    """Test that an insufficient number of bins raises an error."""
     x1 = torch.tensor([0.5])
     x2 = torch.tensor([0.5])
 
-    # Single bin should raise error
-    bins1_single = torch.tensor([0.0])
+    # Test insufficient bins in bins1
+    bins1_insufficient = torch.tensor([0.0])
     bins2 = torch.tensor([0.0, 1.0])
 
     with pytest.raises(ValueError, match="bins\\[0\\] must have at least 2 elements"):
-        cloud_in_cell_charge_deposition_2d(x1, x2, bins1_single, bins2)
+        cloud_in_cell_charge_deposition_2d(x1, x2, bins1_insufficient, bins2)
 
-    # Test single bin for bins2
+    # Test insufficient bins in bins2
     bins1 = torch.tensor([0.0, 1.0])
-    bins2_single = torch.tensor([0.0])
+    bins2_insufficient = torch.tensor([0.0])
 
     with pytest.raises(ValueError, match="bins\\[1\\] must have at least 2 elements"):
-        cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2_single)
+        cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2_insufficient)
 
 
 def test_deposit_charge_cic_2d_single_particle():
