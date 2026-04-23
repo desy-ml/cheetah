@@ -29,7 +29,7 @@ class Screen(Element):
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
     :param method: Method used to generate the screen's reading. Can be either
-        "histogram", "kde", or "cloud-in-cell", defaults to "histogram".
+        "histogram", "kde", or "cloud-in-cell", defaults to "cloud-in-cell".
         KDE and cloud-in-cell methods allow backward differentiation.
     :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
         Controls the smoothness of the distribution.
@@ -42,10 +42,15 @@ class Screen(Element):
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
 
-    NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method='kde'` or `method='cloud-in-cell'` instead.
-        Similarly, `ParameterBeam` can also not be vectorised.
-        Please use `ParticleBeam` instead.
+    NOTE: The three methods for generating the screen's reading differ primarily in
+        terms of performance, with "histogram" being the fastest, followed by
+        "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
+        (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
+        gradients and is incompatible with vectorisation, while both features are
+        supported by "kde" and "cloud-in-cell".
+
+    NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
+        elements.
     """
 
     def __init__(
@@ -54,7 +59,7 @@ class Screen(Element):
         pixel_size: torch.Tensor | None = None,
         binning: int = 1,
         misalignment: torch.Tensor | None = None,
-        method: Literal["histogram", "kde", "cloud-in-cell"] = "histogram",
+        method: Literal["histogram", "kde", "cloud-in-cell"] = "cloud-in-cell",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
         is_active: bool = False,
@@ -73,10 +78,7 @@ class Screen(Element):
             "histogram",
             "kde",
             "cloud-in-cell",
-        ], (
-            f"Invalid method {method}. "
-            "Must be 'histogram', 'kde', or 'cloud-in-cell'."
-        )
+        ], f"Invalid method {method}. Must be 'histogram', 'kde', or 'cloud-in-cell'."
 
         self.register_buffer_or_parameter(
             "pixel_size",
