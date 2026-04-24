@@ -3,10 +3,6 @@
 Utils
 =====
 
-.. automodule:: utils.argument_verification
-    :members:
-    :undoc-members:
-
 .. automodule:: utils.bmadx
     :members:
     :undoc-members:

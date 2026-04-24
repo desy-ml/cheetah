@@ -7,7 +7,12 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, kde_histogram_2d
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    cloud_in_cell_charge_deposition_2d,
+    kde_histogram_2d,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -24,8 +29,8 @@ class Screen(Element):
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
     :param method: Method used to generate the screen's reading. Can be either
-        "histogram" or "kde", defaults to "histogram". KDE will be slower but allows
-        backward differentiation.
+        "histogram", "kde", or "cloud-in-cell", defaults to "cloud-in-cell".
+        KDE and cloud-in-cell methods allow backward differentiation.
     :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
         Controls the smoothness of the distribution.
     :param is_blocking: If `True` the screen is blocking and will stop the beam.
@@ -37,9 +42,15 @@ class Screen(Element):
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
 
-    NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method='kde'` instead. Similarly, `ParameterBeam` can also not be vectorised.
-        Please use `ParticleBeam` instead.
+    NOTE: The three methods for generating the screen's reading differ primarily in
+        terms of performance, with "histogram" being the fastest, followed by
+        "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
+        (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
+        gradients and is incompatible with vectorisation, while both features are
+        supported by "kde" and "cloud-in-cell".
+
+    NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
+        elements.
     """
 
     def __init__(
@@ -48,7 +59,7 @@ class Screen(Element):
         pixel_size: torch.Tensor | None = None,
         binning: int = 1,
         misalignment: torch.Tensor | None = None,
-        method: Literal["histogram", "kde"] = "histogram",
+        method: Literal["histogram", "kde", "cloud-in-cell"] = "cloud-in-cell",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
         is_active: bool = False,
@@ -66,7 +77,8 @@ class Screen(Element):
         assert method in [
             "histogram",
             "kde",
-        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
+            "cloud-in-cell",
+        ], f"Invalid method {method}. Must be 'histogram', 'kde', or 'cloud-in-cell'."
 
         self.register_buffer_or_parameter(
             "pixel_size",
@@ -218,6 +230,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
+        """Image reading of the screen with shape `(..., height, width)."""
         if self.cached_reading is not None:
             return self.cached_reading
 
@@ -299,6 +312,20 @@ class Screen(Element):
                     bins1=self.pixel_bin_centers[0],
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
+                    weights=broadcasted_weights,
+                ).mT
+            elif self.method == "cloud-in-cell":
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
+                )
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
+                image = cloud_in_cell_charge_deposition_2d(
+                    x1=broadcasted_x,
+                    x2=broadcasted_y,
+                    bins1=self.pixel_bin_centers[0],
+                    bins2=self.pixel_bin_centers[1],
                     weights=broadcasted_weights,
                 ).mT
         else:
