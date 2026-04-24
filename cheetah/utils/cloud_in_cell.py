@@ -12,7 +12,7 @@ def cloud_in_cell_charge_deposition(
     Fast Cloud-in-Cell (CIC) charge deposition in 1D, 2D or 3D.
 
     :param positions: List or tuple of particle position tensors, each of shape
-        `(..., N)`, leading with optional batch dimension. `N` is the number of
+        `(..., N)`, leading with optional vector dimension. `N` is the number of
         particles. The length `d` of `positions` determines the dimensionality
         (1D, 2D or 3D).
     :param bins: List or tuple of 1D tensors defining the grid coordinates for each
@@ -30,7 +30,7 @@ def cloud_in_cell_charge_deposition(
     if len(positions) != len(bins):
         raise ValueError("positions and bins must have the same length")
     if len(positions) > 3:
-        raise ValueError("Only 1D, 2D, and 3D CIC deposition are supported")
+        raise ValueError("Only 1D, 2D, and 3D Cloud-in-Cell deposition are supported")
 
     num_dims = len(positions)
     first_pos = positions[0]
