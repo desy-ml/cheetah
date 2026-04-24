@@ -9,20 +9,18 @@ def cloud_in_cell_charge_deposition(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D, 2D, or 3D.
+    Fast Cloud-in-Cell (CIC) charge deposition in 1D, 2D or 3D.
 
     :param positions: List or tuple of particle position tensors, each of shape
-        `(..., N)`, leading with optional batch dimension.
-        `N` is the number of particles.
-        The length `d` of `positions` determines the dimensionality
-        (1D, 2D, or 3D).
+        `(..., N)`, leading with optional batch dimension. `N` is the number of
+        particles. The length `d` of `positions` determines the dimensionality
+        (1D, 2D or 3D).
     :param bins: List or tuple of 1D tensors defining the grid coordinates for each
-        dimension.
-        ((N1,), (N2,), ...) where `Ni` is the number of grid points in dimension `i`.
-        Each grid coordinate tensor must have uniform spacing.
-        Length must match `positions`.
-    :param weights: Particle charge weights of shape `(..., N)`.
-        If `None`, all particles have weight 1.
+        dimension. ((N1,), (N2,), ...) where `Ni` is the number of grid points in
+        dimension `i`. Each grid coordinate tensor must have uniform spacing. Length
+        must match `positions`.
+    :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
+        particles have weight 1.
     :return: Charge density on the d-dimensional grid with shape
         `(..., N1, N2, ..., Nd)`, where `d = len(positions)`.
     """
@@ -34,7 +32,7 @@ def cloud_in_cell_charge_deposition(
     if len(positions) > 3:
         raise ValueError("Only 1D, 2D, and 3D CIC deposition are supported")
 
-    ndim = len(positions)
+    num_dims = len(positions)
     first_pos = positions[0]
     device = first_pos.device
     dtype = first_pos.dtype
@@ -43,9 +41,8 @@ def cloud_in_cell_charge_deposition(
     for i, pos in enumerate(positions[1:], 1):
         if pos.shape != first_pos.shape:
             raise ValueError(
-                f"All position tensors must have the same shape. "
-                f"positions[0] has shape {first_pos.shape}, "
-                f"positions[{i}] has shape {pos.shape}"
+                f"All position tensors must have the same shape. positions[0] has shape"
+                f" {first_pos.shape}, positions[{i}] has shape {pos.shape}."
             )
         if pos.device != device:
             raise ValueError("All tensors must be on the same device")
@@ -95,7 +92,7 @@ def cloud_in_cell_charge_deposition(
         fractional_parts.append(w)
 
     # Generate all corner combinations and their weights
-    num_corners = 2**ndim
+    num_corners = 2**num_dims
     corner_indices = []
     corner_weights = []
 
@@ -104,7 +101,7 @@ def cloud_in_cell_charge_deposition(
         corner_offsets = []
         weight_factors = []
 
-        for dim in range(ndim):
+        for dim in range(num_dims):
             if (corner >> dim) & 1:  # Use right cell in this dimension
                 corner_offsets.append(1)
                 weight_factors.append(fractional_parts[dim])
@@ -114,7 +111,7 @@ def cloud_in_cell_charge_deposition(
 
         # Calculate indices for this corner
         corner_idx_list = []
-        for dim in range(ndim):
+        for dim in range(num_dims):
             base_idx = grid_indices[dim]
             offset_idx = (base_idx + corner_offsets[dim]).clamp(0, grid_sizes[dim] - 1)
             corner_idx_list.append(offset_idx)
@@ -131,7 +128,7 @@ def cloud_in_cell_charge_deposition(
     def multi_to_flat_index(idx_list):
         flat_idx = idx_list[0]
         stride = 1
-        for dim in range(1, ndim):
+        for dim in range(1, num_dims):
             stride *= grid_sizes[dim - 1]
             flat_idx = flat_idx + idx_list[dim] * stride
         return flat_idx
@@ -165,19 +162,19 @@ def cloud_in_cell_charge_deposition(
     for b in range(B):
         charge[b].index_add_(0, idx_all[b], vals_all[b])
 
-    # Calculate inverse cell volume
+    # Compute inverse cell volume
     cell_volume = 1.0
     for spacing in spacings:
         cell_volume *= spacing
     inv_cell_volume = 1.0 / cell_volume
     charge = charge * inv_cell_volume
 
-    # Reshape back to original batch dims + grid dims
+    # Reshape back to original batch dimensions + grid dimensions
     out_shape = (*batch_shape, *grid_sizes[::-1])
-    charge = charge.reshape(out_shape)  # Grid dims are reversed by the reshape
+    charge = charge.reshape(out_shape)  # Grid dimensions are reversed by the reshape
 
     batch_ndim = len(batch_shape)
-    spatial_axes = list(range(batch_ndim, batch_ndim + ndim))
+    spatial_axes = list(range(batch_ndim, batch_ndim + num_dims))
 
     # Permute to put spatial axes in the correct order
     return charge.permute(*range(batch_ndim), *reversed(spatial_axes))
@@ -187,14 +184,14 @@ def cloud_in_cell_charge_deposition_1d(
     x: torch.Tensor, bins: torch.Tensor, weights: torch.Tensor | None = None
 ) -> torch.Tensor:
     """
-    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 1D.
+    Fast Cloud-in-Cell (CIC) charge deposition in 1D.
 
     This is a convenience wrapper around `cloud_in_cell_charge_deposition` for 1D cases.
     Particles outside the grid bounds have their weights set to zero.
 
     :param x: Particle positions of shape `(..., N)`.
-    :param bins: 1D tensor of grid coordinates with shape `(Nx,)`. Must have
-        uniform spacing.
+    :param bins: 1D tensor of grid coordinates with shape `(Nx,)`. Must have uniform
+        spacing.
     :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
         particles have weight 1.
     :return: Charge density on the 1D grid with shape `(..., Nx)`.
@@ -210,17 +207,17 @@ def cloud_in_cell_charge_deposition_2d(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 2D.
+    Fast Cloud-in-Cell (CIC) charge deposition in 2D.
 
     This is a convenience wrapper around `cloud_in_cell_charge_deposition` for 2D cases.
     Particles outside the grid bounds have their weights set to zero.
 
     :param x1: Particle x positions of shape `(..., N)`.
     :param x2: Particle y positions of shape `(..., N)`.
-    :param bins1: 1D tensor of x-grid coordinates with shape `(Nx,)`. Must have
-        uniform spacing.
-    :param bins2: 1D tensor of y-grid coordinates with shape `(Ny,)`. Must have
-        uniform spacing.
+    :param bins1: 1D tensor of x-grid coordinates with shape `(Nx,)`. Must have uniform
+        spacing.
+    :param bins2: 1D tensor of y-grid coordinates with shape `(Ny,)`. Must have uniform
+        spacing.
     :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
         particles have weight 1.
     :return: Charge density on the 2D grid with shape `(..., Nx, Ny)`.
@@ -238,7 +235,7 @@ def cloud_in_cell_charge_deposition_3d(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Fast GPU-optimized Cloud-in-Cell (CIC) charge deposition in 3D.
+    Fast Cloud-in-Cell (CIC) charge deposition in 3D.
 
     This is a convenience wrapper around `cloud_in_cell_charge_deposition` for 3D cases.
     Particles outside the grid bounds have their weights set to zero.
@@ -246,12 +243,12 @@ def cloud_in_cell_charge_deposition_3d(
     :param x1: Particle x positions of shape `(..., N)`.
     :param x2: Particle y positions of shape `(..., N)`.
     :param x3: Particle z positions of shape `(..., N)`.
-    :param bins1: 1D tensor of x-grid coordinates with shape `(Nx,)`. Must have
-        uniform spacing.
-    :param bins2: 1D tensor of y-grid coordinates with shape `(Ny,)`. Must have
-        uniform spacing.
-    :param bins3: 1D tensor of z-grid coordinates with shape `(Nz,)`. Must have
-        uniform spacing.
+    :param bins1: 1D tensor of x-grid coordinates with shape `(Nx,)`. Must have uniform
+        spacing.
+    :param bins2: 1D tensor of y-grid coordinates with shape `(Ny,)`. Must have uniform
+        spacing.
+    :param bins3: 1D tensor of z-grid coordinates with shape `(Nz,)`. Must have uniform
+        spacing.
     :param weights: Particle charge weights of shape `(..., N)`. If `None`, all
         particles have weight 1.
     :return: Charge density on the 3D grid with shape `(..., Nx, Ny, Nz)`.
