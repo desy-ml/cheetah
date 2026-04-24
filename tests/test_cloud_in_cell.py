@@ -62,7 +62,7 @@ def test_2d_basic(device, dtype):
     assert result.shape == (3, 3)
     assert torch.allclose(result, expected)
     assert result.dtype == dtype
-    assert result.device == device
+    assert result.device.type == device.type
 
 
 def test_2d_with_weights():
