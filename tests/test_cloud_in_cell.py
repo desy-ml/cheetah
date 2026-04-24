@@ -388,7 +388,7 @@ def test_deposit_charge_cic_general_validation():
 
     # Test too many dimensions
     with pytest.raises(
-        ValueError, match="Only 1D, 2D, and 3D CIC deposition are supported"
+        ValueError, match="Only 1D, 2D, and 3D Cloud-in-Cell deposition are supported"
     ):
         cloud_in_cell_charge_deposition([x, x, x, x], [bins, bins, bins, bins])
 
