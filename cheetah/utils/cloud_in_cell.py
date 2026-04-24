@@ -9,12 +9,12 @@ def cloud_in_cell_charge_deposition(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Fast Cloud-in-Cell (CIC) charge deposition in 1D, 2D or 3D.
+    Fast and differentiable Cloud-in-Cell (CIC) charge deposition.
 
     :param positions: List or tuple of particle position tensors, each of shape
-        `(..., N)`, leading with optional vector dimension. `N` is the number of
-        particles. The length `d` of `positions` determines the dimensionality
-        (1D, 2D or 3D).
+        `(..., N)`, leading with an arbitrary number of vector dimensions. `N` is the
+        number of particles. The number of tensors passed determines the spatial
+        dimensionality of the resulting charge grid.
     :param bins: List or tuple of 1D tensors defining the grid coordinates for each
         dimension. ((N1,), (N2,), ...) where `Ni` is the number of grid points in
         dimension `i`. Each grid coordinate tensor must have uniform spacing. Length
@@ -29,8 +29,6 @@ def cloud_in_cell_charge_deposition(
         raise ValueError("positions must contain at least one dimension")
     if len(positions) != len(bins):
         raise ValueError("positions and bins must have the same length")
-    if len(positions) > 3:
-        raise ValueError("Only 1D, 2D, and 3D Cloud-in-Cell deposition are supported")
 
     num_dims = len(positions)
     first_pos = positions[0]

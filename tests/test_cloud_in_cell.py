@@ -386,11 +386,12 @@ def test_deposit_charge_cic_general_validation():
     ):
         cloud_in_cell_charge_deposition([x], [bins, bins])
 
-    # Test too many dimensions
-    with pytest.raises(
-        ValueError, match="Only 1D, 2D, and 3D Cloud-in-Cell deposition are supported"
-    ):
-        cloud_in_cell_charge_deposition([x, x, x, x], [bins, bins, bins, bins])
+    # Test 4D support in generalized implementation
+    result_4d = cloud_in_cell_charge_deposition([x, x, x, x], [bins, bins, bins, bins])
+    expected_4d = torch.ones(2, 2, 2, 2) * 0.0625
+    assert result_4d.shape == (2, 2, 2, 2)
+    assert torch.allclose(result_4d, expected_4d)
+    assert torch.allclose(result_4d.sum(), torch.tensor(1.0))
 
     # Test mismatched shapes
     x1 = torch.tensor([0.5])
