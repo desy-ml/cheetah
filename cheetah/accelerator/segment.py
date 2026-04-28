@@ -259,7 +259,7 @@ class Segment(Element):
             elements=[
                 element
                 for element in self.elements
-                if (element.length > 0.0).any()
+                if (element.length != 0.0).any()
                 or (hasattr(element, "is_active") and element.is_active)
                 or element.name in except_for
             ],
