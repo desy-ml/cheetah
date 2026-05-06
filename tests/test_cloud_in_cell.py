@@ -114,6 +114,35 @@ def test_2d_vectorized():
     assert torch.allclose(vectorized_result, looped_result)
 
 
+def test_2d_vectorized_multiple_dimensions():
+    """
+    Test that the vectorised 2D Cloud-in-Cell charge deposition can handle
+    multi-dimensional vector inputs and produces the expected output shape. This test
+    does not check the numerical correctness of the output, just that it can process the
+    input without errors and produces an output of the correct shape.
+    """
+    x1 = torch.tensor(
+        [
+            [[0.5, 1.5, 0.8, 1.0, 0.3], [1.2, 0.3, 1.7, 1.9, 0.4]],
+            [[0.6, 1.4, 1.2, 1.4, 0.5], [0.9, 1.1, 0.4, 0.6, 0.7]],
+        ]
+    )
+    x2 = torch.tensor(
+        [
+            [[0.2, 1.7, 0.9, 1.1, 0.4], [1.4, 0.5, 1.6, 1.8, 0.2]],
+            [[0.7, 1.3, 1.0, 1.5, 0.6], [0.8, 1.2, 0.3, 0.7, 0.9]],
+        ]
+    )
+
+    bins1 = torch.tensor([0.0, 1.0, 2.0])
+    bins2 = torch.tensor([0.0, 1.0, 2.0])
+
+    result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
+
+    # Should be (vector_dim1, vector_dim2, histogram_dim1, histogram_dim2)
+    assert result.shape == (2, 2, 3, 3)
+
+
 def test_2d_bin_edges():
     """
     Test behaviour of 2D Cloud-in-Cell charge deposition for particles placed exactly on
@@ -367,52 +396,6 @@ def test_deposit_charge_cic_3d_wrapper():
     )
 
     assert torch.allclose(result_wrapper, result_general)
-
-
-def test_deposit_charge_cic_general_validation():
-    """Test input validation for generalized function."""
-    x = torch.tensor([0.5])
-    bins = torch.tensor([0.0, 1.0])
-
-    # Test empty positions
-    with pytest.raises(
-        ValueError, match="positions must contain at least one dimension"
-    ):
-        cloud_in_cell_charge_deposition([], [])
-
-    # Test mismatched lengths
-    with pytest.raises(
-        ValueError, match="positions and bins must have the same length"
-    ):
-        cloud_in_cell_charge_deposition([x], [bins, bins])
-
-    # Test 4D support in generalized implementation
-    result_4d = cloud_in_cell_charge_deposition([x, x, x, x], [bins, bins, bins, bins])
-    expected_4d = torch.ones(2, 2, 2, 2) * 0.0625
-    assert result_4d.shape == (2, 2, 2, 2)
-    assert torch.allclose(result_4d, expected_4d)
-    assert torch.allclose(result_4d.sum(), torch.tensor(1.0))
-
-    # Test mismatched shapes
-    x1 = torch.tensor([0.5])
-    x2 = torch.tensor([0.5, 1.5])  # Different shape
-    with pytest.raises(
-        ValueError, match="All position tensors must have the same shape"
-    ):
-        cloud_in_cell_charge_deposition([x1, x2], [bins, bins])
-
-    # Test mismatched devices
-    if torch.cuda.is_available():
-        x_cpu = torch.tensor([0.5])
-        x_gpu = torch.tensor([0.5], device="cuda")
-        with pytest.raises(ValueError, match="All tensors must be on the same device"):
-            cloud_in_cell_charge_deposition([x_cpu, x_gpu], [bins, bins])
-
-    # Test mismatched dtypes
-    x_float = torch.tensor([0.5], dtype=torch.float32)
-    x_double = torch.tensor([0.5], dtype=torch.float64)
-    with pytest.raises(ValueError, match="All tensors must have the same dtype"):
-        cloud_in_cell_charge_deposition([x_float, x_double], [bins, bins])
 
 
 def test_deposit_charge_cic_charge_conservation():

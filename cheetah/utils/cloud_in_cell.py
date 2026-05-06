@@ -1,3 +1,4 @@
+import math
 from typing import Sequence
 
 import torch
@@ -24,158 +25,153 @@ def cloud_in_cell_charge_deposition(
     :return: Charge density on the d-dimensional grid with shape
         `(..., N1, N2, ..., Nd)`, where `d = len(positions)`.
     """
-    # Validate inputs
-    if not positions:
-        raise ValueError("positions must contain at least one dimension")
-    if len(positions) != len(bins):
-        raise ValueError("positions and bins must have the same length")
-
-    num_dims = len(positions)
-    first_pos = positions[0]
-    device = first_pos.device
-    dtype = first_pos.dtype
-
-    # Validate all position tensors have the same shape
-    for i, pos in enumerate(positions[1:], 1):
-        if pos.shape != first_pos.shape:
-            raise ValueError(
-                f"All position tensors must have the same shape. positions[0] has shape"
-                f" {first_pos.shape}, positions[{i}] has shape {pos.shape}."
-            )
-        if pos.device != device:
-            raise ValueError("All tensors must be on the same device")
-        if pos.dtype != dtype:
-            raise ValueError("All tensors must have the same dtype")
-
-    # Grid dimensions and spacing validation
-    grid_sizes = []
-    spacings = []
-
-    for i, bin_array in enumerate(bins):
-        N = bin_array.numel()
-        if N < 2:
-            raise ValueError(f"bins[{i}] must have at least 2 elements")
-
-        spacing = bin_array[1] - bin_array[0]
-        if N > 2:
-            diffs = torch.diff(bin_array)
-            if not torch.allclose(diffs, spacing, rtol=1e-4):
-                raise ValueError(f"bins[{i}] must have uniform spacing")
-
-        grid_sizes.append(N)
-        spacings.append(spacing)
+    assert len(positions) > 0, "At least one position tensor must be provided"
+    assert len(positions) == len(
+        bins
+    ), "Number of position tensors must match number of bin tensors"
 
     if weights is None:
-        weights = torch.ones_like(first_pos)
+        weights = torch.ones_like(positions[0])
+
+    num_hist_dims = len(positions)
+
+    stacked_positions = torch.stack(positions).movedim(
+        0, -1
+    )  # Shape (..., num_samples, num_hist_dims)
+
+    # Grid dimensions and spacing validation
+    # TODO: This interface is bad. If bin widths need to be the same, just change the
+    # interface.
+    histogram_shape = []
+    bin_widths_for_each_hist_dim = []
+    for hist_dim, single_dim_bins in enumerate(bins):
+        num_bins = single_dim_bins.numel()
+        bin_widths = single_dim_bins.diff()
+        reference_bin_width = bin_widths[0]
+
+        assert num_bins > 2, f"bins[{hist_dim}] must have at least 2 elements"
+        assert torch.allclose(
+            bin_widths, reference_bin_width, rtol=1e-4
+        ), f"bins[{hist_dim}] must have uniform spacing"
+
+        histogram_shape.append(num_bins)
+        bin_widths_for_each_hist_dim.append(reference_bin_width)
 
     # Set weights to zero for particles outside grid bounds
-    for pos, bin_array in zip(positions, bins):
-        outside_mask = (pos < bin_array[0]) | (pos >= bin_array[-1])
-        weights = weights * (~outside_mask).float()
+    extent = torch.stack(
+        [single_dim_bins[[0, -1]] for single_dim_bins in bins]
+    )  # Shape (num_hist_dims, 2)
+    inside_mask = (
+        (extent[..., 0] <= stacked_positions) & (stacked_positions < extent[..., 1])
+    ).all(
+        dim=-1
+    )  # Shape (..., num_samples)
+    masked_weights = weights * inside_mask  # Shape (..., num_samples)
 
-    # Normalize particle coordinates to grid index space
-    grid_indices = []
-    fractional_parts = []
-
-    for pos, bin_array, spacing in zip(positions, bins, spacings):
-        # Normalized coordinate in grid index space
-        u = (pos - bin_array[0]) / spacing
-
-        # Left cell index
-        i = torch.floor(u).to(torch.int64)
-        grid_indices.append(i)
-
-        # Fractional distance to right cell
-        w = u - i
-        fractional_parts.append(w)
+    # Normalise particle coordinates to grid index space
+    idx_space_positions = (
+        stacked_positions - extent[..., 0]
+    ) / bin_widths_for_each_hist_dim[-1]
+    idx_space_integer_positions = idx_space_positions.floor().long()
+    idx_space_fractional_positions = idx_space_positions - idx_space_integer_positions
 
     # Generate all corner combinations and their weights
-    num_corners = 2**num_dims
-    corner_indices = []
-    corner_weights = []
+    num_corners = 2**num_hist_dims
+    # TODO speed: torch.tensor(list(itertools.product([0, 1], repeat=D)), device=device)
+    corner_offsets = (
+        torch.arange(num_corners).unsqueeze(-1)
+        // (2 ** torch.arange(num_hist_dims))
+        % 2
+    )
+    corner_positional_weight_factors = idx_space_fractional_positions.unsqueeze(
+        -2
+    ).where(corner_offsets == 1, 1.0 - idx_space_fractional_positions.unsqueeze(-2))
+    idx_space_corner_positions = (
+        idx_space_integer_positions.unsqueeze(-1) + corner_offsets
+    )  # TODO .clamp(0, histogram_shape[hist_dim] - 1) ?
+    corner_weights = masked_weights.unsqueeze(
+        -1
+    ) * corner_positional_weight_factors.prod(dim=-2)
 
-    for corner in range(num_corners):
-        # Determine which corners to use based on binary representation
-        corner_offsets = []
-        weight_factors = []
-
-        for dim in range(num_dims):
-            if (corner >> dim) & 1:  # Use right cell in this dimension
-                corner_offsets.append(1)
-                weight_factors.append(fractional_parts[dim])
-            else:  # Use left cell in this dimension
-                corner_offsets.append(0)
-                weight_factors.append(1 - fractional_parts[dim])
-
-        # Calculate indices for this corner
-        corner_idx_list = []
-        for dim in range(num_dims):
-            base_idx = grid_indices[dim]
-            offset_idx = (base_idx + corner_offsets[dim]).clamp(0, grid_sizes[dim] - 1)
-            corner_idx_list.append(offset_idx)
-
-        # Calculate weight for this corner
-        corner_weight = weights
-        for weight_factor in weight_factors:
-            corner_weight = corner_weight * weight_factor
-
-        corner_indices.append(corner_idx_list)
-        corner_weights.append(corner_weight)
-
-    # Convert multi-dimensional indices to flat indices
     def multi_to_flat_index(idx_list):
+        """Convert multi-dimensional indices to flat indices."""
         flat_idx = idx_list[0]
         stride = 1
-        for dim in range(1, num_dims):
-            stride *= grid_sizes[dim - 1]
-            flat_idx = flat_idx + idx_list[dim] * stride
+        for hist_dim in range(1, num_hist_dims):
+            stride *= histogram_shape[hist_dim - 1]
+            flat_idx = flat_idx + idx_list[hist_dim] * stride
+
         return flat_idx
 
-    # Flatten batch dims and particle dim together
-    batch_shape = first_pos.shape[:-1]
-    B = int(torch.tensor(batch_shape).prod()) if batch_shape else 1
-    N = first_pos.shape[-1]
+    # Flatten vector dimensions and particle dimension together
+    vector_shape = stacked_positions.shape[:-2]
+    num_vector_elements = math.prod(vector_shape)
 
-    def flatten_tensor(t):
-        return t.reshape(B, N)
-
-    # Prepare all indices and weights for batch processing
-    all_flat_indices = []
-    all_weights = []
-
-    for corner_idx_list, corner_weight in zip(corner_indices, corner_weights):
-        flat_idx = multi_to_flat_index(corner_idx_list)
-        all_flat_indices.append(flatten_tensor(flat_idx))
-        all_weights.append(flatten_tensor(corner_weight))
-
-    # Concatenate all indices and weights
-    idx_all = torch.cat(all_flat_indices, dim=1)  # shape (B, num_corners * N)
-    vals_all = torch.cat(all_weights, dim=1)  # shape (B, num_corners * N)
+    # Prepare all indices and weights for vectorised processing
+    flattened_idx_space_corner_positions = torch.concatenate(
+        [
+            multi_to_flat_index(corner_idx_list).flatten(end_dim=-3)
+            for corner_idx_list in idx_space_corner_positions
+        ],
+        dim=1,
+    )  # Shape (num_vector_elements, num_corners * num_samples)
+    flattened_corner_weights = corner_weights.flatten(
+        end_dim=-4
+    )  # Flatten vector dimensions  # Shape (num_vector_elements, num_samples, num_hist_dims, num_corners)
 
     # Output buffer
-    total_grid_size = int(torch.tensor(grid_sizes).prod())
-    charge = torch.zeros((B, total_grid_size), dtype=dtype, device=device)
+    total_grid_size = math.prod(histogram_shape)
+    charge = positions[0].new_zeros((num_vector_elements, total_grid_size))
 
-    # Vectorized batched index_add_
-    for b in range(B):
-        charge[b].index_add_(0, idx_all[b], vals_all[b])
+    charge_tensor = corner_weights.new_zeros(*vector_shape, *histogram_shape)
+    idx_space_corner_positions_vector_indices = tuple(
+        torch.arange(this_vector_dim_length).reshape(
+            this_vector_dim_length, *([1] * (num_hist_dims - dim_idx))
+        )
+        for dim_idx, this_vector_dim_length in enumerate(vector_shape)
+    )
+    idx_space_corner_positions_spatial_indices = (
+        idx_space_corner_positions.movedim(-1, -2)
+        .flatten(start_dim=-3, end_dim=-2)
+        .unbind(-1)
+    )
+    idx_space_corner_positions_full_indices = (
+        idx_space_corner_positions_vector_indices
+        + idx_space_corner_positions_spatial_indices
+    )
+    # charge_tensor[idx_space_corner_positions_full_indices] = corner_weights.movedim(
+    #     -1, -2
+    # ).flatten(start_dim=-3, end_dim=-2)
+    charge_tensor = charge_tensor.index_put(
+        idx_space_corner_positions_full_indices,
+        corner_weights.movedim(-1, -2).flatten(start_dim=-3, end_dim=-2),
+        accumulate=True,
+    )
+
+    # Vectorised index_add_
+    for flattened_vector_idx in range(num_vector_elements):
+        charge[flattened_vector_idx].index_add_(
+            0,
+            flattened_idx_space_corner_positions[flattened_vector_idx].to(torch.int64),
+            flattened_corner_weights[flattened_vector_idx],
+        )
 
     # Compute inverse cell volume
     cell_volume = 1.0
-    for spacing in spacings:
-        cell_volume *= spacing
+    for bin_width in bin_widths_for_each_hist_dim:
+        cell_volume *= bin_width
     inv_cell_volume = 1.0 / cell_volume
     charge = charge * inv_cell_volume
 
-    # Reshape back to original batch dimensions + grid dimensions
-    out_shape = (*batch_shape, *grid_sizes[::-1])
+    # Reshape back to original vector dimensions + grid dimensions
+    out_shape = (*vector_shape, *histogram_shape[::-1])
     charge = charge.reshape(out_shape)  # Grid dimensions are reversed by the reshape
 
-    batch_ndim = len(batch_shape)
-    spatial_axes = list(range(batch_ndim, batch_ndim + num_dims))
+    num_vector_dims = len(vector_shape)
+    spatial_axes = list(range(num_vector_dims, num_vector_dims + num_hist_dims))
 
     # Permute to put spatial axes in the correct order
-    return charge.permute(*range(batch_ndim), *reversed(spatial_axes))
+    return charge.permute(*range(num_vector_dims), *reversed(spatial_axes))
 
 
 def cloud_in_cell_charge_deposition_1d(
