@@ -1,13 +1,9 @@
 import pytest
 import torch
+from icecream import ic
 
 from cheetah.utils import is_mps_available_and_functional
-from cheetah.utils.cloud_in_cell import (
-    cloud_in_cell_charge_deposition,
-    cloud_in_cell_charge_deposition_1d,
-    cloud_in_cell_charge_deposition_2d,
-    cloud_in_cell_charge_deposition_3d,
-)
+from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
 
 
 @pytest.mark.parametrize(
@@ -37,14 +33,14 @@ def test_2d_basic(device, dtype):
     Test basic functionality of 2D Cloud-in-Cell charge deposition on a simple test case
     with a known expected result and for different device and dtype combinations.
     """
+    factory_kwargs = {"device": device, "dtype": dtype}
+
     # Simple test case with known expected result
-    x1 = torch.tensor([0.5, 1.5], device=device, dtype=dtype)
-    x2 = torch.tensor([0.5, 1.5], device=device, dtype=dtype)
-
-    bins1 = torch.tensor([0.0, 1.0, 2.0], device=device, dtype=dtype)
-    bins2 = torch.tensor([0.0, 1.0, 2.0], device=device, dtype=dtype)
-
-    result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
+    result = cloud_in_cell_charge_deposition(
+        positions=torch.tensor([[0.5, 0.5], [1.5, 1.5]], **factory_kwargs),
+        bins=[3, 3],
+        extent=torch.tensor([[0.0, 2.0], [0.0, 2.0]], **factory_kwargs),
+    )
 
     # Expected result: each particle should be deposited equally among 4 grid points
     # Particle at (0.5, 0.5) -> corners at (0,0), (1,0), (0,1), (1,1) with weight 0.25
@@ -55,11 +51,11 @@ def test_2d_basic(device, dtype):
             [0.25, 0.5, 0.25],  # (1,1) gets contribution from both particles
             [0.0, 0.25, 0.25],
         ],
-        device=device,
-        dtype=dtype,
+        **factory_kwargs,
     )
 
     assert result.shape == (3, 3)
+    ic(result, expected)
     assert torch.allclose(result, expected)
     assert result.dtype == dtype
     assert result.device.type == device.type

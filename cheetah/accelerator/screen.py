@@ -10,7 +10,7 @@ from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
-    cloud_in_cell_charge_deposition_2d,
+    cloud_in_cell_charge_deposition,
     kde_histogram_2d,
 )
 
@@ -321,12 +321,19 @@ class Screen(Element):
                 broadcasted_x, broadcasted_y, broadcasted_weights = (
                     torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
                 )
-                image = cloud_in_cell_charge_deposition_2d(
-                    x1=broadcasted_x,
-                    x2=broadcasted_y,
-                    bins1=self.pixel_bin_centers[0],
-                    bins2=self.pixel_bin_centers[1],
-                    weights=broadcasted_weights,
+                image = cloud_in_cell_charge_deposition(
+                    positions=torch.stack([broadcasted_x, broadcasted_y], dim=-1),
+                    bins=[
+                        len(self.pixel_bin_centers[0]),
+                        len(self.pixel_bin_centers[1]),
+                    ],
+                    extent=read_beam.particles.new_tensor(
+                        [
+                            [self.pixel_bin_edges[0][0], self.pixel_bin_edges[0][-1]],
+                            [self.pixel_bin_edges[1][0], self.pixel_bin_edges[1][-1]],
+                        ]
+                    ),
+                    charges=broadcasted_weights,
                 ).mT
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
