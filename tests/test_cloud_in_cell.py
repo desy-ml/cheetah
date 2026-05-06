@@ -123,24 +123,25 @@ def test_2d_vectorized_multiple_dimensions():
     """
     x1 = torch.tensor(
         [
-            [[0.5, 1.5, 0.8, 1.0, 0.3], [1.2, 0.3, 1.7, 1.9, 0.4]],
-            [[0.6, 1.4, 1.2, 1.4, 0.5], [0.9, 1.1, 0.4, 0.6, 0.7]],
+            [[0.5, 1.5, 2.8, 3.0, 4.3], [1.2, 2.3, 3.7, 0.9, 1.4]],
+            [[0.6, 1.4, 2.2, 3.4, 0.5], [0.9, 1.1, 2.4, 3.6, 0.7]],
         ]
     )
     x2 = torch.tensor(
         [
-            [[0.2, 1.7, 0.9, 1.1, 0.4], [1.4, 0.5, 1.6, 1.8, 0.2]],
-            [[0.7, 1.3, 1.0, 1.5, 0.6], [0.8, 1.2, 0.3, 0.7, 0.9]],
+            [[0.2, 1.7, 2.9, 3.1, 4.4], [1.4, 2.5, 3.6, 4.8, 0.2]],
+            [[0.7, 1.3, 2.0, 3.5, 4.6], [0.8, 1.2, 2.3, 3.7, 4.9]],
         ]
     )
 
-    bins1 = torch.tensor([0.0, 1.0, 2.0])
-    bins2 = torch.tensor([0.0, 1.0, 2.0])
+    ranges = torch.tensor([[0.0, 3.0], [0.0, 4.0]])
 
-    result = cloud_in_cell_charge_deposition_2d(x1, x2, bins1, bins2)
+    result = cloud_in_cell_charge_deposition(
+        positions=torch.stack([x1, x2], dim=-1), bins=[3, 4], extent=ranges
+    )
 
     # Should be (vector_dim1, vector_dim2, histogram_dim1, histogram_dim2)
-    assert result.shape == (2, 2, 3, 3)
+    assert result.shape == (2, 2, 3, 4)
 
 
 def test_2d_bin_edges():
