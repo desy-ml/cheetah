@@ -246,6 +246,7 @@ def test_without_zero_length_elements():
             ),
             cheetah.Dipole(length=torch.tensor([0.0, 0.1]), angle=torch.tensor(0.0)),
             cheetah.Drift(length=torch.tensor(0.0)),
+            cheetah.Drift(length=torch.tensor(-0.1)),
             cheetah.Dipole(length=torch.tensor(0.0), angle=torch.tensor([0.5, 0.0])),
         ]
     )
@@ -255,8 +256,8 @@ def test_without_zero_length_elements():
         except_for=["my_dipole"]
     )
 
-    assert len(segment.elements) == 6
-    assert len(pruned.elements) == 3
-    assert len(pruned_except.elements) == 4
+    assert len(segment.elements) == 7
+    assert len(pruned.elements) == 4
+    assert len(pruned_except.elements) == 5
     assert torch.allclose(segment.length, pruned.length)
     assert torch.allclose(segment.length, pruned_except.length)
