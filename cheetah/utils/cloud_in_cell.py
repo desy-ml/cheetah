@@ -49,7 +49,7 @@ def cloud_in_cell_charge_deposition(
     masked_charges = charges * inside_mask  # Shape (..., num_samples)
 
     # Normalise particle coordinates to normalised bin space
-    positions_in_bin_space = (positions - extent[..., 0]) / bin_widths[-1]
+    positions_in_bin_space = (positions - extent[..., 0]) / bin_widths
     positions_in_bin_space_int_component = positions_in_bin_space.floor().long()
     positions_in_bin_space_fractional_components = (
         positions_in_bin_space - positions_in_bin_space_int_component
