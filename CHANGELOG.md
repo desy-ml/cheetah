@@ -15,6 +15,7 @@
 - Update the elegant conversion to include missing dipole attributes, converting `hgap` to `gap` and `fint` to `fringe_integral`. (see #624) (@cr-xu)
 - Update the `to_openpmd_particlegroup` conversion to use `int` for status and add `detach()` before tensor to numpy conversion. (see #629) (@roussel-ryan)
 - Fix an issue where negative length elements are incorrectly removed by the `Segment.without_inactive_zero_length_elements` method (see #633) (@cr-xu)
+- Fix an issue that off-diagonal elements are not included in the conversion from `ParameterBeam` to `ParticleBeam`. Now `from_parameters` construction method takes all elements in a 6D covariance matrix. (see #635) (@cr-xu)
 
 ### 🐆 Other
 
