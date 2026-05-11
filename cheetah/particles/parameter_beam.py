@@ -80,6 +80,14 @@ class ParameterBeam(Beam):
         cov_pxp: torch.Tensor | None = None,
         cov_yp: torch.Tensor | None = None,
         cov_pyp: torch.Tensor | None = None,
+        cov_xy: torch.Tensor | None = None,
+        cov_xpy: torch.Tensor | None = None,
+        cov_xtau: torch.Tensor | None = None,
+        cov_pxy: torch.Tensor | None = None,
+        cov_pxpy: torch.Tensor | None = None,
+        cov_pxtau: torch.Tensor | None = None,
+        cov_ytau: torch.Tensor | None = None,
+        cov_pytau: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
@@ -131,6 +139,28 @@ class ParameterBeam(Beam):
         cov_pyp = (
             cov_pyp if cov_pyp is not None else torch.tensor(0.0, **factory_kwargs)
         )
+        cov_xy = cov_xy if cov_xy is not None else torch.tensor(0.0, **factory_kwargs)
+        cov_xpy = (
+            cov_xpy if cov_xpy is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_xtau = (
+            cov_xtau if cov_xtau is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_pxy = (
+            cov_pxy if cov_pxy is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_pxpy = (
+            cov_pxpy if cov_pxpy is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_pxtau = (
+            cov_pxtau if cov_pxtau is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_ytau = (
+            cov_ytau if cov_ytau is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        cov_pytau = (
+            cov_pytau if cov_pytau is not None else torch.tensor(0.0, **factory_kwargs)
+        )
         energy = energy if energy is not None else torch.tensor(1e8, **factory_kwargs)
         total_charge = (
             total_charge
@@ -160,6 +190,14 @@ class ParameterBeam(Beam):
             cov_pxp,
             cov_yp,
             cov_pyp,
+            cov_xy,
+            cov_xpy,
+            cov_xtau,
+            cov_pxy,
+            cov_pxpy,
+            cov_pxtau,
+            cov_ytau,
+            cov_pytau,
         ) = torch.broadcast_tensors(
             sigma_x,
             cov_xpx,
@@ -174,6 +212,14 @@ class ParameterBeam(Beam):
             cov_pxp,
             cov_yp,
             cov_pyp,
+            cov_xy,
+            cov_xpy,
+            cov_xtau,
+            cov_pxy,
+            cov_pxpy,
+            cov_pxtau,
+            cov_ytau,
+            cov_pytau,
         )
         cov = torch.zeros(*sigma_x.shape, 7, 7, **factory_kwargs)
         cov[..., 0, 0] = sigma_x.square()
@@ -196,6 +242,22 @@ class ParameterBeam(Beam):
         cov[..., 5, 2] = cov_yp
         cov[..., 3, 5] = cov_pyp
         cov[..., 5, 3] = cov_pyp
+        cov[..., 0, 2] = cov_xy
+        cov[..., 2, 0] = cov_xy
+        cov[..., 0, 3] = cov_xpy
+        cov[..., 3, 0] = cov_xpy
+        cov[..., 0, 4] = cov_xtau
+        cov[..., 4, 0] = cov_xtau
+        cov[..., 1, 2] = cov_pxy
+        cov[..., 2, 1] = cov_pxy
+        cov[..., 1, 3] = cov_pxpy
+        cov[..., 3, 1] = cov_pxpy
+        cov[..., 1, 4] = cov_pxtau
+        cov[..., 4, 1] = cov_pxtau
+        cov[..., 2, 4] = cov_ytau
+        cov[..., 4, 2] = cov_ytau
+        cov[..., 3, 4] = cov_pytau
+        cov[..., 4, 3] = cov_pytau
 
         return cls(
             mu=mu,
@@ -496,27 +558,10 @@ class ParameterBeam(Beam):
         """
         from cheetah.particles.particle_beam import ParticleBeam  # No circular import
 
-        return ParticleBeam.from_parameters(
+        return ParticleBeam.from_distribution(
             num_particles=num_particles,
-            mu_x=self.mu_x,
-            mu_y=self.mu_y,
-            mu_px=self.mu_px,
-            mu_py=self.mu_py,
-            mu_tau=self.mu_tau,
-            mu_p=self.mu_p,
-            sigma_x=self.sigma_x,
-            sigma_y=self.sigma_y,
-            sigma_px=self.sigma_px,
-            sigma_py=self.sigma_py,
-            sigma_tau=self.sigma_tau,
-            sigma_p=self.sigma_p,
-            cov_xpx=self.cov_xpx,
-            cov_ypy=self.cov_ypy,
-            cov_taup=self.cov_taup,
-            cov_xp=self.cov_xp,
-            cov_pxp=self.cov_pxp,
-            cov_yp=self.cov_yp,
-            cov_pyp=self.cov_pyp,
+            mu=self.mu[..., :6],
+            cov=self.cov[..., :6, :6],
             energy=self.energy,
             total_charge=self.total_charge,
             s=self.s,
@@ -632,6 +677,38 @@ class ParameterBeam(Beam):
     @property
     def cov_pyp(self) -> torch.Tensor:
         return self.cov[..., 3, 5]
+
+    @property
+    def cov_xy(self) -> torch.Tensor:
+        return self.cov[..., 0, 2]
+
+    @property
+    def cov_xpy(self) -> torch.Tensor:
+        return self.cov[..., 0, 3]
+
+    @property
+    def cov_xtau(self) -> torch.Tensor:
+        return self.cov[..., 0, 4]
+
+    @property
+    def cov_pxy(self) -> torch.Tensor:
+        return self.cov[..., 1, 2]
+
+    @property
+    def cov_pxpy(self) -> torch.Tensor:
+        return self.cov[..., 1, 3]
+
+    @property
+    def cov_pxtau(self) -> torch.Tensor:
+        return self.cov[..., 1, 4]
+
+    @property
+    def cov_ytau(self) -> torch.Tensor:
+        return self.cov[..., 2, 4]
+
+    @property
+    def cov_pytau(self) -> torch.Tensor:
+        return self.cov[..., 3, 4]
 
     def clone(self) -> "ParameterBeam":
         return self.__class__(

@@ -30,6 +30,14 @@ def test_create_from_parameters():
         cov_pxp=torch.tensor(0.0),
         cov_yp=torch.tensor(0.0),
         cov_pyp=torch.tensor(0.0),
+        cov_xy=torch.tensor(1.0e-15),
+        cov_xpy=torch.tensor(-1.1e-15),
+        cov_xtau=torch.tensor(1.2e-15),
+        cov_pxy=torch.tensor(-1.3e-15),
+        cov_pxpy=torch.tensor(1.4e-15),
+        cov_pxtau=torch.tensor(-1.5e-15),
+        cov_ytau=torch.tensor(1.6e-15),
+        cov_pytau=torch.tensor(-1.7e-15),
         energy=torch.tensor(1e7),
         total_charge=torch.tensor(1e-9),
     )
@@ -45,6 +53,14 @@ def test_create_from_parameters():
     assert np.isclose(beam.sigma_py.cpu().numpy(), 2e-7)
     assert np.isclose(beam.sigma_tau.cpu().numpy(), 0.000001)
     assert np.isclose(beam.sigma_p.cpu().numpy(), 0.000001)
+    assert torch.isclose(beam.cov_xy, torch.tensor(1.0e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_xpy, torch.tensor(-1.1e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_xtau, torch.tensor(1.2e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_pxy, torch.tensor(-1.3e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_pxpy, torch.tensor(1.4e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_pxtau, torch.tensor(-1.5e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_ytau, torch.tensor(1.6e-15), rtol=1e-3, atol=1e-20)
+    assert torch.isclose(beam.cov_pytau, torch.tensor(-1.7e-15), rtol=1e-3, atol=1e-20)
     assert np.isclose(beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(beam.total_charge.cpu().numpy(), 1e-9)
 

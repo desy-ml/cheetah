@@ -86,6 +86,14 @@ class Beam(ABC, nn.Module):
         cov_pxp: torch.Tensor | None = None,
         cov_yp: torch.Tensor | None = None,
         cov_pyp: torch.Tensor | None = None,
+        cov_xy: torch.Tensor | None = None,
+        cov_xpy: torch.Tensor | None = None,
+        cov_xtau: torch.Tensor | None = None,
+        cov_pxy: torch.Tensor | None = None,
+        cov_pxpy: torch.Tensor | None = None,
+        cov_pxtau: torch.Tensor | None = None,
+        cov_ytau: torch.Tensor | None = None,
+        cov_pytau: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         s: torch.Tensor | None = None,
@@ -119,6 +127,14 @@ class Beam(ABC, nn.Module):
         :param cov_pxp: Covariance between px and p.
         :param cov_yp: Covariance between y and p.
         :param cov_pyp: Covariance between py and p.
+        :param cov_xy: Covariance between x and y.
+        :param cov_xpy: Covariance between x and py.
+        :param cov_xtau: Covariance between x and tau.
+        :param cov_pxy: Covariance between px and y.
+        :param cov_pxpy: Covariance between px and py.
+        :param cov_pxtau: Covariance between px and tau.
+        :param cov_ytau: Covariance between y and tau.
+        :param cov_pytau: Covariance between py and tau.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param s: Position along the beamline of the reference particle in meters.
@@ -425,6 +441,46 @@ class Beam(ABC, nn.Module):
     @abstractmethod
     def cov_pyp(self) -> torch.Tensor:
         """Covariance between `py` and `p`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_xy(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_xpy(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_xtau(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxy(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxpy(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxtau(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_ytau(self) -> torch.Tensor:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pytau(self) -> torch.Tensor:
         raise NotImplementedError
 
     @property
