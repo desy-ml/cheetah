@@ -40,16 +40,10 @@ def cloud_in_cell_charge_deposition(
         "tensors",
     )
 
-    # Set weights to zero for particles outside grid bounds
-    inside_mask = ((extent[..., 0] <= positions) & (positions < extent[..., 1])).all(
-        dim=-1
-    )  # Shape (..., num_samples)
-    masked_charges = charges * inside_mask  # Shape (..., num_samples)
-
     # Normalise particle coordinates to normalised bin space
-    bin_space_upper_bounds = torch.tensor(histogram_shape, device=positions.device) - 1
+    bin_space_upper_bounds = torch.tensor(histogram_shape, device=positions.device)
     bin_widths = (extent[..., 1] - extent[..., 0]) / bin_space_upper_bounds
-    positions_in_bin_space = (positions - extent[..., 0]) / bin_widths
+    positions_in_bin_space = ((positions - extent[..., 0]) / bin_widths) - 0.5
     positions_in_bin_space_int_component = positions_in_bin_space.floor().long()
     positions_in_bin_space_fractional_components = (
         positions_in_bin_space - positions_in_bin_space_int_component
@@ -61,26 +55,29 @@ def cloud_in_cell_charge_deposition(
     )  # Shape (num_corners, num_hist_dims)
     corner_positions_in_bin_space = (
         positions_in_bin_space_int_component.unsqueeze(-2) + corner_offsets
-    ).clamp(bin_space_upper_bounds.new_zeros(()), bin_space_upper_bounds)
-    positions_in_bin_space_fractional_components.unsqueeze(-2)
+    )
+    clamped_corner_positions_in_bin_space = corner_positions_in_bin_space.clamp(
+        bin_space_upper_bounds.new_zeros(()), bin_space_upper_bounds - 1
+    )
     corner_weight_factors = torch.where(
         corner_offsets == 0,
-        positions_in_bin_space_fractional_components.unsqueeze(-2),
         (1.0 - positions_in_bin_space_fractional_components).unsqueeze(-2),
+        positions_in_bin_space_fractional_components.unsqueeze(-2),
     )  # Shape (..., num_samples, num_corners, num_hist_dims)
-    corner_weights = corner_weight_factors.prod(
-        dim=-1
-    )  # Shape (..., num_samples, num_corners)
-    corner_charges = (  # Actual charge deposition on the corners
-        masked_charges.unsqueeze(-1) * corner_weights
-    )  # Shape (..., num_samples, num_corners)
+    corner_mask = (
+        (0 <= corner_positions_in_bin_space)
+        & (corner_positions_in_bin_space < bin_space_upper_bounds)
+    ).all(dim=-1)
+    corner_weights = corner_weight_factors.prod(dim=-1) * corner_mask
+    corner_charges = corner_weights * charges.unsqueeze(-1)
 
     vector_shape = positions.shape[:-2]
     num_histogram_bins = math.prod(histogram_shape)
 
+    # TODO: Right now, the expression below only works for 2D histograms
     corner_positions_in_flat_bin_space = (
-        corner_positions_in_bin_space[..., 0]
-        + histogram_shape[0] * corner_positions_in_bin_space[..., 1]
+        histogram_shape[-1] * clamped_corner_positions_in_bin_space[..., 0]
+        + clamped_corner_positions_in_bin_space[..., 1]
     )
 
     flat_charge_grid = corner_charges.new_zeros(*vector_shape, num_histogram_bins)

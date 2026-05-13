@@ -1,6 +1,5 @@
 import pytest
 import torch
-from icecream import ic
 
 from cheetah.utils import is_mps_available_and_functional
 from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
@@ -28,37 +27,37 @@ from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
     ],
     ids=["cpu-float32", "cpu-float64", "cuda-float32", "mps-float32"],
 )
-def test_2d_basic(device, dtype):
+def test_2d_compare_histogramdd(device, dtype):
     """
-    Test basic functionality of 2D Cloud-in-Cell charge deposition on a simple test case
-    with a known expected result and for different device and dtype combinations.
+    Test for the case of a 2D histogram, where all particles are exactly at the center
+    of their respective bins that the Cloud-in-Cell charge deposition produces the same
+    result as `torch.histogramdd`.
     """
     factory_kwargs = {"device": device, "dtype": dtype}
 
+    extent = torch.tensor([[0.0, 4.0], [0.0, 3.0]], **factory_kwargs)
+    bins = (4, 3)
+    positions = torch.tensor([[0.5, 0.5], [1.5, 0.5], [3.5, 1.5]], **factory_kwargs)
+    charges = torch.tensor([1.0, 1.0, 2.0], **factory_kwargs)
+
     # Simple test case with known expected result
-    result = cloud_in_cell_charge_deposition(
-        positions=torch.tensor([[0.5, 0.5], [1.5, 1.5]], **factory_kwargs),
-        bins=[3, 3],
-        extent=torch.tensor([[0.0, 2.0], [0.0, 2.0]], **factory_kwargs),
+    cloud_in_cellresult = cloud_in_cell_charge_deposition(
+        positions, bins, extent, charges
     )
 
-    # Expected result: each particle should be deposited equally among 4 grid points
-    # Particle at (0.5, 0.5) -> corners at (0,0), (1,0), (0,1), (1,1) with weight 0.25
-    # Particle at (1.5, 1.5) -> corners at (1,1), (2,1), (1,2), (2,2) with weight 0.25
+    histogram_result, _ = torch.histogramdd(
+        positions, bins=bins, range=extent.flatten().tolist(), weight=charges
+    )
+
     expected = torch.tensor(
-        [
-            [0.25, 0.25, 0.0],
-            [0.25, 0.5, 0.25],  # (1,1) gets contribution from both particles
-            [0.0, 0.25, 0.25],
-        ],
-        **factory_kwargs,
+        [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 2.0, 0.0]],
+        **factory_kwargs
     )
 
-    assert result.shape == (3, 3)
-    ic(result, expected)
-    assert torch.allclose(result, expected)
-    assert result.dtype == dtype
-    assert result.device.type == device.type
+    assert cloud_in_cellresult.shape == histogram_result.shape
+    assert (cloud_in_cellresult == expected).all()
+    assert cloud_in_cellresult.dtype == histogram_result.dtype
+    assert cloud_in_cellresult.device.type == histogram_result.device.type
 
 
 def test_2d_with_weights():
