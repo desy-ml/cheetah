@@ -14,6 +14,7 @@ def cache_transfer_map(func):
     @functools.wraps(func)
     def wrapper(self: Element, energy: torch.Tensor, species: Species) -> torch.Tensor:
         # Caching is not supported if any of input tensors require gradients
+
         if any(
             x.requires_grad
             for x in (energy, species.num_elementary_charges, species.mass_eV)
@@ -27,10 +28,12 @@ def cache_transfer_map(func):
         cache = self._cache[func.__name__]
 
         # Build a validity key to check if element features have changed
+        feature_tensors = []
         feature_validity_key = tuple()
         for feature_name in self.defining_features:
             feature = getattr(self, feature_name)
             if isinstance(feature, torch.Tensor):
+                feature_tensors.append(feature)
                 feature_validity_key += (
                     id(feature),
                     feature._version,
@@ -59,10 +62,11 @@ def cache_transfer_map(func):
             cache["result"] = func(self, energy, species)
 
             cache["feature_validity_key"] = feature_validity_key
+            cache["feature_tensors"] = feature_tensors
             cache["energy"] = energy.clone()
             cache["num_elementary_charges"] = species.num_elementary_charges.clone()
             cache["mass_eV"] = species.mass_eV.clone()
-
+        # returns after
         return cache["result"]
 
     return wrapper
