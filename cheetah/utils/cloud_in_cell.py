@@ -75,15 +75,14 @@ def cloud_in_cell_charge_deposition(
     num_histogram_bins = math.prod(histogram_shape)
 
     # Convert multi-dimensional corner positions to flat bin space indices
-    corner_positions_in_flat_bin_space = torch.zeros_like(
-        clamped_corner_positions_in_bin_space[..., 0]
+    strides = torch.tensor(
+        [math.prod(histogram_shape[i + 1 :]) for i in range(num_hist_dims)],
+        device=positions.device,
+        dtype=torch.long,
     )
-    multiplier = 1
-    for dim in range(num_hist_dims - 1, -1, -1):
-        corner_positions_in_flat_bin_space += (
-            clamped_corner_positions_in_bin_space[..., dim] * multiplier
-        )
-        multiplier *= histogram_shape[dim]
+    corner_positions_in_flat_bin_space = (
+        clamped_corner_positions_in_bin_space * strides
+    ).sum(dim=-1)
 
     flat_charge_grid = corner_charges.new_zeros(*vector_shape, num_histogram_bins)
     flat_charge_grid.scatter_add_(
