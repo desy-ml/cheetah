@@ -27,11 +27,11 @@ from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
     ],
     ids=["cpu-float32", "cpu-float64", "cuda-float32", "mps-float32"],
 )
-def test_1d_compare_histogramdd(device, dtype):
+def test_1d_compare_histogram(device, dtype):
     """
     Test for the case of a 1D histogram, where all particles are exactly at the center
     of their respective bins that the Cloud-in-Cell charge deposition produces the same
-    result as `torch.histogramdd`.
+    result as `torch.histogram`.
     """
     factory_kwargs = {"device": device, "dtype": dtype}
 
@@ -44,7 +44,7 @@ def test_1d_compare_histogramdd(device, dtype):
         positions, bins, extent, charges
     )
 
-    histogram_result, _ = torch.histogramdd(
+    histogram_result, _ = torch.histogram(
         positions.squeeze(-1),
         bins=bins,
         range=extent.flatten().tolist(),
@@ -151,11 +151,8 @@ def test_3d_compare_histogramdd(device, dtype):
         positions, bins=bins, range=extent.flatten().tolist(), weight=charges
     )
 
-    # Particle at (0.5, 0.5, 0.5) should contribute equally to all 8 corners
-    expected = torch.ones(2, 2, 2) * 0.125
-
     assert cloud_in_cell_result.shape == histogram_result.shape
-    assert (cloud_in_cell_result == expected).all()
+    assert (cloud_in_cell_result == histogram_result).all()
     assert cloud_in_cell_result.dtype == histogram_result.dtype
     assert cloud_in_cell_result.device.type == histogram_result.device.type
 
