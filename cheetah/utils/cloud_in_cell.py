@@ -95,11 +95,3 @@ def cloud_in_cell_charge_deposition(
     charge_grid = flat_charge_grid.reshape(*vector_shape, *histogram_shape)
 
     return charge_grid
-
-    # TODO: Is this needed? Is this just what in NumPy is called "density=True"?
-    # Compute inverse cell volume
-    # cell_volume = 1.0
-    # for bin_width in bin_widths_for_each_hist_dim:
-    #     cell_volume *= bin_width
-    # inv_cell_volume = 1.0 / cell_volume
-    # charge = charge * inv_cell_volume
