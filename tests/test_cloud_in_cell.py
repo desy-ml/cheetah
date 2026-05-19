@@ -92,7 +92,7 @@ def test_2d_compare_histogramdd(device, dtype):
     positions = torch.tensor([[0.5, 0.5], [1.5, 0.5], [3.5, 1.5]], **factory_kwargs)
     charges = torch.tensor([1.0, 1.0, 2.0], **factory_kwargs)
 
-    cloud_in_cellresult = cloud_in_cell_charge_deposition(
+    cloud_in_cell_result = cloud_in_cell_charge_deposition(
         positions, bins, extent, charges
     )
 
@@ -100,10 +100,10 @@ def test_2d_compare_histogramdd(device, dtype):
         positions, bins=bins, range=extent.flatten().tolist(), weight=charges
     )
 
-    assert cloud_in_cellresult.shape == histogram_result.shape
-    assert (cloud_in_cellresult == histogram_result).all()
-    assert cloud_in_cellresult.dtype == histogram_result.dtype
-    assert cloud_in_cellresult.device.type == histogram_result.device.type
+    assert cloud_in_cell_result.shape == histogram_result.shape
+    assert (cloud_in_cell_result == histogram_result).all()
+    assert cloud_in_cell_result.dtype == histogram_result.dtype
+    assert cloud_in_cell_result.device.type == histogram_result.device.type
 
 
 @pytest.mark.parametrize(

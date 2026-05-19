@@ -230,7 +230,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
-        """Image reading of the screen with shape `(..., height, width)."""
+        """Image reading of the screen with shape `(..., height, width).`"""
         if self.cached_reading is not None:
             return self.cached_reading
 

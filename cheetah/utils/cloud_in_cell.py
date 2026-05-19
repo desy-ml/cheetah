@@ -35,10 +35,9 @@ def cloud_in_cell_charge_deposition(
 
     num_hist_dims = positions.shape[-1]
     histogram_shape = [bins] * num_hist_dims if isinstance(bins, int) else bins
-    assert len(histogram_shape) == num_hist_dims, (
-        "Number of histogram dimensions defined by bins must match number of position ",
-        "tensors",
-    )
+    assert (
+        len(histogram_shape) == num_hist_dims
+    ), "Number of bin values must match number of position dimensions."
 
     # Normalise particle coordinates to normalised bin space
     bin_space_upper_bounds = torch.tensor(histogram_shape, device=positions.device)
