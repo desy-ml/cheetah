@@ -259,6 +259,15 @@ class ParameterBeam(Beam):
         cov[..., 3, 4] = cov_pytau
         cov[..., 4, 3] = cov_pytau
 
+        # Assert that the covariance matrix is positive (semi)-definite
+        try:
+            torch.linalg.cholesky(cov[..., :6, :6])
+        except RuntimeError as e:
+            raise ValueError(
+                "The covariance matrix of the beam must be positive definite. "
+                "Please check the input parameters to ensure that they are consistent."
+            ) from e
+
         return cls(
             mu=mu,
             cov=cov,
