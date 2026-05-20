@@ -946,15 +946,15 @@ class ParticleBeam(Beam):
         status = self.survival_probabilities > 0.5
 
         data = {
-            "x": self.x.numpy(),
-            "y": self.y.numpy(),
-            "z": self.tau.numpy(),
-            "px": px.numpy(),
-            "py": py.numpy(),
-            "pz": pz.numpy(),
-            "t": t.numpy(),
-            "weight": self.particle_charges.numpy(),
-            "status": status.numpy(),
+            "x": self.x.detach().numpy(),
+            "y": self.y.detach().numpy(),
+            "z": self.tau.detach().numpy(),
+            "px": px.detach().numpy(),
+            "py": py.detach().numpy(),
+            "pz": pz.detach().numpy(),
+            "t": t.detach().numpy(),
+            "weight": self.particle_charges.detach().numpy(),
+            "status": status.int().detach().numpy(),
             "species": self.species.name,
         }
         particle_group = openpmd.ParticleGroup(data=data)
