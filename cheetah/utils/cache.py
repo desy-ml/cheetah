@@ -14,7 +14,6 @@ def cache_transfer_map(func):
     @functools.wraps(func)
     def wrapper(self: Element, energy: torch.Tensor, species: Species) -> torch.Tensor:
         # Caching is not supported if any of input tensors require gradients
-
         if any(
             x.requires_grad
             for x in (energy, species.num_elementary_charges, species.mass_eV)
