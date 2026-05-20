@@ -65,7 +65,6 @@ def cache_transfer_map(func):
             cache["energy"] = energy.clone()
             cache["num_elementary_charges"] = species.num_elementary_charges.clone()
             cache["mass_eV"] = species.mass_eV.clone()
-        # returns after
         return cache["result"]
 
     return wrapper
