@@ -411,41 +411,49 @@ class Beam(ABC, nn.Module):
     @property
     @abstractmethod
     def cov_xy(self) -> torch.Tensor:
+        """Covariance between `x` and `y`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_xpy(self) -> torch.Tensor:
+        """Covariance between `x` and `py`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_xtau(self) -> torch.Tensor:
+        """Covariance between `x` and `tau`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_pxy(self) -> torch.Tensor:
+        """Covariance between `px` and `y`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_pxpy(self) -> torch.Tensor:
+        """Covariance between `px` and `py`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_pxtau(self) -> torch.Tensor:
+        """Covariance between `px` and `tau`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_ytau(self) -> torch.Tensor:
+        """Covariance between `y` and `tau`."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def cov_pytau(self) -> torch.Tensor:
+        """Covariance between `py` and `tau`."""
         raise NotImplementedError
 
     @property
