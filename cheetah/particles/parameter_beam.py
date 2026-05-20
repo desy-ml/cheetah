@@ -478,6 +478,21 @@ class ParameterBeam(Beam):
         sigma_py: torch.Tensor | None = None,
         sigma_tau: torch.Tensor | None = None,
         sigma_p: torch.Tensor | None = None,
+        cov_xpx: torch.Tensor | None = None,
+        cov_ypy: torch.Tensor | None = None,
+        cov_taup: torch.Tensor | None = None,
+        cov_xp: torch.Tensor | None = None,
+        cov_pxp: torch.Tensor | None = None,
+        cov_yp: torch.Tensor | None = None,
+        cov_pyp: torch.Tensor | None = None,
+        cov_xy: torch.Tensor | None = None,
+        cov_xpy: torch.Tensor | None = None,
+        cov_xtau: torch.Tensor | None = None,
+        cov_pxy: torch.Tensor | None = None,
+        cov_pxpy: torch.Tensor | None = None,
+        cov_pxtau: torch.Tensor | None = None,
+        cov_ytau: torch.Tensor | None = None,
+        cov_pytau: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         species: Species | None = None,
@@ -502,50 +517,63 @@ class ParameterBeam(Beam):
         :param sigma_tau: Sigma of the particle distribution in longitudinal direction,
             in meters.
         :param sigma_p: Sigma of the particle distribution in p, dimensionless.
+        :param cov_xpx: Covariance between x and px.
+        :param cov_ypy: Covariance between y and py.
+        :param cov_taup: Covariance between tau and p.
+        :param cov_xp: Covariance between x and p.
+        :param cov_pxp: Covariance between px and p.
+        :param cov_yp: Covariance between y and p.
+        :param cov_pyp: Covariance between py and p.
+        :param cov_xy: Covariance between x and y.
+        :param cov_xpy: Covariance between x and py.
+        :param cov_xtau: Covariance between x and tau.
+        :param cov_pxy: Covariance between px and y.
+        :param cov_pxpy: Covariance between px and py.
+        :param cov_pxtau: Covariance between px and tau.
+        :param cov_ytau: Covariance between y and tau.
+        :param cov_pytau: Covariance between py and tau.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
         :param device: Device that the beam creates its tensors on.
         :param dtype: Data type of the tensors created by the beam.
         """
-        device = device if device is not None else self.mu_x.device
-        dtype = dtype if dtype is not None else self.mu_x.dtype
-
-        mu_x = mu_x if mu_x is not None else self.mu_x
-        mu_px = mu_px if mu_px is not None else self.mu_px
-        mu_y = mu_y if mu_y is not None else self.mu_y
-        mu_py = mu_py if mu_py is not None else self.mu_py
-        mu_tau = mu_tau if mu_tau is not None else self.mu_tau
-        mu_p = mu_p if mu_p is not None else self.mu_p
-        sigma_x = sigma_x if sigma_x is not None else self.sigma_x
-        sigma_px = sigma_px if sigma_px is not None else self.sigma_px
-        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
-        sigma_py = sigma_py if sigma_py is not None else self.sigma_py
-        sigma_tau = sigma_tau if sigma_tau is not None else self.sigma_tau
-        sigma_p = sigma_p if sigma_p is not None else self.sigma_p
-        energy = energy if energy is not None else self.energy
-        total_charge = total_charge if total_charge is not None else self.total_charge
-        species = species if species is not None else self.species
-
         return self.__class__.from_parameters(
-            mu_x=mu_x,
-            mu_px=mu_px,
-            mu_y=mu_y,
-            mu_py=mu_py,
-            mu_tau=mu_tau,
-            mu_p=mu_p,
-            sigma_x=sigma_x,
-            sigma_px=sigma_px,
-            sigma_y=sigma_y,
-            sigma_py=sigma_py,
-            sigma_tau=sigma_tau,
-            sigma_p=sigma_p,
-            energy=energy,
-            total_charge=total_charge,
+            mu_x=mu_x if mu_x is not None else self.mu_x,
+            mu_px=mu_px if mu_px is not None else self.mu_px,
+            mu_y=mu_y if mu_y is not None else self.mu_y,
+            mu_py=mu_py if mu_py is not None else self.mu_py,
+            mu_tau=mu_tau if mu_tau is not None else self.mu_tau,
+            mu_p=mu_p if mu_p is not None else self.mu_p,
+            sigma_x=sigma_x if sigma_x is not None else self.sigma_x,
+            sigma_px=sigma_px if sigma_px is not None else self.sigma_px,
+            sigma_y=sigma_y if sigma_y is not None else self.sigma_y,
+            sigma_py=sigma_py if sigma_py is not None else self.sigma_py,
+            sigma_tau=sigma_tau if sigma_tau is not None else self.sigma_tau,
+            sigma_p=sigma_p if sigma_p is not None else self.sigma_p,
+            cov_xpx=cov_xpx if cov_xpx is not None else self.cov_xpx,
+            cov_ypy=cov_ypy if cov_ypy is not None else self.cov_ypy,
+            cov_taup=cov_taup if cov_taup is not None else self.cov_taup,
+            cov_xp=cov_xp if cov_xp is not None else self.cov_xp,
+            cov_pxp=cov_pxp if cov_pxp is not None else self.cov_pxp,
+            cov_yp=cov_yp if cov_yp is not None else self.cov_yp,
+            cov_pyp=cov_pyp if cov_pyp is not None else self.cov_pyp,
+            cov_xy=cov_xy if cov_xy is not None else self.cov_xy,
+            cov_xpy=cov_xpy if cov_xpy is not None else self.cov_xpy,
+            cov_xtau=cov_xtau if cov_xtau is not None else self.cov_xtau,
+            cov_pxy=cov_pxy if cov_pxy is not None else self.cov_pxy,
+            cov_pxpy=cov_pxpy if cov_pxpy is not None else self.cov_pxpy,
+            cov_pxtau=cov_pxtau if cov_pxtau is not None else self.cov_pxtau,
+            cov_ytau=cov_ytau if cov_ytau is not None else self.cov_ytau,
+            cov_pytau=cov_pytau if cov_pytau is not None else self.cov_pytau,
+            energy=energy if energy is not None else self.energy,
+            total_charge=(
+                total_charge if total_charge is not None else self.total_charge
+            ),
             s=self.s,
-            species=species,
-            device=device,
-            dtype=dtype,
+            species=species if species is not None else self.species,
+            device=device if device is not None else self.mu.device,
+            dtype=dtype if dtype is not None else self.mu.dtype,
         )
 
     def as_particle_beam(self, num_particles: int) -> "ParticleBeam":  # noqa: F821
