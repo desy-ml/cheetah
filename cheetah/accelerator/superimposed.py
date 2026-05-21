@@ -25,16 +25,18 @@ class SuperimposedElement(Element):
     def __init__(
         self,
         base_element: Element,
-        superimposed_element: Segment,
+        superimposed_element: Segment | Element,
         name: str | None = None,
         sanitize_name: bool = False,
     ):
         super().__init__(name=name, sanitize_name=sanitize_name)
 
         self.base_element = base_element
-        if isinstance(superimposed_element, Segment):
+        if type(superimposed_element) is Segment:
             self.superimposed_element = superimposed_element
-        elif isinstance(superimposed_element, Element):
+        elif type(superimposed_element) is not Element and isinstance(
+            superimposed_element, Element
+        ):
             self.superimposed_element = Segment(
                 elements=[superimposed_element],
                 name=f"{superimposed_element.name}_segment",
