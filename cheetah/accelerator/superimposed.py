@@ -17,7 +17,8 @@ class SuperimposedElement(Element):
 
     :param base_element: The base element over which other elements are superimposed.
     :param superimposed_element: Segment of elements to be superimposed at the
-        center of base element.
+        center of base element. If a single Element is provided,
+        it will be converted to a Segment with one element.
     :param name: The name of the segment. If None, a default name is generated.
     :param sanitize_name: Whether to sanitize the name to ensure it is valid.
     """
@@ -46,6 +47,15 @@ class SuperimposedElement(Element):
                 f"superimposed_element must be a Segment or Element subclass, "
                 f"got {type(superimposed_element).__name__}"
             )
+
+        for superimposed_ele in self.superimposed_element.elements:
+            if superimposed_ele.length is not None and not torch.all(
+                superimposed_ele.length == 0
+            ):
+                raise ValueError(
+                    f"Superimposed elements must have zero length, "
+                    f"but {superimposed_ele.name} has length {superimposed_ele.length}"
+                )
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)

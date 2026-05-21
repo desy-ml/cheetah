@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from cheetah.accelerator import BPM, Drift, Quadrupole, Segment, SuperimposedElement
@@ -137,3 +138,17 @@ def test_to_json(tmp_path):
     full_segment.to_lattice_json(output_path)
 
     assert output_path.exists()
+
+
+def test_superimposed_element_rejects_nonzero_length():
+    """
+    Test that SuperimposedElement raises ValueError when a superimposed element
+    has non-zero length.
+    """
+    quad = Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad")
+    drift = Drift(length=torch.tensor(0.5), name="BadDrift")
+
+    with pytest.raises(ValueError):
+        SuperimposedElement(
+            base_element=quad, superimposed_element=drift, name="ShouldFail"
+        )
