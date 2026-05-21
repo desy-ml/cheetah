@@ -15,28 +15,20 @@ class SuperimposedElement(Element):
     A segment that represents a superimposed structure in an accelerator,
     ie. where one element is placed over another at the center of the base element.
 
+    :param base_element: The base element over which other elements are superimposed.
+    :param superimposed_element: Segment of elements to be superimposed at the
+        center of base element.
+    :param name: The name of the segment. If None, a default name is generated.
+    :param sanitize_name: Whether to sanitize the name to ensure it is valid.
     """
 
     def __init__(
         self,
         base_element: Element,
         superimposed_element: Segment,
-        name=None,
-        sanitize_name=False,
+        name: str | None = None,
+        sanitize_name: bool = False,
     ):
-        """
-        Parameters
-        ----------
-        base_element : Element
-            The base element over which other elements are superimposed.
-        superimposed_element : Element
-            Segment of elements to be superimposed at the center of base element
-        name : str, optional
-            The name of the segment. If None, a default name is generated.
-        sanitize_name : bool, optional
-            Whether to sanitize the name to ensure it is valid.
-        """
-        # Call the parent constructor with the composed elements
         super().__init__(name=name, sanitize_name=sanitize_name)
 
         self.base_element = base_element
@@ -53,11 +45,8 @@ class SuperimposedElement(Element):
                 f"got {type(superimposed_element).__name__}"
             )
 
-    # self._buffers["length"] = self.base_element._buffers["length"]
-
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
-
         if name == "length" and hasattr(self, "base_element"):
             base = getattr(self, "base_element", None)
             if base is not None:

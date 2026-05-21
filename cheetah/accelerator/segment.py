@@ -136,7 +136,7 @@ class Segment(Element):
         for element in self.elements:
             if isinstance(element, Segment):
                 flattened_elements += element.flattened().elements
-            elif hasattr(element, "subelements"): # e.g. SuperimposedElement
+            elif hasattr(element, "subelements"):  # e.g. SuperimposedElement
                 flattened_elements += element.subelements
             else:
                 flattened_elements.append(element)

@@ -69,9 +69,9 @@ def test_superimposed_bpm():
 
     tm_expected2 = quad.first_order_transfer_map(energy, species)
     tm = superimposed_segment.first_order_transfer_map(energy, species)
-    #tm_expected2 = quad.first_order_transfer_map(energy, species) 
-    # bug where tm is stale if the cache is not properly invalidated when the quadrupole strength is changed
-    assert not torch.allclose(tm_expected, tm_expected2)  # should not be close to the old transfer map
+    assert not torch.allclose(
+        tm_expected, tm_expected2
+    )  # should not be close to the old transfer map
     assert torch.allclose(tm, tm_expected2)
 
     # set the BPM to active and ensure tracking still works
