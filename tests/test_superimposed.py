@@ -108,7 +108,7 @@ def test_in_lattice():
     assert flattened.element_names == ["Drift", "Quad#0", "BPM1", "Quad#1", "Drift"]
 
 
-def test_to_json():
+def test_to_json(tmp_path):
     """
     Test that a superimposed segment can be correctly serialized to and from JSON.
     """
@@ -127,9 +127,13 @@ def test_to_json():
 
     # test conversion back to segment
     reconstructed_segment = parse_segment("FullSegment", segment_dict)
-    assert (
-        reconstructed_segment.SuperimposedBPM.base_element.k1
-        == superimposed_element.base_element.k1
+    assert torch.equal(
+        reconstructed_segment.SuperimposedBPM.base_element.k1,
+        superimposed_element.base_element.k1,
     )
 
-    full_segment.to_lattice_json("full_segment.json")
+    # Test writing lattice JSON to a temporary file
+    output_path = tmp_path / "full_segment.json"
+    full_segment.to_lattice_json(output_path)
+
+    assert output_path.exists()
