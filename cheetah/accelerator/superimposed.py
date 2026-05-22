@@ -1,8 +1,8 @@
 import torch
 from matplotlib import pyplot as plt
 
-from cheetah.accelerator import Segment
 from cheetah.accelerator.element import Element
+from cheetah.accelerator.segment import Segment
 from cheetah.particles.beam import Beam
 from cheetah.particles.species import Species
 from cheetah.utils.unique_name_generator import UniqueNameGenerator
