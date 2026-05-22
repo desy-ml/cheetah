@@ -18,10 +18,10 @@ from .accelerator import (  # noqa: F401
     Sextupole,
     Solenoid,
     SpaceChargeKick,
+    SuperimposedElement,
     TransverseDeflectingCavity,
     Undulator,
     VerticalCorrector,
-    SuperimposedElement,
 )
 from .particles import Beam, ParameterBeam, ParticleBeam, Species  # noqa: F401
 from .utils import (  # noqa: F401
