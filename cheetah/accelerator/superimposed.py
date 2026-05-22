@@ -56,6 +56,7 @@ class SuperimposedElement(Element):
                     f"Superimposed elements must have zero length, "
                     f"but {superimposed_ele.name} has length {superimposed_ele.length}"
                 )
+        self.length = self.base_element.length.clone()
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
