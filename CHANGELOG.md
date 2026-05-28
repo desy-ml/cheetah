@@ -18,6 +18,8 @@
 
 ### 🐆 Other
 
+- Update the `fortran_namelist` parsing to also allow special characters in quoted names in use line pattern. (see #637) (@cr-xu)
+
 ### 🌟 First Time Contributors
 
 ## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
