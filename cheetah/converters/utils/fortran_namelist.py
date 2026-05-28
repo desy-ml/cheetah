@@ -27,7 +27,7 @@ ELEMENT_DEFINITION_PATTERN = (
     + r"(\s*\,(.*))?"
 )
 LINE_DEFINITION_PATTERN = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
-USE_LINE_PATTERN = r"use\s*\,\s*([a-z0-9_]+)"
+USE_LINE_PATTERN = r'use\s*\,\s*([a-z0-9_]+|"[a-z0-9_\-\.\:]+")'
 OVERLAY_DEFINITION_PATTERN = (
     f"({ELEMENT_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
 )
