@@ -27,9 +27,6 @@ def cache_transfer_map(func):
         cache = self._cache[func.__name__]
 
         # Build a validity key to check if element features have changed
-        # NOTE: We use the id and version of tensors instead of the tensors themselves
-        # because tensor hashes are not stable across different runs and can change even
-        # if the tensor content is the same.
         feature_validity_key = tuple()
         for feature_name in self.defining_features:
             feature = getattr(self, feature_name)
