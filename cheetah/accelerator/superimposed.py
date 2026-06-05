@@ -12,13 +12,13 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 class Superimposed(Element):
     """
-    A segment that represents a superimposed structure in an accelerator,
-    ie. where one element is placed over another at the center of the base element.
+    A segment that represents a superimposed structure in an accelerator, i.e. where one
+    element is placed over another at the center of the base element.
 
     :param base_element: The base element over which other elements are superimposed.
-    :param superimposed_element: Segment of elements to be superimposed at the
-        center of base element. If a single Element is provided,
-        it will be converted to a Segment with one element.
+    :param superimposed_element: Segment of elements to be superimposed at the center of
+        base element. If a single Element is provided, it will be converted to a Segment
+        with one element.
     :param name: The name of the segment. If None, a default name is generated.
     :param sanitize_name: Whether to sanitize the name to ensure it is valid.
     """
@@ -29,23 +29,27 @@ class Superimposed(Element):
         superimposed_element: Segment | Element,
         name: str | None = None,
         sanitize_name: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
-        super().__init__(name=name, sanitize_name=sanitize_name)
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.base_element = base_element
+        self.base_element = base_element.to(**factory_kwargs)
         if type(superimposed_element) is Segment:
-            self.superimposed_element = superimposed_element
+            self.superimposed_element = superimposed_element.to(**factory_kwargs)
         elif type(superimposed_element) is not Element and isinstance(
             superimposed_element, Element
         ):
             self.superimposed_element = Segment(
                 elements=[superimposed_element],
                 name=f"{superimposed_element.name}_segment",
+                **factory_kwargs,
             )
         else:
             raise TypeError(
-                f"superimposed_element must be a Segment or Element subclass, "
-                f"got {type(superimposed_element).__name__}"
+                f"Superimposed_element must be a Segment or Element subclass, got "
+                f"{superimposed_element.__class__.__name__}"
             )
 
         for superimposed_ele in self.superimposed_element.elements:
@@ -106,7 +110,7 @@ class Superimposed(Element):
 
     @property
     def subelements(self) -> list[Element]:
-        half_length = self.base_element.length / 2
+        half_length = self.base_element.length / 2.0
         base = self.base_element
 
         kwargs = {
@@ -115,17 +119,17 @@ class Superimposed(Element):
             if feature != "length" and feature != "name"
         }
 
-        first = type(base)(
+        first = base.__class__(
             length=half_length,
-            name=f"{base.name}#0",
+            name=f"{base.name}_0",
             sanitize_name=False,
             dtype=base.length.dtype,
             device=base.length.device,
             **kwargs,
         )
-        second = type(base)(
+        second = base.__class__(
             length=half_length,
-            name=f"{base.name}#1",
+            name=f"{base.name}_1",
             sanitize_name=False,
             dtype=base.length.dtype,
             device=base.length.device,
@@ -142,7 +146,7 @@ class Superimposed(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return all([el.is_skippable for el in self.subelements])
+        return all([element.is_skippable for element in self.subelements])
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
