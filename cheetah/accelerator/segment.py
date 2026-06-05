@@ -136,11 +136,6 @@ class Segment(Element):
         for element in self.elements:
             if isinstance(element, Segment):
                 flattened_elements += element.flattened().elements
-            elif hasattr(element, "subelements"):
-                # only SuperimposedElement has sublements
-                # but importing SuperimposedElement here would cause a circular import
-                # so we check for the attribute instead
-                flattened_elements += element.subelements
             else:
                 flattened_elements.append(element)
 
