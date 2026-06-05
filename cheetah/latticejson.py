@@ -30,7 +30,7 @@ def convert_element(element: "cheetah.Element"):
     :param element: Cheetah element
     :return: Tuple of element name, element class, and element parameters
     """
-    if isinstance(element, cheetah.SuperimposedElement):
+    if isinstance(element, cheetah.Superimposed):
         params = {
             "base_element": {
                 element.base_element.name: convert_element(element.base_element)[1:]
@@ -182,7 +182,7 @@ def parse_element(
     element_class = getattr(cheetah, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
 
-    if element_class == cheetah.SuperimposedElement:
+    if element_class == cheetah.Superimposed:
         base_element_dict = params["base_element"]
         superimposed_element_dict = params["superimposed_element"]
 
@@ -208,7 +208,7 @@ def parse_element(
             dtype=dtype,
         )
 
-        return cheetah.SuperimposedElement(
+        return cheetah.Superimposed(
             name=name,
             base_element=base_element,
             superimposed_element=superimposed_element,

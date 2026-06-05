@@ -10,7 +10,7 @@ from cheetah.utils.unique_name_generator import UniqueNameGenerator
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
-class SuperimposedElement(Element):
+class Superimposed(Element):
     """
     A segment that represents a superimposed structure in an accelerator,
     ie. where one element is placed over another at the center of the base element.

@@ -135,7 +135,7 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.VerticalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
-    cheetah.SuperimposedElement: {
+    cheetah.Superimposed: {
         "default": {
             "base_element": cheetah.Quadrupole(
                 length=torch.tensor(1.0),

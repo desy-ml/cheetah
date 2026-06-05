@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from cheetah.accelerator import BPM, Drift, Quadrupole, Segment, SuperimposedElement
+from cheetah.accelerator import BPM, Drift, Quadrupole, Segment, Superimposed
 from cheetah.latticejson import convert_segment, parse_segment
 from cheetah.particles import ParticleBeam
 
@@ -18,7 +18,7 @@ def test_superimposed_bpm():
     bpm = BPM(name="BPM1", is_active=False)
 
     # Create a superimposed segment
-    superimposed_segment = SuperimposedElement(
+    superimposed_segment = Superimposed(
         base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
     )
 
@@ -88,7 +88,7 @@ def test_in_lattice():
     quad = Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad")
     bpm = BPM(name="BPM1", is_active=False)
 
-    superimposed_segment = SuperimposedElement(
+    superimposed_segment = Superimposed(
         base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
     )
     full_segment = Segment([drift, superimposed_segment, drift])
@@ -117,7 +117,7 @@ def test_to_json(tmp_path):
     quad = Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad")
     bpm = BPM(name="BPM1", is_active=False)
 
-    superimposed_element = SuperimposedElement(
+    superimposed_element = Superimposed(
         base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
     )
     full_segment = Segment([drift, superimposed_element, drift], name="FullSegment")
@@ -149,6 +149,4 @@ def test_superimposed_element_rejects_nonzero_length():
     drift = Drift(length=torch.tensor(0.5), name="BadDrift")
 
     with pytest.raises(ValueError):
-        SuperimposedElement(
-            base_element=quad, superimposed_element=drift, name="ShouldFail"
-        )
+        Superimposed(base_element=quad, superimposed_element=drift, name="ShouldFail")
