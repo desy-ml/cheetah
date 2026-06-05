@@ -19,7 +19,7 @@
 
 ### 🐆 Other
 
-- Update the `fortran_namelist` parsing to also allow special characters in quoted names in use line pattern. (see #637) (@cr-xu)
+- Update the `fortran_namelist` parsing to also allow special characters in quoted names in use line expressions (see #637) (@cr-xu)
 
 ### 🌟 First Time Contributors
 
