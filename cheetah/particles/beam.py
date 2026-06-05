@@ -460,7 +460,7 @@ class Beam(ABC, nn.Module):
                     ).square()
                 )
             )
-            .clamp_min(torch.finfo(self.sigma_x.dtype).tiny)
+            .clamp_min(torch.finfo(self.sigma_x.dtype).tiny)  # Patch NaN and 0.0 (#639)
             .sqrt()
         )
 
@@ -510,7 +510,7 @@ class Beam(ABC, nn.Module):
                     self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
                 ).square()
             )
-            .clamp_min(torch.finfo(self.sigma_y.dtype).tiny)
+            .clamp_min(torch.finfo(self.sigma_y.dtype).tiny)  # Patch NaN and 0.0 (#639)
             .sqrt()
         )
 
