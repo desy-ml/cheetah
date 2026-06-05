@@ -19,6 +19,8 @@
 
 ### 🐆 Other
 
+- Automate publishing to PyPI when new releases are created on GitHub (see #423) (@jank324)
+
 ### 🌟 First Time Contributors
 
 ## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
