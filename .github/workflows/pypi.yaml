@@ -28,10 +28,10 @@ jobs:
           python-version: "3.x"
 
       - name: Install build tool
-        run: pip install build
+        run: python -m pip install --upgrade build
 
       - name: Build a binary wheel and a source tarball
-        run: build
+        run: python -m build
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
