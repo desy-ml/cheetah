@@ -27,12 +27,13 @@ def cache_transfer_map(func):
         cache = self._cache[func.__name__]
 
         # Build a validity key to check if element features have changed
-        feature_tensors = []
+        # NOTE: We use the id and version of tensors instead of the tensors themselves
+        # because tensor hashes are not stable across different runs and can change even
+        # if the tensor content is the same.
         feature_validity_key = tuple()
         for feature_name in self.defining_features:
             feature = getattr(self, feature_name)
             if isinstance(feature, torch.Tensor):
-                feature_tensors.append(feature)
                 feature_validity_key += (
                     id(feature),
                     feature._version,
@@ -61,7 +62,6 @@ def cache_transfer_map(func):
             cache["result"] = func(self, energy, species)
 
             cache["feature_validity_key"] = feature_validity_key
-            cache["feature_tensors"] = feature_tensors
             cache["energy"] = energy.clone()
             cache["num_elementary_charges"] = species.num_elementary_charges.clone()
             cache["mass_eV"] = species.mass_eV.clone()
