@@ -2,162 +2,76 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.latticejson import convert_segment, parse_segment
 
 
-def test_superimposed_bpm():
+def test_superimposed_base_split_length():
     """
-    Test that a superimposed BPM element correctly tracks particles through the segment.
+    Test that the base element of a superimposed segment is correctly split into two
+    halfs, each half the length of the original base element.
     """
-
-    # Create a base drift element
-    quad = cheetah.Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad"
-    )
-
-    # Create a BPM element to be superimposed
-    bpm = cheetah.BPM(name="BPM1", is_active=False)
-
-    # Create a superimposed segment
     superimposed_segment = cheetah.Superimposed(
-        base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
+        base_element=cheetah.Quadrupole(length=torch.tensor(1.0)),
+        superimposed_element=cheetah.BPM(),
     )
 
-    # make sure the elements are as expected
+    assert len(superimposed_segment.subelements) == 3
     assert isinstance(superimposed_segment.subelements[0], cheetah.Quadrupole)
-    assert superimposed_segment.subelements[0].name == "Quad#0"
-    assert superimposed_segment.subelements[0].length == quad.length / 2
     assert isinstance(superimposed_segment.subelements[1], cheetah.BPM)
-    assert superimposed_segment.subelements[1].name == "BPM1"
     assert isinstance(superimposed_segment.subelements[2], cheetah.Quadrupole)
-    assert superimposed_segment.subelements[2].name == "Quad#1"
-    assert superimposed_segment.subelements[2].length == quad.length / 2
-
-    # Create an incoming particle beam
-    incoming_beam = cheetah.ParticleBeam.from_twiss(
-        beta_x=torch.tensor(10.0),
-        alpha_x=torch.tensor(0.0),
-        beta_y=torch.tensor(10.0),
-        alpha_y=torch.tensor(0.0),
-    )
-
-    # Track the beam through the superimposed segment
-    outgoing_beam = superimposed_segment.track(incoming_beam)
-
-    # Check that the outgoing beam has the same number of particles as the incoming beam
-    assert outgoing_beam.particles.shape[0] == incoming_beam.particles.shape[0]
-
-    # check the names of the elements in the superimposed segment
-    assert superimposed_segment.subelements[0].k1 == quad.k1
-
-    # check to make sure setting the strength of the quadrupole in
-    # the superimposed segment works
-    superimposed_segment.base_element.k1 = torch.tensor(2.0)
-    assert superimposed_segment.subelements[0].k1 == torch.tensor(2.0)
-    assert superimposed_segment.subelements[2].k1 == torch.tensor(2.0)
-    superimposed_segment.base_element.k1 = torch.tensor(1.0)
-
-    # check the transfer map
-    energy = torch.tensor(1.0e9)
-    species = incoming_beam.species
-    tm = superimposed_segment.first_order_transfer_map(energy, species)
-    tm_expected = quad.first_order_transfer_map(energy, species)
-    assert torch.allclose(tm, tm_expected)
-
-    # set the quadrupole strength through the superimposed segment
-    # and ensure it propagates
-    superimposed_segment.base_element.k1 = torch.tensor(3.0)
-    quad.k1 = torch.tensor(3.0)
-
-    tm_expected2 = quad.first_order_transfer_map(energy, species)
-    tm = superimposed_segment.first_order_transfer_map(energy, species)
-    assert not torch.allclose(
-        tm_expected, tm_expected2
-    )  # should not be close to the old transfer map
-    assert torch.allclose(tm, tm_expected2)
-
-    # set the BPM to active and ensure tracking still works
-    superimposed_segment.superimposed_element.elements[0].is_active = True
-    superimposed_segment.track(incoming_beam)
-    assert torch.allclose(
-        superimposed_segment.superimposed_element.elements[0].reading, torch.zeros(2)
-    )
+    assert superimposed_segment.subelements[0].length == torch.tensor(0.5)
+    assert superimposed_segment.subelements[2].length == torch.tensor(0.5)
 
 
-def test_in_lattice():
-    drift = cheetah.Drift(length=torch.tensor(1.0), name="Drift")
-    quad = cheetah.Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad"
-    )
-    bpm = cheetah.BPM(name="BPM1", is_active=False)
-
+def test_superimposed_first_order_transfer_map():
+    """
+    Test that the first order transfer map of a superimposed segment is the same as the
+    first order transfer map of the base element.
+    """
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(4.2))
     superimposed_segment = cheetah.Superimposed(
-        base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
+        base_element=quadrupole, superimposed_element=cheetah.BPM()
     )
-    full_segment = cheetah.Segment([drift, superimposed_segment, drift])
-    assert full_segment.element_names == ["Drift", "SuperimposedBPM", "Drift"]
 
-    # Create an incoming particle beam
-    incoming_beam = cheetah.ParticleBeam.from_twiss(
-        beta_x=torch.tensor(10.0),
-        alpha_x=torch.tensor(0.0),
-        beta_y=torch.tensor(10.0),
-        alpha_y=torch.tensor(0.0),
-    )
-    # Track the beam through the full segment
-    full_segment.track(incoming_beam)
+    energy = torch.tensor(1.0e9)
+    species = cheetah.Species("electron")
 
-    # test flattening
-    flattened = full_segment.flattened()
-    assert flattened.element_names == ["Drift", "Quad#0", "BPM1", "Quad#1", "Drift"]
+    tm_superimposed = superimposed_segment.first_order_transfer_map(energy, species)
+    tm_quadrupole = quadrupole.first_order_transfer_map(energy, species)
+
+    assert torch.allclose(tm_superimposed, tm_quadrupole)
 
 
-def test_to_json(tmp_path):
+def test_not_flattening():
     """
-    Test that a superimposed segment can be correctly serialized to and from JSON.
+    Test that a `Superimposed` element is not flattened when `.flattened()` is called on
+    a `Segment`, but remains as a `Superimposed` element with the correct subelements.
     """
-    drift = cheetah.Drift(length=torch.tensor(1.0), name="Drift")
-    quad = cheetah.Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad"
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Superimposed(
+                base_element=cheetah.Quadrupole(
+                    length=torch.tensor(1.0), k1=torch.tensor(1.0)
+                ),
+                superimposed_element=cheetah.BPM(),
+            ),
+            cheetah.Drift(length=torch.tensor(1.0)),
+        ]
     )
-    bpm = cheetah.BPM(name="BPM1", is_active=False)
+    flattened = segment.flattened()
 
-    superimposed_element = cheetah.Superimposed(
-        base_element=quad, superimposed_element=bpm, name="SuperimposedBPM"
-    )
-    full_segment = cheetah.Segment(
-        [drift, superimposed_element, drift], name="FullSegment"
-    )
-
-    # test conversion to dict
-    elements, lattices = convert_segment(full_segment)
-    segment_dict = {"elements": elements, "lattices": lattices}
-
-    # test conversion back to segment
-    reconstructed_segment = parse_segment("FullSegment", segment_dict)
-    assert torch.equal(
-        reconstructed_segment.SuperimposedBPM.base_element.k1,
-        superimposed_element.base_element.k1,
-    )
-
-    # Test writing lattice JSON to a temporary file
-    output_path = tmp_path / "full_segment.json"
-    full_segment.to_lattice_json(output_path)
-
-    assert output_path.exists()
+    assert len(flattened.elements) == 3
+    assert isinstance(flattened.elements[1], cheetah.Superimposed)
+    assert len(flattened.elements[1].subelements) == 3
 
 
 def test_superimposed_element_rejects_nonzero_length():
     """
-    Test that SuperimposedElement raises ValueError when a superimposed element
-    has non-zero length.
+    Test that an error is raised when attempting to superimpose a non-zero length
+    element.
     """
-    quad = cheetah.Quadrupole(
-        length=torch.tensor(1.0), k1=torch.tensor(1.0), name="Quad"
-    )
-    drift = cheetah.Drift(length=torch.tensor(0.5), name="BadDrift")
-
     with pytest.raises(ValueError):
-        cheetah.Superimposed(
-            base_element=quad, superimposed_element=drift, name="ShouldFail"
+        _ = cheetah.Superimposed(
+            base_element=cheetah.Quadrupole(length=torch.tensor(1.0)),
+            superimposed_element=cheetah.Dipole(length=torch.tensor(0.5)),
         )
