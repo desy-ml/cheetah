@@ -7,6 +7,7 @@
 ### 🚀 Features
 
 - All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+- Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
 
 ### 🐛 Bug fixes
 
@@ -18,8 +19,6 @@
 - Patch emittance `NaN` and `0.0` conditions, which caused Twiss parameters to be `NaN` or `inf` under some conditions. (see #639) (@jank324)
 
 ### 🐆 Other
-
-- Update the `fortran_namelist` parsing to also allow special characters in quoted names in use line expressions (see #637) (@cr-xu)
 
 ### 🌟 First Time Contributors
 
