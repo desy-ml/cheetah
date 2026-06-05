@@ -15,6 +15,10 @@ Accelerator
     :members:
     :undoc-members:
 
+.. automodule:: accelerator.combined_corrector
+    :members:
+    :undoc-members:
+
 .. automodule:: accelerator.custom_transfer_map
     :members:
     :undoc-members:

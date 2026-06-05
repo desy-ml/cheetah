@@ -4,7 +4,6 @@ from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import ParticleBeam
-from cheetah.utils import verify_device_and_dtype
 
 
 class SpaceChargeKick(Element):
@@ -31,50 +30,63 @@ class SpaceChargeKick(Element):
      - Interpolate the Lorentz force to the particles and update their momentum.
 
     :param effect_length: Length over which the effect is applied in meters.
-    :param num_grid_points_x: Number of grid points in the x direction.
-    :param num_grid_points_y: Number of grid points in the y direction.
-    :param num_grid_points_tau: Number of grid points in the tau direction.
-    :param grid_extend_x: Dimensions of the grid on which to compute space-charge, as
+    :param grid_shape: Number of grid points in (x, y, tau) directions.
+    :param grid_extent_x: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the x direction (dimensionless).
-    :param grid_extend_y: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_y: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the y direction (dimensionless).
-    :param grid_extend_tau: Dimensions of the grid on which to compute space-charge, as
+    :param grid_extent_tau: Dimensions of the grid on which to compute space-charge, as
         multiples of sigma of the beam in the tau direction (dimensionless).
     :param name: Unique identifier of the element.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment.
     """
 
     def __init__(
         self,
         effect_length: torch.Tensor,
-        num_grid_points_x: int = 32,  # TODO: Simplify these to a single tuple?
-        num_grid_points_y: int = 32,
-        num_grid_points_tau: int = 32,
-        grid_extend_x: torch.Tensor = 3,  # TODO: Simplify these to a single tensor?
-        grid_extend_y: torch.Tensor = 3,
-        grid_extend_tau: torch.Tensor = 3,
+        grid_shape: tuple[int, int, int] = (32, 32, 32),
+        # TODO: Simplify these to a single tensor?
+        grid_extent_x: torch.Tensor | None = None,
+        grid_extent_y: torch.Tensor | None = None,
+        grid_extent_tau: torch.Tensor | None = None,
         name: str | None = None,
+        sanitize_name: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype([effect_length], device, dtype)
-        self.factory_kwargs = {"device": device, "dtype": dtype}
+        factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name, **self.factory_kwargs)
+        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
-        self.grid_shape = (num_grid_points_x, num_grid_points_y, num_grid_points_tau)
+        self.grid_shape = grid_shape
 
-        self.register_buffer_or_parameter(
-            "effect_length", torch.as_tensor(effect_length, **self.factory_kwargs)
-        )
+        self.register_buffer_or_parameter("effect_length", effect_length)
         # In multiples of sigma
         self.register_buffer_or_parameter(
-            "grid_extend_x", torch.as_tensor(grid_extend_x, **self.factory_kwargs)
+            "grid_extent_x",
+            (
+                grid_extent_x
+                if grid_extent_x is not None
+                else torch.tensor(3.0, **factory_kwargs)
+            ),
         )
         self.register_buffer_or_parameter(
-            "grid_extend_y", torch.as_tensor(grid_extend_y, **self.factory_kwargs)
+            "grid_extent_y",
+            (
+                grid_extent_y
+                if grid_extent_y is not None
+                else torch.tensor(3.0, **factory_kwargs)
+            ),
         )
         self.register_buffer_or_parameter(
-            "grid_extend_tau", torch.as_tensor(grid_extend_tau, **self.factory_kwargs)
+            "grid_extent_tau",
+            (
+                grid_extent_tau
+                if grid_extent_tau is not None
+                else torch.tensor(3.0, **factory_kwargs)
+            ),
         )
 
     def _deposit_charge_on_grid(
@@ -88,12 +100,10 @@ class SpaceChargeKick(Element):
         Deposits the charge density of the beam onto a grid, using the
         Cloud-In-Cell (CIC) method. Returns a grid of charge density in C/m^3.
         """
-        charge = torch.zeros(
-            beam.particles.shape[:-2] + self.grid_shape, **self.factory_kwargs
-        )
+        charge = beam.particles.new_zeros(beam.particles.shape[:-2] + self.grid_shape)
 
         # Compute inverse cell size (to avoid multiple divisions later on)
-        inv_cell_size = 1 / cell_size
+        inv_cell_size = cell_size.reciprocal()
 
         # Get particle positions
         particle_positions = xp_coordinates[..., [0, 2, 4]]
@@ -102,7 +112,7 @@ class SpaceChargeKick(Element):
         ) * inv_cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_positions).type(torch.int)
+        cell_indices = normalized_positions.floor().to(torch.int)
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor(
@@ -115,20 +125,19 @@ class SpaceChargeKick(Element):
                 [1, 0, 1],
                 [1, 1, 0],
                 [1, 1, 1],
-            ]
+            ],
+            device=cell_indices.device,
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
         # Shape: (..., num_particles, 8, 3)
-        weights = 1 - torch.abs(
-            normalized_positions.unsqueeze(-2) - surrounding_indices
-        )
+        weights = 1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
         # Shape: (.., num_particles, 8, 3)
         cell_weights = weights.prod(dim=-1)  # Shape: (.., num_particles, 8)
 
         # Add the charge contributions to the cells
         # Shape: (..., 8 * num_particles)
         idx_vector = (
-            torch.arange(cell_indices.shape[0])
+            torch.arange(cell_indices.shape[0], device=cell_indices.device)
             .repeat(8 * beam.particles.shape[-2], 1)
             .T
         )
@@ -181,14 +190,14 @@ class SpaceChargeKick(Element):
         and is more robust to numerical errors.
         """
 
-        r = torch.sqrt(x**2 + y**2 + tau**2)
+        r = (x.square() + y.square() + tau.square()).sqrt()
         integrated_potential = (
-            -0.5 * tau**2 * torch.atan(x * y / (tau * r))
-            - 0.5 * y**2 * torch.atan(x * tau / (y * r))
-            - 0.5 * x**2 * torch.atan(y * tau / (x * r))
-            + y * tau * torch.asinh(x / torch.sqrt(y**2 + tau**2))
-            + x * tau * torch.asinh(y / torch.sqrt(x**2 + tau**2))
-            + x * y * torch.asinh(tau / torch.sqrt(x**2 + y**2))
+            -0.5 * tau.square() * (x * y / (tau * r)).atan()
+            - 0.5 * y.square() * (x * tau / (y * r)).atan()
+            - 0.5 * x.square() * (y * tau / (x * r)).atan()
+            + y * tau * (x / (y.square() + tau.square()).sqrt()).asinh()
+            + x * tau * (y / (x.square() + tau.square()).sqrt()).asinh()
+            + x * y * (tau / (x.square() + y.square()).sqrt()).asinh()
         )
         return integrated_potential
 
@@ -209,8 +218,8 @@ class SpaceChargeKick(Element):
         new_dims = tuple(2 * dim for dim in self.grid_shape)
 
         # Create a new tensor with the doubled dimensions, filled with zeros
-        new_charge_density = torch.zeros(
-            beam.particles.shape[:-2] + new_dims, **self.factory_kwargs
+        new_charge_density = beam.particles.new_zeros(
+            beam.particles.shape[:-2] + new_dims
         )
 
         # Copy the original charge_density values to the beginning of the new tensor
@@ -240,9 +249,9 @@ class SpaceChargeKick(Element):
         num_grid_points_x, num_grid_points_y, num_grid_points_tau = self.grid_shape
 
         # Create coordinate grids
-        x = torch.arange(num_grid_points_x, **self.factory_kwargs)
-        y = torch.arange(num_grid_points_y, **self.factory_kwargs)
-        tau = torch.arange(num_grid_points_tau, **self.factory_kwargs)
+        x = torch.arange(num_grid_points_x, device=beam.particles.device)
+        y = torch.arange(num_grid_points_y, device=beam.particles.device)
+        tau = torch.arange(num_grid_points_tau, device=beam.particles.device)
         ix_grid, iy_grid, itau_grid = torch.meshgrid(x, y, tau, indexing="ij")
         x_grid = (
             ix_grid[None, :, :, :] * dx[..., None, None, None]
@@ -299,14 +308,13 @@ class SpaceChargeKick(Element):
         )
 
         # Initialize the grid with double dimensions
-        green_func_values = torch.zeros(
+        green_func_values = beam.particles.new_zeros(
             (
                 *beam.particles.shape[:-2],
                 2 * num_grid_points_x,
                 2 * num_grid_points_y,
                 2 * num_grid_points_tau,
-            ),
-            **self.factory_kwargs,
+            )
         )
 
         # Fill the grid with G_values and its periodic copies
@@ -373,7 +381,7 @@ class SpaceChargeKick(Element):
             integrated_green_function, dim=[1, 2, 3]
         )
         potential_ft = charge_density_ft * integrated_green_function_ft
-        potential = (1 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
+        potential = (1.0 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
             potential_ft, dim=[1, 2, 3]
         ).real
 
@@ -396,10 +404,10 @@ class SpaceChargeKick(Element):
         Computes the force field from the potential and the particle positions and
         velocities, as in https://doi.org/10.1063/1.2837054.
         """
-        inv_cell_size = 1 / cell_size
+        inv_cell_size = cell_size.reciprocal()
         igamma2 = torch.zeros_like(beam.relativistic_gamma)
         igamma2[beam.relativistic_gamma != 0] = (
-            1 / beam.relativistic_gamma[beam.relativistic_gamma != 0] ** 2
+            beam.relativistic_gamma[beam.relativistic_gamma != 0].square().reciprocal()
         )
         potential = self._solve_poisson_equation(
             beam, xp_coordinates, cell_size, grid_dimensions
@@ -444,8 +452,8 @@ class SpaceChargeKick(Element):
             beam, xp_coordinates, cell_size, grid_dimensions
         )
         grid_shape = self.grid_shape
-        interpolated_forces = torch.zeros(
-            (*beam.particles.shape[:-1], 3), **self.factory_kwargs
+        interpolated_forces = beam.particles.new_zeros(
+            (*beam.particles.shape[:-1], 3)
         )  # (..., num_particles, 3)
 
         # Get particle positions
@@ -455,7 +463,7 @@ class SpaceChargeKick(Element):
         ) / cell_size.unsqueeze(-2)
 
         # Find indices of the lower corners of the cells containing the particles
-        cell_indices = torch.floor(normalized_positions).type(torch.int)
+        cell_indices = normalized_positions.floor().to(torch.int)
 
         # Calculate the weights for all surrounding cells
         offsets = torch.tensor(
@@ -468,13 +476,14 @@ class SpaceChargeKick(Element):
                 [1, 0, 1],
                 [1, 1, 0],
                 [1, 1, 1],
-            ]
+            ],
+            device=cell_indices.device,
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
             -3
         )  # Shape:(.., num_particles, 8, 3)
-        weights = 1 - torch.abs(
-            normalized_positions.unsqueeze(-2) - surrounding_indices
+        weights = (
+            1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
         )  # Shape: (..., num_particles, 8, 3)
         cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
 
@@ -483,7 +492,7 @@ class SpaceChargeKick(Element):
             start_dim=-3, end_dim=-2
         )  # Shape: (..., num_particles * 8, 3)
         idx_vector = (
-            torch.arange(cell_indices.shape[0])
+            torch.arange(cell_indices.shape[0], device=cell_indices.device)
             .repeat(8 * beam.particles.shape[-2], 1)
             .T
         )  # Shape: (..., num_particles * 8)
@@ -502,15 +511,15 @@ class SpaceChargeKick(Element):
         # Keep dimensions, and set F to zero if non-valid
         force_indices = (
             idx_vector,
-            torch.clamp(idx_x, min=0, max=grid_shape[0] - 1),
-            torch.clamp(idx_y, min=0, max=grid_shape[1] - 1),
-            torch.clamp(idx_tau, min=0, max=grid_shape[2] - 1),
+            idx_x.clamp(min=0, max=grid_shape[0] - 1),
+            idx_y.clamp(min=0, max=grid_shape[1] - 1),
+            idx_tau.clamp(min=0, max=grid_shape[2] - 1),
         )
 
-        Fx_values = torch.where(valid_mask, grad_x[force_indices], 0)
-        Fy_values = torch.where(valid_mask, grad_y[force_indices], 0)
-        Fz_values = torch.where(
-            valid_mask, grad_z[force_indices], 0
+        Fx_values = grad_x[force_indices].where(valid_mask, 0)
+        Fy_values = grad_y[force_indices].where(valid_mask, 0)
+        Fz_values = grad_z[force_indices].where(
+            valid_mask, 0
         )  # (..., 8 * num_particles)
 
         # Compute interpolated forces
@@ -523,7 +532,7 @@ class SpaceChargeKick(Element):
         forces_to_add = torch.stack([values_x, values_y, values_z], dim=-1)
 
         index_tensor = (
-            torch.arange(beam.num_particles)
+            torch.arange(beam.num_particles, device=beam.particles.device)
             .repeat_interleave(8)
             .unsqueeze(0)
             .unsqueeze(-1)
@@ -544,114 +553,119 @@ class SpaceChargeKick(Element):
         :param incoming: Beam of particles entering the element.
         :returns: Beam of particles exiting the element.
         """
-        if isinstance(incoming, ParticleBeam):
-            # This flattening is a hack to only think about one vector dimension in the
-            # following code. It is reversed at the end of the function.
+        assert isinstance(
+            incoming, ParticleBeam
+        ), "SpaceChargeKick currently only supports tracking particle beams."
 
-            # Make sure that the incoming beam has at least one vector dimension by
-            # broadcasting with a dummy dimension (1,).
-            vector_shape = torch.broadcast_shapes(
-                incoming.particles.shape[:-2],
-                incoming.energy.shape,
-                incoming.particle_charges.shape[:-1],
-                incoming.survival_probabilities.shape[:-1],
-                (1,),
-            )
-            vectorized_incoming = ParticleBeam(
-                particles=torch.broadcast_to(
-                    incoming.particles, (*vector_shape, incoming.num_particles, 7)
-                ),
-                energy=torch.broadcast_to(incoming.energy, vector_shape),
-                particle_charges=torch.broadcast_to(
-                    incoming.particle_charges, (*vector_shape, incoming.num_particles)
-                ),
-                survival_probabilities=torch.broadcast_to(
-                    incoming.survival_probabilities,
-                    (*vector_shape, incoming.num_particles),
-                ),
-                device=incoming.particles.device,
-                dtype=incoming.particles.dtype,
-            )
+        # This flattening is a hack to only think about one vector dimension in the
+        # following code. It is reversed at the end of the function.
 
-            flattened_incoming = ParticleBeam(
-                particles=vectorized_incoming.particles.flatten(end_dim=-3),
-                energy=vectorized_incoming.energy.flatten(end_dim=-1),
-                particle_charges=vectorized_incoming.particle_charges.flatten(
-                    end_dim=-2
-                ),
-                survival_probabilities=(
-                    vectorized_incoming.survival_probabilities.flatten(end_dim=-2)
-                ),
-                device=vectorized_incoming.particles.device,
-                dtype=vectorized_incoming.particles.dtype,
-            )
-            flattened_length_effect = self.effect_length.flatten(end_dim=-1)
+        # Make sure that the incoming beam has at least one vector dimension by
+        # broadcasting with a dummy dimension (1,).
+        vector_shape = torch.broadcast_shapes(
+            incoming.particles.shape[:-2],
+            incoming.energy.shape,
+            incoming.particle_charges.shape[:-1],
+            incoming.survival_probabilities.shape[:-1],
+            (1,),
+        )
+        vectorized_incoming = ParticleBeam(
+            particles=torch.broadcast_to(
+                incoming.particles, (*vector_shape, incoming.num_particles, 7)
+            ),
+            energy=torch.broadcast_to(incoming.energy, vector_shape),
+            particle_charges=torch.broadcast_to(
+                incoming.particle_charges, (*vector_shape, incoming.num_particles)
+            ),
+            survival_probabilities=torch.broadcast_to(
+                incoming.survival_probabilities,
+                (*vector_shape, incoming.num_particles),
+            ),
+            species=incoming.species,
+            device=incoming.particles.device,
+            dtype=incoming.particles.dtype,
+        )
 
-            # Compute useful quantities
-            grid_dimensions = torch.stack(
-                [
-                    self.grid_extend_x * flattened_incoming.sigma_x,
-                    self.grid_extend_y * flattened_incoming.sigma_y,
-                    self.grid_extend_tau * flattened_incoming.sigma_tau,
-                ],
-                dim=-1,
-            )
-            cell_size = (
-                2
-                * grid_dimensions
-                / torch.tensor(self.grid_shape, **self.factory_kwargs)
-            )
-            dt = flattened_length_effect / (
-                speed_of_light * flattened_incoming.relativistic_beta
-            )
+        flattened_incoming = ParticleBeam(
+            particles=vectorized_incoming.particles.flatten(end_dim=-3),
+            energy=vectorized_incoming.energy.flatten(end_dim=-1),
+            particle_charges=vectorized_incoming.particle_charges.flatten(end_dim=-2),
+            survival_probabilities=(
+                vectorized_incoming.survival_probabilities.flatten(end_dim=-2)
+            ),
+            species=incoming.species,
+            device=vectorized_incoming.particles.device,
+            dtype=vectorized_incoming.particles.dtype,
+        )
+        flattened_length_effect = self.effect_length.flatten(end_dim=-1)
 
-            # Change coordinates to apply the space charge effect
-            xp_coordinates = flattened_incoming.to_xyz_pxpypz()
-            forces = self._compute_forces(
-                flattened_incoming, xp_coordinates, cell_size, grid_dimensions
+        # Compute useful quantities
+        grid_dimensions = torch.stack(
+            [
+                self.grid_extent_x * flattened_incoming.sigma_x,
+                self.grid_extent_y * flattened_incoming.sigma_y,
+                self.grid_extent_tau * flattened_incoming.sigma_tau,
+            ],
+            dim=-1,
+        )
+        cell_size = (
+            2
+            * grid_dimensions
+            / torch.tensor(
+                self.grid_shape,
+                device=grid_dimensions.device,
+                dtype=grid_dimensions.dtype,
             )
-            xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[
-                ..., 0
-            ] * dt.unsqueeze(-1)
-            xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[
-                ..., 1
-            ] * dt.unsqueeze(-1)
-            xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[
-                ..., 2
-            ] * dt.unsqueeze(-1)
+        )
+        dt = flattened_length_effect / (
+            speed_of_light * flattened_incoming.relativistic_beta
+        )
 
-            # Reverse the flattening of the vector dimensions
-            outgoing_vector_shape = torch.broadcast_shapes(
-                incoming.particles.shape[:-2],
-                incoming.energy.shape,
-                incoming.particle_charges.shape[:-1],
-                incoming.survival_probabilities.shape[:-1],
-                self.effect_length.shape,
-            )
-            outgoing = ParticleBeam.from_xyz_pxpypz(
-                xp_coordinates=xp_coordinates.reshape(
-                    (*outgoing_vector_shape, incoming.num_particles, 7)
-                ),
-                energy=incoming.energy,
-                particle_charges=incoming.particle_charges,
-                survival_probabilities=incoming.survival_probabilities,
-                species=incoming.species,
-            )
+        # Change coordinates to apply the space charge effect
+        xp_coordinates = flattened_incoming.to_xyz_pxpypz()
+        forces = self._compute_forces(
+            flattened_incoming, xp_coordinates, cell_size, grid_dimensions
+        )
+        xp_coordinates[..., 1] = xp_coordinates[..., 1] + forces[..., 0] * dt.unsqueeze(
+            -1
+        )
+        xp_coordinates[..., 3] = xp_coordinates[..., 3] + forces[..., 1] * dt.unsqueeze(
+            -1
+        )
+        xp_coordinates[..., 5] = xp_coordinates[..., 5] + forces[..., 2] * dt.unsqueeze(
+            -1
+        )
 
-            return outgoing
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+        # Reverse the flattening of the vector dimensions
+        outgoing_vector_shape = torch.broadcast_shapes(
+            incoming.particles.shape[:-2],
+            incoming.energy.shape,
+            incoming.particle_charges.shape[:-1],
+            incoming.survival_probabilities.shape[:-1],
+            self.effect_length.shape,
+        )
+        outgoing = ParticleBeam.from_xyz_pxpypz(
+            xp_coordinates=xp_coordinates.reshape(
+                (*outgoing_vector_shape, incoming.num_particles, 7)
+            ),
+            energy=incoming.energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s,
+            species=incoming.species,
+        )
 
-    def split(self, resolution: torch.Tensor) -> list[Element]:
-        # TODO: Implement splitting for SpaceCharge properly, for now just returns the
-        # element itself
-        return [self]
+        return outgoing
 
     @property
     def is_skippable(self) -> bool:
         return False
 
-    def plot(self, ax: plt.Axes, s: float, vector_idx: tuple | None = None) -> None:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
+        ax = ax or plt.subplot(111)
+
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
         ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
@@ -661,19 +675,7 @@ class SpaceChargeKick(Element):
         return super().defining_features + [
             "effect_length",
             "grid_shape",
-            "grid_extend_x",
-            "grid_extend_y",
-            "grid_extend_tau",
+            "grid_extent_x",
+            "grid_extent_y",
+            "grid_extent_tau",
         ]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(effect_length={repr(self.effect_length)}, "
-            + f"num_grid_points_x={repr(self.grid_shape[0])}, "
-            + f"num_grid_points_y={repr(self.grid_shape[1])}, "
-            + f"num_grid_points_tau={repr(self.grid_shape[2])}, "
-            + f"grid_extend_x={repr(self.grid_extend_x)}, "
-            + f"grid_extend_y={repr(self.grid_extend_y)}, "
-            + f"grid_extend_tau={repr(self.grid_extend_tau)}, "
-            + f"name={repr(self.name)})"
-        )

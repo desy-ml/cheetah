@@ -1,31 +1,24 @@
 import pytest
 import torch
 
-from cheetah import (
-    Dipole,
-    Drift,
-    ParameterBeam,
-    ParticleBeam,
-    Quadrupole,
-    RBend,
-    Segment,
-)
+import cheetah
+from cheetah.track_methods import rotation_matrix
 
 
 def test_dipole_off():
     """
     Test that a dipole with angle=0 behaves still like a drift.
     """
-    dipole = Dipole(length=torch.tensor(1.0), angle=torch.tensor(0.0))
-    drift = Drift(length=torch.tensor(1.0))
-    incoming_beam = ParameterBeam.from_parameters(
+    dipole = cheetah.Dipole(length=torch.tensor(1.0), angle=torch.tensor(0.0))
+    drift = cheetah.Drift(length=torch.tensor(1.0))
+    incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
-    outbeam_dipole_off = dipole(incoming_beam)
-    outbeam_drift = drift(incoming_beam)
+    outbeam_dipole_off = dipole.track(incoming_beam)
+    outbeam_drift = drift.track(incoming_beam)
 
     dipole.angle = torch.tensor(1.0, device=dipole.angle.device)
-    outbeam_dipole_on = dipole(incoming_beam)
+    outbeam_dipole_on = dipole.track(incoming_beam)
 
     assert dipole.name is not None
     assert torch.allclose(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
@@ -36,9 +29,9 @@ def test_dipole_focussing():
     """
     Test that a dipole with focussing moment behaves like a quadrupole.
     """
-    dipole = Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
-    quadrupole = Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
-    incoming_beam = ParameterBeam.from_parameters(
+    dipole = cheetah.Dipole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
+    quadrupole = cheetah.Quadrupole(length=torch.tensor([1.0]), k1=torch.tensor([10.0]))
+    incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor([2e-7]), sigma_py=torch.tensor([2e-7])
     )
     outbeam_dipole_on = dipole.track(incoming_beam)
@@ -52,28 +45,26 @@ def test_dipole_focussing():
     assert not torch.allclose(outbeam_dipole_off.sigma_x, outbeam_quadrupole.sigma_x)
 
 
-@pytest.mark.parametrize("DipoleType", [Dipole, RBend])
+@pytest.mark.parametrize("DipoleType", [cheetah.Dipole, cheetah.RBend])
 def test_dipole_vectorized_execution(DipoleType):
     """
     Test that a dipole with vector dimensions behaves as expected.
     """
-    incoming = ParticleBeam.from_parameters(
-        num_particles=torch.tensor(100),
-        energy=torch.tensor(1e9),
-        mu_x=torch.tensor(1e-5),
+    incoming = cheetah.ParticleBeam.from_parameters(
+        num_particles=100, energy=torch.tensor(1e9), mu_x=torch.tensor(1e-5)
     )
 
     # Test vectorisation to generate 3 beam lines
-    segment = Segment(
+    segment = cheetah.Segment(
         [
             DipoleType(
                 length=torch.tensor([0.5, 0.5, 0.5]),
                 angle=torch.tensor([0.1, 0.2, 0.1]),
             ),
-            Drift(length=torch.tensor(0.5)),
+            cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
 
     assert outgoing.particles.shape == torch.Size([3, 100, 7])
     assert outgoing.mu_x.shape == torch.Size([3])
@@ -85,37 +76,39 @@ def test_dipole_vectorized_execution(DipoleType):
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
 
     # Test vectorisation to generate 18 beamlines
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Dipole(
+            cheetah.Dipole(
                 length=torch.tensor([0.5, 0.5, 0.5]).reshape(3, 1),
                 angle=torch.tensor([0.1, 0.2, 0.1]).reshape(1, 3),
             ),
-            Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1, 1)),
+            cheetah.Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1, 1)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
     assert outgoing.particles.shape == torch.Size([2, 3, 3, 100, 7])
 
     # Test improper vectorisation -- this does not obey torch broadcasting rules
-    segment = Segment(
+    segment = cheetah.Segment(
         [
-            Dipole(
+            cheetah.Dipole(
                 length=torch.tensor([0.5, 0.5, 0.5]).reshape(3, 1),
                 angle=torch.tensor([0.1, 0.2, 0.1]).reshape(1, 3),
             ),
-            Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1)),
+            cheetah.Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1)),
         ]
     )
     with pytest.raises(RuntimeError):
-        segment(incoming)
+        segment.track(incoming)
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-def test_dipole_bmadx_tracking(dtype):
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
+def test_dipole_drift_kick_drift_tracking(dtype):
     """
-    Test that the results of tracking through a dipole with the `"bmadx"` tracking
-    method match the results from Bmad-X.
+    Test that the results of tracking through a dipole with the `"drift_kick_drift"`
+    tracking method match the results from Bmad-X.
     """
     incoming = torch.load("tests/resources/bmadx/incoming.pt", weights_only=False).to(
         dtype
@@ -125,7 +118,7 @@ def test_dipole_bmadx_tracking(dtype):
     angle = torch.tensor(20 * torch.pi / 180, dtype=dtype)
     e1 = angle / 2
     e2 = angle - e1
-    dipole_cheetah_bmadx = Dipole(
+    dipole_cheetah_bmadx = cheetah.Dipole(
         length=torch.tensor(0.5),
         angle=angle,
         dipole_e1=e1,
@@ -137,10 +130,10 @@ def test_dipole_bmadx_tracking(dtype):
         gap_exit=torch.tensor(0.05, dtype=dtype),
         fringe_at="both",
         fringe_type="linear_edge",
-        tracking_method="bmadx",
+        tracking_method="drift_kick_drift",
         dtype=dtype,
     )
-    segment_cheetah_bmadx = Segment(elements=[dipole_cheetah_bmadx])
+    segment_cheetah_bmadx = cheetah.Segment(elements=[dipole_cheetah_bmadx])
 
     outgoing_cheetah_bmadx = segment_cheetah_bmadx.track(incoming)
 
@@ -157,57 +150,71 @@ def test_dipole_bmadx_tracking(dtype):
     )
 
 
-def test_buffer_registration():
-    """Test that buffers are properly registered in the dipole element."""
-    length = torch.tensor(0.5)
-    angle = torch.tensor(2e-3)
-    k1 = torch.tensor(1.2)
-    dipole_e1 = torch.tensor(1e-3)
-    dipole_e2 = torch.tensor(-1e-3)
-    tilt = torch.tensor(0.1)
-    gap = torch.tensor(0.1)
-    gap_exit = torch.tensor(0.1)
-    fringe_integral = torch.tensor(0.5)
-    fringe_integral_exit = torch.tensor(0.5)
-    fringe_at = "both"
-    fringe_type = "linear_edge"
-    tracking_method = "cheetah"
-    name = "some_dipole"
+def test_drift_kick_drift_zero_angle():
+    """
+    Test that a dipole with zero angle using the drift_kick_drift tracking method works
+    at all.
 
-    dipole = Dipole(
-        length=length,
-        angle=angle,
-        k1=k1,
-        dipole_e1=dipole_e1,
-        dipole_e2=dipole_e2,
-        tilt=tilt,
-        gap=gap,
-        gap_exit=gap_exit,
-        fringe_integral=fringe_integral,
-        fringe_integral_exit=fringe_integral_exit,
-        fringe_at=fringe_at,
-        fringe_type=fringe_type,
-        tracking_method=tracking_method,
-        name=name,
+    There was a bug in the past where a division by zero due to the angle being zero
+    resulted in NaN values in the output.
+    """
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+    dipole = cheetah.Dipole(
+        length=torch.tensor(1.0601),
+        angle=torch.tensor(0.0),
+        tracking_method="drift_kick_drift",
+        dtype=torch.float64,
     )
 
-    # Check for expected number of buffers
-    assert len(list(dipole.buffers())) == 10
+    outgoing_beam = dipole.track(incoming_beam)
 
-    # Should be buffers
-    assert length in dipole.buffers()
-    assert angle in dipole.buffers()
-    assert k1 in dipole.buffers()
-    assert dipole_e1 in dipole.buffers()
-    assert dipole_e2 in dipole.buffers()
-    assert tilt in dipole.buffers()
-    assert gap in dipole.buffers()
-    assert gap_exit in dipole.buffers()
-    assert fringe_integral in dipole.buffers()
-    assert fringe_integral_exit in dipole.buffers()
+    assert not outgoing_beam.particles.isnan().any()
 
-    # Should not be buffers
-    assert fringe_at not in dipole.buffers()
-    assert fringe_type not in dipole.buffers()
-    assert tracking_method not in dipole.buffers()
-    assert name not in dipole.buffers()
+
+@pytest.mark.parametrize(
+    "tracking_method", ["linear", "second_order", "drift_kick_drift"]
+)
+def test_dipole_tilt_sanity(tracking_method):
+    """
+    Test that tracking through a tilted dipole and untilting a tilted beam tracked
+    through non-tilted dipole gives the same result.
+    """
+    TILT = 0.52
+
+    # Track non-tilted beam through tilted dipole
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001", dtype=torch.float64
+    )
+
+    tilted_dipole = cheetah.Dipole(
+        length=torch.tensor(1.0601),
+        angle=torch.tensor(1e-3),
+        tilt=torch.tensor(TILT),
+        fringe_integral=torch.tensor(1e3),
+        tracking_method=tracking_method,
+    ).to(torch.float64)
+
+    tilted_dipole_outgoing_beam = tilted_dipole.track(incoming_beam)
+
+    # Track tilted beam through non-tilted dipole and then untilt the beam
+    tilted_incoming_beam = incoming_beam.clone()
+    tilted_incoming_beam.particles = (
+        tilted_incoming_beam.particles
+        @ rotation_matrix(torch.tensor(TILT, dtype=torch.float64)).T
+    )
+
+    non_tilted_dipole = tilted_dipole.clone()
+    non_tilted_dipole.tilt = torch.tensor(0.0, dtype=torch.float64)
+
+    non_tilted_dipole_outgoing_beam = non_tilted_dipole.track(tilted_incoming_beam)
+    non_tilted_dipole_outgoing_beam.particles = (
+        non_tilted_dipole_outgoing_beam.particles
+        @ rotation_matrix(torch.tensor(-TILT, dtype=torch.float64)).T
+    )
+
+    # Check that the two outgoing beams are equal
+    assert torch.allclose(
+        tilted_dipole_outgoing_beam.particles, non_tilted_dipole_outgoing_beam.particles
+    )

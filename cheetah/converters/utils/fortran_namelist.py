@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -8,7 +9,32 @@ from typing import Any
 import scipy
 from scipy.constants import physical_constants
 
-from cheetah.converters.utils import rpn
+from cheetah.converters.utils import infix, rpn
+from cheetah.utils import NotUnderstoodPropertyWarning, PhysicsWarning
+
+# Regex patterns
+ELEMENT_NAME_PATTERN = r'(?:[a-z0-9_\-\.]+|"[a-z0-9_\-\.\:]+")'
+PROPERTY_NAME_PATTERN = r"[a-z0-9_\*:]+"
+VARIABLE_NAME_PATTERN = r"[a-z0-9_]+"
+PROPERTY_ASSIGNMENT_PATTERN = (
+    f"({PROPERTY_NAME_PATTERN})" + r"\[([a-z0-9_%]+)\]\s*=(.*)"
+)
+VARIABLE_ASSIGNMENT_PATTERN = f"({VARIABLE_NAME_PATTERN})" + r"\s*=(.*)"
+ELEMENT_DEFINITION_PATTERN = (
+    f"({ELEMENT_NAME_PATTERN})"
+    + r"\s*\:\s*"
+    + f"({VARIABLE_NAME_PATTERN})"
+    + r"(\s*\,(.*))?"
+)
+LINE_DEFINITION_PATTERN = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
+USE_LINE_PATTERN = r"use\s*\,\s*([a-z0-9_]+)"
+OVERLAY_DEFINITION_PATTERN = (
+    f"({ELEMENT_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
+)
+OVERLAY_KNOT_BASED_PATTERN = (
+    OVERLAY_DEFINITION_PATTERN + r"\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"
+)
+OVERLAY_EXPRESSION_BASED_PATTERN = OVERLAY_DEFINITION_PATTERN + r"\{(.*)\}\s*(\,.*)*"
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -95,15 +121,13 @@ def merge_delimiter_continued_lines(
     return merged_lines
 
 
-def evaluate_expression(expression: str, context: dict, warnings: bool = True) -> Any:
+def evaluate_expression(expression: str, context: dict) -> Any:
     """
     Evaluate an expression in the context of a dictionary of variables.
 
     :param expression: Expression to evaluate.
     :param context: Dictionary of variables to evaluate the expression in the context
         of.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Result of evaluating the expression.
     """
 
@@ -128,36 +152,20 @@ def evaluate_expression(expression: str, context: dict, warnings: bool = True) -
         return context[expression]
 
     # Evaluate as a mathematical expression
-    # TODO I would prefer if it tried to do normal parsing first and RPN second.
-    #   Implement when normal parsing was made safe.
+
     try:
-        return rpn.evaluate_expression(expression, context)
+        return infix.evaluate_expression(expression, context)
     except SyntaxError:
         try:
-            # TODO This is currently an unsafe eval and should be replaced with a safer
-            # implementation.
-
-            # Surround expressions in brackets with quotes
-            expression = re.sub(r"\[([a-z0-9_%]+)\]", r"['\1']", expression)
-            # Replace power operator with python equivalent
-            expression = re.sub(r"\^", r"**", expression)
-            # Replace abs with abs_func when it is followed by a (
-            # NOTE: This is a hacky fix to deal with abs being overwritten in the LCLS
-            # lattice file. I'm not sure this replacement will lead to the intended
-            # behaviour.
-            expression = re.sub(r"abs\(", r"abs_func(", expression)
-
-            return eval(expression, context)
+            return rpn.evaluate_expression(expression, context)
         except SyntaxError:
-            if warnings:
-                print(
-                    f"WARNING: Could not evaluate expression {expression}. It will now "
-                    "be treated as a string. This may lead to unexpected behaviour."
-                )
+            warnings.warn(
+                f"Could not evaluate expression '{expression}'. It will now be treated "
+                "as a string. This may lead to unexpected behaviour.",
+                category=PhysicsWarning,
+                stacklevel=2,
+            )
             return expression
-        except Exception as e:
-            print(expression)
-            raise e
 
 
 def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
@@ -184,19 +192,16 @@ def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
     return type_matching_keys
 
 
-def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
+def assign_property(line: str, context: dict) -> dict:
     """
     Assign a property of an element to the context.
 
     :param line: Line of a property assignment to be parsed.
     :param context: Dictionary of variables to assign the property to and from which to
         read variables.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\*:]+)\[([a-z0-9_%]+)\]\s*=(.*)"
-    match = re.fullmatch(pattern, line)
+    match = re.fullmatch(PROPERTY_ASSIGNMENT_PATTERN, line)
 
     object_name = match.group(1).strip()
     property_name = match.group(2).strip()
@@ -207,7 +212,7 @@ def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
     else:
         object_names = [object_name]
 
-    expression_result = evaluate_expression(property_expression, context, warnings)
+    expression_result = evaluate_expression(property_expression, context)
 
     for name in object_names:
         if name not in context:
@@ -217,43 +222,37 @@ def assign_property(line: str, context: dict, warnings: bool = True) -> dict:
     return context
 
 
-def assign_variable(line: str, context: dict, warnings: bool = True) -> dict:
+def assign_variable(line: str, context: dict) -> dict:
     """
     Assign a variable to the context.
 
     :param line: Line of a variable assignment to be parsed.
     :param context: Dictionary of variables to assign the variable to and from which to
         read variables.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_]+)\s*=(.*)"
-    match = re.fullmatch(pattern, line)
+    match = re.fullmatch(VARIABLE_ASSIGNMENT_PATTERN, line)
 
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
 
-    context[variable_name] = evaluate_expression(variable_expression, context, warnings)
+    context[variable_name] = evaluate_expression(variable_expression, context)
 
     return context
 
 
-def define_element(line: str, context: dict, warnings: bool = True) -> dict:
+def define_element(line: str, context: dict) -> dict:
     """
     Define an element in the context.
 
     :param line: Line of an element definition to be parsed.
     :param context: Dictionary of variables to define the element in and from which to
         read variables.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_\.]+)\s*\:\s*([a-z0-9_]+)(\s*\,(.*))?"
-    match = re.fullmatch(pattern, line)
+    match = re.fullmatch(ELEMENT_DEFINITION_PATTERN, line)
 
-    element_name = match.group(1).strip()
+    element_name = match.group(1).strip('" ')
     element_type = match.group(2).strip()
 
     if element_type in context:
@@ -277,7 +276,7 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
             property_expression = property_expression.strip()
 
             element_properties[property_name] = evaluate_expression(
-                property_expression, context, warnings
+                property_expression, context
             )
 
     context[element_name] = element_properties
@@ -287,7 +286,7 @@ def define_element(line: str, context: dict, warnings: bool = True) -> dict:
 
 def define_line(line: str, context: dict) -> dict:
     """
-    Define a beam line in the context.
+    Define a beamline in the context.
 
     :param line: Line of a beam line definition to be parsed.
     :param context: Dictionary of variables to define the beam line in and from which
@@ -295,15 +294,14 @@ def define_line(line: str, context: dict) -> dict:
 
     :return: Updated context.
     """
-    pattern = r"([a-z0-9_]+)\s*\:\s*line\s*=\s*\((.*)\)"
-    match = re.fullmatch(pattern, line)
+    match = re.fullmatch(LINE_DEFINITION_PATTERN, line)
 
-    line_name = match.group(1).strip()
+    line_name = match.group(1).strip('" ')
     line_elements_string = match.group(2).strip()
 
     line_elements = []
     for element_name in line_elements_string.split(","):
-        element_name = element_name.strip()
+        element_name = element_name.strip('" ')
 
         line_elements.append(element_name)
 
@@ -321,11 +319,9 @@ def define_overlay(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    knot_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"  # noqa: E501
-    expression_based_pattern = r"([a-z0-9_]+)\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}\s*(\,.*)*"  # noqa: E501
 
-    expression_match = re.fullmatch(expression_based_pattern, line)
-    knot_match = re.fullmatch(knot_based_pattern, line)
+    expression_match = re.fullmatch(OVERLAY_EXPRESSION_BASED_PATTERN, line)
+    knot_match = re.fullmatch(OVERLAY_KNOT_BASED_PATTERN, line)
 
     if knot_match:
         overlay_name = knot_match.group(1).strip()
@@ -367,8 +363,7 @@ def parse_use_line(line: str, context: dict) -> dict:
         read variables.
     :return: Updated context.
     """
-    pattern = r"use\s*\,\s*([a-z0-9_]+)"
-    match = re.fullmatch(pattern, line)
+    match = re.fullmatch(USE_LINE_PATTERN, line)
 
     use_line_name = match.group(1).strip()
     context["__use__"] = use_line_name
@@ -376,22 +371,14 @@ def parse_use_line(line: str, context: dict) -> dict:
     return context
 
 
-def parse_lines(lines: str, warnings: bool = True) -> dict:
+def parse_lines(lines: str) -> dict:
     """
     Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
     and merged before being passed to this function.
 
     :param lines: List of lines to parse.
-    :param warnings: Whether to print warnings for unrecognised expressions that might
-        lead to unexpected behaviour when parsed as strings.
     :return: Dictionary of variables defined in the lattice file.
     """
-    property_assignment_pattern = r"[a-z0-9_\*:]+\[[a-z0-9_%]+\]\s*=.*"
-    variable_assignment_pattern = r"[a-z0-9_]+\s*=.*"
-    element_definition_pattern = r"[a-z0-9_\.]+\s*\:\s*[a-z0-9_]+.*"
-    line_definition_pattern = r"[a-z0-9_]+\s*\:\s*line\s*=\s*\(.*\)"
-    overlay_definition_pattern = r"[a-z0-9_]+\s*\:\s*overlay\s*=\s*\{.*"
-    use_line_pattern = r"use\s*\,\s*[a-z0-9_]+"
 
     context = {
         "pi": scipy.constants.pi,
@@ -409,19 +396,35 @@ def parse_lines(lines: str, warnings: bool = True) -> dict:
         "raddeg": scipy.constants.degree,
     }
 
-    for line in lines:
-        if re.fullmatch(property_assignment_pattern, line):
-            context = assign_property(line, context, warnings)
-        elif re.fullmatch(variable_assignment_pattern, line):
-            context = assign_variable(line, context, warnings)
-        elif re.fullmatch(line_definition_pattern, line):
+    lines_without_comments = [line.split("#")[0] for line in lines]
+    semicolon_split_lines = [
+        subline.strip()
+        for line in lines_without_comments
+        for subline in line.split(";")
+    ]
+
+    for line in semicolon_split_lines:
+        if re.fullmatch(PROPERTY_ASSIGNMENT_PATTERN, line):
+            context = assign_property(line, context)
+        elif re.fullmatch(VARIABLE_ASSIGNMENT_PATTERN, line):
+            context = assign_variable(line, context)
+        elif re.fullmatch(LINE_DEFINITION_PATTERN, line):
             context = define_line(line, context)
-        elif re.fullmatch(overlay_definition_pattern, line):
+        elif re.fullmatch(OVERLAY_DEFINITION_PATTERN, line):
             context = define_overlay(line, context)
-        elif re.fullmatch(element_definition_pattern, line):
-            context = define_element(line, context, warnings)
-        elif re.fullmatch(use_line_pattern, line):
+        elif re.fullmatch(ELEMENT_DEFINITION_PATTERN, line):
+            context = define_element(line, context)
+        elif re.fullmatch(USE_LINE_PATTERN, line):
             context = parse_use_line(line, context)
+        else:
+            # If the line is not empty or the final line, and does not match any known
+            # pattern, raise an error.
+            if not line.strip() or line == "return":
+                continue
+
+            raise ValueError(
+                f"Line '{line}' not understood. Please check the syntax and try again."
+            )
 
     return context
 
@@ -439,8 +442,10 @@ def validate_understood_properties(understood: list[str], properties: dict) -> N
     :return: None
     """
     for property in properties:
-        assert any([re.fullmatch(pattern, property) for pattern in understood]), (
-            f"Property {property} with value {properties[property]} for element type"
-            f" {properties['element_type']} is currently not understood. Other values"
-            f" in properties are {properties.keys()}."  # noqa: B038
-        )
+        if not any([re.fullmatch(pattern, property) for pattern in understood]):
+            warnings.warn(
+                f"Property {property} with value {properties[property]} for element "
+                f"type {properties['element_type']} is currently not understood.",
+                category=NotUnderstoodPropertyWarning,
+                stacklevel=2,
+            )

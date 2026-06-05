@@ -1,6 +1,7 @@
 from .aperture import Aperture  # noqa: F401
 from .bpm import BPM  # noqa: F401
 from .cavity import Cavity  # noqa: F401
+from .combined_corrector import CombinedCorrector  # noqa: F401
 from .custom_transfer_map import CustomTransferMap  # noqa: F401
 from .dipole import Dipole  # noqa: F401
 from .drift import Drift  # noqa: F401
