@@ -365,7 +365,7 @@ def parse_use_line(line: str, context: dict) -> dict:
     """
     match = re.fullmatch(USE_LINE_PATTERN, line)
 
-    use_line_name = match.group(1).strip()
+    use_line_name = match.group(1).strip('" ')
     context["__use__"] = use_line_name
 
     return context
