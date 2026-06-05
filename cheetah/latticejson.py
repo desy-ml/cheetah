@@ -73,6 +73,7 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
             lattices.update(segment_lattices)
         else:
             element_name, element_class, element_params = convert_element(element)
+
             elements[element_name] = [element_class, element_params]
 
         cell.append(element_name)
