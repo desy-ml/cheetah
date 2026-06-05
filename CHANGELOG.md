@@ -18,6 +18,8 @@
 
 ### 🐆 Other
 
+- Automate publishing to PyPI when new releases are created on GitHub (see #423) (@jank324)
+
 ### 🌟 First Time Contributors
 
 ## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
@@ -214,7 +216,6 @@ This major release comes with significant overhauls of some core components of C
 ### 🐆 Other
 
 - Temporarily limit `torch` dependency to `2.6` or lower to avoid `abort trap: 6` error with `2.7` (at least on macOS) (see #419) (@jank324)
-- Automate publishing to PyPI and creation of GitHub releases (see #423) (@jank324)
 
 ### 🌟 First Time Contributors
 
