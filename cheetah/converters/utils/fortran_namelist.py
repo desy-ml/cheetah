@@ -27,7 +27,7 @@ ELEMENT_DEFINITION_PATTERN = (
     + r"(\s*\,(.*))?"
 )
 LINE_DEFINITION_PATTERN = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
-USE_LINE_PATTERN = r"use\s*\,\s*([a-z0-9_]+)"
+USE_LINE_PATTERN = r'use\s*\,\s*([a-z0-9_]+|"[a-z0-9_\-\.\:]+")'
 OVERLAY_DEFINITION_PATTERN = (
     f"({ELEMENT_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
 )
@@ -365,7 +365,7 @@ def parse_use_line(line: str, context: dict) -> dict:
     """
     match = re.fullmatch(USE_LINE_PATTERN, line)
 
-    use_line_name = match.group(1).strip()
+    use_line_name = match.group(1).strip('" ')
     context["__use__"] = use_line_name
 
     return context
