@@ -20,7 +20,18 @@ ELEMENT_SUBCLASSES_ARGS = {
             "vertical_angle": torch.tensor([1.0, -2.0]),
         }
     },
-    cheetah.CustomTransferMap: {"identity": {"predefined_transfer_map": torch.eye(7)}},
+    cheetah.CustomTransferMap: {
+        "linear": {
+            "predefined_transfer_map": torch.eye(7),
+            "tracking_method": "linear",
+        },
+        "second_order": {
+            "predefined_transfer_map": torch.cat(
+                [torch.zeros(7, 7, 6), torch.eye(7).unsqueeze(-1)], dim=-1
+            ),
+            "tracking_method": "second_order",
+        },
+    },
     cheetah.Dipole: {
         "linear": {
             "length": torch.tensor(1.0),
