@@ -338,6 +338,72 @@ class Segment(Element):
         latticejson.save_cheetah_model(self, filepath, title, info)
 
     @classmethod
+    def from_pals(
+        cls,
+        obj: Any,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> "Segment":
+        """
+        Convert a PALS object to a Cheetah `Segment`.
+
+        :param obj: PALS object to convert. May be a `Lattice`, `BeamLine`,
+            `PALSroot`, or individual PALS element.
+        :param device: Device to place the lattice elements on. If `None`, the
+            current default PyTorch device is used.
+        :param dtype: Data type to use for the lattice elements. If `None`, the
+            current default PyTorch dtype is used.
+        :return: Cheetah `Segment` representing the PALS object.
+        """
+        from cheetah.converters import pals
+
+        return pals.convert_lattice_from_pals(obj, device=device, dtype=dtype)
+
+    def to_pals(self, name: str = "lattice") -> Any:
+        """
+        Convert this Cheetah segment to a PALS `Lattice`.
+
+        :param name: Name to give the generated PALS `Lattice`.
+        :return: PALS `Lattice` representing this segment.
+        """
+        from cheetah.converters import pals
+
+        return pals.convert_lattice_to_pals(self, name=name)
+
+    @classmethod
+    def from_pals_file(
+        cls,
+        filename: str | Path,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> "Segment":
+        """
+        Load a Cheetah segment from a PALS file.
+
+        :param filename: Path to the PALS file to read.
+        :param device: Device to place the lattice elements on. If `None`, the
+            current default PyTorch device is used.
+        :param dtype: Data type to use for the lattice elements. If `None`, the
+            current default PyTorch dtype is used.
+        :return: Cheetah `Segment` loaded from the PALS file.
+        """
+        from cheetah.converters import pals
+
+        return pals.load_lattice_from_pals(filename, device=device, dtype=dtype)
+
+    def to_pals_file(self, filename: str | Path, name: str = "lattice") -> None:
+        """
+        Save this Cheetah segment as a PALS file.
+
+        :param filename: Path to the PALS file to write.
+        :param name: Name to give the generated PALS `Lattice`.
+        :return: None.
+        """
+        from cheetah.converters import pals
+
+        pals.save_lattice_to_pals(self, filename, name=name)
+
+    @classmethod
     def from_ocelot(
         cls,
         cell,
