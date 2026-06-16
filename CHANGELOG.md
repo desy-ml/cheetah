@@ -8,6 +8,8 @@
 
 ### 🚀 Features
 
+- Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
