@@ -1,3 +1,4 @@
+import itertools
 import math
 from typing import Sequence
 
@@ -38,14 +39,8 @@ def cloud_in_cell_charge_deposition(
         len(histogram_shape) == num_hist_dims
     ), "Number of bin values must match number of position dimensions."
 
-    num_particles = positions.shape[-2]
-    vector_shape = positions.shape[:-2]
-    num_vector_elements = math.prod(vector_shape) if vector_shape else 1
-
     # Normalise particle coordinates to normalised bin space
-    bin_space_upper_bounds = torch.tensor(
-        histogram_shape, device=positions.device, dtype=positions.dtype
-    )
+    bin_space_upper_bounds = torch.tensor(histogram_shape, device=positions.device)
     bin_widths = (extent[..., 1] - extent[..., 0]) / bin_space_upper_bounds
     positions_in_bin_space = ((positions - extent[..., 0]) / bin_widths) - 0.5
     positions_in_bin_space_int_component = positions_in_bin_space.floor().long()
@@ -53,65 +48,46 @@ def cloud_in_cell_charge_deposition(
         positions_in_bin_space - positions_in_bin_space_int_component
     )
 
-    # Set charges to zero for particles outside grid bounds
-    inside_mask = (
-        (0 <= positions_in_bin_space)
-        & (positions_in_bin_space < bin_space_upper_bounds)
+    # Generate all corner combinations and their weights
+    corner_offsets = positions_in_bin_space_int_component.new_tensor(
+        list(itertools.product([0, 1], repeat=num_hist_dims))
+    )  # Shape (num_corners, num_hist_dims)
+    corner_positions_in_bin_space = (
+        positions_in_bin_space_int_component.unsqueeze(-2) + corner_offsets
+    )
+    clamped_corner_positions_in_bin_space = corner_positions_in_bin_space.clamp(
+        bin_space_upper_bounds.new_zeros(()), bin_space_upper_bounds - 1
+    )
+    corner_weight_factors = torch.where(
+        corner_offsets == 0,
+        (1.0 - positions_in_bin_space_fractional_components).unsqueeze(-2),
+        positions_in_bin_space_fractional_components.unsqueeze(-2),
+    )  # Shape (..., num_samples, num_corners, num_hist_dims)
+    corner_mask = (
+        (0 <= corner_positions_in_bin_space)
+        & (corner_positions_in_bin_space < bin_space_upper_bounds)
     ).all(dim=-1)
-    masked_charges = charges * inside_mask
+    corner_weights = corner_weight_factors.prod(dim=-1) * corner_mask
+    corner_charges = corner_weights * charges.unsqueeze(-1)
 
-    # Precompute strides for converting multi-dimensional indices to flat indices.
-    # For histogram_shape [H0, H1, H2] the strides are [H1*H2, H2, 1], i.e. row-major.
-    strides = positions_in_bin_space_int_component.new_tensor(
+    vector_shape = positions.shape[:-2]
+    num_histogram_bins = math.prod(histogram_shape)
+
+    # Convert multi-dimensional corner positions to flat bin space indices
+    strides = clamped_corner_positions_in_bin_space.new_tensor(
         [math.prod(histogram_shape[i + 1 :]) for i in range(num_hist_dims)]
     )
+    corner_positions_in_flat_bin_space = (
+        clamped_corner_positions_in_bin_space * strides
+    ).sum(dim=-1)
 
-    # Initialise the output charge grid
-    total_grid_size = math.prod(histogram_shape)
-    charge_grid = torch.zeros(
-        *vector_shape, total_grid_size, dtype=positions.dtype, device=positions.device
+    flat_charge_grid = corner_charges.new_zeros(*vector_shape, num_histogram_bins)
+    flat_charge_grid.scatter_add_(
+        dim=-1,
+        index=corner_positions_in_flat_bin_space.flatten(start_dim=-2),
+        src=corner_charges.flatten(start_dim=-2),
     )
 
-    # Flatten vector dimensions into a single dimension for the loop
-    flat_positions_int = positions_in_bin_space_int_component.reshape(
-        num_vector_elements, num_particles, num_hist_dims
-    )
-    flat_frac = positions_in_bin_space_fractional_components.reshape(
-        num_vector_elements, num_particles, num_hist_dims
-    )
-    flat_charges = masked_charges.reshape(num_vector_elements, num_particles)
-    hist_shape_tensor = flat_positions_int.new_tensor(histogram_shape)
-
-    flat_charge_grid = charge_grid.reshape(num_vector_elements, total_grid_size)
-
-    for vector_idx in range(num_vector_elements):
-        # For each of the 2^num_hist_dims corners, compute indices and weights
-        for corner in range(2**num_hist_dims):
-            corner_indices = []
-            corner_weight = flat_charges[vector_idx]  # (num_particles,)
-
-            for dim in range(num_hist_dims):
-                use_right = (corner >> dim) & 1
-                idx = flat_positions_int[vector_idx, :, dim] + use_right
-                idx_clamped = idx.clamp(0, hist_shape_tensor[dim] - 1)
-
-                if use_right:
-                    weight_factor = flat_frac[vector_idx, :, dim]
-                else:
-                    weight_factor = 1.0 - flat_frac[vector_idx, :, dim]
-
-                corner_indices.append(idx_clamped)
-                corner_weight = corner_weight * weight_factor
-
-            # Convert multi-dimensional corner indices to flat bin index.
-            # flat_idx = idx_0 * strides[0] + idx_1 * strides[1] + ...
-            flat_idx = corner_indices[0] * strides[0]
-            for dim in range(1, num_hist_dims):
-                flat_idx = flat_idx + corner_indices[dim] * strides[dim]
-
-            flat_charge_grid[vector_idx].index_add_(0, flat_idx, corner_weight)
-
-    # Reshape back to the original vector and grid dimensions
-    charge_grid = charge_grid.reshape(*vector_shape, *histogram_shape)
+    charge_grid = flat_charge_grid.reshape(*vector_shape, *histogram_shape)
 
     return charge_grid
