@@ -321,18 +321,16 @@ class Screen(Element):
                 broadcasted_x, broadcasted_y, broadcasted_weights = (
                     torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
                 )
+                edges_x, edges_y = self.pixel_bin_edges
+                extent = torch.tensor(
+                    [[edges_x[0], edges_x[-1]], [edges_y[0], edges_y[-1]]],
+                    device=read_beam.particles.device,
+                    dtype=read_beam.particles.dtype,
+                )
                 image = cloud_in_cell_charge_deposition(
                     positions=torch.stack([broadcasted_x, broadcasted_y], dim=-1),
-                    bins=[
-                        len(self.pixel_bin_centers[0]),
-                        len(self.pixel_bin_centers[1]),
-                    ],
-                    extent=read_beam.particles.new_tensor(
-                        [
-                            [self.pixel_bin_edges[0][0], self.pixel_bin_edges[0][-1]],
-                            [self.pixel_bin_edges[1][0], self.pixel_bin_edges[1][-1]],
-                        ]
-                    ),
+                    bins=[len(edges_x) - 1, len(edges_y) - 1],
+                    extent=extent,
                     charges=broadcasted_weights,
                 ).mT
         else:

@@ -39,55 +39,358 @@ def cloud_in_cell_charge_deposition(
         len(histogram_shape) == num_hist_dims
     ), "Number of bin values must match number of position dimensions."
 
-    # Normalise particle coordinates to normalised bin space
-    bin_space_upper_bounds = torch.tensor(histogram_shape, device=positions.device)
-    bin_widths = (extent[..., 1] - extent[..., 0]) / bin_space_upper_bounds
-    positions_in_bin_space = ((positions - extent[..., 0]) / bin_widths) - 0.5
-    positions_in_bin_space_int_component = positions_in_bin_space.floor().long()
-    positions_in_bin_space_fractional_components = (
-        positions_in_bin_space - positions_in_bin_space_int_component
-    )
-
-    # Generate all corner combinations and their weights
-    corner_offsets = positions_in_bin_space_int_component.new_tensor(
-        list(itertools.product([0, 1], repeat=num_hist_dims))
-    )  # Shape (num_corners, num_hist_dims)
-    corner_positions_in_bin_space = (
-        positions_in_bin_space_int_component.unsqueeze(-2) + corner_offsets
-    )
-    clamped_corner_positions_in_bin_space = corner_positions_in_bin_space.clamp(
-        bin_space_upper_bounds.new_zeros(()), bin_space_upper_bounds - 1
-    )
-    corner_weight_factors = torch.where(
-        corner_offsets == 0,
-        (1.0 - positions_in_bin_space_fractional_components).unsqueeze(-2),
-        positions_in_bin_space_fractional_components.unsqueeze(-2),
-    )  # Shape (..., num_samples, num_corners, num_hist_dims)
-    corner_mask = (
-        (0 <= corner_positions_in_bin_space)
-        & (corner_positions_in_bin_space < bin_space_upper_bounds)
-    ).all(dim=-1)
-    corner_weights = corner_weight_factors.prod(dim=-1) * corner_mask
-    corner_charges = corner_weights * charges.unsqueeze(-1)
-
     vector_shape = positions.shape[:-2]
     num_histogram_bins = math.prod(histogram_shape)
+    flat_charge_grid = positions.new_zeros(*vector_shape, num_histogram_bins)
 
-    # Convert multi-dimensional corner positions to flat bin space indices
-    strides = clamped_corner_positions_in_bin_space.new_tensor(
-        [math.prod(histogram_shape[i + 1 :]) for i in range(num_hist_dims)]
-    )
-    corner_positions_in_flat_bin_space = (
-        clamped_corner_positions_in_bin_space * strides
-    ).sum(dim=-1)
+    if num_hist_dims == 1:
+        num_bins_x = histogram_shape[0]
+        positions_x = positions[..., 0].contiguous()
+        extent_left_x, extent_right_x = extent[..., 0, 0].unsqueeze(-1), extent[
+            ..., 0, 1
+        ].unsqueeze(-1)
 
-    flat_charge_grid = corner_charges.new_zeros(*vector_shape, num_histogram_bins)
-    flat_charge_grid.scatter_add_(
-        dim=-1,
-        index=corner_positions_in_flat_bin_space.flatten(start_dim=-2),
-        src=corner_charges.flatten(start_dim=-2),
-    )
+        in_extent = (positions_x >= extent_left_x) & (positions_x <= extent_right_x)
+        masked_charges = charges * in_extent
+
+        bin_width_x = (extent_right_x - extent_left_x) / num_bins_x
+        positions_in_bin_space_x = (positions_x - extent_left_x) / bin_width_x - 0.5
+
+        positions_in_bin_space_int_component_x = positions_in_bin_space_x.floor().long()
+        positions_in_bin_space_fractional_components_x = (
+            positions_in_bin_space_x - positions_in_bin_space_int_component_x
+        )
+
+        clamped_corner_positions_x0 = positions_in_bin_space_int_component_x.clamp(
+            0, num_bins_x - 1
+        )
+        clamped_corner_positions_x1 = (
+            positions_in_bin_space_int_component_x + 1
+        ).clamp(0, num_bins_x - 1)
+
+        corner_mask_x0 = (positions_in_bin_space_int_component_x >= 0) & (
+            positions_in_bin_space_int_component_x < num_bins_x
+        )
+        corner_mask_x1 = (positions_in_bin_space_int_component_x + 1 >= 0) & (
+            positions_in_bin_space_int_component_x + 1 < num_bins_x
+        )
+
+        corner_weight_factors_x0 = (
+            1.0 - positions_in_bin_space_fractional_components_x
+        ) * corner_mask_x0
+        corner_weight_factors_x1 = (
+            positions_in_bin_space_fractional_components_x * corner_mask_x1
+        )
+
+        flat_charge_grid.scatter_add_(
+            dim=-1,
+            index=clamped_corner_positions_x0,
+            src=masked_charges * corner_weight_factors_x0,
+        )
+        flat_charge_grid.scatter_add_(
+            dim=-1,
+            index=clamped_corner_positions_x1,
+            src=masked_charges * corner_weight_factors_x1,
+        )
+    elif num_hist_dims == 2:
+        num_bins_x, num_bins_y = histogram_shape[0], histogram_shape[1]
+        positions_x = positions[..., 0].contiguous()
+        positions_y = positions[..., 1].contiguous()
+
+        extent_left_x, extent_right_x = extent[..., 0, 0].unsqueeze(-1), extent[
+            ..., 0, 1
+        ].unsqueeze(-1)
+        extent_left_y, extent_right_y = extent[..., 1, 0].unsqueeze(-1), extent[
+            ..., 1, 1
+        ].unsqueeze(-1)
+
+        in_extent = (
+            (positions_x >= extent_left_x)
+            & (positions_x <= extent_right_x)
+            & (positions_y >= extent_left_y)
+            & (positions_y <= extent_right_y)
+        )
+        masked_charges = charges * in_extent
+
+        bin_width_x = (extent_right_x - extent_left_x) / num_bins_x
+        bin_width_y = (extent_right_y - extent_left_y) / num_bins_y
+
+        positions_in_bin_space_x = (positions_x - extent_left_x) / bin_width_x - 0.5
+        positions_in_bin_space_y = (positions_y - extent_left_y) / bin_width_y - 0.5
+
+        positions_in_bin_space_int_component_x = positions_in_bin_space_x.floor().long()
+        positions_in_bin_space_int_component_y = positions_in_bin_space_y.floor().long()
+
+        positions_in_bin_space_fractional_components_x = (
+            positions_in_bin_space_x - positions_in_bin_space_int_component_x
+        )
+        positions_in_bin_space_fractional_components_y = (
+            positions_in_bin_space_y - positions_in_bin_space_int_component_y
+        )
+
+        clamped_corner_positions_x0 = positions_in_bin_space_int_component_x.clamp(
+            0, num_bins_x - 1
+        )
+        clamped_corner_positions_x1 = (
+            positions_in_bin_space_int_component_x + 1
+        ).clamp(0, num_bins_x - 1)
+        clamped_corner_positions_y0 = positions_in_bin_space_int_component_y.clamp(
+            0, num_bins_y - 1
+        )
+        clamped_corner_positions_y1 = (
+            positions_in_bin_space_int_component_y + 1
+        ).clamp(0, num_bins_y - 1)
+
+        corner_mask_x0 = (positions_in_bin_space_int_component_x >= 0) & (
+            positions_in_bin_space_int_component_x < num_bins_x
+        )
+        corner_mask_x1 = (positions_in_bin_space_int_component_x + 1 >= 0) & (
+            positions_in_bin_space_int_component_x + 1 < num_bins_x
+        )
+        corner_mask_y0 = (positions_in_bin_space_int_component_y >= 0) & (
+            positions_in_bin_space_int_component_y < num_bins_y
+        )
+        corner_mask_y1 = (positions_in_bin_space_int_component_y + 1 >= 0) & (
+            positions_in_bin_space_int_component_y + 1 < num_bins_y
+        )
+
+        corner_weight_factors_x0 = (
+            1.0 - positions_in_bin_space_fractional_components_x
+        ) * corner_mask_x0
+        corner_weight_factors_x1 = (
+            positions_in_bin_space_fractional_components_x * corner_mask_x1
+        )
+        corner_weight_factors_y0 = (
+            1.0 - positions_in_bin_space_fractional_components_y
+        ) * corner_mask_y0
+        corner_weight_factors_y1 = (
+            positions_in_bin_space_fractional_components_y * corner_mask_y1
+        )
+
+        stride_x = num_bins_y
+        stride_y = 1
+
+        flat_charge_grid.scatter_add_(
+            dim=-1,
+            index=clamped_corner_positions_x0 * stride_x
+            + clamped_corner_positions_y0 * stride_y,
+            src=masked_charges * corner_weight_factors_x0 * corner_weight_factors_y0,
+        )
+        flat_charge_grid.scatter_add_(
+            dim=-1,
+            index=clamped_corner_positions_x1 * stride_x
+            + clamped_corner_positions_y0 * stride_y,
+            src=masked_charges * corner_weight_factors_x1 * corner_weight_factors_y0,
+        )
+        flat_charge_grid.scatter_add_(
+            dim=-1,
+            index=clamped_corner_positions_x0 * stride_x
+            + clamped_corner_positions_y1 * stride_y,
+            src=masked_charges * corner_weight_factors_x0 * corner_weight_factors_y1,
+        )
+        flat_charge_grid.scatter_add_(
+            dim=-1,
+            index=clamped_corner_positions_x1 * stride_x
+            + clamped_corner_positions_y1 * stride_y,
+            src=masked_charges * corner_weight_factors_x1 * corner_weight_factors_y1,
+        )
+    elif num_hist_dims == 3:
+        num_bins_x, num_bins_y, num_bins_z = (
+            histogram_shape[0],
+            histogram_shape[1],
+            histogram_shape[2],
+        )
+        positions_x = positions[..., 0].contiguous()
+        positions_y = positions[..., 1].contiguous()
+        positions_z = positions[..., 2].contiguous()
+
+        extent_left_x, extent_right_x = extent[..., 0, 0].unsqueeze(-1), extent[
+            ..., 0, 1
+        ].unsqueeze(-1)
+        extent_left_y, extent_right_y = extent[..., 1, 0].unsqueeze(-1), extent[
+            ..., 1, 1
+        ].unsqueeze(-1)
+        extent_left_z, extent_right_z = extent[..., 2, 0].unsqueeze(-1), extent[
+            ..., 2, 1
+        ].unsqueeze(-1)
+
+        in_extent = (
+            (positions_x >= extent_left_x)
+            & (positions_x <= extent_right_x)
+            & (positions_y >= extent_left_y)
+            & (positions_y <= extent_right_y)
+            & (positions_z >= extent_left_z)
+            & (positions_z <= extent_right_z)
+        )
+        masked_charges = charges * in_extent
+
+        bin_width_x = (extent_right_x - extent_left_x) / num_bins_x
+        bin_width_y = (extent_right_y - extent_left_y) / num_bins_y
+        bin_width_z = (extent_right_z - extent_left_z) / num_bins_z
+
+        positions_in_bin_space_x = (positions_x - extent_left_x) / bin_width_x - 0.5
+        positions_in_bin_space_y = (positions_y - extent_left_y) / bin_width_y - 0.5
+        positions_in_bin_space_z = (positions_z - extent_left_z) / bin_width_z - 0.5
+
+        positions_in_bin_space_int_component_x = positions_in_bin_space_x.floor().long()
+        positions_in_bin_space_int_component_y = positions_in_bin_space_y.floor().long()
+        positions_in_bin_space_int_component_z = positions_in_bin_space_z.floor().long()
+
+        positions_in_bin_space_fractional_components_x = (
+            positions_in_bin_space_x - positions_in_bin_space_int_component_x
+        )
+        positions_in_bin_space_fractional_components_y = (
+            positions_in_bin_space_y - positions_in_bin_space_int_component_y
+        )
+        positions_in_bin_space_fractional_components_z = (
+            positions_in_bin_space_z - positions_in_bin_space_int_component_z
+        )
+
+        clamped_corner_positions_x0 = positions_in_bin_space_int_component_x.clamp(
+            0, num_bins_x - 1
+        )
+        clamped_corner_positions_x1 = (
+            positions_in_bin_space_int_component_x + 1
+        ).clamp(0, num_bins_x - 1)
+        clamped_corner_positions_y0 = positions_in_bin_space_int_component_y.clamp(
+            0, num_bins_y - 1
+        )
+        clamped_corner_positions_y1 = (
+            positions_in_bin_space_int_component_y + 1
+        ).clamp(0, num_bins_y - 1)
+        clamped_corner_positions_z0 = positions_in_bin_space_int_component_z.clamp(
+            0, num_bins_z - 1
+        )
+        clamped_corner_positions_z1 = (
+            positions_in_bin_space_int_component_z + 1
+        ).clamp(0, num_bins_z - 1)
+
+        corner_mask_x0 = (positions_in_bin_space_int_component_x >= 0) & (
+            positions_in_bin_space_int_component_x < num_bins_x
+        )
+        corner_mask_x1 = (positions_in_bin_space_int_component_x + 1 >= 0) & (
+            positions_in_bin_space_int_component_x + 1 < num_bins_x
+        )
+        corner_mask_y0 = (positions_in_bin_space_int_component_y >= 0) & (
+            positions_in_bin_space_int_component_y < num_bins_y
+        )
+        corner_mask_y1 = (positions_in_bin_space_int_component_y + 1 >= 0) & (
+            positions_in_bin_space_int_component_y + 1 < num_bins_y
+        )
+        corner_mask_z0 = (positions_in_bin_space_int_component_z >= 0) & (
+            positions_in_bin_space_int_component_z < num_bins_z
+        )
+        corner_mask_z1 = (positions_in_bin_space_int_component_z + 1 >= 0) & (
+            positions_in_bin_space_int_component_z + 1 < num_bins_z
+        )
+
+        corner_weight_factors_x0 = (
+            1.0 - positions_in_bin_space_fractional_components_x
+        ) * corner_mask_x0
+        corner_weight_factors_x1 = (
+            positions_in_bin_space_fractional_components_x * corner_mask_x1
+        )
+        corner_weight_factors_y0 = (
+            1.0 - positions_in_bin_space_fractional_components_y
+        ) * corner_mask_y0
+        corner_weight_factors_y1 = (
+            positions_in_bin_space_fractional_components_y * corner_mask_y1
+        )
+        corner_weight_factors_z0 = (
+            1.0 - positions_in_bin_space_fractional_components_z
+        ) * corner_mask_z0
+        corner_weight_factors_z1 = (
+            positions_in_bin_space_fractional_components_z * corner_mask_z1
+        )
+
+        stride_x = num_bins_y * num_bins_z
+        stride_y = num_bins_z
+        stride_z = 1
+
+        for ox, oy, oz in itertools.product([0, 1], repeat=3):
+            idx = (
+                (
+                    clamped_corner_positions_x0
+                    if ox == 0
+                    else clamped_corner_positions_x1
+                )
+                * stride_x
+                + (
+                    clamped_corner_positions_y0
+                    if oy == 0
+                    else clamped_corner_positions_y1
+                )
+                * stride_y
+                + (
+                    clamped_corner_positions_z0
+                    if oz == 0
+                    else clamped_corner_positions_z1
+                )
+                * stride_z
+            )
+            weight = (
+                (corner_weight_factors_x0 if ox == 0 else corner_weight_factors_x1)
+                * (corner_weight_factors_y0 if oy == 0 else corner_weight_factors_y1)
+                * (corner_weight_factors_z0 if oz == 0 else corner_weight_factors_z1)
+            )
+            flat_charge_grid.scatter_add_(
+                dim=-1, index=idx, src=masked_charges * weight
+            )
+    else:
+        # Fallback for >3D
+        in_extent = torch.ones_like(charges, dtype=torch.bool)
+        for d in range(num_hist_dims):
+            coord = positions[..., d]
+            extent_left_d = extent[..., d, 0].unsqueeze(-1)
+            extent_right_d = extent[..., d, 1].unsqueeze(-1)
+            in_extent = in_extent & (coord >= extent_left_d) & (coord <= extent_right_d)
+
+        masked_charges = charges * in_extent
+
+        positions_in_bin_space_int_components_dims = []
+        positions_in_bin_space_fractional_components_dims = []
+        for d in range(num_hist_dims):
+            coord = positions[..., d].contiguous()
+            extent_left_d = extent[..., d, 0].unsqueeze(-1)
+            extent_right_d = extent[..., d, 1].unsqueeze(-1)
+            num_bins_d = histogram_shape[d]
+            bin_width_d = (extent_right_d - extent_left_d) / num_bins_d
+            positions_in_bin_space_d = (coord - extent_left_d) / bin_width_d - 0.5
+
+            positions_in_bin_space_int_component_d = (
+                positions_in_bin_space_d.floor().long()
+            )
+            positions_in_bin_space_fractional_components_d = (
+                positions_in_bin_space_d - positions_in_bin_space_int_component_d
+            )
+
+            positions_in_bin_space_int_components_dims.append(
+                positions_in_bin_space_int_component_d
+            )
+            positions_in_bin_space_fractional_components_dims.append(
+                positions_in_bin_space_fractional_components_d
+            )
+
+        strides = [math.prod(histogram_shape[d + 1 :]) for d in range(num_hist_dims)]
+
+        for corner in itertools.product([0, 1], repeat=num_hist_dims):
+            corner_idx = 0
+            corner_weight = masked_charges.clone()
+            for d in range(num_hist_dims):
+                use_right = corner[d]
+                idx = positions_in_bin_space_int_components_dims[d] + use_right
+                clamped_corner_positions_d = idx.clamp(0, histogram_shape[d] - 1)
+                corner_idx = corner_idx + clamped_corner_positions_d * strides[d]
+
+                corner_mask_d = (idx >= 0) & (idx < histogram_shape[d])
+                corner_weight_factor_d = (
+                    positions_in_bin_space_fractional_components_dims[d]
+                    if use_right
+                    else (1.0 - positions_in_bin_space_fractional_components_dims[d])
+                ) * corner_mask_d
+                corner_weight = corner_weight * corner_weight_factor_d
+
+            flat_charge_grid.scatter_add_(dim=-1, index=corner_idx, src=corner_weight)
 
     charge_grid = flat_charge_grid.reshape(*vector_shape, *histogram_shape)
-
     return charge_grid
