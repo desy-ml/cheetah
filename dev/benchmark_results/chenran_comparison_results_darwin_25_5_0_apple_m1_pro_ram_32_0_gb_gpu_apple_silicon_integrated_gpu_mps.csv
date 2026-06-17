@@ -1,0 +1,5 @@
+System,Device,Batch Shape,Chenran's Loop-based (s),Current Optimized (s),Speedup
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,"(20, 1)",0.0475845250999555,0.04611785837914795,1.0318025765366134
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,"(2, 10)",0.04614028738578781,0.04569911261787638,1.0096539022890973
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,"(20, 1)",0.01763053339673206,0.015855908393859863,1.1119220014893259
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,"(2, 10)",0.017643979203421624,0.01572773311054334,1.1218386705451975
