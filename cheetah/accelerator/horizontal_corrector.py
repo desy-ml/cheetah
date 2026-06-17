@@ -59,7 +59,7 @@ class HorizontalCorrector(Element):
             self.length.shape, igamma2.shape, self.angle.shape
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
+        tm = torch.eye(7, **factory_kwargs).expand((*vector_shape, 7, 7)).clone()
         tm[..., 0, 1] = self.length
         tm[..., 1, 6] = self.angle
         tm[..., 2, 3] = self.length

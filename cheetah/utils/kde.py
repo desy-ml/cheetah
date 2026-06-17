@@ -59,7 +59,7 @@ def _kde_marginal_pdf(
                 f"Weights must have the same shape as values. Got {weights.shape}"
             )
 
-    residuals = values - bins.repeat(*values.shape)
+    residuals = values - bins
     kernel_values = (
         weights
         * (-0.5 * (residuals / sigma).square()).exp()
