@@ -1,0 +1,15 @@
+System,Device,Batch Shape,Method,Time (s)
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,(),histogram,0.0009359707939438522
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,(),kde,0.060782483604270965
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,(),cloud-in-cell,0.0066031583934091035
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,"(20, 1)",kde,1.2446860667085275
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,"(20, 1)",cloud-in-cell,0.04159117921954021
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,"(2, 10)",kde,1.3183711997931824
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),CPU,"(2, 10)",cloud-in-cell,0.04066629180451855
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,(),histogram,0.7824607416987419
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,(),kde,0.03518585409037769
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,(),cloud-in-cell,0.004428050096612424
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,"(20, 1)",kde,0.5255451458739117
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,"(20, 1)",cloud-in-cell,0.020862545794807376
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,"(2, 10)",kde,0.525345575006213
+Darwin 25.5.0 | Apple M1 Pro | RAM: 32.0 GB | GPU: Apple Silicon Integrated GPU (MPS),MPS,"(2, 10)",cloud-in-cell,0.0209082956193015
