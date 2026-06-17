@@ -1,0 +1,9 @@
+System,Component,Device,Batch Shape,Original (s),Tensorised (s)
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Standalone,CPU,"(20, 1)",0.033092,0.034731
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Standalone,CPU,"(2, 10)",0.029333,0.032838
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Standalone,CUDA,"(20, 1)",0.001855,0.001787
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Standalone,CUDA,"(2, 10)",0.001846,0.001788
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Screen,CPU,"(20, 1)",0.0325,0.03615
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Screen,CPU,"(2, 10)",0.031929,0.033724
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Screen,CUDA,"(20, 1)",0.004664,0.004414
+Linux (AMD EPYC/Intel Xeon CPU) + NVIDIA A100 GPU,Screen,CUDA,"(2, 10)",0.00462,0.004361
