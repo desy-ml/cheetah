@@ -16,9 +16,9 @@ class Superimposed(Element):
     element is placed over another at the center of the base element.
 
     :param base_element: The base element over which other elements are superimposed.
-    :param superimposed_element: Segment of elements to be superimposed at the center of
-        base element. If a single Element is provided, it will be converted to a Segment
-        with one element.
+    :param superimposed_element: Element or list of elements to be
+        superimposed at the center of the base element.
+        If a single Element is provided
     :param name: The name of the segment. If None, a default name is generated.
     :param sanitize_name: Whether to sanitize the name to ensure it is valid.
     """
@@ -26,7 +26,7 @@ class Superimposed(Element):
     def __init__(
         self,
         base_element: Element,
-        superimposed_element: Segment | Element,
+        superimposed_element: Element | list[Element],
         name: str | None = None,
         sanitize_name: bool = False,
         device: torch.device | None = None,
@@ -36,23 +36,29 @@ class Superimposed(Element):
         super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
 
         self.base_element = base_element.to(**factory_kwargs)
-        if type(superimposed_element) is Segment:
-            self.superimposed_element = superimposed_element.to(**factory_kwargs)
-        elif type(superimposed_element) is not Element and isinstance(
-            superimposed_element, Element
+
+        if (
+            isinstance(superimposed_element, Element)
+            and type(superimposed_element) is not Element
         ):
-            self.superimposed_element = Segment(
-                elements=[superimposed_element],
-                name=f"{superimposed_element.name}_segment",
-                **factory_kwargs,
-            )
+            # convert to a list of one element for uniform handling
+            self.superimposed_element = [superimposed_element.to(**factory_kwargs)]
+        elif isinstance(superimposed_element, list) and all(
+            isinstance(ele, Element) and type(ele) is not Element
+            for ele in superimposed_element
+        ):
+            superimposed_element = [
+                ele.to(**factory_kwargs) for ele in superimposed_element
+            ]
+            self.superimposed_element = superimposed_element
         else:
             raise TypeError(
-                f"Superimposed_element must be a Segment or Element subclass, got "
+                "Superimposed_element must be an Element subclass"
+                " or a list of Element subclasses, got "
                 f"{superimposed_element.__class__.__name__}"
             )
 
-        for superimposed_ele in self.superimposed_element.elements:
+        for superimposed_ele in self.superimposed_element:
             if superimposed_ele.length is not None and not torch.all(
                 superimposed_ele.length == 0
             ):
@@ -60,14 +66,45 @@ class Superimposed(Element):
                     f"Superimposed elements must have zero length, "
                     f"but {superimposed_ele.name} has length {superimposed_ele.length}"
                 )
+
         self.length = self.base_element.length.clone()
+
+        # Split base and insert superimposed element(s)
+        self.update_subelements()
 
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
+        # if superimposed.length changes, update superimposed.base_element.length
+        # then redraw segment
+        # need to do this vice-versa (NOT IMPLEMENTED)
         if name == "length" and hasattr(self, "base_element"):
             base = getattr(self, "base_element", None)
             if base is not None:
                 base.length = self.length
+                self.update_subelements()
+
+    def update_subelements(self):
+        """
+        Update the subelements of the superimposed element.
+
+        Called whenever base_element or superimposed_element is modified.
+        """
+        halves = self.base_element.split(self.base_element.length / 2.0)
+        self._segment = Segment(
+            elements=[halves[0], *self.superimposed_element, halves[1]],
+            name=f"{self.name}_segment",
+            sanitize_name=False,
+        )
+
+    @property
+    def subelements(self) -> list[Element]:
+        """
+        The two halves of the base element with the superimposed
+        element(s) in between.
+        """
+        if not hasattr(self, "_segment"):
+            self.update_subelements()
+        return self._segment.elements
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
@@ -107,42 +144,6 @@ class Superimposed(Element):
         for element in self.subelements:
             tm = element.first_order_transfer_map(energy, species) @ tm
         return tm
-
-    @property
-    def subelements(self) -> list[Element]:
-        half_length = self.base_element.length / 2.0
-        base = self.base_element
-
-        kwargs = {
-            feature: getattr(base, feature)
-            for feature in base.defining_features
-            if feature != "length" and feature != "name"
-        }
-
-        first = base.__class__(
-            length=half_length,
-            name=f"{base.name}_0",
-            sanitize_name=False,
-            dtype=base.length.dtype,
-            device=base.length.device,
-            **kwargs,
-        )
-        second = base.__class__(
-            length=half_length,
-            name=f"{base.name}_1",
-            sanitize_name=False,
-            dtype=base.length.dtype,
-            device=base.length.device,
-            **kwargs,
-        )
-
-        if isinstance(self.superimposed_element, Segment):
-            return [first, *self.superimposed_element.elements, second]
-
-        raise TypeError(
-            f"superimposed_element must be a Segment or Element subclass, "
-            f"got {type(self.superimposed_element).__name__}"
-        )
 
     @property
     def is_skippable(self) -> bool:
