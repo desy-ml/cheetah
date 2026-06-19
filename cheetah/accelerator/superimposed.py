@@ -89,7 +89,9 @@ class Superimposed(Element):
 
         Called whenever base_element or superimposed_element is modified.
         """
-        halves = self.base_element.split(self.base_element.length / 2.0)
+        resolution = self.base_element.length.abs().max() / 2.0
+        halves = self.base_element.split(resolution=resolution)
+
         self._segment = Segment(
             elements=[halves[0], *self.superimposed_element, halves[1]],
             name=f"{self.name}_segment",
