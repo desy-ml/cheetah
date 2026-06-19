@@ -104,7 +104,9 @@ class Superimposed(Element):
         The two halves of the base element with the superimposed
         element(s) in between.
         """
-        if not hasattr(self, "_segment"):
+
+        if not hasattr(self, "_segment") or self.length != self.base_element.length:
+            self.length = self.base_element.length.clone()
             self.update_subelements()
         return self._segment.elements
 
