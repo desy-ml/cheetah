@@ -67,21 +67,14 @@ class Superimposed(Element):
                     f"but {superimposed_ele.name} has length {superimposed_ele.length}"
                 )
 
-        self.length = self.base_element.length.clone()
+        self._length = self.base_element.length.clone()
 
         # Split base and insert superimposed element(s)
         self.update_subelements()
 
-    def __setattr__(self, name, value):
-        super().__setattr__(name, value)
-        # if superimposed.length changes, update superimposed.base_element.length
-        # then redraw segment
-        # need to do this vice-versa (NOT IMPLEMENTED)
-        if name == "length" and hasattr(self, "base_element"):
-            base = getattr(self, "base_element", None)
-            if base is not None:
-                base.length = self.length
-                self.update_subelements()
+    @property
+    def length(self) -> torch.Tensor:
+        return self.base_element.length
 
     def update_subelements(self):
         """
@@ -105,8 +98,9 @@ class Superimposed(Element):
         element(s) in between.
         """
 
-        if not hasattr(self, "_segment") or self.length != self.base_element.length:
-            self.length = self.base_element.length.clone()
+        if not hasattr(self, "_segment") or self._length != self.base_element.length:
+            # if base element length has been updated redraw the _segment
+            self._length = self.base_element.length.clone()
             self.update_subelements()
         return self._segment.elements
 
