@@ -20,7 +20,7 @@ def assert_tensor_equal(actual: torch.Tensor, expected: torch.Tensor) -> None:
     assert torch.allclose(actual, expected)
 
 
-def assert_v1_roundtrip_equal(
+def assert_roundtrip_equal(
     original: cheetah.Segment, converted: cheetah.Segment
 ) -> None:
     assert converted.name == original.name
@@ -81,6 +81,7 @@ def cheetah_test_segment(dtype: torch.dtype = torch.float32) -> cheetah.Segment:
             cheetah.Quadrupole(
                 length=torch.tensor(1.0, dtype=dtype),
                 k1=torch.tensor(2.0, dtype=dtype),
+                misalignment=torch.tensor([0.01, -0.02], dtype=dtype),
                 tilt=torch.tensor(0.1, dtype=dtype),
                 name="q1",
             ),
@@ -127,6 +128,7 @@ def cheetah_test_segment(dtype: torch.dtype = torch.float32) -> cheetah.Segment:
             cheetah.Solenoid(
                 length=torch.tensor(0.2, dtype=dtype),
                 k=torch.tensor(0.5, dtype=dtype),
+                misalignment=torch.tensor([-0.03, 0.04], dtype=dtype),
                 name="sol1",
             ),
             cheetah.Marker(name="m1"),
@@ -190,20 +192,20 @@ def test_pals_example_fodo_roundtrip():
 
 
 @pytest.mark.filterwarnings(UNDER_CONSTRUCTION_WARNING)
-def test_v1_elements_roundtrip():
+def test_elements_roundtrip():
     original = cheetah_test_segment()
 
     converted = cheetah_pals.convert_lattice_from_pals(
-        cheetah_pals.convert_lattice_to_pals(original, name="v1_lattice")
+        cheetah_pals.convert_lattice_to_pals(original, name="pals_lattice")
     )
 
-    assert_v1_roundtrip_equal(original, converted)
+    assert_roundtrip_equal(original, converted)
 
 
 @pytest.mark.filterwarnings(UNDER_CONSTRUCTION_WARNING)
 def test_extended_elements_to_pals_shape():
     lattice = cheetah_pals.convert_lattice_to_pals(
-        cheetah_test_segment(), name="v1_lattice"
+        cheetah_test_segment(), name="pals_lattice"
     )
     by_name = {element.name: element for element in lattice.branches[0].line}
 
@@ -217,6 +219,9 @@ def test_extended_elements_to_pals_shape():
     assert by_name["cav1"].RFP.frequency == pytest.approx(1.3e9)
     assert by_name["cav1"].RFP.phase == pytest.approx(math.pi / 6.0)
 
+    assert by_name["q1"].BodyShiftP.x_offset == pytest.approx(0.01)
+    assert by_name["q1"].BodyShiftP.y_offset == pytest.approx(-0.02)
+
     assert by_name["hcor1"].kind == "Kicker"
     assert by_name["hcor1"].MagneticMultipoleP.Kn0 == pytest.approx(1.0e-3)
     assert by_name["vcor1"].MagneticMultipoleP.Ks0 == pytest.approx(-2.0e-3)
@@ -224,6 +229,8 @@ def test_extended_elements_to_pals_shape():
     assert by_name["ccor1"].MagneticMultipoleP.Ks0 == pytest.approx(-4.0e-3)
 
     assert by_name["sol1"].kind == "Solenoid"
+    assert by_name["sol1"].BodyShiftP.x_offset == pytest.approx(-0.03)
+    assert by_name["sol1"].BodyShiftP.y_offset == pytest.approx(0.04)
     assert by_name["sol1"].SolenoidP.Ksol == pytest.approx(0.5)
 
 
@@ -291,7 +298,7 @@ def test_file_io_roundtrip(tmp_path):
 
         converted = cheetah_pals.load_lattice_from_pals(filename)
 
-        assert_v1_roundtrip_equal(original, converted)
+        assert_roundtrip_equal(original, converted)
 
 
 @pytest.mark.filterwarnings(UNDER_CONSTRUCTION_WARNING)
@@ -302,13 +309,13 @@ def test_segment_pals_methods(tmp_path):
     converted = cheetah.Segment.from_pals(lattice)
 
     assert isinstance(lattice, pals.Lattice)
-    assert_v1_roundtrip_equal(original, converted)
+    assert_roundtrip_equal(original, converted)
 
     filename = tmp_path / "segment_methods.pals.json"
     original.to_pals_file(filename, name="segment_methods_file")
     loaded = cheetah.Segment.from_pals_file(filename)
 
-    assert_v1_roundtrip_equal(original, loaded)
+    assert_roundtrip_equal(original, loaded)
 
 
 def test_pals_extras_roundtrip():
@@ -326,13 +333,16 @@ def test_pals_extras_roundtrip():
 
     segment = cheetah_pals.convert_lattice_from_pals(beamline)
 
-    assert segment.q1.pals_extras["BodyShiftP"]["x_offset"] == pytest.approx(0.5)
+    assert_tensor_equal(segment.q1.misalignment, torch.tensor([0.5, 0.0]))
+    assert "x_offset" not in segment.q1.pals_extras.get("BodyShiftP", {})
+    assert "y_offset" not in segment.q1.pals_extras.get("BodyShiftP", {})
     assert segment.q1.pals_extras["MagneticMultipoleP"]["Kn2"] == pytest.approx(5.0)
 
     lattice = cheetah_pals.convert_lattice_to_pals(segment)
     roundtrip_quad = lattice.branches[0].line[0]
 
     assert roundtrip_quad.BodyShiftP.x_offset == pytest.approx(0.5)
+    assert roundtrip_quad.BodyShiftP.y_offset == pytest.approx(0.0)
     assert roundtrip_quad.MagneticMultipoleP.Kn2 == pytest.approx(5.0)
 
 

@@ -347,6 +347,9 @@ class Segment(Element):
         """
         Convert a PALS object to a Cheetah `Segment`.
 
+        PALS does not encode Cheetah-only simulation settings such as
+        `tracking_method`; set those manually on the returned elements as needed.
+
         :param obj: PALS object to convert. May be a `Lattice`, `BeamLine`,
             `PALSroot`, or individual PALS element.
         :param device: Device to place the lattice elements on. If `None`, the
@@ -379,6 +382,9 @@ class Segment(Element):
     ) -> "Segment":
         """
         Load a Cheetah segment from a PALS file.
+
+        PALS does not encode Cheetah-only simulation settings such as
+        `tracking_method`; set those manually on the returned elements as needed.
 
         :param filename: Path to the PALS file to read.
         :param device: Device to place the lattice elements on. If `None`, the

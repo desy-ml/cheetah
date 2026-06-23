@@ -63,17 +63,6 @@ def _f2t(value: Any, *, device: torch.device, dtype: torch.dtype) -> torch.Tenso
     return torch.tensor(value, device=device, dtype=dtype)
 
 
-def _nonnegative_length(value: torch.Tensor, element_name: str) -> float:
-    """Currently PALS requires thick elements with non-negative length."""
-    length = _t2f(value)
-    if length < 0:
-        raise ValueError(
-            f"Element {element_name!r} has negative length {length}; PALS lengths "
-            "must be non-negative."
-        )
-    return length
-
-
 def _is_zero(value: torch.Tensor) -> bool:
     return torch.allclose(value, torch.zeros_like(value))
 
@@ -235,18 +224,33 @@ def _aperture_shape_from_pals(shape: str, element_name: str) -> str:
     )
 
 
+def _body_shift_to_pals(pals, misalignment: torch.Tensor, extras: dict):
+    body_shift_extras = extras.get("BodyShiftP", {})
+    if _is_zero(misalignment) and not body_shift_extras:
+        return None
+
+    body_shift_data = {
+        "x_offset": _t2f(misalignment[..., 0]),
+        "y_offset": _t2f(misalignment[..., 1]),
+    }
+    return _merge_group(pals, "BodyShiftP", body_shift_data, extras)
+
+
+def _misalignment_from_body_shift(element, factory_kwargs: dict) -> torch.Tensor:
+    body_shift = _model_dump_or_empty(element.BodyShiftP)
+    return _f2t(
+        [body_shift.get("x_offset", 0.0), body_shift.get("y_offset", 0.0)],
+        **factory_kwargs,
+    )
+
+
 # Start Element converters
 def _drift_to_pals(element: cheetah.Drift, pals):
-    _require_default(
-        element.tracking_method == "linear",
-        f"Drift {element.name!r} uses unsupported tracking_method "
-        f"{element.tracking_method!r}.",
-    )
     _, extras = _split_pals_extras(element)
     kwargs = _common_kwargs_from_extras(pals.Drift, extras)
     return pals.Drift(
         name=element.name,
-        length=_nonnegative_length(element.length, element.name),
+        length=_t2f(element.length),
         **kwargs,
     )
 
@@ -327,17 +331,8 @@ def _aperture_from_pals(element, factory_kwargs: dict) -> cheetah.Aperture:
 
 def _quad_to_pals(element: cheetah.Quadrupole, pals):
     _require_default(
-        element.tracking_method == "linear",
-        f"Quadrupole {element.name!r} uses unsupported tracking_method "
-        f"{element.tracking_method!r}.",
-    )
-    _require_default(
         element.num_steps == 1,
         f"Quadrupole {element.name!r} has unsupported num_steps={element.num_steps}.",
-    )
-    _require_default(
-        _is_zero(element.misalignment),
-        f"Quadrupole {element.name!r} has unsupported misalignment.",
     )
 
     metadata, extras = _split_pals_extras(element)
@@ -348,11 +343,13 @@ def _quad_to_pals(element: cheetah.Quadrupole, pals):
     if not _is_zero(element.tilt) or metadata.get("tilt1_present", False):
         multipole_data["tilt1"] = _t2f(element.tilt)
     multipole = _merge_group(pals, "MagneticMultipoleP", multipole_data, extras)
+    body_shift = _body_shift_to_pals(pals, element.misalignment, extras)
     kwargs = _common_kwargs_from_extras(pals.Quadrupole, extras)
 
     return pals.Quadrupole(
         name=element.name,
-        length=_nonnegative_length(element.length, element.name),
+        length=_t2f(element.length),
+        BodyShiftP=body_shift,
         MagneticMultipoleP=multipole,
         **kwargs,
     )
@@ -374,6 +371,7 @@ def _quad_from_pals(element, factory_kwargs: dict) -> cheetah.Quadrupole:
     converted = cheetah.Quadrupole(
         length=_f2t(element.length, **factory_kwargs),
         k1=_f2t(k1, **factory_kwargs),
+        misalignment=_misalignment_from_body_shift(element, factory_kwargs),
         tilt=_f2t(tilt, **factory_kwargs),
         name=element.name,
     )
@@ -391,18 +389,16 @@ def _quad_from_pals(element, factory_kwargs: dict) -> cheetah.Quadrupole:
     extras = _extract_extras(
         element,
         consumed_fields={"length"},
-        consumed_groups={"MagneticMultipoleP": consumed},
+        consumed_groups={
+            "BodyShiftP": {"x_offset", "y_offset"},
+            "MagneticMultipoleP": consumed,
+        },
         converter_metadata=metadata or None,
     )
     return _attach_pals_extras(converted, extras)
 
 
 def _dipole_to_pals(element: cheetah.Dipole, pals):
-    _require_default(
-        element.tracking_method == "linear",
-        f"Dipole {element.name!r} uses unsupported tracking_method "
-        f"{element.tracking_method!r}.",
-    )
     _require_default(
         _is_zero(element.gap) and _is_zero(element.gap_exit),
         f"Dipole {element.name!r} has unsupported gap settings.",
@@ -417,7 +413,7 @@ def _dipole_to_pals(element: cheetah.Dipole, pals):
     )
 
     metadata, extras = _split_pals_extras(element)
-    length = _nonnegative_length(element.length, element.name)
+    length = _t2f(element.length)
     angle = _t2f(element.angle)
     if length == 0.0 and angle != 0.0:
         raise ValueError(f"Dipole {element.name!r} has nonzero angle and zero length.")
@@ -517,7 +513,7 @@ def _cavity_to_pals(element: cheetah.Cavity, pals):
     kwargs = _common_kwargs_from_extras(pals.RFCavity, extras)
     return pals.RFCavity(
         name=element.name,
-        length=_nonnegative_length(element.length, element.name),
+        length=_t2f(element.length),
         RFP=rf,
         **kwargs,
     )
@@ -547,7 +543,7 @@ def _corrector_multipole_to_pals(element: cheetah.Element, pals, data: dict):
     kwargs = _common_kwargs_from_extras(pals.Kicker, extras)
     return pals.Kicker(
         name=element.name,
-        length=_nonnegative_length(element.length, element.name),
+        length=_t2f(element.length),
         MagneticMultipoleP=multipole,
         **kwargs,
     )
@@ -622,11 +618,6 @@ def _kicker_from_pals(element, factory_kwargs: dict) -> cheetah.Element:
 
 
 def _solenoid_to_pals(element: cheetah.Solenoid, pals):
-    _require_default(
-        _is_zero(element.misalignment),
-        f"Solenoid {element.name!r} has unsupported misalignment.",
-    )
-
     _, extras = _split_pals_extras(element)
     solenoid = _merge_group(
         pals,
@@ -634,10 +625,12 @@ def _solenoid_to_pals(element: cheetah.Solenoid, pals):
         {"Ksol": _t2f(element.k)},
         extras,
     )
+    body_shift = _body_shift_to_pals(pals, element.misalignment, extras)
     kwargs = _common_kwargs_from_extras(pals.Solenoid, extras)
     return pals.Solenoid(
         name=element.name,
-        length=_nonnegative_length(element.length, element.name),
+        length=_t2f(element.length),
+        BodyShiftP=body_shift,
         SolenoidP=solenoid,
         **kwargs,
     )
@@ -648,12 +641,16 @@ def _solenoid_from_pals(element, factory_kwargs: dict) -> cheetah.Solenoid:
     converted = cheetah.Solenoid(
         length=_f2t(element.length, **factory_kwargs),
         k=_f2t(solenoid.get("Ksol", 0.0), **factory_kwargs),
+        misalignment=_misalignment_from_body_shift(element, factory_kwargs),
         name=element.name,
     )
     extras = _extract_extras(
         element,
         consumed_fields={"length"},
-        consumed_groups={"SolenoidP": {"Ksol"}},
+        consumed_groups={
+            "BodyShiftP": {"x_offset", "y_offset"},
+            "SolenoidP": {"Ksol"},
+        },
     )
     return _attach_pals_extras(converted, extras)
 
@@ -784,6 +781,9 @@ def convert_lattice_from_pals(
     """
     Convert a PALS Lattice, BeamLine, or PALSroot to a Cheetah segment.
 
+    PALS does not encode Cheetah-only simulation settings such as
+    `tracking_method`; set those manually on the returned elements as needed.
+
     :param obj: PALS object to convert. May be a `Lattice`, `BeamLine`,
         `PALSroot`, or individual PALS element.
     :param device: Device to use for converted tensors. If `None`, uses the
@@ -837,6 +837,9 @@ def load_lattice_from_pals(
 ) -> cheetah.Segment:
     """
     Load a Cheetah segment from a PALS file.
+
+    PALS does not encode Cheetah-only simulation settings such as
+    `tracking_method`; set those manually on the returned elements as needed.
 
     :param filename: Path to the PALS file to read.
     :param device: Device to use for converted tensors. If `None`, uses the
