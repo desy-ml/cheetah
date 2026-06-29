@@ -415,16 +415,24 @@ class Beam(ABC, nn.Module):
         """
         return (
             (
-                (self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square())
-                * (
-                    self.sigma_px.square()
-                    - self.cov_pxp.square() / self.sigma_p.square()
+                (
+                    (
+                        self.sigma_x.square()
+                        - self.cov_xp.square() / self.sigma_p.square()
+                    )
+                    * (
+                        self.sigma_px.square()
+                        - self.cov_pxp.square() / self.sigma_p.square()
+                    )
+                    - (
+                        self.cov_xpx
+                        - self.cov_xp * self.cov_pxp / self.sigma_p.square()
+                    ).square()
                 )
-                - (
-                    self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square()
-                ).square()
             )
-        ).sqrt()
+            .clamp_min(torch.finfo(self.sigma_x.dtype).tiny)  # Patch NaN and 0.0 (#639)
+            .sqrt()
+        )
 
     @property
     def normalized_emittance_x(self) -> torch.Tensor:
@@ -462,12 +470,19 @@ class Beam(ABC, nn.Module):
         This is computed with the dispersion correction.
         """
         return (
-            (self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square())
-            * (self.sigma_py.square() - self.cov_pyp.square() / self.sigma_p.square())
-            - (
-                self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
-            ).square()
-        ).sqrt()
+            (
+                (self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square())
+                * (
+                    self.sigma_py.square()
+                    - self.cov_pyp.square() / self.sigma_p.square()
+                )
+                - (
+                    self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
+                ).square()
+            )
+            .clamp_min(torch.finfo(self.sigma_y.dtype).tiny)  # Patch NaN and 0.0 (#639)
+            .sqrt()
+        )
 
     @property
     def normalized_emittance_y(self) -> torch.Tensor:
