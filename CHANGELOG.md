@@ -1,8 +1,20 @@
 # Changelog
 
-## v0.8.2 [🚧 Work in Progress]
+## v0.8.3 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
+
+### 🚀 Features
+
+- Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.8.2](https://github.com/desy-ml/cheetah/releases/tag/v0.8.2) (2026-06-05)
 
 ### 🚀 Features
 
@@ -21,7 +33,7 @@
 
 ### 🐆 Other
 
-### 🌟 First Time Contributors
+- Automate publishing to PyPI when new releases are created on GitHub (see #423) (@jank324)
 
 ## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
 
