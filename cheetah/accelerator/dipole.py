@@ -44,6 +44,9 @@ class Dipole(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Optional dictionary of arbitrary, serializable annotations
+        attached to the element (e.g. control-system PV names). Not used in
+        simulation. See the documentation for suggested templates.
     """
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
@@ -67,11 +70,14 @@ class Dipole(Element):
         ] = "linear",
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ):
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
         self.length = length
 

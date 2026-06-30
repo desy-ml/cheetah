@@ -20,6 +20,24 @@ def test_element_buffer_contents_and_location(element):
         assert not mwe_feature.data_ptr() == clone_feature.data_ptr()
 
 
+@pytest.mark.for_every_element("element")
+def test_element_metadata_is_cloned(element):
+    """
+    Test that cloning an element deep-copies its `metadata` so that the clone has equal
+    content but does not share the same dictionary.
+    """
+    element.metadata = {"control_system": {"pv_base": "A:Q1:"}}
+
+    clone = element.clone()
+
+    assert clone.metadata == element.metadata
+    assert clone.metadata is not element.metadata
+
+    # Mutating the clone's metadata must not affect the original.
+    clone.metadata["control_system"]["pv_base"] = "B:Q2:"
+    assert element.metadata["control_system"]["pv_base"] == "A:Q1:"
+
+
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_beam_buffer_contents_and_location(BeamClass):
     """

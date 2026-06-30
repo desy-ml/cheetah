@@ -36,6 +36,11 @@ def convert_element(element: "cheetah.Element"):
         if feature != "name"
     }
 
+    # `metadata` is not a defining feature (it does not affect simulation), so it is
+    # added explicitly and only when present.
+    if element.metadata:
+        params["metadata"] = element.metadata
+
     return element.name, element.__class__.__name__, params
 
 
@@ -136,8 +141,9 @@ def nontorch2feature(
 ) -> Any:
     """
     Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary.
-    Values of type `str` and `bool` are not converted, because all currently existing
-    `cheetah.Element` subclasses expect these values to not be of type `torch.Tensor`.
+    Values of type `str`, `bool` and `dict` are not converted, because all currently
+    existing `cheetah.Element` subclasses expect these values to not be of type
+    `torch.Tensor`. (`dict` values are used for the free-form `metadata` field.)
 
     :param value: Value to convert to a `torch.Tensor` if necessary.
     :param device: Device to place the lattice elements on.
@@ -147,7 +153,7 @@ def nontorch2feature(
     return (
         value
         if value is None
-        or isinstance(value, (str, bool, int))
+        or isinstance(value, (str, bool, int, dict))
         or isinstance(value, (tuple, list))
         and all(isinstance(v, (str, bool, int)) for v in value)
         else torch.tensor(value, device=device, dtype=dtype)

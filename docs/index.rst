@@ -61,6 +61,7 @@ For more advanced usage, please refer to the in-depth documentation.
 
     accelerator
     converters
+    element_metadata.md
     latticejson
     particles
     track_methods

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 import torch
 
@@ -70,6 +72,45 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
         custom_transfer_map_element.length, reloaded_custom_transfer_map_element.length
     )
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
+
+
+def test_save_and_reload_metadata(tmp_path):
+    """
+    Test that the free-form `metadata` of elements survives a LatticeJSON save/reload
+    round trip, and that elements without metadata do not write a `metadata` field.
+    """
+    metadata = {
+        "control_system": {
+            "pv_base": "A:Q1:",
+            "readbacks": ["MeasCurrent"],
+        }
+    }
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0), name="d1"),
+            cheetah.Quadrupole(
+                length=torch.tensor(0.3),
+                k1=torch.tensor(4.2),
+                name="q1",
+                metadata=metadata,
+            ),
+        ],
+        name="test_segment",
+    )
+
+    filename = str(tmp_path / "metadata_lattice.json")
+    segment.to_lattice_json(filename)
+
+    # The element without metadata must not write a `metadata` field.
+    with open(filename, "r") as f:
+        lattice_dict = json.load(f)
+    assert "metadata" not in lattice_dict["elements"]["d1"][1]
+    assert lattice_dict["elements"]["q1"][1]["metadata"] == metadata
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(filename)
+
+    assert reloaded_segment.elements[0].metadata == {}
+    assert reloaded_segment.elements[1].metadata == metadata
 
 
 @pytest.mark.parametrize(

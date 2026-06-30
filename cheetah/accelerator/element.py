@@ -22,6 +22,11 @@ class Element(ABC, nn.Module):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Optional dictionary of arbitrary, serializable annotations attached
+        to the element (e.g. control-system PV names). This information is *not* used in
+        simulation and may contain any extra data the user wants to store along with the
+        lattice. Cheetah does not enforce a schema; see the documentation for suggested
+        templates.
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """
@@ -30,10 +35,13 @@ class Element(ABC, nn.Module):
         self,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
+
+        self.metadata = metadata if metadata is not None else {}
 
         self.name = name if name is not None else generate_unique_name()
         if not self.is_name_sanitized():
@@ -321,7 +329,8 @@ class Element(ABC, nn.Module):
                     else deepcopy(getattr(self, feature))
                 )
                 for feature in self.defining_features
-            }
+            },
+            metadata=deepcopy(self.metadata),
         )
 
     def split(self, resolution: torch.Tensor) -> list["Element"]:
