@@ -28,8 +28,8 @@ def convert_element(
 ) -> tuple[str, str, dict]:
     """
     Deconstruct an element into its name, class and parameters for saving to JSON. If a
-    property of the element is another element, it is recursively converted
-    and added to `elements_dict`.
+    property of the element is another element, it is recursively converted and added to
+    `elements_dict`.
 
     :param element: Cheetah element
     :param elements_dict: Optional dictionary to accumulate sub-elements.
@@ -58,12 +58,12 @@ def convert_element(
 
 def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
     """
-    Deconstruct a segment into its name, a list of its elements and a dictionary of
-    its element parameters for saving to JSON.
+    Deconstruct a segment into its name, a list of its elements and a dictionary of its
+    element parameters for saving to JSON.
 
     :param segment: Cheetah segment.
-    :return: Tuple of elments and lattices dictionaries found in segment, including
-        the segment itself.
+    :return: Tuple of elments and lattices dictionaries found in segment, including the
+        segment itself.
     """
     elements = {}
     lattices = {}
@@ -153,8 +153,8 @@ def nontorch2feature(
     value: Any, device: torch.device | None = None, dtype: torch.dtype | None = None
 ) -> Any:
     """
-    Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary.
-    Values of type `str` and `bool` are not converted, because all currently existing
+    Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary. Values
+    of type `str` and `bool` are not converted, because all currently existing
     `cheetah.Element` subclasses expect these values to not be of type `torch.Tensor`.
 
     :param value: Value to convert to a `torch.Tensor` if necessary.
