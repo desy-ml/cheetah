@@ -49,11 +49,6 @@ class Superimposed(Element):
         self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
-        self.elements = [
-            base_element_halves[0],
-            superimposed_element,
-            base_element_halves[1],
-        ]
         self._segment = Segment(
             elements=[
                 base_element_halves[0],
