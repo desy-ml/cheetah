@@ -342,7 +342,7 @@ def test_consistency(element, beam_cls):
 
     try:
         actual_outgoing_beam = element.track(incoming_beam)
-    except Exception as e:
+    except AssertionError as e:
         # Expect test to fail if error message contains "is currently only supported for
         # `ParticleBeam`"
         # NOTE: Some elements only warn about their incompatibility with ParameterBeam,
