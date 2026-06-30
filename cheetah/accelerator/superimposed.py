@@ -15,7 +15,7 @@ class Superimposed(Element):
     A segment that represents a superimposed structure in an accelerator, i.e. where one
     element is placed over another at the center of the base element.
 
-    NOTE: Chaning either `base_element` or `superimposed_element` after initialisation
+    NOTE: Changing either `base_element` or `superimposed_element` after initialisation
         will lead to unexpected behaviour. If you need to change either of these
         elements, please create a new instance of `Superimposed`.
 
