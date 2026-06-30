@@ -418,10 +418,7 @@ def test_vectorized_parameter_beam_creation():
     "ElementClass", [cheetah.HorizontalCorrector, cheetah.VerticalCorrector]
 )
 def test_broadcasting_corrector_angles(ElementClass):
-    """
-    Test that broadcasting rules are correctly applied to elements with corrector
-    angles.
-    """
+    """Test that broadcasting rules are correctly applied to corrector angles."""
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
