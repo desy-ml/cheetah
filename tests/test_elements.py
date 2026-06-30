@@ -330,9 +330,6 @@ def test_consistency(element, beam_cls):
         outputs for elements that did not have intentional changes to their tracking
         behaviour.
     """
-    if beam_cls == cheetah.ParameterBeam and element.tracking_method != "linear":
-        pytest.xfail("ParameterBeam does not support drift-kick-drift elements")
-
     element = element.to(torch.float64)
 
     incoming_beam_path = (
@@ -343,6 +340,24 @@ def test_consistency(element, beam_cls):
         if not isinstance(incoming_beam, beam_cls):
             incoming_beam = incoming_beam.as_parameter_beam()
 
+    try:
+        actual_outgoing_beam = element.track(incoming_beam)
+    except Exception as e:
+        # Expect test to fail if error message contains "is currently only supported for
+        # `ParticleBeam`"
+        # NOTE: Some elements only warn about their incompatibility with ParameterBeam,
+        #   and return a best-effort output. In those cases the consistency test should
+        #   still be run, and the output should be compared to the expected output.
+        if (
+            beam_cls == cheetah.ParameterBeam
+            and "is currently only supported for `ParticleBeam`" in str(e)
+        ):
+            pytest.xfail(
+                "The element under test does not support ParameterBeam tracking."
+            )
+        else:
+            raise e
+
     expected_outgoing_beam_path = (
         Path("tests")
         / "resources"
@@ -352,8 +367,6 @@ def test_consistency(element, beam_cls):
     # NOTE: Comment out the following block to generate ground truth expected outputs
     with expected_outgoing_beam_path.open("rb") as f:
         expected_outgoing_beam = pickle.load(f)
-
-    actual_outgoing_beam = element.track(incoming_beam)
 
     # NOTE: Uncomment the following block to generate ground truth expected outputs
     # expected_outgoing_beam_path.parent.mkdir(parents=True, exist_ok=True)
