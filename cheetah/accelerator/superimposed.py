@@ -22,6 +22,7 @@ class Superimposed(Element):
     :param base_element: The base element at the center of which the superimposed
         element is placed.
     :param superimposed_element: Element to be placed at the center of the base element.
+        NOTE: The `superimposed_element` must have a length of zero.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
