@@ -38,6 +38,7 @@ We provide some examples to demonstrate some features of *Cheetah* and show how 
     examples/convert
     examples/optimize_speed
     examples/gradientbased
+    element_metadata.md
 
 Getting Started
 ---------------
@@ -61,7 +62,6 @@ For more advanced usage, please refer to the in-depth documentation.
 
     accelerator
     converters
-    element_metadata.md
     latticejson
     particles
     track_methods
