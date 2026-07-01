@@ -21,19 +21,19 @@ def test_element_buffer_contents_and_location(element):
 
 
 @pytest.mark.for_every_element("element")
-def test_element_metadata_is_cloned(element):
+def test_element_metadata(element):
     """
-    Test that cloning an element deep-copies its `metadata` so that the clone has equal
-    content but does not share the same dictionary.
+    Test that the `metadata` property of cloned elements share the same contents but no
+    the same memory.
     """
     element.metadata = {"control_system": {"pv_base": "A:Q1:"}}
 
     clone = element.clone()
 
-    assert clone.metadata == element.metadata
-    assert clone.metadata is not element.metadata
+    assert clone.metadata == element.metadata  # Equal contents
+    assert clone.metadata is not element.metadata  # Not the same memory
 
-    # Mutating the clone's metadata must not affect the original.
+    # Mutating the clone's metadata must not affect the original
     clone.metadata["control_system"]["pv_base"] = "B:Q2:"
     assert element.metadata["control_system"]["pv_base"] == "A:Q1:"
 
