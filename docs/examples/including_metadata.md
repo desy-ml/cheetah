@@ -40,10 +40,8 @@ By default, `metadata` is an empty dictionary (`{}`).
 
 ## Schema
 
-_Cheetah_ does **not** enforce a schema on `metadata`. You are free to structure it
-however suits your application. The only requirement is that the contents should be
 JSON-serializable (e.g. `str`, `int`, `float`, `bool`, `list` and nested `dict`) so that
-it survives a [LatticeJSON](latticejson.rst) save/load round trip.
+it survives a [LatticeJSON](../latticejson.rst) save/load round trip.
 
 One of the original intents of `metadata` was to store control-system information. In
 the following there are two good practices for structuring control-system metadata for
