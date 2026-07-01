@@ -13,6 +13,8 @@
 
 ### 🐆 Other
 
+- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions (see #627) (@cr-xu)
+
 ### 🌟 First Time Contributors
 
 - Christopher Garnier (@phys-cgarnier)
@@ -28,11 +30,9 @@
 - RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
 - Fix issue, where the first example in the gradient-based optimisation notebook from the docs would not run because the `k1` of the quadrupoles was set to `0.0`, which causes the gradients to be undefined (see #588, #603) (@jank324, @cr-xu)
 - Update the elegant conversion to include missing dipole attributes, converting `hgap` to `gap` and `fint` to `fringe_integral`. (see #624) (@cr-xu)
-- Empty the Beam.UNVECTORIZED_NUM_ATTR_DIMS and only keep non-scalar attributes in ParticleBeam, ParameterBeam respectively. Default UNVECTORIZED_NUM_ATTR_DIMS to 0 in `get_beam_attrs_along_segment`. (see #627) (@cr-xu)
 - Update the `to_openpmd_particlegroup` conversion to use `int` for status and add `detach()` before tensor to numpy conversion. (see #629) (@roussel-ryan)
 - Fix an issue where negative length elements are incorrectly removed by the `Segment.without_inactive_zero_length_elements` method (see #633) (@cr-xu)
 - Patch emittance `NaN` and `0.0` conditions, which caused Twiss parameters to be `NaN` or `inf` under some conditions. (see #639) (@jank324)
-
 
 ### 🐆 Other
 
