@@ -264,8 +264,8 @@ class ParameterBeam(Beam):
             torch.linalg.cholesky(cov[..., :6, :6])
         except RuntimeError as e:
             raise ValueError(
-                "The covariance matrix of the beam must be positive definite. "
-                "Please check the input parameters to ensure that they are consistent."
+                "The covariance matrix of the beam must be positive definite. Please "
+                "check the input parameters to ensure that they are consistent."
             ) from e
 
         return cls(
