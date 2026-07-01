@@ -12,15 +12,22 @@ You can set `metadata` either via the constructor or as an attribute after creat
 
 ```python
 # Metadata added when the element is created
-q1 = cheetah.Quadrupole(
+qf_2124_t1 = cheetah.Quadrupole(
     length=torch.tensor(0.1),
     k1=torch.tensor(4.2),
-    name="Q1",
+    name="QF.2124.T1",
     metadata={
-        "epics": {
-            "pv_base": "A:Q1:",
-            "setpoint": "SetCurrent",
-            "readback": "MeasCurrent",
+        "control_system": {
+            "type": "DOOCS",   # Define global control system protocol
+            "facility": "XFEL.MAGNETS",   # DOOCS facility name
+            "device": "MAGNET.ML",   # DOOCS device name
+            "location": "QF.2124.T1",   # DOOCS location name
+            "properties": {
+                "k1": {   # Name of the corresponding property of the Cheetah element
+                    "setpoint": "K1.SP",   # DOOCS property name for setpoint
+                    "readback": "K1.RBV",   # DOOCS property name for readback
+                },
+            },
         },
     },
 )
