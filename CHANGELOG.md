@@ -8,7 +8,7 @@
 
 - Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
 - A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
-- Add an optional, serializable `metadata` dictionary to all elements (and segments) for storing annotations such as control-system PV names that are not used in simulation. The field is preserved by `clone` and through LatticeJSON save/load. (see #645) (@cr-xu)
+- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #645) (@cr-xu, @jank324, @hespe, @roussel-ryan)
 
 ### 🐛 Bug fixes
 
