@@ -25,7 +25,7 @@ class Element(ABC, nn.Module):
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
-        the lattice. See *insert link to docs page here* for more information.
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """

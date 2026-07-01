@@ -32,7 +32,7 @@ class Segment(Element):
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
-        the lattice. See *insert link to docs page here* for more information.
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
