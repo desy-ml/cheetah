@@ -39,6 +39,7 @@ def test_create_from_parameters():
         cov_pyp=torch.tensor(1e-15),
         cov_taup=torch.tensor(1e-15),
         energy=torch.tensor(1e7),
+        total_charge=torch.tensor(1e-9),
     )
 
     assert beam.num_particles == 1_000_000
