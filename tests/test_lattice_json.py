@@ -97,3 +97,49 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
         for element in reloaded_segment.elements
         for feature in element.defining_tensors
     )
+
+
+def test_save_and_reload_superimposed_element(tmp_path):
+    """
+    Test that saving and reloading a segment containing an element with other elements
+    as its properties (here a `Superimposed` element) works correctly and preserves the
+    recursively nested sub-elements.
+    """
+    base_element = cheetah.Quadrupole(
+        length=torch.tensor(1.0), k1=torch.tensor(4.2), name="quadrupole_base"
+    )
+    superimposed_element = cheetah.BPM(is_active=True, name="bpm_superimposed")
+    superimposed = cheetah.Superimposed(
+        base_element=base_element,
+        superimposed_element=superimposed_element,
+        name="my_superimposed",
+    )
+
+    original_segment = cheetah.Segment([superimposed], name="superimposed_segment")
+
+    original_segment.to_lattice_json(
+        str(tmp_path / "superimposed_lattice.json"),
+        title="Superimposed LatticeJSON",
+        info="Save and reload test with nested elements",
+    )
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "superimposed_lattice.json")
+    )
+
+    assert len(reloaded_segment.elements) == 1
+    reloaded_superimposed = reloaded_segment.elements[0]
+
+    assert isinstance(reloaded_superimposed, cheetah.Superimposed)
+    assert reloaded_superimposed.name == "my_superimposed"
+
+    # Check base element
+    assert isinstance(reloaded_superimposed.base_element, cheetah.Quadrupole)
+    assert reloaded_superimposed.base_element.name == "quadrupole_base"
+    assert torch.allclose(reloaded_superimposed.base_element.length, torch.tensor(1.0))
+    assert torch.allclose(reloaded_superimposed.base_element.k1, torch.tensor(4.2))
+
+    # Check superimposed element
+    assert isinstance(reloaded_superimposed.superimposed_element, cheetah.BPM)
+    assert reloaded_superimposed.superimposed_element.name == "bpm_superimposed"
+    assert reloaded_superimposed.superimposed_element.is_active is True

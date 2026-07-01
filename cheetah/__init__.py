@@ -18,6 +18,7 @@ from .accelerator import (  # noqa: F401
     Sextupole,
     Solenoid,
     SpaceChargeKick,
+    Superimposed,
     TransverseDeflectingCavity,
     Undulator,
     VerticalCorrector,

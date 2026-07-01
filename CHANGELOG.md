@@ -9,6 +9,7 @@
 ### 🚀 Features
 
 - Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
+- A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
 - Implement a new differentiable Cloud-In-Cell (CIC) method for n-D charge deposition and add it to `Screen`. The new method is up to two orders of magnitude faster than the existing and previously only differentiable option `kde` method. (see #625) (@roussel-ryan, @cr-xu, @jank324)
 
 ### 🐛 Bug fixes
@@ -16,6 +17,8 @@
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
+
+- Christopher Garnier (@phys-cgarnier)
 
 ## [v0.8.2](https://github.com/desy-ml/cheetah/releases/tag/v0.8.2) (2026-06-05)
 
