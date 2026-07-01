@@ -29,9 +29,10 @@ class Segment(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
-    :param metadata: Optional dictionary of arbitrary, serializable annotations
-        attached to the element (e.g. control-system PV names). Not used in
-        simulation. See the documentation for suggested templates.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See *insert link to docs page here* for more information.
     """
 
     def __init__(
