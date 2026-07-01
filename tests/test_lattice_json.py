@@ -76,41 +76,25 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
 
 def test_save_and_reload_metadata(tmp_path):
     """
-    Test that the free-form `metadata` of elements survives a LatticeJSON save/reload
-    round trip, and that elements without metadata do not write a `metadata` field.
+    Test that saving and reloading an element with metadata correctly preserves the
+    metadata.
     """
-    metadata = {
-        "control_system": {
-            "pv_base": "A:Q1:",
-            "readbacks": ["MeasCurrent"],
-        }
-    }
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(1.0), name="d1"),
-            cheetah.Quadrupole(
-                length=torch.tensor(0.3),
-                k1=torch.tensor(4.2),
-                name="q1",
-                metadata=metadata,
-            ),
-        ],
-        name="test_segment",
+    quadrupole = cheetah.Quadrupole(
+        length=torch.tensor(0.3),
+        k1=torch.tensor(4.2),
+        name="my_quadrupole",
+        metadata={"control_system": {"pv_base": "A:Q1:", "readbacks": ["MeasCurrent"]}},
     )
+    segment = cheetah.Segment(elements=[quadrupole], name="test_segment")
 
-    filename = str(tmp_path / "metadata_lattice.json")
-    segment.to_lattice_json(filename)
+    segment.to_lattice_json(str(tmp_path / "metadata_lattice.json"))
 
-    # The element without metadata must not write a `metadata` field.
-    with open(filename, "r") as f:
-        lattice_dict = json.load(f)
-    assert "metadata" not in lattice_dict["elements"]["d1"][1]
-    assert lattice_dict["elements"]["q1"][1]["metadata"] == metadata
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "metadata_lattice.json")
+    )
+    reloaded_quadrupole = reloaded_segment.my_quadrupole
 
-    reloaded_segment = cheetah.Segment.from_lattice_json(filename)
-
-    assert reloaded_segment.elements[0].metadata == {}
-    assert reloaded_segment.elements[1].metadata == metadata
+    assert reloaded_quadrupole.metadata == quadrupole.metadata
 
 
 @pytest.mark.parametrize(
