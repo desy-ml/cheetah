@@ -23,30 +23,47 @@ def feature2nontorch(value: Any) -> Any:
     )
 
 
-def convert_element(element: "cheetah.Element"):
+def convert_element(
+    element: "cheetah.Element", elements_dict: dict | None = None
+) -> tuple[str, str, dict]:
     """
-    Deconstruct an element into its name, class and parameters for saving to JSON.
+    Deconstruct an element into its name, class and parameters for saving to JSON. If a
+    property of the element is another element, it is recursively converted and added to
+    `elements_dict`.
 
     :param element: Cheetah element
-    :return: Tuple of element name, element class, and element parameters
+    :param elements_dict: Optional dictionary to accumulate sub-elements.
+    :return: Tuple of element name, element class, and element parameters.
     """
-    params = {
-        feature: feature2nontorch(getattr(element, feature))
-        for feature in element.defining_features
-        if feature != "name"
-    }
+    if elements_dict is None:
+        elements_dict = {}
+
+    params = {}
+    for feature in element.defining_features:
+        if feature == "name":
+            continue
+
+        value = getattr(element, feature)
+        if isinstance(value, cheetah.Element):
+            subelement_name, subelement_class, subelement_params = convert_element(
+                value, elements_dict
+            )
+            elements_dict[subelement_name] = [subelement_class, subelement_params]
+            params[feature] = subelement_name
+        else:
+            params[feature] = feature2nontorch(value)
 
     return element.name, element.__class__.__name__, params
 
 
 def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
     """
-    Deconstruct a segment into its name, a list of its elements and a dictionary of
-    its element parameters for saving to JSON.
+    Deconstruct a segment into its name, a list of its elements and a dictionary of its
+    element parameters for saving to JSON.
 
     :param segment: Cheetah segment.
-    :return: Tuple of elments and lattices dictionaries found in segment, including
-        the segment itself.
+    :return: Tuple of elments and lattices dictionaries found in segment, including the
+        segment itself.
     """
     elements = {}
     lattices = {}
@@ -54,13 +71,14 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
     cell = []
 
     for element in segment.elements:
+        element_name = element.name
         if isinstance(element, cheetah.Segment):
             segment_elements, segment_lattices = convert_segment(element)
 
             elements.update(segment_elements)
             lattices.update(segment_lattices)
         else:
-            element_name, element_class, element_params = convert_element(element)
+            _, element_class, element_params = convert_element(element, elements)
 
             elements[element_name] = [element_class, element_params]
 
@@ -135,8 +153,8 @@ def nontorch2feature(
     value: Any, device: torch.device | None = None, dtype: torch.dtype | None = None
 ) -> Any:
     """
-    Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary.
-    Values of type `str` and `bool` are not converted, because all currently existing
+    Convert a value like a `float`, `int`, etc. to a `torch.Tensor` if necessary. Values
+    of type `str` and `bool` are not converted, because all currently existing
     `cheetah.Element` subclasses expect these values to not be of type `torch.Tensor`.
 
     :param value: Value to convert to a `torch.Tensor` if necessary.
@@ -172,7 +190,11 @@ def parse_element(
     params = lattice_dict["elements"][name][1]
 
     converted_params = {
-        key: nontorch2feature(value, device=device, dtype=dtype)
+        key: (
+            parse_element(value, lattice_dict, device=device, dtype=dtype)
+            if isinstance(value, str) and value in lattice_dict["elements"]
+            else nontorch2feature(value, device=device, dtype=dtype)
+        )
         for key, value in params.items()
     }
 
