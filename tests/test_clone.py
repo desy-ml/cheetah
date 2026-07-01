@@ -23,8 +23,8 @@ def test_element_buffer_contents_and_location(element):
 @pytest.mark.for_every_element("element")
 def test_element_metadata(element):
     """
-    Test that the `metadata` property of cloned elements shares the same contents but not
-    the same memory.
+    Test that the `metadata` property of cloned elements shares the same contents but
+    not the same memory.
     """
     element.metadata = {"control_system": {"pv_base": "A:Q1:"}}
 
