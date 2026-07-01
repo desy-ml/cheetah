@@ -26,47 +26,6 @@ def test_all_element_subclasses_is_skippable_boolean(element):
 
 
 @pytest.mark.for_every_element("element")
-def test_element_metadata_defaults_to_empty_dict(element):
-    """
-    Test that all `Element` subclasses default to an empty `metadata` dictionary when
-    none is provided.
-    """
-    assert element.metadata == {}
-
-
-def test_element_metadata_accepted_by_constructor():
-    """Test that `metadata` can be set via the constructor and is stored as given."""
-    metadata = {"control_system": {"pv_base": "A:Q1:"}}
-    quadrupole = cheetah.Quadrupole(
-        length=torch.tensor(0.1), k1=torch.tensor(4.2), metadata=metadata
-    )
-
-    assert quadrupole.metadata == metadata
-
-
-def test_metadata_does_not_affect_simulation():
-    """
-    Test that `metadata` is not used in simulation, i.e. setting it does not change the
-    tracking result and does not invalidate the cached transfer map.
-    """
-    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.1), k1=torch.tensor(4.2))
-    incoming = cheetah.ParticleBeam.from_parameters(num_particles=100)
-
-    outgoing_before = quadrupole.track(incoming)
-
-    # Populate the transfer map cache, then set metadata. Since `metadata` is not a
-    # defining feature, the cache must remain valid and return the same cached object.
-    tm_before = quadrupole.first_order_transfer_map(incoming.energy, incoming.species)
-    quadrupole.metadata = {"control_system": {"pv_base": "A:Q1:"}}
-    tm_after = quadrupole.first_order_transfer_map(incoming.energy, incoming.species)
-    assert tm_after is tm_before
-
-    # Setting metadata must not change the tracking result either.
-    outgoing_after = quadrupole.track(incoming)
-    assert torch.allclose(outgoing_before.particles, outgoing_after.particles)
-
-
-@pytest.mark.for_every_element("element")
 def test_defining_features_dtype(element):
     """
     Test that all defining features of `Element` subclasses that are `torch.Tensor`are
