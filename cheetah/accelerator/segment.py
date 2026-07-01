@@ -139,7 +139,7 @@ class Segment(Element):
         """
         flattened_elements = []
         for element in self.elements:
-            if isinstance(element, Segment):
+            if hasattr(element, "flattened"):
                 flattened_elements += element.flattened().elements
             else:
                 flattened_elements.append(element)
