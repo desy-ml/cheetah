@@ -31,7 +31,7 @@ class CustomTransferMap(Element):
         self,
         predefined_transfer_map: torch.Tensor,
         length: torch.Tensor | None = None,
-        name: torch.Tensor | None = None,
+        name: str | None = None,
         sanitize_name: bool = False,
         metadata: dict | None = None,
         device: torch.device | None = None,
