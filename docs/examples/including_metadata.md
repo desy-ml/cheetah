@@ -85,7 +85,7 @@ q1.metadata = {
 screen.metadata = {
     "control_system": {
         "pv_base": "CAM1:image1:",   # Common PV prefix
-        "readback":"ArrayData",   # Image PV
+        "readback": "ArrayData",   # Image PV
         "callback": "EnableCallbacks",   # Enable/disable camera data streaming
     },
 }
