@@ -8,8 +8,11 @@
 
 - Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
 - A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
+- Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
 
 ### 🐛 Bug fixes
+
+- Fix an issue where off-diagonal elements are not included in the conversion from `ParameterBeam` to `ParticleBeam` (see #635) (@cr-xu)
 
 ### 🐆 Other
 
@@ -22,7 +25,6 @@
 ### 🚀 Features
 
 - All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
-- Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
 
 ### 🐛 Bug fixes
 
@@ -32,7 +34,6 @@
 - Update the `to_openpmd_particlegroup` conversion to use `int` for status and add `detach()` before tensor to numpy conversion. (see #629) (@roussel-ryan)
 - Fix an issue where negative length elements are incorrectly removed by the `Segment.without_inactive_zero_length_elements` method (see #633) (@cr-xu)
 - Patch emittance `NaN` and `0.0` conditions, which caused Twiss parameters to be `NaN` or `inf` under some conditions. (see #639) (@jank324)
-- Fix an issue where off-diagonal elements are not included in the conversion from `ParameterBeam` to `ParticleBeam` (see #635) (@cr-xu)
 
 ### 🐆 Other
 
