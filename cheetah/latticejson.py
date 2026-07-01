@@ -53,10 +53,9 @@ def convert_element(
         else:
             params[feature] = feature2nontorch(value)
 
-    # `metadata` is not a defining feature (it does not affect simulation), so it is
-    # added explicitly and only when present.
-    if element.metadata:
-        params["metadata"] = element.metadata
+    # Add `metadata` explicitly because it is not in `defining_features` (because it
+    # does not affect the simulation itself)
+    params["metadata"] = element.metadata
 
     return element.name, element.__class__.__name__, params
 
