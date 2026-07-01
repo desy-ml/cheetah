@@ -33,7 +33,7 @@ qf_2124_t1 = cheetah.Quadrupole(
 )
 
 # Metadata added after the element is created
-q1.metadata["comment"] = "This magnet was installed 2026-06-02."
+qf_2124_t1.metadata["comment"] = "This magnet was installed 2026-06-02."
 ```
 
 By default, `metadata` is an empty dictionary (`{}`).
