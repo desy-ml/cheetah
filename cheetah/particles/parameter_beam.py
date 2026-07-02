@@ -748,8 +748,15 @@ class ParameterBeam(Beam):
         return self.cov[..., 3, 4]
 
     @property
-    def defining_features(self):
-        return ["mu", "cov", "energy", "total_charge", "s", "species"]
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "mu",
+            "cov",
+            "energy",
+            "total_charge",
+            "s",
+            "species",
+        ]
 
     def clone(self) -> "ParameterBeam":
         return self.__class__(

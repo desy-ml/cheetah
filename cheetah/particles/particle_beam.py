@@ -1956,8 +1956,8 @@ class ParticleBeam(Beam):
         return (self.energies.square() - self.species.mass_eV.square()).sqrt()
 
     @property
-    def defining_features(self):
-        return [
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
             "particles",
             "energy",
             "particle_charges",

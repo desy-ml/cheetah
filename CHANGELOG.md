@@ -19,7 +19,7 @@
 
 ### 🐆 Other
 
-- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions (see #627) (@cr-xu)
+- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions (see #627) (@cr-xu, @jank324)
 
 ### 🌟 First Time Contributors
 

@@ -556,10 +556,15 @@ class Beam(ABC, nn.Module):
         return self.cov_pyp / self.sigma_p.square()
 
     @property
-    @abstractmethod
     def defining_features(self) -> list[str]:
-        """Defining features of the beam."""
-        raise NotImplementedError
+        """
+        List of features that define the beam. Used to compare beams for equality and to
+        save them.
+
+        NOTE: When overriding this property, make sure to call the super method and
+            extend the list it returns.
+        """
+        return []
 
     @abstractmethod
     def clone(self) -> "Beam":
