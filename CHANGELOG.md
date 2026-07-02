@@ -19,7 +19,7 @@
 
 ### 🐆 Other
 
-- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions (see #627) (@cr-xu, @jank324)
+- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions and add `defining_features` to beam classes like already implemented for element classes. (see #627) (@cr-xu, @jank324)
 
 ### 🌟 First Time Contributors
 
