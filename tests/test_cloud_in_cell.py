@@ -187,10 +187,13 @@ def test_4d_compare_histogramdd(device, dtype):
     """
     factory_kwargs = {"device": device, "dtype": dtype}
 
-    extent = torch.tensor([[0.0, 2.0], [0.0, 3.0], [0.0, 4.0], [0.0, 2.0]], **factory_kwargs)
+    extent = torch.tensor(
+        [[0.0, 2.0], [0.0, 3.0], [0.0, 4.0], [0.0, 2.0]], **factory_kwargs
+    )
     bins = (2, 3, 4, 2)
     positions = torch.tensor(
-        [[0.5, 0.5, 0.5, 0.5], [1.5, 0.5, 0.5, 1.5], [0.5, 2.5, 3.5, 0.5]], **factory_kwargs
+        [[0.5, 0.5, 0.5, 0.5], [1.5, 0.5, 0.5, 1.5], [0.5, 2.5, 3.5, 0.5]],
+        **factory_kwargs
     )
     charges = torch.tensor([1.0, 1.0, 2.0], **factory_kwargs)
 
