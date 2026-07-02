@@ -31,6 +31,8 @@ class Beam(ABC, nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
+    # Number of dimensions (without vectorisation) of multi-dimensional attributes. All
+    # others are assumed to be scalar (when not vectorised).
     UNVECTORIZED_NUM_ATTR_DIMS = {}
 
     @classmethod
