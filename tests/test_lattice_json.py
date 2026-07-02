@@ -72,6 +72,29 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
 
 
+def test_save_and_reload_metadata(tmp_path):
+    """
+    Test that saving and reloading an element with metadata correctly preserves the
+    metadata.
+    """
+    quadrupole = cheetah.Quadrupole(
+        length=torch.tensor(0.3),
+        k1=torch.tensor(4.2),
+        name="my_quadrupole",
+        metadata={"control_system": {"pv_base": "A:Q1:", "readbacks": ["MeasCurrent"]}},
+    )
+    segment = cheetah.Segment(elements=[quadrupole], name="test_segment")
+
+    segment.to_lattice_json(str(tmp_path / "metadata_lattice.json"))
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "metadata_lattice.json")
+    )
+    reloaded_quadrupole = reloaded_segment.my_quadrupole
+
+    assert reloaded_quadrupole.metadata == quadrupole.metadata
+
+
 @pytest.mark.parametrize(
     "desired_dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )

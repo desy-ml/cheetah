@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import reduce
 from pathlib import Path
 from typing import Any, Iterator
@@ -28,6 +29,10 @@ class Segment(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
@@ -35,8 +40,9 @@ class Segment(Element):
         elements: list[Element],
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
     ) -> None:
-        super().__init__(name=name, sanitize_name=sanitize_name)
+        super().__init__(name=name, sanitize_name=sanitize_name, metadata=metadata)
 
         # Segment inherits `length` as a buffer from `Element`. Since `length` is
         # overwritten as a standard Python property, this is misleading when calling
@@ -503,7 +509,9 @@ class Segment(Element):
 
     def clone(self) -> "Segment":
         return Segment(
-            elements=[element.clone() for element in self.elements], name=self.name
+            elements=[element.clone() for element in self.elements],
+            name=self.name,
+            metadata=deepcopy(self.metadata),
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:

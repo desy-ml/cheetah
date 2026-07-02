@@ -38,6 +38,8 @@ We provide some examples to demonstrate some features of *Cheetah* and show how 
     examples/convert
     examples/optimize_speed
     examples/gradientbased
+    examples/including_metadata
+
 
 Getting Started
 ---------------

@@ -12,6 +12,7 @@
 - A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
 - Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
 - Implement a new differentiable Cloud-In-Cell (CIC) method for n-D charge deposition and add it to `Screen`. The new method is up to two orders of magnitude faster than the existing and previously only differentiable option `kde` method. (see #625) (@roussel-ryan, @cr-xu, @jank324)
+- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @hespe, @roussel-ryan)
 
 ### 🐛 Bug fixes
 

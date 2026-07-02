@@ -21,6 +21,16 @@ class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
 
+    NOTE: The three methods for generating the screen's reading differ primarily in
+        terms of performance, with "histogram" being the fastest, followed by
+        "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
+        (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
+        gradients and is incompatible with vectorisation, while both features are
+        supported by "kde" and "cloud-in-cell".
+
+    NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
+        elements.
+
     :param resolution: Resolution of the camera sensor looking at the screen given as
         tuple or list `(width, height)` in pixels.
     :param pixel_size: Size of a pixel on the screen in meters given as a Tensor
@@ -41,16 +51,10 @@ class Screen(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
-
-    NOTE: The three methods for generating the screen's reading differ primarily in
-        terms of performance, with "histogram" being the fastest, followed by
-        "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
-        (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
-        gradients and is incompatible with vectorisation, while both features are
-        supported by "kde" and "cloud-in-cell".
-
-    NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
-        elements.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
@@ -65,11 +69,14 @@ class Screen(Element):
         is_active: bool = False,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
         assert (
             isinstance(resolution, (tuple, list)) and len(resolution) == 2
