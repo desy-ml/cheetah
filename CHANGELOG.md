@@ -8,8 +8,11 @@
 
 - Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
 - A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
+- Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
 
 ### 🐛 Bug fixes
+
+- Fix an issue where off-diagonal elements are not included in the conversion from `ParameterBeam` to `ParticleBeam` (see #635) (@cr-xu)
 
 ### 🐆 Other
 
