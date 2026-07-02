@@ -23,13 +23,21 @@ def test_create_from_parameters():
         sigma_py=torch.tensor(2e-7),
         sigma_tau=torch.tensor(0.000001),
         sigma_p=torch.tensor(0.000001),
-        cov_xpx=torch.tensor(0.0),
-        cov_ypy=torch.tensor(0.0),
-        cov_taup=torch.tensor(0.0),
-        cov_xp=torch.tensor(0.0),
-        cov_pxp=torch.tensor(0.0),
-        cov_yp=torch.tensor(0.0),
-        cov_pyp=torch.tensor(0.0),
+        cov_xpx=torch.tensor(1e-15),
+        cov_xy=torch.tensor(1e-15),
+        cov_xpy=torch.tensor(-1.1e-15),
+        cov_xtau=torch.tensor(1.2e-15),
+        cov_xp=torch.tensor(1e-15),
+        cov_pxy=torch.tensor(-1.3e-15),
+        cov_pxpy=torch.tensor(1.4e-15),
+        cov_pxtau=torch.tensor(-1.5e-15),
+        cov_pxp=torch.tensor(1e-15),
+        cov_ypy=torch.tensor(1e-15),
+        cov_ytau=torch.tensor(1.6e-15),
+        cov_yp=torch.tensor(1e-15),
+        cov_pytau=torch.tensor(-1.7e-15),
+        cov_pyp=torch.tensor(1e-15),
+        cov_taup=torch.tensor(1e-15),
         energy=torch.tensor(1e7),
         total_charge=torch.tensor(1e-9),
     )
@@ -45,6 +53,21 @@ def test_create_from_parameters():
     assert np.isclose(beam.sigma_py.cpu().numpy(), 2e-7)
     assert np.isclose(beam.sigma_tau.cpu().numpy(), 0.000001)
     assert np.isclose(beam.sigma_p.cpu().numpy(), 0.000001)
+    assert np.isclose(beam.cov_xpx.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_xy.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_xpy.cpu().numpy(), -1.1e-15)
+    assert np.isclose(beam.cov_xtau.cpu().numpy(), 1.2e-15)
+    assert np.isclose(beam.cov_xp.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_pxy.cpu().numpy(), -1.3e-15)
+    assert np.isclose(beam.cov_pxpy.cpu().numpy(), 1.4e-15)
+    assert np.isclose(beam.cov_pxtau.cpu().numpy(), -1.5e-15)
+    assert np.isclose(beam.cov_pxp.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_ypy.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_ytau.cpu().numpy(), 1.6e-15)
+    assert np.isclose(beam.cov_yp.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_pytau.cpu().numpy(), -1.7e-15)
+    assert np.isclose(beam.cov_pyp.cpu().numpy(), 1e-15)
+    assert np.isclose(beam.cov_taup.cpu().numpy(), 1e-15)
     assert np.isclose(beam.energy.cpu().numpy(), 1e7)
     assert np.isclose(beam.total_charge.cpu().numpy(), 1e-9)
 
