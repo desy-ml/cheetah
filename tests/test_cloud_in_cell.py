@@ -157,6 +157,57 @@ def test_3d_compare_histogramdd(device, dtype):
     assert cloud_in_cell_result.device.type == histogram_result.device.type
 
 
+@pytest.mark.parametrize(
+    "device, dtype",
+    [
+        (torch.device("cpu"), torch.float32),
+        (torch.device("cpu"), torch.float64),
+        pytest.param(
+            torch.device("cuda"),
+            torch.float32,
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            torch.float32,
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+    ids=["cpu-float32", "cpu-float64", "cuda-float32", "mps-float32"],
+)
+def test_4d_compare_histogramdd(device, dtype):
+    """
+    Test for the case of a 4D histogram, where all particles are exactly at the center
+    of their respective bins that the Cloud-in-Cell charge deposition produces the same
+    result as `torch.histogramdd`.
+    """
+    factory_kwargs = {"device": device, "dtype": dtype}
+
+    extent = torch.tensor([[0.0, 2.0], [0.0, 3.0], [0.0, 4.0], [0.0, 2.0]], **factory_kwargs)
+    bins = (2, 3, 4, 2)
+    positions = torch.tensor(
+        [[0.5, 0.5, 0.5, 0.5], [1.5, 0.5, 0.5, 1.5], [0.5, 2.5, 3.5, 0.5]], **factory_kwargs
+    )
+    charges = torch.tensor([1.0, 1.0, 2.0], **factory_kwargs)
+
+    cloud_in_cell_result = cloud_in_cell_charge_deposition(
+        positions, bins, extent, charges
+    )
+
+    histogram_result, _ = torch.histogramdd(
+        positions, bins=bins, range=extent.flatten().tolist(), weight=charges
+    )
+
+    assert cloud_in_cell_result.shape == histogram_result.shape
+    assert (cloud_in_cell_result == histogram_result).all()
+    assert cloud_in_cell_result.dtype == histogram_result.dtype
+    assert cloud_in_cell_result.device.type == histogram_result.device.type
+
+
 def test_2d_vectorized():
     """
     Test that the vectorised 2D Cloud-in-Cell charge deposition can handle
