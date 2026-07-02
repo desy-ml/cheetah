@@ -148,16 +148,16 @@ def test_generate_uniform_ellipsoid_dtype():
 
     # Check that the dtype is float32 by default
     default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid()
-    beam_attributes = [
-        attr for attr in default_beam.defining_features if attr != "species"
+    non_module_features = [
+        feature for feature in default_beam.defining_features if feature != "species"
     ]
-    for attribute in beam_attributes:
-        assert getattr(default_beam, attribute).dtype == torch.float32
+    for feature in non_module_features:
+        assert getattr(default_beam, feature).dtype == torch.float32
 
     # Verify that all attributes have been changed to float64
     double_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(dtype=torch.float64)
-    for attribute in beam_attributes:
-        assert getattr(double_beam, attribute).dtype == torch.float64
+    for feature in non_module_features:
+        assert getattr(double_beam, feature).dtype == torch.float64
 
 
 @pytest.mark.parametrize(
@@ -186,11 +186,11 @@ def test_generate_uniform_ellipsoid_device(device):
     """
 
     default_beam = cheetah.ParticleBeam.uniform_3d_ellipsoid(device=device)
-    beam_attributes = [
-        attr for attr in default_beam.defining_features if attr != "species"
+    non_module_features = [
+        feature for feature in default_beam.defining_features if feature != "species"
     ]
-    for attribute in beam_attributes:
-        assert getattr(default_beam, attribute).device.type == device.type
+    for feature in non_module_features:
+        assert getattr(default_beam, feature).device.type == device.type
 
 
 def test_generate_uniform_ellipsoid_vectorized():
