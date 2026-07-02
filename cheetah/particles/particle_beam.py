@@ -1955,6 +1955,17 @@ class ParticleBeam(Beam):
         """Momenta of the individual particles."""
         return (self.energies.square() - self.species.mass_eV.square()).sqrt()
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "particles",
+            "energy",
+            "particle_charges",
+            "survival_probabilities",
+            "s",
+            "species",
+        ]
+
     def clone(self) -> "ParticleBeam":
         return self.__class__(
             particles=self.particles.clone(),

@@ -747,6 +747,17 @@ class ParameterBeam(Beam):
     def cov_pytau(self) -> torch.Tensor:
         return self.cov[..., 3, 4]
 
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "mu",
+            "cov",
+            "energy",
+            "total_charge",
+            "s",
+            "species",
+        ]
+
     def clone(self) -> "ParameterBeam":
         return self.__class__(
             mu=self.mu.clone(),
