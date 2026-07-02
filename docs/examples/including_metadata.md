@@ -23,8 +23,8 @@ qf_2124_t1 = cheetah.Quadrupole(
             "device": "MAGNET.ML",   # DOOCS device name
             "location": "QF.2124.T1",   # DOOCS location name
             "properties": {
-                "K1.SP": "k1",   # Map DOOCS setpoint property to Cheetah property
-                "K1.RBV": "k1",   # Map DOOCS readback property to Cheetah property
+                "STRENGTH.SP": "k1",   # Map DOOCS setpoint property to Cheetah property
+                "STRENGTH.RBV": "k1",   # Map DOOCS readback property to Cheetah property
                 "PS_ON": "is_active",   # Map DOOCS on/off property to Cheetah property
             },
         },
@@ -57,8 +57,8 @@ qf_2124_t1.metadata = {
         "device": "MAGNET.ML",   # DOOCS device name
         "location": "QF.2124.T1",   # DOOCS location name
         "properties": {
-            "K1.SP": "k1",   # Map DOOCS setpoint property to Cheetah property
-            "K1.RBV": "k1",   # Map DOOCS readback property to Cheetah property
+            "STRENGTH.SP": "k1",   # Map DOOCS setpoint property to Cheetah property
+            "STRENGTH.RBV": "k1",   # Map DOOCS readback property to Cheetah property
             "PS_ON": "is_active",   # Map DOOCS on/off property to Cheetah property
         },
     },
