@@ -301,7 +301,7 @@ class Element(ABC, nn.Module):
         and to save them.
 
         NOTE: When overriding this property, make sure to call the super method and
-        extend the list it returns.
+            extend the list it returns.
         """
         return (
             ["name"]

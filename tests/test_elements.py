@@ -91,9 +91,12 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     outgoing_beam = segment.track(incoming_beam)
 
     # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        assert getattr(outgoing_beam, attribute).device.type == device.type
-        assert getattr(outgoing_beam, attribute).dtype == dtype
+    non_module_features = [
+        feature for feature in outgoing_beam.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
+        assert getattr(outgoing_beam, feature).device.type == device.type
+        assert getattr(outgoing_beam, feature).dtype == dtype
 
 
 @pytest.mark.for_every_element(
@@ -140,7 +143,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     """
     Test that `Element` subclasses work correctly on various devices and with various
-    dtypes if tracked with a `ParticleBeam`.
+    dtypes if tracked with a `ParameterBeam`.
     """
     segment = cheetah.Segment(
         elements=[
@@ -160,9 +163,12 @@ def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     outgoing_beam = segment.track(incoming_beam)
 
     # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        assert getattr(outgoing_beam, attribute).device.type == device.type
-        assert getattr(outgoing_beam, attribute).dtype == dtype
+    non_module_features = [
+        feature for feature in outgoing_beam.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
+        assert getattr(outgoing_beam, feature).device.type == device.type
+        assert getattr(outgoing_beam, feature).dtype == dtype
 
 
 @pytest.mark.for_every_element("element")
