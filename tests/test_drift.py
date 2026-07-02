@@ -83,10 +83,12 @@ def test_length_as_parameter():
     outgoing_parameter = drift_parameter.track(incoming)
 
     # Check that all properties of the two outgoing beams are same
-    beam_attributes = [attr for attr in outgoing.defining_features if attr != "species"]
-    for attribute in beam_attributes:
+    non_module_features = [
+        feature for feature in outgoing.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
         assert torch.allclose(
-            getattr(outgoing, attribute), getattr(outgoing_parameter, attribute)
+            getattr(outgoing, feature), getattr(outgoing_parameter, feature)
         )
 
 
@@ -106,8 +108,8 @@ def test_inversion_with_negative_length():
     outgoing = segment.track(incoming)
 
     # Check that all properties of the two beams are same
-    beam_attributes = [attr for attr in outgoing.defining_features if attr != "species"]
-    for attribute in beam_attributes:
-        assert torch.allclose(
-            getattr(incoming, attribute), getattr(outgoing, attribute)
-        )
+    non_module_features = [
+        feature for feature in outgoing.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
+        assert torch.allclose(getattr(incoming, feature), getattr(outgoing, feature))
