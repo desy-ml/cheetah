@@ -57,10 +57,9 @@ qf_2124_t1.metadata = {
         "device": "MAGNET.ML",   # DOOCS device name
         "location": "QF.2124.T1",   # DOOCS location name
         "properties": {
-            "k1": {   # Name of the corresponding property of the Cheetah element
-                "setpoint": "K1.SP",   # DOOCS property name for setpoint
-                "readback": "K1.RBV",   # DOOCS property name for readback
-            },
+            "K1.SP": "k1",   # Map DOOCS setpoint property to Cheetah property
+            "K1.RBV": "k1",   # Map DOOCS readback property to Cheetah property
+            "PS_ON": "is_active",   # Map DOOCS on/off property to Cheetah property
         },
     },
 }
