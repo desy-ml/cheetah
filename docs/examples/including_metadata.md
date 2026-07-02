@@ -79,6 +79,16 @@ q1.metadata = {
     },
 }
 
+# Alternative example quadrupole
+q1.metadata = {
+  "control_system": {
+    "pv_base": "A:Q1:PS:"
+    "properties": {
+        "SetCurrent": "k1",   # Map EPICS setpoint PV to Cheetah property
+        "MeasCurrent": "k1",   # Map EPICS readback PV to Cheetah property
+    },
+}
+
 # Example screen with EPICS AreaDetector Module
 screen.metadata = {
     "control_system": {
