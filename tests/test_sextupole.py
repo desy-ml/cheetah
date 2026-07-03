@@ -6,11 +6,14 @@ import torch
 import cheetah
 
 
-def test_compare_sextupole_to_ocelot():
-    """Compare the results of tracking through a sextupole in Cheetah and Ocelot."""
-    length = 0.34
-    k2 = 0.5
-    tilt = 0.1
+def test_compare_sextupole_particle_beam_to_ocelot():
+    """
+    Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
+    `ParticleBeam` with second order effects in Ocelot.
+    """
+    length = 0.11
+    k2 = 87.0
+    tilt = torch.pi / 2
 
     # Track through a sextupole in Cheetah
     incoming = cheetah.ParticleBeam.from_astra(
@@ -39,14 +42,94 @@ def test_compare_sextupole_to_ocelot():
     )
 
 
+def test_compare_sextupole_particle_beam_to_ocelot_vectorized():
+    """
+    Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
+    `ParticleBeam` with second order effects in Ocelot.
+
+    Vectorised version of the test.
+    """
+    length = 0.11
+    k2 = 87.0
+    tilt = torch.pi / 2
+
+    # Track through a sextupole in Cheetah
+    incoming = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_sextupole = cheetah.Sextupole(
+        length=torch.tensor(length),
+        k2=torch.tensor(k2).repeat([2]),
+        tilt=torch.tensor(tilt).repeat([3, 1]),
+    )
+    outgoing_cheetah = cheetah_sextupole.track(incoming)
+
+    # Convert to Ocelot sextupole
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Sextupole(l=length, k2=k2, tilt=tilt)],
+        method={"global": ocelot.SecondTM},
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+    outgoing_ocelot = cheetah.ParticleBeam.from_ocelot(outgoing_p_array)
+
+    # Compare the results
+    assert torch.allclose(
+        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
+    )
+
+
+def test_compare_sextupole_parameter_beam_to_ocelot():
+    """
+    Compare the results of tracking through a sextupole in Cheetah and Ocelot for a
+    `ParameterBeam` with only first order effects in Ocelot.
+    """
+    length = 0.11
+    k2 = 87.0
+    tilt = torch.pi / 2
+
+    # Track through a sextupole in Cheetah
+    incoming = cheetah.ParameterBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_sextupole = cheetah.Sextupole(
+        length=torch.tensor(length),
+        k2=torch.tensor(k2),
+        tilt=torch.tensor(tilt),
+        tracking_method="linear",
+    )
+    outgoing_cheetah = cheetah_sextupole.track(incoming)
+
+    # Convert to Ocelot sextupole
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    lattice = ocelot.MagneticLattice(
+        [ocelot.Sextupole(l=length, k2=k2, tilt=tilt)],
+        method={"global": ocelot.TransferMap},
+    )
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+    outgoing_ocelot = cheetah.ParameterBeam.from_ocelot(outgoing_p_array)
+
+    # Compare the results
+    assert torch.allclose(outgoing_cheetah.mu, outgoing_ocelot.mu, atol=1e-5, rtol=1e-6)
+    assert torch.allclose(
+        outgoing_cheetah.cov, outgoing_ocelot.cov, atol=1e-5, rtol=1e-6
+    )
+
+
 def test_sextupole_as_drift():
     """Test that a sextupole with k2=0 is equivalent to a drift."""
     incoming = cheetah.ParticleBeam.from_astra(
         "tests/resources/ACHIP_EA1_2021.1351.001"
     )
 
-    sextupole = cheetah.Sextupole(length=torch.tensor(0.34), k2=torch.tensor(0.0))
-    drift = cheetah.Drift(length=torch.tensor(0.34))
+    sextupole = cheetah.Sextupole(length=torch.tensor(0.11), k2=torch.tensor(0.0))
+    drift = cheetah.Drift(length=torch.tensor(0.11))
 
     # Track through the sextupole and drift
     sextupole_outgoing = sextupole.track(incoming)
@@ -58,47 +141,48 @@ def test_sextupole_as_drift():
     )
 
 
-def test_sextupole_parameter_beam_particle_beam_agreement():
+def test_sextupole_with_misalignments():
     """
-    Test that the results of tracking an `ParameterBeam` and a `ParticleBeam` through a
-    sextupole agree.
+    Test that tracking a centered beam through a misaligned sextupole gives the same
+    result as tracking a misaligned beam through a centered sextupole (including
+    shifting the output beam to account for the misalignment).
     """
-    # Create a sextupole
-    length = 0.34
-    k2 = 0.5
-    tilt = 0.1
-    sextupole = cheetah.Sextupole(
-        length=torch.tensor(length), k2=torch.tensor(k2), tilt=torch.tensor(tilt)
+    horizontal_misalignment = 1e-3
+
+    # Centered beam through a misaligned sextupole
+    misaligned_sextupole = cheetah.Sextupole(
+        length=torch.tensor(1.0),
+        k2=torch.tensor(0.5),
+        misalignment=torch.tensor([horizontal_misalignment, 0.0]),
+    )
+    centered_incoming_beam = cheetah.ParticleBeam.from_parameters(
+        mu_x=torch.tensor(0.0),
+        sigma_px=torch.tensor(2e-7),
+        sigma_py=torch.tensor(2e-7),
+        sigma_p=torch.tensor(1e-2),
     )
 
-    # Create an incoming ParticleBeam
-    incoming_particle_beam = cheetah.ParticleBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+    centered_through_misaligned_outgoing_beam = misaligned_sextupole.track(
+        centered_incoming_beam
     )
 
-    # Create an incoming ParameterBeam
-    incoming_parameter_beam = cheetah.ParameterBeam.from_astra(
-        "tests/resources/ACHIP_EA1_2021.1351.001"
+    # Misaligned beam through a centered sextupole
+    centered_sextupole = cheetah.Sextupole(
+        length=torch.tensor(1.0), k2=torch.tensor(0.5)
     )
+    misaligned_incoming_beam = centered_incoming_beam.clone()
+    misaligned_incoming_beam.x -= horizontal_misalignment
 
-    # Track through the sextupole
-    outgoing_particle_beam = sextupole.track(incoming_particle_beam)
-    outgoing_parameter_beam = sextupole.track(incoming_parameter_beam)
-
-    outgoing_particle_beam_as_parameter_beam = (
-        outgoing_particle_beam.as_parameter_beam()
+    misaligned_through_centered_outgoing_beam = centered_sextupole.track(
+        misaligned_incoming_beam
     )
+    shifted_misaligned_through_centered_outgoing_beam = (
+        misaligned_through_centered_outgoing_beam.clone()
+    )
+    shifted_misaligned_through_centered_outgoing_beam.x += horizontal_misalignment
 
     # Check that the results are the same
     assert torch.allclose(
-        outgoing_particle_beam_as_parameter_beam.mu,
-        outgoing_parameter_beam.mu,
-        atol=1e-5,
-        rtol=1e-6,
-    )
-    assert torch.allclose(
-        outgoing_particle_beam_as_parameter_beam.cov,
-        outgoing_parameter_beam.cov,
-        atol=1e-5,
-        rtol=1e-6,
+        centered_through_misaligned_outgoing_beam.particles,
+        shifted_misaligned_through_centered_outgoing_beam.particles,
     )

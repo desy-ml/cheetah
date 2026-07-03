@@ -31,6 +31,10 @@ class Beam(ABC, nn.Module):
         :math:`\Delta E = E - E_0`
     """
 
+    # Number of dimensions (without vectorisation) of multi-dimensional attributes. All
+    # others are assumed to be scalar (when not vectorised).
+    UNVECTORIZED_NUM_ATTR_DIMS = {}
+
     @classmethod
     @abstractmethod
     def from_parameters(
@@ -50,8 +54,21 @@ class Beam(ABC, nn.Module):
         cov_xpx: torch.Tensor | None = None,
         cov_ypy: torch.Tensor | None = None,
         cov_taup: torch.Tensor | None = None,
+        cov_xp: torch.Tensor | None = None,
+        cov_pxp: torch.Tensor | None = None,
+        cov_yp: torch.Tensor | None = None,
+        cov_pyp: torch.Tensor | None = None,
+        cov_xy: torch.Tensor | None = None,
+        cov_xpy: torch.Tensor | None = None,
+        cov_xtau: torch.Tensor | None = None,
+        cov_pxy: torch.Tensor | None = None,
+        cov_pxpy: torch.Tensor | None = None,
+        cov_pxtau: torch.Tensor | None = None,
+        cov_ytau: torch.Tensor | None = None,
+        cov_pytau: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -76,14 +93,26 @@ class Beam(ABC, nn.Module):
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
         :param cov_xpx: Covariance between x and px.
-        :param cov_ypy: Covariance between y and yp.
+        :param cov_ypy: Covariance between y and py.
         :param cov_taup: Covariance between tau and p.
+        :param cov_xp: Covariance between x and p.
+        :param cov_pxp: Covariance between px and p.
+        :param cov_yp: Covariance between y and p.
+        :param cov_pyp: Covariance between py and p.
+        :param cov_xy: Covariance between x and y.
+        :param cov_xpy: Covariance between x and py.
+        :param cov_xtau: Covariance between x and tau.
+        :param cov_pxy: Covariance between px and y.
+        :param cov_pxpy: Covariance between px and py.
+        :param cov_pxtau: Covariance between px and tau.
+        :param cov_ytau: Covariance between y and tau.
+        :param cov_pytau: Covariance between py and tau.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
+        :param s: Position along the beamline of the reference particle in meters.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
-            selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         raise NotImplementedError
 
@@ -100,8 +129,13 @@ class Beam(ABC, nn.Module):
         sigma_tau: torch.Tensor | None = None,
         sigma_p: torch.Tensor | None = None,
         cov_taup: torch.Tensor | None = None,
+        dispersion_x: torch.Tensor | None = None,
+        dispersion_px: torch.Tensor | None = None,
+        dispersion_y: torch.Tensor | None = None,
+        dispersion_py: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
+        s: torch.Tensor | None = None,
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -120,12 +154,16 @@ class Beam(ABC, nn.Module):
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
         :param cov_taup: Covariance between tau and p.
+        :param dispersion_x: Dispersion in x direction in meters.
+        :param dispersion_px: Dispersion in px direction, dimensionless.
+        :param dispersion_y: Dispersion in y direction in meters.
+        :param dispersion_py: Dispersion in py direction, dimensionless.
         :param energy: Energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam. Defaults to electron.
-        :param device: Device to create the beam on. If set to `"auto"` a CUDA GPU is
-            selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the beam.
+        :param s: Position along the beamline of the reference particle in meters.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
         raise NotImplementedError
 
@@ -159,6 +197,21 @@ class Beam(ABC, nn.Module):
         sigma_py: torch.Tensor | None = None,
         sigma_tau: torch.Tensor | None = None,
         sigma_p: torch.Tensor | None = None,
+        cov_xpx: torch.Tensor | None = None,
+        cov_ypy: torch.Tensor | None = None,
+        cov_taup: torch.Tensor | None = None,
+        cov_xp: torch.Tensor | None = None,
+        cov_pxp: torch.Tensor | None = None,
+        cov_yp: torch.Tensor | None = None,
+        cov_pyp: torch.Tensor | None = None,
+        cov_xy: torch.Tensor | None = None,
+        cov_xpy: torch.Tensor | None = None,
+        cov_xtau: torch.Tensor | None = None,
+        cov_pxy: torch.Tensor | None = None,
+        cov_pxpy: torch.Tensor | None = None,
+        cov_pxtau: torch.Tensor | None = None,
+        cov_ytau: torch.Tensor | None = None,
+        cov_pytau: torch.Tensor | None = None,
         energy: torch.Tensor | None = None,
         total_charge: torch.Tensor | None = None,
         species: Species | None = None,
@@ -184,79 +237,28 @@ class Beam(ABC, nn.Module):
             in meters.
         :param sigma_p: Sigma of the particle distribution in p direction,
             dimensionless.
+        :param cov_xpx: Covariance between x and px.
+        :param cov_ypy: Covariance between y and py.
+        :param cov_taup: Covariance between tau and p.
+        :param cov_xp: Covariance between x and p.
+        :param cov_pxp: Covariance between px and p.
+        :param cov_yp: Covariance between y and p.
+        :param cov_pyp: Covariance between py and p.
+        :param cov_xy: Covariance between x and y.
+        :param cov_xpy: Covariance between x and py.
+        :param cov_xtau: Covariance between x and tau.
+        :param cov_pxy: Covariance between px and y.
+        :param cov_pxpy: Covariance between px and py.
+        :param cov_pxtau: Covariance between px and tau.
+        :param cov_ytau: Covariance between y and tau.
+        :param cov_pytau: Covariance between py and tau.
         :param energy: Reference energy of the beam in eV.
         :param total_charge: Total charge of the beam in C.
         :param species: Particle species of the beam.
-        :param device: Device to create the transformed beam on. If set to `"auto"` a
-            CUDA GPU is selected if available. The CPU is used otherwise.
-        :param dtype: Data type of the transformed beam.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
         """
-        device = device if device is not None else self.mu_x.device
-        dtype = dtype if dtype is not None else self.mu_x.dtype
-
-        # Figure out vector dimensions of the original beam and check that passed
-        # arguments have the same vector dimensions.
-        shape = self.mu_x.shape
-        not_nones = [
-            argument
-            for argument in [
-                mu_x,
-                mu_px,
-                mu_y,
-                mu_py,
-                mu_tau,
-                mu_p,
-                sigma_x,
-                sigma_px,
-                sigma_y,
-                sigma_py,
-                sigma_tau,
-                sigma_p,
-                energy,
-                total_charge,
-            ]
-            if argument is not None
-        ]
-        if len(not_nones) > 0:
-            assert all(
-                argument.shape == shape for argument in not_nones
-            ), "Arguments must have the same shape."
-
-        mu_x = mu_x if mu_x is not None else self.mu_x
-        mu_px = mu_px if mu_px is not None else self.mu_px
-        mu_y = mu_y if mu_y is not None else self.mu_y
-        mu_py = mu_py if mu_py is not None else self.mu_py
-        mu_tau = mu_tau if mu_tau is not None else self.mu_tau
-        mu_p = mu_p if mu_p is not None else self.mu_p
-        sigma_x = sigma_x if sigma_x is not None else self.sigma_x
-        sigma_px = sigma_px if sigma_px is not None else self.sigma_px
-        sigma_y = sigma_y if sigma_y is not None else self.sigma_y
-        sigma_py = sigma_py if sigma_py is not None else self.sigma_py
-        sigma_tau = sigma_tau if sigma_tau is not None else self.sigma_tau
-        sigma_p = sigma_p if sigma_p is not None else self.sigma_p
-        energy = energy if energy is not None else self.energy
-        total_charge = total_charge if total_charge is not None else self.total_charge
-        species = species if species is not None else self.species
-
-        return self.__class__.from_parameters(
-            mu_x=mu_x,
-            mu_px=mu_px,
-            mu_y=mu_y,
-            mu_py=mu_py,
-            mu_tau=mu_tau,
-            mu_p=mu_p,
-            sigma_x=sigma_x,
-            sigma_px=sigma_px,
-            sigma_y=sigma_y,
-            sigma_py=sigma_py,
-            sigma_tau=sigma_tau,
-            sigma_p=sigma_p,
-            energy=energy,
-            total_charge=total_charge,
-            species=species,
-            device=device,
-            dtype=dtype,
-        )
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -327,14 +329,15 @@ class Beam(ABC, nn.Module):
     def relativistic_beta(self) -> torch.Tensor:
         """Reference relativistic beta of the beam."""
         relativistic_beta = torch.ones_like(self.relativistic_gamma)
-        relativistic_beta[torch.abs(self.relativistic_gamma) > 0] = torch.sqrt(
-            1 - 1 / (self.relativistic_gamma[self.relativistic_gamma > 0] ** 2)
-        )
+        relativistic_beta[self.relativistic_gamma.abs() > 0] = (
+            1
+            - self.relativistic_gamma[self.relativistic_gamma > 0].square().reciprocal()
+        ).sqrt()
         return relativistic_beta
 
     @property
     def p0c(self) -> torch.Tensor:
-        """Get the reference momentum * speed of light in eV."""
+        """Reference momentum * speed of light in eV."""
         return self.relativistic_beta * self.relativistic_gamma * self.species.mass_eV
 
     @property
@@ -354,13 +357,112 @@ class Beam(ABC, nn.Module):
         raise NotImplementedError
 
     @property
+    @abstractmethod
+    def cov_xp(self) -> torch.Tensor:
+        """Covariance of between `x` and `p`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxp(self) -> torch.Tensor:
+        """Covariance between `px` and `p`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_yp(self) -> torch.Tensor:
+        """Covariance between `y` and `p`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pyp(self) -> torch.Tensor:
+        """Covariance between `py` and `p`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_xy(self) -> torch.Tensor:
+        """Covariance between `x` and `y`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_xpy(self) -> torch.Tensor:
+        """Covariance between `x` and `py`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_xtau(self) -> torch.Tensor:
+        """Covariance between `x` and `tau`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxy(self) -> torch.Tensor:
+        """Covariance between `px` and `y`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxpy(self) -> torch.Tensor:
+        """Covariance between `px` and `py`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pxtau(self) -> torch.Tensor:
+        """Covariance between `px` and `tau`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_ytau(self) -> torch.Tensor:
+        """Covariance between `y` and `tau`."""
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def cov_pytau(self) -> torch.Tensor:
+        """Covariance between `py` and `tau`."""
+        raise NotImplementedError
+
+    @property
+    def projected_emittance_x(self) -> torch.Tensor:
+        """
+        Projected emittance of the beam in x direction in m.
+        This is determined from the beam sizes without dispersion correction.
+        """
+        return (
+            self.sigma_x.square() * self.sigma_px.square() - self.cov_xpx.square()
+        ).sqrt()
+
+    @property
     def emittance_x(self) -> torch.Tensor:
-        """Emittance of the beam in x direction in m."""
-        return torch.sqrt(
-            torch.clamp_min(
-                self.sigma_x**2 * self.sigma_px**2 - self.cov_xpx**2,
-                torch.finfo(self.sigma_x.dtype).tiny,
+        """
+        Uncoupled betatron emittance of the beam in x direction in m.
+        This is computed with the dispersion correction.
+        """
+        return (
+            (
+                (
+                    (
+                        self.sigma_x.square()
+                        - self.cov_xp.square() / self.sigma_p.square()
+                    )
+                    * (
+                        self.sigma_px.square()
+                        - self.cov_pxp.square() / self.sigma_p.square()
+                    )
+                    - (
+                        self.cov_xpx
+                        - self.cov_xp * self.cov_pxp / self.sigma_p.square()
+                    ).square()
+                )
             )
+            .clamp_min(torch.finfo(self.sigma_x.dtype).tiny)  # Patch NaN and 0.0 (#639)
+            .sqrt()
         )
 
     @property
@@ -371,21 +473,46 @@ class Beam(ABC, nn.Module):
     @property
     def beta_x(self) -> torch.Tensor:
         """Beta function in x direction in meters."""
-        return self.sigma_x**2 / self.emittance_x
+        return (
+            self.sigma_x.square() - self.cov_xp.square() / self.sigma_p.square()
+        ) / self.emittance_x
 
     @property
     def alpha_x(self) -> torch.Tensor:
         """Alpha function in x direction, dimensionless."""
-        return -self.cov_xpx / self.emittance_x
+        return (
+            -(self.cov_xpx - self.cov_xp * self.cov_pxp / self.sigma_p.square())
+            / self.emittance_x
+        )
+
+    @property
+    def projected_emittance_y(self) -> torch.Tensor:
+        """Projected emittance of the beam in y direction in m.
+        This is determined from the beam sizes without dispersion correction.
+        """
+        return (
+            self.sigma_y.square() * self.sigma_py.square() - self.cov_ypy.square()
+        ).sqrt()
 
     @property
     def emittance_y(self) -> torch.Tensor:
-        """Emittance of the beam in y direction in m."""
-        return torch.sqrt(
-            torch.clamp_min(
-                self.sigma_y**2 * self.sigma_py**2 - self.cov_ypy**2,
-                torch.finfo(self.sigma_y.dtype).tiny,
+        """
+        Uncoupled betatron emittance of the beam in y direction in m.
+        This is computed with the dispersion correction.
+        """
+        return (
+            (
+                (self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square())
+                * (
+                    self.sigma_py.square()
+                    - self.cov_pyp.square() / self.sigma_p.square()
+                )
+                - (
+                    self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square()
+                ).square()
             )
+            .clamp_min(torch.finfo(self.sigma_y.dtype).tiny)  # Patch NaN and 0.0 (#639)
+            .sqrt()
         )
 
     @property
@@ -396,12 +523,48 @@ class Beam(ABC, nn.Module):
     @property
     def beta_y(self) -> torch.Tensor:
         """Beta function in y direction in meters."""
-        return self.sigma_y**2 / self.emittance_y
+        return (
+            self.sigma_y.square() - self.cov_yp.square() / self.sigma_p.square()
+        ) / self.emittance_y
 
     @property
     def alpha_y(self) -> torch.Tensor:
         """Alpha function in y direction, dimensionless."""
-        return -self.cov_ypy / self.emittance_y
+        return (
+            -(self.cov_ypy - self.cov_yp * self.cov_pyp / self.sigma_p.square())
+            / self.emittance_y
+        )
+
+    @property
+    def dispersion_x(self) -> torch.Tensor:
+        """Dispersion of the beam in x direction in m."""
+        return self.cov_xp / self.sigma_p.square()
+
+    @property
+    def dispersion_px(self) -> torch.Tensor:
+        """Dispersion of the beam in px direction, dimensionless."""
+        return self.cov_pxp / self.sigma_p.square()
+
+    @property
+    def dispersion_y(self) -> torch.Tensor:
+        """Dispersion of the beam in y direction in m."""
+        return self.cov_yp / self.sigma_p.square()
+
+    @property
+    def dispersion_py(self) -> torch.Tensor:
+        """Dispersion of the beam in py direction, dimensionless."""
+        return self.cov_pyp / self.sigma_p.square()
+
+    @property
+    def defining_features(self) -> list[str]:
+        """
+        List of features that define the beam. Used to compare beams for equality and to
+        save them.
+
+        NOTE: When overriding this property, make sure to call the super method and
+            extend the list it returns.
+        """
+        return []
 
     @abstractmethod
     def clone(self) -> "Beam":

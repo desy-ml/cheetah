@@ -6,6 +6,7 @@ import cheetah
 from .resources import ARESlatticeStage3v1_9 as ares
 
 
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
 def test_save_and_reload_ares_example(tmp_path):
     """
     Test that saving Cheetah `Segment` to LatticeJSON works and that it can be reloaded
@@ -71,7 +72,32 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
 
 
-@pytest.mark.parametrize("desired_dtype", [torch.float32, torch.float64])
+def test_save_and_reload_metadata(tmp_path):
+    """
+    Test that saving and reloading an element with metadata correctly preserves the
+    metadata.
+    """
+    quadrupole = cheetah.Quadrupole(
+        length=torch.tensor(0.3),
+        k1=torch.tensor(4.2),
+        name="my_quadrupole",
+        metadata={"control_system": {"pv_base": "A:Q1:", "readbacks": ["MeasCurrent"]}},
+    )
+    segment = cheetah.Segment(elements=[quadrupole], name="test_segment")
+
+    segment.to_lattice_json(str(tmp_path / "metadata_lattice.json"))
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "metadata_lattice.json")
+    )
+    reloaded_quadrupole = reloaded_segment.my_quadrupole
+
+    assert reloaded_quadrupole.metadata == quadrupole.metadata
+
+
+@pytest.mark.parametrize(
+    "desired_dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     """
     Test that the lattice JSON import correctly interprets its optional dtype parameter.
@@ -90,7 +116,53 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     )
 
     assert all(
-        buffer.dtype == desired_dtype
+        getattr(element, feature).dtype == desired_dtype
         for element in reloaded_segment.elements
-        for buffer in element.buffers()
+        for feature in element.defining_tensors
     )
+
+
+def test_save_and_reload_superimposed_element(tmp_path):
+    """
+    Test that saving and reloading a segment containing an element with other elements
+    as its properties (here a `Superimposed` element) works correctly and preserves the
+    recursively nested sub-elements.
+    """
+    base_element = cheetah.Quadrupole(
+        length=torch.tensor(1.0), k1=torch.tensor(4.2), name="quadrupole_base"
+    )
+    superimposed_element = cheetah.BPM(is_active=True, name="bpm_superimposed")
+    superimposed = cheetah.Superimposed(
+        base_element=base_element,
+        superimposed_element=superimposed_element,
+        name="my_superimposed",
+    )
+
+    original_segment = cheetah.Segment([superimposed], name="superimposed_segment")
+
+    original_segment.to_lattice_json(
+        str(tmp_path / "superimposed_lattice.json"),
+        title="Superimposed LatticeJSON",
+        info="Save and reload test with nested elements",
+    )
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "superimposed_lattice.json")
+    )
+
+    assert len(reloaded_segment.elements) == 1
+    reloaded_superimposed = reloaded_segment.elements[0]
+
+    assert isinstance(reloaded_superimposed, cheetah.Superimposed)
+    assert reloaded_superimposed.name == "my_superimposed"
+
+    # Check base element
+    assert isinstance(reloaded_superimposed.base_element, cheetah.Quadrupole)
+    assert reloaded_superimposed.base_element.name == "quadrupole_base"
+    assert torch.allclose(reloaded_superimposed.base_element.length, torch.tensor(1.0))
+    assert torch.allclose(reloaded_superimposed.base_element.k1, torch.tensor(4.2))
+
+    # Check superimposed element
+    assert isinstance(reloaded_superimposed.superimposed_element, cheetah.BPM)
+    assert reloaded_superimposed.superimposed_element.name == "bpm_superimposed"
+    assert reloaded_superimposed.superimposed_element.is_active is True

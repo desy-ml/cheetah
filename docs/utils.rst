@@ -11,6 +11,10 @@ Utils
     :members:
     :undoc-members:
 
+.. automodule:: utils.elementwise_linspace
+    :members:
+    :undoc-members:
+
 .. automodule:: utils.kde
     :members:
     :undoc-members:
@@ -19,6 +23,14 @@ Utils
     :members:
     :undoc-members:
 
+.. automodule:: utils.statistics
+    :members:
+    :undoc-members:
+
 .. automodule:: utils.unique_name_generator
+    :members:
+    :undoc-members:
+
+.. automodule:: utils.vector
     :members:
     :undoc-members:
