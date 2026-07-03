@@ -1,4 +1,4 @@
-furo
-ipykernel
-myst-parser
-nbsphinx
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+mkdocs-jupyter

@@ -1,0 +1,69 @@
+site_name: Cheetah
+site_url: https://desy-ml.github.io/cheetah/
+repo_name: desy-ml/cheetah
+repo_url: https://github.com/desy-ml/cheetah
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  logo: _static/logo.png
+  favicon: _static/logo.png
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.select
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
+      ignore: ["*.py", "*.json", "*.glb", ".gitignore"]
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [.]
+          options:
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: true
+            show_object_full_path: false
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - admonition
+  - md_in_html
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Welcome: index.md
+  - Examples:
+      - Simple: examples/simple.ipynb
+      - Convert: examples/convert.ipynb
+      - Optimize Speed: examples/optimize_speed.ipynb
+      - Gradient-based: examples/gradientbased.ipynb
+  - Getting Started:
+      - Coordinate System: coordinate_system.md
+  - Documentation:
+      - Accelerator: accelerator.md
+      - Converters: converters.md
+      - LatticeJSON: latticejson.md
+      - Particles: particles.md
+      - Track Methods: track_methods.md
+      - Utils: utils.md

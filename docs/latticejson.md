@@ -1,0 +1,3 @@
+# LatticeJSON
+
+::: cheetah.latticejson

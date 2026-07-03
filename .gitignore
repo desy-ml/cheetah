@@ -16,5 +16,7 @@ build
 distributions
 
 docs/_build
+site/
+.cache/
 
 dev*
