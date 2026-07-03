@@ -52,14 +52,14 @@ These pages explain how to get started with *Cheetah*.
     
     coordinate_system.md
 
-Documentation
+API Reference
 -------------
 
-For more advanced usage, please refer to the in-depth documentation.
+For a complete overview of the *Cheetah* API, please refer to the following pages.
 
 .. toctree::
     :maxdepth: 1
-    :caption: Documentation
+    :caption: API Reference
 
     accelerator
     converters
