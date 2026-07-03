@@ -1,0 +1,40 @@
+/* Custom styling for mkdocstrings output */
+
+div.doc-contents:not(.first) {
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--md-primary-color);
+  margin-bottom: 2rem;
+  margin-top: 0.5rem;
+}
+
+/* Light mode override for border */
+[data-md-color-scheme="default"] div.doc-contents:not(.first) {
+  border-left: 3px solid #009688; /* Teal primary */
+}
+
+/* Dark mode override for border */
+[data-md-color-scheme="slate"] div.doc-contents:not(.first) {
+  border-left: 3px solid #aeea00; /* Lime accent */
+}
+
+.doc-heading {
+  margin-top: 2rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Style parameter and attribute tables inside docstrings */
+.doc-contents table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.doc-contents th, .doc-contents td {
+  padding: 0.5rem 0.75rem !important;
+  border: 1px solid var(--md-typeset-table-color, #e0e0e0);
+}
+
+.doc-contents th {
+  background-color: var(--md-code-bg-color, #f5f5f5);
+  font-weight: bold;
+}

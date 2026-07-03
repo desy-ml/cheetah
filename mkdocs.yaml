@@ -9,10 +9,43 @@ theme:
   logo: _static/logo.png
   favicon: _static/logo.png
   features:
-    - navigation.sections
-    - navigation.expand
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
     - content.code.copy
     - content.code.select
+    - content.tooltips
+    - navigation.expand
+    - navigation.footer
+    - navigation.instant.preview
+    - navigation.path
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: lime
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
 
 plugins:
   - search
@@ -28,8 +61,10 @@ plugins:
           options:
             show_source: true
             show_root_heading: true
+            show_root_toc_entry: true
             show_root_full_path: true
             show_object_full_path: false
+            docstring_style: google
 
 markdown_extensions:
   - pymdownx.arithmatex:
@@ -50,6 +85,9 @@ markdown_extensions:
 extra_javascript:
   - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra_css:
+  - css/mkdocstrings.css
 
 nav:
   - Welcome: index.md
