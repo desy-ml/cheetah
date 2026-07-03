@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.8.3 [🚧 Work in Progress]
+## v0.8.4 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
 
 ### 🚨 Breaking Changes
 
