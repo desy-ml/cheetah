@@ -61,7 +61,7 @@ nav:
       - Including Metadata: examples/including_metadata.md
   - Getting Started:
       - Coordinate System: coordinate_system.md
-  - Documentation:
+  - API Reference:
       - Accelerator: accelerator.md
       - Converters: converters.md
       - LatticeJSON: latticejson.md
