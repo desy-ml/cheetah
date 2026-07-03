@@ -1,13 +1,14 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import DirtyNameWarning, NoVisualizationWarning, UniqueNameGenerator
+from cheetah.utils import DirtyNameWarning, UniqueNameGenerator, VisualizationWarning
 from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -21,12 +22,19 @@ class Element(ABC, nn.Module):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
         self,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
@@ -45,6 +53,8 @@ class Element(ABC, nn.Module):
                     category=DirtyNameWarning,
                     stacklevel=2,
                 )
+
+        self.metadata = metadata if metadata is not None else {}
 
         self.register_buffer("length", torch.tensor(0.0, device=device, dtype=dtype))
 
@@ -155,7 +165,7 @@ class Element(ABC, nn.Module):
         if isinstance(incoming, ParameterBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-            new_cov = tm @ incoming.cov @ tm.transpose(-2, -1)
+            new_cov = tm @ incoming.cov @ tm.mT
             new_s = incoming.s + self.length
             return ParameterBeam(
                 new_mu,
@@ -167,7 +177,7 @@ class Element(ABC, nn.Module):
             )
         elif isinstance(incoming, ParticleBeam):
             tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-            new_particles = incoming.particles @ tm.transpose(-2, -1)
+            new_particles = incoming.particles @ tm.mT
             new_s = incoming.s + self.length
             return ParticleBeam(
                 new_particles,
@@ -256,8 +266,17 @@ class Element(ABC, nn.Module):
         """
         raise NotImplementedError
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Check if attribute even exists needed because `__setattr__` can be called
+        # during the initialisation of the object.
+        if hasattr(self, "defining_features") and name in self.defining_features:
+            self._cached_first_order_transfer_map = None
+            self._cached_second_order_transfer_map = None
+
+        return super().__setattr__(name, value)
+
     def register_buffer_or_parameter(
-        self, name: str, value: torch.Tensor | nn.Parameter
+        self, name: str, value: torch.Tensor | nn.Parameter, persistent: bool = True
     ) -> None:
         """
         Register a buffer or parameter with the given name and value. Automatically
@@ -267,23 +286,28 @@ class Element(ABC, nn.Module):
         :param name: Name of the buffer or parameter.
         :param value: Value of the buffer or parameter.
         :param default: Default value of the buffer.
+        :param persistent: Whether the buffer or parameter should be persistent. NOTE:
+            This is only relevant for buffers, as parameters are always persistent.
         """
         if isinstance(value, nn.Parameter):
             self.register_parameter(name, value)
         else:
-            self.register_buffer(name, value)
+            self.register_buffer(name, value, persistent)
 
     @property
-    @abstractmethod
     def defining_features(self) -> list[str]:
         """
         List of features that define the element. Used to compare elements for equality
         and to save them.
 
         NOTE: When overriding this property, make sure to call the super method and
-        extend the list it returns.
+            extend the list it returns.
         """
-        return ["name"]
+        return (
+            ["name"]
+            if len(self.supported_tracking_methods) == 1
+            else ["name", "tracking_method"]
+        )
 
     @property
     def defining_tensors(self) -> list[str]:
@@ -304,7 +328,8 @@ class Element(ABC, nn.Module):
                     else deepcopy(getattr(self, feature))
                 )
                 for feature in self.defining_features
-            }
+            },
+            metadata=deepcopy(self.metadata),
         )
 
     def split(self, resolution: torch.Tensor) -> list["Element"]:
@@ -355,7 +380,10 @@ class Element(ABC, nn.Module):
         raise NotImplementedError
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
     ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
         """
         Return a 3D mesh representation of the element at position `s`.
@@ -367,6 +395,8 @@ class Element(ABC, nn.Module):
             or a dictionary mapping element names and types to their respective
             scaling factors. Names have precedence over types. The `"*"` key can be used
             to specify a default scaling factor.
+        :param asset_version: The branch or tag name for the version of the 3D assets
+            repository to use.
         :param show_download_progress: If `True`, show a progress bar during the
             download of the mesh if it is not cached.
         :return: Tuple of a 3D mesh representation of the element, oriented with the
@@ -378,13 +408,14 @@ class Element(ABC, nn.Module):
         # Import only here because most people will not need it
         import trimesh
 
-        from cheetah.utils import cache
+        from cheetah.utils import assets
 
         snake_case_class_name = "".join(
             "_" + c.lower() if c.isupper() else c for c in self.__class__.__name__
         ).lstrip("_")
-        mesh = cache.load_3d_asset(
+        mesh = assets.load_3d_asset(
             f"{snake_case_class_name}.glb",
+            branch_or_tag=asset_version,
             show_download_progress=show_download_progress,
         )
 
@@ -392,7 +423,7 @@ class Element(ABC, nn.Module):
             warnings.warn(
                 f"Could not load 3D mesh for element {self.name} of type "
                 f"{self.__class__.__name__}. The element will not be visualised.",
-                category=NoVisualizationWarning,
+                category=VisualizationWarning,
                 stacklevel=2,
             )
             output_transform = trimesh.transformations.translation_matrix(
@@ -404,10 +435,22 @@ class Element(ABC, nn.Module):
         # positioned correctly after scaling.
 
         # Scale element to the correct length (only if the mesh has a length)
-        if abs(self.length.item()) > 0.0:
+        # Raise a warning if the element's length is zero and it is not one of the
+        # element types that are expected to have a length of zero, meaning the element
+        # would be scaled incorrectly.
+        if self.length.abs() > 0.0:
             _, _, mesh_length = mesh.extents
             scale_factor_for_correct_length = self.length.item() / mesh_length
             mesh.apply_scale(scale_factor_for_correct_length)
+        elif self.length == 0.0 and "length" in self.defining_features:
+            warnings.warn(
+                f"Element {self.name} of type {self.__class__.__name__} has a length of"
+                " zero. The mesh is therefore scaled to a default size and does not "
+                "accurately represent the element's length. If this is intentional, you"
+                " can ignore this warning.",
+                category=VisualizationWarning,
+                stacklevel=2,
+            )
 
         # Apply scaling to make the mesh look cuter
         scale_factor_for_cuteness = 1.0
@@ -431,4 +474,8 @@ class Element(ABC, nn.Module):
         return mesh, output_transform
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"
+        feature_list = [
+            f"{feature}={repr(getattr(self, feature))}"
+            for feature in self.defining_features
+        ]
+        return f"{self.__class__.__name__}({', '.join(feature_list)})"

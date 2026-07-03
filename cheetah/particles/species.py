@@ -45,6 +45,7 @@ class Species(nn.Module):
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
         if name in self.__class__.known:  # Known particle species
@@ -60,17 +61,14 @@ class Species(nn.Module):
             self.name = name
             self.register_buffer_or_parameter(
                 "num_elementary_charges",
-                torch.as_tensor(
+                torch.tensor(
                     self.__class__.known[name]["num_elementary_charges"],
-                    device=device,
-                    dtype=dtype,
+                    **factory_kwargs,
                 ),
             )
             self.register_buffer_or_parameter(
                 "mass_eV",
-                torch.as_tensor(
-                    self.__class__.known[name]["mass_eV"], device=device, dtype=dtype
-                ),
+                torch.tensor(self.__class__.known[name]["mass_eV"], **factory_kwargs),
             )
         else:  # Custom particle species
             assert any(
@@ -88,18 +86,9 @@ class Species(nn.Module):
             self.name = name
             self.register_buffer_or_parameter(
                 "num_elementary_charges",
-                torch.as_tensor(
-                    num_elementary_charges or charge_coulomb / elementary_charge,
-                    device=device,
-                    dtype=dtype,
-                ),
+                num_elementary_charges or charge_coulomb / elementary_charge,
             )
-            self.register_buffer_or_parameter(
-                "mass_eV",
-                torch.as_tensor(
-                    mass_eV or mass_kg * eV_to_kg, device=device, dtype=dtype
-                ),
-            )
+            self.register_buffer_or_parameter("mass_eV", mass_eV or mass_kg * eV_to_kg)
 
     @property
     def mass_kg(self) -> torch.Tensor:

@@ -6,8 +6,12 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.track_methods import base_ttensor, drift_matrix, misalignment_matrix
-from cheetah.utils import squash_index_for_unavailable_dims, verify_device_and_dtype
+from cheetah.track_methods import (
+    base_ttensor,
+    combined_rotation_misalignment_matrix,
+    drift_matrix,
+)
+from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
 
 
 class Sextupole(Element):
@@ -25,6 +29,10 @@ class Sextupole(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     supported_tracking_methods = ["linear", "second_order"]
@@ -38,46 +46,50 @@ class Sextupole(Element):
         tracking_method: Literal["linear", "second_order"] = "second_order",
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
-        device, dtype = verify_device_and_dtype(
-            [length, k2, misalignment, tilt], device, dtype
-        )
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
-        self.length = torch.as_tensor(length, **factory_kwargs)
+        self.length = length
 
         self.register_buffer_or_parameter(
-            "k2", torch.as_tensor(k2 if k2 is not None else 0.0, **factory_kwargs)
+            "k2", k2 if k2 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "misalignment",
-            torch.as_tensor(
-                misalignment if misalignment is not None else (0.0, 0.0),
-                **factory_kwargs,
+            (
+                misalignment
+                if misalignment is not None
+                else torch.tensor((0.0, 0.0), **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
         self.tracking_method = tracking_method
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return drift_matrix(length=self.length, species=species, energy=energy)
 
+    @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
+        zero = self.length.new_zeros(())
+
         T = base_ttensor(
             length=self.length,
-            k1=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            k1=zero,
             k2=self.k2,
-            hx=torch.tensor(0.0, device=self.length.device, dtype=self.length.dtype),
+            hx=zero,
             species=species,
-            tilt=self.tilt,
             energy=energy,
         )
 
@@ -86,12 +98,13 @@ class Sextupole(Element):
             length=self.length, species=species, energy=energy
         )
 
-        # Apply misalignments to the entire second-order transfer map
-        if not torch.all(self.misalignment == 0):
-            R_entry, R_exit = misalignment_matrix(self.misalignment)
-            T = torch.einsum(
-                "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
-            )
+        # Apply misalignments and rotation to the entire second-order transfer map
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        T = torch.einsum(
+            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+        )
 
         return T
 
@@ -108,7 +121,7 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.any(self.k2 != 0.0).item()
+        return (self.k2 != 0.0).any().item()
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -133,7 +146,7 @@ class Sextupole(Element):
         )
 
         alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (torch.sign(plot_k2) if self.is_active else 1)
+        height = 0.8 * (plot_k2.sign() if self.is_active else 1)
         patch = Rectangle(
             (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
         )
@@ -142,12 +155,3 @@ class Sextupole(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["length", "k2", "misalignment", "tilt"]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(length={repr(self.length)}, "
-            f"k2={repr(self.k2)}, "
-            f"misalignment={repr(self.misalignment)}, "
-            f"tilt={repr(self.tilt)}, "
-            f"name={repr(self.name)})"
-        )

@@ -212,16 +212,18 @@ def test_enormous_through_ares_ea():
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParticleBeam, cheetah.ParameterBeam])
-def test_cavity_with_zero_and_non_zero_voltage(BeamClass):
+@pytest.mark.parametrize("cavity_type", ["standing_wave", "traveling_wave"])
+def test_cavity_with_zero_and_non_zero_voltage(BeamClass, cavity_type):
     """
     Tests that if zero and non-zero voltages are passed to a cavity in a single batch,
     there are no errors. This test does NOT check physical correctness.
     """
     cavity = cheetah.Cavity(
         length=torch.tensor(3.0441),
-        voltage=torch.tensor([0.0, 48_198_468.0, 0.0]),
+        voltage=torch.tensor([0.0, 48198468.0, 0.0]),
         phase=torch.tensor(48198468.0),
         frequency=torch.tensor(2.8560e09),
+        cavity_type=cavity_type,
         name="my_test_cavity",
     )
     incoming = BeamClass.from_parameters(sigma_x=torch.tensor(1e-5))
@@ -336,19 +338,23 @@ def test_vectorized_screen_2d(BeamClass, method):
 
 @pytest.mark.for_every_element(
     "element_with_length",
-    except_for=[
-        cheetah.Aperture,
-        cheetah.BPM,
-        cheetah.CustomTransferMap,
-        cheetah.Marker,
-        cheetah.Screen,
-        cheetah.Segment,
-        cheetah.SpaceChargeKick,
-    ],
+    except_if=lambda test_case: isinstance(
+        test_case,
+        (
+            cheetah.Aperture,
+            cheetah.BPM,
+            cheetah.CustomTransferMap,
+            cheetah.Marker,
+            cheetah.Screen,
+            cheetah.Segment,
+            cheetah.SpaceChargeKick,
+            cheetah.Superimposed,
+        ),
+    ),
 )
 def test_broadcasting_two_different_inputs(element_with_length):
     """
-    Test that broadcasting rules are correctly applied to a elements with two different
+    Test that broadcasting rules are correctly applied to elements with two different
     input shapes for elements that have a `length` attribute.
 
     Skipped for elements whose response is not influenced by their length.
@@ -376,8 +382,8 @@ def test_broadcasting_two_different_inputs(element_with_length):
 )
 def test_broadcasting_two_different_inputs_bmadx(ElementClass):
     """
-    Test that broadcasting rules are correctly applied to a elements with two different
-    input shapes for elements that have a `"bmadx"` tracking method.
+    Test that broadcasting rules are correctly applied to elements with two different
+    input shapes for elements that have a `"drift_kick_drift"` tracking method.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
@@ -412,7 +418,7 @@ def test_vectorized_parameter_beam_creation():
     "ElementClass", [cheetah.HorizontalCorrector, cheetah.VerticalCorrector]
 )
 def test_broadcasting_corrector_angles(ElementClass):
-    """Test that broadcasting rules are correctly applied to with corrector angles."""
+    """Test that broadcasting rules are correctly applied to corrector angles."""
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )

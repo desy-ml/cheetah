@@ -49,4 +49,7 @@ beamlines
 @SuchethShenoy
 Sucheth
 Shenoy
+EuXFEL
+dtype
+DOOCS
 subclassing

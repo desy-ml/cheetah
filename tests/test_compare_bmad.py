@@ -22,11 +22,12 @@ atomic_mass_eV = (
         cheetah.Species("deuteron", dtype=torch.float64),
         cheetah.Species(
             "#12C+3",
-            num_elementary_charges=3,
-            mass_eV=12 * atomic_mass_eV,
+            num_elementary_charges=torch.tensor(3.0, dtype=torch.float64),
+            mass_eV=torch.tensor(12.0, dtype=torch.float64) * atomic_mass_eV,
             dtype=torch.float64,
         ),
     ],
+    ids=["proton", "electron", "positron", "antiproton", "deuteron", "12C+3"],
 )
 @pytest.mark.parametrize(
     "cheetah_element",
@@ -64,6 +65,7 @@ atomic_mass_eV = (
             )
         ),
     ],
+    ids=["Drift", "Dipole", "Quadrupole"],
 )
 def test_different_species_in_different_elements(species, cheetah_element):
     """
@@ -93,7 +95,7 @@ def test_different_species_in_different_elements(species, cheetah_element):
     )
 
     # Track with Cheetah using bmadx routines
-    outgoing = cheetah_element(incoming)
+    outgoing = cheetah_element.track(incoming)
     # Convert to Bmad coordinates
     outgoing_bmad_coordinates, _ = cheetah_to_bmad_coords(
         outgoing.particles, ref_energy=outgoing.energy, mc2=outgoing.species.mass_eV

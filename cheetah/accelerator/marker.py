@@ -3,7 +3,7 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -16,19 +16,29 @@ class Marker(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
         self,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__(
-            name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
+            name=name,
+            sanitize_name=sanitize_name,
+            metadata=metadata,
+            device=device,
+            dtype=dtype,
         )
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
@@ -50,10 +60,3 @@ class Marker(Element):
         # TODO: Implement a better visualisation for markers. At the moment they are
         # invisible.
         return ax
-
-    @property
-    def defining_features(self) -> list[str]:
-        return super().defining_features
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"

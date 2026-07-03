@@ -204,7 +204,7 @@ def translate_element(row: list[str], header: list[str]) -> dict | None:
     return {"element": element, "s_position": s_position}
 
 
-def convert_lattice_to_cheetah(filepath: Path) -> "cheetah.Element":
+def convert_lattice(filepath: Path) -> "cheetah.Element":
     """
     Read an NX Tables CSV-like file generated for the ARES lattice into a Cheetah
     `Segment`.

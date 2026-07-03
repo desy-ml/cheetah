@@ -4,7 +4,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -16,28 +16,46 @@ class BPM(Element):
     :param is_active: If `True` the BPM is active and will record the beam's position.
         If `False` the BPM is inactive and will not record the beam's position.
     :param name: Unique identifier of the element.
+    :param misalignment: Misalignment vector of the BPM in x- and y-directions.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
         self,
         is_active: bool = False,
         name: str | None = None,
+        misalignment: torch.Tensor | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
+        factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(
-            name=name, sanitize_name=sanitize_name, device=device, dtype=dtype
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
         self.is_active = is_active
+        factory_kwargs = {"device": device, "dtype": dtype}
+
+        self.register_buffer_or_parameter(
+            "misalignment",
+            (
+                misalignment
+                if misalignment is not None
+                else torch.zeros(2, **factory_kwargs)
+            ),
+        )
 
         self.register_buffer(
             "reading",
-            torch.as_tensor((torch.nan, torch.nan), device=device, dtype=dtype),
+            torch.tensor((torch.nan, torch.nan), **factory_kwargs),
             persistent=False,
         )
 
@@ -45,6 +63,7 @@ class BPM(Element):
     def is_skippable(self) -> bool:
         return not self.is_active
 
+    @cache_transfer_map
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
@@ -54,7 +73,13 @@ class BPM(Element):
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:
-            self.reading = torch.stack([incoming.mu_x, incoming.mu_y], dim=-1)
+            self.reading = torch.stack(
+                [
+                    incoming.mu_x - self.misalignment[..., 0],
+                    incoming.mu_y - self.misalignment[..., 1],
+                ],
+                dim=-1,
+            )
 
         return incoming.clone()
 
@@ -74,6 +99,3 @@ class BPM(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["is_active"]
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={repr(self.name)})"

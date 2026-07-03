@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import reduce
 from pathlib import Path
 from typing import Any, Iterator
@@ -7,12 +8,12 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 
+from cheetah import latticejson
 from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
-from cheetah.latticejson import load_cheetah_model, save_cheetah_model
 from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
 
@@ -28,6 +29,10 @@ class Segment(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
@@ -35,8 +40,9 @@ class Segment(Element):
         elements: list[Element],
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
     ) -> None:
-        super().__init__(name=name, sanitize_name=sanitize_name)
+        super().__init__(name=name, sanitize_name=sanitize_name, metadata=metadata)
 
         # Segment inherits `length` as a buffer from `Element`. Since `length` is
         # overwritten as a standard Python property, this is misleading when calling
@@ -56,6 +62,27 @@ class Segment(Element):
                     self.__dict__[element.name] = [self.__dict__[element.name], element]
             else:
                 self.__dict__[element.name] = element
+
+    @property
+    def element_names(self) -> list[str]:
+        """
+        Ordered list of names of the elements in the segment.
+
+        :return: Ordered list of names of the elements in the segment.
+        """
+        return [element.name for element in self.elements]
+
+    def element_index(self, element_name: str) -> int:
+        """
+        Get the index of the first occurrence of an element in the segment by its name.
+
+        :param element_name: Name of the element to get the index for.
+        :return: Index of the first element in the segment with the passed name.
+        """
+        try:
+            return self.element_names.index(element_name)
+        except ValueError:
+            raise ValueError(f"Element '{element_name}' not found in segment.")
 
     def subcell(
         self,
@@ -113,7 +140,7 @@ class Segment(Element):
         """
         flattened_elements = []
         for element in self.elements:
-            if isinstance(element, Segment):
+            if hasattr(element, "flattened"):
                 flattened_elements += element.flattened().elements
             else:
                 flattened_elements.append(element)
@@ -238,7 +265,7 @@ class Segment(Element):
             elements=[
                 element
                 for element in self.elements
-                if torch.any(element.length > 0.0)
+                if (element.length != 0.0).any()
                 or (hasattr(element, "is_active") and element.is_active)
                 or element.name in except_for
             ],
@@ -267,7 +294,7 @@ class Segment(Element):
                 (
                     element
                     if (hasattr(element, "is_active") and element.is_active)
-                    or torch.all(element.length == 0.0)
+                    or (element.length == 0.0).all()
                     or element.name in except_for
                     else Drift(
                         element.length,
@@ -296,7 +323,7 @@ class Segment(Element):
         :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return load_cheetah_model(filepath, device=device, dtype=dtype)
+        return latticejson.load_cheetah_model(filepath, device=device, dtype=dtype)
 
     def to_lattice_json(
         self,
@@ -314,7 +341,7 @@ class Segment(Element):
         :param info: Information about the lattice. Defaults to "This is a placeholder
             lattice description".
         """
-        save_cheetah_model(self, filepath, title, info)
+        latticejson.save_cheetah_model(self, filepath, title, info)
 
     @classmethod
     def from_ocelot(
@@ -347,7 +374,7 @@ class Segment(Element):
         from cheetah.converters import ocelot
 
         converted = [
-            ocelot.convert_element_to_cheetah(
+            ocelot.convert_element(
                 element,
                 sanitize_name=sanitize_names,
                 device=device,
@@ -385,7 +412,7 @@ class Segment(Element):
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
         bmad_lattice_file_path = Path(bmad_lattice_file_path)
-        return bmad.convert_lattice_to_cheetah(
+        return bmad.convert_lattice(
             bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
         )
 
@@ -399,20 +426,19 @@ class Segment(Element):
         dtype: torch.dtype | None = None,
     ) -> "Segment":
         """
-        Read a Cheetah segment from an elegant lattice file.
+        Read a Cheetah segment from an Elegant lattice file.
 
-        :param bmad_lattice_file_path: Path to the Bmad lattice file.
-        :param name: Name of the root element
+        :param elegant_lattice_file_path: Path to the Elegant lattice file.
+        :param name: Name of the root element.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
             `segment.element_name` syntax to access the element in a segment.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
-        :return: Cheetah `Segment` representing the elegant lattice.
+        :return: Cheetah `Segment` representing the Elegant lattice.
         """
-
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
-        return elegant.convert_lattice_to_cheetah(
+        return elegant.convert_lattice(
             elegant_lattice_file_path, name, sanitize_names, device, dtype
         )
 
@@ -430,7 +456,7 @@ class Segment(Element):
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        return nxtables.convert_lattice_to_cheetah(filepath)
+        return nxtables.convert_lattice(filepath)
 
     @property
     def is_skippable(self) -> bool:
@@ -483,7 +509,9 @@ class Segment(Element):
 
     def clone(self) -> "Segment":
         return Segment(
-            elements=[element.clone() for element in self.elements], name=self.name
+            elements=[element.clone() for element in self.elements],
+            name=self.name,
+            metadata=deepcopy(self.metadata),
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
@@ -553,7 +581,7 @@ class Segment(Element):
         broadcasted_results = tuple(
             torch.stack(
                 torch.broadcast_tensors(*attr_tensor),
-                dim=-(incoming.UNVECTORIZED_NUM_ATTR_DIMS[attr_name] + 1),
+                dim=-(incoming.UNVECTORIZED_NUM_ATTR_DIMS.get(attr_name, 0) + 1),
             )
             for attr_tensor, attr_name in zip(results, attr_name_tuple)
         )
@@ -631,18 +659,16 @@ class Segment(Element):
 
     def plot_mean_and_std(
         self,
-        axx: plt.Axes,
-        axy: plt.Axes,
         incoming: Beam,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-    ) -> None:
+        axx: plt.Axes | None = None,
+        axy: plt.Axes | None = None,
+    ) -> tuple[plt.Axes, plt.Axes]:
         """
         Plot the mean (i.e. beam position) and standard deviation (i.e. beam size) of
         the beam along the segment view in x- and y-direction.
 
-        :param axx: Axes to plot the particle traces into viewed in x-direction.
-        :param axy: Axes to plot the particle traces into viewed in y-direction.
         :param incoming: Entering beam for which the position and size are shown
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
@@ -650,7 +676,18 @@ class Segment(Element):
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param axx: Axes to plot the particle traces into viewed in x-direction. Must
+            be provided together with `axy`, or both must be `None` to create new axes.
+        :param axy: Axes to plot the particle traces into viewed in y-direction. Must
+            be provided together with `axx`, or both must be `None` to create new axes.
+        :return: Both axes with the plotted mean and standard deviation of the beam
+            along the segment.
         """
+        if axx is None and axy is None:
+            _, (axx, axy) = plt.subplots(2, 1, sharex=True)
+        elif axx is None or axy is None:
+            raise ValueError("Either provide both axx and axy, or neither.")
+
         reference_segment = self.clone()  # Prevent side effects when plotting
 
         ss, x_means, x_stds, y_means, y_stds = (
@@ -681,28 +718,31 @@ class Segment(Element):
 
         axx.set_xlabel("s (m)")
         axx.set_ylabel("x (m)")
-        axx.set_xlabel("s (m)")
+        axy.set_xlabel("s (m)")
         axy.set_ylabel("y (m)")
+
+        return axx, axy
 
     def plot_overview(
         self,
         incoming: Beam,
-        fig: matplotlib.figure.Figure | None = None,
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-    ) -> None:
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> matplotlib.figure.Figure:
         """
         Plot an overview of the segment with the lattice along with the beam position
         and size.
 
         :param incoming: Entering beam for which the position and size are shown.
-        :param fig: Figure to plot the overview into.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param fig: Figure to plot the overview into.
+        :return: Figure with the plotted overview.
         """
         if fig is None:
             fig = plt.figure()
@@ -718,9 +758,9 @@ class Segment(Element):
             vector_idx=vector_idx,
         )
 
-        self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
+        _ = self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
 
-        plt.tight_layout()
+        return fig
 
     def plot_beam_attrs(
         self,
@@ -773,10 +813,10 @@ class Segment(Element):
         self,
         incoming: Beam,
         attr_names: tuple[str, ...] | str,
-        figsize=(8, 4),
         resolution: float | None = None,
         vector_idx: tuple | None = None,
-    ) -> None:
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> matplotlib.figure.Figure:
         """
         Plot beam attributes in a plot over a plot of the lattice.
 
@@ -784,15 +824,19 @@ class Segment(Element):
             trajectory is computed.
         :param attr_names: Metrics to compute. Can be a single metric or a tuple of
             metrics. Supported metrics are any property of beam class of `incoming`.
-        :param figsize: Size of the figure.
         :param resolution: Minimum resolution of the tracking of the beam position and
             beam size in the plot.
         :param vector_idx: Index of the vector dimension to plot. If the model has more
             than one vector dimension, this can be used to select a specific one. In the
             case of present vector dimension but no index provided, the first one is
             used by default.
+        :param fig: Figure to plot into. Can be used, for example to pass a figure with
+            a desired custom `figsize`. If `None`, a new figure with default size is
+            created.
+        :return: Figure with the plotted beam attributes over the lattice.
         """
-        fig = plt.figure(figsize=figsize)
+        if fig is None:
+            fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
@@ -803,14 +847,25 @@ class Segment(Element):
             vector_idx=vector_idx,
             ax=axs[0],
         )
-        self.plot(s=0.0, ax=axs[1])
+        self.plot(s=0.0, ax=axs[1], vector_idx=vector_idx)
 
-        plt.tight_layout()
+        return fig
 
     def plot_twiss(
         self, incoming: Beam, vector_idx: tuple | None = None, ax: Any | None = None
     ) -> plt.Axes:
-        """Plot twiss parameters along the segment."""
+        """
+        Plot Twiss parameters along the segment.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param ax: Axes to plot into.
+        :return: Axes with the plotted Twiss parameters.
+        """
         ax = self.plot_beam_attrs(
             incoming,
             ("beta_x", "beta_y"),
@@ -834,50 +889,87 @@ class Segment(Element):
 
         return ax
 
-    def plot_twiss_over_lattice(self, incoming: Beam, figsize=(8, 4)) -> None:
-        """Plot twiss parameters in a plot over a plot of the lattice."""
-        fig = plt.figure(figsize=figsize)
+    def plot_twiss_over_lattice(
+        self,
+        incoming: Beam,
+        vector_idx: tuple | None = None,
+        fig: matplotlib.figure.Figure | None = None,
+    ) -> matplotlib.figure.Figure:
+        """
+        Plot Twiss parameters in a plot over a plot of the lattice.
+
+        :param incoming: Beam that is entering the segment from upstream for which the
+            trajectory is computed.
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param fig: Figure to plot into. Can be used, for example to pass a figure with
+            a desired custom `figsize`. If `None`, a new figure with default size is
+            created.
+        :return: Figure with the plotted Twiss parameters over the lattice.
+        """
+        if fig is None:
+            fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
 
-        self.plot_twiss(incoming, ax=axs[0])
-        self.plot(s=0.0, ax=axs[1])
+        self.plot_twiss(incoming, vector_idx=vector_idx, ax=axs[0])
+        self.plot(s=0.0, vector_idx=vector_idx, ax=axs[1])
 
-        plt.tight_layout()
+        return fig
 
     def to_mesh(
-        self, cuteness: float | dict = 1.0, show_download_progress: bool = True
-    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
+    ) -> "tuple[trimesh.Scene | None, np.ndarray]":  # noqa: F821 # type: ignore
         # Import only here because most people will not need it
         import trimesh
 
-        meshes = []
+        scene = trimesh.Scene()
         input_transform = trimesh.transformations.identity_matrix()
         for element in self.elements:
             element_mesh, element_output_transform = element.to_mesh(
-                cuteness=cuteness, show_download_progress=show_download_progress
+                cuteness=cuteness,
+                asset_version=asset_version,
+                show_download_progress=show_download_progress,
             )
 
             if element_mesh is not None:
                 element_mesh.apply_transform(input_transform)
             input_transform = input_transform @ element_output_transform
 
-            meshes.append(element_mesh)
+            scene.add_geometry(element_mesh)
 
-        # Using `trimesh.util.concatenate` rather than adding to `Scene` to preserve
-        # materials. Otherwise you might find that everything becomes glossy. (But
-        # doesn't always work.)
-        segment_mesh = trimesh.util.concatenate(meshes)
         segment_output_transform = input_transform
 
-        return segment_mesh, segment_output_transform
+        return scene, segment_output_transform
 
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
 
     def __repr__(self) -> str:
+        num_elements = len(self.elements)
+        if num_elements <= 5:
+            elements_repr = repr(self.elements)
+        else:
+            element_repr_list = [
+                f"({i}): {repr(self.elements[i])}"
+                for i in [0, 1, num_elements - 2, num_elements - 1]
+            ]
+            element_repr_list.insert(2, " ⋮")
+
+            # Using `format` since Python<=3.11 does not permit backslashes in nested
+            # f-strings: https://stackoverflow.com/questions/67680296/syntaxerror-f-string-expression-part-cannot-include-a-backslash   # noqa: E501
+            # TODO: Switch to f-string when Python>=3.12 is the minimum requirement
+            elements_repr = "ModuleList(\n  {0}\n)".format(
+                "\n  ".join(element_repr_list)
+            )
+
         return (
-            f"{self.__class__.__name__}(elements={repr(self.elements)}, "
+            f"{self.__class__.__name__}(elements={elements_repr}, "
             + f"name={repr(self.name)})"
         )

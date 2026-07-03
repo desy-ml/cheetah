@@ -17,7 +17,7 @@ from _version import __version__  # noqa: E402  # type: ignore
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Cheetah"
-copyright = "2021-2025 Jan Kaiser, Chenran Xu, Christian Hespe"
+copyright = "2021-2026 Jan Kaiser, Chenran Xu, Christian Hespe"
 author = "Jan Kaiser, Chenran Xu"
 release = __version__
 

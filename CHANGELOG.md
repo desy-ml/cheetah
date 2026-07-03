@@ -1,23 +1,140 @@
 # Changelog
 
-## v0.7.6 [🚧 Work in Progress]
+## v0.8.4 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
-- `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
-
 ### 🚀 Features
-
-- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. Rename the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` will remain supported with a `DeprecationWarning`. (see #476) (@cr-xu, @jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
 ### 🐆 Other
 
-- Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 
 ### 🌟 First Time Contributors
+
+## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
+
+### 🚨 Breaking Changes
+
+- Change default `method` of `Screen` from `"histogram"` to `"cloud-in-cell"` (see #625) (@roussel-ryan, @cr-xu, @jank324)
+
+### 🚀 Features
+
+- Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
+- A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
+- Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
+- Implement a new differentiable Cloud-In-Cell (CIC) method for n-D charge deposition and add it to `Screen`. The new method is up to two orders of magnitude faster than the existing and previously only differentiable option `kde` method. (see #625) (@roussel-ryan, @cr-xu, @jank324)
+- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @hespe, @roussel-ryan)
+
+### 🐛 Bug fixes
+
+- Fix an issue where off-diagonal elements are not included in the conversion from `ParameterBeam` to `ParticleBeam` (see #635) (@cr-xu)
+
+### 🐆 Other
+
+- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions and add `defining_features` to beam classes like already implemented for element classes. (see #627) (@cr-xu, @jank324)
+
+### 🌟 First Time Contributors
+
+- Christopher Garnier (@phys-cgarnier)
+
+## [v0.8.2](https://github.com/desy-ml/cheetah/releases/tag/v0.8.2) (2026-06-05)
+
+### 🚀 Features
+
+- All plotting functions in `Segment` now accept an optional axes or figure object with an interface loosely mimicking that of [_Seaborn_](https://seaborn.pydata.org). If they are passed one, they use it, otherwise they create one themselves. Either way, they return the axes or figure they used. (see #604) (@jank324)
+
+### 🐛 Bug fixes
+
+- RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
+- Fix issue, where the first example in the gradient-based optimisation notebook from the docs would not run because the `k1` of the quadrupoles was set to `0.0`, which causes the gradients to be undefined (see #588, #603) (@jank324, @cr-xu)
+- Update the elegant conversion to include missing dipole attributes, converting `hgap` to `gap` and `fint` to `fringe_integral`. (see #624) (@cr-xu)
+- Update the `to_openpmd_particlegroup` conversion to use `int` for status and add `detach()` before tensor to numpy conversion. (see #629) (@roussel-ryan)
+- Fix an issue where negative length elements are incorrectly removed by the `Segment.without_inactive_zero_length_elements` method (see #633) (@cr-xu)
+- Patch emittance `NaN` and `0.0` conditions, which caused Twiss parameters to be `NaN` or `inf` under some conditions. (see #639) (@jank324)
+
+### 🐆 Other
+
+- Automate publishing to PyPI when new releases are created on GitHub (see #423) (@jank324)
+
+## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
+
+### 🚨 Breaking Changes
+
+- `NoVisualizationWarning` was renamed to `VisualizationWarning` to be more general, and can now be thrown for other visualisation issues as well. (see #610) (@amylizzle, @jank324)
+
+### 🚀 Features
+
+- Update to (default) `3d-assets` version 1.2.0 with `RBend` and `CombinedCorrector` models (see #605, #610) (@jank324)
+- Add option to dynamically specify the branch or tag of the `3d-assets` repository to use when generating 3D meshes (see #618) (@jank324)
+- Converter to load Elegant SDDS beam distributions (see #612) (@cr-xu, @jank324)
+- Improve efficiency of 3D rendering of large lattices by using the `Scene` class instead of `Mesh` concatenation (see #610) (@amylizzle)
+- New warning about elements with a length of 0.0 not being 3D rendered to-scale (see #610) (@amylizzle, @jank324)
+
+### 🐛 Bug fixes
+
+- Fixed rotation orientation of dipoles and quadrupoles when rendering 3D models (see #610) (@amylizzle)
+- Fix bug when reading `null` fields from LatticeJSON files (see #619) (@alekseevpavel04)
+
+### 🐆 Other
+
+- The copyright years were updated to 2026 (see #608) (@jank324)
+- Fix format issue caused by new `black` version (see #611) (@jank324)
+
+### 🌟 First Time Contributors
+
+- @alekseevpavel04
+
+## [v0.8.0](https://github.com/desy-ml/cheetah/releases/tag/v0.8.0) (2025-12-03)
+
+This major release comes with significant overhauls of some core components of Cheetah. Highlights include an overhaul of the tracking system to support second-order tracking and transfer map/tensor caching; clearer tracking methods names; improved reliability of the gradients computed through Cheetah; a more PyTorch-like typing behaviour; and overall speed improvements of up to 7x in some cases.
+
+### 🚨 Breaking Changes
+
+- `Segment.set_attrs_on_every_element_of_type` has been renamed to `Segment.set_attrs_on_every_element`, and made more general, with the `element_type` argument being optional and renamed to `filter_type`. (see #476) (@jank324, @cr-xu)
+- Cheetah Modules (`Element`, `Beam`, `Species`) no longer automatically change the device and dtype of passed parameters. Instead, the user is expected to make sure that the device and dtype of parameters and Modules match. This is more in line with how Modules included in PyTorch operate. (see #538, #552) (@jank324, @Hespe)
+- Add support for Python 3.14, and remove support for Python 3.10, as well as increase the minimum required versions for some dependencies. (see #582) (@jank324)
+- The tracking system has been widely overhauled. As part of this overhaul we renamed the tracking method `"cheetah"` to `"linear"` and `"bmadx"` to `"drift_kick_drift"`. The existing methods `"cheetah"` and `"bmadx"` have been fully deprecated and will no longer work. Cheetah will raise an informative error for a number of releases to give users time to adapt their code. (see #476, #596) (@jank324, @Hespe, @cr-xu)
+
+### 🚀 Features
+
+- Implement second-order tracking for `Drift`, `Dipole` and `Quadrupole` elements, and add a convenient method to set tracking methods for an entire segment. This comes with an overhaul of the overall tracking system. (see #476) (@cr-xu, @jank324, @Hespe)
+- `Cavity` now supports travelling wave cavities in addition to standing wave cavities via the `cavity_type` argument (see #286) (@zihan-zh, @jank324)
+- Documented PyTorch `compile` for improved speed (see #390) (@ax3l)
+- Beam classes now account for dispersion. Dispersion correction is included in the Twiss and emittance computations. Dispersion arguments are added to `from_parameters` and `from_twiss` beam initialisation methods. (see #540) (@cr-xu)
+- Add convenience methods to `Segment` for getting an ordered list of all element names and the index of a specific element by its name (see #534) (@roussel-ryan, @jank324)
+- First- and second-order transfer maps are now cached resulting in potential speed-ups of up to 10x and more (see #532, #565) (@jank324)
+- Methods for creating `ParticleBeam` instances from distributions via stochastic sampling now make sure that the statistics of the generated particles match the desired distribution (see #546) (@cr-xu)
+- `BPM` elements now support misalignments (see #533) (@roussel-ryan, @jank324)
+- Speed up tracking by replacing some PyTorch operations with faster alternatives (see #538, #558, #555, #556, #563, #561) (@jank324, @Hespe)
+- New `CombinedCorrector` element that combines the functionality of `HorizontalCorrector` and `VerticalCorrector` (see #589) (@jank324, @amylizzle)
+
+### 🐛 Bug fixes
+
+- Shorten `__repr__` of `Segment` for large lattices to prevent debugging slowdowns (see #529) (@Hespe)
+- Fix typo saying Bmad in Elegant import method docstring (see #531) (@jank324)
+- Remove division by zero in `Cavity` for off-crest phase (see #549, #550) (@Hespe)
+- Fix issue with `SpaceChargeKick` where the particle species was not preserved (see #560) (@austin-hoover, @jank324)
+- Fix bug that caused beams to revert to electron species when tracking through `Cavity` element, resulting in unexpected acceleration behaviour when tracking non-electron species through multiple `Cavity` elements. (see #570) (@jank324, @hjkim-iris, @Copilot)
+- Fix issue where branching in the computations could "hide" gradients w.r.t. to some inputs under certain conditions, leading to incorrect gradient computations. (see #553) (@jank324, @Hespe)
+
+### 🐆 Other
+
+- Add a speed benchmarking workflow of tracking through the ARES lattice (see #527) (@Hespe)
+- Add tests that track through every subclass of `Element` for all permissible `dtypes` and `device` combinations (see #499) (@Hespe)
+- Fix false dtype in `Screen` documentation (see #544) (@jp-ga)
+- Fix an issue where running the plot tests on Windows (most notably on the recently upgraded GitHub Actions Windows runners) would sporadically fail with a `_tkinter.TclError: Can't find a usable init.tcl in the following directories` error, by forcing the matplotlib backend to `Agg` when running tests on Windows. (see #567) (@jank324)
+- Temporarily removed `flake8-black` from `format` Action because it causes issues with the latest `black` version. This has since been reinstated. (see #569, #575) (@jank324)
+- Fix typo in README (see #581) (@jank324)
+- Update ARES LatticeJSON file to match the latest properties in Cheetah (see #588) (@cr-xu, @jank324)
+
+### 🌟 First Time Contributors
+
+- Zihan Zhu (@zihan-zh)
+- Austin Hoover (@austin-hoover)
+- @hjkim-iris
 
 ## [v0.7.5](https://github.com/desy-ml/cheetah/releases/tag/v0.7.5) (2025-08-04)
 

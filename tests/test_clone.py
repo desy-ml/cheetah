@@ -20,6 +20,24 @@ def test_element_buffer_contents_and_location(element):
         assert not mwe_feature.data_ptr() == clone_feature.data_ptr()
 
 
+@pytest.mark.for_every_element("element")
+def test_element_metadata(element):
+    """
+    Test that the `metadata` property of cloned elements shares the same contents but
+    not the same memory.
+    """
+    element.metadata = {"control_system": {"pv_base": "A:Q1:"}}
+
+    clone = element.clone()
+
+    assert clone.metadata == element.metadata  # Equal contents
+    assert clone.metadata is not element.metadata  # Not the same memory
+
+    # Mutating the clone's metadata must not affect the original
+    clone.metadata["control_system"]["pv_base"] = "B:Q2:"
+    assert element.metadata["control_system"]["pv_base"] == "A:Q1:"
+
+
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
 def test_beam_buffer_contents_and_location(BeamClass):
     """
@@ -28,13 +46,16 @@ def test_beam_buffer_contents_and_location(BeamClass):
     """
     beam = BeamClass.from_parameters(species=cheetah.Species("positron"))
     clone = beam.clone()
+    non_module_features = [
+        feature for feature in beam.defining_features if feature != "species"
+    ]
 
-    for attribute in beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        beam_attribute = getattr(beam, attribute)
-        cloned_attribute = getattr(clone, attribute)
+    for feature in non_module_features:
+        beam_feature = getattr(beam, feature)
+        cloned_feature = getattr(clone, feature)
 
-        assert torch.allclose(beam_attribute, cloned_attribute)
-        assert not beam_attribute.data_ptr() == cloned_attribute.data_ptr()
+        assert torch.allclose(beam_feature, cloned_feature)
+        assert not beam_feature.data_ptr() == cloned_feature.data_ptr()
 
     assert beam.species.name == clone.species.name
     assert beam.species.num_elementary_charges == clone.species.num_elementary_charges

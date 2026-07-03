@@ -14,11 +14,11 @@ def test_dipole_off():
     incoming_beam = cheetah.ParameterBeam.from_parameters(
         sigma_px=torch.tensor(2e-7), sigma_py=torch.tensor(2e-7)
     )
-    outbeam_dipole_off = dipole(incoming_beam)
-    outbeam_drift = drift(incoming_beam)
+    outbeam_dipole_off = dipole.track(incoming_beam)
+    outbeam_drift = drift.track(incoming_beam)
 
     dipole.angle = torch.tensor(1.0, device=dipole.angle.device)
-    outbeam_dipole_on = dipole(incoming_beam)
+    outbeam_dipole_on = dipole.track(incoming_beam)
 
     assert dipole.name is not None
     assert torch.allclose(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
@@ -64,7 +64,7 @@ def test_dipole_vectorized_execution(DipoleType):
             cheetah.Drift(length=torch.tensor(0.5)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
 
     assert outgoing.particles.shape == torch.Size([3, 100, 7])
     assert outgoing.mu_x.shape == torch.Size([3])
@@ -85,7 +85,7 @@ def test_dipole_vectorized_execution(DipoleType):
             cheetah.Drift(length=torch.tensor([0.5, 1.0]).reshape(2, 1, 1)),
         ]
     )
-    outgoing = segment(incoming)
+    outgoing = segment.track(incoming)
     assert outgoing.particles.shape == torch.Size([2, 3, 3, 100, 7])
 
     # Test improper vectorisation -- this does not obey torch broadcasting rules
@@ -99,10 +99,12 @@ def test_dipole_vectorized_execution(DipoleType):
         ]
     )
     with pytest.raises(RuntimeError):
-        segment(incoming)
+        segment.track(incoming)
 
 
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
 def test_dipole_drift_kick_drift_tracking(dtype):
     """
     Test that the results of tracking through a dipole with the `"drift_kick_drift"`
@@ -146,62 +148,6 @@ def test_dipole_drift_kick_drift_tracking(dtype):
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
         atol=1e-14 if dtype == torch.float64 else 1e-6,
     )
-
-
-def test_buffer_registration():
-    """Test that buffers are properly registered in the dipole element."""
-    length = torch.tensor(0.5)
-    angle = torch.tensor(2e-3)
-    k1 = torch.tensor(1.2)
-    dipole_e1 = torch.tensor(1e-3)
-    dipole_e2 = torch.tensor(-1e-3)
-    tilt = torch.tensor(0.1)
-    gap = torch.tensor(0.1)
-    gap_exit = torch.tensor(0.1)
-    fringe_integral = torch.tensor(0.5)
-    fringe_integral_exit = torch.tensor(0.5)
-    fringe_at = "both"
-    fringe_type = "linear_edge"
-    tracking_method = "cheetah"
-    name = "some_dipole"
-
-    dipole = cheetah.Dipole(
-        length=length,
-        angle=angle,
-        k1=k1,
-        dipole_e1=dipole_e1,
-        dipole_e2=dipole_e2,
-        tilt=tilt,
-        gap=gap,
-        gap_exit=gap_exit,
-        fringe_integral=fringe_integral,
-        fringe_integral_exit=fringe_integral_exit,
-        fringe_at=fringe_at,
-        fringe_type=fringe_type,
-        tracking_method=tracking_method,
-        name=name,
-    )
-
-    # Check for expected number of buffers
-    assert len(list(dipole.buffers())) == 10
-
-    # Should be buffers
-    assert length in dipole.buffers()
-    assert angle in dipole.buffers()
-    assert k1 in dipole.buffers()
-    assert dipole_e1 in dipole.buffers()
-    assert dipole_e2 in dipole.buffers()
-    assert tilt in dipole.buffers()
-    assert gap in dipole.buffers()
-    assert gap_exit in dipole.buffers()
-    assert fringe_integral in dipole.buffers()
-    assert fringe_integral_exit in dipole.buffers()
-
-    # Should not be buffers
-    assert fringe_at not in dipole.buffers()
-    assert fringe_type not in dipole.buffers()
-    assert tracking_method not in dipole.buffers()
-    assert name not in dipole.buffers()
 
 
 def test_drift_kick_drift_zero_angle():
@@ -248,8 +194,7 @@ def test_dipole_tilt_sanity(tracking_method):
         tilt=torch.tensor(TILT),
         fringe_integral=torch.tensor(1e3),
         tracking_method=tracking_method,
-        dtype=torch.float64,
-    )
+    ).to(torch.float64)
 
     tilted_dipole_outgoing_beam = tilted_dipole.track(incoming_beam)
 

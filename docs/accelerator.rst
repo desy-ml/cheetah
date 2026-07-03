@@ -15,6 +15,10 @@ Accelerator
     :members:
     :undoc-members:
 
+.. automodule:: accelerator.combined_corrector
+    :members:
+    :undoc-members:
+
 .. automodule:: accelerator.custom_transfer_map
     :members:
     :undoc-members:
@@ -64,6 +68,10 @@ Accelerator
     :undoc-members:
 
 .. automodule:: accelerator.space_charge_kick
+    :members:
+    :undoc-members:
+
+.. automodule:: accelerator.superimposed
     :members:
     :undoc-members:
 

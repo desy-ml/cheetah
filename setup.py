@@ -29,15 +29,16 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=[package for package in find_packages() if package.startswith("cheetah")],
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     install_requires=[
         "matplotlib>=3.5",
-        "numpy>=1.21.3",
-        "scipy>=1.7.2",
+        "numpy>=1.23.3",
+        "scipy>=1.10.1",
         "torch[opt-einsum]>=2.3",
     ],
     extras_require={
-        "openpmd": ["openpmd-beamphysics"],
         "3d-visualization": ["trimesh>=4.4.0", "requests>=2.32.2", "tqdm>=4.66.0"],
+        "openpmd": ["openpmd-beamphysics"],
+        "sdds": ["soliday.sdds>=5.7.0"],
     },
 )

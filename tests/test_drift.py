@@ -38,28 +38,9 @@ def test_diverging_particle_beam():
     )
 
 
-@pytest.mark.skip(
-    reason="Requires rewriting Element and Beam member variables to be buffers."
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )
-def test_device_like_torch_module():
-    """
-    Test that when changing the device, Drift reacts like a `torch.nn.Module`.
-    """
-    # There is no point in running this test, if there aren't two different devices to
-    # move between
-    if not torch.cuda.is_available():
-        return
-
-    element = cheetah.Drift(length=torch.tensor(0.2), device="cuda")
-
-    assert element.length.device.type == "cuda"
-
-    element = element.cpu()
-
-    assert element.length.device.type == "cpu"
-
-
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 def test_drift_drift_kick_drift_tracking(dtype):
     """
     Test that the results of tracking through a drift with the `"drift_kick_drift"`
@@ -102,9 +83,12 @@ def test_length_as_parameter():
     outgoing_parameter = drift_parameter.track(incoming)
 
     # Check that all properties of the two outgoing beams are same
-    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
+    non_module_features = [
+        feature for feature in outgoing.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
         assert torch.allclose(
-            getattr(outgoing, attribute), getattr(outgoing_parameter, attribute)
+            getattr(outgoing, feature), getattr(outgoing_parameter, feature)
         )
 
 
@@ -124,7 +108,8 @@ def test_inversion_with_negative_length():
     outgoing = segment.track(incoming)
 
     # Check that all properties of the two beams are same
-    for attribute in outgoing.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        assert torch.allclose(
-            getattr(incoming, attribute), getattr(outgoing, attribute)
-        )
+    non_module_features = [
+        feature for feature in outgoing.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
+        assert torch.allclose(getattr(incoming, feature), getattr(outgoing, feature))
