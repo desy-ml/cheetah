@@ -58,6 +58,7 @@ nav:
       - Convert: examples/convert.ipynb
       - Optimize Speed: examples/optimize_speed.ipynb
       - Gradient-based: examples/gradientbased.ipynb
+      - Including Metadata: examples/including_metadata.md
   - Getting Started:
       - Coordinate System: coordinate_system.md
   - Documentation:
