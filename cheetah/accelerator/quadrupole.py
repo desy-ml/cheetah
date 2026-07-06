@@ -291,7 +291,11 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k1 != 0).any().item()
+        return (
+            (self.k1 != 0).any().item()
+            or (self.hkick != 0).any().item()
+            or (self.vkick != 0).any().item()
+        )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()

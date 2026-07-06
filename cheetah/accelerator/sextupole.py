@@ -143,7 +143,11 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k2 != 0.0).any().item()
+        return (
+            (self.k2 != 0.0).any().item()
+            or (self.hkick != 0.0).any().item()
+            or (self.vkick != 0.0).any().item()
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
