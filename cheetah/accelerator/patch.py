@@ -38,11 +38,14 @@ class Patch(Element):
         drift_to_exit: bool = True,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
         self.drift_to_exit = drift_to_exit
 
