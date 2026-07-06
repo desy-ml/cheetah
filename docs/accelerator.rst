@@ -75,6 +75,10 @@ Accelerator
     :members:
     :undoc-members:
 
+.. automodule:: accelerator.superimposed
+    :members:
+    :undoc-members:
+
 .. automodule:: accelerator.transverse_deflecting_cavity
     :members:
     :undoc-members:

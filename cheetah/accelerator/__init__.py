@@ -16,6 +16,7 @@ from .segment import Segment  # noqa: F401
 from .sextupole import Sextupole  # noqa: F401
 from .solenoid import Solenoid  # noqa: F401
 from .space_charge_kick import SpaceChargeKick  # noqa: F401
+from .superimposed import Superimposed  # noqa: F401
 from .transverse_deflecting_cavity import TransverseDeflectingCavity  # noqa: F401
 from .undulator import Undulator  # noqa: F401
 from .vertical_corrector import VerticalCorrector  # noqa: F401

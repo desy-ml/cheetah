@@ -7,7 +7,12 @@ from torch.distributions import MultivariateNormal
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, kde_histogram_2d
+from cheetah.utils import (
+    UniqueNameGenerator,
+    cache_transfer_map,
+    cloud_in_cell_charge_deposition,
+    kde_histogram_2d,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -15,6 +20,16 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class Screen(Element):
     """
     Diagnostic screen in a particle accelerator.
+
+    NOTE: The three methods for generating the screen's reading differ primarily in
+        terms of performance, with "histogram" being the fastest, followed by
+        "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
+        (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
+        gradients and is incompatible with vectorisation, while both features are
+        supported by "kde" and "cloud-in-cell".
+
+    NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
+        elements.
 
     :param resolution: Resolution of the camera sensor looking at the screen given as
         tuple or list `(width, height)` in pixels.
@@ -24,8 +39,8 @@ class Screen(Element):
     :param misalignment: Misalignment of the screen in meters given as a Tensor
         `(x, y)`.
     :param method: Method used to generate the screen's reading. Can be either
-        "histogram" or "kde", defaults to "histogram". KDE will be slower but allows
-        backward differentiation.
+        "histogram", "kde", or "cloud-in-cell", defaults to "cloud-in-cell".
+        KDE and cloud-in-cell methods allow backward differentiation.
     :param kde_bandwidth: Bandwidth used for the kernel density estimation in meters.
         Controls the smoothness of the distribution.
     :param is_blocking: If `True` the screen is blocking and will stop the beam.
@@ -36,10 +51,10 @@ class Screen(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
-
-    NOTE: `method='histogram'` currently does not support vectorisation. Please use
-        `method='kde'` instead. Similarly, `ParameterBeam` can also not be vectorised.
-        Please use `ParticleBeam` instead.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
@@ -48,17 +63,20 @@ class Screen(Element):
         pixel_size: torch.Tensor | None = None,
         binning: int = 1,
         misalignment: torch.Tensor | None = None,
-        method: Literal["histogram", "kde"] = "histogram",
+        method: Literal["histogram", "kde", "cloud-in-cell"] = "cloud-in-cell",
         kde_bandwidth: torch.Tensor | None = None,
         is_blocking: bool = False,
         is_active: bool = False,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
         assert (
             isinstance(resolution, (tuple, list)) and len(resolution) == 2
@@ -66,7 +84,8 @@ class Screen(Element):
         assert method in [
             "histogram",
             "kde",
-        ], f"Invalid method {method}. Must be either 'histogram' or 'kde'."
+            "cloud-in-cell",
+        ], f"Invalid method {method}. Must be 'histogram', 'kde', or 'cloud-in-cell'."
 
         self.register_buffer_or_parameter(
             "pixel_size",
@@ -218,6 +237,7 @@ class Screen(Element):
 
     @property
     def reading(self) -> torch.Tensor:
+        """Image reading of the screen with shape `(..., height, width).`"""
         if self.cached_reading is not None:
             return self.cached_reading
 
@@ -300,6 +320,19 @@ class Screen(Element):
                     bins2=self.pixel_bin_centers[1],
                     bandwidth=self.kde_bandwidth,
                     weights=broadcasted_weights,
+                ).mT
+            elif self.method == "cloud-in-cell":
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
+                )
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
+                image = cloud_in_cell_charge_deposition(
+                    positions=torch.stack([broadcasted_x, broadcasted_y], dim=-1),
+                    bins=self.effective_resolution,
+                    extent=self.extent.reshape(2, 2),
+                    charges=broadcasted_weights,
                 ).mT
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
