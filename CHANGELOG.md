@@ -6,7 +6,7 @@
 
 ### 🚀 Features
 
-- Add hkick and vkick parameters to `Quadrupole` and `Sextupole` magnets to supoort optional steering components. (see #647) (@cr-xu)
+- Add hkick and vkick parameters to `Quadrupole` and `Sextupole` magnets to support optional steering components. (see #647) (@cr-xu)
 
 ### 🐛 Bug fixes
 
