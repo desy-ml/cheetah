@@ -4,7 +4,6 @@ import torch
 import cheetah
 
 
-@pytest.mark.for_every_element("original")
 @pytest.mark.for_every_element(
     "original",
     xfail_if=lambda original: isinstance(original, cheetah.Quadrupole)
