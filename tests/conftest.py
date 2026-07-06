@@ -60,6 +60,8 @@ ELEMENT_SUBCLASSES_ARGS = {
         "linear": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
+            "hkick": torch.tensor(1e-4),
+            "vkick": torch.tensor(-1e-4),
             "tilt": torch.tensor(0.42),
             "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "linear",
@@ -67,6 +69,8 @@ ELEMENT_SUBCLASSES_ARGS = {
         "second_order": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
+            "hkick": torch.tensor(1e-4),
+            "vkick": torch.tensor(-1e-4),
             "tilt": torch.tensor(0.42),
             "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "second_order",
@@ -74,9 +78,12 @@ ELEMENT_SUBCLASSES_ARGS = {
         "drift_kick_drift": {
             "length": torch.tensor(1.0),
             "k1": torch.tensor([1.0, -2.0]),
+            "hkick": torch.tensor(1e-4),
+            "vkick": torch.tensor(-1e-4),
             "tilt": torch.tensor(0.42),
             "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "drift_kick_drift",
+            "num_steps": 10,
         },
     },
     cheetah.RBend: {
@@ -107,6 +114,8 @@ ELEMENT_SUBCLASSES_ARGS = {
         "linear": {
             "length": torch.tensor(1.0),
             "k2": torch.tensor([1.0, -2.0]),
+            "hkick": torch.tensor(1e-4),
+            "vkick": torch.tensor(-1e-4),
             "tilt": torch.tensor(0.42),
             "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "linear",
@@ -114,6 +123,8 @@ ELEMENT_SUBCLASSES_ARGS = {
         "second_order": {
             "length": torch.tensor(1.0),
             "k2": torch.tensor([1.0, -2.0]),
+            "hkick": torch.tensor(1e-4),
+            "vkick": torch.tensor(-1e-4),
             "tilt": torch.tensor(0.42),
             "misalignment": torch.tensor([0.01, -0.02]),
             "tracking_method": "second_order",

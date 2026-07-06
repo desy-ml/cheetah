@@ -290,3 +290,29 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     # Check that the transfer matrices are equal to the precision of the dtype
     assert torch.allclose(tm_drift, tm_quad, atol=2e-7)
     assert torch.allclose(tm_drift, tm_skew_quad, atol=2e-7)
+
+
+def test_quadrupole_off_kick_linear_transfer_map():
+    """Test that when k1=0, the linear transfer map with a kick is as the
+    closed-form expression.
+    """
+
+    length = torch.tensor(0.5)
+    k1 = torch.tensor(0.0)
+    hkick = torch.tensor(2e-4)
+    vkick = torch.tensor(3e-4)
+
+    quad = cheetah.Quadrupole(length=length, k1=k1, hkick=hkick, vkick=vkick)
+
+    R = quad.first_order_transfer_map(
+        energy=torch.tensor(1e9), species=cheetah.Species("electron")
+    )
+
+    assert torch.isclose(R[1, 6], hkick)  # total horizontal kick
+    assert torch.isclose(R[3, 6], vkick)  # total vertical kick
+    assert torch.isclose(
+        R[0, 6], length * hkick / 2
+    )  # entrance half-kick drifts over length in horizontal plane
+    assert torch.isclose(
+        R[2, 6], length * vkick / 2
+    )  # entrance half-kick drifts over length in vertical plane

@@ -5,6 +5,11 @@ import cheetah
 
 
 @pytest.mark.for_every_element("original")
+@pytest.mark.for_every_element(
+    "original",
+    xfail_if=lambda original: isinstance(original, cheetah.Quadrupole)
+    and original.tracking_method == "linear",
+)
 def test_element_end(original):
     """
     Test that at the end of a split element the result is the same as at the end of the

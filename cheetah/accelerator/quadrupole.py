@@ -299,6 +299,8 @@ class Quadrupole(Element):
             Quadrupole(
                 self.length / num_splits,
                 self.k1,
+                hkick=self.hkick / num_splits,
+                vkick=self.vkick / num_splits,
                 misalignment=self.misalignment,
                 tilt=self.tilt,
                 num_steps=self.num_steps,
