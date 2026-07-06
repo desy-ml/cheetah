@@ -10,6 +10,7 @@ from cheetah.track_methods import (
     base_rmatrix,
     base_ttensor,
     combined_rotation_misalignment_matrix,
+    thin_kick_matrix,
 )
 from cheetah.utils import (
     UniqueNameGenerator,
@@ -27,6 +28,8 @@ class Quadrupole(Element):
 
     :param length: Length in meters.
     :param k1: Strength of the quadrupole in 1/m^-2.
+    :param hkick: Horizontal kick in rad.
+    :param vkick: Vertical kick in rad.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians. pi/4 for
         skew-quadrupole.
@@ -49,6 +52,8 @@ class Quadrupole(Element):
         self,
         length: torch.Tensor,
         k1: torch.Tensor | None = None,
+        hkick: torch.Tensor | None = None,
+        vkick: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
@@ -83,6 +88,13 @@ class Quadrupole(Element):
             "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
+        self.register_buffer_or_parameter(
+            "hkick", hkick if hkick is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "vkick", vkick if vkick is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+
         self.num_steps = num_steps
         self.tracking_method = tracking_method
 
@@ -101,7 +113,10 @@ class Quadrupole(Element):
         R_entry, R_exit = combined_rotation_misalignment_matrix(
             angle=self.tilt, misalignment=self.misalignment
         )
-        R = R_exit @ R @ R_entry
+
+        R_half_kick = thin_kick_matrix(hkick=0.5 * self.hkick, vkick=0.5 * self.vkick)
+
+        R = R_half_kick @ R_exit @ R @ R_entry @ R_half_kick
 
         return R
 
@@ -133,8 +148,18 @@ class Quadrupole(Element):
         R_entry, R_exit = combined_rotation_misalignment_matrix(
             angle=self.tilt, misalignment=self.misalignment
         )
+        # Apply half-kick matrices to the entrance and exit
+        R_half_kick = thin_kick_matrix(hkick=0.5 * self.hkick, vkick=0.5 * self.vkick)
+
+        R_entry_total = R_entry @ R_half_kick
+        R_exit_total = R_half_kick @ R_exit
+
         T = torch.einsum(
-            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+            "...ij,...jkl,...kn,...lm->...inm",
+            R_exit_total,
+            T,
+            R_entry_total,
+            R_entry_total,
         )
 
         return T
@@ -191,6 +216,12 @@ class Quadrupole(Element):
         step_length = self.length / self.num_steps
         b1 = self.k1 * self.length
 
+        # Get the hkick and vkick in magnet body frame
+        hkick_body, vkick_body = bmadx.rotate_kicks_to_body_frame(
+            self.hkick, self.vkick, self.tilt
+        )
+        half_kick_fraction = 0.5 / self.num_steps
+
         # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
@@ -202,6 +233,10 @@ class Quadrupole(Element):
 
             tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
             ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
+
+            # Apply half-kick at the entrance
+            px = px + hkick_body * half_kick_fraction
+            py = py + vkick_body * half_kick_fraction
 
             z = (
                 z
@@ -219,6 +254,10 @@ class Quadrupole(Element):
             py_next = ty[1][0] * y + ty[1][1] * py
 
             x, px, y, py = x_next, px_next, y_next, py_next
+
+            # Apply half-kick at the exit
+            px = px + hkick_body * half_kick_fraction
+            py = py + vkick_body * half_kick_fraction
 
             z = z + bmadx.low_energy_z_correction(pz, p0c, mc2, step_length)
 
@@ -335,6 +374,8 @@ class Quadrupole(Element):
         return super().defining_features + [
             "length",
             "k1",
+            "hkick",
+            "vkick",
             "misalignment",
             "tilt",
             "num_steps",
