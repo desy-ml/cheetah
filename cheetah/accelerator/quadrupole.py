@@ -28,8 +28,8 @@ class Quadrupole(Element):
 
     :param length: Length in meters.
     :param k1: Strength of the quadrupole in 1/m^-2.
-    :param hkick: Horizontal kick in rad.
-    :param vkick: Vertical kick in rad.
+    :param hkick: Horizontal kick in rad. Acting in lab frame, *not* rotated with tilt.
+    :param vkick: Vertical kick in rad. Acting in lab frame, *not* rotated with tilt.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians. pi/4 for
         skew-quadrupole.

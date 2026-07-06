@@ -21,6 +21,8 @@ class Sextupole(Element):
 
     :param length: Length in meters.
     :param k2: Sextupole strength in 1/m^3.
+    :param hkick: Horizontal kick in rad. Acting in lab frame, *not* rotated with tilt.
+    :param vkick: Vertical kick in rad. Acting in lab frame, *not* rotated with tilt.
     :param misalignment: Transverse misalignment in x and y directions in meters.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
     :param tracking_method: Method to use for tracking through the element.
