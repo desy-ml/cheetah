@@ -115,9 +115,11 @@ class SpaceChargeKick(Element):
             charges=beam.particle_charges * beam.survival_probabilities,
         )
 
+        # Normalise by the cell volume to get density
         inv_cell_volume = cell_size.prod(dim=-1).reciprocal()
+        density_grid = charge_grid * inv_cell_volume[..., None, None, None]
 
-        return charge_grid * inv_cell_volume[..., None, None, None]
+        return density_grid
 
     def _integrated_potential(
         self, x: torch.Tensor, y: torch.Tensor, tau: torch.Tensor
