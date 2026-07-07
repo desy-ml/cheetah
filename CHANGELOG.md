@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
