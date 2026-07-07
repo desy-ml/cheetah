@@ -127,6 +127,7 @@ ELEMENT_SUBCLASSES_ARGS = {
         }
     },
     cheetah.SpaceChargeKick: {"default": {"effect_length": torch.tensor(1.0)}},
+    cheetah.SpaceChargeKick2D: {"default": {"effect_length": torch.tensor(1.0)}},
     cheetah.Superimposed: {
         "default": {
             "base_element": cheetah.Quadrupole(
