@@ -103,9 +103,9 @@ class SpaceChargeKick(Element):
         """
         Computes the integrate potential as in
         https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.10.129901
-        The formula used here is slightly different than the one used in
-        the above paper, but is equivalent (up to integration constants),
-        and is more robust to numerical errors.
+        The formula used here is slightly different than the one used in the above
+        paper, but is equivalent (up to integration constants), and is more robust to
+        numerical errors.
         """
 
         r = (x.square() + y.square() + tau.square()).sqrt()
@@ -161,8 +161,8 @@ class SpaceChargeKick(Element):
         self, beam: ParticleBeam, cell_size: torch.Tensor
     ) -> torch.Tensor:
         """
-        Computes the Integrated Green Function (IGF) in the 2x larger array,
-        as needed for the Hockney method.
+        Computes the Integrated Green Function (IGF) in the 2x larger array, as needed
+        for the Hockney method.
         """
         dx, dy, dtau = (
             cell_size[..., 0],
