@@ -141,12 +141,8 @@ class SpaceChargeKick(Element):
         inv_cell_volume = cell_size.prod(dim=-1).reciprocal()
         charge_density = charge_grid * inv_cell_volume[..., None, None, None]
 
-        charge_density = self._deposit_charge_on_grid(
-            beam, xp_coordinates, cell_size, grid_dimensions
-        )
-        new_dims = tuple(2 * dim for dim in self.grid_shape)
-
         # Create a new tensor with the doubled dimensions, filled with zeros
+        new_dims = tuple(2 * dim for dim in self.grid_shape)
         new_charge_density = beam.particles.new_zeros(
             beam.particles.shape[:-2] + new_dims
         )
