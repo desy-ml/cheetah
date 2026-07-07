@@ -97,30 +97,6 @@ class SpaceChargeKick(Element):
             ),
         )
 
-    def _deposit_charge_on_grid(
-        self,
-        beam: ParticleBeam,
-        xp_coordinates: torch.Tensor,
-        cell_size: torch.Tensor,
-        grid_dimensions: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Deposits the charge density of the beam onto a grid, using the Cloud-In-Cell
-        (CIC) method. Returns a grid of charge density in C/m^3.
-        """
-        charge_grid = cloud_in_cell_charge_deposition(
-            positions=xp_coordinates[..., [0, 2, 4]],
-            bins=self.grid_shape,
-            extent=torch.stack([-grid_dimensions, grid_dimensions], dim=-1),
-            charges=beam.particle_charges * beam.survival_probabilities,
-        )
-
-        # Normalise by the cell volume to get density
-        inv_cell_volume = cell_size.prod(dim=-1).reciprocal()
-        density_grid = charge_grid * inv_cell_volume[..., None, None, None]
-
-        return density_grid
-
     def _integrated_potential(
         self, x: torch.Tensor, y: torch.Tensor, tau: torch.Tensor
     ) -> torch.Tensor:
@@ -154,6 +130,17 @@ class SpaceChargeKick(Element):
         Allocates a 2x larger array in all dimensions (to perform Hockney's method), and
         copies the charge density in one of the "quadrants".
         """
+        charge_grid = cloud_in_cell_charge_deposition(
+            positions=xp_coordinates[..., [0, 2, 4]],
+            bins=self.grid_shape,
+            extent=torch.stack([-grid_dimensions, grid_dimensions], dim=-1),
+            charges=beam.particle_charges * beam.survival_probabilities,
+        )
+
+        # Normalise by the cell volume to get density
+        inv_cell_volume = cell_size.prod(dim=-1).reciprocal()
+        charge_density = charge_grid * inv_cell_volume[..., None, None, None]
+
         charge_density = self._deposit_charge_on_grid(
             beam, xp_coordinates, cell_size, grid_dimensions
         )
