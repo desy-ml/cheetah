@@ -108,23 +108,14 @@ class SpaceChargeKick(Element):
         Deposits the charge density of the beam onto a grid, using the Cloud-In-Cell
         (CIC) method. Returns a grid of charge density in C/m^3.
         """
-        positions = xp_coordinates[..., [0, 2, 4]]
-        extent = torch.stack(
-            [-grid_dimensions - 0.5 * cell_size, grid_dimensions - 0.5 * cell_size],
-            dim=-1,
-        )
-        masked_particle_charges = beam.particle_charges * beam.survival_probabilities
         charge_grid = cloud_in_cell_charge_deposition(
-            positions=positions,
+            positions=xp_coordinates[..., [0, 2, 4]],
             bins=self.grid_shape,
-            extent=extent,
-            charges=masked_particle_charges,
+            extent=torch.stack([-grid_dimensions, grid_dimensions], dim=-1),
+            charges=beam.particle_charges * beam.survival_probabilities,
         )
 
-        inv_cell_size = cell_size.reciprocal()
-        inv_cell_volume = (
-            inv_cell_size[..., 0] * inv_cell_size[..., 1] * inv_cell_size[..., 2]
-        )
+        inv_cell_volume = cell_size.prod(dim=-1).reciprocal()
 
         return charge_grid * inv_cell_volume[..., None, None, None]
 
