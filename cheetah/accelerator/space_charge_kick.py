@@ -113,9 +113,12 @@ class SpaceChargeKick(Element):
             [-grid_dimensions - 0.5 * cell_size, grid_dimensions - 0.5 * cell_size],
             dim=-1,
         )
-        charges = beam.particle_charges * beam.survival_probabilities
-        charge = cloud_in_cell_charge_deposition(
-            positions=positions, bins=self.grid_shape, extent=extent, charges=charges
+        masked_particle_charges = beam.particle_charges * beam.survival_probabilities
+        charge_grid = cloud_in_cell_charge_deposition(
+            positions=positions,
+            bins=self.grid_shape,
+            extent=extent,
+            charges=masked_particle_charges,
         )
 
         inv_cell_size = cell_size.reciprocal()
@@ -123,7 +126,7 @@ class SpaceChargeKick(Element):
             inv_cell_size[..., 0] * inv_cell_size[..., 1] * inv_cell_size[..., 2]
         )
 
-        return charge * inv_cell_volume[..., None, None, None]
+        return charge_grid * inv_cell_volume[..., None, None, None]
 
     def _integrated_potential(
         self, x: torch.Tensor, y: torch.Tensor, tau: torch.Tensor
