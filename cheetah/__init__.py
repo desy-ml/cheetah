@@ -1,8 +1,8 @@
 from . import converters  # noqa: F401
 from ._version import __version__  # noqa: F401
 from .accelerator import (  # noqa: F401
-    BPM,
     Aperture,
+    BPM,
     Cavity,
     CombinedCorrector,
     CustomTransferMap,
@@ -17,8 +17,9 @@ from .accelerator import (  # noqa: F401
     Segment,
     Sextupole,
     Solenoid,
+    SpaceChargeKick,
     SpaceChargeKick2D,
-    SpaceChargeKick3D,
+    Superimposed,
     TransverseDeflectingCavity,
     Undulator,
     VerticalCorrector,

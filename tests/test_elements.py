@@ -91,9 +91,12 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     outgoing_beam = segment.track(incoming_beam)
 
     # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        assert getattr(outgoing_beam, attribute).device.type == device.type
-        assert getattr(outgoing_beam, attribute).dtype == dtype
+    non_module_features = [
+        feature for feature in outgoing_beam.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
+        assert getattr(outgoing_beam, feature).device.type == device.type
+        assert getattr(outgoing_beam, feature).dtype == dtype
 
 
 @pytest.mark.for_every_element(
@@ -101,8 +104,8 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
     xfail_if=lambda element: isinstance(
         element,
         (
+            cheetah.SpaceChargeKick,
             cheetah.SpaceChargeKick2D,
-            cheetah.SpaceChargeKick3D,
             cheetah.TransverseDeflectingCavity,
         ),
     )
@@ -145,7 +148,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     """
     Test that `Element` subclasses work correctly on various devices and with various
-    dtypes if tracked with a `ParticleBeam`.
+    dtypes if tracked with a `ParameterBeam`.
     """
     segment = cheetah.Segment(
         elements=[
@@ -165,9 +168,12 @@ def test_parameter_beam_tracking_with_device_and_dtype(element, device, dtype):
     outgoing_beam = segment.track(incoming_beam)
 
     # Check device and dtype of the output
-    for attribute in outgoing_beam.UNVECTORIZED_NUM_ATTR_DIMS.keys():
-        assert getattr(outgoing_beam, attribute).device.type == device.type
-        assert getattr(outgoing_beam, attribute).dtype == dtype
+    non_module_features = [
+        feature for feature in outgoing_beam.defining_features if feature != "species"
+    ]
+    for feature in non_module_features:
+        assert getattr(outgoing_beam, feature).device.type == device.type
+        assert getattr(outgoing_beam, feature).dtype == dtype
 
 
 @pytest.mark.for_every_element("element")
@@ -335,9 +341,6 @@ def test_consistency(element, beam_cls):
         outputs for elements that did not have intentional changes to their tracking
         behaviour.
     """
-    if beam_cls == cheetah.ParameterBeam and element.tracking_method != "linear":
-        pytest.xfail("ParameterBeam does not support drift-kick-drift elements")
-
     element = element.to(torch.float64)
 
     incoming_beam_path = (
@@ -348,6 +351,24 @@ def test_consistency(element, beam_cls):
         if not isinstance(incoming_beam, beam_cls):
             incoming_beam = incoming_beam.as_parameter_beam()
 
+    try:
+        actual_outgoing_beam = element.track(incoming_beam)
+    except AssertionError as e:
+        # Expect test to fail if error message contains "is currently only supported for
+        # `ParticleBeam`"
+        # NOTE: Some elements only warn about their incompatibility with ParameterBeam,
+        #   and return a best-effort output. In those cases the consistency test should
+        #   still be run, and the output should be compared to the expected output.
+        if (
+            beam_cls == cheetah.ParameterBeam
+            and "is currently only supported for `ParticleBeam`" in str(e)
+        ):
+            pytest.xfail(
+                "The element under test does not support ParameterBeam tracking."
+            )
+        else:
+            raise e
+
     expected_outgoing_beam_path = (
         Path("tests")
         / "resources"
@@ -357,8 +378,6 @@ def test_consistency(element, beam_cls):
     # NOTE: Comment out the following block to generate ground truth expected outputs
     with expected_outgoing_beam_path.open("rb") as f:
         expected_outgoing_beam = pickle.load(f)
-
-    actual_outgoing_beam = element.track(incoming_beam)
 
     # NOTE: Uncomment the following block to generate ground truth expected outputs
     # expected_outgoing_beam_path.parent.mkdir(parents=True, exist_ok=True)

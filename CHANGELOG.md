@@ -1,10 +1,48 @@
 # Changelog
 
-## v0.8.2 [🚧 Work in Progress]
+## v0.8.4 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
 - The `SpaceChargeKick` element has been renamed to `SpaceChargeKick3D` in order to reflect the difference to the new `SpaceChargeKick2D` element (see #576) (@austin-hoover, @RemiLehe, @jank324)
+
+### 🚀 Features
+
+- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
+
+### 🚨 Breaking Changes
+
+- Change default `method` of `Screen` from `"histogram"` to `"cloud-in-cell"` (see #625) (@roussel-ryan, @cr-xu, @jank324)
+
+### 🚀 Features
+
+- Allow special characters in quoted names in `use line` expressions from Fortran namelist-based lattice files created by Elegant and Bmad (see #637) (@cr-xu)
+- A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
+- Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
+- Implement a new differentiable Cloud-In-Cell (CIC) method for n-D charge deposition and add it to `Screen`. The new method is up to two orders of magnitude faster than the existing and previously only differentiable option `kde` method. (see #625) (@roussel-ryan, @cr-xu, @jank324)
+- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @hespe, @roussel-ryan)
+
+### 🐛 Bug fixes
+
+- Fix an issue where off-diagonal elements are not included in the conversion from `ParameterBeam` to `ParticleBeam` (see #635) (@cr-xu)
+
+### 🐆 Other
+
+- Limit `UNVECTORIZED_NUM_ATTR_DIMS` to only those attributes with more than 0 dimensions and add `defining_features` to beam classes like already implemented for element classes. (see #627) (@cr-xu, @jank324)
+
+### 🌟 First Time Contributors
+
+- Christopher Garnier (@phys-cgarnier)
+
+## [v0.8.2](https://github.com/desy-ml/cheetah/releases/tag/v0.8.2) (2026-06-05)
 
 ### 🚀 Features
 
@@ -16,10 +54,13 @@
 - RPN parsing was made more robust to missing whitespace in expressions, and arc trig expressions were added to infix parsing. (see #585) (@amylizzle)
 - Fix issue, where the first example in the gradient-based optimisation notebook from the docs would not run because the `k1` of the quadrupoles was set to `0.0`, which causes the gradients to be undefined (see #588, #603) (@jank324, @cr-xu)
 - Update the elegant conversion to include missing dipole attributes, converting `hgap` to `gap` and `fint` to `fringe_integral`. (see #624) (@cr-xu)
+- Update the `to_openpmd_particlegroup` conversion to use `int` for status and add `detach()` before tensor to numpy conversion. (see #629) (@roussel-ryan)
+- Fix an issue where negative length elements are incorrectly removed by the `Segment.without_inactive_zero_length_elements` method (see #633) (@cr-xu)
+- Patch emittance `NaN` and `0.0` conditions, which caused Twiss parameters to be `NaN` or `inf` under some conditions. (see #639) (@jank324)
 
 ### 🐆 Other
 
-### 🌟 First Time Contributors
+- Automate publishing to PyPI when new releases are created on GitHub (see #423) (@jank324)
 
 ## [v0.8.1](https://github.com/desy-ml/cheetah/releases/tag/v0.8.1) (2026-03-05)
 

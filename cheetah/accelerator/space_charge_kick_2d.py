@@ -48,12 +48,15 @@ class SpaceChargeKick2D(Element):
         grid_extent_y: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
         self.grid_shape = grid_shape
 
@@ -422,7 +425,7 @@ class SpaceChargeKick2D(Element):
         """
         assert isinstance(
             incoming, ParticleBeam
-        ), "SpaceChargeKick2D currently only supports tracking ParticleBeam."
+        ), "SpaceChargeKick2D tracking is currently only supported for `ParticleBeam`."
 
         # This flattening is a hack to only think about one vector dimension in the
         # following code. It is reversed at the end of the function.

@@ -4,9 +4,10 @@ from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import ParticleBeam
+from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
 
 
-class SpaceChargeKick3D(Element):
+class SpaceChargeKick(Element):
     """
     Applies the effect of space charge over a length `effect_length`, on the
     **momentum** (i.e. divergence and energy spread) of the beam. The positions are
@@ -41,6 +42,10 @@ class SpaceChargeKick3D(Element):
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element (e.g. control-system addresses or PVs). This information is *not* used
+        in simulation and may contain any extra data the user wants to store along with
+        the lattice. See :doc:`/examples/including_metadata` for more information.
     """
 
     def __init__(
@@ -53,12 +58,15 @@ class SpaceChargeKick3D(Element):
         grid_extent_tau: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool = False,
+        metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        super().__init__(name=name, sanitize_name=sanitize_name, **factory_kwargs)
+        super().__init__(
+            name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
+        )
 
         self.grid_shape = grid_shape
 
@@ -89,105 +97,15 @@ class SpaceChargeKick3D(Element):
             ),
         )
 
-    def _deposit_charge_on_grid(
-        self,
-        beam: ParticleBeam,
-        xp_coordinates: torch.Tensor,
-        cell_size: torch.Tensor,
-        grid_dimensions: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Deposits the charge density of the beam onto a grid, using the
-        Cloud-In-Cell (CIC) method. Returns a grid of charge density in C/m^3.
-        """
-        charge = beam.particles.new_zeros(beam.particles.shape[:-2] + self.grid_shape)
-
-        # Compute inverse cell size (to avoid multiple divisions later on)
-        inv_cell_size = cell_size.reciprocal()
-
-        # Get particle positions
-        particle_positions = xp_coordinates[..., [0, 2, 4]]
-        normalized_positions = (
-            particle_positions + grid_dimensions.unsqueeze(-2)
-        ) * inv_cell_size.unsqueeze(-2)
-
-        # Find indices of the lower corners of the cells containing the particles
-        cell_indices = normalized_positions.floor().to(torch.int)
-
-        # Calculate the weights for all surrounding cells
-        offsets = torch.tensor(
-            [
-                [0, 0, 0],
-                [0, 0, 1],
-                [0, 1, 0],
-                [0, 1, 1],
-                [1, 0, 0],
-                [1, 0, 1],
-                [1, 1, 0],
-                [1, 1, 1],
-            ],
-            device=cell_indices.device,
-        )
-        surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(-3)
-        # Shape: (..., num_particles, 8, 3)
-        weights = 1.0 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
-        # Shape: (..., num_particles, 8, 3)
-        cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
-
-        # Add the charge contributions to the cells
-        # Shape: (..., 8 * num_particles)
-        idx_vector = (
-            torch.arange(cell_indices.shape[0], device=cell_indices.device)
-            .repeat(8 * beam.particles.shape[-2], 1)
-            .T
-        )
-        idx_x = surrounding_indices[..., 0].flatten(start_dim=-2)
-        idx_y = surrounding_indices[..., 1].flatten(start_dim=-2)
-        idx_tau = surrounding_indices[..., 2].flatten(start_dim=-2)
-
-        # Check that particles are inside the grid
-        valid_mask = (
-            (idx_x >= 0)
-            & (idx_x < self.grid_shape[0])
-            & (idx_y >= 0)
-            & (idx_y < self.grid_shape[1])
-            & (idx_tau >= 0)
-            & (idx_tau < self.grid_shape[2])
-        )
-
-        # Accumulate the charge contributions
-        survived_particle_charges = beam.particle_charges * beam.survival_probabilities
-        repeated_charges = survived_particle_charges.repeat_interleave(
-            repeats=8, dim=-1
-        )  # Shape:(..., 8 * num_particles)
-        values = (cell_weights.flatten(start_dim=-2) * repeated_charges)[valid_mask]
-        charge.index_put_(
-            (
-                idx_vector[valid_mask],
-                idx_x[valid_mask],
-                idx_y[valid_mask],
-                idx_tau[valid_mask],
-            ),
-            values,
-            accumulate=True,
-        )
-
-        # Normalize by the cell volume
-        inv_cell_volume = (
-            inv_cell_size[..., 0] * inv_cell_size[..., 1] * inv_cell_size[..., 2]
-        )
-
-        return charge * inv_cell_volume[..., None, None, None]
-
     def _integrated_potential(
         self, x: torch.Tensor, y: torch.Tensor, tau: torch.Tensor
     ) -> torch.Tensor:
         """
         Computes the integrate potential as in
         https://journals.aps.org/prab/abstract/10.1103/PhysRevSTAB.10.129901
-        The formula used here is slightly different than the one used in
-        the above paper, but is equivalent (up to integration constants),
-        and is more robust to numerical errors.
+        The formula used here is slightly different than the one used in the above
+        paper, but is equivalent (up to integration constants), and is more robust to
+        numerical errors.
         """
 
         r = (x.square() + y.square() + tau.square()).sqrt()
@@ -212,12 +130,19 @@ class SpaceChargeKick3D(Element):
         Allocates a 2x larger array in all dimensions (to perform Hockney's method), and
         copies the charge density in one of the "quadrants".
         """
-        charge_density = self._deposit_charge_on_grid(
-            beam, xp_coordinates, cell_size, grid_dimensions
+        charge_grid = cloud_in_cell_charge_deposition(
+            positions=xp_coordinates[..., [0, 2, 4]],
+            bins=self.grid_shape,
+            extent=torch.stack([-grid_dimensions, grid_dimensions], dim=-1),
+            charges=beam.particle_charges * beam.survival_probabilities,
         )
-        new_dims = tuple(2 * dim for dim in self.grid_shape)
+
+        # Normalise by the cell volume to get density
+        inv_cell_volume = cell_size.prod(dim=-1).reciprocal()
+        charge_density = charge_grid * inv_cell_volume[..., None, None, None]
 
         # Create a new tensor with the doubled dimensions, filled with zeros
+        new_dims = tuple(2 * dim for dim in self.grid_shape)
         new_charge_density = beam.particles.new_zeros(
             beam.particles.shape[:-2] + new_dims
         )
@@ -236,8 +161,8 @@ class SpaceChargeKick3D(Element):
         self, beam: ParticleBeam, cell_size: torch.Tensor
     ) -> torch.Tensor:
         """
-        Computes the Integrated Green Function (IGF) in the 2x larger array,
-        as needed for the Hockney method.
+        Computes the Integrated Green Function (IGF) in the 2x larger array, as needed
+        for the Hockney method.
         """
         dx, dy, dtau = (
             cell_size[..., 0],
@@ -381,9 +306,9 @@ class SpaceChargeKick3D(Element):
             integrated_green_function, dim=[1, 2, 3]
         )
         potential_ft = charge_density_ft * integrated_green_function_ft
-        potential = torch.fft.irfftn(potential_ft, dim=[1, 2, 3]).real / (
-            4.0 * torch.pi * epsilon_0
-        )
+        potential = (1.0 / (4 * torch.pi * epsilon_0)) * torch.fft.irfftn(
+            potential_ft, dim=[1, 2, 3]
+        ).real
 
         # Return the physical potential
         return potential[
@@ -481,9 +406,9 @@ class SpaceChargeKick3D(Element):
         )
         surrounding_indices = cell_indices.unsqueeze(-2) + offsets.unsqueeze(
             -3
-        )  # Shape:(..., num_particles, 8, 3)
+        )  # Shape:(.., num_particles, 8, 3)
         weights = (
-            1.0 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
+            1 - (normalized_positions.unsqueeze(-2) - surrounding_indices).abs()
         )  # Shape: (..., num_particles, 8, 3)
         cell_weights = weights.prod(dim=-1)  # Shape: (..., num_particles, 8)
 
@@ -555,7 +480,7 @@ class SpaceChargeKick3D(Element):
         """
         assert isinstance(
             incoming, ParticleBeam
-        ), "SpaceChargeKick3D currently only supports tracking ParticleBeam."
+        ), "SpaceChargeKick tracking is currently only supported for `ParticleBeam`."
 
         # This flattening is a hack to only think about one vector dimension in the
         # following code. It is reversed at the end of the function.

@@ -126,8 +126,16 @@ ELEMENT_SUBCLASSES_ARGS = {
             "misalignment": torch.tensor([0.01, -0.02]),
         }
     },
+    cheetah.SpaceChargeKick: {"default": {"effect_length": torch.tensor(1.0)}},
     cheetah.SpaceChargeKick2D: {"default": {"effect_length": torch.tensor(1.0)}},
-    cheetah.SpaceChargeKick3D: {"default": {"effect_length": torch.tensor(1.0)}},
+    cheetah.Superimposed: {
+        "default": {
+            "base_element": cheetah.Quadrupole(
+                length=torch.tensor(1.0), k1=torch.tensor(0.5)
+            ),
+            "superimposed_element": cheetah.BPM(),
+        }
+    },
     cheetah.TransverseDeflectingCavity: {
         "inactive": {"length": torch.tensor(1.0), "voltage": torch.tensor(0.0)},
         "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},

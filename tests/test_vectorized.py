@@ -347,14 +347,15 @@ def test_vectorized_screen_2d(BeamClass, method):
             cheetah.Marker,
             cheetah.Screen,
             cheetah.Segment,
+            cheetah.SpaceChargeKick,
             cheetah.SpaceChargeKick2D,
-            cheetah.SpaceChargeKick3D,
+            cheetah.Superimposed,
         ),
     ),
 )
 def test_broadcasting_two_different_inputs(element_with_length):
     """
-    Test that broadcasting rules are correctly applied to a elements with two different
+    Test that broadcasting rules are correctly applied to elements with two different
     input shapes for elements that have a `length` attribute.
 
     Skipped for elements whose response is not influenced by their length.
@@ -382,7 +383,7 @@ def test_broadcasting_two_different_inputs(element_with_length):
 )
 def test_broadcasting_two_different_inputs_bmadx(ElementClass):
     """
-    Test that broadcasting rules are correctly applied to a elements with two different
+    Test that broadcasting rules are correctly applied to elements with two different
     input shapes for elements that have a `"drift_kick_drift"` tracking method.
     """
     incoming = cheetah.ParticleBeam.from_parameters(
@@ -418,7 +419,7 @@ def test_vectorized_parameter_beam_creation():
     "ElementClass", [cheetah.HorizontalCorrector, cheetah.VerticalCorrector]
 )
 def test_broadcasting_corrector_angles(ElementClass):
-    """Test that broadcasting rules are correctly applied to with corrector angles."""
+    """Test that broadcasting rules are correctly applied to corrector angles."""
     incoming = cheetah.ParticleBeam.from_parameters(
         num_particles=100_000, energy=torch.tensor([154e6, 14e9])
     )
