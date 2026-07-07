@@ -6,6 +6,7 @@
 
 ### 🚀 Features
 
+- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
 - Add hkick and vkick parameters to `Quadrupole` and `Sextupole` magnets to support optional steering components. (see #647) (@cr-xu)
 
 ### 🐛 Bug fixes
