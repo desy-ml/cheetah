@@ -1,8 +1,8 @@
 from . import converters  # noqa: F401
 from ._version import __version__  # noqa: F401
 from .accelerator import (  # noqa: F401
-    Aperture,
     BPM,
+    Aperture,
     Cavity,
     CombinedCorrector,
     CustomTransferMap,
