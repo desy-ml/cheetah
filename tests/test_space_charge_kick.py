@@ -42,14 +42,18 @@ def test_cold_uniform_beam_expansion(energy):
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
     )
 
     # Compute section length that results in a doubling of the beam size
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
+    kappa = (
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
+    )
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
@@ -66,9 +70,9 @@ def test_cold_uniform_beam_expansion(energy):
     )
     outgoing = segment.track(incoming)
 
-    assert torch.isclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
-    assert torch.isclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.isclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_x, 2.0 * incoming.sigma_x, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_y, 2.0 * incoming.sigma_y, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_tau, 2.0 * incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized_cold_uniform_beam_expansion():
@@ -95,14 +99,18 @@ def test_vectorized_cold_uniform_beam_expansion():
         energy=energy,
         radius_x=R0,
         radius_y=R0,
-        radius_tau=R0 / gamma / beta,  # Duration of the beam in in the lab frame
+        radius_tau=R0 / gamma / beta,  # Duration of the beam in the lab frame
         sigma_px=torch.tensor(1e-15),
         sigma_py=torch.tensor(1e-15),
         sigma_p=torch.tensor(1e-15),
     )
 
     # Compute section length
-    kappa = 1 + (torch.tensor(2).sqrt() / 4) * (3 + 2 * torch.tensor(2).sqrt()).log()
+    kappa = (
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
+    )
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
@@ -119,9 +127,9 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
     outgoing = segment.track(incoming)
 
-    assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_x, 2.0 * incoming.sigma_x, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_y, 2.0 * incoming.sigma_y, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_tau, 2.0 * incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized():
@@ -226,7 +234,9 @@ def test_gradient_value_backward_ad():
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     kappa = (
-        1 + (torch.tensor(2.0).sqrt() / 4) * (3 + 2 * torch.tensor(2.0).sqrt()).log()
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
     )
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
@@ -290,7 +300,9 @@ def test_gradient_value_forward_ad():
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
     kappa = (
-        1 + (torch.tensor(2.0).sqrt() / 4) * (3 + 2 * torch.tensor(2.0).sqrt()).log()
+        1.0
+        + (torch.tensor(2.0).sqrt() / 4.0)
+        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
     )
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
