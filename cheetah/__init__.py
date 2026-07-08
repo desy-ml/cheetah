@@ -11,6 +11,7 @@ from .accelerator import (  # noqa: F401
     Element,
     HorizontalCorrector,
     Marker,
+    Octupole,
     Quadrupole,
     RBend,
     Screen,
