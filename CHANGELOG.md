@@ -10,6 +10,8 @@
 
 ### 🐛 Bug fixes
 
+- Make `Sextupole` skippable if its tracking method is set to `linear` (see #655) (@hespe)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
