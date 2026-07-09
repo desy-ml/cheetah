@@ -10,9 +10,11 @@
 
 ### 🐛 Bug fixes
 
-- Make `Sextupole` skippable if its tracking method is set to `linear` (see #655) (@hespe)
+- Fix `Sextupole` not being skippable if its tracking method is set to `linear` (see #655) (@hespe)
 
 ### 🐆 Other
+
+- Non-deterministic torch features now raise a warning in tests instead of a failure (see #655) (@hespe, @jank324)
 
 ### 🌟 First Time Contributors
 
