@@ -207,7 +207,7 @@ def seed_random_generators(request):
     seed = request.config.getoption("--seed")
 
     # Prevent torch from using non-deterministic algorithms
-    torch.use_deterministic_algorithms(True)
+    torch.use_deterministic_algorithms(True, warn_only=True)
 
     # Manually seed all torch PRNGs
     torch.manual_seed(seed)

@@ -6,9 +6,16 @@
 
 ### 🚀 Features
 
+- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
+
 ### 🐛 Bug fixes
 
+- Fix `Sextupole` not being skippable if its tracking method is set to `linear` (see #655) (@hespe)
+- Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @hespe)
+
 ### 🐆 Other
+
+- Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@hespe, @jank324)
 
 ### 🌟 First Time Contributors
 

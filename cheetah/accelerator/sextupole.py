@@ -117,7 +117,7 @@ class Sextupole(Element):
 
     @property
     def is_skippable(self) -> bool:
-        return False
+        return self.tracking_method == "linear"
 
     @property
     def is_active(self) -> bool:
