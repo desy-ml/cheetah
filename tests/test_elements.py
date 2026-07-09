@@ -30,9 +30,12 @@ def test_all_element_subclasses_is_skippable_boolean(element):
     except_if=lambda element: "linear" not in element.supported_tracking_methods,
 )
 def test_linear_tracking_is_skippable(element: cheetah.Element):
-    """Test that all elements supporting `tracking_method` to be set to `"linear"` are skippable when it is set to `"linear"`."""
+    """
+    Test that all elements supporting `tracking_method` to be set to `"linear"` are
+    skippable when it is set to `"linear"`.
+    """
     element.tracking_method = "linear"
-    
+
     assert element.is_skippable
 
 
@@ -42,10 +45,11 @@ def test_linear_tracking_is_skippable(element: cheetah.Element):
 )
 def test_second_order_tracking_is_not_skippable(element: cheetah.Element):
     """
-    Test that elements with their `tracking_method` set to `second_order` are not skippable.
+    Test that elements with their `tracking_method` set to `second_order` are not
+    skippable.
     """
     element.tracking_method = "second_order"
-    
+
     assert not element.is_skippable
 
 
