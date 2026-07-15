@@ -25,7 +25,8 @@ def convert_element(
         accelerator.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :return: Cheetah element object representing an element of particle accelerator.
     """
     try:

@@ -30,7 +30,8 @@ def convert_element(
     :param context: Context dictionary parsed from Elegant lattice file(s).
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
@@ -398,7 +399,8 @@ def convert_lattice(
     :param sanitize_names: Whether to sanitise the names of the elements as well as the
         name of the segment to be valid Python variable names. This is needed if you
         want to use the `segment.element_name` syntax to access the element in a
-        segment.
+        segment. If `None` (default), a warning is raised for invalid names. Set to `True`
+        to sanitise, or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype

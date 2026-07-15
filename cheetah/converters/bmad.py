@@ -26,7 +26,8 @@ def convert_element(
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
-        name.
+        name. If `None` (default), a warning is raised for invalid names. Set to `True`
+        to sanitise, or `False` to silence the warning.
     :param device: Device to put the element on. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the element. If `None`, the current default dtype
@@ -290,7 +291,9 @@ def convert_lattice(
         parsing the lattice file.
     :param sanitize_names: Whether to sanitise the names of the elements to be valid
         Python variable names. This is needed if you want to use the
-        `segment.element_name` syntax to access the element in a segment.
+        `segment.element_name` syntax to access the element in a segment. If `None`
+        (default), a warning is raised for invalid names. Set to `True` to sanitise,
+        or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
