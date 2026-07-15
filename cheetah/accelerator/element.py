@@ -42,7 +42,7 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        if not self.is_name_sanitized():
+        if self.name.isidentifier():
             if sanitize_name:
                 self.sanitize_name()
             elif sanitize_name is None:
@@ -345,25 +345,22 @@ class Element(ABC, nn.Module):
         """
         return [self]
 
-    def is_name_sanitized(self) -> bool:
-        """
-        Check if a name is sanitised, i.e. it contains only alphanumeric characters and
-        underscores.
-
-        A clean name can be used as a Python variable name, which is a requirement
-        when using the `segment.element_name` syntax to access the element in a segment.
-        """
-        return all(c.isalnum() or c == "_" for c in self.name)
-
     def sanitize_name(self) -> None:
         """
         Sanitise the element's name to be a valid Python variable name.
 
         Replaces characters that are not alphanumeric or underscores with underscores.
+        If the name starts with a number, an underscore is prepended.
         """
-        self.name = "".join(
+        alphanumeric_with_underscores = "".join(
             c if c.isalnum() or c == "_" else "_" for c in self.name
-        ).strip("_")
+        )
+        stripped = alphanumeric_with_underscores.strip("_")
+
+        if stripped and stripped[0].isdigit():
+            stripped = "_" + stripped
+
+        self.name = stripped
 
     @abstractmethod
     def plot(
