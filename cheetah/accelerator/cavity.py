@@ -53,7 +53,7 @@ class Cavity(Element):
         frequency: torch.Tensor | None = None,
         cavity_type: Literal["standing_wave", "traveling_wave"] = "standing_wave",
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,

@@ -17,7 +17,7 @@ from cheetah.utils import UnknownElementWarning
 def convert_element(
     name: str,
     context: dict,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -273,7 +273,7 @@ def convert_element(
 def convert_lattice(
     bmad_lattice_file_path: Path,
     environment_variables: dict | None = None,
-    sanitize_names: bool = False,
+    sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":

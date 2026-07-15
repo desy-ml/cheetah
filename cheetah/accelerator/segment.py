@@ -39,7 +39,7 @@ class Segment(Element):
         self,
         elements: list[Element],
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
     ) -> None:
         super().__init__(name=name, sanitize_name=sanitize_name, metadata=metadata)
@@ -348,7 +348,7 @@ class Segment(Element):
         cls,
         cell,
         name: str | None = None,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
         **kwargs,
@@ -389,7 +389,7 @@ class Segment(Element):
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -421,7 +421,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":

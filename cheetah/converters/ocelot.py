@@ -8,7 +8,7 @@ from cheetah.utils import DefaultParameterWarning, UnknownElementWarning
 
 def convert_element(
     element,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":

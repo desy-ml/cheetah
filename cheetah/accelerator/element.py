@@ -33,7 +33,7 @@ class Element(ABC, nn.Module):
     def __init__(
         self,
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -44,12 +44,13 @@ class Element(ABC, nn.Module):
         if not self.is_name_sanitized():
             if sanitize_name:
                 self.sanitize_name()
-            else:
+            elif sanitize_name is None:
                 warnings.warn(
                     f"Dirty element name {self.name} is not a valid Python variable "
                     "name. You will not be able to use the `segment.element_name` "
                     "syntax to access this element. Set `sanitize_name=True` to change "
-                    "the name to a valid one, if you want to use this syntax.",
+                    "the name to a valid one, or `sanitize_name=False` to silence this "
+                    "warning.",
                     category=DirtyNameWarning,
                     stacklevel=2,
                 )

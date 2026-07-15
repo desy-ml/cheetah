@@ -56,7 +56,7 @@ class Quadrupole(Element):
             "linear", "second_order", "drift_kick_drift"
         ] = "linear",
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,

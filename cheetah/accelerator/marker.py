@@ -25,7 +25,7 @@ class Marker(Element):
     def __init__(
         self,
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,

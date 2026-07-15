@@ -19,7 +19,7 @@ electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][
 def convert_element(
     name: str,
     context: dict,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -386,7 +386,7 @@ def convert_element(
 def convert_lattice(
     elegant_lattice_file_path: Path,
     name: str,
-    sanitize_names: bool = False,
+    sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
