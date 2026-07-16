@@ -71,12 +71,12 @@ metadata = {
 
 ## Online Integration Example
 
-Below is a simple conceptual example of how a control script can use Cheetah's metadata to read magnet settings from EPICS, run a simulation, and write updated settings back.
+Below is a simple conceptual example of how a control script can use Cheetah's metadata to read magnet settings from DOOCS (using the `pydoocs` library), run a simulation, and write updated settings back.
 
 ```python
 import torch
 import cheetah
-from epics import PV  # Assuming pyepics is installed
+import pydoocs  # Assuming pydoocs is installed
 
 # Load your lattice
 segment = cheetah.Segment.from_lattice_json("my_lattice.json")
@@ -85,17 +85,23 @@ segment = cheetah.Segment.from_lattice_json("my_lattice.json")
 for element in segment.elements:
     if "control_system" in element.metadata:
         cs = element.metadata["control_system"]
-        pv_base = cs.get("pv_base", "")
-
-        # Look for the readback property mapping
-        for prop_pv, element_attr in cs.get("properties", {}).items():
-            if prop_pv.endswith("RBV") or "Meas" in prop_pv:
-                # Construct PV name and fetch value
-                pv_name = f"{pv_base}{prop_pv}"
-                live_value = PV(pv_name).get()
-
-                # Update Cheetah element attribute
-                setattr(element, element_attr, torch.tensor(live_value))
+        if cs.get("type") == "DOOCS":
+            facility = cs.get("facility")
+            device = cs.get("device")
+            location = cs.get("location")
+            
+            # Map DOOCS properties to Cheetah element attributes
+            for prop_name, element_attr in cs.get("properties", {}).items():
+                if prop_name == "STRENGTH.RBV":
+                    # Construct DOOCS address: FACILITY/DEVICE/LOCATION/PROPERTY
+                    address = f"{facility}/{device}/{location}/{prop_name}"
+                    
+                    # Read live value from DOOCS (value is returned in a dict)
+                    live_data = pydoocs.read(address)
+                    live_value = live_data["data"]
+                    
+                    # Update Cheetah element attribute
+                    setattr(element, element_attr, torch.tensor(live_value))
 
 # 2. Run the simulation with live settings
 outgoing_beam = segment.track(incoming_beam)
@@ -105,8 +111,8 @@ outgoing_beam = segment.track(incoming_beam)
 new_k1 = torch.tensor(4.5)
 segment.elements[0].k1 = new_k1
 
-# Write setpoint back to EPICS
+# Write setpoint back to DOOCS
 cs = segment.elements[0].metadata["control_system"]
-pv_name = f"{cs['pv_base']}SetCurrent"
-PV(pv_name).put(new_k1.item())
+address_sp = f"{cs['facility']}/{cs['device']}/{cs['location']}/STRENGTH.SP"
+pydoocs.write(address_sp, new_k1.item())
 ```
