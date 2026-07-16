@@ -47,7 +47,9 @@ You can also change the tracking method of an existing element at runtime by mod
 
 ```python
 # Check supported methods
-print(quadrupole.supported_tracking_methods)  # ['linear', 'second_order', 'drift_kick_drift']
+print(
+    quadrupole.supported_tracking_methods
+)  # ['linear', 'second_order', 'drift_kick_drift']
 
 # Switch to drift-kick-drift
 quadrupole.tracking_method = "drift_kick_drift"

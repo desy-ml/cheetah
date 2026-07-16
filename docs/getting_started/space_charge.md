@@ -38,9 +38,15 @@ for _ in range(num_steps):
         cheetah.SpaceChargeKick(
             effect_length=torch.tensor(step_length),
             grid_shape=(32, 32, 32),
-            grid_extent_x=torch.tensor(3.0),   # Grid width in x (multiples of beam sigma_x)
-            grid_extent_y=torch.tensor(3.0),   # Grid height in y (multiples of beam sigma_y)
-            grid_extent_tau=torch.tensor(3.0), # Grid length in tau (multiples of beam sigma_tau)
+            grid_extent_x=torch.tensor(
+                3.0
+            ),  # Grid width in x (multiples of beam sigma_x)
+            grid_extent_y=torch.tensor(
+                3.0
+            ),  # Grid height in y (multiples of beam sigma_y)
+            grid_extent_tau=torch.tensor(
+                3.0
+            ),  # Grid length in tau (multiples of beam sigma_tau)
         )
     )
 

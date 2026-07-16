@@ -44,9 +44,9 @@ metadata = {
         "device": "MAGNET.ML",
         "location": "QF.2124.T1",
         "properties": {
-            "STRENGTH.SP": "k1",    # Setpoint property
-            "STRENGTH.RBV": "k1",   # Readback value property
-            "PS_ON": "is_active",   # Power supply state property
+            "STRENGTH.SP": "k1",  # Setpoint property
+            "STRENGTH.RBV": "k1",  # Readback value property
+            "PS_ON": "is_active",  # Power supply state property
         },
     },
 }
@@ -62,8 +62,8 @@ metadata = {
         "type": "EPICS",
         "pv_base": "A:Q1:PS:",
         "properties": {
-            "SetCurrent": "k1",     # EPICS setpoint maps to quadrupole k1
-            "MeasCurrent": "k1",    # EPICS readback maps to quadrupole k1
+            "SetCurrent": "k1",  # EPICS setpoint maps to quadrupole k1
+            "MeasCurrent": "k1",  # EPICS readback maps to quadrupole k1
         },
     },
 }

@@ -108,7 +108,7 @@ beam = cheetah.ParameterBeam.from_twiss(
     beta_x=torch.tensor(3.14),
     beta_y=torch.tensor(3.14),
     energy=torch.tensor(1e7),
-    species=cheetah.Species("electron")
+    species=cheetah.Species("electron"),
 )
 ```
 
@@ -124,13 +124,13 @@ import cheetah
 carbon_ion = cheetah.Species(
     name="carbon_ion",
     num_elementary_charges=torch.tensor(6.0),
-    mass_eV=torch.tensor(11.178e9)
+    mass_eV=torch.tensor(11.178e9),
 )
 
 beam = cheetah.ParameterBeam.from_twiss(
     beta_x=torch.tensor(3.14),
     beta_y=torch.tensor(3.14),
     energy=torch.tensor(1e7),
-    species=carbon_ion
+    species=carbon_ion,
 )
 ```

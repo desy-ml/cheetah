@@ -73,7 +73,10 @@ segment.to_lattice_json("my_lattice.json")
 
 # Or save using the helper function
 from cheetah.latticejson import save_cheetah_model
-save_cheetah_model(segment, "my_lattice.json", title="My Lattice Model", info="Optional description")
+
+save_cheetah_model(
+    segment, "my_lattice.json", title="My Lattice Model", info="Optional description"
+)
 ```
 
 #### Loading a Lattice
@@ -88,6 +91,7 @@ segment = cheetah.Segment.from_lattice_json("my_lattice.json")
 
 # Or load using the helper function
 from cheetah.latticejson import load_cheetah_model
+
 segment = load_cheetah_model("my_lattice.json")
 ```
 
@@ -135,14 +139,12 @@ import cheetah
 
 # Load from an openPMD HDF5/JSON file
 beam = cheetah.ParticleBeam.from_openpmd_file(
-    "path/to/beam.h5",
-    energy=torch.tensor(1e7)
+    "path/to/beam.h5", energy=torch.tensor(1e7)
 )
 
 # Load directly from an openpmd-beamphysics ParticleGroup object
 beam = cheetah.ParticleBeam.from_openpmd_particlegroup(
-    particle_group,
-    energy=torch.tensor(1e7)
+    particle_group, energy=torch.tensor(1e7)
 )
 ```
 
@@ -158,9 +160,7 @@ import cheetah
 
 # Create a parameter beam from Twiss parameters
 beam_param = cheetah.ParameterBeam.from_twiss(
-    beta_x=torch.tensor(3.14),
-    beta_y=torch.tensor(3.14),
-    energy=torch.tensor(1e7)
+    beta_x=torch.tensor(3.14), beta_y=torch.tensor(3.14), energy=torch.tensor(1e7)
 )
 
 # Create a particle beam from Twiss parameters
@@ -168,6 +168,6 @@ beam_part = cheetah.ParticleBeam.from_twiss(
     num_particles=10000,
     beta_x=torch.tensor(3.14),
     beta_y=torch.tensor(3.14),
-    energy=torch.tensor(1e7)
+    energy=torch.tensor(1e7),
 )
 ```

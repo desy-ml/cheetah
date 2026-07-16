@@ -44,8 +44,7 @@ For large lattices where only a few elements are adjusted (e.g. tuning corrector
 ```python
 # Merge skippable elements, leaving only the steerers unmerged
 merged_segment = segment.transfer_maps_merged(
-    incoming_beam=incoming_beam,
-    except_for=["HCOR_1", "VCOR_1", "HCOR_2", "VCOR_2"]
+    incoming_beam=incoming_beam, except_for=["HCOR_1", "VCOR_1", "HCOR_2", "VCOR_2"]
 )
 ```
 
