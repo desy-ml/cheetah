@@ -44,7 +44,7 @@ To convert an Elegant lattice file (`.lte`), pass the file path to `cheetah.Segm
 ```python
 import cheetah
 
-segment = cheetah.Segment.from_elegant("path/to/lattice.lte")
+segment = cheetah.Segment.from_elegant("path/to/lattice.lte", name="ares_line")
 ```
 
 ### NX Tables
@@ -72,7 +72,8 @@ import cheetah
 segment.to_lattice_json("my_lattice.json")
 
 # Or save using the helper function
-cheetah.save_cheetah_model(segment, "my_lattice.json", title="My Lattice Model", info="Optional description")
+from cheetah.latticejson import save_cheetah_model
+save_cheetah_model(segment, "my_lattice.json", title="My Lattice Model", info="Optional description")
 ```
 
 #### Loading a Lattice
@@ -86,7 +87,8 @@ import cheetah
 segment = cheetah.Segment.from_lattice_json("my_lattice.json")
 
 # Or load using the helper function
-segment = cheetah.load_cheetah_model("my_lattice.json")
+from cheetah.latticejson import load_cheetah_model
+segment = load_cheetah_model("my_lattice.json")
 ```
 
 ## Beams
@@ -128,13 +130,20 @@ beam = cheetah.ParticleBeam.from_ocelot(ocelot_beam)
 Cheetah supports the openPMD standard (via the `openpmd-beamphysics` library) to load standard beam distribution datasets:
 
 ```python
+import torch
 import cheetah
 
 # Load from an openPMD HDF5/JSON file
-beam = cheetah.ParticleBeam.from_openpmd_file("path/to/beam.h5")
+beam = cheetah.ParticleBeam.from_openpmd_file(
+    "path/to/beam.h5",
+    energy=torch.tensor(1e7)
+)
 
 # Load directly from an openpmd-beamphysics ParticleGroup object
-beam = cheetah.ParticleBeam.from_openpmd_particlegroup(particle_group)
+beam = cheetah.ParticleBeam.from_openpmd_particlegroup(
+    particle_group,
+    energy=torch.tensor(1e7)
+)
 ```
 
 *Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`.*

@@ -107,7 +107,7 @@ beam = cheetah.ParameterBeam.from_twiss(
     beta_x=torch.tensor(3.14),
     beta_y=torch.tensor(3.14),
     energy=torch.tensor(1e7),
-    species="electron"
+    species=cheetah.Species("electron")
 )
 ```
 
