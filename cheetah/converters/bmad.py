@@ -240,9 +240,13 @@ def convert_element(
                 sanitize_name=sanitize_name,
             )
         elif bmad_parsed["element_type"] == "wiggler":
-            validate_understood_properties(shared_properties + ["l"], bmad_parsed)
+            validate_understood_properties(
+                shared_properties + ["l", "l_period", "kx"], bmad_parsed
+            )
             return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                period=torch.tensor(bmad_parsed["l_period"], **factory_kwargs),
+                Kx=torch.tensor(bmad_parsed["kx"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
             )

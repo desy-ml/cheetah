@@ -349,6 +349,22 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
             )
+        elif parsed["element_type"] == "wiggler":
+            validate_understood_properties(
+                shared_properties + ["l", "k", "poles"], parsed
+            )
+
+            # There are two poles in one period
+            length = parsed.get("l", 0.0)
+            period = 2 * length / parsed["poles"] if "poles" in parsed else 0.0
+
+            return cheetah.Cavity(
+                length=torch.tensor(length, **factory_kwargs),
+                period=torch.tensor(period, **factory_kwargs),
+                Kx=torch.tensor(parsed.get("k", 0.0), **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+            )
         elif parsed["element_type"] == "watch":
             validate_understood_properties(shared_properties + ["filename"], parsed)
             return cheetah.Marker(
