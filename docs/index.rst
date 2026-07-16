@@ -58,16 +58,16 @@ These pages explain how to get started with *Cheetah*.
     :maxdepth: 1
     :caption: Getting Started
     
-    examples/simple
-    coordinate_system.md
-    tracking_methods.md
-    importing_from_other_codes.md
-    vectorized_simulations
-    examples/gradientbased
-    space_charge.md
-    simulation_optimization.md
-    plotting_visualization
-    control_systems.md
+    getting_started/simple
+    getting_started/coordinate_system.md
+    getting_started/tracking_methods.md
+    getting_started/importing_from_other_codes.md
+    getting_started/vectorized_simulations
+    getting_started/gradientbased
+    getting_started/space_charge.md
+    getting_started/simulation_optimization.md
+    getting_started/plotting_visualization
+    getting_started/control_systems.md
 
 API Reference
 -------------
