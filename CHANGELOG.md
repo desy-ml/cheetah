@@ -4,11 +4,21 @@
 
 ### 🚨 Breaking Changes
 
+- `DirtyNameWarning`s are now suppressed when `sanitize_name` is explicitly set to `False` (see #658) (@jank324, @Hespe)
+
 ### 🚀 Features
+
+- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
 
 ### 🐛 Bug fixes
 
+- Fix `Sextupole` not being skippable if its tracking method is set to `linear` (see #655) (@Hespe)
+- Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @Hespe)
+- Fix a bug where some magnet names that are invalid identifiers (i.e. cannot be used with the `segment.element_name` syntax) would not be sanitised correctly (e.g. when they start with a digit). (see #658) (@jank324, @Hespe)
+
 ### 🐆 Other
+
+- Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 
 ### 🌟 First Time Contributors
 
@@ -24,7 +34,7 @@
 - A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
 - Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
 - Implement a new differentiable Cloud-In-Cell (CIC) method for n-D charge deposition and add it to `Screen`. The new method is up to two orders of magnitude faster than the existing and previously only differentiable option `kde` method. (see #625) (@roussel-ryan, @cr-xu, @jank324)
-- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @hespe, @roussel-ryan)
+- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @Hespe, @roussel-ryan)
 
 ### 🐛 Bug fixes
 
