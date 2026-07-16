@@ -4,10 +4,11 @@
 
 ### 🚨 Breaking Changes
 
+- `DirtyNameWarning`s are now suppressed when `sanitize_name` is explicitly set to `False` (see #658) (@jank324, @Hespe)
+
 ### 🚀 Features
 
 - Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
-- `DirtyNameWarning`s are now automatically suppressed when `sanitize_name` is explicitly set to `False` (see #658) (@jank324, @Hespe)
 
 ### 🐛 Bug fixes
 
