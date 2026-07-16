@@ -355,12 +355,10 @@ class Element(ABC, nn.Module):
         alphanumeric_with_underscores = "".join(
             c if c.isalnum() or c == "_" else "_" for c in self.name
         )
-        stripped = alphanumeric_with_underscores.strip("_")
+        if alphanumeric_with_underscores[0].isdigit():
+            alphanumeric_with_underscores = "_" + alphanumeric_with_underscores
 
-        if stripped and stripped[0].isdigit():
-            stripped = "_" + stripped
-
-        self.name = stripped
+        self.name = alphanumeric_with_underscores
 
     @abstractmethod
     def plot(
