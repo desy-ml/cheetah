@@ -21,6 +21,11 @@ The primary tracking methods supported by Cheetah elements are:
    - Ideal for non-linear dynamics and is required for certain elements.
    - Supported by: `Drift`, `Dipole`, `Quadrupole`, `TransverseDeflectingCavity`.
 
+4. **Custom / Element-Specific Methods**
+   - Some elements (such as diagnostics or custom physical models) use custom tracking routines that do not fall into the three categories above.
+   - For these elements, their `supported_tracking_methods` is a single-item list containing their own lowercase class name.
+   - Supported by: `Aperture` (`"aperture"`), `BPM` (`"bpm"`), `Screen` (`"screen"`), `SpaceChargeKick` (`"spacechargekick"`), `Marker` (`"marker"`).
+
 ## Configuring Tracking Methods
 
 ### For a Single Element
