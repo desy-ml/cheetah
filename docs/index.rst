@@ -6,14 +6,24 @@
 Welcome to Cheetah's documentation!
 ===================================
 
-`Cheetah <https://github.com/desy-ml/cheetah>`_ is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
+*Cheetah* is a high-speed, differentiable particle tracking engine designed specifically for machine learning applications in accelerator physics, such as reinforcement learning, system identification, and magnet tuning.
 
-GitHub repository: https://github.com/desy-ml/cheetah
+Resources & Links
+-----------------
 
-Paper: https://doi.org/10.1103/PhysRevAccelBeams.27.054601
+* **Code**: `GitHub Repository <https://github.com/desy-ml/cheetah>`_
+* **Paper**: `Physical Review Accelerators and Beams <https://doi.org/10.1103/PhysRevAccelBeams.27.054601>`_
+* **Community**: `Discord Server <https://discord.gg/hrwYPC3a>`_
+* **Demos**: `Cheetah Demos <https://github.com/desy-ml/cheetah-demos>`_ (examples including system identification, magnet tuning, and reinforcement learning)
 
-Discord server: https://discord.gg/hrwYPC3a
+Key Features
+------------
 
+* **Differentiable Physics**: Fully integrated with PyTorch's automatic differentiation (autograd) to allow backpropagation of gradients directly through lattice elements and parameters.
+* **High-Speed Execution**: Tailored algorithms optimised to speed up the training of reinforcement learning agents and parameter optimisation loops.
+* **Vectorised Simulations**: Perform parallel parameter sweeps over beam distributions and magnet settings without slow CPU Python loops.
+* **Native GPU/CPU Support**: Seamlessly transition computations between CPU and GPU devices (CUDA or MPS) using PyTorch's native ``.to()`` method.
+* **3D CAD Mesh Generation**: Automatic visual rendering and mesh export of your lattice geometry for integration into CAD software or web visualisations.
 
 Installation
 ------------
@@ -38,9 +48,6 @@ Cheetah supports the following accelerator elements:
 * **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`, :class:`~cheetah.Superimposed`
 
 For the full element API documentation, see the :doc:`/accelerator` API Reference.
-
-
-Application examples (such as system identification, magnet tuning, and reinforcement learning) can be found in the `cheetah-demos <https://github.com/desy-ml/cheetah-demos>`_ repository on GitHub.
 
 Getting Started
 ---------------
