@@ -39,11 +39,11 @@ These pages explain how to get started with *Cheetah*.
     examples/simple
     coordinate_system.md
     lattice_conversion.md
-    vectorized_simulations.md
+    vectorized_simulations
     examples/gradientbased
     space_charge.md
     simulation_optimization.md
-    plotting_visualization.md
+    plotting_visualization
     control_systems.md
 
 API Reference
