@@ -38,6 +38,7 @@ These pages explain how to get started with *Cheetah*.
     
     examples/simple
     coordinate_system.md
+    tracking_methods.md
     importing_from_other_codes.md
     vectorized_simulations
     examples/gradientbased
