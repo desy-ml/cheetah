@@ -103,3 +103,43 @@ torch._inductor.config.cuda.use_fast_math = False
 # ROCm backend
 torch._inductor.config.rocm.use_fast_math = False
 ```
+
+---
+
+## Running on GPU & Changing Precision (Device & Dtype)
+
+Since Cheetah elements and beams are subclasses of PyTorch's `nn.Module`, you can manage their PyTorch `device` and `dtype` using the native `.to()` method.
+
+### Running on GPU (CUDA / MPS)
+
+To run simulations on a GPU, move both the `Segment` and the `Beam` to the desired device:
+
+```python
+import torch
+import cheetah
+
+# Check if CUDA is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Move segment and beam to device
+segment.to(device)
+incoming_beam.to(device)
+
+# The tracking will automatically execute on the GPU
+outgoing = segment.track(incoming_beam)
+```
+
+### Changing Precision (Single vs Double Precision)
+
+By default, Cheetah initialises parameters in PyTorch's default floating-point precision (typically `torch.float32`). If your simulation requires higher precision, you can cast the model and the beam to double precision (`torch.float64`):
+
+```python
+import torch
+
+# Cast both segment and beam to double precision
+segment.to(torch.float64)
+incoming_beam.to(torch.float64)
+
+# Run simulation in double precision
+outgoing = segment.track(incoming_beam)
+```
