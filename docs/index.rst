@@ -25,6 +25,21 @@ Simply install *Cheetah* from PyPI by running the following command.
     pip install cheetah-accelerator
 
 
+Supported Elements
+------------------
+
+Cheetah supports the following accelerator elements:
+
+* **Drifts**: :class:`~cheetah.Drift`
+* **Magnets**: :class:`~cheetah.Quadrupole`, :class:`~cheetah.Sextupole`, :class:`~cheetah.Solenoid`, :class:`~cheetah.Dipole` (sector bend), and :class:`~cheetah.RBend` (rectangular bend)
+* **Correctors**: :class:`~cheetah.HorizontalCorrector`, :class:`~cheetah.VerticalCorrector`, :class:`~cheetah.CombinedCorrector`
+* **RF Cavities**: :class:`~cheetah.Cavity`, :class:`~cheetah.TransverseDeflectingCavity`
+* **Diagnostics**: :class:`~cheetah.BPM` (Beam Position Monitor), :class:`~cheetah.Screen`
+* **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`, :class:`~cheetah.Superimposed`
+
+For the full element API documentation, see the :doc:`/accelerator` API Reference.
+
+
 Application examples (such as system identification, magnet tuning, and reinforcement learning) can be found in the `cheetah-demos <https://github.com/desy-ml/cheetah-demos>`_ repository on GitHub.
 
 Getting Started
