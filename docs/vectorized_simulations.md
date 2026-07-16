@@ -4,26 +4,26 @@ One of Cheetah's most powerful features is its native support for vectorised sim
 
 Vectorised simulations are ideal for tasks like **sensitivity analysis, parameter sweeps, reinforcement learning ensemble training, and Bayesian optimisation**.
 
-## Vectorising Beams (Batching Beams)
+## Vectorising Beams
 
-Both beam classes in Cheetah support batch dimensions. By providing multi-dimensional tensors to the beam constructors, you can define a batch of different beam distributions:
+Both beam classes in Cheetah support vectorisation dimensions. By providing multi-dimensional tensors to the beam constructors, you can define a vectorised set of different beam distributions:
 
 ### ParameterBeam
 For `ParameterBeam`, the shapes are:
-- `mu`: `(..., 7)` where `...` represents any number of batch dimensions.
+- `mu`: `(..., 7)` where `...` represents any number of vectorisation dimensions.
 - `cov`: `(..., 7, 7)`
 
-For example, a batch of 100 parameter beams is represented by `mu` of shape `(100, 7)` and `cov` of shape `(100, 7, 7)`.
+For example, a vectorised set of 100 parameter beams is represented by `mu` of shape `(100, 7)` and `cov` of shape `(100, 7, 7)`.
 
 ### ParticleBeam
 For `ParticleBeam`, the shapes are:
-- `particles`: `(..., N, 7)` where `N` is the number of macroparticles and `...` are the batch dimensions.
+- `particles`: `(..., N, 7)` where `N` is the number of macroparticles and `...` are the vectorisation dimensions.
 
-For example, a batch of 100 particle beams, each containing 10,000 particles, is represented by a tensor of shape `(100, 10000, 7)`.
+For example, a vectorised set of 100 particle beams, each containing 10,000 particles, is represented by a tensor of shape `(100, 10000, 7)`.
 
 ---
 
-## Vectorising Elements (Batching Settings)
+## Vectorising Elements
 
 Lattice element parameters (like a quadrupole's `k1` or a drift's `length`) can also be multi-dimensional PyTorch tensors.
 
@@ -34,7 +34,7 @@ import cheetah
 # Define 50 different strength settings for a quadrupole magnet
 k1_settings = torch.linspace(-15.0, 15.0, 50)
 
-# Create a quadrupole element with batched settings
+# Create a quadrupole element with vectorised settings
 quad = cheetah.Quadrupole(length=torch.tensor(0.122), k1=k1_settings)
 ```
 
@@ -45,8 +45,8 @@ During tracking, Cheetah computes the transfer map for all 50 quadrupole setting
 ## PyTorch Broadcasting in Action
 
 When a beam is tracked through an element, PyTorch's native broadcasting rules are applied:
-- If a batched beam with batch size `(B,)` is tracked through a batched element with setting batch size `(M,)`, the shapes will broadcast.
-- The output beam will have batch dimensions `(B, M)`.
+- If a vectorised beam with shape `(B, ...)` is tracked through a vectorised element with setting shape `(M, ...)`, the shapes will broadcast.
+- The output beam will have vectorised dimensions `(B, M)`.
 
 This enables parallel parameter sweeps over various beam conditions and magnet settings simultaneously.
 
@@ -59,7 +59,7 @@ import torch
 import cheetah
 import matplotlib.pyplot as plt
 
-# 1. Define a simple lattice with a batched quadrupole
+# 1. Define a simple lattice with a vectorised quadrupole
 k1_sweep = torch.linspace(-20.0, 20.0, 100)
 segment = cheetah.Segment(
     elements=[
