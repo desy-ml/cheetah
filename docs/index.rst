@@ -23,7 +23,7 @@ Key Features
 * **High-Speed Execution**: Tailored algorithms optimised to speed up the training of reinforcement learning agents and parameter optimisation loops.
 * **Vectorised Simulations**: Perform parallel parameter sweeps over beam distributions and magnet settings without slow CPU Python loops.
 * **Native GPU/CPU Support**: Seamlessly transition computations between CPU and GPU devices (CUDA or MPS) using PyTorch's native ``.to()`` method.
-* **3D CAD Mesh Generation**: Automatic visual rendering and mesh export of your lattice geometry for integration into CAD software or web visualisations.
+* **3D Visualisation**: Automatic 3D model rendering and mesh export of your lattice geometry for interactive visualisation.
 
 Installation
 ------------

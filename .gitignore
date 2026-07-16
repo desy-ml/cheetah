@@ -18,3 +18,4 @@ distributions
 docs/_build
 
 dev*
+*.glb
