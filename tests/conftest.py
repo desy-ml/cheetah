@@ -139,7 +139,13 @@ ELEMENT_SUBCLASSES_ARGS = {
         "inactive": {"length": torch.tensor(1.0), "voltage": torch.tensor(0.0)},
         "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},
     },
-    cheetah.Undulator: {"default": {"length": torch.tensor(1.0)}},
+    cheetah.Undulator: {
+        "default": {
+            "length": torch.tensor(1.0),
+            "period": torch.tensor(0.1),
+            "Kx": torch.tensor(1.3),
+        }
+    },
     cheetah.VerticalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
