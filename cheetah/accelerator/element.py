@@ -42,7 +42,7 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        if self.name.isidentifier():
+        if not self.name.isidentifier():
             if sanitize_name:
                 self.sanitize_name()
             elif sanitize_name is None:
