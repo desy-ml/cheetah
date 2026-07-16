@@ -11,7 +11,7 @@ import torch
 import cheetah
 
 # Set metadata during instantiation
-quad = cheetah.Quadrupole(
+quadrupole = cheetah.Quadrupole(
     length=torch.tensor(0.1),
     k1=torch.tensor(4.2),
     name="QF.2124.T1",
@@ -21,13 +21,13 @@ quad = cheetah.Quadrupole(
             "properties": {
                 "STRENGTH.SP": "k1",
                 "STRENGTH.RBV": "k1",
-            }
+            },
         }
-    }
+    },
 )
 
 # Modify metadata later
-quad.metadata["comment"] = "Calibrated on 2026-07-16."
+quadrupole.metadata["comment"] = "Calibrated on 2026-07-16."
 ```
 
 ## Recommended Schemas
