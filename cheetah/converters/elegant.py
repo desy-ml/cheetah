@@ -19,7 +19,7 @@ electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][
 def convert_element(
     name: str,
     context: dict,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -30,7 +30,8 @@ def convert_element(
     :param context: Context dictionary parsed from Elegant lattice file(s).
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
@@ -386,7 +387,7 @@ def convert_element(
 def convert_lattice(
     elegant_lattice_file_path: Path,
     name: str,
-    sanitize_names: bool = False,
+    sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -398,7 +399,8 @@ def convert_lattice(
     :param sanitize_names: Whether to sanitise the names of the elements as well as the
         name of the segment to be valid Python variable names. This is needed if you
         want to use the `segment.element_name` syntax to access the element in a
-        segment.
+        segment. If `None` (default), a warning is raised for invalid names. Set to
+        `True` to sanitise, or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
