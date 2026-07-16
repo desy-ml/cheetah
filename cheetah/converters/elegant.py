@@ -359,10 +359,10 @@ def convert_element(
             length = parsed.get("l", 0.0)
             period = 2 * length / parsed["poles"] if "poles" in parsed else 0.0
 
-            return cheetah.Cavity(
+            return cheetah.Undulator(
                 length=torch.tensor(length, **factory_kwargs),
                 period=torch.tensor(period, **factory_kwargs),
-                Kx=torch.tensor(parsed.get("k", 0.0), **factory_kwargs),
+                kx=torch.tensor(parsed.get("k", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
             )

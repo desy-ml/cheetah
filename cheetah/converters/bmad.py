@@ -242,12 +242,14 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "wiggler":
             validate_understood_properties(
-                shared_properties + ["l", "l_period", "kx"], bmad_parsed
+                shared_properties + ["l", "l_period"], bmad_parsed
             )
+
+            # TODO: Map the magnetic strength `b_max of Bmad to the undulator
+            # coefficient `kx`.
             return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 period=torch.tensor(bmad_parsed["l_period"], **factory_kwargs),
-                kx=torch.tensor(bmad_parsed["kx"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
             )
