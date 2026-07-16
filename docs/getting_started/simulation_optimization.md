@@ -20,7 +20,7 @@ clean_segment = segment.without_inactive_markers()
 clean_segment = segment.without_inactive_zero_length_elements()
 ```
 
-*Benchmark Impact:* In a typical 1000-element lattice, removing inactive markers can reduce tracking time from **11.0 ms** to **9.63 ms** (approx. 12% speedup).
+_Benchmark Impact:_ In a typical 1000-element lattice, removing inactive markers can reduce tracking time from **11.0 ms** to **9.63 ms** (approx. 12% speedup).
 
 ---
 
@@ -50,12 +50,13 @@ merged_segment = segment.transfer_maps_merged(
 ```
 
 ### How it works
+
 - Cheetah identifies consecutive elements that are skippable (`element.is_skippable`) and are not listed in `except_for`.
 - It tracks the beam through them once to compute the composite transfer map.
 - It replaces the entire sequence with a single `CustomTransferMap` element.
 - During subsequent tracking calls, only the single merged map is applied, eliminating thousands of matrix multiplications.
 
-*Benchmark Impact:* In a 1000-element lattice, merging transfer maps can reduce tracking time from **11.0 ms** to **112 μs** (a **100x speedup**!).
+_Benchmark Impact:_ In a 1000-element lattice, merging transfer maps can reduce tracking time from **11.0 ms** to **112 μs** (a **100x speedup**!).
 
 ---
 
@@ -69,7 +70,7 @@ fully_optimized_segment.HCOR_1.angle = torch.linspace(-1e-4, 1e-4, 1000)
 outgoing = fully_optimized_segment.track(incoming_beam)
 ```
 
-*Benchmark Impact:* Running 1000 configurations in a sequential Python loop takes **177 ms** (~177 μs per track). Running the same sweep using PyTorch broadcasting takes just **1.17 ms** total (~1.17 μs per track, a **150x speedup** over the loop and **10,000x speedup** compared to the unoptimised loop!).
+_Benchmark Impact:_ Running 1000 configurations in a sequential Python loop takes **177 ms** (~177 μs per track). Running the same sweep using PyTorch broadcasting takes just **1.17 ms** total (~1.17 μs per track, a **150x speedup** over the loop and **10,000x speedup** compared to the unoptimised loop!).
 
 ---
 
@@ -93,6 +94,7 @@ outgoing = compiled_track(incoming_beam)
 ```
 
 ### JIT Math Precision Settings
+
 By default, PyTorch compiles with fast-math optimisations on some platforms. If you observe precision issues after compilation, disable unsafe math optimisations before calling `torch.compile`:
 
 ```python

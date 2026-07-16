@@ -89,17 +89,17 @@ for element in segment.elements:
             facility = cs.get("facility")
             device = cs.get("device")
             location = cs.get("location")
-            
+
             # Map DOOCS properties to Cheetah element attributes
             for prop_name, element_attr in cs.get("properties", {}).items():
                 if prop_name == "STRENGTH.RBV":
                     # Construct DOOCS address: FACILITY/DEVICE/LOCATION/PROPERTY
                     address = f"{facility}/{device}/{location}/{prop_name}"
-                    
+
                     # Read live value from DOOCS (value is returned in a dict)
                     live_data = pydoocs.read(address)
                     live_value = live_data["data"]
-                    
+
                     # Update Cheetah element attribute
                     setattr(element, element_attr, torch.tensor(live_value))
 

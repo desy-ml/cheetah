@@ -5,6 +5,7 @@ Cheetah supports fast, differentiable 3D space charge simulations using the `Spa
 ## Overview of the Method
 
 Cheetah uses the **integrated Green's function method** to compute space charge effects:
+
 1. **Grid Deposition**: The beam's charge density is deposited onto a 3D grid in the laboratory frame using the Cloud-in-Cell (CIC) charge deposition algorithm.
 2. **Poisson Solver**: The Poisson equation is solved on the grid to find the electrostatic potential. To handle open boundaries, Cheetah uses the **Hockney method**, which doubles the grid size and performs convolution using Fast Fourier Transforms (FFTs).
 3. **Field Computation**: The corresponding electromagnetic fields and Lorentz force components are computed on the grid.
@@ -49,5 +50,6 @@ segment = cheetah.Segment(elements=elements)
 ## Grid Configuration
 
 The size and shape of the 3D grid can be configured using the following parameters:
+
 - `grid_shape`: A tuple of three integers `(nx, ny, ntau)` specifying the grid resolution. Higher values increase accuracy but require more memory and computation.
 - `grid_extent_x` / `grid_extent_y` / `grid_extent_tau`: The boundary extents of the grid, specified as multipliers of the beam's root-mean-square (RMS) size ($\sigma$) in the respective coordinate directions. For example, a value of `3.0` means the grid covers $\pm 3\sigma$ around the beam centre.

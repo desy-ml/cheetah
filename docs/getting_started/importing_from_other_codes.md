@@ -146,7 +146,7 @@ beam = cheetah.ParticleBeam.from_openpmd_particlegroup(
 )
 ```
 
-*Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`.*
+_Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`._
 
 ### Twiss Parameters & Standard Distributions
 
