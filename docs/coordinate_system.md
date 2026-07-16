@@ -83,3 +83,53 @@ In general
 $$ x' = \frac{p_x}{\sqrt{p^2 - p_x^2 - p_y^2}} (1+gx) $$
 
 Note that $p_s := \sqrt{p^2 - p_x^2 - p_y^2}$ is the longitudinal momentum, $g = 1/\rho$ is the curvature of the trajectory.
+
+## Particle Species
+
+Beams in Cheetah have an associated `Species` that defines the charge and mass of the particles being simulated. This is used to calculate relativistic factors and track physics updates.
+
+### Predefined Species
+
+Cheetah provides several predefined species that can be resolved automatically by name:
+- `"electron"`
+- `"positron"`
+- `"proton"`
+- `"antiproton"`
+- `"deuteron"`
+
+When creating a beam, pass the species name to populate its mass and charge:
+
+```python
+import torch
+import cheetah
+
+beam = cheetah.ParameterBeam.from_twiss(
+    beta_x=torch.tensor(3.14),
+    beta_y=torch.tensor(3.14),
+    energy=torch.tensor(1e7),
+    species="electron"
+)
+```
+
+### Custom Species
+
+For custom particle species (such as heavy ions), you can define a custom `Species` object by specifying its name, charge, and mass:
+
+```python
+import torch
+import cheetah
+
+# Define a custom carbon ion species
+carbon_ion = cheetah.Species(
+    name="carbon_ion",
+    num_elementary_charges=torch.tensor(6.0),
+    mass_eV=torch.tensor(11.178e9)
+)
+
+beam = cheetah.ParameterBeam.from_twiss(
+    beta_x=torch.tensor(3.14),
+    beta_y=torch.tensor(3.14),
+    energy=torch.tensor(1e7),
+    species=carbon_ion
+)
+```
