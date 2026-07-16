@@ -165,7 +165,7 @@ beam_param = cheetah.ParameterBeam.from_twiss(
 
 # Create a particle beam from Twiss parameters
 beam_part = cheetah.ParticleBeam.from_twiss(
-    n_particles=10000,
+    num_particles=10000,
     beta_x=torch.tensor(3.14),
     beta_y=torch.tensor(3.14),
     energy=torch.tensor(1e7)
