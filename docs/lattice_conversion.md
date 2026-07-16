@@ -53,9 +53,9 @@ import cheetah
 segment = cheetah.Segment.from_nx_tables("path/to/nxtables.csv")
 ```
 
-## LatticeJSON (Native Serialization)
+## LatticeJSON (Native Serialisation)
 
-Cheetah has native support for LatticeJSON, a standardized, human-readable format for exchange of accelerator lattice descriptions.
+Cheetah has native support for LatticeJSON, a standardised, human-readable format for exchange of accelerator lattice descriptions.
 
 ### Saving a Lattice
 

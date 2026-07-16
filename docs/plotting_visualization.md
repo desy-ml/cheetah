@@ -1,6 +1,6 @@
-# Plotting & 3D Visualization
+# Plotting & 3D Visualisation
 
-Cheetah provides several utilities for plotting beam parameters and visualizing accelerator lattices in 2D and 3D.
+Cheetah provides several utilities for plotting beam parameters and visualising accelerator lattices in 2D and 3D.
 
 ## 2D Plotting of Beam Parameters
 
@@ -58,13 +58,13 @@ segment.plot_mean_and_std(incoming_beam)
 
 ---
 
-## 3D Visualization
+## 3D Visualisation
 
 Cheetah allows you to generate a 3D CAD mesh of your lattice. This can be viewed interactively or exported to standard formats like GLB/gltf.
 
 ### Installation Prerequisite
 
-3D visualization requires additional dependencies. Install Cheetah with the `[3d-visualization]` extra:
+3D visualisation requires additional dependencies. Install Cheetah with the `[3d-visualization]` extra:
 
 ```bash
 pip install "cheetah-accelerator[3d-visualization]"

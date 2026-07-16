@@ -50,4 +50,4 @@ segment = cheetah.Segment(elements=elements)
 
 The size and shape of the 3D grid can be configured using the following parameters:
 - `grid_shape`: A tuple of three integers `(nx, ny, ntau)` specifying the grid resolution. Higher values increase accuracy but require more memory and computation.
-- `grid_extent_x` / `grid_extent_y` / `grid_extent_tau`: The boundary extents of the grid, specified as multipliers of the beam's root-mean-square (RMS) size ($\sigma$) in the respective coordinate directions. For example, a value of `3.0` means the grid covers $\pm 3\sigma$ around the beam center.
+- `grid_extent_x` / `grid_extent_y` / `grid_extent_tau`: The boundary extents of the grid, specified as multipliers of the beam's root-mean-square (RMS) size ($\sigma$) in the respective coordinate directions. For example, a value of `3.0` means the grid covers $\pm 3\sigma$ around the beam centre.

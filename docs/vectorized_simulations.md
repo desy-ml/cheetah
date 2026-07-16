@@ -1,10 +1,10 @@
-# Vectorized Simulations & Broadcasting
+# Vectorised Simulations & Broadcasting
 
-One of Cheetah's most powerful features is its native support for vectorized simulations and broadcasting, inherited directly from PyTorch. This allows you to simulate multiple beam configurations and magnet settings in parallel, fully avoiding slow Python-level loops.
+One of Cheetah's most powerful features is its native support for vectorised simulations and broadcasting, inherited directly from PyTorch. This allows you to simulate multiple beam configurations and magnet settings in parallel, fully avoiding slow Python-level loops.
 
-Vectorized simulations are ideal for tasks like **sensitivity analysis, parameter sweeps, reinforcement learning ensemble training, and Bayesian optimization**.
+Vectorised simulations are ideal for tasks like **sensitivity analysis, parameter sweeps, reinforcement learning ensemble training, and Bayesian optimisation**.
 
-## Vectorizing Beams (Batching Beams)
+## Vectorising Beams (Batching Beams)
 
 Both beam classes in Cheetah support batch dimensions. By providing multi-dimensional tensors to the beam constructors, you can define a batch of different beam distributions:
 
@@ -23,7 +23,7 @@ For example, a batch of 100 particle beams, each containing 10,000 particles, is
 
 ---
 
-## Vectorizing Elements (Batching Settings)
+## Vectorising Elements (Batching Settings)
 
 Lattice element parameters (like a quadrupole's `k1` or a drift's `length`) can also be multi-dimensional PyTorch tensors.
 

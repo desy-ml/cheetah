@@ -32,7 +32,7 @@ quad.metadata["comment"] = "Calibrated on 2026-07-16."
 
 ## Recommended Schemas
 
-To maintain clean and standardized integration, the following schemas are recommended for DOOCS and EPICS.
+To maintain clean and standardised integration, the following schemas are recommended for DOOCS and EPICS.
 
 ### DOOCS Schema
 
@@ -100,8 +100,8 @@ for element in segment.elements:
 # 2. Run the simulation with live settings
 outgoing_beam = segment.track(incoming_beam)
 
-# 3. Perform optimization/tuning and write setpoints back
-# (e.g. update quadrupole settings to new values computed by an optimizer)
+# 3. Perform optimisation/tuning and write setpoints back
+# (e.g. update quadrupole settings to new values computed by an optimiser)
 new_k1 = torch.tensor(4.5)
 segment.elements[0].k1 = new_k1
 

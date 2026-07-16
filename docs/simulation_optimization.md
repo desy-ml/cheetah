@@ -1,8 +1,8 @@
-# Optimizing Simulations for Speed
+# Optimising Simulations for Speed
 
-Cheetah is designed for high-speed beam dynamics simulations. While it is already fast out-of-the-box, several opt-in optimizations are available to speed up simulations significantly—often by several orders of magnitude—especially when running large lattices where only a small number of parameters change.
+Cheetah is designed for high-speed beam dynamics simulations. While it is already fast out-of-the-box, several opt-in optimisations are available to speed up simulations significantly—often by several orders of magnitude—especially when running large lattices where only a small number of parameters change.
 
-This page guides you through the available optimizations, provides typical benchmark performance numbers, and details how to JIT-compile Cheetah using PyTorch.
+This page guides you through the available optimisations, provides typical benchmark performance numbers, and details how to JIT-compile Cheetah using PyTorch.
 
 ---
 
@@ -59,23 +59,23 @@ merged_segment = segment.transfer_maps_merged(
 
 ---
 
-## 4. Vectorization and Broadcasting
+## 4. Vectorisation and Broadcasting
 
 Instead of evaluating multiple magnet settings in a Python loop, you can pass settings as PyTorch tensors. PyTorch performs the tracking in parallel over all configurations:
 
 ```python
-# Vectorized parameter sweep (e.g., 1000 corrector settings)
+# Vectorised parameter sweep (e.g., 1000 corrector settings)
 fully_optimized_segment.HCOR_1.angle = torch.linspace(-1e-4, 1e-4, 1000)
 outgoing = fully_optimized_segment.track(incoming_beam)
 ```
 
-*Benchmark Impact:* Running 1000 configurations in a sequential Python loop takes **177 ms** (~177 μs per track). Running the same sweep using PyTorch broadcasting takes just **1.17 ms** total (~1.17 μs per track, a **150x speedup** over the loop and **10,000x speedup** compared to the unoptimized loop!).
+*Benchmark Impact:* Running 1000 configurations in a sequential Python loop takes **177 ms** (~177 μs per track). Running the same sweep using PyTorch broadcasting takes just **1.17 ms** total (~1.17 μs per track, a **150x speedup** over the loop and **10,000x speedup** compared to the unoptimised loop!).
 
 ---
 
 ## 5. Just-in-Time (JIT) Compiling Cheetah
 
-PyTorch supports compiling code to optimize runtime performance. JIT compilation provides a **10-20% speedup** on AMD CPUs, a **0.5-2x speedup** on Intel CPUs, and up to **8x speedup** on Nvidia GPUs.
+PyTorch supports compiling code to optimise runtime performance. JIT compilation provides a **10-20% speedup** on AMD CPUs, a **0.5-2x speedup** on Intel CPUs, and up to **8x speedup** on Nvidia GPUs.
 
 JIT compilation takes around 4-20 seconds on CPU (and more on GPU) on the first tracking call, but subsequent calls are significantly faster.
 
@@ -88,12 +88,12 @@ compiled_track = torch.compile(merged_segment.track)
 # First call performs JIT compilation (slow)
 _ = compiled_track(incoming_beam)
 
-# Subsequent calls are fully compiled and optimized
+# Subsequent calls are fully compiled and optimised
 outgoing = compiled_track(incoming_beam)
 ```
 
 ### JIT Math Precision Settings
-By default, PyTorch compiles with fast-math optimizations on some platforms. If you observe precision issues after compilation, disable unsafe math optimizations before calling `torch.compile`:
+By default, PyTorch compiles with fast-math optimisations on some platforms. If you observe precision issues after compilation, disable unsafe math optimisations before calling `torch.compile`:
 
 ```python
 # C++ backend
