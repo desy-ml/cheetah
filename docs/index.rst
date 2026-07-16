@@ -30,6 +30,8 @@ Examples
 
 We provide some examples to demonstrate some features of *Cheetah* and show how to use them. They provide a good entry point to using *Cheetah*, but they do not represent its full functionality. To move beyond the examples, please refer to the in-depth documentation. If you feel like other examples should be added, feel free to open an issue on GitHub.
 
+For more application examples (such as system identification, magnet tuning, and reinforcement learning), see the `cheetah-demos <https://github.com/desy-ml/cheetah-demos>`_ repository on GitHub.
+
 .. toctree::
     :maxdepth: 2
     :caption: Examples
@@ -51,6 +53,12 @@ These pages explain how to get started with *Cheetah*.
     :caption: Getting Started
     
     coordinate_system.md
+    lattice_conversion.md
+    vectorized_simulations.md
+    space_charge.md
+    simulation_optimization.md
+    plotting_visualization.md
+    control_systems.md
 
 API Reference
 -------------
