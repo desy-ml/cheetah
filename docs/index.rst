@@ -38,7 +38,7 @@ These pages explain how to get started with *Cheetah*.
     
     examples/simple
     coordinate_system.md
-    lattice_conversion.md
+    importing_from_other_codes.md
     vectorized_simulations
     examples/gradientbased
     space_charge.md
