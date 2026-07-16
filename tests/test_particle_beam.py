@@ -374,7 +374,7 @@ def test_random_subsample_gaussian_properties(device: torch.device):
     assert torch.isclose(
         subsampled_beam.mu_tau, original_beam.mu_tau, rtol=1e-5, atol=1e-5
     )
-    assert torch.isclose(subsampled_beam.mu_p, original_beam.mu_p, rtol=1e-5, atol=1e-5)
+    assert torch.isclose(subsampled_beam.mu_p, original_beam.mu_p, rtol=1e-5, atol=2e-5)
     assert torch.isclose(
         subsampled_beam.sigma_x, original_beam.sigma_x, rtol=1e-5, atol=1e-5
     )

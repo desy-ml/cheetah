@@ -21,7 +21,8 @@ class Element(ABC, nn.Module):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
@@ -33,7 +34,7 @@ class Element(ABC, nn.Module):
     def __init__(
         self,
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -41,15 +42,16 @@ class Element(ABC, nn.Module):
         super().__init__()
 
         self.name = name if name is not None else generate_unique_name()
-        if not self.is_name_sanitized():
+        if not self.name.isidentifier():
             if sanitize_name:
                 self.sanitize_name()
-            else:
+            elif sanitize_name is None:
                 warnings.warn(
                     f"Dirty element name {self.name} is not a valid Python variable "
                     "name. You will not be able to use the `segment.element_name` "
                     "syntax to access this element. Set `sanitize_name=True` to change "
-                    "the name to a valid one, if you want to use this syntax.",
+                    "the name to a valid one, or `sanitize_name=False` to silence this "
+                    "warning.",
                     category=DirtyNameWarning,
                     stacklevel=2,
                 )
@@ -343,25 +345,20 @@ class Element(ABC, nn.Module):
         """
         return [self]
 
-    def is_name_sanitized(self) -> bool:
-        """
-        Check if a name is sanitised, i.e. it contains only alphanumeric characters and
-        underscores.
-
-        A clean name can be used as a Python variable name, which is a requirement
-        when using the `segment.element_name` syntax to access the element in a segment.
-        """
-        return all(c.isalnum() or c == "_" for c in self.name)
-
     def sanitize_name(self) -> None:
         """
         Sanitise the element's name to be a valid Python variable name.
 
         Replaces characters that are not alphanumeric or underscores with underscores.
+        If the name starts with a number, an underscore is prepended.
         """
-        self.name = "".join(
+        alphanumeric_with_underscores = "".join(
             c if c.isalnum() or c == "_" else "_" for c in self.name
-        ).strip("_")
+        )
+        if alphanumeric_with_underscores[0].isdigit():
+            alphanumeric_with_underscores = "_" + alphanumeric_with_underscores
+
+        self.name = alphanumeric_with_underscores
 
     @abstractmethod
     def plot(
