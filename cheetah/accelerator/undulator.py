@@ -24,8 +24,8 @@ class Undulator(Element):
 
     :param length: Length in meters.
     :param period: Undulator period in meters.
-    :param Kx: Vertical undulator parameter.
-    :param Ky: Horizontal undulator parameter.
+    :param kx: Vertical undulator parameter.
+    :param ky: Horizontal undulator parameter.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -43,8 +43,8 @@ class Undulator(Element):
         self,
         length: torch.Tensor,
         period: torch.Tensor | None = None,
-        Kx: torch.Tensor | None = None,
-        Ky: torch.Tensor | None = None,
+        kx: torch.Tensor | None = None,
+        ky: torch.Tensor | None = None,
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
@@ -63,10 +63,10 @@ class Undulator(Element):
             period if period is not None else torch.tensor(1.0, **factory_kwargs),
         )
         self.register_buffer_or_parameter(
-            "Kx", Kx if Kx is not None else torch.tensor(0.0, **factory_kwargs)
+            "kx", kx if kx is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
-            "Ky", Ky if Ky is not None else torch.tensor(0.0, **factory_kwargs)
+            "ky", ky if ky is not None else torch.tensor(0.0, **factory_kwargs)
         )
 
     @property
@@ -84,8 +84,8 @@ class Undulator(Element):
         vector_shape = torch.broadcast_shapes(
             self.length.shape,
             igamma2.shape,
-            self.Kx.shape,
-            self.Ky.shape,
+            self.kx.shape,
+            self.ky.shape,
             self.period.shape,
         )
 
@@ -93,7 +93,7 @@ class Undulator(Element):
         tm[..., 4, 5] = (
             -self.length
             * igamma2
-            * (beta.square().reciprocal() + 0.5 * (self.Kx.square() + self.Ky.square()))
+            * (beta.square().reciprocal() + 0.5 * (self.kx.square() + self.ky.square()))
         )
 
         spatial_frequency = torch.where(
@@ -103,7 +103,7 @@ class Undulator(Element):
         )
 
         # Transverse focusing from vertical field (Kx > 0)
-        omega_x = spatial_frequency * self.Kx
+        omega_x = spatial_frequency * self.kx
         cos_omega_x = (omega_x * self.length).cos()
 
         tm[..., 2, 2] = cos_omega_x
@@ -112,7 +112,7 @@ class Undulator(Element):
         tm[..., 3, 3] = cos_omega_x
 
         # Transverse focusing from horizontal field (Ky > 0)
-        omega_y = spatial_frequency * self.Ky
+        omega_y = spatial_frequency * self.ky
         cos_omega_y = (omega_y * self.length).cos()
 
         tm[..., 0, 0] = cos_omega_y
@@ -144,4 +144,4 @@ class Undulator(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "period", "Kx", "Ky"]
+        return super().defining_features + ["length", "period", "kx", "ky"]

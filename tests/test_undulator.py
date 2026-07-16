@@ -4,7 +4,7 @@ import cheetah
 
 
 def test_undulator_off():
-    """Test that an undulator with Kx=Ky=0 behaves like a drift."""
+    """Test that an undulator with kx=ky=0 behaves like a drift."""
     undulator = cheetah.Undulator(length=torch.tensor(1.0), period=torch.tensor(0.1))
     drift = cheetah.Drift(length=torch.tensor(1.0))
     incoming_beam = cheetah.ParameterBeam.from_parameters(
@@ -14,12 +14,12 @@ def test_undulator_off():
     outgoing_beam_drift = drift.track(incoming_beam)
     outgoing_beam_undulator_off = undulator.track(incoming_beam)
 
-    undulator.Kx = torch.tensor(1.0)
-    undulator.Ky = torch.tensor(0.0)
+    undulator.kx = torch.tensor(1.0)
+    undulator.ky = torch.tensor(0.0)
     outgoing_beam_undulator_on_y = undulator.track(incoming_beam)
 
-    undulator.Kx = torch.tensor(0.0)
-    undulator.Ky = torch.tensor(1.0)
+    undulator.kx = torch.tensor(0.0)
+    undulator.ky = torch.tensor(1.0)
     outgoing_beam_undulator_on_x = undulator.track(incoming_beam)
 
     assert torch.allclose(

@@ -247,7 +247,7 @@ def convert_element(
             return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 period=torch.tensor(bmad_parsed["l_period"], **factory_kwargs),
-                Kx=torch.tensor(bmad_parsed["kx"], **factory_kwargs),
+                kx=torch.tensor(bmad_parsed["kx"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
             )

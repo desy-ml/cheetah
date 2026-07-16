@@ -175,8 +175,8 @@ def convert_element(
         return cheetah.Undulator(
             length=torch.tensor(element.l, **factory_kwargs),
             period=torch.tensor(element.lperiod, **factory_kwargs),
-            Kx=torch.tensor(element.Kx, **factory_kwargs),
-            Ky=torch.tensor(element.Ky, **factory_kwargs),
+            kx=torch.tensor(element.Kx, **factory_kwargs),
+            ky=torch.tensor(element.Ky, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )

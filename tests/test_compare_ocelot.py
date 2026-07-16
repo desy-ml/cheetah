@@ -733,8 +733,8 @@ def test_undulator(default_torch_dtype):
     )
     cheetah_undulator = cheetah.Undulator(
         length=torch.tensor(1.0),
-        Kx=torch.tensor(0.5),
-        Ky=torch.tensor(4.2),
+        kx=torch.tensor(0.5),
+        ky=torch.tensor(4.2),
         period=torch.tensor(0.1),
     )
     outgoing_beam = cheetah_undulator.track(incoming_beam)

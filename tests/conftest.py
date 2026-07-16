@@ -143,7 +143,7 @@ ELEMENT_SUBCLASSES_ARGS = {
         "default": {
             "length": torch.tensor(1.0),
             "period": torch.tensor(0.1),
-            "Kx": torch.tensor(1.3),
+            "kx": torch.tensor(1.3),
         }
     },
     cheetah.VerticalCorrector: {
