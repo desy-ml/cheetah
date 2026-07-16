@@ -6,6 +6,44 @@ Cheetah provides utilities to import both accelerator lattices and particle beam
 
 Cheetah supports converting lattices from other tracking codes and file formats into Cheetah segments.
 
+### LatticeJSON (Native Serialisation)
+
+Cheetah has native support for LatticeJSON, a standardised, human-readable format for exchange of accelerator lattice descriptions.
+
+#### Saving a Lattice
+
+You can save a Cheetah `Segment` to a `.json` file:
+
+```python
+import cheetah
+
+# Save using the segment method
+segment.to_lattice_json("my_lattice.json")
+
+# Or save using the helper function
+from cheetah.latticejson import save_cheetah_model
+
+save_cheetah_model(
+    segment, "my_lattice.json", title="My Lattice Model", info="Optional description"
+)
+```
+
+#### Loading a Lattice
+
+To load a saved LatticeJSON file back into Cheetah:
+
+```python
+import cheetah
+
+# Load using the segment class method
+segment = cheetah.Segment.from_lattice_json("my_lattice.json")
+
+# Or load using the helper function
+from cheetah.latticejson import load_cheetah_model
+
+segment = load_cheetah_model("my_lattice.json")
+```
+
 ### Ocelot
 
 Lattices defined as Ocelot cells (lists of Ocelot elements) can be converted directly in memory using `cheetah.Segment.from_ocelot()`:
@@ -57,47 +95,32 @@ import cheetah
 segment = cheetah.Segment.from_nx_tables("path/to/nxtables.csv")
 ```
 
-### LatticeJSON (Native Serialisation)
-
-Cheetah has native support for LatticeJSON, a standardised, human-readable format for exchange of accelerator lattice descriptions.
-
-#### Saving a Lattice
-
-You can save a Cheetah `Segment` to a `.json` file:
-
-```python
-import cheetah
-
-# Save using the segment method
-segment.to_lattice_json("my_lattice.json")
-
-# Or save using the helper function
-from cheetah.latticejson import save_cheetah_model
-
-save_cheetah_model(
-    segment, "my_lattice.json", title="My Lattice Model", info="Optional description"
-)
-```
-
-#### Loading a Lattice
-
-To load a saved LatticeJSON file back into Cheetah:
-
-```python
-import cheetah
-
-# Load using the segment class method
-segment = cheetah.Segment.from_lattice_json("my_lattice.json")
-
-# Or load using the helper function
-from cheetah.latticejson import load_cheetah_model
-
-segment = load_cheetah_model("my_lattice.json")
-```
+---
 
 ## Beams
 
 Cheetah supports importing particle beams and beam parameter distributions from several simulation codes and standard formats.
+
+### openPMD
+
+Cheetah supports the openPMD standard (via the `openpmd-beamphysics` library) to load standard beam distribution datasets:
+
+```python
+import torch
+import cheetah
+
+# Load from an openPMD HDF5/JSON file
+beam = cheetah.ParticleBeam.from_openpmd_file(
+    "path/to/beam.h5", energy=torch.tensor(1e7)
+)
+
+# Load directly from an openpmd-beamphysics ParticleGroup object
+beam = cheetah.ParticleBeam.from_openpmd_particlegroup(
+    particle_group, energy=torch.tensor(1e7)
+)
+```
+
+*Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`.*
 
 ### Astra
 
@@ -128,27 +151,6 @@ import cheetah
 
 beam = cheetah.ParticleBeam.from_ocelot(ocelot_beam)
 ```
-
-### openPMD
-
-Cheetah supports the openPMD standard (via the `openpmd-beamphysics` library) to load standard beam distribution datasets:
-
-```python
-import torch
-import cheetah
-
-# Load from an openPMD HDF5/JSON file
-beam = cheetah.ParticleBeam.from_openpmd_file(
-    "path/to/beam.h5", energy=torch.tensor(1e7)
-)
-
-# Load directly from an openpmd-beamphysics ParticleGroup object
-beam = cheetah.ParticleBeam.from_openpmd_particlegroup(
-    particle_group, energy=torch.tensor(1e7)
-)
-```
-
-_Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`._
 
 ### Twiss Parameters & Standard Distributions
 
