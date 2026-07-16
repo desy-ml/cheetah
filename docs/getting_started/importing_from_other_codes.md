@@ -19,13 +19,6 @@ import cheetah
 
 # Save using the segment method
 segment.to_lattice_json("my_lattice.json")
-
-# Or save using the helper function
-from cheetah.latticejson import save_cheetah_model
-
-save_cheetah_model(
-    segment, "my_lattice.json", title="My Lattice Model", info="Optional description"
-)
 ```
 
 #### Loading a Lattice
@@ -37,11 +30,6 @@ import cheetah
 
 # Load using the segment class method
 segment = cheetah.Segment.from_lattice_json("my_lattice.json")
-
-# Or load using the helper function
-from cheetah.latticejson import load_cheetah_model
-
-segment = load_cheetah_model("my_lattice.json")
 ```
 
 ### Ocelot
@@ -120,7 +108,7 @@ beam = cheetah.ParticleBeam.from_openpmd_particlegroup(
 )
 ```
 
-*Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`.*
+_Note: Using openPMD requires the `[openpmd]` extra dependency. Install it using `pip install "cheetah-accelerator[openpmd]"`._
 
 ### Astra
 
