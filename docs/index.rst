@@ -67,7 +67,7 @@ These pages explain how to get started with *Cheetah* and provide a nice guided 
     getting_started/vectorized_simulations
     getting_started/gradientbased
     getting_started/space_charge.md
-    getting_started/simulation_optimization
+    getting_started/optimising_speed
     getting_started/plotting_visualization
     getting_started/control_systems.md
     getting_started/custom_elements
