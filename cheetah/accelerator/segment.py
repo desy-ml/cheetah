@@ -28,18 +28,21 @@ class Segment(Element):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
         self,
         elements: list[Element],
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
     ) -> None:
         super().__init__(name=name, sanitize_name=sanitize_name, metadata=metadata)
@@ -348,7 +351,7 @@ class Segment(Element):
         cls,
         cell,
         name: str | None = None,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
         **kwargs,
@@ -366,7 +369,9 @@ class Segment(Element):
         :param name: Unique identifier for the entire segment.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
@@ -389,7 +394,7 @@ class Segment(Element):
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -406,7 +411,9 @@ class Segment(Element):
             parsing the lattice file.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
@@ -421,7 +428,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -432,7 +439,9 @@ class Segment(Element):
         :param name: Name of the root element.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Elegant lattice.
