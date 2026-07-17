@@ -136,3 +136,11 @@ def test_default_dtype(default_torch_dtype):
     assert converted.q.k1.dtype == default_torch_dtype
     assert converted.s.length.dtype == default_torch_dtype
     assert converted.s.k2.dtype == default_torch_dtype
+
+
+def test_cu_hxr_lcls_fixture_conversion_fails():
+    """Document current parser limitation for the split CU_HXR test fixture."""
+    file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
+
+    with pytest.raises(ValueError):
+        cheetah.Segment.from_bmad(file_path)
