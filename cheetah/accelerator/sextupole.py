@@ -34,6 +34,8 @@ class Sextupole(Element):
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/getting_started/control_systems` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     supported_tracking_methods = ["linear", "second_order"]
