@@ -1,6 +1,6 @@
 # Tracking Methods
 
-Cheetah supports multiple physical tracking methods (orders of tracking) for propagating beams through accelerator elements. Depending on your simulation needs, you can choose between fast first-order tracking, detailed second-order aberration tracking, or symplectic drift-kick-drift tracking.
+Cheetah supports multiple physical tracking methods for propagating beams through accelerator elements. Most elements support three primary tracking methods with linear tracking, second order tracking and drift-kick-drift tracking, from which you can choose depending on your needs for speed and fidelity. Some elements (such as diagnostics or custom physical models) use custom tracking routines that do not fall into the three categories above.
 
 ## Supported Tracking Methods
 
@@ -23,8 +23,8 @@ The primary tracking methods supported by Cheetah elements are:
 
 4. **Custom / Element-Specific Methods**
    - Some elements (such as diagnostics or custom physical models) use custom tracking routines that do not fall into the three categories above.
-   - For these elements, their `supported_tracking_methods` is a single-item list containing their own lowercase class name.
-   - Supported by: `Aperture` (`"aperture"`), `BPM` (`"bpm"`), `Screen` (`"screen"`), `SpaceChargeKick` (`"spacechargekick"`), `Marker` (`"marker"`).
+   - For these elements, their `supported_tracking_methods` is usually (but not always) a single-item list containing their own lowercase class name.
+   - Used by e.g.: `Aperture` (`"aperture"`), `BPM` (`"bpm"`), `Screen` (`"screen"`), `SpaceChargeKick` (`"spacechargekick"`), `Marker` (`"marker"`).
 
 ## Configuring Tracking Methods
 
@@ -37,8 +37,8 @@ import cheetah
 
 # Create a quadrupole using second-order tracking
 quadrupole = cheetah.Quadrupole(
-    length=0.1,
-    k1=4.2,
+    length=torch.tensor(0.1),
+    k1=torch.tensor(4.2),
     tracking_method="second_order",
 )
 ```
@@ -61,7 +61,5 @@ To switch the tracking order for an entire `Segment`, iterate over its elements 
 
 ```python
 # Configure the entire segment to track using second-order maps where possible
-for element in segment.elements:
-    if "second_order" in element.supported_tracking_methods:
-        element.tracking_method = "second_order"
+segment.set_attrs_on_every_element("tracking_method", "second_order")
 ```

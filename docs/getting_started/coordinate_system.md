@@ -32,7 +32,7 @@ $$ \delta= \frac{E-E_0}{p_0 c} = \frac{E}{p_0 c} - \frac{1}{\beta_0} $$
 
 Here, $E$ is the energy of a particle. $E_0$ is the energy of the reference particle, i.e. _reference energy_. $p_0$ is the reference momentum.
 
-## Relation with coordinates in other simulation tools
+## Relation with Coordinates in Other Simulation Tools
 
 ### OCELOT
 
@@ -40,7 +40,7 @@ Here, $E$ is the energy of a particle. $E_0$ is the energy of the reference part
 
 The coordinates are identical as the ones used in OCELOT.
 
-Note that in OCELOT the energy has the unit of GeV, while in Cheetah the energy is in eV.
+**NOTE** that in OCELOT the energy has the unit of GeV, while in Cheetah the energy is in eV.
 
 ### Bmad
 
@@ -70,7 +70,7 @@ The longitudinal momentum is identical
 
 $$ \delta*\text{(Cheetah)} = p*{t,\text{(MAD)}} $$
 
-## Conversion to trace space notation
+## Conversion to Trace Space Notation
 
 In many literatures, the trace space, or _slope_ notation is used.
 
@@ -82,7 +82,7 @@ In general
 
 $$ x' = \frac{p_x}{\sqrt{p^2 - p_x^2 - p_y^2}} (1+gx) $$
 
-Note that $p_s := \sqrt{p^2 - p_x^2 - p_y^2}$ is the longitudinal momentum, $g = 1/\rho$ is the curvature of the trajectory.
+**NOTE** that $p_s := \sqrt{p^2 - p_x^2 - p_y^2}$ is the longitudinal momentum, $g = 1/\rho$ is the curvature of the trajectory.
 
 ## Particle Species
 

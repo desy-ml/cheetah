@@ -139,25 +139,3 @@ import cheetah
 
 beam = cheetah.ParticleBeam.from_ocelot(ocelot_beam)
 ```
-
-### Twiss Parameters & Standard Distributions
-
-You can also generate beams from Twiss parameters or multi-dimensional parameters:
-
-```python
-import torch
-import cheetah
-
-# Create a parameter beam from Twiss parameters
-beam_param = cheetah.ParameterBeam.from_twiss(
-    beta_x=torch.tensor(3.14), beta_y=torch.tensor(3.14), energy=torch.tensor(1e7)
-)
-
-# Create a particle beam from Twiss parameters
-beam_part = cheetah.ParticleBeam.from_twiss(
-    num_particles=10000,
-    beta_x=torch.tensor(3.14),
-    beta_y=torch.tensor(3.14),
-    energy=torch.tensor(1e7),
-)
-```

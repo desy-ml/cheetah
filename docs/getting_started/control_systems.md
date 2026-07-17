@@ -17,12 +17,16 @@ quadrupole = cheetah.Quadrupole(
     name="QF.2124.T1",
     metadata={
         "control_system": {
-            "pv_base": "XFEL:QF:2124:T1:",
+            "type": "DOOCS",
+            "facility": "XFEL.MAGNETS",
+            "device": "MAGNET.ML",
+            "location": "QF.2124.T1",
             "properties": {
-                "STRENGTH.SP": "k1",
-                "STRENGTH.RBV": "k1",
+                "STRENGTH.SP": "k1",  # Setpoint property
+                "STRENGTH.RBV": "k1",  # Readback value property
+                "PS_ON": "is_active",  # Power supply state property
             },
-        }
+        },
     },
 )
 
@@ -71,48 +75,35 @@ metadata = {
 
 ## Online Integration Example
 
-Below is a simple conceptual example of how a control script can use Cheetah's metadata to read magnet settings from DOOCS (using the `pydoocs` library), run a simulation, and write updated settings back.
+Below is a simple conceptual example of how a control script can use Cheetah's metadata to read magnet settings from DOOCS (using the `doocs4py` package) to synchronise a Cheetah-based digital twin with the live accelerator.
 
 ```python
-import torch
 import cheetah
-import pydoocs  # Assuming pydoocs is installed
+import doocs4py
+import torch
 
 # Load your lattice
 segment = cheetah.Segment.from_lattice_json("my_lattice.json")
 
 # 1. Read live values from the control system and update Cheetah elements
 for element in segment.elements:
-    if "control_system" in element.metadata:
-        cs = element.metadata["control_system"]
-        if cs.get("type") == "DOOCS":
-            facility = cs.get("facility")
-            device = cs.get("device")
-            location = cs.get("location")
+    control_system = element.metadata.get("control_system", {})
+    properties = control_system.get("properties", {})
+    for property_name, element_attr in properties.items():
+        if property_name.endswith(".RBV"):
+            facility = control_system["facility"]
+            device = control_system["device"]
+            location = control_system["location"]
 
-            # Map DOOCS properties to Cheetah element attributes
-            for prop_name, element_attr in cs.get("properties", {}).items():
-                if prop_name == "STRENGTH.RBV":
-                    # Construct DOOCS address: FACILITY/DEVICE/LOCATION/PROPERTY
-                    address = f"{facility}/{device}/{location}/{prop_name}"
+            # Construct DOOCS address: FACILITY/DEVICE/LOCATION/PROPERTY
+            address = f"{facility}/{device}/{location}/{property_name}"
 
-                    # Read live value from DOOCS (value is returned in a dict)
-                    live_data = pydoocs.read(address)
-                    live_value = live_data["data"]
+            # Read live value from DOOCS
+            live_value = doocs4py.read(address)["data"]
 
-                    # Update Cheetah element attribute
-                    setattr(element, element_attr, torch.tensor(live_value))
+            # Update Cheetah element attribute
+            setattr(element, element_attr, torch.tensor(live_value))
 
 # 2. Run the simulation with live settings
 outgoing_beam = segment.track(incoming_beam)
-
-# 3. Perform optimisation/tuning and write setpoints back
-# (e.g. update quadrupole settings to new values computed by an optimiser)
-new_k1 = torch.tensor(4.5)
-segment.elements[0].k1 = new_k1
-
-# Write setpoint back to DOOCS
-cs = segment.elements[0].metadata["control_system"]
-address_sp = f"{cs['facility']}/{cs['device']}/{cs['location']}/STRENGTH.SP"
-pydoocs.write(address_sp, new_k1.item())
 ```
