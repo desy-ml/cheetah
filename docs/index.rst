@@ -38,7 +38,7 @@ Simply install *Cheetah* from PyPI by running the following command.
 Supported Elements
 ------------------
 
-Cheetah supports the following accelerator elements:
+Cheetah currently supports the following accelerator elements:
 
 * **Drifts**: :class:`~cheetah.Drift`
 * **Magnets**: :class:`~cheetah.Quadrupole`, :class:`~cheetah.Sextupole`, :class:`~cheetah.Solenoid`, :class:`~cheetah.Dipole` (sector bend), and :class:`~cheetah.RBend` (rectangular bend)
@@ -46,6 +46,8 @@ Cheetah supports the following accelerator elements:
 * **RF Cavities**: :class:`~cheetah.Cavity`, :class:`~cheetah.TransverseDeflectingCavity`
 * **Diagnostics**: :class:`~cheetah.BPM` (Beam Position Monitor), :class:`~cheetah.Screen`
 * **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`, :class:`~cheetah.Superimposed`
+
+If you need an element that is not yet supported, you can open an issue on the `GitHub repository <https://github.com/desy-ml/cheetah>`_ or implement a custom element by subclassing :class:`~cheetah.Element` and implementing the required methods. See :doc:`/getting_started/custom_elements` for more information.
 
 For the full element API documentation, see the :doc:`/accelerator` API Reference.
 
