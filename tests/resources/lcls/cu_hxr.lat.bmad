@@ -1,0 +1,182 @@
+!
+! Reduced CU_HXR-like lattice fixture for tests.
+! Self-contained single-file version with no external includes.
+!
+
+! ------------------------------------------------------------------------------
+! Global parameters and beginning conditions
+! ------------------------------------------------------------------------------
+
+parameter[custom_attribute1] = taylor::mat_und_k
+parameter[custom_attribute2] = taylor::mat_und_l
+parameter[geometry] = open
+parameter[particle] = electron
+
+beginning[beta_a] = 1.29704949763868189E+001
+beginning[alpha_a] = -4.39664934865974200E+000
+beginning[beta_b] = 3.47990377067604273E-001
+beginning[alpha_b] = 2.93951797746668075E-001
+beginning[e_tot] = 6e6
+beginning[theta_position] = -35*pi/180
+beginning[z_position] = 3050.512000 - 1032.60052
+beginning[x_position] = 10.448934545
+
+setsp = 0
+setcus = 0
+setda = 0
+sethxrss = 0
+setsxrss = 0
+setpepx = 0
+setcbxfel = 0
+setxl2wig = 0
+setxl2ss = 0
+
+intgsx = 30.0
+intghx = 30.0
+cb = 1.0e10/c_light
+e00 = 0.006
+in2m = 0.0254
+
+! ------------------------------------------------------------------------------
+! Representative element inventory
+! ------------------------------------------------------------------------------
+
+dbmark80: marker
+beggunb: marker
+l0bbeg: marker
+otr2: marker
+yag03: marker
+ws12: marker
+ws24: marker
+ws28144: marker
+ws32: marker
+ws32b: marker
+bpm4: marker, superimpose, ref=qa01
+bpm5: marker, superimpose, ref=qa02
+bpm50: marker, superimpose, ref=q50q3
+
+qa01: quadrupole, l = 0.122, k1 = -12.0
+qa02: quadrupole, l = 0.122, k1 = 13.0
+qe01: quadrupole, l = 0.150, k1 = -6.0
+qe02: quadrupole, l = 0.150, k1 = 5.0
+q50q3: quadrupole, l = 0.200, k1 = 0.30
+q4: quadrupole, l = 0.200, k1 = -0.20
+q5: quadrupole, l = 0.200, k1 = 0.15
+q6: quadrupole, l = 0.200, k1 = -0.11
+qa0: quadrupole, l = 0.200, k1 = 0.10
+qum1: quadrupole, l = 0.200, k1 = 0.27
+qum2: quadrupole, l = 0.200, k1 = -0.26
+qum3: quadrupole, l = 0.200, k1 = 0.28
+qum4: quadrupole, l = 0.200, k1 = -0.25
+
+l0a: lcavity, l = 3.0, voltage = 4.0e7, phi0 = 0.0, rf_frequency = 2.856e9
+l0b: lcavity, l = 3.0, voltage = 8.0e7, phi0 = 0.0, rf_frequency = 2.856e9
+
+d11o: drift, l = 2.4349
+d11oa: drift, l = 2.4349
+d_mid: drift, l = 0.2500
+
+bx11: sbend, l = 0.2032, angle = -0.093575352547, e2 = -0.093575352547, hgap = 0.01, fint = 0.5
+bx12: sbend, l = 0.2032, angle = 0.093575352547, e1 = 0.093575352547, hgap = 0.01, fint = 0.5
+bx13: sbend, l = 0.2032, angle = 0.093575352547, e2 = 0.093575352547, hgap = 0.01, fint = 0.5
+bx14: sbend, l = 0.2032, angle = -0.093575352547, e1 = -0.093575352547, hgap = 0.01, fint = 0.5
+
+! ------------------------------------------------------------------------------
+! Line hierarchy
+! ------------------------------------------------------------------------------
+
+qa01_full: line = (qa01)
+qa02_full: line = (qa02)
+q50q3_full: line = (q50q3)
+
+gunl0a: line = (beggunb, l0a, otr2, qa01_full, d_mid, qa02_full)
+l0al0b: line = (l0bbeg, l0b, q50q3_full, ws12)
+bc1: line = (bx11, d11o, bx12, d11oa, bx13, d11o, bx14)
+lcls2cuh: line = (bc1, ws24, ws28144, ws32, ws32b)
+cu_hxr: line = (gunl0a, l0al0b, lcls2cuh, yag03)
+
+! ------------------------------------------------------------------------------
+! Characteristic property assignments and aliases
+! ------------------------------------------------------------------------------
+
+qa01[alias] = "QUAD:IN20:121"
+qa02[alias] = "QUAD:IN20:122"
+l0a[alias] = "ACCL:IN20:300"
+l0b[alias] = "ACCL:IN20:400"
+otr2[alias] = "OTRS:IN20:111"
+yag03[alias] = "YAGS:IN20:131"
+
+lcavity::*[field_autoscale] = 1.0
+lcavity::*[cavity_type] = traveling_wave
+sbend::*[fringe_type] = full
+
+q50q3[k1] = 0.384840836193
+q4[k1] = -0.219396715005
+q5[k1] = 0.165708852387
+q6[k1] = -0.113569101470
+qa0[k1] = 0.109210100871
+qum1[k1] = 0.270162424011
+qum2[k1] = -0.268570675719
+qum3[k1] = 0.279944439325
+qum4[k1] = -0.248916368979
+qa01[k1] = -1.23714160523957588E+001
+qa02[k1] = 1.37440905821587052E+001
+qe01[k1] = -6.56502402848857436E+000
+qe02[k1] = 5.35877772165317712E+000
+
+l0a[voltage] = 4.0e7
+l0b[voltage] = 8.0e7
+o_l0_phase_turns = 0.0
+l0a[phi0] = o_l0_phase_turns
+l0b[phi0] = -o_l0_phase_turns
+
+lcavity::*[n_rf_steps] = 1000
+l0a[n_rf_steps] = 500
+l0b[n_rf_steps] = 500
+
+! ------------------------------------------------------------------------------
+! Minimal overlay examples
+! ------------------------------------------------------------------------------
+
+bc1_theta_default = -0.093575352547
+bc1_lp_default = 0.2032
+bc1_lp_drift_default = 2.4349
+
+o_bx11: overlay = {
+  bx11[g]:sin(theta)/lp,
+  bx11[l]:lp*theta/sin(theta),
+  bx11[e2]:theta},
+  var = {lp, theta},
+  theta = bc1_theta_default,
+  lp = bc1_lp_default
+
+o_bc1: overlay = {
+  o_bx11[theta]:angle_deg*pi/180,
+  d11o[l]:d11o[l] + lp_drift*(1/cos(angle_deg*pi/180)-1/cos(bc1_theta_default)),
+  d11oa[l]:d11oa[l] + lp_drift*(1/cos(angle_deg*pi/180)-1/cos(bc1_theta_default))},
+  var = {angle_deg, lp_drift},
+  angle_deg = bc1_theta_default*180/pi,
+  lp_drift = bc1_lp_drift_default
+
+o_bc1_offset: overlay = {o_bc1[angle_deg]: {-5.0, 0.0, 5.0}},
+  var = {offset},
+  x_knot = {-0.2, 0.0, 0.2}
+o_bc1_offset[offset] = 0.0
+
+o_quad_fudge: overlay = {qa01[k1]:k1_scale * qa01[k1], qa02[k1]:k1_scale * qa02[k1]},
+  var = {k1_scale},
+  k1_scale = 1.0
+
+! ------------------------------------------------------------------------------
+! Representative fixer superimpose definitions
+! ------------------------------------------------------------------------------
+
+fixer_otr2: fixer, superimpose, ref=otr2, ref_origin=beginning, is_on=F
+fixer_ws12: fixer, superimpose, ref=ws12, ref_origin=beginning, is_on=F
+fixer_ws24: fixer, superimpose, ref=ws24, ref_origin=beginning, is_on=F
+fixer_ws28144: fixer, superimpose, ref=ws28144, ref_origin=beginning, is_on=F
+fixer_ws32: fixer, superimpose, ref=ws32, ref_origin=beginning, is_on=F
+fixer_ws32b: fixer, superimpose, ref=ws32b, ref_origin=beginning, is_on=F
+fixer_l0a: fixer, superimpose, ref=l0bbeg, ref_origin=beginning, is_on=T
+
+use, cu_hxr
