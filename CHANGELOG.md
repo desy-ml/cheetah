@@ -19,6 +19,7 @@
 ### 🐆 Other
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
+- Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 
 ### 🌟 First Time Contributors
 
