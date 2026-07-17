@@ -68,6 +68,7 @@ These pages explain how to get started with *Cheetah*.
     getting_started/simulation_optimization.md
     getting_started/plotting_visualization
     getting_started/control_systems.md
+    getting_started/custom_elements
 
 API Reference
 -------------
