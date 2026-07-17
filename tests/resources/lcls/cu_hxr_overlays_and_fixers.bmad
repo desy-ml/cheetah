@@ -1,0 +1,49 @@
+!
+! Companion include for CU_HXR test lattice.
+! Contains representative overlay and fixer definitions.
+!
+
+! ------------------------------------------------------------------------------
+! Minimal overlay examples
+! ------------------------------------------------------------------------------
+
+bc1_theta_default = -0.093575352547
+bc1_lp_default = 0.2032
+bc1_lp_drift_default = 2.4349
+
+o_bx11: overlay = {
+  bx11[g]:sin(theta)/lp,
+  bx11[l]:lp*theta/sin(theta),
+  bx11[e2]:theta},
+  var = {lp, theta},
+  theta = bc1_theta_default,
+  lp = bc1_lp_default
+
+o_bc1: overlay = {
+  o_bx11[theta]:angle_deg*pi/180,
+  d11o[l]:d11o[l] + lp_drift*(1/cos(angle_deg*pi/180)-1/cos(bc1_theta_default)),
+  d11oa[l]:d11oa[l] + lp_drift*(1/cos(angle_deg*pi/180)-1/cos(bc1_theta_default))},
+  var = {angle_deg, lp_drift},
+  angle_deg = bc1_theta_default*180/pi,
+  lp_drift = bc1_lp_drift_default
+
+o_bc1_offset: overlay = {o_bc1[angle_deg]: {-5.0, 0.0, 5.0}},
+  var = {offset},
+  x_knot = {-0.2, 0.0, 0.2}
+o_bc1_offset[offset] = 0.0
+
+o_quad_fudge: overlay = {qa01[k1]:k1_scale * qa01[k1], qa02[k1]:k1_scale * qa02[k1]},
+  var = {k1_scale},
+  k1_scale = 1.0
+
+! ------------------------------------------------------------------------------
+! Representative fixer superimpose definitions
+! ------------------------------------------------------------------------------
+
+fixer_otr2: fixer, superimpose, ref=otr2, ref_origin=beginning, is_on=F
+fixer_ws12: fixer, superimpose, ref=ws12, ref_origin=beginning, is_on=F
+fixer_ws24: fixer, superimpose, ref=ws24, ref_origin=beginning, is_on=F
+fixer_ws28144: fixer, superimpose, ref=ws28144, ref_origin=beginning, is_on=F
+fixer_ws32: fixer, superimpose, ref=ws32, ref_origin=beginning, is_on=F
+fixer_ws32b: fixer, superimpose, ref=ws32b, ref_origin=beginning, is_on=F
+fixer_l0a: fixer, superimpose, ref=l0bbeg, ref_origin=beginning, is_on=T
