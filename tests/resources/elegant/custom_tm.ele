@@ -1,0 +1,18 @@
+&run_setup
+    lattice = "custom_tm.lte",
+    use_beamline = "custom",
+    p_central_mev = 107.3159,
+    rootname = "track",
+&end
+
+&run_control
+    n_steps = 1,
+    n_passes = 1
+&end
+
+&sdds_beam
+    input = "../ACHIP_EA1_2021.1351.001.sdds"
+&end
+
+&track
+&end

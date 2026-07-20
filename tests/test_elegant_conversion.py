@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 import torch
@@ -14,7 +16,7 @@ from cheetah.utils.warnings import PhysicsWarning
 
 def test_fodo_import():
     """Test importing a FODO lattice defined in the Elegant file format."""
-    file_path = "tests/resources/fodo.lte"
+    file_path = "tests/resources/elegant/fodo.lte"
 
     with pytest.warns(
         NoBeamPropertiesInLatticeWarning, match=("c.*charge")
@@ -122,7 +124,7 @@ def test_fodo_import():
 )
 def test_reverse_beamline_import():
     """Test importing a reversed beamline."""
-    file_path = "tests/resources/fodo.lte"
+    file_path = "tests/resources/elegant/fodo.lte"
 
     converted_forward = cheetah.Segment.from_elegant(file_path, "fodo")
     correct_lattice = converted_forward.reversed()
@@ -140,7 +142,7 @@ def test_reverse_beamline_import():
 
 def test_cavity_import():
     """Test importing an accelerating cavity defined in the Elegant file format."""
-    file_path = "tests/resources/cavity.lte"
+    file_path = "tests/resources/elegant/cavity.lte"
     with pytest.warns(
         NotUnderstoodPropertyWarning, match="(end[12]_focus|body_focus_model|change_p0)"
     ), pytest.warns(PhysicsWarning, match="srs"):
@@ -155,29 +157,28 @@ def test_cavity_import():
 
 
 @pytest.mark.filterwarnings(
-    "ignore:"
-    ".*(end[12]_focus|body_focus_model|change_p0).*:"
-    "cheetah.utils.NotUnderstoodPropertyWarning"
+    "ignore:.*[(coordinates)(custom_tm\\.sdds)].*:cheetah.utils.PhysicsWarning"
 )
-@pytest.mark.filterwarnings("ignore:.*srs.*:cheetah.utils.PhysicsWarning")
-def test_custom_transfer_map_import():
-    """Test importing an Elegant EMATRIX into a Cheetah CustomTransferMap."""
-    file_path = "tests/resources/cavity.lte"
-    converted = cheetah.Segment.from_elegant(file_path, "cavity")
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_custom_transfer_map_import(default_torch_dtype):
+    resource_dir = Path("tests/resources")
+    elegant_dir = resource_dir / "elegant"
 
-    correct_transfer_map = torch.tensor(
-        [
-            [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [0.04, 1.0, 0.003, 0.0, 0.0, 0.0, -0.0027],
-            [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
-            [0.003, 0.0, -0.04, 1.0, 0.0, 0.0, -0.15],
-            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-        ]
+    incoming_beam = cheetah.ParticleBeam.from_elegant(
+        resource_dir / "ACHIP_EA1_2021.1351.001.sdds"
+    )
+    lattice = cheetah.Segment.from_elegant(
+        elegant_dir / "custom_tm.lte",
+        name="custom",
+        relativistic_beta=incoming_beam.relativistic_beta,
     )
 
-    assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
+    cheetah_output = lattice.track(incoming_beam)
+    elegant_output = cheetah.ParticleBeam.from_elegant(elegant_dir / "custom_tm.sdds")
+
+    assert torch.allclose(cheetah_output.particles, elegant_output.particles)
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
@@ -209,7 +210,7 @@ def test_custom_transfer_map_import():
 )
 def test_lattice_device(device: torch.device):
     """Test that the device is passed correctly."""
-    file_path = "tests/resources/fodo.lte"
+    file_path = "tests/resources/elegant/fodo.lte"
 
     # Convert the lattice while passing the device
     converted = cheetah.Segment.from_elegant(file_path, "fodo", device=device)
@@ -251,7 +252,7 @@ def test_lattice_device(device: torch.device):
 )
 def test_lattice_dtype(dtype: torch.dtype):
     """Test that the dtype is passed correctly."""
-    file_path = "tests/resources/fodo.lte"
+    file_path = "tests/resources/elegant/fodo.lte"
 
     # Convert the lattice while passing the device
     converted = cheetah.Segment.from_elegant(file_path, "fodo", dtype=dtype)
@@ -296,7 +297,7 @@ def test_lattice_dtype(dtype: torch.dtype):
 )
 def test_lattice_default_dtype(default_torch_dtype):
     """Test that the default dtype is used if no explicit type is passed."""
-    file_path = "tests/resources/fodo.lte"
+    file_path = "tests/resources/elegant/fodo.lte"
 
     # Convert the lattice while passing the device
     converted = cheetah.Segment.from_elegant(file_path, "fodo")

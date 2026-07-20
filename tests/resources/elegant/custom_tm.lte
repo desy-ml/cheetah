@@ -1,0 +1,7 @@
+custom_tm:  EMATRIX, L = 123.4, R11 = 1.0, R12 = 123.4, R22 = 1.0, R33 = 1.0, &
+            R34 = 123.4, R44 = 1.0, R55 = 1, R56 = 2.7979e-03, R66 = 1
+d1: drift,l=123.4
+endwatch: WATCH, MODE="coordinates", FILENAME="custom_tm.sdds"
+
+custom: line=(d1, endwatch)
+! custom: line=(custom_tm, endwatch)
