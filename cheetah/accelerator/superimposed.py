@@ -59,6 +59,12 @@ class Superimposed(Element):
         self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
+
+        if len(base_element_halves) != 2:
+            raise ValueError(
+                "The base element could not be split into two halves. "
+            )
+
         self._segment = Segment(
             elements=[
                 base_element_halves[0],

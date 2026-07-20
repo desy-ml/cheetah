@@ -2,7 +2,12 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import NotUnderstoodPropertyWarning, is_mps_available_and_functional
+import cheetah.converters.bmad as bmad_converter
+from cheetah.utils import (
+    NotUnderstoodPropertyWarning,
+    UnknownElementWarning,
+    is_mps_available_and_functional,
+)
 
 
 def test_bmad_tutorial():
@@ -169,3 +174,23 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
     assert converted.gunl0a.qa02.base_element.name == "_qa02"
+
+
+def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
+    """Test that superimpose conversion falls back to the base element on split errors."""
+    file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
+
+    def _raise_superimpose_value_error(*args, **kwargs):
+        raise ValueError("forced split failure for test")
+
+    monkeypatch.setattr(
+        bmad_converter.cheetah, "Superimposed", _raise_superimpose_value_error
+    )
+
+    with pytest.warns(
+        UnknownElementWarning, match="Keeping only the base element"
+    ):
+        converted = cheetah.Segment.from_bmad(file_path, dtype=torch.float64)
+
+    assert isinstance(converted.gunl0a.qe01, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.qa02, cheetah.Quadrupole)

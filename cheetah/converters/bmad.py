@@ -76,7 +76,7 @@ def convert_element(
     shared_properties = ["element_type", "alias", "type", "metadata"]
 
     if _allow_superimpose and isinstance(bmad_parsed, dict):
-        superimposed_elements = []
+        superimposed_entries = []
         for other_name, other_parsed in context.items():
             if other_name == name:
                 continue
@@ -97,14 +97,14 @@ def convert_element(
                 candidate_superimposed.length,
                 torch.zeros_like(candidate_superimposed.length),
             ):
-                superimposed_elements.append(candidate_superimposed)
+                superimposed_entries.append((other_name, candidate_superimposed))
 
-        if superimposed_elements:
-            if len(superimposed_elements) == 1:
-                superimposed_element = superimposed_elements[0]
+        if superimposed_entries:
+            if len(superimposed_entries) == 1:
+                superimposed_element = superimposed_entries[0][1]
             else:
                 superimposed_element = cheetah.Segment(
-                    elements=superimposed_elements,
+                    elements=[entry[1] for entry in superimposed_entries],
                     name=f"{name}_superimposed",
                     sanitize_name=sanitize_name,
                 )
@@ -117,15 +117,28 @@ def convert_element(
                 dtype,
                 _allow_superimpose=False,
             )
-            base_element.name = f"_{base_element.name}"
+            base_element_for_superimpose = base_element.clone()
+            base_element_for_superimpose.name = f"_{base_element_for_superimpose.name}"
 
-            return cheetah.Superimposed(
-                base_element=base_element,
-                superimposed_element=superimposed_element,
-                name=name,
-                sanitize_name=sanitize_name,
-                metadata=metadata,
-            )
+            try:
+                return cheetah.Superimposed(
+                    base_element=base_element_for_superimpose,
+                    superimposed_element=superimposed_element,
+                    name=name,
+                    sanitize_name=sanitize_name,
+                    metadata=metadata,
+                )
+            except ValueError as error:
+                superimposed_names = ", ".join(
+                    [entry[0] for entry in superimposed_entries]
+                )
+                warnings.warn(
+                    f"Could not superimpose element(s) {superimposed_names} on "
+                    f"{name}. Keeping only the base element. Reason: {error}",
+                    category=UnknownElementWarning,
+                    stacklevel=2,
+                )
+                return base_element
 
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
