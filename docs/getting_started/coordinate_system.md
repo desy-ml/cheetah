@@ -50,13 +50,16 @@ The transverse coordinates $(x, px, y, py)$ are identical to the Bmad coordinate
 
 The longitudinal coordinate in Bmad is defined as
 
-$$ z\_\text{(Bmad)} = -\beta c \Delta t $$
+<!-- prettier-ignore -->
+$$ z_\text{(Bmad)} = -\beta c \Delta t $$
 
-$$ \tau*\text{(Cheetah)} = -\frac{1}{\beta} z*\text{(Bmad)} $$
+<!-- prettier-ignore -->
+$$ \tau_\text{(Cheetah)} = -\frac{1}{\beta} z_\text{(Bmad)} $$
 
 In Bmad, the sixth dimension (longitudinal momentum) is defined as the momentum offset over the reference momentum
 
-$$ p\_{z, \text{(Bmad)}} = \frac{p-p_0}{p_0}$$
+<!-- prettier-ignore -->
+$$ p_{z, \text{(Bmad)}} = \frac{p-p_0}{p_0}$$
 
 ### Mad-X
 
@@ -64,11 +67,13 @@ $$ p\_{z, \text{(Bmad)}} = \frac{p-p_0}{p_0}$$
 
 The longidutinal coordinate has an opposite sign
 
-$$ \tau*\text{(Cheetah)} = - z*\text{(MAD)} $$
+<!-- prettier-ignore -->
+$$ \tau_\text{(Cheetah)} = - z_\text{(MAD)} $$
 
 The longitudinal momentum is identical
 
-$$ \delta*\text{(Cheetah)} = p*{t,\text{(MAD)}} $$
+<!-- prettier-ignore -->
+$$ \delta_\text{(Cheetah)} = p_{t,\text{(MAD)}} $$
 
 ## Conversion to Trace Space Notation
 
