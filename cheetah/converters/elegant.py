@@ -11,7 +11,11 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
-from cheetah.utils import NoBeamPropertiesInLatticeWarning, UnknownElementWarning
+from cheetah.utils import (
+    NoBeamPropertiesInLatticeWarning,
+    PhysicsWarning,
+    UnknownElementWarning,
+)
 
 electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][0] * 1e6
 
@@ -19,6 +23,7 @@ electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][
 def convert_element(
     name: str,
     context: dict,
+    relativistic_beta: torch.Tensor | None = None,
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
@@ -28,6 +33,8 @@ def convert_element(
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Elegant lattice file(s).
+    :param relativistic_beta: Relativistic beta of the reference beam this lattice is
+        defined for. Defaults to 1 with a warning if `None` is passed.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment. If `None` (default), a warning is raised for
@@ -255,6 +262,26 @@ def convert_element(
             # Ensure the affine component is passed along
             R[6, 6] = 1.0
 
+            if relativistic_beta is None:
+                warnings.warn(
+                    "Assuming ultra-relativistic physics (β = 1) while converting"
+                    f" element {name} of type {parsed['element_type']}. Pass an"
+                    " explicit `relativistic_beta` if this is unsuitable.",
+                    category=PhysicsWarning,
+                    stacklevel=2,
+                )
+                relativistic_beta = R.new_ones(7)
+            else:
+                relativistic_beta = relativistic_beta.unsqueeze(-1)
+
+            # Apply Cheetah -> Elegant conversion to the columns
+            R[:, 4] *= -relativistic_beta
+            R[:, 5] /= relativistic_beta
+
+            # Apply Elegant -> Cheetah conversion to the rows
+            R[4, :] /= -relativistic_beta
+            R[5, :] *= relativistic_beta
+
             return cheetah.CustomTransferMap(
                 length=torch.tensor(parsed.get("l", 0.0), **factory_kwargs),
                 predefined_transfer_map=R,
@@ -387,6 +414,7 @@ def convert_element(
 def convert_lattice(
     elegant_lattice_file_path: Path,
     name: str,
+    relativistic_beta: torch.Tensor | None = None,
     sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
@@ -396,6 +424,8 @@ def convert_lattice(
 
     :param elegant_lattice_file_path: Path to the Elegant lattice file.
     :param name: Name of the root element.
+    :param relativistic_beta: Relativistic beta of the reference beam this lattice is
+        defined for. Defaults to 1 with a warning if `None` is passed.
     :param sanitize_names: Whether to sanitise the names of the elements as well as the
         name of the segment to be valid Python variable names. This is needed if you
         want to use the `segment.element_name` syntax to access the element in a
@@ -429,7 +459,9 @@ def convert_lattice(
     context = parse_lines(merged_lines)
 
     # Convert the parsed lattice info to Cheetah elements
-    return convert_element(name, context, sanitize_names, device, dtype)
+    return convert_element(
+        name, context, relativistic_beta, sanitize_names, device, dtype
+    )
 
 
 def convert_beam(

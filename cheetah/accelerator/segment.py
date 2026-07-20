@@ -428,6 +428,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
+        relativistic_beta: torch.Tensor | None = None,
         sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -437,6 +438,8 @@ class Segment(Element):
 
         :param elegant_lattice_file_path: Path to the Elegant lattice file.
         :param name: Name of the root element.
+        :param relativistic_beta: Relativistic beta of the reference beam this lattice is
+            defined for. Defaults to 1 with a warning if `None` is passed.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
             `segment.element_name` syntax to access the element in a segment. If `None`
@@ -448,7 +451,12 @@ class Segment(Element):
         """
         elegant_lattice_file_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice(
-            elegant_lattice_file_path, name, sanitize_names, device, dtype
+            elegant_lattice_file_path,
+            name,
+            relativistic_beta,
+            sanitize_names,
+            device,
+            dtype,
         )
 
     @classmethod
