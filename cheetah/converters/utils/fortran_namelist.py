@@ -36,8 +36,7 @@ OVERLAY_KNOT_BASED_PATTERN = (
 )
 OVERLAY_EXPRESSION_BASED_PATTERN = OVERLAY_DEFINITION_PATTERN + r"\{(.*)\}\s*(\,.*)*"
 GROUP_DEFINITION_PATTERN = (
-    f"({ELEMENT_NAME_PATTERN})"
-    + r"\s*\:\s*group\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}(\,.*)*"
+    f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*group\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}(\,.*)*"
 )
 
 
@@ -238,6 +237,16 @@ def assign_property(line: str, context: dict) -> dict:
 
         return context
 
+    if property_name == "ref":
+        reference_name = property_expression.strip('" ')
+
+        for name in object_names:
+            if name not in context:
+                context[name] = {}
+            context[name][property_name] = reference_name
+
+        return context
+
     expression_result = evaluate_expression(property_expression, context)
 
     for name in object_names:
@@ -304,6 +313,8 @@ def define_element(line: str, context: dict) -> dict:
             if property_name in {"type", "alias"}:
                 metadata = element_properties.setdefault("metadata", {})
                 metadata[property_name] = property_expression.strip('"')
+            elif property_name == "ref":
+                element_properties[property_name] = property_expression.strip('" ')
             else:
                 element_properties[property_name] = evaluate_expression(
                     property_expression, context

@@ -15,12 +15,36 @@ from cheetah.converters.utils.fortran_namelist import (
 from cheetah.utils import UnknownElementWarning
 
 
+def _is_truthy_superimpose(value: object) -> bool:
+    """Interpret Bmad superimpose flags as booleans."""
+    if isinstance(value, str):
+        return value.lower() in {"t", "true", "1", "yes"}
+    return bool(value)
+
+
+def _is_superimposed_definition(parsed: object) -> bool:
+    """Return whether a parsed element definition denotes a superimposed element."""
+    if not isinstance(parsed, dict):
+        return False
+    if "ref" not in parsed:
+        return False
+
+    # Inline syntax like "..., superimpose, ref=..." currently may omit an explicit
+    # superimpose property after parsing, so entries with ref are treated as
+    # superimposed by default.
+    if "superimpose" not in parsed:
+        return True
+
+    return _is_truthy_superimpose(parsed["superimpose"])
+
+
 def convert_element(
     name: str,
     context: dict,
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
+    _allow_superimpose: bool = True,
 ) -> "cheetah.Element":
     """Convert a parsed Bmad element dict to a cheetah Element.
 
@@ -33,6 +57,8 @@ def convert_element(
         of PyTorch is used.
     :param dtype: Data type to use for the element. If `None`, the current default dtype
         of PyTorch is used.
+    :param _allow_superimpose: Internal recursion guard to prevent wrapping both the
+        base and marker elements repeatedly while constructing a `Superimposed` object.
     :return: Converted cheetah Element. If you are calling this function yourself
         as a user of Cheetah, this is most likely a `Segment`.
     """
@@ -49,6 +75,52 @@ def convert_element(
 
     shared_properties = ["element_type", "alias", "type", "metadata"]
 
+    if _allow_superimpose and isinstance(bmad_parsed, dict):
+        superimposed_name = None
+        superimposed_element = None
+        for other_name, other_parsed in context.items():
+            if other_name == name:
+                continue
+            if not _is_superimposed_definition(other_parsed):
+                continue
+            if other_parsed.get("ref") != name:
+                continue
+
+            candidate_superimposed = convert_element(
+                other_name,
+                context,
+                sanitize_name,
+                device,
+                dtype,
+                _allow_superimpose=False,
+            )
+            if torch.allclose(
+                candidate_superimposed.length,
+                torch.zeros_like(candidate_superimposed.length),
+            ):
+                superimposed_name = other_name
+                superimposed_element = candidate_superimposed
+                break
+
+        if superimposed_name is not None and superimposed_element is not None:
+            base_element = convert_element(
+                name,
+                context,
+                sanitize_name,
+                device,
+                dtype,
+                _allow_superimpose=False,
+            )
+            base_element.name = f"_{base_element.name}"
+
+            return cheetah.Superimposed(
+                base_element=base_element,
+                superimposed_element=superimposed_element,
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
+            )
+
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
             elements=[
@@ -60,7 +132,9 @@ def convert_element(
         )
     elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
         if bmad_parsed["element_type"] == "marker":
-            validate_understood_properties(shared_properties, bmad_parsed)
+            validate_understood_properties(
+                shared_properties + ["ref", "superimpose"], bmad_parsed
+            )
             return cheetah.Marker(
                 name=name,
                 sanitize_name=sanitize_name,
@@ -117,7 +191,10 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "hkicker":
-            validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
+            validate_understood_properties(
+                shared_properties + ["l", "kick", "ref", "superimpose"],
+                bmad_parsed,
+            )
             return cheetah.HorizontalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
@@ -126,7 +203,10 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "vkicker":
-            validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
+            validate_understood_properties(
+                shared_properties + ["l", "kick", "ref", "superimpose"],
+                bmad_parsed,
+            )
             return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),

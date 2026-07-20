@@ -149,8 +149,8 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert converted.name == "cu_hxr"
     assert isinstance(flattened.bx11, cheetah.Dipole)
 
-    assert flattened.qa01.k1.item() == pytest.approx(0.384840836193)
-    assert flattened.qa01.metadata["alias"] == "quad:in20:121"
+    assert converted.gunl0a.qa01.base_element.k1.item() == pytest.approx(0.384840836193)
+    assert converted.gunl0a.qa01.metadata["alias"] == "quad:in20:121"
 
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
@@ -159,6 +159,14 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qe01.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qe01.base_element.name == "_qe01"
+    assert isinstance(converted.gunl0a.d_mid, cheetah.Superimposed)
+    assert isinstance(converted.gunl0a.d_mid.base_element, cheetah.Drift)
+    assert isinstance(
+        converted.gunl0a.d_mid.superimposed_element, cheetah.HorizontalCorrector
+    )
+    assert converted.gunl0a.d_mid.base_element.name == "_d_mid"
     assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qa02.base_element.name == "_qa02"

@@ -45,3 +45,5 @@ otr3: marker
 otr3[superimpose] = T
 otr3[ref] = qe01
 
+trim_mid: hkicker, l = 0.0, kick = 1e-4, superimpose, ref=d_mid
+
