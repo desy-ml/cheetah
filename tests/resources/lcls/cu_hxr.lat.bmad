@@ -52,7 +52,6 @@ ws28144: marker
 ws32: marker
 ws32b: marker
 bpm4: marker, superimpose, ref=qa01
-bpm5: marker, superimpose, ref=qa02
 bpm50: marker, superimpose, ref=q50q3
 
 bq1 = 10

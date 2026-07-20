@@ -40,10 +40,10 @@ o_quad_fudge: overlay = {qa01[k1]:k1_scale * qa01[k1], qa02[k1]:k1_scale * qa02[
 ! Representative superimpose definitions
 ! ------------------------------------------------------------------------------
 
-otr2: marker, superimpose, ref=qa02
+otr2: marker, superimpose, ref=qe01
 otr3: marker
 otr3[superimpose] = T
-otr3[ref] = qe01
+otr3[ref] = qa02
 
-trim_mid: hkicker, l = 0.0, kick = 1e-4, superimpose, ref=d_mid
+trim: hkicker, l = 0.0, kick = 1e-4, superimpose, ref=qe01
 

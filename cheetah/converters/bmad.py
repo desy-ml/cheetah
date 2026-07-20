@@ -76,8 +76,7 @@ def convert_element(
     shared_properties = ["element_type", "alias", "type", "metadata"]
 
     if _allow_superimpose and isinstance(bmad_parsed, dict):
-        superimposed_name = None
-        superimposed_element = None
+        superimposed_elements = []
         for other_name, other_parsed in context.items():
             if other_name == name:
                 continue
@@ -98,11 +97,18 @@ def convert_element(
                 candidate_superimposed.length,
                 torch.zeros_like(candidate_superimposed.length),
             ):
-                superimposed_name = other_name
-                superimposed_element = candidate_superimposed
-                break
+                superimposed_elements.append(candidate_superimposed)
 
-        if superimposed_name is not None and superimposed_element is not None:
+        if superimposed_elements:
+            if len(superimposed_elements) == 1:
+                superimposed_element = superimposed_elements[0]
+            else:
+                superimposed_element = cheetah.Segment(
+                    elements=superimposed_elements,
+                    name=f"{name}_superimposed",
+                    sanitize_name=sanitize_name,
+                )
+
             base_element = convert_element(
                 name,
                 context,
