@@ -35,6 +35,9 @@ OVERLAY_KNOT_BASED_PATTERN = (
     OVERLAY_DEFINITION_PATTERN + r"\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"
 )
 OVERLAY_EXPRESSION_BASED_PATTERN = OVERLAY_DEFINITION_PATTERN + r"\{(.*)\}\s*(\,.*)*"
+GROUP_DEFINITION_PATTERN = (
+    f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*group\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}(\,.*)*"
+)
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -177,19 +180,30 @@ def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
     :return: List of object names that match the given wildcard pattern, both in terms
         of name and element type.
     """
-    object_type, object_name = wildcard_pattern.split("::")
+    if "::" in wildcard_pattern:
+        object_type, object_name = wildcard_pattern.split("::", maxsplit=1)
+    else:
+        object_type, object_name = None, wildcard_pattern
 
     pattern = object_name.replace("*", ".*").replace("%", ".")
-    name_matching_keys = [key for key in context.keys() if re.fullmatch(pattern, key)]
-    type_matching_keys = [
+    name_matching_keys = [key for key in context if re.fullmatch(pattern, key)]
+
+    # For typed wildcards (e.g. "lcavity::*"), match both by name and element type.
+    if object_type is not None:
+        return [
+            key
+            for key in name_matching_keys
+            if isinstance(context[key], dict)
+            and "element_type" in context[key]
+            and context[key]["element_type"] == object_type
+        ]
+
+    # For plain wildcards (e.g. "l0*"), only target actual parsed elements.
+    return [
         key
         for key in name_matching_keys
-        if isinstance(context[key], dict)
-        and "element_type" in context[key]
-        and context[key]["element_type"] == object_type
+        if isinstance(context[key], dict) and "element_type" in context[key]
     ]
-
-    return type_matching_keys
 
 
 def assign_property(line: str, context: dict) -> dict:
@@ -410,8 +424,14 @@ def parse_lines(lines: str) -> dict:
             context = assign_variable(line, context)
         elif re.fullmatch(LINE_DEFINITION_PATTERN, line):
             context = define_line(line, context)
-        elif re.fullmatch(OVERLAY_DEFINITION_PATTERN, line):
-            context = define_overlay(line, context)
+        elif re.fullmatch(OVERLAY_KNOT_BASED_PATTERN, line) or re.fullmatch(
+            OVERLAY_EXPRESSION_BASED_PATTERN, line
+        ):
+            # Overlay definitions are currently not converted; skip for simplicity.
+            continue
+        elif re.fullmatch(GROUP_DEFINITION_PATTERN, line):
+            # Group definitions are control entries; skip for simplicity.
+            continue
         elif re.fullmatch(ELEMENT_DEFINITION_PATTERN, line):
             context = define_element(line, context)
         elif re.fullmatch(USE_LINE_PATTERN, line):

@@ -55,19 +55,13 @@ bpm4: marker, superimpose, ref=qa01
 bpm5: marker, superimpose, ref=qa02
 bpm50: marker, superimpose, ref=q50q3
 
-qa01: quadrupole, l = 0.122, k1 = -12.0
+bq1 = 10
+brho = 10
+
+qa01: quadrupole, l = 0.122, k1 = 10.0
 qa02: quadrupole, l = 0.122, k1 = 13.0
 qe01: quadrupole, l = 0.150, k1 = -6.0
-qe02: quadrupole, l = 0.150, k1 = 5.0
-q50q3: quadrupole, l = 0.200, k1 = 0.30
-q4: quadrupole, l = 0.200, k1 = -0.20
-q5: quadrupole, l = 0.200, k1 = 0.15
-q6: quadrupole, l = 0.200, k1 = -0.11
-qa0: quadrupole, l = 0.200, k1 = 0.10
-qum1: quadrupole, l = 0.200, k1 = 0.27
-qum2: quadrupole, l = 0.200, k1 = -0.26
-qum3: quadrupole, l = 0.200, k1 = 0.28
-qum4: quadrupole, l = 0.200, k1 = -0.25
+qe02: quadrupole, l = 0.150, k1 = -(10*bq1)/brho
 
 l0a: lcavity, l = 3.0, voltage = 4.0e7, phi0 = 0.0, rf_frequency = 2.856e9
 l0b: lcavity, l = 3.0, voltage = 8.0e7, phi0 = 0.0, rf_frequency = 2.856e9
@@ -82,20 +76,6 @@ bx13: sbend, l = 0.2032, angle = 0.093575352547, e2 = 0.093575352547, hgap = 0.0
 bx14: sbend, l = 0.2032, angle = -0.093575352547, e1 = -0.093575352547, hgap = 0.01, fint = 0.5
 
 ! ------------------------------------------------------------------------------
-! Line hierarchy
-! ------------------------------------------------------------------------------
-
-qa01_full: line = (qa01)
-qa02_full: line = (qa02)
-q50q3_full: line = (q50q3)
-
-gunl0a: line = (beggunb, l0a, otr2, qa01_full, d_mid, qa02_full)
-l0al0b: line = (l0bbeg, l0b, q50q3_full, ws12)
-bc1: line = (bx11, d11o, bx12, d11oa, bx13, d11o, bx14)
-lcls2cuh: line = (bc1, ws24, ws28144, ws32, ws32b)
-cu_hxr: line = (gunl0a, l0al0b, lcls2cuh, yag03)
-
-! ------------------------------------------------------------------------------
 ! Characteristic property assignments and aliases
 ! ------------------------------------------------------------------------------
 
@@ -103,37 +83,27 @@ qa01[alias] = "QUAD:IN20:121"
 qa02[alias] = "QUAD:IN20:122"
 l0a[alias] = "ACCL:IN20:300"
 l0b[alias] = "ACCL:IN20:400"
-otr2[alias] = "OTRS:IN20:111"
 yag03[alias] = "YAGS:IN20:131"
 
 lcavity::*[field_autoscale] = 1.0
 lcavity::*[cavity_type] = traveling_wave
 sbend::*[fringe_type] = full
 
-q50q3[k1] = 0.384840836193
-q4[k1] = -0.219396715005
-q5[k1] = 0.165708852387
-q6[k1] = -0.113569101470
-qa0[k1] = 0.109210100871
-qum1[k1] = 0.270162424011
-qum2[k1] = -0.268570675719
-qum3[k1] = 0.279944439325
-qum4[k1] = -0.248916368979
-qa01[k1] = -1.23714160523957588E+001
-qa02[k1] = 1.37440905821587052E+001
-qe01[k1] = -6.56502402848857436E+000
-qe02[k1] = 5.35877772165317712E+000
+qa01[k1] = 0.384840836193
 
 l0a[voltage] = 4.0e7
 l0b[voltage] = 8.0e7
-o_l0_phase_turns = 0.0
-l0a[phi0] = o_l0_phase_turns
-l0b[phi0] = -o_l0_phase_turns
-
 lcavity::*[n_rf_steps] = 1000
-l0a[n_rf_steps] = 500
-l0b[n_rf_steps] = 500
+l0*[phi0] = 10
 
 call, file = cu_hxr_overlays_and_fixers.bmad
+
+! ------------------------------------------------------------------------------
+! Line hierarchy
+! ------------------------------------------------------------------------------
+
+gunl0a: line = (beggunb, l0a, l0b, qa01, d_mid, qa02)
+bc1: line = (bx11, d11o, bx12, d11oa, bx13, d11o, bx14)
+cu_hxr: line = (gunl0a, bc1, yag03)
 
 use, cu_hxr

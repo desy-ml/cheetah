@@ -37,13 +37,8 @@ o_quad_fudge: overlay = {qa01[k1]:k1_scale * qa01[k1], qa02[k1]:k1_scale * qa02[
   k1_scale = 1.0
 
 ! ------------------------------------------------------------------------------
-! Representative fixer superimpose definitions
+! Representative superimpose definitions
 ! ------------------------------------------------------------------------------
 
-fixer_otr2: fixer, superimpose, ref=otr2, ref_origin=beginning, is_on=F
-fixer_ws12: fixer, superimpose, ref=ws12, ref_origin=beginning, is_on=F
-fixer_ws24: fixer, superimpose, ref=ws24, ref_origin=beginning, is_on=F
-fixer_ws28144: fixer, superimpose, ref=ws28144, ref_origin=beginning, is_on=F
-fixer_ws32: fixer, superimpose, ref=ws32, ref_origin=beginning, is_on=F
-fixer_ws32b: fixer, superimpose, ref=ws32b, ref_origin=beginning, is_on=F
-fixer_l0a: fixer, superimpose, ref=l0bbeg, ref_origin=beginning, is_on=T
+otr2: marker, superimpose, ref=qa02
+
