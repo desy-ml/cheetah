@@ -102,7 +102,7 @@ call, file = cu_hxr_overlays_and_fixers.bmad
 ! Line hierarchy
 ! ------------------------------------------------------------------------------
 
-gunl0a: line = (beggunb, l0a, l0b, qa01, d_mid, qa02)
+gunl0a: line = (beggunb, l0a, l0b, qa01, d_mid, qa02, qe01)
 bc1: line = (bx11, d11o, bx12, d11oa, bx13, d11o, bx14)
 cu_hxr: line = (gunl0a, bc1, yag03)
 

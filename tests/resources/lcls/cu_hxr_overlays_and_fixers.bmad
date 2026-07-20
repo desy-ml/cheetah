@@ -41,4 +41,7 @@ o_quad_fudge: overlay = {qa01[k1]:k1_scale * qa01[k1], qa02[k1]:k1_scale * qa02[
 ! ------------------------------------------------------------------------------
 
 otr2: marker, superimpose, ref=qa02
+otr3: marker
+otr3[superimpose] = T
+otr3[ref] = qe01
 

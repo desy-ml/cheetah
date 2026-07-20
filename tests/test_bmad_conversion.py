@@ -154,3 +154,11 @@ def test_cu_hxr_lcls_fixture_conversion():
 
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
+
+    # check superimposed elements
+    assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
+    assert isinstance(converted.gunl0a.qe01.base_element, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
+    assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
