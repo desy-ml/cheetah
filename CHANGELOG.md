@@ -20,6 +20,7 @@
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
+- New "Getting Started" guide in the documentation with a more comprehensive overview of Cheetah's features and capabilities etc. (see #651) (@jank324)
 
 ### 🌟 First Time Contributors
 
