@@ -15,10 +15,12 @@
 - Fix `Sextupole` not being skippable if its tracking method is set to `linear` (see #655) (@Hespe)
 - Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @Hespe)
 - Fix a bug where some magnet names that are invalid identifiers (i.e. cannot be used with the `segment.element_name` syntax) would not be sanitised correctly (e.g. when they start with a digit). (see #658) (@jank324, @Hespe)
+- Fix KDE stability issue leading to NaNs (see #660) (@jp-ga)
 
 ### 🐆 Other
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
+- Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 
 ### 🌟 First Time Contributors
 
