@@ -8,23 +8,22 @@ The primary tracking methods supported by Cheetah elements are:
 
 1. **`"linear"` (First-Order)**
    - Uses first-order transfer matrix ($R$-matrix) multiplication to propagate the beam.
-   - This is highly efficient and linear, and is the default for most elements.
+   - Provides by far the fastest computation speed.
    - Supported by: `Drift`, `Dipole`, `Quadrupole`, `Sextupole`, `Solenoid`, `HorizontalCorrector`, `VerticalCorrector`, `CombinedCorrector`, `Undulator`.
 
 2. **`"second_order"` (Second-Order)**
    - Uses second-order transfer tensor ($T$-tensor) multiplication to capture chromatic and geometric aberrations.
-   - Differentiable with PyTorch autograd.
    - Supported by: `Drift`, `Dipole`, `Quadrupole`, `Sextupole`.
 
 3. **`"drift_kick_drift"`**
    - Propagates particles through symplectic drift-kick-drift steps.
-   - Ideal for non-linear dynamics and is required for certain elements.
    - Supported by: `Drift`, `Dipole`, `Quadrupole`, `TransverseDeflectingCavity`.
 
 4. **Custom / Element-Specific Methods**
    - Some elements (such as diagnostics or custom physical models) use custom tracking routines that do not fall into the three categories above.
    - For these elements, their `supported_tracking_methods` is usually (but not always) a single-item list containing their own lowercase class name.
-   - Used by e.g.: `Aperture` (`"aperture"`), `BPM` (`"bpm"`), `Screen` (`"screen"`), `SpaceChargeKick` (`"spacechargekick"`), `Marker` (`"marker"`).
+   - In the latter case you typically cannot/should not change the tracking method.
+   - E.g.: `"aperture"`, `"screen"`, `"spacechargekick"`.
 
 ## Configuring Tracking Methods
 
