@@ -117,12 +117,10 @@ def convert_element(
                 dtype,
                 _allow_superimpose=False,
             )
-            base_element_for_superimpose = base_element.clone()
-            base_element_for_superimpose.name = f"_{base_element_for_superimpose.name}"
 
             try:
                 return cheetah.Superimposed(
-                    base_element=base_element_for_superimpose,
+                    base_element=base_element,
                     superimposed_element=superimposed_element,
                     name=name,
                     sanitize_name=sanitize_name,

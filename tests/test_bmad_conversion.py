@@ -161,19 +161,25 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
 
     # check superimposed elements
+    # single superimposed element
+    assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
+    assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qa02.base_element.name == "_qa02"
+
+    # multiple superimposed elements
     assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qe01.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Segment)
     assert len(converted.gunl0a.qe01.superimposed_element.elements) == 2
     assert isinstance(converted.gunl0a.qe01.superimposed_element.otr2, cheetah.Marker)
     assert isinstance(converted.gunl0a.qe01.superimposed_element.trim, cheetah.HorizontalCorrector)
-
     assert converted.gunl0a.qe01.base_element.name == "_qe01"
 
-    assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
-    assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
-    assert converted.gunl0a.qa02.base_element.name == "_qa02"
+    # check flattened superimposed elements
+    flattened_qe01 = converted.gunl0a.qe01.flattened()
+    assert isinstance(flattened_qe01, cheetah.Segment)
+    assert flattened_qe01.element_names == ["qe01#1", "otr2", "trim", "qe01#2"]
 
 
 def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
