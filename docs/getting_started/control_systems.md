@@ -99,7 +99,7 @@ for element in segment.elements:
             address = f"{facility}/{device}/{location}/{property_name}"
 
             # Read live value from DOOCS
-            live_value = doocs4py.read(address)["data"]
+            live_value = doocs4py.get(address).get_data()
 
             # Update Cheetah element attribute
             setattr(element, element_attr, torch.tensor(live_value))
