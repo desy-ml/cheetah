@@ -61,7 +61,14 @@ def convert_element(
     if isinstance(parsed, list):
         segment = cheetah.Segment(
             elements=[
-                convert_element(element_name, context, sanitize_name, device, dtype)
+                convert_element(
+                    name=element_name,
+                    context=context,
+                    relativistic_beta=relativistic_beta,
+                    sanitize_name=sanitize_name,
+                    device=device,
+                    dtype=dtype,
+                )
                 for element_name in parsed
             ],
             name=name,
@@ -271,8 +278,6 @@ def convert_element(
                     stacklevel=2,
                 )
                 relativistic_beta = R.new_ones(7)
-            else:
-                relativistic_beta = relativistic_beta.unsqueeze(-1)
 
             # Apply Cheetah -> Elegant conversion to the columns
             R[:, 4] *= -relativistic_beta
