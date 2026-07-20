@@ -65,19 +65,15 @@ def _kde_marginal_pdf(
         * (-0.5 * (residuals / sigma).square()).exp()
         / (2 * math.pi * sigma.square()).sqrt()
     )
-    kernel_values = kernel_values.clamp_min(torch.finfo(kernel_values.dtype).tiny)
+    clamped_kernel_values = kernel_values.clamp_min(
+        torch.finfo(kernel_values.dtype).tiny
+    )
 
-    prob_mass = kernel_values.sum(dim=-2)
-    normalization = prob_mass.sum(dim=-1).unsqueeze(-1) + epsilon
-    prob_mass = prob_mass / normalization
+    probability_mass = clamped_kernel_values.sum(dim=-2)
+    normalization = probability_mass.sum(dim=-1).unsqueeze(-1) + epsilon
+    normalized_probability_mass = probability_mass / normalization
 
-    clamped_kernel_values = kernel_values.clamp_min(torch.finfo(kernel_values.dtype).tiny)
-
-prob_mass = clamped_kernel_values.sum(dim=-2)
-normalization = prob_mass.sum(dim=-1).unsqueeze(-1) + epsilon
-prob_mass = prob_mass / normalization
-
-return prob_mass, clamped_kernel_values
+    return normalized_probability_mass, clamped_kernel_values
 
 
 def _kde_joint_pdf_2d(
