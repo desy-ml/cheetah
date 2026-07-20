@@ -150,6 +150,21 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
 
     for char in expression:
         if char.isspace() or char in "+-*/^()[]":
+            # Keep scientific-notation exponents in one token (e.g. 0.750e-3).
+            if (
+                char in "+-"
+                and current_key is None
+                and current_token
+                and current_token[-1] in "eE"
+            ):
+                mantissa = current_token[:-1]
+                try:
+                    float(mantissa)
+                    current_token += char
+                    continue
+                except ValueError:
+                    pass
+
             if current_token:
                 if char == "]" and current_key is not None:
                     # This will throw an index error if current key is invalid
