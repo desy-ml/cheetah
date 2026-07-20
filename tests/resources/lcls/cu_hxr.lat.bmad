@@ -60,7 +60,7 @@ brho = 10
 
 qa01: quadrupole, l = 0.122, k1 = 10.0
 qa02: quadrupole, l = 0.122, k1 = 13.0
-qe01: quadrupole, l = 0.150, k1 = -6.0
+qe01: quadrupole, l = 0.150, k1 = +bq1
 qe02: quadrupole, l = 0.150, k1 = -(10*bq1)/brho
 
 l0a: lcavity, l = 3.0, voltage = 4.0e7, phi0 = 0.0, rf_frequency = 2.856e9

@@ -7,6 +7,8 @@ operators = {
     "*": {"precedence": 2, "inputs": 2, "func": lambda a, b: a * b},
     "/": {"precedence": 2, "inputs": 2, "func": lambda a, b: a / b},
     "^": {"precedence": 3, "inputs": 2, "func": lambda a, b: a**b},
+    "u+": {"precedence": 4, "inputs": 1, "func": lambda a: +a},
+    "u-": {"precedence": 4, "inputs": 1, "func": lambda a: -a},
     "sqrt": {"precedence": 4, "inputs": 1, "func": lambda a: math.sqrt(a)},
     "sin": {"precedence": 4, "inputs": 1, "func": lambda a: math.sin(a)},
     "asin": {"precedence": 4, "inputs": 1, "func": lambda a: math.asin(a)},
@@ -76,6 +78,7 @@ def _parse_expression(tokens: list[str]) -> dict:
     output = None
     stack = []
     operator_stack = []
+    expecting_value = True
 
     while len(tokens) > 0:
         token = tokens.pop(0)
@@ -95,9 +98,16 @@ def _parse_expression(tokens: list[str]) -> dict:
                 raise SyntaxError("Mismatched parentheses in expression")
             nested_ast = _parse_expression(nested_tokens)
             stack.append(nested_ast)
+            expecting_value = False
         elif token not in operators:
             stack.append({"value": float(token), "left": None, "right": None})
+            expecting_value = False
         else:
+            if token in {"+", "-"} and expecting_value:
+                token = "u+" if token == "+" else "u-"
+            elif expecting_value and operators[token]["inputs"] == 2:
+                raise SyntaxError(f"Unexpected binary operator '{token}'")
+
             while (
                 operator_stack
                 and operators[operator_stack[-1]]["precedence"]
@@ -112,19 +122,13 @@ def _parse_expression(tokens: list[str]) -> dict:
                 output = {"value": operator, "left": left, "right": right}
                 stack.append(output)
             operator_stack.append(token)
+            expecting_value = True
 
     while operator_stack:
-        if operators[operator_stack[-1]]["inputs"] == 1 or (
-            operator_stack[-1] == "-" and len(stack) == 1
-        ):
-            # Handle unary functions or unary minus
+        if operators[operator_stack[-1]]["inputs"] == 1:
+            # Handle unary functions and sign operators.
             right = None
-            if operator_stack[-1] == "-" and len(stack) == 1:
-                # Unary minus, treat as 0 - x
-                left = {"value": 0, "left": None, "right": None}
-                right = stack.pop()
-            else:
-                left = stack.pop()
+            left = stack.pop()
         else:
             right = stack.pop()
             left = stack.pop()

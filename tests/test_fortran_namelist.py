@@ -13,6 +13,13 @@ def test_evaluate_expression():
     value = evaluate_expression('mc2+0.750e-3', context)
     assert value == pytest.approx(context["mc2"] + 0.750e-3)
 
+    value = evaluate_expression('+mc2', context)
+    assert value == pytest.approx(context["mc2"])
+
+    value = evaluate_expression('-mc2', context)
+    assert value == pytest.approx(-context["mc2"])
+
+
 
 def test_define_element_type_and_alias_stored_as_metadata():
     lines = [
