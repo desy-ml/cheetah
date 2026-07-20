@@ -10,6 +10,7 @@ from cheetah.track_methods import (
     base_ttensor,
     combined_rotation_misalignment_matrix,
     drift_matrix,
+    thin_kick_matrix,
 )
 from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
 
@@ -20,6 +21,8 @@ class Sextupole(Element):
 
     :param length: Length in meters.
     :param k2: Sextupole strength in 1/m^3.
+    :param hkick: Horizontal kick in rad. Acting in lab frame, *not* rotated with tilt.
+    :param vkick: Vertical kick in rad. Acting in lab frame, *not* rotated with tilt.
     :param misalignment: Transverse misalignment in x and y directions in meters.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians.
     :param tracking_method: Method to use for tracking through the element.
@@ -44,6 +47,8 @@ class Sextupole(Element):
         self,
         length: torch.Tensor,
         k2: torch.Tensor | None = None,
+        hkick: torch.Tensor | None = None,
+        vkick: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         tracking_method: Literal["linear", "second_order"] = "second_order",
@@ -64,6 +69,12 @@ class Sextupole(Element):
             "k2", k2 if k2 is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
+            "hkick", hkick if hkick is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "vkick", vkick if vkick is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
             "misalignment",
             (
                 misalignment
@@ -81,7 +92,10 @@ class Sextupole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return drift_matrix(length=self.length, species=species, energy=energy)
+        R = drift_matrix(length=self.length, species=species, energy=energy)
+
+        R_half_kick = thin_kick_matrix(hkick=0.5 * self.hkick, vkick=0.5 * self.vkick)
+        return R_half_kick @ R @ R_half_kick
 
     @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
@@ -105,8 +119,18 @@ class Sextupole(Element):
         R_entry, R_exit = combined_rotation_misalignment_matrix(
             angle=self.tilt, misalignment=self.misalignment
         )
+        # Apply half-kick matrices to the entrance and exit
+        R_half_kick = thin_kick_matrix(hkick=0.5 * self.hkick, vkick=0.5 * self.vkick)
+
+        R_entry_total = R_entry @ R_half_kick
+        R_exit_total = R_half_kick @ R_exit
+
         T = torch.einsum(
-            "...ij,...jkl,...kn,...lm->...inm", R_exit, T, R_entry, R_entry
+            "...ij,...jkl,...kn,...lm->...inm",
+            R_exit_total,
+            T,
+            R_entry_total,
+            R_entry_total,
         )
 
         return T
@@ -124,7 +148,11 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k2 != 0.0).any().item()
+        return (
+            (self.k2 != 0.0).any().item()
+            or (self.hkick != 0.0).any().item()
+            or (self.vkick != 0.0).any().item()
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
@@ -157,4 +185,11 @@ class Sextupole(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["length", "k2", "misalignment", "tilt"]
+        return super().defining_features + [
+            "length",
+            "k2",
+            "hkick",
+            "vkick",
+            "misalignment",
+            "tilt",
+        ]

@@ -316,3 +316,22 @@ def sinc(x):
 def cosc(x):
     """cosc(x) = (cos(x)-1)/x^2 = -1/2 [sinc(x/2)]^2"""
     return -0.5 * sinc(x / 2).square()
+
+
+def rotate_kicks_to_body_frame(
+    hkick: torch.Tensor, vkick: torch.Tensor, tilt: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Returns the lab frame horizontal and vertical kick in the magnet body frame.
+
+    :param hkick: Horizontal kick in rad.
+    :param vkick: Vertical kick in rad.
+    :param tilt: Tilt angle in rad.
+    :return: Horizontal and vertical kick in the magnet body frame.
+    """
+
+    s = tilt.sin()
+    c = tilt.cos()
+    hkick_body = (hkick * c + vkick * s).unsqueeze(-1)
+    vkick_body = (-hkick * s + vkick * c).unsqueeze(-1)
+
+    return hkick_body, vkick_body

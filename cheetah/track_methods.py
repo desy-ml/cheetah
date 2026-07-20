@@ -380,3 +380,18 @@ def combined_rotation_misalignment_matrix(
     tm_exit[..., [0, 2], 6] = misalignment
 
     return tm_entry, tm_exit
+
+
+def thin_kick_matrix(hkick: torch.Tensor, vkick: torch.Tensor) -> torch.Tensor:
+    """Thin horizontal and vertical kick transfer map.
+
+    :param hkick: Horizontal kick in rad.
+    :param vkick: Vertical kick in rad.
+    :return: Transfer map for the kick.
+    """
+    factory_kwargs = {"device": hkick.device, "dtype": hkick.dtype}
+    vector_shape = torch.broadcast_shapes(hkick.shape, vkick.shape)
+    tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
+    tm[..., 1, 6] = hkick
+    tm[..., 3, 6] = vkick
+    return tm
