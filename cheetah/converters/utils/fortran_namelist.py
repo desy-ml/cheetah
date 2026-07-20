@@ -36,7 +36,8 @@ OVERLAY_KNOT_BASED_PATTERN = (
 )
 OVERLAY_EXPRESSION_BASED_PATTERN = OVERLAY_DEFINITION_PATTERN + r"\{(.*)\}\s*(\,.*)*"
 GROUP_DEFINITION_PATTERN = (
-    f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*group\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}(\,.*)*"
+    f"({ELEMENT_NAME_PATTERN})"
+    + r"\s*\:\s*group\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*\{(.*)\}(\,.*)*"
 )
 
 
