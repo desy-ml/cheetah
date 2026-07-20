@@ -71,7 +71,13 @@ def _kde_marginal_pdf(
     normalization = prob_mass.sum(dim=-1).unsqueeze(-1) + epsilon
     prob_mass = prob_mass / normalization
 
-    return prob_mass, kernel_values
+    clamped_kernel_values = kernel_values.clamp_min(torch.finfo(kernel_values.dtype).tiny)
+
+prob_mass = clamped_kernel_values.sum(dim=-2)
+normalization = prob_mass.sum(dim=-1).unsqueeze(-1) + epsilon
+prob_mass = prob_mass / normalization
+
+return prob_mass, clamped_kernel_values
 
 
 def _kde_joint_pdf_2d(
