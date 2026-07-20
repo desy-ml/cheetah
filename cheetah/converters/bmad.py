@@ -18,7 +18,7 @@ from cheetah.utils import UnknownElementWarning
 def _is_truthy_superimpose(value: object) -> bool:
     """Interpret Bmad superimpose flags as booleans."""
     if isinstance(value, str):
-        return value.lower() in {"t", "true", "1", "yes"}
+        return value.lower() in {"t", "true", "1"}
     return bool(value)
 
 
