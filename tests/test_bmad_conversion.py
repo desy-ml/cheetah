@@ -173,7 +173,9 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Segment)
     assert len(converted.gunl0a.qe01.superimposed_element.elements) == 2
     assert isinstance(converted.gunl0a.qe01.superimposed_element.otr2, cheetah.Marker)
-    assert isinstance(converted.gunl0a.qe01.superimposed_element.trim, cheetah.HorizontalCorrector)
+    assert isinstance(
+        converted.gunl0a.qe01.superimposed_element.trim, cheetah.HorizontalCorrector
+    )
     assert converted.gunl0a.qe01.base_element.name == "_qe01"
 
     # check flattened superimposed elements
@@ -183,7 +185,10 @@ def test_cu_hxr_lcls_fixture_conversion():
 
 
 def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
-    """Test that superimpose conversion falls back to the base element on split errors."""
+    """
+    Test that superimpose conversion falls back to the
+    base element on split errors.
+    """
     file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
 
     def _raise_superimpose_value_error(*args, **kwargs):
@@ -193,9 +198,7 @@ def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
         bmad_converter.cheetah, "Superimposed", _raise_superimpose_value_error
     )
 
-    with pytest.warns(
-        UnknownElementWarning, match="Keeping only the base element"
-    ):
+    with pytest.warns(UnknownElementWarning, match="Keeping only the base element"):
         converted = cheetah.Segment.from_bmad(file_path, dtype=torch.float64)
 
     assert isinstance(converted.gunl0a.qe01, cheetah.Quadrupole)
