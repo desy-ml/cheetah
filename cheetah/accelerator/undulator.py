@@ -104,7 +104,7 @@ class Undulator(Element):
             torch.tensor(0.0),
         )
 
-        # Transverse focusing from vertical field (Kx > 0)
+        # Transverse focusing from vertical field (Kx > 0.0)
         omega_x = spatial_frequency * self.kx
         cos_omega_x = (omega_x * self.length).cos()
 
@@ -113,7 +113,7 @@ class Undulator(Element):
         tm[..., 3, 2] = -(omega_x * self.length).sin() * omega_x
         tm[..., 3, 3] = cos_omega_x
 
-        # Transverse focusing from horizontal field (Ky > 0)
+        # Transverse focusing from horizontal field (Ky > 0.0)
         omega_y = spatial_frequency * self.ky
         cos_omega_y = (omega_y * self.length).cos()
 
