@@ -357,7 +357,7 @@ def convert_element(
 
             # There are two poles in one period
             length = parsed.get("l", 0.0)
-            period = 2 * length / parsed["poles"] if "poles" in parsed else 0.0
+            period = 2.0 * length / parsed["poles"] if "poles" in parsed else 0.0
 
             return cheetah.Undulator(
                 length=torch.tensor(length, **factory_kwargs),
