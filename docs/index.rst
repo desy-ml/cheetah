@@ -6,14 +6,24 @@
 Welcome to Cheetah's documentation!
 ===================================
 
-`Cheetah <https://github.com/desy-ml/cheetah>`_ is a particle tracking accelerator we built specifically to speed up the training of reinforcement learning models.
+*Cheetah* is a high-speed, differentiable particle tracking engine designed specifically for machine learning applications in accelerator physics, such as reinforcement learning, system identification, and magnet tuning.
 
-GitHub repository: https://github.com/desy-ml/cheetah
+Resources & Links
+-----------------
 
-Paper: https://doi.org/10.1103/PhysRevAccelBeams.27.054601
+* **Code**: `GitHub Repository <https://github.com/desy-ml/cheetah>`_
+* **Paper**: `Physical Review Accelerators and Beams <https://doi.org/10.1103/PhysRevAccelBeams.27.054601>`_
+* **Community**: `Discord Server <https://discord.gg/hrwYPC3a>`_
+* **Demos**: `Cheetah Demos <https://github.com/desy-ml/cheetah-demos>`_ (examples including system identification, magnet tuning, and reinforcement learning)
 
-Discord server: https://discord.gg/hrwYPC3a
+Key Features
+------------
 
+* **Differentiable Physics**: Fully integrated with PyTorch's automatic differentiation (autograd) to allow backpropagation of gradients directly through lattice elements and parameters.
+* **High-Speed Execution**: Tailored algorithms optimised to speed up the data generation for training machine learning algorithms and gradient-based parameter optimisation loops.
+* **Vectorised Simulations**: Perform parallel parameter sweeps over beam distributions and magnet settings without slow CPU Python loops.
+* **Native GPU/CPU Support**: Seamlessly transition computations between CPU and GPU devices (CUDA or MPS) using PyTorch's native ``.to()`` method.
+* **3D Visualisation**: Automatic 3D model rendering and mesh export of your lattice geometry for visualisation.
 
 Installation
 ------------
@@ -25,42 +35,51 @@ Simply install *Cheetah* from PyPI by running the following command.
     pip install cheetah-accelerator
 
 
-Examples
---------
+Supported Elements
+------------------
 
-We provide some examples to demonstrate some features of *Cheetah* and show how to use them. They provide a good entry point to using *Cheetah*, but they do not represent its full functionality. To move beyond the examples, please refer to the in-depth documentation. If you feel like other examples should be added, feel free to open an issue on GitHub.
+Cheetah currently supports the following accelerator elements:
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Examples
+* **Drifts**: :class:`~cheetah.Drift`
+* **Magnets**: :class:`~cheetah.Quadrupole`, :class:`~cheetah.Sextupole`, :class:`~cheetah.Solenoid`, :class:`~cheetah.Dipole` (sector bend), and :class:`~cheetah.RBend` (rectangular bend)
+* **Correctors**: :class:`~cheetah.HorizontalCorrector`, :class:`~cheetah.VerticalCorrector`, :class:`~cheetah.CombinedCorrector`
+* **RF Cavities**: :class:`~cheetah.Cavity`, :class:`~cheetah.TransverseDeflectingCavity`
+* **Diagnostics**: :class:`~cheetah.BPM` (Beam Position Monitor), :class:`~cheetah.Screen`
+* **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`, :class:`~cheetah.Superimposed`
 
-    examples/simple
-    examples/convert
-    examples/optimize_speed
-    examples/gradientbased
-    examples/including_metadata
-    examples/custom_elements
+If you need an element that is not yet supported, you can open an issue on the `GitHub repository <https://github.com/desy-ml/cheetah>`_ or implement a custom element by subclassing :class:`~cheetah.Element` and implementing the required methods. See :doc:`/getting_started/custom_elements` for more information.
 
+For the full element API documentation, see the :doc:`/accelerator` API Reference.
 
 Getting Started
 ---------------
 
-These pages explain how to get started with *Cheetah*.
+These pages explain how to get started with *Cheetah* and provide a nice guided overview over many of its features.
 
 .. toctree::
     :maxdepth: 1
     :caption: Getting Started
     
-    coordinate_system.md
+    getting_started/simple
+    getting_started/coordinate_system.md
+    getting_started/tracking_methods.md
+    getting_started/importing_from_other_codes.md
+    getting_started/vectorized_simulations
+    getting_started/gradientbased
+    getting_started/space_charge.md
+    getting_started/optimising_speed
+    getting_started/plotting_visualization
+    getting_started/control_systems.md
+    getting_started/custom_elements
 
-Documentation
+API Reference
 -------------
 
-For more advanced usage, please refer to the in-depth documentation.
+For a complete overview of the *Cheetah* API, please refer to the following pages.
 
 .. toctree::
     :maxdepth: 1
-    :caption: Documentation
+    :caption: API Reference
 
     accelerator
     converters
@@ -75,7 +94,7 @@ Cite Cheetah
 
 If you use Cheetah, please cite the two papers below.
 
-If you use 3D meshes generated by Cheetah, please respect the licencing terms of the **[_3D Assets for Particle Accelerators_](https://github.com/desy-ml/3d-assets) repository**.
+If you use the 3D meshes generated by Cheetah, please respect the licensing terms of the `3D Assets for Particle Accelerators <https://github.com/desy-ml/3d-assets>`_ repository.
 
 .. code-block:: bibtex
 
@@ -128,23 +147,23 @@ Author Contributions
 
 The following people have contributed to the development of Cheetah:
 
-- Jan Kaiser (@jank324)
-- Chenran Xu (@cr-xu)
-- Annika Eichler (@AnEichler)
-- Andrea Santamaria Garcia (@ansantam)
-- Christian Hespe (@Hespe)
-- Oliver Stein (@OliStein523)
-- Grégoire Charleux (@greglenerd)
-- Remi Lehe (@RemiLehe)
-- Axel Huebl (@ax3l)
-- Juan Pablo Gonzalez-Aguilera (@jp-ga)
-- Ryan Roussel (@roussel-ryan)
-- Auralee Edelen (@lee-edelen)
-- Zihan Zhu (@zihan-zh)
-- Christian Contreras-Campana (@chrisjcc)
-- Sucheth Shenoy (@SuchethShenoy)
-- Amelia Pollard (@amylizzle)
-- Julian Gethmann (@smartsammler)
+- Jan Kaiser (`@jank324 <https://github.com/jank324>`_)
+- Chenran Xu (`@cr-xu <https://github.com/cr-xu>`_)
+- Annika Eichler (`@AnEichler <https://github.com/AnEichler>`_)
+- Andrea Santamaria Garcia (`@ansantam <https://github.com/ansantam>`_)
+- Christian Hespe (`@Hespe <https://github.com/Hespe>`_)
+- Oliver Stein (`@OliStein523 <https://github.com/OliStein523>`_)
+- Grégoire Charleux (`@greglenerd <https://github.com/greglenerd>`_)
+- Remi Lehe (`@RemiLehe <https://github.com/RemiLehe>`_)
+- Axel Huebl (`@ax3l <https://github.com/ax3l>`_)
+- Juan Pablo Gonzalez-Aguilera (`@jp-ga <https://github.com/jp-ga>`_)
+- Ryan Roussel (`@roussel-ryan <https://github.com/roussel-ryan>`_)
+- Auralee Edelen (`@lee-edelen <https://github.com/lee-edelen>`_)
+- Zihan Zhu (`@zihan-zh <https://github.com/zihan-zh>`_)
+- Christian Contreras-Campana (`@chrisjcc <https://github.com/chrisjcc>`_)
+- Sucheth Shenoy (`@SuchethShenoy <https://github.com/SuchethShenoy>`_)
+- Amelia Pollard (`@amylizzle <https://github.com/amylizzle>`_)
+- Julian Gethmann (`@smartsammler <https://github.com/smartsammler>`_)
 
 Institutions
 ~~~~~~~~~~~~
