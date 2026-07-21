@@ -20,7 +20,7 @@ class Undulator(Element):
     Element representing an undulator in a particle accelerator.
 
     Implements a linear paraxial undulator field approximation taken from Ocelot, see
-    S.Tomin, Varenna, 2017.
+    S. Tomin, Varenna, 2017.
 
     :param length: Length in meters.
     :param period: Undulator period in meters.
