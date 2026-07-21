@@ -113,6 +113,10 @@ def _parse_expression(tokens: list[str]) -> dict:
                 and operators[operator_stack[-1]]["precedence"]
                 >= operators[token]["precedence"]
             ):
+                # Keep prefix signs pending while we're still waiting for the value
+                # they apply to, e.g. in expressions like `-sin(x)`.
+                if expecting_value and operator_stack[-1] in {"u+", "u-"}:
+                    break
                 if operators[operator_stack[-1]]["inputs"] == 1:
                     right = None
                 else:
