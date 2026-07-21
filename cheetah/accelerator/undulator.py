@@ -99,7 +99,7 @@ class Undulator(Element):
         )
 
         spatial_frequency = torch.where(
-            self.period > 0,
+            self.period > 0.0,
             math.sqrt(2) * torch.pi / (self.period * gamma * beta),
             torch.tensor(0.0),
         )
