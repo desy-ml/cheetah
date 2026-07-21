@@ -717,3 +717,41 @@ def test_cavity(cavity_type, phase):
     )
 
     assert np.isclose(outgoing_beam.energy.cpu().numpy(), outgoing_parray.E * 1e9)
+
+
+@pytest.mark.parametrize(
+    "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
+)
+def test_undulator(default_torch_dtype):
+    """
+    Test that the tracking results through a Cheetah `Undulator` element match those
+    through an Ocelot `Undulator` element.
+    """
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_astra(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    cheetah_undulator = cheetah.Undulator(
+        length=torch.tensor(1.0),
+        kx=torch.tensor(0.5),
+        ky=torch.tensor(4.2),
+        period=torch.tensor(0.1),
+    )
+    outgoing_beam = cheetah_undulator.track(incoming_beam)
+
+    # Ocelot
+    incoming_p_array = ocelot.astraBeam2particleArray(
+        "tests/resources/ACHIP_EA1_2021.1351.001"
+    )
+    ocelot_undulator = ocelot.Undulator(lperiod=0.1, nperiods=10, Kx=0.5, Ky=4.2)
+    lattice = ocelot.MagneticLattice([ocelot_undulator])
+    navigator = ocelot.Navigator(lattice)
+    _, outgoing_p_array = ocelot.track(lattice, deepcopy(incoming_p_array), navigator)
+
+    assert np.allclose(
+        outgoing_beam.particles[..., :6].cpu().numpy(),
+        outgoing_p_array.rparticles.transpose(),
+    )
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array
+    )

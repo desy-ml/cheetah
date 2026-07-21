@@ -173,7 +173,10 @@ def convert_element(
         return cheetah.Marker(name=element.id, sanitize_name=sanitize_name)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
-            torch.tensor(element.l, **factory_kwargs),
+            length=torch.tensor(element.l, **factory_kwargs),
+            period=torch.tensor(element.lperiod, **factory_kwargs),
+            kx=torch.tensor(element.Kx, **factory_kwargs),
+            ky=torch.tensor(element.Ky, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )
