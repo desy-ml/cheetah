@@ -73,7 +73,7 @@ class Undulator(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.logical_or(self.Kx != 0, self.Ky != 0).any().item()
+        return torch.logical_or(self.kx != 0.0, self.ky != 0.0).any().item()
 
     @cache_transfer_map
     def first_order_transfer_map(
