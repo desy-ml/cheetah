@@ -154,3 +154,5 @@ def test_cu_hxr_lcls_fixture_conversion():
 
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
+
+    assert isinstance(flattened.tcxdg0, cheetah.TransverseDeflectingCavity)

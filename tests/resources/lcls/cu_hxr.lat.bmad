@@ -75,6 +75,8 @@ bx12: sbend, l = 0.2032, angle = 0.093575352547, e1 = 0.093575352547, hgap = 0.0
 bx13: sbend, l = 0.2032, angle = 0.093575352547, e2 = 0.093575352547, hgap = 0.01, fint = 0.5
 bx14: sbend, l = 0.2032, angle = -0.093575352547, e1 = -0.093575352547, hgap = 0.01, fint = 0.5
 
+tcxdg0: crab_cavity, type = "STCAV_X", rf_frequency = 2856 * 1e6, l = 20*in2m/2
+
 ! ------------------------------------------------------------------------------
 ! Characteristic property assignments and aliases
 ! ------------------------------------------------------------------------------
@@ -104,6 +106,6 @@ call, file = cu_hxr_overlays_and_fixers.bmad
 
 gunl0a: line = (beggunb, l0a, l0b, qa01, d_mid, qa02)
 bc1: line = (bx11, d11o, bx12, d11oa, bx13, d11o, bx14)
-cu_hxr: line = (gunl0a, bc1, yag03)
+cu_hxr: line = (gunl0a, bc1, yag03, tcxdg0)
 
 use, cu_hxr

@@ -288,6 +288,22 @@ def convert_element(
                 sanitize_name=sanitize_name,
                 metadata=metadata,
             )
+        elif bmad_parsed["element_type"] == "crab_cavity":
+            validate_understood_properties(
+                shared_properties + ["l", "rf_frequency", "voltage", "phi"],
+                bmad_parsed,
+            )
+            return cheetah.TransverseDeflectingCavity(
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
+                phase=-(
+                    torch.tensor(bmad_parsed.get("phi", 0.0), **factory_kwargs)
+                ),
+                frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
+            )
         else:
             warnings.warn(
                 f"Element {name} of type {bmad_parsed['element_type']} cannot be"
