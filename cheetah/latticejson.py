@@ -24,7 +24,9 @@ def feature2nontorch(value: Any) -> Any:
 
 
 def convert_element(
-    element: "cheetah.Element", elements_dict: dict | None = None
+    element: "cheetah.Element",
+    elements_dict: dict | None = None,
+    lattices_dict: dict | None = None,
 ) -> tuple[str, str, dict]:
     """
     Deconstruct an element into its name, class and parameters for saving to JSON. If a
@@ -33,10 +35,13 @@ def convert_element(
 
     :param element: Cheetah element
     :param elements_dict: Optional dictionary to accumulate sub-elements.
+    :param lattices_dict: Optional dictionary to accumulate sub-segments.
     :return: Tuple of element name, element class, and element parameters.
     """
     if elements_dict is None:
         elements_dict = {}
+    if lattices_dict is None:
+        lattices_dict = {}
 
     params = {}
     for feature in element.defining_features:
@@ -44,9 +49,14 @@ def convert_element(
             continue
 
         value = getattr(element, feature)
-        if isinstance(value, cheetah.Element):
+        if isinstance(value, cheetah.Segment):
+            segment_elements, segment_lattices = convert_segment(value)
+            elements_dict.update(segment_elements)
+            lattices_dict.update(segment_lattices)
+            params[feature] = value.name
+        elif isinstance(value, cheetah.Element):
             subelement_name, subelement_class, subelement_params = convert_element(
-                value, elements_dict
+                value, elements_dict, lattices_dict
             )
             elements_dict[subelement_name] = [subelement_class, subelement_params]
             params[feature] = subelement_name
@@ -82,7 +92,9 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
             elements.update(segment_elements)
             lattices.update(segment_lattices)
         else:
-            _, element_class, element_params = convert_element(element, elements)
+            _, element_class, element_params = convert_element(
+                element, elements, lattices
+            )
 
             elements[element_name] = [element_class, element_params]
 
@@ -195,14 +207,20 @@ def parse_element(
     element_class = getattr(cheetah, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
 
-    converted_params = {
-        key: (
-            parse_element(value, lattice_dict, device=device, dtype=dtype)
-            if isinstance(value, str) and value in lattice_dict["elements"]
-            else nontorch2feature(value, device=device, dtype=dtype)
-        )
-        for key, value in params.items()
-    }
+    converted_params = {}
+    for key, value in params.items():
+        if isinstance(value, str) and value in lattice_dict["lattices"]:
+            converted_params[key] = parse_segment(
+                value, lattice_dict, device=device, dtype=dtype
+            )
+        elif isinstance(value, str) and value in lattice_dict["elements"]:
+            converted_params[key] = parse_element(
+                value, lattice_dict, device=device, dtype=dtype
+            )
+        else:
+            converted_params[key] = nontorch2feature(
+                value, device=device, dtype=dtype
+            )
 
     return element_class(name=name, **converted_params)
 
