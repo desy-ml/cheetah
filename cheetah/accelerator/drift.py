@@ -3,7 +3,7 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import torch
 
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix
 from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
@@ -163,6 +163,20 @@ class Drift(Element):
             )
             for i in range(num_splits)
         ]
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, Drift):
+            return None
+        if self.tracking_method != other.tracking_method:
+            return None
+
+        return Drift(
+            length=self.length + other.length,
+            tracking_method=self.tracking_method,
+            name=merge_element_names(self.name, other.name),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

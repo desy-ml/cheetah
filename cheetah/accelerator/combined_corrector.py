@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.particles import Species
 from cheetah.utils import (
     UniqueNameGenerator,
@@ -106,6 +106,29 @@ class CombinedCorrector(Element):
         return (
             torch.any(self.horizontal_angle != 0).item()
             or torch.any(self.vertical_angle != 0).item()
+        )
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, CombinedCorrector):
+            return None
+        if not (
+            ((self.length == 0.0).all() and (other.length == 0.0).all())
+            or (
+                (self.horizontal_angle == 0.0).all()
+                and (other.horizontal_angle == 0.0).all()
+                and (self.vertical_angle == 0.0).all()
+                and (other.vertical_angle == 0.0).all()
+            )
+        ):
+            return None
+
+        return CombinedCorrector(
+            length=self.length + other.length,
+            horizontal_angle=self.horizontal_angle + other.horizontal_angle,
+            vertical_angle=self.vertical_angle + other.vertical_angle,
+            name=merge_element_names(self.name, other.name),
+            dtype=self.length.dtype,
+            device=self.length.device,
         )
 
     def plot(

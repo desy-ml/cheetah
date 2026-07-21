@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.particles import Beam, Species
 from cheetah.track_methods import (
     base_ttensor,
@@ -125,6 +125,29 @@ class Sextupole(Element):
     @property
     def is_active(self) -> bool:
         return (self.k2 != 0.0).any().item()
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, Sextupole):
+            return None
+        if self.tracking_method != other.tracking_method:
+            return None
+        if not (
+            torch.equal(self.k2, other.k2)
+            and torch.equal(self.misalignment, other.misalignment)
+            and torch.equal(self.tilt, other.tilt)
+        ):
+            return None
+
+        return Sextupole(
+            length=self.length + other.length,
+            k2=self.k2,
+            misalignment=self.misalignment,
+            tilt=self.tilt,
+            tracking_method=self.tracking_method,
+            name=merge_element_names(self.name, other.name),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

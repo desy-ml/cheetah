@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import (
@@ -135,6 +135,24 @@ class Solenoid(Element):
             )
             for _ in range(num_splits)
         ]
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, Solenoid):
+            return None
+        if not (
+            torch.equal(self.k, other.k)
+            and torch.equal(self.misalignment, other.misalignment)
+        ):
+            return None
+
+        return Solenoid(
+            length=self.length + other.length,
+            k=self.k,
+            misalignment=self.misalignment,
+            name=merge_element_names(self.name, other.name),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

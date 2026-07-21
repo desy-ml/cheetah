@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import (
     base_rmatrix,
@@ -272,6 +272,33 @@ class Quadrupole(Element):
             )
             for i in range(num_splits)
         ]
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, Quadrupole):
+            return None
+        if (
+            self.tracking_method != other.tracking_method
+            or self.num_steps != other.num_steps
+        ):
+            return None
+        if not (
+            torch.equal(self.k1, other.k1)
+            and torch.equal(self.misalignment, other.misalignment)
+            and torch.equal(self.tilt, other.tilt)
+        ):
+            return None
+
+        return Quadrupole(
+            length=self.length + other.length,
+            k1=self.k1,
+            misalignment=self.misalignment,
+            tilt=self.tilt,
+            num_steps=self.num_steps,
+            tracking_method=self.tracking_method,
+            name=merge_element_names(self.name, other.name),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

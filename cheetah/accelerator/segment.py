@@ -11,7 +11,7 @@ from torch import nn
 from cheetah import latticejson
 from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
@@ -311,6 +311,50 @@ class Segment(Element):
             name=self.name,
         )
 
+    def with_consecutive_elements_merged(
+        self, except_for: list[str] | None = None
+    ) -> "Segment":
+        """
+        Return a segment where consecutive elements of the same type that can be merged
+        are combined into single elements.
+
+        :param except_for: List of names of elements that should not be merged despite
+            being mergeable.
+        :return: Segment with consecutive mergeable elements merged.
+        """
+        if except_for is None:
+            except_for = []
+
+        if not self.elements:
+            return Segment(
+                elements=[], name=self.name, metadata=deepcopy(self.metadata)
+            )
+
+        merged_elements = []
+        current = self.elements[0]
+
+        for next_element in self.elements[1:]:
+            if current.name not in except_for and next_element.name not in except_for:
+                merged = current.merge(next_element)
+                if merged is not None:
+                    current = merged
+                    continue
+
+            merged_elements.append(current)
+            current = next_element
+
+        merged_elements.append(current)
+
+        return Segment(
+            elements=merged_elements,
+            name=self.name,
+            metadata=deepcopy(self.metadata),
+        )
+
+    with_merged_elements = with_consecutive_elements_merged
+    consecutive_elements_merged = with_consecutive_elements_merged
+    with_adjacent_elements_merged = with_consecutive_elements_merged
+
     @classmethod
     def from_lattice_json(
         cls,
@@ -529,6 +573,14 @@ class Segment(Element):
             for element in self.elements
             for split_element in element.split(resolution)
         ]
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, Segment):
+            return None
+        return Segment(
+            elements=self.elements + other.elements,
+            name=merge_element_names(self.name, other.name),
+        )
 
     def beam_along_segment_generator(
         self, incoming: Beam, resolution: float | None = None

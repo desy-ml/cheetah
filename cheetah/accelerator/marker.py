@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
 
-from cheetah.accelerator.element import Element
+from cheetah.accelerator.element import Element, merge_element_names
 from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, cache_transfer_map
 
@@ -55,6 +55,16 @@ class Marker(Element):
     @property
     def is_skippable(self) -> bool:
         return True
+
+    def merge(self, other: Element) -> Element | None:
+        if not isinstance(other, Marker):
+            return None
+
+        return Marker(
+            name=merge_element_names(self.name, other.name),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
