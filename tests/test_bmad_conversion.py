@@ -181,7 +181,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     # check flattened superimposed elements
     flattened_qe01 = converted.gunl0a.qe01.flattened()
     assert isinstance(flattened_qe01, cheetah.Segment)
-    assert flattened_qe01.element_names == ["qe01#1", "otr2", "trim", "qe01#2"]
+    assert flattened_qe01.element_names == ["qe01_1", "otr2", "trim", "qe01_2"]
 
 
 def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
