@@ -94,9 +94,7 @@ def test_superimposed_serialization(tmp_path):
 
     # test case where the superimposed element is a BPM
     superimposed = cheetah.Superimposed(
-        base_element=cheetah.Quadrupole(
-            length=torch.tensor(1.0), k1=torch.tensor(2.0)
-        ),
+        base_element=cheetah.Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(2.0)),
         superimposed_element=cheetah.BPM(),
         name="superimposed_test",
     )
@@ -122,9 +120,7 @@ def test_superimposed_serialization(tmp_path):
     )
 
     superimposed = cheetah.Superimposed(
-        base_element=cheetah.Quadrupole(
-            length=torch.tensor(1.0), k1=torch.tensor(2.0)
-        ),
+        base_element=cheetah.Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(2.0)),
         superimposed_element=superimposed_segment,
         name="superimposed_segment_test",
     )

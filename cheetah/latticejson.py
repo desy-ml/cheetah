@@ -218,9 +218,7 @@ def parse_element(
                 value, lattice_dict, device=device, dtype=dtype
             )
         else:
-            converted_params[key] = nontorch2feature(
-                value, device=device, dtype=dtype
-            )
+            converted_params[key] = nontorch2feature(value, device=device, dtype=dtype)
 
     return element_class(name=name, **converted_params)
 
