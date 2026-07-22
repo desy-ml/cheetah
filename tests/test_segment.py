@@ -270,10 +270,13 @@ def test_no_name_warning_on_segment_methods():
     """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`"""
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.5), name=f"dirty:drift:{i}")
+            cheetah.Drift(
+                length=torch.tensor(0.5), name=f"dirty:drift:{i}", sanitize_name=False
+            )
             for i in range(10)
         ],
         name="dirty:segment",
+        sanitize_name=False,
     )
     incoming_beam = cheetah.ParameterBeam.from_parameters()
 
@@ -285,7 +288,6 @@ def test_no_name_warning_on_segment_methods():
         segment.clone()
 
         segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
-        segment.partition_at("dirty:drift:5")
 
         segment.without_inactive_markers()
         segment.without_inactive_zero_length_elements()

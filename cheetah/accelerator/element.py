@@ -332,6 +332,7 @@ class Element(ABC, nn.Module):
                 for feature in self.defining_features
             },
             metadata=deepcopy(self.metadata),
+            sanitize_name=False,
         )
 
     def split(self, resolution: torch.Tensor) -> list["Element"]:

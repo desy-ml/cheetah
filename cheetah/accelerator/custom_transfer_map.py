@@ -59,7 +59,10 @@ class CustomTransferMap(Element):
 
     @classmethod
     def from_merging_elements(
-        cls, elements: list[Element], incoming_beam: Beam
+        cls,
+        elements: list[Element],
+        incoming_beam: Beam,
+        sanitize_name: bool | None = None,
     ) -> "CustomTransferMap":
         """
         Combine the transfer maps of multiple successive elements into a single transfer
@@ -72,6 +75,11 @@ class CustomTransferMap(Element):
             this is required because the separate original transfer maps have to be
             computed before being combined and some of them may depend on the energy of
             the beam.
+        :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+            name. This is needed if you want to use the `segment.element_name` syntax to
+            access the element in a segment. If `None` (default), a warning is raised
+            for invalid names. Set to `True` to sanitise, or `False` to silence the
+            warning.
         """
         assert all(element.is_skippable for element in elements), (
             "Combining the elements in a Segment that is not skippable will result in"
@@ -100,7 +108,13 @@ class CustomTransferMap(Element):
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
-        return cls(tm, length=combined_length, name=combined_name, **factory_kwargs)
+        return cls(
+            tm,
+            length=combined_length,
+            name=combined_name,
+            sanitize_name=sanitize_name,
+            **factory_kwargs
+        )
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
