@@ -459,5 +459,5 @@ def test_element_no_internal_dirty_name_warning(element):
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=DirtyNameWarning)
 
-        element.clone()
-        element.split(torch.tensor(1.0))
+        _ = element.clone()
+        _ = element.split(torch.tensor(1.0))
