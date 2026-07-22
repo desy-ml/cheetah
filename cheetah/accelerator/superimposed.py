@@ -1,11 +1,15 @@
+from typing import TYPE_CHECKING
+
 import torch
 from matplotlib import pyplot as plt
 
 from cheetah.accelerator.element import Element
-from cheetah.accelerator.segment import Segment
 from cheetah.particles.beam import Beam
 from cheetah.particles.species import Species
 from cheetah.utils.unique_name_generator import UniqueNameGenerator
+
+if TYPE_CHECKING:
+    from cheetah.accelerator.segment import Segment
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -57,6 +61,9 @@ class Superimposed(Element):
 
         self.base_element = base_element
         self.superimposed_element = superimposed_element
+
+        # Import Segment lazily to avoid circular imports at module load time.
+        from cheetah.accelerator.segment import Segment
 
         base_element_halves = base_element.split(base_element.length / 2.0)
         self._segment = Segment(

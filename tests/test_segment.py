@@ -262,3 +262,23 @@ def test_element_index_raises_for_none():
 
     with pytest.raises(ValueError):
         segment.element_index("some_nonexistent_element")
+
+
+def test_flatten_skip_segment():
+    """
+    Test that the `flattened` method returns a flattened segment with the correct number
+    of elements when `skip_superimposed` is set to True.
+    """
+    drift1 = cheetah.Drift(length=torch.tensor(0.5), name="drift1")
+    base_element = cheetah.Quadrupole(length=torch.tensor(0.5), name="base_quad")
+    superimposed_element = cheetah.Marker(name="superimposed_marker")
+
+    superimposed = cheetah.Superimposed(
+        base_element=base_element, superimposed_element=superimposed_element
+    )
+
+    segment = cheetah.Segment(elements=[drift1, superimposed])
+
+    flattened_segment_skip = segment.flattened(skip_superimposed=True)
+    assert len(flattened_segment_skip.elements) == 2
+    assert isinstance(flattened_segment_skip.elements[1], cheetah.Superimposed)

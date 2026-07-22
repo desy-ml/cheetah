@@ -13,6 +13,7 @@ from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
+from cheetah.accelerator.superimposed import Superimposed
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
 from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
@@ -136,14 +137,24 @@ class Segment(Element):
 
         return self.__class__(subcell)
 
-    def flattened(self) -> "Segment":
+    def flattened(self, skip_superimposed: bool = False) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
         resolved and their elements entered into a top-level segment.
+
+        :param skip_superimposed: If `True`, superimposed elements are not flattened
+            and remain as `Superimposed` elements in the returned segment. If `False`,
+            they are flattened into the top-level segment.
         """
         flattened_elements = []
         for element in self.elements:
-            if hasattr(element, "flattened"):
+            if skip_superimposed and isinstance(element, Superimposed):
+                flattened_elements.append(element)
+            elif isinstance(element, Segment):
+                flattened_elements += element.flattened(
+                    skip_superimposed=skip_superimposed
+                ).elements
+            elif hasattr(element, "flattened"):
                 flattened_elements += element.flattened().elements
             else:
                 flattened_elements.append(element)
