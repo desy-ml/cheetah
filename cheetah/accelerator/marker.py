@@ -3,7 +3,7 @@ import torch
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, merge_element_names
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -55,13 +55,6 @@ class Marker(Element):
     @property
     def is_skippable(self) -> bool:
         return True
-
-    def merge(self, other: "Marker") -> "Marker | None":
-        return self.__class__(
-            name=merge_element_names(self.name, other.name),
-            dtype=self.length.dtype,
-            device=self.length.device,
-        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
