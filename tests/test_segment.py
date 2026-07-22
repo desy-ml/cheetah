@@ -86,6 +86,7 @@ def test_partitioning_boundary():
     assert element.name == "drift_3"
     assert len(post_cell.elements) == 6
 
+
 def test_partitioning_unknown_element():
     """Test that partitioning on an unknown element raises an error."""
     segment = cheetah.Segment(
