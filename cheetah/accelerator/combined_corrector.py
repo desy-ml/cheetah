@@ -110,17 +110,6 @@ class CombinedCorrector(Element):
         )
 
     def merge(self, other: "CombinedCorrector") -> "CombinedCorrector | None":
-        if not (
-            ((self.length == 0.0).all() and (other.length == 0.0).all())
-            or (
-                (self.horizontal_angle == 0.0).all()
-                and (other.horizontal_angle == 0.0).all()
-                and (self.vertical_angle == 0.0).all()
-                and (other.vertical_angle == 0.0).all()
-            )
-        ):
-            return None
-
         return self.__class__(
             length=self.length + other.length,
             horizontal_angle=self.horizontal_angle + other.horizontal_angle,
