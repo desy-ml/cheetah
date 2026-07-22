@@ -498,9 +498,7 @@ class Segment(Element):
                     # and append them before the non-skippable element
                     if len(continuous_skippable_elements) > 0:
                         todos.append(
-                            self.__class__(
-                                elements=continuous_skippable_elements,
-                            )
+                            self.__class__(elements=continuous_skippable_elements)
                         )
                         continuous_skippable_elements = []
 
