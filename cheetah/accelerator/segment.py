@@ -156,14 +156,14 @@ class Segment(Element):
 
         index = self.element_index(element_name)
         pre_cell = (
-            Segment(self.elements[:index])
+            self.__class__(self.elements[:index])
             if split_before
-            else Segment(self.elements[: index + 1])
+            else self.__class__(self.elements[: index + 1])
         )
         post_cell = (
-            Segment(self.elements[index + 1 :])
+            self.__class__(self.elements[index + 1 :])
             if split_after
-            else Segment(self.elements[index:])
+            else self.__class__(self.elements[index:])
         )
 
         if split_after and split_before:  # Two splits, before and after
@@ -183,7 +183,7 @@ class Segment(Element):
             else:
                 flattened_elements.append(element)
 
-        return Segment(elements=flattened_elements, name=self.name)
+        return self.__class__(elements=flattened_elements, name=self.name)
 
     def reversed(self) -> "Segment":
         """
@@ -199,11 +199,7 @@ class Segment(Element):
             )
         )
 
-        return Segment(
-            elements=reversed_elements,
-            name=f"{self.name}_reversed",
-            sanitize_name=self.sanitize_name,
-        )
+        return self.__class__(elements=reversed_elements, name=f"{self.name}_reversed")
 
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: list[str] | None = None
@@ -253,7 +249,7 @@ class Segment(Element):
                 )
             )
 
-        return Segment(elements=merged_elements, name=self.name)
+        return self.__class__(elements=merged_elements, name=self.name)
 
     def without_inactive_markers(
         self, except_for: list[str] | None = None
@@ -273,7 +269,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 element
                 for element in self.elements
@@ -299,7 +295,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 element
                 for element in self.elements
@@ -327,7 +323,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 (
                     element
@@ -536,7 +532,11 @@ class Segment(Element):
                     # If a non-skippable element is found, merge the skippable elements
                     # and append them before the non-skippable element
                     if len(continuous_skippable_elements) > 0:
-                        todos.append(Segment(elements=continuous_skippable_elements))
+                        todos.append(
+                            self.__class__(
+                                elements=continuous_skippable_elements,
+                            )
+                        )
                         continuous_skippable_elements = []
 
                     todos.append(element)
@@ -544,7 +544,7 @@ class Segment(Element):
             # If there are still skippable elements at the end of the segment append
             # them as well
             if len(continuous_skippable_elements) > 0:
-                todos.append(Segment(elements=continuous_skippable_elements))
+                todos.append(self.__class__(elements=continuous_skippable_elements))
 
             for todo in todos:
                 incoming = todo.track(incoming)
@@ -552,7 +552,7 @@ class Segment(Element):
             return incoming
 
     def clone(self) -> "Segment":
-        return Segment(
+        return self.__class__(
             elements=[element.clone() for element in self.elements],
             name=self.name,
             metadata=deepcopy(self.metadata),
