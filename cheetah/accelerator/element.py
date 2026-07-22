@@ -354,7 +354,7 @@ class Element(ABC, nn.Module):
         :param other: Element to merge with.
         :return: Merged element or `None`.
         """
-        raise NotImplementedError
+        return None
 
     def sanitize_name(self) -> None:
         """
