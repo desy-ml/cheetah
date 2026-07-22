@@ -14,34 +14,25 @@ class UniqueNameGenerator:
         return name
 
 
-def merge_element_names(*names: str) -> str:
+def merge_element_names(*names: str, use_shared_prefix: bool = True) -> str:
     """
     Determine the name for a merged element based on the names of the elements being
     merged.
 
-    If elements share a long-enough common prefix followed by a short suffix (e.g.
-    enumeration or "in"/"out"), the prefix is returned as the new name. Otherwise, a
-    concatenation of the names is returned.
+    If element names share a common prefix followed by a suffix (e.g. enumeration or
+    "in"/"out") and `use_shared_prefix=True`, the shared prefix is returned as the
+    merged name. Otherwise, a concatenation of the names separated by `_` is returned.
 
     :param names: Names of elements to merge.
+    :param use_shared_prefix: Whether to use the shared prefix if it exists.
     :return: Name for the merged element.
     """
-    if not names:
-        return ""
-    if len(names) == 1:
-        return names[0]
+    assert len(names) > 0, "At least one name must be provided."
 
     common_prefix = os.path.commonprefix(list(names))
-    clean_prefix = common_prefix.rstrip("_.- ")
 
-    if len(clean_prefix) >= 1:
-        is_valid_prefix = True
-        for name in names:
-            suffix = name[len(clean_prefix) :].strip("_.- ")
-            if len(suffix) > 5:
-                is_valid_prefix = False
-                break
-        if is_valid_prefix:
-            return clean_prefix
-
-    return "_".join(names)
+    return (
+        common_prefix
+        if use_shared_prefix and len(common_prefix) > 0
+        else "_".join(names)
+    )
