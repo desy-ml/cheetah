@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -529,7 +529,7 @@ class Segment(Element):
         ]
 
     def partition_at(
-        self, element_name: str, split_before: bool = True, split_after: bool = True
+        self, element_name: str, mode: Literal["before", "after", "both"] = "both"
     ) -> tuple[Element, ...]:
         """
         Partition the segment into multiple subcells around a named element. If the
@@ -537,29 +537,26 @@ class Segment(Element):
         tuple containing the original segment is returned.
 
         :param element_name: Name of the element at which the segment is split.
-        :param split_before: Partition the segment before the named element.
-        :param split_after: Partition the segment after the named element.
+        :param mode: Mode of partitioning. If "before", the segment is split before the
+            named element. If "after", the segment is split after the named element. If
+            "both", the segment is split both before and after the named element.
         :return: Segment partition. May contain 1, 2, or 3 subcells depending on whether
             the segment is split before and/or after the named element.
         """
-        if not (split_before or split_after):  # No splits
-            return (self,)
-
         index = self.element_index(element_name)
         pre_cell = (
-            self.__class__(self.elements[:index])
-            if split_before
-            else self.__class__(self.elements[: index + 1])
+            self._class__(self.elements[: index + 1])
+            if mode == "after"
+            else self._class__(self.elements[:index])
         )
         post_cell = (
-            self.__class__(self.elements[index + 1 :])
-            if split_after
-            else self.__class__(self.elements[index:])
+            self._class__(self.elements[index:])
+            if mode == "before"
+            else self._class__(self.elements[index + 1 :])
         )
-
         return (
             (pre_cell, self.elements[index], post_cell)  # Two splits: before and after
-            if split_after and split_before
+            if mode == "both"
             else (pre_cell, post_cell)  # One split: before or after
         )
 
