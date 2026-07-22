@@ -10,6 +10,7 @@
 
 - Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
 - Implement `Undulator` transverse focusing effect on charged particle beam (see #659) (@Hespe)
+- Add `Segment.partition_at` method to divide a `Segment` into subcells before and after a given named `Element` (see #666) (@Hespe, @jank324)
 - Add `Segment.with_consecutive_elements_merged` method to merge consecutive elements of the same type, and a `.merge` method to `Element` subclasses to merge two elements of the same type. (see #667) (@jank324)
 
 ### 🐛 Bug fixes

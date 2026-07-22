@@ -262,3 +262,32 @@ def test_element_index_raises_for_none():
 
     with pytest.raises(ValueError):
         segment.element_index("some_nonexistent_element")
+
+
+def test_partition_example():
+    """Test `partition_at` on a simple example."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    pre_cell, element, post_cell = segment.partition_at("drift_3", mode="both")
+
+    assert len(pre_cell.elements) == 3
+    assert element.name == "drift_3"
+    assert len(post_cell.elements) == 6
+
+
+def test_partition_unknown_element():
+    """Test that partitioning on an unknown element raises an error."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        segment.partition_at("drift_42")
