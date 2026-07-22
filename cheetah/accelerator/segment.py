@@ -545,14 +545,14 @@ class Segment(Element):
         """
         index = self.element_index(element_name)
         pre_cell = (
-            self._class__(self.elements[: index + 1])
+            self.__class__(self.elements[: index + 1])
             if mode == "after"
-            else self._class__(self.elements[:index])
+            else self.__class__(self.elements[:index])
         )
         post_cell = (
-            self._class__(self.elements[index:])
+            self.__class__(self.elements[index:])
             if mode == "before"
-            else self._class__(self.elements[index + 1 :])
+            else self.__class__(self.elements[index + 1 :])
         )
         return (
             (pre_cell, self.elements[index], post_cell)  # Two splits: before and after

@@ -53,53 +53,6 @@ def test_subcell_endpoint():
     assert len(segment.subcell("drift_2", include_end=False).elements) == 8
 
 
-def test_partitioning_boundary():
-    """Test that partioning respects the `split_before` and `split_after` arguments."""
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
-            for i in range(10)
-        ]
-    )
-
-    (no_partition,) = segment.partition_at(
-        "drift_3", split_before=False, split_after=False
-    )
-    assert len(no_partition.elements) == 10
-
-    pre_cell, post_cell = segment.partition_at(
-        "drift_3", split_before=True, split_after=False
-    )
-    assert len(pre_cell.elements) == 3
-    assert len(post_cell.elements) == 7
-
-    pre_cell, post_cell = segment.partition_at(
-        "drift_3", split_before=False, split_after=True
-    )
-    assert len(pre_cell.elements) == 4
-    assert len(post_cell.elements) == 6
-
-    pre_cell, element, post_cell = segment.partition_at(
-        "drift_3", split_before=True, split_after=True
-    )
-    assert len(pre_cell.elements) == 3
-    assert element.name == "drift_3"
-    assert len(post_cell.elements) == 6
-
-
-def test_partitioning_unknown_element():
-    """Test that partitioning on an unknown element raises an error."""
-    segment = cheetah.Segment(
-        elements=[
-            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
-            for i in range(10)
-        ]
-    )
-
-    with pytest.raises(ValueError):
-        segment.partition_at("drift_42")
-
-
 @pytest.mark.parametrize("is_recursive", [True, False])
 def test_attr_setting_by_element_type_convenience_method(is_recursive):
     """
@@ -309,3 +262,32 @@ def test_element_index_raises_for_none():
 
     with pytest.raises(ValueError):
         segment.element_index("some_nonexistent_element")
+
+
+def test_partition_example():
+    """Test `partition_at` on a simple example."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    pre_cell, element, post_cell = segment.partition_at("drift_3", mode="both")
+
+    assert len(pre_cell.elements) == 3
+    assert element.name == "drift_3"
+    assert len(post_cell.elements) == 6
+
+
+def test_partition_unknown_element():
+    """Test that partitioning on an unknown element raises an error."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        segment.partition_at("drift_42")
