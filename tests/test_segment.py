@@ -53,7 +53,8 @@ def test_subcell_endpoint():
     assert len(segment.subcell("drift_2", include_end=False).elements) == 8
 
 
-def test_partitioning():
+def test_partitioning_boundary():
+    """Test that partioning respects the `split_before` and `split_after` arguments."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
@@ -84,6 +85,15 @@ def test_partitioning():
     assert len(pre_cell.elements) == 3
     assert element.name == "drift_3"
     assert len(post_cell.elements) == 6
+
+def test_partitioning_unknown_element():
+    """Test that partitioning on an unknown element raises an error."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
 
     with pytest.raises(ValueError):
         segment.partition_at("drift_42")
