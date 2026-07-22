@@ -138,10 +138,7 @@ class Solenoid(Element):
         ]
 
     def merge(self, other: "Solenoid") -> "Solenoid | None":
-        if not (
-            torch.equal(self.k, other.k)
-            and torch.equal(self.misalignment, other.misalignment)
-        ):
+        if not (self.k.equal(other.k) and self.misalignment.equal(other.misalignment)):
             return None
 
         return self.__class__(

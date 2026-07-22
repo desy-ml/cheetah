@@ -282,9 +282,9 @@ class Quadrupole(Element):
             return None
 
         if not (
-            torch.equal(self.k1, other.k1)
-            and torch.equal(self.misalignment, other.misalignment)
-            and torch.equal(self.tilt, other.tilt)
+            self.k1.equal(other.k1)
+            and self.misalignment.equal(other.misalignment)
+            and self.tilt.equal(other.tilt)
         ):
             return None
 

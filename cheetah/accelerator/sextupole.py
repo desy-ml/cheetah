@@ -135,9 +135,9 @@ class Sextupole(Element):
             return None
 
         if not (
-            torch.equal(self.k2, other.k2)
-            and torch.equal(self.misalignment, other.misalignment)
-            and torch.equal(self.tilt, other.tilt)
+            self.k2.equal(other.k2)
+            and self.misalignment.equal(other.misalignment)
+            and self.tilt.equal(other.tilt)
         ):
             return None
 
