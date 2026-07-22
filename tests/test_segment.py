@@ -53,6 +53,42 @@ def test_subcell_endpoint():
     assert len(segment.subcell("drift_2", include_end=False).elements) == 8
 
 
+def test_partitioning():
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    (no_partition,) = segment.partition_at(
+        "drift_3", split_before=False, split_after=False
+    )
+    assert len(no_partition.elements) == 10
+
+    pre_cell, post_cell = segment.partition_at(
+        "drift_3", split_before=True, split_after=False
+    )
+    assert len(pre_cell.elements) == 3
+    assert len(post_cell.elements) == 7
+
+    pre_cell, post_cell = segment.partition_at(
+        "drift_3", split_before=False, split_after=True
+    )
+    assert len(pre_cell.elements) == 4
+    assert len(post_cell.elements) == 6
+
+    pre_cell, element, post_cell = segment.partition_at(
+        "drift_3", split_before=True, split_after=True
+    )
+    assert len(pre_cell.elements) == 3
+    assert element.name == "drift_3"
+    assert len(post_cell.elements) == 6
+
+    with pytest.raises(ValueError):
+        segment.partition_at("drift_42")
+
+
 @pytest.mark.parametrize("is_recursive", [True, False])
 def test_attr_setting_by_element_type_convenience_method(is_recursive):
     """
