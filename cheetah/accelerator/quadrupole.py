@@ -273,14 +273,13 @@ class Quadrupole(Element):
             for i in range(num_splits)
         ]
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, Quadrupole):
-            return None
+    def merge(self, other: "Quadrupole") -> "Quadrupole | None":
         if (
             self.tracking_method != other.tracking_method
             or self.num_steps != other.num_steps
         ):
             return None
+
         if not (
             torch.equal(self.k1, other.k1)
             and torch.equal(self.misalignment, other.misalignment)
@@ -288,7 +287,7 @@ class Quadrupole(Element):
         ):
             return None
 
-        return Quadrupole(
+        return self.__class__(
             length=self.length + other.length,
             k1=self.k1,
             misalignment=self.misalignment,

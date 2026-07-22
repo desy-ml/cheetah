@@ -17,7 +17,8 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 def merge_element_names(*names: str) -> str:
     """
-    Determine the name for a merged element based on the names of the elements being merged.
+    Determine the name for a merged element based on the names of the elements being
+    merged.
 
     If elements share a long-enough common prefix followed by a short suffix (e.g.
     enumeration or "in"/"out"), the prefix is returned as the new name.
@@ -380,14 +381,14 @@ class Element(ABC, nn.Module):
 
     def merge(self, other: "Element") -> "Element | None":
         """
-        Attempt to merge this element with another element. Returns the merged element
-        if successful, or `None` if the elements cannot be merged or merging is not
-        supported for this element type.
+        Attempt to merge this element with another element of the same type. Returns the
+        merged element if successful, or `None` if the elements cannot be merged or
+        merging is not supported for this element type.
 
         :param other: Element to merge with.
         :return: Merged element or `None`.
         """
-        return None
+        raise NotImplementedError
 
     def sanitize_name(self) -> None:
         """

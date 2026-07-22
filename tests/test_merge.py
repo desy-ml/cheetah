@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 import cheetah
@@ -38,10 +39,6 @@ def test_drift_merge():
     # Mismatched tracking method
     d3 = cheetah.Drift(length=torch.tensor(0.3), tracking_method="drift_kick_drift")
     assert d1.merge(d3) is None
-
-    # Mismatched element type
-    q1 = cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(1.0))
-    assert d1.merge(q1) is None
 
 
 def test_quadrupole_merge():

@@ -108,9 +108,7 @@ class CombinedCorrector(Element):
             or torch.any(self.vertical_angle != 0).item()
         )
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, CombinedCorrector):
-            return None
+    def merge(self, other: "CombinedCorrector") -> "CombinedCorrector | None":
         if not (
             ((self.length == 0.0).all() and (other.length == 0.0).all())
             or (
@@ -122,7 +120,7 @@ class CombinedCorrector(Element):
         ):
             return None
 
-        return CombinedCorrector(
+        return self.__class__(
             length=self.length + other.length,
             horizontal_angle=self.horizontal_angle + other.horizontal_angle,
             vertical_angle=self.vertical_angle + other.vertical_angle,

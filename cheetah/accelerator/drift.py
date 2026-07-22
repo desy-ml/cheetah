@@ -164,13 +164,11 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, Drift):
-            return None
+    def merge(self, other: "Drift") -> "Drift | None":
         if self.tracking_method != other.tracking_method:
             return None
 
-        return Drift(
+        return self.__class__(
             length=self.length + other.length,
             tracking_method=self.tracking_method,
             name=merge_element_names(self.name, other.name),

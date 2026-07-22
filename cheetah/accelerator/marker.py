@@ -56,11 +56,8 @@ class Marker(Element):
     def is_skippable(self) -> bool:
         return True
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, Marker):
-            return None
-
-        return Marker(
+    def merge(self, other: "Marker") -> "Marker | None":
+        return self.__class__(
             name=merge_element_names(self.name, other.name),
             dtype=self.length.dtype,
             device=self.length.device,

@@ -334,7 +334,11 @@ class Segment(Element):
         current = self.elements[0]
 
         for next_element in self.elements[1:]:
-            if current.name not in except_for and next_element.name not in except_for:
+            if (
+                type(current) is type(next_element)
+                and current.name not in except_for
+                and next_element.name not in except_for
+            ):
                 merged = current.merge(next_element)
                 if merged is not None:
                     current = merged
@@ -574,10 +578,8 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, Segment):
-            return None
-        return Segment(
+    def merge(self, other: "Segment") -> "Segment | None":
+        return self.__class__(
             elements=self.elements + other.elements,
             name=merge_element_names(self.name, other.name),
         )

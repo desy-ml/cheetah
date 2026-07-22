@@ -85,16 +85,14 @@ class VerticalCorrector(Element):
     def is_active(self) -> bool:
         return (self.angle != 0).any().item()
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, VerticalCorrector):
-            return None
+    def merge(self, other: "VerticalCorrector") -> "VerticalCorrector | None":
         if not (
             ((self.length == 0.0).all() and (other.length == 0.0).all())
             or ((self.angle == 0.0).all() and (other.angle == 0.0).all())
         ):
             return None
 
-        return VerticalCorrector(
+        return self.__class__(
             length=self.length + other.length,
             angle=self.angle + other.angle,
             name=merge_element_names(self.name, other.name),

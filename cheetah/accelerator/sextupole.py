@@ -126,11 +126,10 @@ class Sextupole(Element):
     def is_active(self) -> bool:
         return (self.k2 != 0.0).any().item()
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, Sextupole):
-            return None
+    def merge(self, other: "Sextupole") -> "Sextupole | None":
         if self.tracking_method != other.tracking_method:
             return None
+
         if not (
             torch.equal(self.k2, other.k2)
             and torch.equal(self.misalignment, other.misalignment)
@@ -138,7 +137,7 @@ class Sextupole(Element):
         ):
             return None
 
-        return Sextupole(
+        return self.__class__(
             length=self.length + other.length,
             k2=self.k2,
             misalignment=self.misalignment,

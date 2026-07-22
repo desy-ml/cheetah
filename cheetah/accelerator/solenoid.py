@@ -136,16 +136,14 @@ class Solenoid(Element):
             for _ in range(num_splits)
         ]
 
-    def merge(self, other: Element) -> Element | None:
-        if not isinstance(other, Solenoid):
-            return None
+    def merge(self, other: "Solenoid") -> "Solenoid | None":
         if not (
             torch.equal(self.k, other.k)
             and torch.equal(self.misalignment, other.misalignment)
         ):
             return None
 
-        return Solenoid(
+        return self.__class__(
             length=self.length + other.length,
             k=self.k,
             misalignment=self.misalignment,
