@@ -136,41 +136,6 @@ class Segment(Element):
 
         return self.__class__(subcell)
 
-    def partition_at(
-        self, element_name: str, split_before: bool = True, split_after: bool = True
-    ) -> tuple[Element, ...]:
-        """
-        Partition the segment into multiple subcells around a named element. If the
-        segment is split neither before nor after the named element, a single-element
-        tuple containing the original segment is returned.
-
-        :param element_name: Name of the element at which the segment is split.
-        :param split_before: Partition the segment before the named element.
-        :param split_after: Partition the segment after the named element.
-        :return: Segment partition. Might contain 1, 2, or 3 subcells depending on
-            whether the segment is split before and/or after the named element.
-        """
-
-        if (not split_after) and (not split_before):  # No splits
-            return (self,)
-
-        index = self.element_index(element_name)
-        pre_cell = (
-            self.__class__(self.elements[:index])
-            if split_before
-            else self.__class__(self.elements[: index + 1])
-        )
-        post_cell = (
-            self.__class__(self.elements[index + 1 :])
-            if split_after
-            else self.__class__(self.elements[index:])
-        )
-
-        if split_after and split_before:  # Two splits, before and after
-            return (pre_cell, self.elements[index], post_cell)
-        else:  # One split, before or after
-            return (pre_cell, post_cell)
-
     def flattened(self) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
@@ -564,6 +529,41 @@ class Segment(Element):
             for element in self.elements
             for split_element in element.split(resolution)
         ]
+
+    def partition_at(
+        self, element_name: str, split_before: bool = True, split_after: bool = True
+    ) -> tuple[Element, ...]:
+        """
+        Partition the segment into multiple subcells around a named element. If the
+        segment is split neither before nor after the named element, a single-element
+        tuple containing the original segment is returned.
+
+        :param element_name: Name of the element at which the segment is split.
+        :param split_before: Partition the segment before the named element.
+        :param split_after: Partition the segment after the named element.
+        :return: Segment partition. May contain 1, 2, or 3 subcells depending on whether
+            the segment is split before and/or after the named element.
+        """
+        if not (split_before or split_after):  # No splits
+            return (self,)
+
+        index = self.element_index(element_name)
+        pre_cell = (
+            self.__class__(self.elements[:index])
+            if split_before
+            else self.__class__(self.elements[: index + 1])
+        )
+        post_cell = (
+            self.__class__(self.elements[index + 1 :])
+            if split_after
+            else self.__class__(self.elements[index:])
+        )
+
+        return (
+            (pre_cell, self.elements[index], post_cell)  # Two splits: before and after
+            if split_after and split_before
+            else (pre_cell, post_cell)  # One split: before or after
+        )
 
     def beam_along_segment_generator(
         self, incoming: Beam, resolution: float | None = None
