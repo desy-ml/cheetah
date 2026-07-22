@@ -329,14 +329,8 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        if not self.elements:
-            return Segment(
-                elements=[], name=self.name, metadata=deepcopy(self.metadata)
-            )
-
         merged_elements = []
         current = self.elements[0]
-
         for next_element in self.elements[1:]:
             if (
                 type(current) is type(next_element)
@@ -353,15 +347,11 @@ class Segment(Element):
 
         merged_elements.append(current)
 
-        return Segment(
+        return self.__class__(
             elements=merged_elements,
             name=self.name,
             metadata=deepcopy(self.metadata),
         )
-
-    with_merged_elements = with_consecutive_elements_merged
-    consecutive_elements_merged = with_consecutive_elements_merged
-    with_adjacent_elements_merged = with_consecutive_elements_merged
 
     @classmethod
     def from_lattice_json(
