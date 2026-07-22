@@ -16,7 +16,10 @@ from .statistics import (  # noqa: F401
     unbiased_weighted_std,
     unbiased_weighted_variance,
 )
-from .unique_name_generator import UniqueNameGenerator  # noqa: F401
+from .unique_name_generator import (  # noqa: F401
+    UniqueNameGenerator,
+    merge_element_names,
+)
 from .vector import squash_index_for_unavailable_dims  # noqa: F401
 from .warnings import (  # noqa: F401
     DefaultParameterWarning,

@@ -1,4 +1,3 @@
-import os
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
@@ -13,39 +12,6 @@ from cheetah.utils import DirtyNameWarning, UniqueNameGenerator, VisualizationWa
 from cheetah.utils.warnings import PhysicsWarning
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
-
-
-def merge_element_names(*names: str) -> str:
-    """
-    Determine the name for a merged element based on the names of the elements being
-    merged.
-
-    If elements share a long-enough common prefix followed by a short suffix (e.g.
-    enumeration or "in"/"out"), the prefix is returned as the new name.
-    Otherwise, a concatenation of the names is returned.
-
-    :param names: Names of elements to merge.
-    :return: Name for the merged element.
-    """
-    if not names:
-        return ""
-    if len(names) == 1:
-        return names[0]
-
-    common_prefix = os.path.commonprefix(list(names))
-    clean_prefix = common_prefix.rstrip("_.- ")
-
-    if len(clean_prefix) >= 1:
-        is_valid_prefix = True
-        for name in names:
-            suffix = name[len(clean_prefix) :].strip("_.- ")
-            if len(suffix) > 5:
-                is_valid_prefix = False
-                break
-        if is_valid_prefix:
-            return clean_prefix
-
-    return "_".join(names)
 
 
 class Element(ABC, nn.Module):
