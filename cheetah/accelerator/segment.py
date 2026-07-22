@@ -573,7 +573,7 @@ class Segment(Element):
             elements=self.elements + other.elements,
             name=merge_element_names(self.name, other.name),
         )
-    
+
     def partition_at(
         self, element_name: str, mode: Literal["before", "after", "both"] = "both"
     ) -> tuple[Element, ...]:
