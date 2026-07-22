@@ -8,7 +8,6 @@ from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     compute_relativistic_factors,
-    merge_element_names,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -85,21 +84,6 @@ class VerticalCorrector(Element):
     @property
     def is_active(self) -> bool:
         return (self.angle != 0).any().item()
-
-    def merge(self, other: "VerticalCorrector") -> "VerticalCorrector | None":
-        if not (
-            ((self.length == 0.0).all() and (other.length == 0.0).all())
-            or ((self.angle == 0.0).all() and (other.angle == 0.0).all())
-        ):
-            return None
-
-        return self.__class__(
-            length=self.length + other.length,
-            angle=self.angle + other.angle,
-            name=merge_element_names(self.name, other.name),
-            dtype=self.length.dtype,
-            device=self.length.device,
-        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

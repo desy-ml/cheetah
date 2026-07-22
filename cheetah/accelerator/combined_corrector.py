@@ -8,7 +8,6 @@ from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     compute_relativistic_factors,
-    merge_element_names,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -107,16 +106,6 @@ class CombinedCorrector(Element):
         return (
             torch.any(self.horizontal_angle != 0).item()
             or torch.any(self.vertical_angle != 0).item()
-        )
-
-    def merge(self, other: "CombinedCorrector") -> "CombinedCorrector | None":
-        return self.__class__(
-            length=self.length + other.length,
-            horizontal_angle=self.horizontal_angle + other.horizontal_angle,
-            vertical_angle=self.vertical_angle + other.vertical_angle,
-            name=merge_element_names(self.name, other.name),
-            dtype=self.length.dtype,
-            device=self.length.device,
         )
 
     def plot(
