@@ -136,3 +136,23 @@ def test_default_dtype(default_torch_dtype):
     assert converted.q.k1.dtype == default_torch_dtype
     assert converted.s.length.dtype == default_torch_dtype
     assert converted.s.k2.dtype == default_torch_dtype
+
+
+def test_cu_hxr_lcls_fixture_conversion():
+    """Test converting the reduced split CU_HXR fixture into Cheetah."""
+    file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
+
+    converted = cheetah.Segment.from_bmad(file_path, dtype=torch.float64)
+    flattened = converted.flattened()
+
+    assert isinstance(converted, cheetah.Segment)
+    assert converted.name == "cu_hxr"
+    assert isinstance(flattened.bx11, cheetah.Dipole)
+
+    assert flattened.qa01.k1.item() == pytest.approx(0.384840836193)
+    assert flattened.qa01.metadata["alias"] == "quad:in20:121"
+
+    assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
+    assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
+
+    assert isinstance(flattened.tcxdg0, cheetah.TransverseDeflectingCavity)
