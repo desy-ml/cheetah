@@ -288,6 +288,7 @@ def test_no_name_warning_on_segment_methods():
         segment.clone()
 
         segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
+        segment.partition_at("dirty:drift:3")
 
         segment.without_inactive_markers()
         segment.without_inactive_zero_length_elements()
@@ -295,8 +296,8 @@ def test_no_name_warning_on_segment_methods():
 
         segment.transfer_maps_merged(incoming_beam)
         segment.track(incoming_beam)
-        
-        
+
+
 def test_partition_example():
     """Test `partition_at` on a simple example."""
     segment = cheetah.Segment(

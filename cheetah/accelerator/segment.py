@@ -148,7 +148,9 @@ class Segment(Element):
             else:
                 flattened_elements.append(element)
 
-        return self.__class__(elements=flattened_elements, name=self.name, sanitize_name=False)
+        return self.__class__(
+            elements=flattened_elements, name=self.name, sanitize_name=False
+        )
 
     def reversed(self) -> "Segment":
         """
