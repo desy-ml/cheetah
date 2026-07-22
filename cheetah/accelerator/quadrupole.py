@@ -277,7 +277,6 @@ class Quadrupole(Element):
     def merge(self, other: "Quadrupole") -> "Quadrupole | None":
         if (
             self.tracking_method != other.tracking_method
-            or self.num_steps != other.num_steps
             or self.misalignment.not_equal(other.misalignment)
             or self.tilt.not_equal(other.tilt)
         ):
@@ -289,7 +288,7 @@ class Quadrupole(Element):
             / (self.length + other.length),
             misalignment=self.misalignment,
             tilt=self.tilt,
-            num_steps=self.num_steps,
+            num_steps=self.num_steps + other.num_steps,
             tracking_method=self.tracking_method,
             name=merge_element_names(self.name, other.name),
             dtype=self.length.dtype,
