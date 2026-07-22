@@ -348,9 +348,7 @@ class Segment(Element):
         merged_elements.append(current)
 
         return self.__class__(
-            elements=merged_elements,
-            name=self.name,
-            metadata=deepcopy(self.metadata),
+            elements=merged_elements, name=self.name, metadata=deepcopy(self.metadata)
         )
 
     @classmethod
