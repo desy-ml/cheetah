@@ -138,12 +138,13 @@ class Solenoid(Element):
         ]
 
     def merge(self, other: "Solenoid") -> "Solenoid | None":
-        if not (self.k.equal(other.k) and self.misalignment.equal(other.misalignment)):
+        if not self.misalignment.equal(other.misalignment):
             return None
 
         return self.__class__(
             length=self.length + other.length,
-            k=self.k,
+            k=(self.k * self.length + other.k * other.length)
+            / (self.length + other.length),
             misalignment=self.misalignment,
             name=merge_element_names(self.name, other.name),
             dtype=self.length.dtype,
