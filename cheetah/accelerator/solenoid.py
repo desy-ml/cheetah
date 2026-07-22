@@ -131,9 +131,11 @@ class Solenoid(Element):
                 length=split_length,
                 k=self.k,
                 misalignment=self.misalignment,
+                name=f"{self.name}_split_{i}",
+                sanitize_name=False,
                 **factory_kwargs,
             )
-            for _ in range(num_splits)
+            for i in range(num_splits)
         ]
 
     def plot(

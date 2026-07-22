@@ -158,6 +158,8 @@ class Drift(Element):
             Drift(
                 self.length / num_splits,
                 tracking_method=self.tracking_method,
+                name=f"{self.name}_split_{i}",
+                sanitize_name=False,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
