@@ -344,7 +344,10 @@ class Segment(Element):
         merged_elements.append(current)
 
         return self.__class__(
-            elements=merged_elements, name=self.name, metadata=deepcopy(self.metadata)
+            elements=merged_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     @classmethod
@@ -572,6 +575,8 @@ class Segment(Element):
         return self.__class__(
             elements=self.elements + other.elements,
             name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def partition_at(
