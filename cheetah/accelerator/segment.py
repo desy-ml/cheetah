@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -148,7 +148,7 @@ class Segment(Element):
             else:
                 flattened_elements.append(element)
 
-        return Segment(elements=flattened_elements, name=self.name)
+        return self.__class__(elements=flattened_elements, name=self.name)
 
     def reversed(self) -> "Segment":
         """
@@ -164,11 +164,7 @@ class Segment(Element):
             )
         )
 
-        return Segment(
-            elements=reversed_elements,
-            name=f"{self.name}_reversed",
-            sanitize_name=self.sanitize_name,
-        )
+        return self.__class__(elements=reversed_elements, name=f"{self.name}_reversed")
 
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: list[str] | None = None
@@ -218,7 +214,7 @@ class Segment(Element):
                 )
             )
 
-        return Segment(elements=merged_elements, name=self.name)
+        return self.__class__(elements=merged_elements, name=self.name)
 
     def without_inactive_markers(
         self, except_for: list[str] | None = None
@@ -238,7 +234,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 element
                 for element in self.elements
@@ -264,7 +260,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 element
                 for element in self.elements
@@ -292,7 +288,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 (
                     element
@@ -501,7 +497,9 @@ class Segment(Element):
                     # If a non-skippable element is found, merge the skippable elements
                     # and append them before the non-skippable element
                     if len(continuous_skippable_elements) > 0:
-                        todos.append(Segment(elements=continuous_skippable_elements))
+                        todos.append(
+                            self.__class__(elements=continuous_skippable_elements)
+                        )
                         continuous_skippable_elements = []
 
                     todos.append(element)
@@ -509,7 +507,7 @@ class Segment(Element):
             # If there are still skippable elements at the end of the segment append
             # them as well
             if len(continuous_skippable_elements) > 0:
-                todos.append(Segment(elements=continuous_skippable_elements))
+                todos.append(self.__class__(elements=continuous_skippable_elements))
 
             for todo in todos:
                 incoming = todo.track(incoming)
@@ -517,7 +515,7 @@ class Segment(Element):
             return incoming
 
     def clone(self) -> "Segment":
-        return Segment(
+        return self.__class__(
             elements=[element.clone() for element in self.elements],
             name=self.name,
             metadata=deepcopy(self.metadata),
@@ -529,6 +527,38 @@ class Segment(Element):
             for element in self.elements
             for split_element in element.split(resolution)
         ]
+
+    def partition_at(
+        self, element_name: str, mode: Literal["before", "after", "both"] = "both"
+    ) -> tuple[Element, ...]:
+        """
+        Partition the segment into multiple subcells around a named element. If the
+        segment is split neither before nor after the named element, a single-element
+        tuple containing the original segment is returned.
+
+        :param element_name: Name of the element at which the segment is split.
+        :param mode: Mode of partitioning. If "before", the segment is split before the
+            named element. If "after", the segment is split after the named element. If
+            "both", the segment is split both before and after the named element.
+        :return: Segment partition. May contain 1, 2, or 3 subcells depending on whether
+            the segment is split before and/or after the named element.
+        """
+        index = self.element_index(element_name)
+        pre_cell = (
+            self.__class__(self.elements[: index + 1])
+            if mode == "after"
+            else self.__class__(self.elements[:index])
+        )
+        post_cell = (
+            self.__class__(self.elements[index:])
+            if mode == "before"
+            else self.__class__(self.elements[index + 1 :])
+        )
+        return (
+            (pre_cell, self.elements[index], post_cell)  # Two splits: before and after
+            if mode == "both"
+            else (pre_cell, post_cell)  # One split: before or after
+        )
 
     def beam_along_segment_generator(
         self, incoming: Beam, resolution: float | None = None
