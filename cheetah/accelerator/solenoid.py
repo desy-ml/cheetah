@@ -2,13 +2,14 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element, merge_element_names
+from cheetah.accelerator.element import Element
 from cheetah.particles import Species
 from cheetah.track_methods import misalignment_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     compute_relativistic_factors,
+    merge_element_names,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")

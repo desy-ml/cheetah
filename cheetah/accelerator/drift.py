@@ -3,10 +3,15 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import torch
 
-from cheetah.accelerator.element import Element, merge_element_names
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    cache_transfer_map,
+    merge_element_names,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

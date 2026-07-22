@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element, merge_element_names
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import (
     base_rmatrix,
@@ -15,6 +15,7 @@ from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
     cache_transfer_map,
+    merge_element_names,
     squash_index_for_unavailable_dims,
 )
 

@@ -4,14 +4,18 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.patches import Rectangle
 
-from cheetah.accelerator.element import Element, merge_element_names
+from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
 from cheetah.track_methods import (
     base_ttensor,
     combined_rotation_misalignment_matrix,
     drift_matrix,
 )
-from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
+from cheetah.utils import (
+    cache_transfer_map,
+    merge_element_names,
+    squash_index_for_unavailable_dims,
+)
 
 
 class Sextupole(Element):

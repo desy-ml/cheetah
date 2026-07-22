@@ -11,11 +11,15 @@ from torch import nn
 from cheetah import latticejson
 from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
-from cheetah.accelerator.element import Element, merge_element_names
+from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
+from cheetah.utils import (
+    UniqueNameGenerator,
+    merge_element_names,
+    squash_index_for_unavailable_dims,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
