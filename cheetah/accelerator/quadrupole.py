@@ -278,19 +278,15 @@ class Quadrupole(Element):
         if (
             self.tracking_method != other.tracking_method
             or self.num_steps != other.num_steps
-        ):
-            return None
-
-        if not (
-            self.k1.equal(other.k1)
-            and self.misalignment.equal(other.misalignment)
-            and self.tilt.equal(other.tilt)
+            or self.misalignment.not_equal(other.misalignment)
+            or self.tilt.not_equal(other.tilt)
         ):
             return None
 
         return self.__class__(
             length=self.length + other.length,
-            k1=self.k1,
+            k1=(self.k1 * self.length + other.k1 * other.length)
+            / (self.length + other.length),
             misalignment=self.misalignment,
             tilt=self.tilt,
             num_steps=self.num_steps,
