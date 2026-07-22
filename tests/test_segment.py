@@ -283,19 +283,19 @@ def test_no_name_warning_on_segment_methods():
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=DirtyNameWarning)
 
-        segment.flattened()
-        segment.reversed()
-        segment.clone()
+        _ = segment.flattened()
+        _ = segment.reversed()
+        _ = segment.clone()
 
-        segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
-        segment.partition_at("dirty:drift:3")
+        _ = segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
+        _ = segment.partition_at("dirty:drift:3")
 
-        segment.without_inactive_markers()
-        segment.without_inactive_zero_length_elements()
-        segment.inactive_elements_as_drifts()
+        _ = segment.without_inactive_markers()
+        _ = segment.without_inactive_zero_length_elements()
+        _ = segment.inactive_elements_as_drifts()
 
-        segment.transfer_maps_merged(incoming_beam)
-        segment.track(incoming_beam)
+        _ = segment.transfer_maps_merged(incoming_beam)
+        _ = segment.track(incoming_beam)
 
 
 def test_partition_example():
