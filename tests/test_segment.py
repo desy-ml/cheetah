@@ -267,7 +267,7 @@ def test_element_index_raises_for_none():
 
 
 def test_no_name_warning_on_segment_methods():
-    """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`"""
+    """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`."""
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(

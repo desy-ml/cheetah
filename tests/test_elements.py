@@ -453,7 +453,7 @@ def test_element_dirty_name_warning(sanitize_name):
 
 @pytest.mark.for_every_element("element")
 def test_element_no_internal_dirty_name_warning(element):
-    """Test that no internal `DirtyNameWarning` are produced by methods of `Element`"""
+    """Test that no internal `DirtyNameWarning` are produced by methods of `Element`."""
     element.name = "dirty:element"
 
     with warnings.catch_warnings():
