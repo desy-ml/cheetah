@@ -49,3 +49,67 @@ def test_merge_preserves_dtype(original):
 
     for merged in merged_segment.elements:
         assert original.length.dtype == merged.length.dtype
+
+
+def test_with_consecutive_elements_merged_except_for():
+    """
+    Test that Segment.with_consecutive_elements_merged respects the `except_for` list.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"d{i}") for i in range(4)
+        ]
+    )
+
+    merged_segment = segment.with_consecutive_elements_merged(except_for=["d2"])
+
+    assert len(merged_segment.elements) == 3
+    assert [element.name for element in merged_segment.elements] == ["d", "d2", "d3"]
+
+
+def test_with_consecutive_elements_merged_nested_segments():
+    """
+    Test that Segment.with_consecutive_elements_merged correctly processes nested
+    segments.
+    """
+    d1 = cheetah.Drift(length=torch.tensor(0.5), name="drift_1")
+    d2 = cheetah.Drift(length=torch.tensor(0.5), name="drift_2")
+    d3 = cheetah.Drift(length=torch.tensor(0.5), name="drift_3")
+    d4 = cheetah.Drift(length=torch.tensor(0.5), name="drift_4")
+    d5 = cheetah.Drift(length=torch.tensor(0.5), name="drift_5")
+
+    sub1 = cheetah.Segment(elements=[d1, d2], name="sub1")
+    sub2 = cheetah.Segment(elements=[d3, d4], name="sub2")
+
+    parent = cheetah.Segment(elements=[sub1, sub2, d5], name="parent")
+    merged_parent = parent.with_consecutive_elements_merged()
+
+    # sub1 and sub2 are nested segments whose inner elements are merged
+    merged_sub1 = merged_parent.elements[0]
+    assert isinstance(merged_sub1, cheetah.Segment)
+    assert len(merged_sub1.elements) == 1
+
+    merged_sub2 = merged_parent.elements[1]
+    assert isinstance(merged_sub2, cheetah.Segment)
+    assert len(merged_sub2.elements) == 1
+
+
+def test_with_consecutive_elements_merged_different_in_middle():
+    """
+    Test that merging consecutive elements in a `Segment` correctly handles when a
+    different type of element is in the middle of mergeable elements.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name="d1"),
+            cheetah.Drift(length=torch.tensor(0.5), name="d2"),
+            cheetah.Quadrupole(length=torch.tensor(0.2), name="q1"),
+            cheetah.Drift(length=torch.tensor(0.5), name="d3"),
+            cheetah.Drift(length=torch.tensor(0.5), name="d4"),
+        ]
+    )
+
+    merged_segment = segment.with_consecutive_elements_merged()
+
+    assert len(merged_segment.elements) == 3
+    assert [element.name for element in merged_segment.elements] == ["d", "q1", "d"]
