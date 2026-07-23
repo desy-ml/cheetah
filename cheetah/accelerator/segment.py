@@ -328,7 +328,7 @@ class Segment(Element):
         merged_elements = []
         current = self.elements[0]
         for next_element in self.elements[1:]:
-            if not type(current) is Segment:
+            if not type(current) is Segment and current.name not in except_for:
                 current = current.with_consecutive_elements_merged(
                     except_for=except_for
                 )
