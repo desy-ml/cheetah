@@ -593,7 +593,7 @@ class Segment(Element):
             elements=self.elements + other.elements,
             name=merge_element_names(self.name, other.name),
             sanitize_name=False,
-            metadata=deepcopy(self.metadata),
+            metadata=other.metadata.update(self.metadata),
         )
 
     def partition_at(
