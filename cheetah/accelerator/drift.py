@@ -170,7 +170,7 @@ class Drift(Element):
         ]
 
     def merge(self, other: "Drift") -> "Drift | None":
-        if self.tracking_method != other.tracking_method:
+        if not (self.tracking_method == other.tracking_method):
             return None
 
         return self.__class__(

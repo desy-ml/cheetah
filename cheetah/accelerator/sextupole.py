@@ -131,11 +131,11 @@ class Sextupole(Element):
         return (self.k2 != 0.0).any().item()
 
     def merge(self, other: "Sextupole") -> "Sextupole | None":
-        if (
-            self.tracking_method != other.tracking_method
-            or self.k2.not_equal(other.k2)
-            or self.misalignment.not_equal(other.misalignment)
-            or self.tilt.not_equal(other.tilt)
+        if not (
+            self.tracking_method == other.tracking_method
+            and self.k2.equal(other.k2)
+            and self.misalignment.equal(other.misalignment)
+            and self.tilt.equal(other.tilt)
         ):
             return None
 

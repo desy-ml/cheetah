@@ -275,10 +275,10 @@ class Quadrupole(Element):
         ]
 
     def merge(self, other: "Quadrupole") -> "Quadrupole | None":
-        if (
-            self.tracking_method != other.tracking_method
-            or self.misalignment.not_equal(other.misalignment)
-            or self.tilt.not_equal(other.tilt)
+        if not (
+            self.tracking_method == other.tracking_method
+            and self.misalignment.equal(other.misalignment)
+            and self.tilt.equal(other.tilt)
         ):
             return None
 
