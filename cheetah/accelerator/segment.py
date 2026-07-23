@@ -328,10 +328,12 @@ class Segment(Element):
         merged_elements = []
         current = self.elements[0]
         for next_element in self.elements[1:]:
-            if not type(current) is Segment and current.name not in except_for:
+            if type(current) is Segment and current.name not in except_for:
                 current = current.with_consecutive_elements_merged(
                     except_for=except_for
                 )
+                merged_elements.append(current)
+                current = next_element
             elif (
                 type(current) is type(next_element)
                 and current.name not in except_for
