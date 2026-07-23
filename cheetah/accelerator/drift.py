@@ -6,7 +6,12 @@ import torch
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    cache_transfer_map,
+    merge_element_names,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -160,11 +165,26 @@ class Drift(Element):
                 tracking_method=self.tracking_method,
                 name=f"{self.name}_split_{i}",
                 sanitize_name=False,
+                metadata=self.metadata,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
             for i in range(num_splits)
         ]
+
+    def merge(self, other: "Drift") -> "Drift | None":
+        if not (self.tracking_method == other.tracking_method):
+            return None
+
+        return self.__class__(
+            length=self.length + other.length,
+            tracking_method=self.tracking_method,
+            name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

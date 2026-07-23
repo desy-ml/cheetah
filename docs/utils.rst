@@ -19,15 +19,15 @@ Utils
     :members:
     :undoc-members:
 
+.. automodule:: utils.names
+    :members:
+    :undoc-members:
+
 .. automodule:: utils.physics
     :members:
     :undoc-members:
 
 .. automodule:: utils.statistics
-    :members:
-    :undoc-members:
-
-.. automodule:: utils.unique_name_generator
     :members:
     :undoc-members:
 

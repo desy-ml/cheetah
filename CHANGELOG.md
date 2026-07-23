@@ -11,6 +11,7 @@
 - Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
 - Implement `Undulator` transverse focusing effect on charged particle beam (see #659) (@Hespe)
 - Add `Segment.partition_at` method to divide a `Segment` into subcells before and after a given named `Element` (see #666) (@Hespe, @jank324)
+- Add `Segment.with_consecutive_elements_merged` method to merge consecutive elements of the same type, and a `.merge` method to `Element` subclasses to merge two elements of the same type. (see #667) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -18,12 +19,12 @@
 - Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @Hespe)
 - Fix a bug where some magnet names that are invalid identifiers (i.e. cannot be used with the `segment.element_name` syntax) would not be sanitised correctly (e.g. when they start with a digit). (see #658) (@jank324, @Hespe)
 - Fix KDE stability issue leading to NaNs (see #660) (@jp-ga)
+- Methods of `Element` and `Segment` that internally construct new instances no longer emit `DirtyNameWarning`s (see #669) (@Hespe)
 
 ### 🐆 Other
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
-- Methods of `Element` and `Segment` that internally construct new instances no longer emit `DirtyNameWarning`s (see #669) (@Hespe)
 
 ### 🌟 First Time Contributors
 

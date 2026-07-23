@@ -15,7 +15,11 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
+from cheetah.utils import (
+    UniqueNameGenerator,
+    merge_element_names,
+    squash_index_for_unavailable_dims,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -319,6 +323,49 @@ class Segment(Element):
             sanitize_name=False,
         )
 
+    def with_consecutive_elements_merged(
+        self, except_for: list[str] | None = None
+    ) -> "Segment":
+        """
+        Return a segment where consecutive elements of the same type that can be merged
+        are combined into single elements.
+
+        :param except_for: List of names of elements that should not be merged despite
+            being mergeable.
+        :return: Segment with consecutive mergeable elements merged.
+        """
+        if except_for is None:
+            except_for = []
+
+        merged_elements = []
+        current = self.elements[0]
+        for next_element in self.elements[1:]:
+            if current.name not in except_for:
+                if type(current) is Segment:
+                    current = current.with_consecutive_elements_merged(
+                        except_for=except_for
+                    )
+                elif (
+                    type(current) is type(next_element)
+                    and next_element.name not in except_for
+                ):
+                    merged = current.merge(next_element)
+                    if merged is not None:
+                        current = merged
+                        continue  # Don't do merged_elements.append(current) and advance
+
+            merged_elements.append(current)
+            current = next_element
+
+        merged_elements.append(current)
+
+        return self.__class__(
+            elements=merged_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
+        )
+
     @classmethod
     def from_lattice_json(
         cls,
@@ -540,6 +587,14 @@ class Segment(Element):
             for element in self.elements
             for split_element in element.split(resolution)
         ]
+
+    def merge(self, other: "Segment") -> "Segment | None":
+        return self.__class__(
+            elements=self.elements + other.elements,
+            name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
+        )
 
     def partition_at(
         self, element_name: str, mode: Literal["before", "after", "both"] = "both"
