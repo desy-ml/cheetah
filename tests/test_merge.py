@@ -57,14 +57,14 @@ def test_with_consecutive_elements_merged_except_for():
     """
     segment = cheetah.Segment(
         elements=[
-            cheetah.Drift(length=torch.tensor(0.5), name=f"d{i}") for i in range(4)
+            cheetah.Drift(length=torch.tensor(0.5), name=f"d{i}") for i in range(6)
         ]
     )
 
-    merged_segment = segment.with_consecutive_elements_merged(except_for=["d2"])
+    merged_segment = segment.with_consecutive_elements_merged(except_for=["d4"])
 
     assert len(merged_segment.elements) == 3
-    assert [element.name for element in merged_segment.elements] == ["d", "d2", "d3"]
+    assert [element.name for element in merged_segment.elements] == ["d", "d4", "d5"]
 
 
 def test_with_consecutive_elements_merged_nested_segments():
