@@ -152,7 +152,9 @@ class Segment(Element):
             else:
                 flattened_elements.append(element)
 
-        return self.__class__(elements=flattened_elements, name=self.name)
+        return self.__class__(
+            elements=flattened_elements, name=self.name, sanitize_name=False
+        )
 
     def reversed(self) -> "Segment":
         """
@@ -168,7 +170,11 @@ class Segment(Element):
             )
         )
 
-        return self.__class__(elements=reversed_elements, name=f"{self.name}_reversed")
+        return self.__class__(
+            elements=reversed_elements,
+            name=f"{self.name}_reversed",
+            sanitize_name=False,
+        )
 
     def transfer_maps_merged(
         self, incoming_beam: Beam, except_for: list[str] | None = None
@@ -218,7 +224,9 @@ class Segment(Element):
                 )
             )
 
-        return self.__class__(elements=merged_elements, name=self.name)
+        return self.__class__(
+            elements=merged_elements, name=self.name, sanitize_name=False
+        )
 
     def without_inactive_markers(
         self, except_for: list[str] | None = None
@@ -245,6 +253,7 @@ class Segment(Element):
                 if not isinstance(element, Marker) or element.name in except_for
             ],
             name=self.name,
+            sanitize_name=False,
         )
 
     def without_inactive_zero_length_elements(
@@ -273,6 +282,7 @@ class Segment(Element):
                 or element.name in except_for
             ],
             name=self.name,
+            sanitize_name=False,
         )
 
     def inactive_elements_as_drifts(
@@ -304,11 +314,13 @@ class Segment(Element):
                         name=element.name,
                         device=element.length.device,
                         dtype=element.length.dtype,
+                        sanitize_name=False,
                     )
                 )
                 for element in self.elements
             ],
             name=self.name,
+            sanitize_name=False,
         )
 
     def with_consecutive_elements_merged(
@@ -566,6 +578,7 @@ class Segment(Element):
             elements=[element.clone() for element in self.elements],
             name=self.name,
             metadata=deepcopy(self.metadata),
+            sanitize_name=False,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:

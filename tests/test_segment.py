@@ -1,8 +1,10 @@
+import warnings
+
 import pytest
 import torch
 
 import cheetah
-from cheetah.utils.warnings import PhysicsWarning
+from cheetah.utils.warnings import DirtyNameWarning, PhysicsWarning
 
 
 def test_subcell_start_end():
@@ -262,6 +264,38 @@ def test_element_index_raises_for_none():
 
     with pytest.raises(ValueError):
         segment.element_index("some_nonexistent_element")
+
+
+def test_no_name_warning_on_segment_methods():
+    """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(
+                length=torch.tensor(0.5), name=f"dirty:drift:{i}", sanitize_name=False
+            )
+            for i in range(10)
+        ],
+        name="dirty:segment",
+        sanitize_name=False,
+    )
+    incoming_beam = cheetah.ParameterBeam.from_parameters()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DirtyNameWarning)
+
+        _ = segment.flattened()
+        _ = segment.reversed()
+        _ = segment.clone()
+
+        _ = segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
+        _ = segment.partition_at("dirty:drift:3")
+
+        _ = segment.without_inactive_markers()
+        _ = segment.without_inactive_zero_length_elements()
+        _ = segment.inactive_elements_as_drifts()
+
+        _ = segment.transfer_maps_merged(incoming_beam)
+        _ = segment.track(incoming_beam)
 
 
 def test_partition_example():

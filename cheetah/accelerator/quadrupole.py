@@ -268,6 +268,8 @@ class Quadrupole(Element):
                 tilt=self.tilt,
                 num_steps=self.num_steps,
                 tracking_method=self.tracking_method,
+                name=f"{self.name}_split_{i}",
+                sanitize_name=False,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
