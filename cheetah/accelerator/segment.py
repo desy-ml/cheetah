@@ -342,7 +342,9 @@ class Segment(Element):
                 merged = current.merge(next_element)
                 if merged is not None:
                     current = merged
-                    continue
+                else:
+                    merged_elements.append(current)
+                    current = next_element
             else:
                 merged_elements.append(current)
                 current = next_element
