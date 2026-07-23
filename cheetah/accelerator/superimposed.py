@@ -59,6 +59,22 @@ class Superimposed(Element):
         self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
+
+        # check to make sure the base element was split into two halves
+        if len(base_element_halves) != 2:
+            raise ValueError("The base element could not be split into two halves.")
+
+        # add useful names for element halves such that
+        # it can be accessed in the flattened segment
+        base_element_halves[0].name = f"{base_element.name}_1"
+        base_element_halves[1].name = f"{base_element.name}_2"
+
+        # if the base element has the same name as the
+        # superimposed element, prepend an underscore to the base
+        # element's name to avoid naming conflicts in the flattened segment
+        if self.base_element.name == name:
+            self.base_element.name = "_" + self.base_element.name
+
         self._segment = Segment(
             elements=[
                 base_element_halves[0],
