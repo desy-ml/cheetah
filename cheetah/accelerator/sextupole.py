@@ -147,6 +147,7 @@ class Sextupole(Element):
             tracking_method=self.tracking_method,
             name=merge_element_names(self.name, other.name),
             sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
             dtype=self.length.dtype,
             device=self.length.device,
         )
