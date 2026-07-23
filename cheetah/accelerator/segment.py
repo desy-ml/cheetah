@@ -204,9 +204,7 @@ class Segment(Element):
                 elif len(skippable_elements) > 1:  # i.e. we need to merge some elements
                     merged_elements.append(
                         CustomTransferMap.from_merging_elements(
-                            skippable_elements,
-                            incoming_beam=tracked_beam,
-                            sanitize_name=False,
+                            skippable_elements, incoming_beam=tracked_beam
                         )
                     )
                     tracked_beam = merged_elements[-1].track(tracked_beam)
@@ -218,7 +216,7 @@ class Segment(Element):
         if len(skippable_elements) > 0:
             merged_elements.append(
                 CustomTransferMap.from_merging_elements(
-                    skippable_elements, incoming_beam=tracked_beam, sanitize_name=False
+                    skippable_elements, incoming_beam=tracked_beam
                 )
             )
 
