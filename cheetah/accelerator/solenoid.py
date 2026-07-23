@@ -134,6 +134,7 @@ class Solenoid(Element):
                 misalignment=self.misalignment,
                 name=f"{self.name}_split_{i}",
                 sanitize_name=False,
+                metadata=self.metadata,
                 **factory_kwargs,
             )
             for i in range(num_splits)
