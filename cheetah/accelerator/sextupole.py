@@ -146,6 +146,7 @@ class Sextupole(Element):
             tilt=self.tilt,
             tracking_method=self.tracking_method,
             name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
             dtype=self.length.dtype,
             device=self.length.device,
         )

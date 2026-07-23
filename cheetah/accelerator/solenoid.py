@@ -149,6 +149,7 @@ class Solenoid(Element):
             / (self.length + other.length),
             misalignment=self.misalignment,
             name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
             dtype=self.length.dtype,
             device=self.length.device,
         )
