@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.8.4 [🚧 Work in Progress]
+## v0.8.5 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+### 🐛 Bug fixes
+
+### 🐆 Other
+
+### 🌟 First Time Contributors
+
+## [v0.8.4](https://github.com/desy-ml/cheetah/releases/tag/v0.8.4) (2026-07-23)
 
 ### 🚨 Breaking Changes
 
@@ -25,8 +37,6 @@
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
-
-### 🌟 First Time Contributors
 
 ## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
 
