@@ -292,6 +292,7 @@ def test_no_name_warning_on_segment_methods():
 
         _ = segment.without_inactive_markers()
         _ = segment.without_inactive_zero_length_elements()
+        _ = segment.with_consecutive_elements_merged()
         _ = segment.inactive_elements_as_drifts()
 
         _ = segment.transfer_maps_merged(incoming_beam)

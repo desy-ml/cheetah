@@ -461,3 +461,4 @@ def test_element_no_internal_dirty_name_warning(element):
 
         _ = element.clone()
         _ = element.split(torch.tensor(1.0))
+        _ = element.merge(element.clone())
