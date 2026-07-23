@@ -113,7 +113,7 @@ class CustomTransferMap(Element):
             length=combined_length,
             name=combined_name,
             sanitize_name=sanitize_name,
-            **factory_kwargs
+            **factory_kwargs,
         )
 
     def first_order_transfer_map(
