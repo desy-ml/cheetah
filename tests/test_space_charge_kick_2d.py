@@ -1,3 +1,5 @@
+import math
+
 import pytest
 import torch
 import torch.autograd.forward_ad as fwAD
@@ -49,22 +51,18 @@ def test_cold_uniform_beam_expansion(energy):
     )
 
     # Compute section length that results in a doubling of the beam size
-    kappa = (
-        1.0
-        + (torch.tensor(2.0).sqrt() / 4.0)
-        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
-    )
+    kappa = 1.352 * beta.reciprocal().sqrt()
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -72,7 +70,7 @@ def test_cold_uniform_beam_expansion(energy):
 
     assert torch.isclose(outgoing.sigma_x, 2.0 * incoming.sigma_x, rtol=2e-2)
     assert torch.isclose(outgoing.sigma_y, 2.0 * incoming.sigma_y, rtol=2e-2)
-    assert torch.isclose(outgoing.sigma_tau, 2.0 * incoming.sigma_tau, rtol=2e-2)
+    assert torch.isclose(outgoing.sigma_tau, incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized_cold_uniform_beam_expansion():
@@ -106,22 +104,18 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
 
     # Compute section length
-    kappa = (
-        1.0
-        + (torch.tensor(2.0).sqrt() / 4.0)
-        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
-    )
+    kappa = 1.352 * beta.reciprocal().sqrt()
     Nb = incoming.total_charge / elementary_charge
     section_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -129,7 +123,7 @@ def test_vectorized_cold_uniform_beam_expansion():
 
     assert torch.allclose(outgoing.sigma_x, 2.0 * incoming.sigma_x, rtol=2e-2)
     assert torch.allclose(outgoing.sigma_y, 2.0 * incoming.sigma_y, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_tau, 2.0 * incoming.sigma_tau, rtol=2e-2)
+    assert torch.allclose(outgoing.sigma_tau, incoming.sigma_tau, rtol=2e-2)
 
 
 def test_vectorized():
@@ -162,11 +156,11 @@ def test_vectorized():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -190,11 +184,11 @@ def test_incoming_beam_not_modified():
     segment_space_charge = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -233,11 +227,7 @@ def test_gradient_value_backward_ad():
 
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-    kappa = (
-        1.0
-        + (torch.tensor(2.0).sqrt() / 4.0)
-        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
-    )
+    kappa = 1.352 * beta.reciprocal().sqrt()
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
@@ -245,11 +235,11 @@ def test_gradient_value_backward_ad():
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(segment_length / 6),
-            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.SpaceChargeKick2D(segment_length / 3),
             cheetah.Drift(segment_length / 3),
-            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.SpaceChargeKick2D(segment_length / 3),
             cheetah.Drift(segment_length / 3),
-            cheetah.SpaceChargeKick(segment_length / 3),
+            cheetah.SpaceChargeKick2D(segment_length / 3),
             cheetah.Drift(segment_length / 6),
         ]
     )
@@ -265,8 +255,9 @@ def test_gradient_value_backward_ad():
     dsigma_dlength = segment_length.grad
     # For a sphere, the radius is sqrt(5) bigger than sigma_x
     dradius_dlength = 5**0.5 * dsigma_dlength
-    # Theoretical formula obtained by conservation of energy in the beam frame
-    expected_dradius_dlength = (Nb * electron_radius / R0).sqrt() / gamma
+    # Theoretical formula obtained by conservation of energy in the beam frame,
+    # scaled by 1.25 due to the parabolic longitudinal profile.
+    expected_dradius_dlength = 1.25 * (2.0 * math.log(2.0) / beta).sqrt() * (Nb * electron_radius / R0).sqrt() / gamma
 
     assert torch.allclose(dradius_dlength, expected_dradius_dlength, rtol=0.1)
 
@@ -299,11 +290,7 @@ def test_gradient_value_forward_ad():
 
     # Compute section length that results in a doubling of the beam size
     electron_radius = torch.tensor(physical_constants["classical electron radius"][0])
-    kappa = (
-        1.0
-        + (torch.tensor(2.0).sqrt() / 4.0)
-        * (3.0 + 2.0 * torch.tensor(2.0).sqrt()).log()
-    )
+    kappa = 1.352 * beta.reciprocal().sqrt()
     Nb = incoming_beam.total_charge / constants.elementary_charge
     segment_length = beta * gamma * kappa * (R0.pow(3) / (Nb * electron_radius)).sqrt()
 
@@ -315,11 +302,11 @@ def test_gradient_value_forward_ad():
         segment = cheetah.Segment(
             elements=[
                 cheetah.Drift(segment_length / 6),
-                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.SpaceChargeKick2D(segment_length / 3),
                 cheetah.Drift(segment_length / 3),
-                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.SpaceChargeKick2D(segment_length / 3),
                 cheetah.Drift(segment_length / 3),
-                cheetah.SpaceChargeKick(segment_length / 3),
+                cheetah.SpaceChargeKick2D(segment_length / 3),
                 cheetah.Drift(segment_length / 6),
             ]
         )
@@ -333,8 +320,9 @@ def test_gradient_value_forward_ad():
         dsigma_dlength = fwAD.unpack_dual(beam_size).tangent
         # For a sphere, the radius is sqrt(5) bigger than sigma_x
         dradius_dlength = 5**0.5 * dsigma_dlength
-        # Theoretical formula obtained by conservation of energy in the beam frame
-        expected_dradius_dlength = ((Nb * electron_radius) / R0).sqrt() / gamma
+        # Theoretical formula obtained by conservation of energy in the beam frame,
+        # scaled by 1.25 due to the parabolic longitudinal profile.
+        expected_dradius_dlength = 1.25 * (2.0 * math.log(2.0) / beta).sqrt() * (Nb * electron_radius / R0).sqrt() / gamma
 
         assert torch.allclose(dradius_dlength, expected_dradius_dlength, rtol=0.1)
 
@@ -342,17 +330,17 @@ def test_gradient_value_forward_ad():
 def test_does_not_break_segment_length():
     """
     Test that the computation of a `Segment`'s length does not break when
-    `SpaceChargeKick` is used.
+    `SpaceChargeKick2D` is used.
     """
     section_length = torch.tensor(1.0)
     segment = cheetah.Segment(
         elements=[
             cheetah.Drift(section_length / 6),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 3),
-            cheetah.SpaceChargeKick(section_length / 3),
+            cheetah.SpaceChargeKick2D(section_length / 3),
             cheetah.Drift(section_length / 6),
         ]
     )
@@ -370,7 +358,7 @@ def test_space_charge_with_ares_astra_beam():
     segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor(1.0)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(1.0)),
+            cheetah.SpaceChargeKick2D(effect_length=torch.tensor(1.0)),
         ]
     )
     beam = cheetah.ParticleBeam.from_astra("tests/resources/ACHIP_EA1_2021.1351.001")
@@ -394,7 +382,7 @@ def test_space_charge_with_aperture_cutoff():
                 name="aperture",
             ),
             cheetah.Drift(length=torch.tensor(0.25)),
-            cheetah.SpaceChargeKick(effect_length=torch.tensor(0.5)),
+            cheetah.SpaceChargeKick2D(effect_length=torch.tensor(0.5)),
             cheetah.Drift(length=torch.tensor(0.25)),
         ]
     )
