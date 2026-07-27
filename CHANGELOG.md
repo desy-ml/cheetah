@@ -8,6 +8,8 @@
 
 ### 🐛 Bug fixes
 
+- Fix the ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity`. (see #675) (@cr-xu)
+
 ### 🐆 Other
 
 ### 🌟 First Time Contributors
