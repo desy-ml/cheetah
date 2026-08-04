@@ -140,15 +140,24 @@ class Segment(Element):
 
         return self.__class__(subcell)
 
-    def flattened(self) -> "Segment":
+    def flattened(self, skip_superimposed: bool = False) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
         resolved and their elements entered into a top-level segment.
+
+        :param skip_superimposed: If `True`, `Superimposed` elements are not flattened
+            and are kept as-is. Default is `False`.
         """
+        from cheetah.accelerator.superimposed import Superimposed
+
         flattened_elements = []
         for element in self.elements:
-            if hasattr(element, "flattened"):
-                flattened_elements += element.flattened().elements
+            if skip_superimposed and isinstance(element, Superimposed):
+                flattened_elements.append(element)
+            elif hasattr(element, "flattened"):
+                flattened_elements += element.flattened(
+                    skip_superimposed=skip_superimposed
+                ).elements
             else:
                 flattened_elements.append(element)
 
