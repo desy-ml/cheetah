@@ -6,6 +6,8 @@
 
 ### 🚀 Features
 
+- Add the flag `skip_superimposed` to `segment.flatten()` which allows the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
+
 ### 🐛 Bug fixes
 
 ### 🐆 Other
