@@ -5,7 +5,7 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.segment import Segment
 from cheetah.particles.beam import Beam
 from cheetah.particles.species import Species
-from cheetah.utils.unique_name_generator import UniqueNameGenerator
+from cheetah.utils.names import UniqueNameGenerator
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
