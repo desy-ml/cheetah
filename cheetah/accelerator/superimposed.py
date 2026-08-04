@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from cheetah.accelerator.element import Element
 from cheetah.particles.beam import Beam
 from cheetah.particles.species import Species
-from cheetah.utils.unique_name_generator import UniqueNameGenerator
+from cheetah.utils.names import UniqueNameGenerator
 
 if TYPE_CHECKING:
     from cheetah.accelerator.segment import Segment

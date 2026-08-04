@@ -1,8 +1,10 @@
+import warnings
+
 import pytest
 import torch
 
 import cheetah
-from cheetah.utils.warnings import PhysicsWarning
+from cheetah.utils.warnings import DirtyNameWarning, PhysicsWarning
 
 
 def test_subcell_start_end():
@@ -282,3 +284,63 @@ def test_flatten_skip_segment():
     flattened_segment_skip = segment.flattened(skip_superimposed=True)
     assert len(flattened_segment_skip.elements) == 2
     assert isinstance(flattened_segment_skip.elements[1], cheetah.Superimposed)
+def test_no_name_warning_on_segment_methods():
+    """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(
+                length=torch.tensor(0.5), name=f"dirty:drift:{i}", sanitize_name=False
+            )
+            for i in range(10)
+        ],
+        name="dirty:segment",
+        sanitize_name=False,
+    )
+    incoming_beam = cheetah.ParameterBeam.from_parameters()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DirtyNameWarning)
+
+        _ = segment.flattened()
+        _ = segment.reversed()
+        _ = segment.clone()
+
+        _ = segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
+        _ = segment.partition_at("dirty:drift:3")
+
+        _ = segment.without_inactive_markers()
+        _ = segment.without_inactive_zero_length_elements()
+        _ = segment.with_consecutive_elements_merged()
+        _ = segment.inactive_elements_as_drifts()
+
+        _ = segment.transfer_maps_merged(incoming_beam)
+        _ = segment.track(incoming_beam)
+
+
+def test_partition_example():
+    """Test `partition_at` on a simple example."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    pre_cell, element, post_cell = segment.partition_at("drift_3", mode="both")
+
+    assert len(pre_cell.elements) == 3
+    assert element.name == "drift_3"
+    assert len(post_cell.elements) == 6
+
+
+def test_partition_unknown_element():
+    """Test that partitioning on an unknown element raises an error."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        segment.partition_at("drift_42")
