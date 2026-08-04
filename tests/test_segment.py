@@ -284,6 +284,8 @@ def test_flatten_skip_segment():
     flattened_segment_skip = segment.flattened(skip_superimposed=True)
     assert len(flattened_segment_skip.elements) == 2
     assert isinstance(flattened_segment_skip.elements[1], cheetah.Superimposed)
+
+
 def test_no_name_warning_on_segment_methods():
     """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`."""
     segment = cheetah.Segment(
