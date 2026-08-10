@@ -719,6 +719,54 @@ def test_cavity(cavity_type, phase):
     assert np.isclose(outgoing_beam.energy.cpu().numpy(), outgoing_parray.E * 1e9)
 
 
+@pytest.mark.parametrize("phase", [0.0, 30.0])
+def test_transverse_deflecting_cavity(phase):
+    """
+    Test that tracking a particle through a TransvserseDeflectingCavity at different
+    phases in Cheetah agrees with Ocelot results.
+    """
+    # Ocelot
+    tws = ocelot.Twiss(
+        beta_x=5.91253677,
+        alpha_x=3.55631308,
+        beta_y=5.91253677,
+        alpha_y=3.55631308,
+        emit_x=3.494768647122823e-09,
+        emit_y=3.497810737006068e-09,
+        E=6e-3,
+    )
+
+    p_array = ocelot.generate_parray(tws=tws, charge=5e-9)
+
+    cell = [ocelot.TDCavity(l=0.5, v=0.001, freq=1.3e9, phi=phase)]
+    lattice = ocelot.MagneticLattice(cell)
+    navigator = ocelot.Navigator(lattice=lattice)
+
+    _, outgoing_parray = ocelot.track(lattice, deepcopy(p_array), navigator)
+
+    # Cheetah
+    incoming_beam = cheetah.ParticleBeam.from_ocelot(
+        parray=p_array, dtype=torch.float64
+    )
+    cheetah_cavity = cheetah.TransverseDeflectingCavity(
+        length=torch.tensor(0.5),
+        voltage=torch.tensor(0.001e9),
+        frequency=torch.tensor(1.3e9),
+        phase=torch.tensor(phase) / 360.0,
+    ).to(torch.float64)
+    outgoing_beam = cheetah_cavity.track(incoming_beam)
+
+    # Compare
+    cheetah_outgoing_particles = outgoing_beam.particles.cpu().numpy()[:, :6]
+    ocelot_outgoing_particles = outgoing_parray.rparticles.transpose()
+
+    assert np.allclose(cheetah_outgoing_particles, ocelot_outgoing_particles, atol=1e-9)
+    assert np.allclose(
+        outgoing_beam.particle_charges.cpu().numpy(), outgoing_parray.q_array
+    )
+    assert np.isclose(outgoing_beam.energy.cpu().numpy(), outgoing_parray.E * 1e9)
+
+
 @pytest.mark.parametrize(
     "default_torch_dtype", [torch.float64], indirect=True, ids=["float64"]
 )

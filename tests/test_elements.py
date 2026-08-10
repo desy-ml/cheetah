@@ -130,9 +130,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 
 @pytest.mark.for_every_element(
     "element",
-    xfail_if=lambda element: isinstance(
-        element, (cheetah.SpaceChargeKick, cheetah.TransverseDeflectingCavity)
-    )
+    xfail_if=lambda element: isinstance(element, cheetah.SpaceChargeKick)
     or (
         isinstance(
             element,
@@ -142,6 +140,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
                 cheetah.Quadrupole,
                 cheetah.RBend,
                 cheetah.Sextupole,
+                cheetah.TransverseDeflectingCavity,
             ),
         )
         and element.tracking_method != "linear"

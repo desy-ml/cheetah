@@ -136,8 +136,27 @@ ELEMENT_SUBCLASSES_ARGS = {
         }
     },
     cheetah.TransverseDeflectingCavity: {
-        "inactive": {"length": torch.tensor(1.0), "voltage": torch.tensor(0.0)},
-        "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},
+        "inactive": {
+            "length": torch.tensor(0.5),
+            "voltage": torch.tensor(0.0),
+            "frequency": torch.tensor(1.3e9),
+            "phase": torch.tensor(0.0),
+            "tracking_method": "linear",
+        },
+        "linear": {
+            "length": torch.tensor(0.5),
+            "voltage": torch.tensor(1e6),
+            "frequency": torch.tensor(1.3e9),
+            "phase": torch.tensor(0.0),
+            "tracking_method": "linear",
+        },
+        "drift_kick_drift": {
+            "length": torch.tensor(0.5),
+            "voltage": torch.tensor(1e6),
+            "frequency": torch.tensor(1.3e9),
+            "phase": torch.tensor(0.0),
+            "tracking_method": "drift_kick_drift",
+        },
     },
     cheetah.Undulator: {
         "default": {
