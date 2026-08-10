@@ -130,9 +130,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 
 @pytest.mark.for_every_element(
     "element",
-    xfail_if=lambda element: isinstance(
-        element, (cheetah.SpaceChargeKick, cheetah.TransverseDeflectingCavity)
-    )
+    xfail_if=lambda element: isinstance(element, cheetah.SpaceChargeKick)
     or (
         isinstance(
             element,
@@ -142,6 +140,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
                 cheetah.Quadrupole,
                 cheetah.RBend,
                 cheetah.Sextupole,
+                cheetah.TransverseDeflectingCavity,
             ),
         )
         and element.tracking_method != "linear"
@@ -449,3 +448,16 @@ def test_element_dirty_name_warning(sanitize_name):
         with warnings.catch_warnings():
             warnings.simplefilter("error", DirtyNameWarning)
             _ = cheetah.Marker(name=dirty_name, sanitize_name=sanitize_name)
+
+
+@pytest.mark.for_every_element("element")
+def test_element_no_internal_dirty_name_warning(element):
+    """Test that no internal `DirtyNameWarning` are produced by methods of `Element`."""
+    element.name = "dirty:element"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DirtyNameWarning)
+
+        _ = element.clone()
+        _ = element.split(torch.tensor(1.0))
+        _ = element.merge(element.clone())
