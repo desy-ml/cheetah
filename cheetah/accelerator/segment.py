@@ -13,7 +13,6 @@ from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
-from cheetah.accelerator.superimposed import Superimposed
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
 from cheetah.utils import (
@@ -150,6 +149,9 @@ class Segment(Element):
             and remain as `Superimposed` elements in the returned segment. If `False`,
             they are flattened into the top-level segment.
         """
+        # Import Superimposed lazily to avoid circular imports at module load time.
+        from cheetah.accelerator.superimposed import Superimposed
+
         flattened_elements = []
         for element in self.elements:
             if skip_superimposed and isinstance(element, Superimposed):

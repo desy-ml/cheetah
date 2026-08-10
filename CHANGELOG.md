@@ -6,7 +6,7 @@
 
 ### 🚀 Features
 
-- Add the flag `skip_superimposed` to `segment.flatten()` which allows the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
+- Add the flag `skip_superimposed` to `segment.flattened()` which allows the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 
 ### 🐛 Bug fixes
