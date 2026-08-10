@@ -95,6 +95,14 @@ def test_infix_expression_with_function_call():
     assert infix.evaluate_expression(expression) == 8
 
 
+def test_infix_expression_with_unary_minus_before_function_call():
+    """Test unary minus directly in front of a function call."""
+    expression = "-sin(argw)*sqrt(kqwig)"
+    context = {"argw": 0, "kqwig": 0}
+
+    assert infix.evaluate_expression(expression, context) == 0
+
+
 def test_infix_expression_with_var_conflict():
     """
     Test that an infix expression with a variable name that conflicts with a function
