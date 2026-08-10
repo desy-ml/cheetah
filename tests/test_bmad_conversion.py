@@ -156,17 +156,26 @@ def test_cu_hxr_lcls_fixture_conversion():
 
     assert converted.gunl0a.qa01.base_element.k1.item() == pytest.approx(0.384840836193)
     assert converted.gunl0a.qa01.metadata["alias"] == "quad:in20:121"
-    assert flattened.qa01.k1.item() == pytest.approx(0.384840836193)
-    assert flattened.qa01.metadata["alias"] == "quad:in20:121"
+    assert flattened.qa01_1.k1.item() == pytest.approx(0.384840836193)
+    assert flattened.qa01_1.metadata["alias"] == "quad:in20:121"
 
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
 
     # check superimposed elements
     # single superimposed element
+    assert isinstance(converted.gunl0a.qa01, cheetah.Superimposed)
+    assert isinstance(converted.gunl0a.qa01.base_element, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.qa01.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qa01.base_element.name == "_qa01"
+
+    # multiple superimposed elements
     assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Segment)
+    assert len(converted.gunl0a.qa02.superimposed_element.elements) == 2
+    assert isinstance(converted.gunl0a.qa02.superimposed_element.bpm5, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qa02.superimposed_element.otr3, cheetah.Marker)
     assert converted.gunl0a.qa02.base_element.name == "_qa02"
 
     # multiple superimposed elements
