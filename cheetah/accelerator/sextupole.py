@@ -11,7 +11,11 @@ from cheetah.track_methods import (
     combined_rotation_misalignment_matrix,
     drift_matrix,
 )
-from cheetah.utils import cache_transfer_map, squash_index_for_unavailable_dims
+from cheetah.utils import (
+    cache_transfer_map,
+    merge_element_names,
+    squash_index_for_unavailable_dims,
+)
 
 
 class Sextupole(Element):
@@ -28,11 +32,14 @@ class Sextupole(Element):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     supported_tracking_methods = ["linear", "second_order"]
@@ -45,7 +52,7 @@ class Sextupole(Element):
         tilt: torch.Tensor | None = None,
         tracking_method: Literal["linear", "second_order"] = "second_order",
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -122,6 +129,28 @@ class Sextupole(Element):
     @property
     def is_active(self) -> bool:
         return (self.k2 != 0.0).any().item()
+
+    def merge(self, other: "Sextupole") -> "Sextupole | None":
+        if not (
+            self.tracking_method == other.tracking_method
+            and self.k2.equal(other.k2)
+            and self.misalignment.equal(other.misalignment)
+            and self.tilt.equal(other.tilt)
+        ):
+            return None
+
+        return self.__class__(
+            length=self.length + other.length,
+            k2=self.k2,
+            misalignment=self.misalignment,
+            tilt=self.tilt,
+            tracking_method=self.tracking_method,
+            name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

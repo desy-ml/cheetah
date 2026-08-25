@@ -9,6 +9,7 @@ from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     compute_relativistic_factors,
+    merge_element_names,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -28,11 +29,14 @@ class Solenoid(Element):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     supported_tracking_methods = ["linear"]
@@ -43,7 +47,7 @@ class Solenoid(Element):
         k: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -128,10 +132,29 @@ class Solenoid(Element):
                 length=split_length,
                 k=self.k,
                 misalignment=self.misalignment,
+                name=f"{self.name}_split_{i}",
+                sanitize_name=False,
+                metadata=self.metadata,
                 **factory_kwargs,
             )
-            for _ in range(num_splits)
+            for i in range(num_splits)
         ]
+
+    def merge(self, other: "Solenoid") -> "Solenoid | None":
+        if not self.misalignment.equal(other.misalignment):
+            return None
+
+        return self.__class__(
+            length=self.length + other.length,
+            k=(self.k * self.length + other.k * other.length)
+            / (self.length + other.length),
+            misalignment=self.misalignment,
+            name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

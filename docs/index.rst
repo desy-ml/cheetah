@@ -39,6 +39,7 @@ We provide some examples to demonstrate some features of *Cheetah* and show how 
     examples/optimize_speed
     examples/gradientbased
     examples/including_metadata
+    examples/custom_elements
 
 
 Getting Started

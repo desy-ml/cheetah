@@ -28,13 +28,7 @@ ELEMENT_DEFINITION_PATTERN = (
 )
 LINE_DEFINITION_PATTERN = f"({ELEMENT_NAME_PATTERN})" + r"\s*\:\s*line\s*=\s*\((.*)\)"
 USE_LINE_PATTERN = r'use\s*\,\s*([a-z0-9_]+|"[a-z0-9_\-\.\:]+")'
-OVERLAY_DEFINITION_PATTERN = (
-    f"({ELEMENT_NAME_PATTERN})" r"\s*\:\s*overlay\s*=\s*\{(.*)\}\s*\,\s*var\s*=\s*"
-)
-OVERLAY_KNOT_BASED_PATTERN = (
-    OVERLAY_DEFINITION_PATTERN + r"\{\s*([a-z0-9_]+)\s*\}\s*\,\s*x_knot\s*=\s*\{(.*)\}"
-)
-OVERLAY_EXPRESSION_BASED_PATTERN = OVERLAY_DEFINITION_PATTERN + r"\{(.*)\}\s*(\,.*)*"
+CONTROL_DEFINITION_PATTERN = rf"({ELEMENT_NAME_PATTERN})\s*:\s*(?:overlay|group)\b.*"
 
 
 def read_clean_lines(lattice_file_path: Path) -> list[str]:
@@ -143,6 +137,12 @@ def evaluate_expression(expression: str, context: dict) -> Any:
     except ValueError:
         pass
 
+    # Check against string literals enclosed in quotes
+    if (expression.startswith('"') and expression.endswith('"')) or (
+        expression.startswith("'") and expression.endswith("'")
+    ):
+        return expression[1:-1]
+
     # Check against allowed keywords
     if expression in ["open", "electron", "t", "f", "traveling_wave", "full"]:
         return expression
@@ -168,28 +168,26 @@ def evaluate_expression(expression: str, context: dict) -> Any:
             return expression
 
 
-def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list:
+def resolve_object_name_wildcard(wildcard_pattern: str, context: dict) -> list[str]:
     """
-    Return a list of object names that match the given wildcard pattern.
-
-    :param wildcard_pattern: Wildcard pattern to match.
-    :param context: Dictionary of variables among which to search for matching object.
-    :return: List of object names that match the given wildcard pattern, both in terms
-        of name and element type.
+    Return a list of element names in context matching a name pattern and/or type
+    prefix.
     """
-    object_type, object_name = wildcard_pattern.split("::")
+    if "::" in wildcard_pattern:
+        object_type, object_name = wildcard_pattern.split("::", maxsplit=1)
+    else:
+        object_type, object_name = None, wildcard_pattern
 
     pattern = object_name.replace("*", ".*").replace("%", ".")
-    name_matching_keys = [key for key in context.keys() if re.fullmatch(pattern, key)]
-    type_matching_keys = [
-        key
-        for key in name_matching_keys
-        if isinstance(context[key], dict)
-        and "element_type" in context[key]
-        and context[key]["element_type"] == object_type
-    ]
 
-    return type_matching_keys
+    return [
+        name
+        for name, element in context.items()
+        if isinstance(element, dict)
+        and "element_type" in element
+        and (object_type is None or element["element_type"] == object_type)
+        and re.fullmatch(pattern, name)
+    ]
 
 
 def assign_property(line: str, context: dict) -> dict:
@@ -207,7 +205,7 @@ def assign_property(line: str, context: dict) -> dict:
     property_name = match.group(2).strip()
     property_expression = match.group(3).strip()  # TODO: Evaluate expression first
 
-    if "*" in object_name or "%" in object_name:
+    if "*" in object_name or "%" in object_name or "::" in object_name:
         object_names = resolve_object_name_wildcard(object_name, context)
     else:
         object_names = [object_name]
@@ -271,7 +269,7 @@ def define_element(line: str, context: dict) -> dict:
         for property_string in property_matches:
             property_string = property_string.strip()
 
-            property_name, property_expression = property_string.split("=")
+            property_name, property_expression = property_string.split("=", maxsplit=1)
             property_name = property_name.strip()
             property_expression = property_expression.strip()
 
@@ -306,50 +304,6 @@ def define_line(line: str, context: dict) -> dict:
         line_elements.append(element_name)
 
     context[line_name] = line_elements
-
-    return context
-
-
-def define_overlay(line: str, context: dict) -> dict:
-    """
-    Define an overlay in the context.
-
-    :param line: Line of an overlay definition to be parsed.
-    :param context: Dictionary of variables to define the overlay in and from which to
-        read variables.
-    :return: Updated context.
-    """
-
-    expression_match = re.fullmatch(OVERLAY_EXPRESSION_BASED_PATTERN, line)
-    knot_match = re.fullmatch(OVERLAY_KNOT_BASED_PATTERN, line)
-
-    if knot_match:
-        overlay_name = knot_match.group(1).strip()
-        overlay_definition = knot_match.group(2).strip()
-        overlay_variable = knot_match.group(3).strip()
-        overlay_x_knot = knot_match.group(4).strip()
-
-        context[overlay_name] = {
-            "overlay_definition": overlay_definition,
-            "overlay_variable": overlay_variable,
-            "overlay_x_knot": overlay_x_knot,
-        }
-    elif expression_match:
-        overlay_name = expression_match.group(1).strip()
-        overlay_definition = expression_match.group(2).strip()
-        overlay_variables = expression_match.group(3).strip()
-        if expression_match.group(4) is not None:
-            overlay_parameters = expression_match.group(4).strip()[1:].strip()
-        else:
-            overlay_parameters = None
-
-        context[overlay_name] = {
-            "overlay_definition": overlay_definition,
-            "overlay_variables": overlay_variables,
-            "overlay_parameters": overlay_parameters,
-        }
-    else:
-        raise ValueError(f"Overlay definition {line} not understood.")
 
     return context
 
@@ -410,8 +364,9 @@ def parse_lines(lines: str) -> dict:
             context = assign_variable(line, context)
         elif re.fullmatch(LINE_DEFINITION_PATTERN, line):
             context = define_line(line, context)
-        elif re.fullmatch(OVERLAY_DEFINITION_PATTERN, line):
-            context = define_overlay(line, context)
+        elif re.fullmatch(CONTROL_DEFINITION_PATTERN, line):
+            # Overlay and group definitions are control entries; skip for simplicity.
+            continue
         elif re.fullmatch(ELEMENT_DEFINITION_PATTERN, line):
             context = define_element(line, context)
         elif re.fullmatch(USE_LINE_PATTERN, line):

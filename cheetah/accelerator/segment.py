@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,7 +15,11 @@ from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator, squash_index_for_unavailable_dims
+from cheetah.utils import (
+    UniqueNameGenerator,
+    merge_element_names,
+    squash_index_for_unavailable_dims,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -28,18 +32,21 @@ class Segment(Element):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
         self,
         elements: list[Element],
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
     ) -> None:
         super().__init__(name=name, sanitize_name=sanitize_name, metadata=metadata)
@@ -133,19 +140,33 @@ class Segment(Element):
 
         return self.__class__(subcell)
 
-    def flattened(self) -> "Segment":
+    def flattened(self, skip_superimposed: bool = False) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
         resolved and their elements entered into a top-level segment.
+
+        :param skip_superimposed: If `True`, `Superimposed` elements are not flattened,
+            otherwise they are flattened like nested `Segment`s.
         """
+        # Import Superimposed lazily to avoid circular imports at module load time.
+        from cheetah.accelerator.superimposed import Superimposed
+
         flattened_elements = []
         for element in self.elements:
-            if hasattr(element, "flattened"):
+            if skip_superimposed and isinstance(element, Superimposed):
+                flattened_elements.append(element)
+            elif isinstance(element, Segment):
+                flattened_elements += element.flattened(
+                    skip_superimposed=skip_superimposed
+                ).elements
+            elif hasattr(element, "flattened"):
                 flattened_elements += element.flattened().elements
             else:
                 flattened_elements.append(element)
 
-        return Segment(elements=flattened_elements, name=self.name)
+        return self.__class__(
+            elements=flattened_elements, name=self.name, sanitize_name=False
+        )
 
     def reversed(self) -> "Segment":
         """
@@ -161,10 +182,10 @@ class Segment(Element):
             )
         )
 
-        return Segment(
+        return self.__class__(
             elements=reversed_elements,
             name=f"{self.name}_reversed",
-            sanitize_name=self.sanitize_name,
+            sanitize_name=False,
         )
 
     def transfer_maps_merged(
@@ -215,7 +236,9 @@ class Segment(Element):
                 )
             )
 
-        return Segment(elements=merged_elements, name=self.name)
+        return self.__class__(
+            elements=merged_elements, name=self.name, sanitize_name=False
+        )
 
     def without_inactive_markers(
         self, except_for: list[str] | None = None
@@ -235,13 +258,14 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 element
                 for element in self.elements
                 if not isinstance(element, Marker) or element.name in except_for
             ],
             name=self.name,
+            sanitize_name=False,
         )
 
     def without_inactive_zero_length_elements(
@@ -261,7 +285,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 element
                 for element in self.elements
@@ -270,6 +294,7 @@ class Segment(Element):
                 or element.name in except_for
             ],
             name=self.name,
+            sanitize_name=False,
         )
 
     def inactive_elements_as_drifts(
@@ -289,7 +314,7 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        return Segment(
+        return self.__class__(
             elements=[
                 (
                     element
@@ -301,11 +326,56 @@ class Segment(Element):
                         name=element.name,
                         device=element.length.device,
                         dtype=element.length.dtype,
+                        sanitize_name=False,
                     )
                 )
                 for element in self.elements
             ],
             name=self.name,
+            sanitize_name=False,
+        )
+
+    def with_consecutive_elements_merged(
+        self, except_for: list[str] | None = None
+    ) -> "Segment":
+        """
+        Return a segment where consecutive elements of the same type that can be merged
+        are combined into single elements.
+
+        :param except_for: List of names of elements that should not be merged despite
+            being mergeable.
+        :return: Segment with consecutive mergeable elements merged.
+        """
+        if except_for is None:
+            except_for = []
+
+        merged_elements = []
+        current = self.elements[0]
+        for next_element in self.elements[1:]:
+            if current.name not in except_for:
+                if type(current) is Segment:
+                    current = current.with_consecutive_elements_merged(
+                        except_for=except_for
+                    )
+                elif (
+                    type(current) is type(next_element)
+                    and next_element.name not in except_for
+                ):
+                    merged = current.merge(next_element)
+                    if merged is not None:
+                        current = merged
+                        continue  # Don't do merged_elements.append(current) and advance
+
+            merged_elements.append(current)
+            current = next_element
+
+        merged_elements.append(current)
+
+        return self.__class__(
+            elements=merged_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     @classmethod
@@ -348,7 +418,7 @@ class Segment(Element):
         cls,
         cell,
         name: str | None = None,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
         **kwargs,
@@ -366,7 +436,9 @@ class Segment(Element):
         :param name: Unique identifier for the entire segment.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah segment closely resembling the Ocelot cell.
@@ -389,7 +461,7 @@ class Segment(Element):
         cls,
         bmad_lattice_file_path: str,
         environment_variables: dict | None = None,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -406,7 +478,9 @@ class Segment(Element):
             parsing the lattice file.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
@@ -421,7 +495,7 @@ class Segment(Element):
         cls,
         elegant_lattice_file_path: str,
         name: str,
-        sanitize_names: bool = False,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -432,7 +506,9 @@ class Segment(Element):
         :param name: Name of the root element.
         :param sanitize_names: Whether to sanitise the names of the elements to be valid
             Python variable names. This is needed if you want to use the
-            `segment.element_name` syntax to access the element in a segment.
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Elegant lattice.
@@ -492,7 +568,9 @@ class Segment(Element):
                     # If a non-skippable element is found, merge the skippable elements
                     # and append them before the non-skippable element
                     if len(continuous_skippable_elements) > 0:
-                        todos.append(Segment(elements=continuous_skippable_elements))
+                        todos.append(
+                            self.__class__(elements=continuous_skippable_elements)
+                        )
                         continuous_skippable_elements = []
 
                     todos.append(element)
@@ -500,7 +578,7 @@ class Segment(Element):
             # If there are still skippable elements at the end of the segment append
             # them as well
             if len(continuous_skippable_elements) > 0:
-                todos.append(Segment(elements=continuous_skippable_elements))
+                todos.append(self.__class__(elements=continuous_skippable_elements))
 
             for todo in todos:
                 incoming = todo.track(incoming)
@@ -508,10 +586,11 @@ class Segment(Element):
             return incoming
 
     def clone(self) -> "Segment":
-        return Segment(
+        return self.__class__(
             elements=[element.clone() for element in self.elements],
             name=self.name,
             metadata=deepcopy(self.metadata),
+            sanitize_name=False,
         )
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
@@ -520,6 +599,46 @@ class Segment(Element):
             for element in self.elements
             for split_element in element.split(resolution)
         ]
+
+    def merge(self, other: "Segment") -> "Segment | None":
+        return self.__class__(
+            elements=self.elements + other.elements,
+            name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
+        )
+
+    def partition_at(
+        self, element_name: str, mode: Literal["before", "after", "both"] = "both"
+    ) -> tuple[Element, ...]:
+        """
+        Partition the segment into multiple subcells around a named element. If the
+        segment is split neither before nor after the named element, a single-element
+        tuple containing the original segment is returned.
+
+        :param element_name: Name of the element at which the segment is split.
+        :param mode: Mode of partitioning. If "before", the segment is split before the
+            named element. If "after", the segment is split after the named element. If
+            "both", the segment is split both before and after the named element.
+        :return: Segment partition. May contain 1, 2, or 3 subcells depending on whether
+            the segment is split before and/or after the named element.
+        """
+        index = self.element_index(element_name)
+        pre_cell = (
+            self.__class__(self.elements[: index + 1])
+            if mode == "after"
+            else self.__class__(self.elements[:index])
+        )
+        post_cell = (
+            self.__class__(self.elements[index:])
+            if mode == "before"
+            else self.__class__(self.elements[index + 1 :])
+        )
+        return (
+            (pre_cell, self.elements[index], post_cell)  # Two splits: before and after
+            if mode == "both"
+            else (pre_cell, post_cell)  # One split: before or after
+        )
 
     def beam_along_segment_generator(
         self, incoming: Beam, resolution: float | None = None

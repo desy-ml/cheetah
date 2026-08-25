@@ -8,7 +8,7 @@ from cheetah.utils import DefaultParameterWarning, UnknownElementWarning
 
 def convert_element(
     element,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -25,7 +25,8 @@ def convert_element(
         accelerator.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :return: Cheetah element object representing an element of particle accelerator.
     """
     try:
@@ -172,7 +173,10 @@ def convert_element(
         return cheetah.Marker(name=element.id, sanitize_name=sanitize_name)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
-            torch.tensor(element.l, **factory_kwargs),
+            length=torch.tensor(element.l, **factory_kwargs),
+            period=torch.tensor(element.lperiod, **factory_kwargs),
+            kx=torch.tensor(element.Kx, **factory_kwargs),
+            ky=torch.tensor(element.Ky, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )

@@ -17,7 +17,7 @@ from cheetah.utils import UnknownElementWarning
 def convert_element(
     name: str,
     context: dict,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -26,7 +26,8 @@ def convert_element(
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
-        name.
+        name. If `None` (default), a warning is raised for invalid names. Set to `True`
+        to sanitise, or `False` to silence the warning.
     :param device: Device to put the element on. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the element. If `None`, the current default dtype
@@ -39,6 +40,11 @@ def convert_element(
         "dtype": dtype or torch.get_default_dtype(),
     }
     bmad_parsed = context[name]
+    metadata = (
+        {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
+        if isinstance(bmad_parsed, dict)
+        else {}
+    )
 
     shared_properties = ["element_type", "alias", "type"]
 
@@ -54,7 +60,9 @@ def convert_element(
     elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
         if bmad_parsed["element_type"] == "marker":
             validate_understood_properties(shared_properties, bmad_parsed)
-            return cheetah.Marker(name=name, sanitize_name=sanitize_name)
+            return cheetah.Marker(
+                name=name, sanitize_name=sanitize_name, metadata=metadata
+            )
         elif bmad_parsed["element_type"] == "monitor":
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
             if "l" in bmad_parsed:
@@ -62,9 +70,12 @@ def convert_element(
                     length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                     name=name,
                     sanitize_name=sanitize_name,
+                    metadata=metadata,
                 )
             else:
-                return cheetah.Marker(name=name, sanitize_name=sanitize_name)
+                return cheetah.Marker(
+                    name=name, sanitize_name=sanitize_name, metadata=metadata
+                )
         elif bmad_parsed["element_type"] == "instrument":
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
             if "l" in bmad_parsed:
@@ -72,9 +83,12 @@ def convert_element(
                     length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                     name=name,
                     sanitize_name=sanitize_name,
+                    metadata=metadata,
                 )
             else:
-                return cheetah.Marker(name=name, sanitize_name=sanitize_name)
+                return cheetah.Marker(
+                    name=name, sanitize_name=sanitize_name, metadata=metadata
+                )
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
                 shared_properties + ["l", "descrip"], bmad_parsed
@@ -83,6 +97,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "drift":
             validate_understood_properties(
@@ -92,6 +107,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
@@ -100,6 +116,7 @@ def convert_element(
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
@@ -108,6 +125,7 @@ def convert_element(
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "sbend":
             validate_understood_properties(
@@ -119,7 +137,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 gap=torch.tensor(2 * bmad_parsed.get("hgap", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("angle", 0.0), **factory_kwargs),
-                dipole_e1=torch.tensor(bmad_parsed["e1"], **factory_kwargs),
+                dipole_e1=torch.tensor(bmad_parsed.get("e1", 0.0), **factory_kwargs),
                 dipole_e2=torch.tensor(bmad_parsed.get("e2", 0.0), **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("ref_tilt", 0.0), **factory_kwargs),
                 fringe_integral=torch.tensor(
@@ -132,6 +150,7 @@ def convert_element(
                 ),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
             validate_understood_properties(
@@ -143,6 +162,7 @@ def convert_element(
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "sextupole":
             validate_understood_properties(
@@ -154,6 +174,7 @@ def convert_element(
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(shared_properties + ["l", "ks"], bmad_parsed)
@@ -162,6 +183,7 @@ def convert_element(
                 k=torch.tensor(bmad_parsed["ks"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "lcavity":
             validate_understood_properties(
@@ -180,6 +202,21 @@ def convert_element(
                 cavity_type=bmad_parsed["cavity_type"],
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
+            )
+        elif bmad_parsed["element_type"] == "crab_cavity":
+            validate_understood_properties(
+                shared_properties + ["l", "rf_frequency", "voltage", "phi0"],
+                bmad_parsed,
+            )
+            return cheetah.TransverseDeflectingCavity(
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
+                phase=-(torch.tensor(bmad_parsed.get("phi0", 0.0), **factory_kwargs)),
+                frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
@@ -209,6 +246,7 @@ def convert_element(
                 ],
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "ecollimator":
             validate_understood_properties(
@@ -238,13 +276,21 @@ def convert_element(
                 ],
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "wiggler":
-            validate_understood_properties(shared_properties + ["l"], bmad_parsed)
+            validate_understood_properties(
+                shared_properties + ["l", "l_period"], bmad_parsed
+            )
+
+            # TODO: Map the magnetic strength `b_max of Bmad to the undulator
+            # coefficient `kx`.
             return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                period=torch.tensor(bmad_parsed["l_period"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "patch":
             validate_understood_properties(
@@ -268,6 +314,7 @@ def convert_element(
                     **factory_kwargs,
                 ),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
+                metadata=metadata,
             )
         else:
             warnings.warn(
@@ -280,6 +327,7 @@ def convert_element(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
+                metadata=metadata,
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
@@ -288,7 +336,7 @@ def convert_element(
 def convert_lattice(
     bmad_lattice_file_path: Path,
     environment_variables: dict | None = None,
-    sanitize_names: bool = False,
+    sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -305,7 +353,9 @@ def convert_lattice(
         parsing the lattice file.
     :param sanitize_names: Whether to sanitise the names of the elements to be valid
         Python variable names. This is needed if you want to use the
-        `segment.element_name` syntax to access the element in a segment.
+        `segment.element_name` syntax to access the element in a segment. If `None`
+        (default), a warning is raised for invalid names. Set to `True` to sanitise,
+        or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype

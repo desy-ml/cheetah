@@ -19,7 +19,7 @@ electron_mass_eV = physical_constants["electron mass energy equivalent in MeV"][
 def convert_element(
     name: str,
     context: dict,
-    sanitize_name: bool = False,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -30,7 +30,8 @@ def convert_element(
     :param context: Context dictionary parsed from Elegant lattice file(s).
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype
@@ -349,6 +350,22 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
             )
+        elif parsed["element_type"] == "wiggler":
+            validate_understood_properties(
+                shared_properties + ["l", "k", "poles"], parsed
+            )
+
+            # There are two poles in one period
+            length = parsed.get("l", 0.0)
+            period = 2.0 * length / parsed["poles"] if "poles" in parsed else 0.0
+
+            return cheetah.Undulator(
+                length=torch.tensor(length, **factory_kwargs),
+                period=torch.tensor(period, **factory_kwargs),
+                kx=torch.tensor(parsed.get("k", 0.0), **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+            )
         elif parsed["element_type"] == "watch":
             validate_understood_properties(shared_properties + ["filename"], parsed)
             return cheetah.Marker(
@@ -386,7 +403,7 @@ def convert_element(
 def convert_lattice(
     elegant_lattice_file_path: Path,
     name: str,
-    sanitize_names: bool = False,
+    sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -398,7 +415,8 @@ def convert_lattice(
     :param sanitize_names: Whether to sanitise the names of the elements as well as the
         name of the segment to be valid Python variable names. This is needed if you
         want to use the `segment.element_name` syntax to access the element in a
-        segment.
+        segment. If `None` (default), a warning is raised for invalid names. Set to
+        `True` to sanitise, or `False` to silence the warning.
     :param device: Device to use for the lattice. If `None`, the current default device
         of PyTorch is used.
     :param dtype: Data type to use for the lattice. If `None`, the current default dtype

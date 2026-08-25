@@ -1,23 +1,49 @@
 # Changelog
 
-## v0.8.4 [🚧 Work in Progress]
+## v0.8.5 [🚧 Work in Progress]
 
 ### 🚨 Breaking Changes
 
 ### 🚀 Features
 
-- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
+- Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
+- `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 
 ### 🐛 Bug fixes
 
-- Fix `Sextupole` not being skippable if its tracking method is set to `linear` (see #655) (@hespe)
-- Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @hespe)
+- Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
 
 ### 🐆 Other
 
-- Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@hespe, @jank324)
+- Update openPMD dependency to renamed package (see #684) (@jank324)
 
 ### 🌟 First Time Contributors
+
+## [v0.8.4](https://github.com/desy-ml/cheetah/releases/tag/v0.8.4) (2026-07-23)
+
+### 🚨 Breaking Changes
+
+- `DirtyNameWarning`s are now suppressed when `sanitize_name` is explicitly set to `False` (see #658) (@jank324, @Hespe)
+
+### 🚀 Features
+
+- Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
+- Implement `Undulator` transverse focusing effect on charged particle beam (see #659) (@Hespe)
+- Add `Segment.partition_at` method to divide a `Segment` into subcells before and after a given named `Element` (see #666) (@Hespe, @jank324)
+- Add `Segment.with_consecutive_elements_merged` method to merge consecutive elements of the same type, and a `.merge` method to `Element` subclasses to merge two elements of the same type. (see #667) (@jank324)
+
+### 🐛 Bug fixes
+
+- Fix `Sextupole` not being skippable if its tracking method is set to `linear` (see #655) (@Hespe)
+- Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @Hespe)
+- Fix a bug where some magnet names that are invalid identifiers (i.e. cannot be used with the `segment.element_name` syntax) would not be sanitised correctly (e.g. when they start with a digit). (see #658) (@jank324, @Hespe)
+- Fix KDE stability issue leading to NaNs (see #660) (@jp-ga)
+- Methods of `Element` and `Segment` that internally construct new instances no longer emit `DirtyNameWarning`s (see #669) (@Hespe)
+
+### 🐆 Other
+
+- Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
+- Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 
 ## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
 
@@ -31,7 +57,7 @@
 - A new `Superimposed` element was added that allows zero-length elements like BPMs to be superimposed in the centre of another element (see #591) (@jank324, @phys-cgarnier)
 - Add all missing off-diagonal terms to the `from_parameters` and `transformed_to` methods of all `Beam` subclasses (see #635) (@cr-xu, @jank324)
 - Implement a new differentiable Cloud-In-Cell (CIC) method for n-D charge deposition and add it to `Screen`. The new method is up to two orders of magnitude faster than the existing and previously only differentiable option `kde` method. (see #625) (@roussel-ryan, @cr-xu, @jank324)
-- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @hespe, @roussel-ryan)
+- Add a `metadata` property to elements, allowing users to store arbitrary, serialisable annotations that are not used in simulation, such as control-system addresses and PV names. (see #646) (@cr-xu, @jank324, @Hespe, @roussel-ryan)
 
 ### 🐛 Bug fixes
 

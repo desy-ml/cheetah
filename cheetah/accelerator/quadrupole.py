@@ -15,6 +15,7 @@ from cheetah.utils import (
     UniqueNameGenerator,
     bmadx,
     cache_transfer_map,
+    merge_element_names,
     squash_index_for_unavailable_dims,
 )
 
@@ -36,11 +37,14 @@ class Quadrupole(Element):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
@@ -56,7 +60,7 @@ class Quadrupole(Element):
             "linear", "second_order", "drift_kick_drift"
         ] = "linear",
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -264,11 +268,37 @@ class Quadrupole(Element):
                 tilt=self.tilt,
                 num_steps=self.num_steps,
                 tracking_method=self.tracking_method,
+                name=f"{self.name}_split_{i}",
+                sanitize_name=False,
+                metadata=self.metadata,
                 dtype=self.length.dtype,
                 device=self.length.device,
             )
             for i in range(num_splits)
         ]
+
+    def merge(self, other: "Quadrupole") -> "Quadrupole | None":
+        if not (
+            self.tracking_method == other.tracking_method
+            and self.misalignment.equal(other.misalignment)
+            and self.tilt.equal(other.tilt)
+        ):
+            return None
+
+        return self.__class__(
+            length=self.length + other.length,
+            k1=(self.k1 * self.length + other.k1 * other.length)
+            / (self.length + other.length),
+            misalignment=self.misalignment,
+            tilt=self.tilt,
+            num_steps=self.num_steps + other.num_steps,
+            tracking_method=self.tracking_method,
+            name=merge_element_names(self.name, other.name),
+            sanitize_name=False,
+            metadata=other.metadata.update(self.metadata),
+            dtype=self.length.dtype,
+            device=self.length.device,
+        )
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

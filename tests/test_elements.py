@@ -1,11 +1,12 @@
 import pickle
+import warnings
 from pathlib import Path
 
 import pytest
 import torch
 
 import cheetah
-from cheetah.utils import is_mps_available_and_functional
+from cheetah.utils import DirtyNameWarning, is_mps_available_and_functional
 
 
 @pytest.mark.for_every_element("element")
@@ -129,9 +130,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 
 @pytest.mark.for_every_element(
     "element",
-    xfail_if=lambda element: isinstance(
-        element, (cheetah.SpaceChargeKick, cheetah.TransverseDeflectingCavity)
-    )
+    xfail_if=lambda element: isinstance(element, cheetah.SpaceChargeKick)
     or (
         isinstance(
             element,
@@ -141,6 +140,7 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
                 cheetah.Quadrupole,
                 cheetah.RBend,
                 cheetah.Sextupole,
+                cheetah.TransverseDeflectingCavity,
             ),
         )
         and element.tracking_method != "linear"
@@ -428,3 +428,36 @@ def test_consistency(element, beam_cls):
             actual_outgoing_beam.survival_probabilities,
             expected_outgoing_beam.survival_probabilities,
         )
+
+
+@pytest.mark.parametrize("sanitize_name", [None, True, False])
+def test_element_dirty_name_warning(sanitize_name):
+    """
+    Test that `Element` subclasses raise `DirtyNameWarning` only when `sanitize_name` is
+    not specified (i.e. is `None`), and that no warning is raised when `sanitize_name`
+    is explicitly set to `True` or `False`.
+    """
+    dirty_name = "dirty:name"
+
+    if sanitize_name is None:
+        # Check that the warning is raised
+        with pytest.warns(DirtyNameWarning):
+            _ = cheetah.Marker(name=dirty_name, sanitize_name=sanitize_name)
+    else:
+        # Check that no warning is raised
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DirtyNameWarning)
+            _ = cheetah.Marker(name=dirty_name, sanitize_name=sanitize_name)
+
+
+@pytest.mark.for_every_element("element")
+def test_element_no_internal_dirty_name_warning(element):
+    """Test that no internal `DirtyNameWarning` are produced by methods of `Element`."""
+    element.name = "dirty:element"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DirtyNameWarning)
+
+        _ = element.clone()
+        _ = element.split(torch.tensor(1.0))
+        _ = element.merge(element.clone())

@@ -6,8 +6,14 @@ from matplotlib.patches import Rectangle
 from scipy.constants import speed_of_light
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import Beam, ParticleBeam
-from cheetah.utils import UniqueNameGenerator, bmadx
+from cheetah.particles import Beam, ParticleBeam, Species
+from cheetah.track_methods import combined_rotation_misalignment_matrix
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    cache_transfer_map,
+    compute_relativistic_factors,
+)
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -31,14 +37,17 @@ class TransverseDeflectingCavity(Element):
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
-        access the element in a segment.
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/examples/including_metadata` for more information.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
-    supported_tracking_methods = ["drift_kick_drift"]
+    supported_tracking_methods = ["linear", "drift_kick_drift"]
 
     def __init__(
         self,
@@ -49,9 +58,9 @@ class TransverseDeflectingCavity(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
-        tracking_method: Literal["drift_kick_drift"] = "drift_kick_drift",
+        tracking_method: Literal["linear", "drift_kick_drift"] = "linear",
         name: str | None = None,
-        sanitize_name: bool = False,
+        sanitize_name: bool | None = None,
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -95,8 +104,7 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_skippable(self) -> bool:
-        # TODO: Implement drrift-like `transfer_map` and set to `self.is_active`
-        return False
+        return self.tracking_method == "linear"
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -105,7 +113,9 @@ class TransverseDeflectingCavity(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if self.tracking_method == "drift_kick_drift":
+        if self.tracking_method == "linear":
+            return super()._track_first_order(incoming)
+        elif self.tracking_method == "drift_kick_drift":
             return self._track_drift_kick_drift(incoming)
         else:
             raise ValueError(
@@ -115,6 +125,44 @@ class TransverseDeflectingCavity(Element):
                 " tracking methods have been deprecated and are no longer supported."
                 "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
+
+    @cache_transfer_map
+    def first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+
+        phase_rad = self.phase * 2.0 * torch.pi
+
+        gamma, igamma2, _ = compute_relativistic_factors(energy, species.mass_eV)
+        reference_momentum = species.mass_eV * (gamma.square() - 1.0).sqrt()
+        wave_number = 2.0 * torch.pi * self.frequency / speed_of_light
+        effective_voltage = -self.voltage * species.num_elementary_charges
+        strength = effective_voltage * wave_number / reference_momentum
+
+        vector_shape = torch.broadcast_shapes(
+            self.length.shape,
+            strength.shape,
+            phase_rad.shape,
+            igamma2.shape,
+        )
+
+        R = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
+        R[..., 0, 1] = self.length
+        R[..., 0, 4] = -self.length * strength * phase_rad.cos() / 2.0
+        R[..., 1, 4] = -strength * phase_rad.cos()
+        R[..., 2, 3] = self.length
+        R[..., 4, 5] = -self.length * igamma2 / (1.0 - igamma2)
+        R[..., 5, 0] = -R[..., 1, 4]
+        R[..., 5, 1] = -R[..., 0, 4]
+        R[..., 5, 4] = -self.length * strength.square() * (2.0 * phase_rad).cos() / 6.0
+
+        R_entry, R_exit = combined_rotation_misalignment_matrix(
+            angle=self.tilt, misalignment=self.misalignment
+        )
+        R = R_exit @ R @ R_entry
+
+        return R
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
@@ -147,13 +195,13 @@ class TransverseDeflectingCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(self.length / 2.0, x, px, y, py, z, pz, p0c, mc2)
 
         voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
-        k_rf = 2 * torch.pi * self.frequency / speed_of_light
+        k_rf = 2.0 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (
-            2
+            2.0
             * torch.pi
             * (
                 self.phase.unsqueeze(-1)
@@ -183,7 +231,7 @@ class TransverseDeflectingCavity(Element):
         pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
         z = z * beta / beta_old
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(self.length / 2.0, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
