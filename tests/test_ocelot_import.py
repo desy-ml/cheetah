@@ -104,7 +104,7 @@ def test_ocelot_lattice_import():
         ocelot.Quadrupole(l=0.2),
         ocelot.Drift(l=1.0),
         ocelot.Sextupole(l=0.4),
-        ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=0.0),
+        ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0),
     ]
     segment = cheetah.Segment.from_ocelot(cell=cell)
 
