@@ -6,11 +6,17 @@
 
 ### 🚀 Features
 
+- Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
+- `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
+
 ### 🐛 Bug fixes
 
+- Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
 - Fix the ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity`. (see #675) (@cr-xu)
 
 ### 🐆 Other
+
+- Update openPMD dependency to renamed package (see #684) (@jank324)
 
 ### 🌟 First Time Contributors
 

@@ -326,3 +326,24 @@ def test_partition_unknown_element():
 
     with pytest.raises(ValueError):
         segment.partition_at("drift_42")
+
+
+def test_flatten_skips_superimposed():
+    """
+    Test that the `flattened` method returns a flattened segment with the correct number
+    of elements when `skip_superimposed` is set to True.
+    """
+    drift = cheetah.Drift(length=torch.tensor(0.5), name="drift1")
+    quadrupole = cheetah.Quadrupole(length=torch.tensor(0.5), name="base_quad")
+    marker = cheetah.Marker(name="superimposed_marker")
+
+    superimposed = cheetah.Superimposed(
+        base_element=quadrupole, superimposed_element=marker
+    )
+
+    segment = cheetah.Segment(elements=[drift, superimposed])
+
+    flattened = segment.flattened(skip_superimposed=True)
+
+    assert len(flattened.elements) == 2
+    assert isinstance(flattened.elements[1], cheetah.Superimposed)
