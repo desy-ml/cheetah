@@ -216,8 +216,7 @@ def assign_property(line: str, context: dict) -> dict:
         for name in object_names:
             if name not in context:
                 context[name] = {}
-            metadata = context[name].setdefault("metadata", {})
-            metadata[property_name] = metadata_value
+            context[name][property_name] = metadata_value
 
         return context
 
@@ -295,8 +294,7 @@ def define_element(line: str, context: dict) -> dict:
             property_expression = property_expression.strip()
 
             if property_name in {"type", "alias"}:
-                metadata = element_properties.setdefault("metadata", {})
-                metadata[property_name] = property_expression.strip('"')
+                element_properties[property_name] = property_expression.strip('"')
             elif property_name == "ref":
                 element_properties[property_name] = property_expression.strip('" ')
             else:
