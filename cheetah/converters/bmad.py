@@ -1,6 +1,5 @@
 import os
 import warnings
-from copy import deepcopy
 from pathlib import Path
 
 import torch
@@ -68,12 +67,12 @@ def convert_element(
     }
     bmad_parsed = context[name]
     metadata = (
-        deepcopy(bmad_parsed.get("metadata", {}))
+        {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
         if isinstance(bmad_parsed, dict)
         else {}
     )
 
-    shared_properties = ["element_type", "alias", "type", "metadata"]
+    shared_properties = ["element_type", "alias", "type"]
 
     if _allow_superimpose and isinstance(bmad_parsed, dict):
         superimposed_entries = []
@@ -153,9 +152,7 @@ def convert_element(
                 shared_properties + ["ref", "superimpose"], bmad_parsed
             )
             return cheetah.Marker(
-                name=name,
-                sanitize_name=sanitize_name,
-                metadata=metadata,
+                name=name, sanitize_name=sanitize_name, metadata=metadata
             )
         elif bmad_parsed["element_type"] == "monitor":
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
@@ -168,9 +165,7 @@ def convert_element(
                 )
             else:
                 return cheetah.Marker(
-                    name=name,
-                    sanitize_name=sanitize_name,
-                    metadata=metadata,
+                    name=name, sanitize_name=sanitize_name, metadata=metadata
                 )
         elif bmad_parsed["element_type"] == "instrument":
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
@@ -183,9 +178,7 @@ def convert_element(
                 )
             else:
                 return cheetah.Marker(
-                    name=name,
-                    sanitize_name=sanitize_name,
-                    metadata=metadata,
+                    name=name, sanitize_name=sanitize_name, metadata=metadata
                 )
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
@@ -308,6 +301,20 @@ def convert_element(
                 sanitize_name=sanitize_name,
                 metadata=metadata,
             )
+        elif bmad_parsed["element_type"] == "crab_cavity":
+            validate_understood_properties(
+                shared_properties + ["l", "rf_frequency", "voltage", "phi0"],
+                bmad_parsed,
+            )
+            return cheetah.TransverseDeflectingCavity(
+                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
+                voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
+                phase=-(torch.tensor(bmad_parsed.get("phi0", 0.0), **factory_kwargs)),
+                frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
+            )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
                 shared_properties + ["l", "x_limit", "y_limit"],
@@ -387,20 +394,6 @@ def convert_element(
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
             return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
-                name=name,
-                sanitize_name=sanitize_name,
-                metadata=metadata,
-            )
-        elif bmad_parsed["element_type"] == "crab_cavity":
-            validate_understood_properties(
-                shared_properties + ["l", "rf_frequency", "voltage", "phi"],
-                bmad_parsed,
-            )
-            return cheetah.TransverseDeflectingCavity(
-                length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
-                voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
-                phase=-(torch.tensor(bmad_parsed.get("phi", 0.0), **factory_kwargs)),
-                frequency=torch.tensor(bmad_parsed["rf_frequency"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,

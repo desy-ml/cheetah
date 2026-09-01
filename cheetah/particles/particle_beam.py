@@ -911,10 +911,10 @@ class ParticleBeam(Beam):
     ) -> "ParticleBeam":
         """Load an openPMD particle group HDF5 file as a Cheetah `ParticleBeam`."""
         try:
-            import pmd_beamphysics as openpmd
+            import beamphysics as openpmd
         except ImportError:
             raise ImportError(
-                """To use the openPMD beam import, openPMD-beamphysics must be
+                """To use the openPMD beam import, openpmd-beamphysics must be
                 installed."""
             )
 
@@ -994,10 +994,10 @@ class ParticleBeam(Beam):
         :return: openPMD `ParticleGroup` object with the `ParticleBeam`'s particles.
         """
         try:
-            import pmd_beamphysics as openpmd
+            import beamphysics as openpmd
         except ImportError:
             raise ImportError(
-                """To use the openPMD beam export, openPMD-beamphysics must be
+                """To use the openPMD beam export, openpmd-beamphysics must be
                 installed."""
             )
 

@@ -132,11 +132,11 @@ class TransverseDeflectingCavity(Element):
     ) -> torch.Tensor:
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
 
-        phase_rad = self.phase * 2 * torch.pi
+        phase_rad = self.phase * 2.0 * torch.pi
 
         gamma, igamma2, _ = compute_relativistic_factors(energy, species.mass_eV)
-        reference_momentum = species.mass_eV * (gamma.square() - 1).sqrt()
-        wave_number = 2 * torch.pi * self.frequency / speed_of_light
+        reference_momentum = species.mass_eV * (gamma.square() - 1.0).sqrt()
+        wave_number = 2.0 * torch.pi * self.frequency / speed_of_light
         effective_voltage = -self.voltage * species.num_elementary_charges
         strength = effective_voltage * wave_number / reference_momentum
 
@@ -149,13 +149,13 @@ class TransverseDeflectingCavity(Element):
 
         R = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         R[..., 0, 1] = self.length
-        R[..., 0, 4] = -self.length * strength * phase_rad.cos() / 2
+        R[..., 0, 4] = -self.length * strength * phase_rad.cos() / 2.0
         R[..., 1, 4] = -strength * phase_rad.cos()
         R[..., 2, 3] = self.length
-        R[..., 4, 5] = -self.length * igamma2 / (1 - igamma2)
+        R[..., 4, 5] = -self.length * igamma2 / (1.0 - igamma2)
         R[..., 5, 0] = -R[..., 1, 4]
         R[..., 5, 1] = -R[..., 0, 4]
-        R[..., 5, 4] = -self.length * strength.square() * (2 * phase_rad).cos() / 6
+        R[..., 5, 4] = -self.length * strength.square() * (2.0 * phase_rad).cos() / 6.0
 
         R_entry, R_exit = combined_rotation_misalignment_matrix(
             angle=self.tilt, misalignment=self.misalignment
@@ -195,13 +195,13 @@ class TransverseDeflectingCavity(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(self.length / 2.0, x, px, y, py, z, pz, p0c, mc2)
 
         voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
-        k_rf = 2 * torch.pi * self.frequency / speed_of_light
+        k_rf = 2.0 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (
-            2
+            2.0
             * torch.pi
             * (
                 self.phase.unsqueeze(-1)
@@ -231,7 +231,7 @@ class TransverseDeflectingCavity(Element):
         pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
         z = z * beta / beta_old
 
-        x, y, z = bmadx.track_a_drift(self.length / 2, x, px, y, py, z, pz, p0c, mc2)
+        x, y, z = bmadx.track_a_drift(self.length / 2.0, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py

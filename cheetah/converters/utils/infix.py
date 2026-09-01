@@ -6,18 +6,18 @@ operators = {
     "-": {"precedence": 1, "inputs": 2, "func": lambda a, b: a - b},
     "*": {"precedence": 2, "inputs": 2, "func": lambda a, b: a * b},
     "/": {"precedence": 2, "inputs": 2, "func": lambda a, b: a / b},
-    "^": {"precedence": 3, "inputs": 2, "func": lambda a, b: a**b},
-    "u+": {"precedence": 4, "inputs": 1, "func": lambda a: +a},
-    "u-": {"precedence": 4, "inputs": 1, "func": lambda a: -a},
-    "sqrt": {"precedence": 4, "inputs": 1, "func": lambda a: math.sqrt(a)},
-    "sin": {"precedence": 4, "inputs": 1, "func": lambda a: math.sin(a)},
-    "asin": {"precedence": 4, "inputs": 1, "func": lambda a: math.asin(a)},
-    "cos": {"precedence": 4, "inputs": 1, "func": lambda a: math.cos(a)},
-    "acos": {"precedence": 4, "inputs": 1, "func": lambda a: math.acos(a)},
-    "tan": {"precedence": 4, "inputs": 1, "func": lambda a: math.tan(a)},
-    "atan": {"precedence": 4, "inputs": 1, "func": lambda a: math.atan(a)},
-    "abs": {"precedence": 4, "inputs": 1, "func": lambda a: abs(a)},
-    "log": {"precedence": 4, "inputs": 1, "func": lambda a: math.log(a)},
+    "u+": {"precedence": 3, "inputs": 1, "func": lambda a: +a},
+    "u-": {"precedence": 3, "inputs": 1, "func": lambda a: -a},
+    "^": {"precedence": 4, "inputs": 2, "func": lambda a, b: a**b},
+    "sqrt": {"precedence": 5, "inputs": 1, "func": lambda a: math.sqrt(a)},
+    "sin": {"precedence": 5, "inputs": 1, "func": lambda a: math.sin(a)},
+    "asin": {"precedence": 5, "inputs": 1, "func": lambda a: math.asin(a)},
+    "cos": {"precedence": 5, "inputs": 1, "func": lambda a: math.cos(a)},
+    "acos": {"precedence": 5, "inputs": 1, "func": lambda a: math.acos(a)},
+    "tan": {"precedence": 5, "inputs": 1, "func": lambda a: math.tan(a)},
+    "atan": {"precedence": 5, "inputs": 1, "func": lambda a: math.atan(a)},
+    "abs": {"precedence": 5, "inputs": 1, "func": lambda a: abs(a)},
+    "log": {"precedence": 5, "inputs": 1, "func": lambda a: math.log(a)},
 }
 
 
@@ -110,13 +110,10 @@ def _parse_expression(tokens: list[str]) -> dict:
 
             while (
                 operator_stack
+                and not expecting_value
                 and operators[operator_stack[-1]]["precedence"]
                 >= operators[token]["precedence"]
             ):
-                # Keep prefix signs pending while we're still waiting for the value
-                # they apply to, e.g. in expressions like `-sin(x)`.
-                if expecting_value and operator_stack[-1] in {"u+", "u-"}:
-                    break
                 if operators[operator_stack[-1]]["inputs"] == 1:
                     right = None
                 else:
@@ -158,7 +155,7 @@ def _tokenize_expression(expression: str, context: dict) -> list[str]:
 
     for char in expression:
         if char.isspace() or char in "+-*/^()[]":
-            # Keep scientific-notation exponents in one token (e.g. 0.750e-3).
+            # Keep scientific-notation exponents in one token (e.g. 0.750e-3)
             if (
                 char in "+-"
                 and current_key is None

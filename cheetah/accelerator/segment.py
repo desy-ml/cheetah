@@ -145,9 +145,8 @@ class Segment(Element):
         Return a flattened version of the segment, i.e. one where all subsegments are
         resolved and their elements entered into a top-level segment.
 
-        :param skip_superimposed: If `True`, superimposed elements are not flattened
-            and remain as `Superimposed` elements in the returned segment. If `False`,
-            they are flattened into the top-level segment.
+        :param skip_superimposed: If `True`, `Superimposed` elements are not flattened,
+            otherwise they are flattened like nested `Segment`s.
         """
         # Import Superimposed lazily to avoid circular imports at module load time.
         from cheetah.accelerator.superimposed import Superimposed
