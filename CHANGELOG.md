@@ -16,6 +16,7 @@
 ### 🐆 Other
 
 - Update openPMD dependency to renamed package (see #684) (@jank324)
+- Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
 
 ### 🌟 First Time Contributors
 
