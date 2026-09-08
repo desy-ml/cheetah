@@ -147,7 +147,7 @@ def convert_element(
             voltage=torch.tensor(element.v, **factory_kwargs) * 1e9,
             frequency=torch.tensor(element.freq, **factory_kwargs),
             phase=torch.tensor(element.phi, **factory_kwargs).deg2rad()
-            / (2 * torch.pi),
+            / (2.0 * torch.pi),
             tilt=torch.tensor(element.tilt, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,

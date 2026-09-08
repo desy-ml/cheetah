@@ -104,7 +104,7 @@ def test_ocelot_lattice_import():
         ocelot.Quadrupole(l=0.2),
         ocelot.Drift(l=1.0),
         ocelot.Sextupole(l=0.4),
-        ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0),
+        ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0, tilt=1.57),
     ]
     segment = cheetah.Segment.from_ocelot(cell=cell)
 
@@ -113,6 +113,12 @@ def test_ocelot_lattice_import():
     assert isinstance(segment.elements[2], cheetah.Drift)
     assert isinstance(segment.elements[3], cheetah.Sextupole)
     assert isinstance(segment.elements[4], cheetah.TransverseDeflectingCavity)
+
+    assert segment.elements[4].length == 1.0
+    assert segment.elements[4].voltage == 0.01 * 1e9
+    assert segment.elements[4].frequency == 1e9
+    assert torch.isclose(segment.elements[4].phase, torch.tensor(30.0 / 360.0))
+    assert segment.elements[4].tilt == 1.57
 
     assert segment.elements[0].length.device.type == "cpu"
     assert segment.elements[1].length.device.type == "cpu"
@@ -125,3 +131,4 @@ def test_ocelot_lattice_import():
     assert segment.elements[4].voltage.device.type == "cpu"
     assert segment.elements[4].frequency.device.type == "cpu"
     assert segment.elements[4].phase.device.type == "cpu"
+    assert segment.elements[4].tilt.device.type == "cpu"
