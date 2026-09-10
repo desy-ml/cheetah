@@ -1,46 +1,66 @@
-name: Feature Request
-description: Suggest an idea or feature for Cheetah
+name: "🚀 Feature Request"
+description: Propose a new feature, element, or enhancement for Cheetah
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest an enhancement!
+        ### Before submitting
+        - Please check [existing issues and feature requests](https://github.com/desy-ml/cheetah/issues) to avoid duplicates.
+        - For discussions, ideas, or questions, you can also connect with us on our [Discord server](https://discord.gg/7k7kzSDwpn).
+        - Please review our [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md) if using AI tools to prepare this request.
+
   - type: textarea
     id: problem
     attributes:
-      label: Problem or Motivation
-      description: Is your feature request related to a problem or limitation? Please describe it clearly.
+      label: 💡 Motivation & Problem Description
+      description: |
+        What problem are you trying to solve, or what is currently missing?
+        E.g., *"I am working on X and need Y to simulate Z..."*
+      placeholder: |
+        A clear description of the problem or motivation...
     validations:
       required: true
+
   - type: textarea
-    id: solution
+    id: pitch
     attributes:
-      label: Proposed Solution
-      description: A clear and concise description of what you want to happen and how it could work.
+      label: 🚀 Proposed Solution / Feature
+      description: |
+        A clear and concise description of what you want to happen and how you envision it working.
+        Include proposed API designs or code usage examples if applicable.
+      placeholder: |
+        ```python
+        # Desired API or usage example:
+        ```
     validations:
       required: true
+
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives Considered
-      description: A clear and concise description of any alternative solutions or features you've considered.
-    validations:
-      required: false
+      label: 🔄 Alternatives Considered
+      description: Any alternative solutions, workarounds, or features you've considered.
+
   - type: textarea
-    id: additional
+    id: additional-context
     attributes:
-      label: Additional Context
-      description: Add any other context, references, or physics formulas about the feature request here.
-    validations:
-      required: false
+      label: 📖 Additional Context & Physics References
+      description: |
+        Add any other context, papers (e.g. PRAB, IPAC), formulas, or diagrams that support this feature request.
+
   - type: checkboxes
-    id: checkboxes
+    id: checklist
     attributes:
-      label: Checklist
+      label: ✅ Checklist
       options:
-        - label: I have searched the existing issues to make sure this feature hasn't already been requested.
+        - label: I have searched [existing issues](https://github.com/desy-ml/cheetah/issues) and confirmed this feature hasn't already been requested.
           required: true
-        - label: I have read and followed the [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md) if AI tools were used to prepare this issue.
+        - label: I have read and followed the [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md) if AI tools were used to prepare this request.
           required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Cheetah! 🎉

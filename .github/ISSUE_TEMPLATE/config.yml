@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Discord Community
+  - name: "💬 Discord Community"
     url: https://discord.gg/7k7kzSDwpn
-    about: Ask questions and get help on our Discord server.
-  - name: Cheetah Documentation
+    about: Ask questions and discuss with the Cheetah community.
+  - name: "📖 Cheetah Documentation"
     url: https://cheetah-accelerator.readthedocs.io/
-    about: Read the official Cheetah documentation and tutorials.
+    about: Read the official documentation, tutorials, and examples.
