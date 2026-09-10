@@ -1,0 +1,89 @@
+name: "🐛 Bug Report"
+description: Create a report to help us reproduce and fix the bug
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Before submitting
+        - Please search through [existing and past issues](https://github.com/desy-ml/cheetah/issues) to ensure this hasn't already been reported.
+        - Review the [Contributing Guide](https://github.com/desy-ml/cheetah/blob/master/CONTRIBUTING.md) and [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md).
+        - For general questions, support, or discussion, please use our [Discord server](https://discord.gg/7k7kzSDwpn) instead of filing an issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 🐛 Describe the bug
+      description: |
+        A clear and concise description of what the bug is. Please also describe what you expected to happen instead.
+      placeholder: |
+        A clear description of the bug and the expected behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 🔬 Reproducible example
+      description: |
+        Please provide a minimal, self-contained Python script to reproduce the bug.
+        The snippet should be as trimmed down as possible to help us debug efficiently.
+      placeholder: |
+        ```python
+        import torch
+        import cheetah
+
+        # Minimal reproducing example:
+        segment = cheetah.Segment(...)
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: 📋 Relevant log output / Error traceback
+      description: |
+        Please paste the full error message and traceback here.
+        This will be automatically formatted into a code block (no backticks needed).
+      placeholder: "Traceback (most recent call last):\n  File ..."
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: ⚙️ System information
+      description: |
+        Please specify your operating environment details.
+      value: |
+        - OS: 
+        - Python version: 
+        - Cheetah version: 
+        - PyTorch version: 
+        - CUDA / GPU (if applicable):
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 💬 Additional context
+      description: Add any other context, physics references, or screenshots about the problem here.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      options:
+        - label: I have searched [existing issues](https://github.com/desy-ml/cheetah/issues) and confirmed this is not a duplicate.
+          required: true
+        - label: I have provided a minimal, reproducible code example.
+          required: true
+        - label: I have read and followed the [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md) if AI tools were used to prepare this report.
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to Cheetah! 🎉
