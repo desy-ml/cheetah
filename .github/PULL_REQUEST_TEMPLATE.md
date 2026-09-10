@@ -35,7 +35,7 @@
 - [ ] I have reformatted the code and checked that formatting passes (**required**).
 - [ ] I have fixed all issues found by `flake8` (**required**).
 - [ ] I have ensured that all `pytest` tests pass (**required**).
-- [ ] I have run `pytest` on a machine with a CUDA GPU and made sure all tests pass (**required**).
+- [ ] I have run `pytest` on a machine with a CUDA GPU and made sure all tests pass.
 - [ ] I have checked that the documentation builds (**required**).
 
 Note: We are using a maximum length of 88 characters per line.
