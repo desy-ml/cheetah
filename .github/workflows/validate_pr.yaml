@@ -21,6 +21,8 @@ jobs:
             }
 
             const body = pr.body;
+            // Strip HTML comments so commented-out template instructions are never checked
+            const cleanBody = body.replace(/<!--[\s\S]*?-->/g, '');
             const errors = [];
 
             // 1. Verify PR template sections exist
@@ -48,7 +50,7 @@ jobs:
             }
 
             // 4. Check that at least one "Type of change" is selected
-            const typesMatch = body.match(/## Types of changes([\s\S]*?)(?=## Checklist|$)/);
+            const typesMatch = cleanBody.match(/## Types of changes([\s\S]*?)(?=## Checklist|$)/);
             if (typesMatch) {
               const hasTypeSelected = /- \[[xX]\]/.test(typesMatch[1]);
               if (!hasTypeSelected) {
@@ -57,13 +59,13 @@ jobs:
             }
 
             // 5. Check for unticked required items: '- [ ] ... (**required**)'
-            const uncheckedRequired = body.match(/- \[\s\][^\n\r]*?\(\*\*required\*\*\)/gi);
+            const uncheckedRequired = cleanBody.match(/- \[\s\][^\n\r]*?\(\*\*required\*\*\)/gi);
             if (uncheckedRequired) {
               errors.push('The following required checklist items are not completed:\n' + uncheckedRequired.map(item => `  • ${item.replace(/^- \[\s\]\s*/, '').trim()}`).join('\n'));
             }
 
             // 6. Check that required checklist items were not deleted
-            const requiredCount = (body.match(/\(\*\*required\*\*\)/gi) || []).length;
+            const requiredCount = (cleanBody.match(/\(\*\*required\*\*\)/gi) || []).length;
             if (requiredCount < 3) {
               errors.push('One or more required checklist items appear to have been removed.');
             }
