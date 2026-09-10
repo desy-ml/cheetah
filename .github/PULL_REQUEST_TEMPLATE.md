@@ -33,7 +33,6 @@
 - [ ] I have updated the tests accordingly (_required for a bug fix or a new feature_).
 - [ ] I have updated the documentation accordingly.
 - [ ] I have run `pytest` on a machine with a CUDA GPU and made sure all tests pass.
-- [ ] I have checked that the documentation builds (**required**).
 
 Note: We are using a maximum length of 88 characters per line.
 

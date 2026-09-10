@@ -64,7 +64,7 @@ jobs:
 
             // 6. Check that required checklist items were not deleted
             const requiredCount = (body.match(/\(\*\*required\*\*\)/gi) || []).length;
-            if (requiredCount < 4) {
+            if (requiredCount < 3) {
               errors.push('One or more required checklist items appear to have been removed.');
             }
 
