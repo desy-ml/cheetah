@@ -16,15 +16,10 @@
 
 <!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Performance improvement (optimization without adding features or fixing bugs)
-- [ ] Refactoring (code restructuring or cleanup with no behavioral change)
-- [ ] Documentation (updates or additions to documentation, tutorials, or docstrings)
-- [ ] Maintenance / CI (dependencies, GitHub Actions, packaging, or tooling)
-- [ ] Tests (adding missing tests or fixing existing tests)
-- [ ] Breaking change (fix or feature that causes existing functionality to change)
-- [ ] Other (please describe in the Description section)
+- [ ] 🚨 Breaking Changes (fix or feature that causes existing functionality to change)
+- [ ] 🚀 Features (non-breaking change which adds functionality)
+- [ ] 🐛 Bug fixes (non-breaking change which fixes an issue)
+- [ ] 🐆 Other (documentation, maintenance, performance, refactoring, or tests)
 
 ## Checklist
 
