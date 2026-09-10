@@ -17,6 +17,7 @@
 
 - Update openPMD dependency to renamed package (see #684) (@jank324)
 - Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
+- Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693) (@jank324)
 
 ### 🌟 First Time Contributors
 
