@@ -12,6 +12,7 @@ from cheetah.utils import (
     cache_transfer_map,
     cloud_in_cell_charge_deposition,
     kde_histogram_2d,
+    vectorized_histogram_2d,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -290,25 +291,19 @@ class Screen(Element):
             image = dist.log_prob(pos).exp().mT
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
-                # Catch vectorisation, which is currently not supported by "histogram"
-                if (
-                    len(read_beam.particles.shape) > 2
-                    or len(read_beam.particle_charges.shape) > 1
-                    or len(read_beam.energy.shape) > 0
-                ):
-                    raise NotImplementedError(
-                        "The `'histogram'` method of `Screen` does not support "
-                        "vectorization. Use `'kde'` instead. If this is a feature you "
-                        "would like to see, please open an issue on GitHub."
-                    )
-
-                image_transposed, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).mT,
-                    bins=self.pixel_bin_edges,
-                    weight=read_beam.particle_charges.abs()
-                    * read_beam.survival_probabilities,
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
                 )
-                image = image_transposed.mT
+                broadcasted_x, broadcasted_y, broadcasted_weights = (
+                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
+                )
+                image = vectorized_histogram_2d(
+                    x1=broadcasted_x,
+                    x2=broadcasted_y,
+                    bins1=self.pixel_bin_centers[0],
+                    bins2=self.pixel_bin_centers[1],
+                    weights=broadcasted_weights,
+                ).mT
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
