@@ -17,7 +17,7 @@ jobs:
           - os: ubuntu-latest
             python-version: "3.11"
             options: "-c test_minimum_requirements_constraints.txt"
-          - os: macos-26 # Fix upwards from macos-latest to fix macos-15 vs. torch 2.14
+          - os: macos-latest
             python-version: "3.14"
             options: ""
           - os: windows-latest
