@@ -18,8 +18,13 @@
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
-- [ ] Documentation (update in the documentation)
+- [ ] Performance improvement (optimization without adding features or fixing bugs)
+- [ ] Refactoring (code restructuring or cleanup with no behavioral change)
+- [ ] Documentation (updates or additions to documentation, tutorials, or docstrings)
+- [ ] Maintenance / CI (dependencies, GitHub Actions, packaging, or tooling)
+- [ ] Tests (adding missing tests or fixing existing tests)
+- [ ] Breaking change (fix or feature that causes existing functionality to change)
+- [ ] Other (please describe in the Description section)
 
 ## Checklist
 
