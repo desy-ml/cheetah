@@ -1,0 +1,46 @@
+name: Feature Request
+description: Suggest an idea or feature for Cheetah
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest an enhancement!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem or limitation? Please describe it clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: A clear and concise description of what you want to happen and how it could work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, references, or physics formulas about the feature request here.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched the existing issues to make sure this feature hasn't already been requested.
+          required: true
+        - label: I have read and followed the [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md) if AI tools were used to prepare this issue.
+          required: false

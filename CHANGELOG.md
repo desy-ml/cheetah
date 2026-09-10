@@ -18,6 +18,7 @@
 - Update openPMD dependency to renamed package (see #684) (@jank324)
 - Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
+- Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693) (@jank324)
 
 ### 🌟 First Time Contributors
 
