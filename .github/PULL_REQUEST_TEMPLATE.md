@@ -27,7 +27,7 @@
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 
 - [ ] I have read the [CONTRIBUTING](CONTRIBUTING.md) guide (**required**).
-- [ ] I have read and followed the [AI Policy](AI_POLICY.md) if AI tools were used.
+- [ ] I have read and followed the [AI Policy](AI_POLICY.md) if AI tools were used (**required**).
 - [ ] I have updated the changelog accordingly (**required**).
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the tests accordingly (_required for a bug fix or a new feature_).
