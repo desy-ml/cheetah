@@ -162,14 +162,14 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
 
-    # check superimposed elements
-    # single superimposed element
+    # Check superimposed elements
+    # Single superimposed element
     assert isinstance(converted.gunl0a.qa01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa01.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa01.superimposed_element, cheetah.Marker)
     assert converted.gunl0a.qa01.base_element.name == "_qa01"
 
-    # multiple superimposed elements
+    # Multiple superimposed elements
     assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Segment)
@@ -178,7 +178,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert isinstance(converted.gunl0a.qa02.superimposed_element.otr3, cheetah.Marker)
     assert converted.gunl0a.qa02.base_element.name == "_qa02"
 
-    # multiple superimposed elements
+    # Multiple superimposed elements
     assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qe01.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Segment)
@@ -189,7 +189,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     )
     assert converted.gunl0a.qe01.base_element.name == "_qe01"
 
-    # check flattened superimposed elements
+    # Check flattened superimposed elements
     flattened_qe01 = converted.gunl0a.qe01.flattened()
     assert isinstance(flattened_qe01, cheetah.Segment)
     assert flattened_qe01.element_names == ["qe01_1", "otr2", "trim", "qe01_2"]

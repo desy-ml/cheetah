@@ -86,13 +86,13 @@ def test_superimposed_element_rejects_nonzero_length():
 
 def test_superimposed_serialization(tmp_path):
     """
-    Test that a `Superimposed` element can be serialized to and deserialized from JSON.
+    Test that a `Superimposed` element can be serialised to and deserialised from JSON.
     """
 
     single_element_json = tmp_path / "superimposed_test.json"
     segment_element_json = tmp_path / "superimposed_segment_test.json"
 
-    # test case where the superimposed element is a BPM
+    # Test case where the superimposed element is a `BPM`
     superimposed = cheetah.Superimposed(
         base_element=cheetah.Quadrupole(length=torch.tensor(1.0), k1=torch.tensor(2.0)),
         superimposed_element=cheetah.BPM(),
@@ -110,7 +110,7 @@ def test_superimposed_serialization(tmp_path):
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.BPM)
 
-    # test case where the superimposed element is a Segment
+    # Test case where the superimposed element is a `Segment`
     superimposed_segment = cheetah.Segment(
         elements=[
             cheetah.BPM(name="bpm1"),
