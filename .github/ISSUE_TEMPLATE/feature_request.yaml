@@ -1,6 +1,7 @@
 name: "🚀 Feature Request"
 description: Propose a new feature, element, or enhancement for Cheetah
 title: "[Feature]: "
+type: Feature
 labels: ["enhancement"]
 body:
   - type: markdown
