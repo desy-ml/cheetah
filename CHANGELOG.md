@@ -8,10 +8,12 @@
 
 - Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
+- `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 
 ### 🐛 Bug fixes
 
 - Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
+- Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
 
 ### 🐆 Other
 
