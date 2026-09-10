@@ -19,7 +19,7 @@ body:
         Describe what is unclear, missing, or incorrect.
       placeholder: |
         - Page / URL: 
-        - Description: 
+        - Description:
     validations:
       required: true
 
