@@ -34,6 +34,7 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 ## Project-Specific Information
 
 - **Environment**: Use the global `cheetah-dev` conda environment or the environment in the `env` directory within the repository directory if they are available.
-- **Code Style & Formatting**: All files should be formatted with formatters and follow their best practices. For Python, use `black`, `isort`, and `flake8`.
+- **Code Style & Formatting**: All files should be formatted with formatters and follow their best practices. For Python, use `black`, `isort`, and `flake8`. Other files should be formatted according to Prettier.
 - **Numeric Literals**: Float literals should always show the decimal point and at least one digit after it, even if they are whole numbers (e.g., `1.0`). Int literals and exponential style literals (e.g., `1e9`) don't need this.
 - **Changelog Entries**: Changelog entries end in a period only when they also contain other punctuation marks like commas; otherwise, they do not end in a period.
+- **YAML Files**: The correct suffix for YAML files is `.yaml`.

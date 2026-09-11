@@ -13,6 +13,7 @@
 ### 🐛 Bug fixes
 
 - Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
+- Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
 - Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
 
 ### 🐆 Other
@@ -20,7 +21,7 @@
 - Update openPMD dependency to renamed package (see #684) (@jank324)
 - Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
-- Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693) (@jank324)
+- Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 
 ### 🌟 First Time Contributors
 
