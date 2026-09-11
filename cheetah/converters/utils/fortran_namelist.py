@@ -210,6 +210,26 @@ def assign_property(line: str, context: dict) -> dict:
     else:
         object_names = [object_name]
 
+    if property_name in {"type", "alias"}:
+        metadata_value = property_expression.strip('"')
+
+        for name in object_names:
+            if name not in context:
+                context[name] = {}
+            context[name][property_name] = metadata_value
+
+        return context
+
+    if property_name == "ref":
+        reference_name = property_expression.strip('" ')
+
+        for name in object_names:
+            if name not in context:
+                context[name] = {}
+            context[name][property_name] = reference_name
+
+        return context
+
     expression_result = evaluate_expression(property_expression, context)
 
     for name in object_names:
@@ -273,9 +293,14 @@ def define_element(line: str, context: dict) -> dict:
             property_name = property_name.strip()
             property_expression = property_expression.strip()
 
-            element_properties[property_name] = evaluate_expression(
-                property_expression, context
-            )
+            if property_name in {"type", "alias"}:
+                element_properties[property_name] = property_expression.strip('"')
+            elif property_name == "ref":
+                element_properties[property_name] = property_expression.strip('" ')
+            else:
+                element_properties[property_name] = evaluate_expression(
+                    property_expression, context
+                )
 
     context[element_name] = element_properties
 

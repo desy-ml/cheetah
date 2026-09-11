@@ -36,5 +36,7 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 - **Environment**: Use the global `cheetah-dev` conda environment or the environment in the `env` directory within the repository directory if they are available.
 - **Code Style & Formatting**: All files should be formatted with formatters and follow their best practices. For Python, use `black`, `isort`, and `flake8`. Other files should be formatted according to Prettier.
 - **Numeric Literals**: Float literals should always show the decimal point and at least one digit after it, even if they are whole numbers (e.g., `1.0`). Int literals and exponential style literals (e.g., `1e9`) don't need this.
-- **Changelog Entries**: Changelog entries end in a period only when they also contain other punctuation marks like commas; otherwise, they do not end in a period.
+- **Changelog Entries**: Changelog entries end in a period only when they also contain other punctuation marks like commas; otherwise, they do not end in a period. New changelog entries should always be appended to the bottom of the respective section.
 - **YAML Files**: The correct suffix for YAML files is `.yaml`.
+- **Comments**: Comments should always start capitalised. Like changelog entries, they end in a period only when they also contain other punctuation marks like commas; otherwise, they do not end in a period.
+- **Code References**: Docstrings, comments, changelog entries, and documentation should try to put class names and similar code elements in backticks (`...`) to apply code style.
