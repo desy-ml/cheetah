@@ -4,9 +4,17 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import DefaultParameterWarning
+from cheetah.utils import DefaultParameterWarning, is_mps_available_and_functional
 
 from .resources import ARESlatticeStage3v1_9 as ares
+
+DEMO_CELL = [
+    ocelot.Drift(l=0.3),
+    ocelot.Quadrupole(l=0.2),
+    ocelot.Drift(l=1.0),
+    ocelot.Sextupole(l=0.4),
+    ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0, tilt=1.57),
+]
 
 
 @pytest.mark.parametrize(
@@ -98,15 +106,9 @@ def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype)
 
 
 def test_ocelot_lattice_import():
-    """Tests if a lattice is importet correctly (and to the device requested)."""
-    cell = [
-        ocelot.Drift(l=0.3),
-        ocelot.Quadrupole(l=0.2),
-        ocelot.Drift(l=1.0),
-        ocelot.Sextupole(l=0.4),
-        ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0, tilt=1.57),
-    ]
-    segment = cheetah.Segment.from_ocelot(cell=cell)
+    """Tests if a lattice is correctly imported from Ocelot."""
+
+    segment = cheetah.Segment.from_ocelot(cell=DEMO_CELL)
 
     assert isinstance(segment.elements[0], cheetah.Drift)
     assert isinstance(segment.elements[1], cheetah.Quadrupole)
@@ -120,15 +122,46 @@ def test_ocelot_lattice_import():
     assert torch.isclose(segment.elements[4].phase, torch.tensor(30.0 / 360.0))
     assert segment.elements[4].tilt == 1.57
 
-    assert segment.elements[0].length.device.type == "cpu"
-    assert segment.elements[1].length.device.type == "cpu"
-    assert segment.elements[1].k1.device.type == "cpu"
-    assert segment.elements[1].misalignment.device.type == "cpu"
-    assert segment.elements[2].length.device.type == "cpu"
-    assert segment.elements[3].length.device.type == "cpu"
-    assert segment.elements[3].k2.device.type == "cpu"
-    assert segment.elements[4].length.device.type == "cpu"
-    assert segment.elements[4].voltage.device.type == "cpu"
-    assert segment.elements[4].frequency.device.type == "cpu"
-    assert segment.elements[4].phase.device.type == "cpu"
-    assert segment.elements[4].tilt.device.type == "cpu"
+
+@pytest.mark.parametrize(
+    "device",
+    [
+        torch.device("cpu"),
+        pytest.param(
+            torch.device("cuda"),
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA not available"
+            ),
+        ),
+        pytest.param(
+            torch.device("mps"),
+            marks=pytest.mark.skipif(
+                not is_mps_available_and_functional(), reason="MPS not available"
+            ),
+        ),
+    ],
+    ids=["cpu", "cuda", "mps"],
+)
+def test_ocelot_lattice_import_device(device: torch.device):
+    """Test that the device is properly used during the Ocelot conversion."""
+    segment = cheetah.Segment.from_ocelot(cell=DEMO_CELL, device=device)
+
+    # Check that the properties of the loaded elements are on the correct device
+    for element in segment.elements:
+        for buffer in element.buffers():
+            assert (
+                buffer.device.type == device.type
+            ), f"Wrong device in element {element.name}"
+
+
+@pytest.mark.parametrize(
+    "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
+)
+def test_ocelot_lattice_import_dtype(dtype: torch.dtype):
+    """Test that the dtype is properly used during the Ocelot conversion."""
+    segment = cheetah.Segment.from_ocelot(cell=DEMO_CELL, dtype=dtype)
+
+    # Check that the properties of the loaded elements are of the correct dtype
+    for element in segment.elements:
+        for buffer in element.buffers():
+            assert buffer.dtype == dtype, f"Wrong dtype in element {element.name}"
