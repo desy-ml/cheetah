@@ -13,7 +13,7 @@
 
 - Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
 - Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
-- Fix `dtype` of default attributes in Elegant and Ocelot import. (see #698) (@Hespe) 
+- Fix `dtype` and `device` of default attributes in Bmad, Elegant, and Ocelot import. (see #698) (@Hespe) 
 
 ### 🐆 Other
 
