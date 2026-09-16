@@ -80,13 +80,11 @@ def test_device_passing(device: torch.device):
     converted = cheetah.Segment.from_bmad(file_path, device=device)
 
     # Check that the properties of the loaded elements are on the correct device
-    assert converted.d.length.device.type == device.type
-    assert converted.b.length.device.type == device.type
-    assert converted.b.dipole_e1.device.type == device.type
-    assert converted.q.length.device.type == device.type
-    assert converted.q.k1.device.type == device.type
-    assert converted.s.length.device.type == device.type
-    assert converted.s.k2.device.type == device.type
+    for element in converted.elements:
+        for buffer in element.buffers():
+            assert (
+                buffer.device.type == device.type
+            ), f"Wrong device in element {element.name}"
 
 
 @pytest.mark.filterwarnings(
@@ -103,13 +101,9 @@ def test_dtype_passing(dtype: torch.dtype):
     converted = cheetah.Segment.from_bmad(file_path, dtype=dtype)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    assert converted.d.length.dtype == dtype
-    assert converted.b.length.dtype == dtype
-    assert converted.b.dipole_e1.dtype == dtype
-    assert converted.q.length.dtype == dtype
-    assert converted.q.k1.dtype == dtype
-    assert converted.s.length.dtype == dtype
-    assert converted.s.k2.dtype == dtype
+    for element in converted.elements:
+        for buffer in element.buffers():
+            assert buffer.dtype == dtype, f"Wrong dtype in element {element.name}"
 
 
 @pytest.mark.filterwarnings(
@@ -129,13 +123,11 @@ def test_default_dtype(default_torch_dtype):
     converted = cheetah.Segment.from_bmad(file_path)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    assert converted.d.length.dtype == default_torch_dtype
-    assert converted.b.length.dtype == default_torch_dtype
-    assert converted.b.dipole_e1.dtype == default_torch_dtype
-    assert converted.q.length.dtype == default_torch_dtype
-    assert converted.q.k1.dtype == default_torch_dtype
-    assert converted.s.length.dtype == default_torch_dtype
-    assert converted.s.k2.dtype == default_torch_dtype
+    for element in converted.elements:
+        for buffer in element.buffers():
+            assert (
+                buffer.dtype == default_torch_dtype
+            ), f"Wrong dtype in element {element.name}"
 
 
 def test_cu_hxr_lcls_fixture_conversion():
