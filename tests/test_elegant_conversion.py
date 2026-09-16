@@ -215,27 +215,11 @@ def test_lattice_device(device: torch.device):
     converted = cheetah.Segment.from_elegant(file_path, "fodo", device=device)
 
     # Check that the properties of the loaded elements are on the correct device
-    assert converted.q1.length.device.type == device.type
-    assert converted.q1.k1.device.type == device.type
-    assert converted.q2.length.device.type == device.type
-    assert converted.q2.k1.device.type == device.type
-    assert getattr(converted, "long-name-quad").length.device.type == device.type
-    assert getattr(converted, "long-name-quad").k1.device.type == device.type
-
-    assert [d.length.device.type for d in converted.d1] == [device.type, device.type]
-    assert converted.d2.length.device.type == device.type
-
-    assert converted.b1.length.device.type == device.type
-    assert converted.b1.angle.device.type == device.type
-    assert converted.b1.dipole_e1.device.type == device.type
-    assert converted.b1.gap.device.type == device.type
-    assert converted.csrbend.length.device.type == device.type
-    assert converted.csrbend.angle.device.type == device.type
-    assert converted.csrbend.dipole_e2.device.type == device.type
-    assert converted.csrbend.k1.device.type == device.type
-
-    assert converted.s1.length.device.type == device.type
-    assert converted.s1.k2.device.type == device.type
+    for element in converted.elements:
+        for buffer in element.buffers():
+            assert (
+                buffer.device.type == device.type
+            ), f"Wrong device in element {element.name}"
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
@@ -257,27 +241,9 @@ def test_lattice_dtype(dtype: torch.dtype):
     converted = cheetah.Segment.from_elegant(file_path, "fodo", dtype=dtype)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    assert converted.q1.length.dtype == dtype
-    assert converted.q1.k1.dtype == dtype
-    assert converted.q2.length.dtype == dtype
-    assert converted.q2.k1.dtype == dtype
-    assert getattr(converted, "long-name-quad").length.dtype == dtype
-    assert getattr(converted, "long-name-quad").k1.dtype == dtype
-
-    assert [d.length.dtype for d in converted.d1] == [dtype, dtype]
-    assert converted.d2.length.dtype == dtype
-
-    assert converted.b1.length.dtype == dtype
-    assert converted.b1.angle.dtype == dtype
-    assert converted.b1.dipole_e1.dtype == dtype
-    assert converted.b1.gap.dtype == dtype
-    assert converted.csrbend.length.dtype == dtype
-    assert converted.csrbend.angle.dtype == dtype
-    assert converted.csrbend.dipole_e2.dtype == dtype
-    assert converted.csrbend.k1.dtype == dtype
-
-    assert converted.s1.length.dtype == dtype
-    assert converted.s1.k2.dtype == dtype
+    for element in converted.elements:
+        for buffer in element.buffers():
+            assert buffer.dtype == dtype, f"Wrong dtype in element {element.name}"
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
@@ -302,27 +268,11 @@ def test_lattice_default_dtype(default_torch_dtype):
     converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
     # Check that the properties of the loaded elements are of the correct dtype
-    assert converted.q1.length.dtype == default_torch_dtype
-    assert converted.q1.k1.dtype == default_torch_dtype
-    assert converted.q2.length.dtype == default_torch_dtype
-    assert converted.q2.k1.dtype == default_torch_dtype
-    assert getattr(converted, "long-name-quad").length.dtype == default_torch_dtype
-    assert getattr(converted, "long-name-quad").k1.dtype == default_torch_dtype
-
-    assert [d.length.dtype for d in converted.d1] == [default_torch_dtype] * 2
-    assert converted.d2.length.dtype == default_torch_dtype
-
-    assert converted.b1.length.dtype == default_torch_dtype
-    assert converted.b1.angle.dtype == default_torch_dtype
-    assert converted.b1.dipole_e1.dtype == default_torch_dtype
-    assert converted.b1.gap.dtype == default_torch_dtype
-    assert converted.csrbend.length.dtype == default_torch_dtype
-    assert converted.csrbend.angle.dtype == default_torch_dtype
-    assert converted.csrbend.dipole_e2.dtype == default_torch_dtype
-    assert converted.csrbend.k1.dtype == default_torch_dtype
-
-    assert converted.s1.length.dtype == default_torch_dtype
-    assert converted.s1.k2.dtype == default_torch_dtype
+    for element in converted.elements:
+        for buffer in element.buffers():
+            assert (
+                buffer.dtype == default_torch_dtype
+            ), f"Wrong dtype in element {element.name}"
 
 
 def test_particle_beam_import():
