@@ -1,0 +1,77 @@
+name: validate-pr
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    name: validate-pr
+    runs-on: ubuntu-latest
+    if: ${{ !endsWith(github.actor, '[bot]') }}
+    steps:
+      - name: Validate PR body and checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr || !pr.body) {
+              core.setFailed('PR description is completely empty. Please complete the PR template.');
+              return;
+            }
+
+            const body = pr.body;
+            // Strip HTML comments so commented-out template instructions are never checked
+            const cleanBody = body.replace(/<!--[\s\S]*?-->/g, '');
+            const errors = [];
+
+            // 1. Verify PR template sections exist
+            if (!body.includes('## Description') || !body.includes('## Checklist')) {
+              errors.push('The PR description is missing required template sections (Description or Checklist). Please follow the PR template.');
+            }
+
+            // 2. Ensure nothing was written above ## Description
+            const descIndex = body.indexOf('## Description');
+            if (descIndex !== -1) {
+              const textBefore = body.slice(0, descIndex);
+              const cleanBefore = textBefore.replace(/<!--[\s\S]*?-->/g, '').trim();
+              if (cleanBefore.length > 0) {
+                errors.push('Please do not write anything above the "## Description" section. Put your summary in the PR title or inside the Description section.');
+              }
+            }
+
+            // 3. Check that ## Description has actual content (excluding HTML comments)
+            const descMatch = body.match(/## Description([\s\S]*?)(?=## Motivation and Context|$)/);
+            if (descMatch) {
+              const cleanDesc = descMatch[1].replace(/<!--[\s\S]*?-->/g, '').trim();
+              if (cleanDesc.length === 0) {
+                errors.push('The "## Description" section is empty. Please describe your changes.');
+              }
+            }
+
+            // 4. Check that at least one "Type of change" is selected
+            const typesMatch = cleanBody.match(/## Types of changes([\s\S]*?)(?=## Checklist|$)/);
+            if (typesMatch) {
+              const hasTypeSelected = /- \[[xX]\]/.test(typesMatch[1]);
+              if (!hasTypeSelected) {
+                errors.push('Please select at least one type of change under "## Types of changes".');
+              }
+            }
+
+            // 5. Check for unticked required items: '- [ ] ... (**required**)'
+            const uncheckedRequired = cleanBody.match(/- \[\s\][^\n\r]*?\(\*\*required\*\*\)/gi);
+            if (uncheckedRequired) {
+              errors.push('The following required checklist items are not completed:\n' + uncheckedRequired.map(item => `  • ${item.replace(/^- \[\s\]\s*/, '').trim()}`).join('\n'));
+            }
+
+            // 6. Check that required checklist items were not deleted
+            const requiredCount = (cleanBody.match(/\(\*\*required\*\*\)/gi) || []).length;
+            if (requiredCount < 3) {
+              errors.push('One or more required checklist items appear to have been removed.');
+            }
+
+            if (errors.length > 0) {
+              core.setFailed('PR Template validation failed:\n\n' + errors.join('\n\n'));
+            } else {
+              core.info('All PR checklist requirements and sections passed validation!');
+            }
