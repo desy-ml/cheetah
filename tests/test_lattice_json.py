@@ -122,7 +122,11 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
     )
 
 
-def test_save_and_reload_superimposed_element(tmp_path):
+@pytest.mark.parametrize(
+    "superimposed_kind",
+    ["single_bpm", "segment_of_bpms"],
+)
+def test_save_and_reload_superimposed_element(tmp_path, superimposed_kind: str):
     """
     Test that saving and reloading a segment containing an element with other elements
     as its properties (here a `Superimposed` element) works correctly and preserves the
@@ -131,7 +135,16 @@ def test_save_and_reload_superimposed_element(tmp_path):
     base_element = cheetah.Quadrupole(
         length=torch.tensor(1.0), k1=torch.tensor(4.2), name="quadrupole_base"
     )
-    superimposed_element = cheetah.BPM(is_active=True, name="bpm_superimposed")
+    if superimposed_kind == "single_bpm":
+        superimposed_element = cheetah.BPM(is_active=True, name="bpm_superimposed")
+    else:
+        superimposed_element = cheetah.Segment(
+            elements=[
+                cheetah.BPM(is_active=True, name="bpm_superimposed_1"),
+                cheetah.BPM(is_active=False, name="bpm_superimposed_2"),
+            ],
+            name="bpm_superimposed_segment",
+        )
     superimposed = cheetah.Superimposed(
         base_element=base_element,
         superimposed_element=superimposed_element,
@@ -163,6 +176,25 @@ def test_save_and_reload_superimposed_element(tmp_path):
     assert torch.allclose(reloaded_superimposed.base_element.k1, torch.tensor(4.2))
 
     # Check superimposed element
-    assert isinstance(reloaded_superimposed.superimposed_element, cheetah.BPM)
-    assert reloaded_superimposed.superimposed_element.name == "bpm_superimposed"
-    assert reloaded_superimposed.superimposed_element.is_active is True
+    if superimposed_kind == "single_bpm":
+        assert isinstance(reloaded_superimposed.superimposed_element, cheetah.BPM)
+        assert reloaded_superimposed.superimposed_element.name == "bpm_superimposed"
+        assert reloaded_superimposed.superimposed_element.is_active is True
+    else:
+        assert isinstance(reloaded_superimposed.superimposed_element, cheetah.Segment)
+        assert (
+            reloaded_superimposed.superimposed_element.name
+            == "bpm_superimposed_segment"
+        )
+        assert len(reloaded_superimposed.superimposed_element.elements) == 2
+
+        first_bpm = reloaded_superimposed.superimposed_element.elements[0]
+        second_bpm = reloaded_superimposed.superimposed_element.elements[1]
+
+        assert isinstance(first_bpm, cheetah.BPM)
+        assert first_bpm.name == "bpm_superimposed_1"
+        assert first_bpm.is_active is True
+
+        assert isinstance(second_bpm, cheetah.BPM)
+        assert second_bpm.name == "bpm_superimposed_2"
+        assert second_bpm.is_active is False
