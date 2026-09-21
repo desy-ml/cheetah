@@ -138,7 +138,7 @@ class Segment(Element):
             if is_in_subcell:
                 subcell.append(element)
 
-        return self.__class__(subcell)
+        return self.__class__(subcell, metadata=deepcopy(self.metadata))
 
     def flattened(self, skip_superimposed: bool = False) -> "Segment":
         """
@@ -165,7 +165,10 @@ class Segment(Element):
                 flattened_elements.append(element)
 
         return self.__class__(
-            elements=flattened_elements, name=self.name, sanitize_name=False
+            elements=flattened_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def reversed(self) -> "Segment":
@@ -186,6 +189,7 @@ class Segment(Element):
             elements=reversed_elements,
             name=f"{self.name}_reversed",
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def transfer_maps_merged(
@@ -237,7 +241,10 @@ class Segment(Element):
             )
 
         return self.__class__(
-            elements=merged_elements, name=self.name, sanitize_name=False
+            elements=merged_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def without_inactive_markers(
@@ -266,6 +273,7 @@ class Segment(Element):
             ],
             name=self.name,
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def without_inactive_zero_length_elements(
@@ -295,6 +303,7 @@ class Segment(Element):
             ],
             name=self.name,
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def inactive_elements_as_drifts(
@@ -327,12 +336,14 @@ class Segment(Element):
                         device=element.length.device,
                         dtype=element.length.dtype,
                         sanitize_name=False,
+                        metadata=deepcopy(element.metadata),
                     )
                 )
                 for element in self.elements
             ],
             name=self.name,
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def with_consecutive_elements_merged(
@@ -625,14 +636,16 @@ class Segment(Element):
         """
         index = self.element_index(element_name)
         pre_cell = (
-            self.__class__(self.elements[: index + 1])
+            self.__class__(self.elements[: index + 1], metadata=deepcopy(self.metadata))
             if mode == "after"
-            else self.__class__(self.elements[:index])
+            else self.__class__(self.elements[:index], metadata=deepcopy(self.metadata))
         )
         post_cell = (
-            self.__class__(self.elements[index:])
+            self.__class__(self.elements[index:], metadata=deepcopy(self.metadata))
             if mode == "before"
-            else self.__class__(self.elements[index + 1 :])
+            else self.__class__(
+                self.elements[index + 1 :], metadata=deepcopy(self.metadata)
+            )
         )
         return (
             (pre_cell, self.elements[index], post_cell)  # Two splits: before and after
