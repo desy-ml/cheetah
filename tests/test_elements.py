@@ -461,3 +461,23 @@ def test_element_no_internal_dirty_name_warning(element):
         _ = element.clone()
         _ = element.split(torch.tensor(1.0))
         _ = element.merge(element.clone())
+
+
+@pytest.mark.for_every_element("orignal")
+def test_element_merging_metadata(orignal):
+    """
+    Test that metadata is properly merged with its element and the original elements are
+    not modified.
+    """
+    other = orignal.clone()
+
+    orignal.metadata = {"original": None}
+    other.metadata = {"other": None}
+
+    merged_element = orignal.merge(other)
+
+    # If `None`, the element does not support merging, which passes the test
+    if merged_element is not None:
+        assert orignal.metadata == {"original": None}
+        assert other.metadata == {"other": None}
+        assert merged_element.metadata == {"original": None, "other": None}
