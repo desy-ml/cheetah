@@ -61,9 +61,7 @@ def vectorized_histogram_2d(
     idx_flat = ix1 * bins_x2 + ix2  # (B, N)
 
     # Offset each batch so all histograms can be accumulated with one bincount.
-    offset = torch.arange(
-        B, device=device, dtype=idx_flat.dtype
-    ) * (bins_x1 * bins_x2)
+    offset = torch.arange(B, device=device, dtype=idx_flat.dtype) * (bins_x1 * bins_x2)
 
     idx_flat_offset = (idx_flat + offset.unsqueeze(1)).reshape(-1)
 
