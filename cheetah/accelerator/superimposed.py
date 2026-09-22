@@ -51,14 +51,32 @@ class Superimposed(Element):
             name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
-        assert superimposed_element.length == torch.tensor(
-            0.0
-        ), "The superimposed element must have zero length."
+        assert (
+            superimposed_element.length == 0.0
+        ).all(), "The superimposed element must have zero length."
 
         self.base_element = base_element
         self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
+
+        # Check to make sure the base element was split into two halves
+        if len(base_element_halves) != 2:
+            raise ValueError("The base element could not be split into two halves.")
+
+        # Add useful names for element halves such that they can be accessed in the
+        # flattened segment. These are derived from the name of this `Superimposed`
+        # element rather than from `base_element.name`, because the latter may be
+        # renamed below and is therefore not stable across serialisation round trips.
+        base_element_halves[0].name = f"{self.name}_1"
+        base_element_halves[1].name = f"{self.name}_2"
+
+        # If the base element has the same name as the `Superimposed` element, prepend
+        # an underscore to the base element's name to avoid naming conflicts in
+        # serialisation.
+        if self.base_element.name == name:
+            self.base_element.name = "_" + self.base_element.name
+
         self._segment = Segment(
             elements=[
                 base_element_halves[0],
