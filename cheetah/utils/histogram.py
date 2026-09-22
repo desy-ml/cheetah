@@ -87,13 +87,27 @@ def vectorized_histogram_2d(
 
     idx_flat = ix1 * bins_x2 + ix2  # (B, N)
 
-    offset = torch.arange(B, device=device, dtype=idx_flat.dtype) * (bins_x1 * bins_x2)
+    offset = torch.arange(
+        B, device=device, dtype=idx_flat.dtype
+    ) * (bins_x1 * bins_x2)
+
     idx_flat_offset = (idx_flat + offset.unsqueeze(1)).reshape(-1)
 
     weights_flat = weights_flat.reshape(-1).to(dtype)
+
+    valid = (
+        (x1_flat >= x1_edges[0])
+        & (x1_flat <= x1_edges[-1])
+        & (x2_flat >= x2_edges[0])
+        & (x2_flat <= x2_edges[-1])
+    ).reshape(-1)
+
     hist_flat = torch.bincount(
-        idx_flat_offset, weights=weights_flat, minlength=B * bins_x1 * bins_x2
+        idx_flat_offset[valid],
+        weights=weights_flat[valid],
+        minlength=B * bins_x1 * bins_x2,
     ).to(dtype)
+
     hist = hist_flat.view(*batch_shape, bins_x1, bins_x2)
 
     return hist
