@@ -195,6 +195,28 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened_qe01.element_names == ["qe01_1", "otr2", "trim", "qe01_2"]
 
 
+def test_superimpose_non_zero_length_warns():
+    """
+    Test that a superimposed element with a non-zero length is dropped with a warning,
+    because Cheetah can only superimpose zero-length elements.
+    """
+    context = {
+        "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
+        "trim": {
+            "element_type": "hkicker",
+            "l": 0.05,
+            "kick": 1e-4,
+            "superimpose": "T",
+            "ref": "qa01",
+        },
+    }
+
+    with pytest.warns(UnknownElementWarning, match="non-zero length"):
+        converted = bmad_converter.convert_element("qa01", context)
+
+    assert isinstance(converted, cheetah.Quadrupole)
+
+
 def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
     """
     Test that superimpose conversion falls back to the

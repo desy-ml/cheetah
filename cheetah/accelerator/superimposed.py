@@ -51,9 +51,9 @@ class Superimposed(Element):
             name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
-        assert superimposed_element.length == torch.tensor(
-            0.0
-        ), "The superimposed element must have zero length."
+        assert (
+            superimposed_element.length == 0.0
+        ).all(), "The superimposed element must have zero length."
 
         self.base_element = base_element
         self.superimposed_element = superimposed_element

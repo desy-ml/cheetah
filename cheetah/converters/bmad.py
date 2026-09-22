@@ -92,11 +92,16 @@ def convert_element(
                 dtype,
                 _allow_superimpose=False,
             )
-            if torch.allclose(
-                candidate_superimposed.length,
-                torch.zeros_like(candidate_superimposed.length),
-            ):
+            if (candidate_superimposed.length == 0.0).all():
                 superimposed_entries.append((other_name, candidate_superimposed))
+            else:
+                warnings.warn(
+                    f"Element {other_name} is superimposed on {name}, but has a "
+                    "non-zero length. Cheetah only supports superimposing zero-length "
+                    f"elements, so {other_name} is dropped from the lattice.",
+                    category=UnknownElementWarning,
+                    stacklevel=2,
+                )
 
         if superimposed_entries:
             if len(superimposed_entries) == 1:
