@@ -464,7 +464,7 @@ def test_element_no_internal_dirty_name_warning(element):
 
 
 @pytest.mark.for_every_element("original")
-def test_element_merging_metadata(orignal):
+def test_element_merging_metadata(original):
     """
     Test that metadata is properly merged with its element and the original elements are
     not modified.
