@@ -463,21 +463,21 @@ def test_element_no_internal_dirty_name_warning(element):
         _ = element.merge(element.clone())
 
 
-@pytest.mark.for_every_element("orignal")
+@pytest.mark.for_every_element("original")
 def test_element_merging_metadata(orignal):
     """
     Test that metadata is properly merged with its element and the original elements are
     not modified.
     """
-    other = orignal.clone()
+    other = original.clone()
 
-    orignal.metadata = {"original": None}
+    original.metadata = {"original": None}
     other.metadata = {"other": None}
 
-    merged_element = orignal.merge(other)
+    merged_element = original.merge(other)
 
     # If `None`, the element does not support merging, which passes the test
     if merged_element is not None:
-        assert orignal.metadata == {"original": None}
+        assert original.metadata == {"original": None}
         assert other.metadata == {"other": None}
         assert merged_element.metadata == {"original": None, "other": None}
