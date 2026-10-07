@@ -9,16 +9,10 @@ def test_superimposed_base_split_length():
     Test that the base element of a superimposed segment is correctly split into two
     halves, each half the length of the original base element.
     """
-    base_quad = cheetah.Quadrupole(name="q1", length=torch.tensor(1.0))
     superimposed = cheetah.Superimposed(
-        base_element=base_quad,
-        superimposed_element=cheetah.BPM(name="bpm1"),
-        name="super1",
+        base_element=cheetah.Quadrupole(length=torch.tensor(1.0)),
+        superimposed_element=cheetah.BPM(),
     )
-
-    # Base element name must not be mutated
-    assert base_quad.name == "q1"
-    assert superimposed.base_element.name == "q1"
 
     flattened = superimposed.flattened()
     assert len(flattened.elements) == 3
@@ -27,10 +21,28 @@ def test_superimposed_base_split_length():
     assert isinstance(flattened.elements[2], cheetah.Quadrupole)
     assert flattened.elements[0].length == torch.tensor(0.5)
     assert flattened.elements[2].length == torch.tensor(0.5)
-    assert flattened.elements[0].name == "super1_1"
-    assert flattened.elements[2].name == "super1_2"
 
     assert superimposed.length == torch.tensor(1.0)
+
+
+def test_superimposed_element_naming():
+    """
+    Test that the base element is not mutated when creating a `Superimposed` element,
+    and that the element halves in the flattened segment are named after the base 
+    element.
+    """
+    superimposed = cheetah.Superimposed(
+        base_element=cheetah.Quadrupole(name="q1", length=torch.tensor(1.0)),
+        superimposed_element=cheetah.BPM(name="bpm1"),
+        name="super1",
+    )
+
+    assert superimposed.base_element.name == "q1"
+
+    flattened = superimposed.flattened()
+    assert flattened.elements[0].name == "q1_1"
+    assert flattened.elements[1].name == "bpm1"
+    assert flattened.elements[2].name == "q1_2"
 
 
 def test_superimposed_first_order_transfer_map():
@@ -95,12 +107,13 @@ def test_superimposed_element_rejects_nonzero_length():
 
 def test_superimposed_serialization(tmp_path):
     """
-    Test that a `Superimposed` element can be serialised to and deserialised from JSON.
+    Test that a `Superimposed` element can be serialised to and deserialised from
+    LatticeJSON.
 
     The base elements share their name with the `Superimposed` element, as is the case
-    for elements coming from the Bmad importer. This means they are renamed internally,
-    so this also tests that the names of the base element halves are unchanged by the
-    round trip.
+    for elements coming from the Bmad importer. Their storage keys are disambiguated in
+    LatticeJSON, so this also tests that the names of the base element and its halves
+    are preserved across the round trip.
     """
     # Test case where the superimposed element is a `BPM`
     superimposed = cheetah.Superimposed(
@@ -127,9 +140,7 @@ def test_superimposed_serialization(tmp_path):
     superimposed_deserialized = deserialized.elements[0]
     assert superimposed_deserialized.name == "superimposed_test"
     assert isinstance(superimposed_deserialized.base_element, cheetah.Quadrupole)
-    assert (
-        superimposed_deserialized.base_element.name == "superimposed_test_base_element"
-    )
+    assert superimposed_deserialized.base_element.name == "superimposed_test"
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.BPM)
     assert deserialized.flattened().element_names == [
@@ -140,10 +151,7 @@ def test_superimposed_serialization(tmp_path):
 
     # Test case where the superimposed element is a `Segment`
     superimposed_segment = cheetah.Segment(
-        elements=[
-            cheetah.BPM(name="bpm1"),
-            cheetah.Marker(name="marker1"),
-        ],
+        elements=[cheetah.BPM(name="bpm1"), cheetah.Marker(name="marker1")],
         name="superimposed_segment",
     )
 
@@ -167,7 +175,7 @@ def test_superimposed_serialization(tmp_path):
     superimposed_deserialized = deserialized.elements[0]
     assert superimposed_deserialized.name == "q1"
     assert isinstance(superimposed_deserialized.base_element, cheetah.Quadrupole)
-    assert superimposed_deserialized.base_element.name == "q1_base_element"
+    assert superimposed_deserialized.base_element.name == "q1"
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.Segment)
     assert deserialized.flattened().element_names == ["q1_1", "bpm1", "marker1", "q1_2"]

@@ -63,13 +63,11 @@ class Superimposed(Element):
             )
 
         # Add useful names for element halves such that they can be accessed in the
-        # flattened segment. These are derived from the name of this `Superimposed`
-        # element rather than from `base_element.name`, because the latter may clash
-        # with `self.name` during serialisation.
+        # flattened segment
         half_1 = base_element_halves[0].clone()
         half_2 = base_element_halves[1].clone()
-        half_1.name = f"{self.name}_1"
-        half_2.name = f"{self.name}_2"
+        half_1.name = f"{base_element.name}_1"
+        half_2.name = f"{base_element.name}_2"
 
         if isinstance(superimposed_element, Segment):
             super_elements = superimposed_element.elements

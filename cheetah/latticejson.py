@@ -64,6 +64,7 @@ def convert_element(
                 and elements_dict[storage_name] != [subelement_class, subelement_params]
             ):
                 storage_name = f"{element.name}_{feature}"
+                subelement_params["name"] = subelement_name
             elements_dict[storage_name] = [subelement_class, subelement_params]
             params[feature] = storage_name
         else:
@@ -212,9 +213,12 @@ def parse_element(
     """
     element_class = getattr(cheetah, lattice_dict["elements"][name][0])
     params = lattice_dict["elements"][name][1]
+    element_name = params.get("name", name)
 
     converted_params = {}
     for key, value in params.items():
+        if key == "name":
+            continue
         if isinstance(value, str) and value in lattice_dict.get("lattices", {}):
             converted_params[key] = parse_segment(
                 value, lattice_dict, device=device, dtype=dtype
@@ -226,7 +230,7 @@ def parse_element(
         else:
             converted_params[key] = nontorch2feature(value, device=device, dtype=dtype)
 
-    return element_class(name=name, **converted_params)
+    return element_class(name=element_name, **converted_params)
 
 
 def parse_segment(
