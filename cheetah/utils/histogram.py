@@ -40,7 +40,6 @@ def vectorized_histogram_2d(
 
     x1_flat = x1.reshape(-1, N).contiguous()
     x2_flat = x2.reshape(-1, N).contiguous()
-    weights_flat = weights.reshape(-1, N)
 
     B = x1_flat.shape[0]
     device = x1_flat.device
@@ -65,7 +64,7 @@ def vectorized_histogram_2d(
 
     idx_flat_offset = (idx_flat + offset.unsqueeze(1)).reshape(-1)
 
-    weights_flat = weights_flat.reshape(-1).to(dtype)
+    weights_flat = weights.reshape(-1).to(dtype)
 
     valid = (
         (x1_flat >= x1_edges[0])
