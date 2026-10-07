@@ -40,3 +40,4 @@ Not lazy about: understanding the problem (read it fully and trace the real flow
 - **YAML Files**: The correct suffix for YAML files is `.yaml`.
 - **Comments**: Comments should always start capitalised. Like changelog entries, they end in a period only when they also contain other punctuation marks like commas; otherwise, they do not end in a period.
 - **Code References**: Docstrings, comments, changelog entries, and documentation should try to put class names and similar code elements in backticks (`...`) to apply code style.
+- **Simulations**: All simulations must be as fast as possible (and optimised to achieve that), and they must be fully differentiable and have usable smooth gradients.

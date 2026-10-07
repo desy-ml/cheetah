@@ -58,8 +58,14 @@ def convert_element(
             subelement_name, subelement_class, subelement_params = convert_element(
                 value, elements_dict, lattices_dict
             )
-            elements_dict[subelement_name] = [subelement_class, subelement_params]
-            params[feature] = subelement_name
+            storage_name = subelement_name
+            if storage_name == element.name or (
+                storage_name in elements_dict
+                and elements_dict[storage_name] != [subelement_class, subelement_params]
+            ):
+                storage_name = f"{element.name}_{feature}"
+            elements_dict[storage_name] = [subelement_class, subelement_params]
+            params[feature] = storage_name
         else:
             params[feature] = feature2nontorch(value)
 
@@ -209,11 +215,11 @@ def parse_element(
 
     converted_params = {}
     for key, value in params.items():
-        if isinstance(value, str) and value in lattice_dict["lattices"]:
+        if isinstance(value, str) and value in lattice_dict.get("lattices", {}):
             converted_params[key] = parse_segment(
                 value, lattice_dict, device=device, dtype=dtype
             )
-        elif isinstance(value, str) and value in lattice_dict["elements"]:
+        elif isinstance(value, str) and value in lattice_dict.get("elements", {}):
             converted_params[key] = parse_element(
                 value, lattice_dict, device=device, dtype=dtype
             )

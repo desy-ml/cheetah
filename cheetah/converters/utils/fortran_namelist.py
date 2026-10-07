@@ -144,8 +144,17 @@ def evaluate_expression(expression: str, context: dict) -> Any:
         return expression[1:-1]
 
     # Check against allowed keywords
-    if expression in ["open", "electron", "t", "f", "traveling_wave", "full"]:
-        return expression
+    if expression.lower() in [
+        "open",
+        "electron",
+        "t",
+        "f",
+        "true",
+        "false",
+        "traveling_wave",
+        "full",
+    ]:
+        return expression.lower()
 
     # Check against previously defined variables
     if expression in context:
@@ -210,18 +219,8 @@ def assign_property(line: str, context: dict) -> dict:
     else:
         object_names = [object_name]
 
-    if property_name in {"type", "alias"}:
-        metadata_value = property_expression.strip('"')
-
-        for name in object_names:
-            if name not in context:
-                context[name] = {}
-            context[name][property_name] = metadata_value
-
-        return context
-
     if property_name == "ref":
-        reference_name = property_expression.strip('" ')
+        reference_name = property_expression.strip("\"' ")
 
         for name in object_names:
             if name not in context:
@@ -293,10 +292,8 @@ def define_element(line: str, context: dict) -> dict:
             property_name = property_name.strip()
             property_expression = property_expression.strip()
 
-            if property_name in {"type", "alias"}:
-                element_properties[property_name] = property_expression.strip('"')
-            elif property_name == "ref":
-                element_properties[property_name] = property_expression.strip('" ')
+            if property_name == "ref":
+                element_properties[property_name] = property_expression.strip("\"' ")
             else:
                 element_properties[property_name] = evaluate_expression(
                     property_expression, context

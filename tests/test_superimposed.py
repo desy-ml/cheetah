@@ -7,19 +7,28 @@ import cheetah
 def test_superimposed_base_split_length():
     """
     Test that the base element of a superimposed segment is correctly split into two
-    halfs, each half the length of the original base element.
+    halves, each half the length of the original base element.
     """
+    base_quad = cheetah.Quadrupole(name="q1", length=torch.tensor(1.0))
     superimposed = cheetah.Superimposed(
-        base_element=cheetah.Quadrupole(length=torch.tensor(1.0)),
-        superimposed_element=cheetah.BPM(),
+        base_element=base_quad,
+        superimposed_element=cheetah.BPM(name="bpm1"),
+        name="super1",
     )
 
-    assert len(superimposed._segment.elements) == 3
-    assert isinstance(superimposed._segment.elements[0], cheetah.Quadrupole)
-    assert isinstance(superimposed._segment.elements[1], cheetah.BPM)
-    assert isinstance(superimposed._segment.elements[2], cheetah.Quadrupole)
-    assert superimposed._segment.elements[0].length == torch.tensor(0.5)
-    assert superimposed._segment.elements[2].length == torch.tensor(0.5)
+    # Base element name must not be mutated
+    assert base_quad.name == "q1"
+    assert superimposed.base_element.name == "q1"
+
+    flattened = superimposed.flattened()
+    assert len(flattened.elements) == 3
+    assert isinstance(flattened.elements[0], cheetah.Quadrupole)
+    assert isinstance(flattened.elements[1], cheetah.BPM)
+    assert isinstance(flattened.elements[2], cheetah.Quadrupole)
+    assert flattened.elements[0].length == torch.tensor(0.5)
+    assert flattened.elements[2].length == torch.tensor(0.5)
+    assert flattened.elements[0].name == "super1_1"
+    assert flattened.elements[2].name == "super1_2"
 
     assert superimposed.length == torch.tensor(1.0)
 
@@ -76,7 +85,7 @@ def test_superimposed_element_rejects_nonzero_length():
     element.
     """
     with pytest.raises(
-        AssertionError, match="The superimposed element must have zero length."
+        ValueError, match="The superimposed element must have zero length."
     ):
         _ = cheetah.Superimposed(
             base_element=cheetah.Quadrupole(length=torch.tensor(1.0)),
@@ -170,5 +179,5 @@ def test_superimposed_serialization(tmp_path):
         "q1_1",
         "bpm1",
         "marker1",
-        "q1_2",
+        "q1_2"
     ]

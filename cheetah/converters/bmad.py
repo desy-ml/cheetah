@@ -11,56 +11,31 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
-from cheetah.utils import UnknownElementWarning
+from cheetah.utils import PhysicsWarning, UnknownElementWarning
 
 
-def _is_truthy_superimpose(value: object) -> bool:
-    """Interpret Bmad superimpose flags as booleans."""
-    if isinstance(value, str):
-        return value.lower() in {"t", "true", "1"}
-    return bool(value)
+def _find_superimposed_elements(context: dict) -> dict[str, list[str]]:
+    """Build a mapping from reference element names to superimposed element names."""
+    superimposed_map: dict[str, list[str]] = {}
+    for elem_name, elem_def in context.items():
+        if not isinstance(elem_def, dict) or "ref" not in elem_def:
+            continue
+        super_flag = elem_def.get("superimpose", True)
+        if isinstance(super_flag, str):
+            super_flag = super_flag.lower() in {"t", "true", "1"}
+        if bool(super_flag):
+            ref_name = elem_def["ref"]
+            superimposed_map.setdefault(ref_name, []).append(elem_name)
+    return superimposed_map
 
 
-def _is_superimposed_definition(parsed: object) -> bool:
-    """Return whether a parsed element definition denotes a superimposed element."""
-    if not isinstance(parsed, dict):
-        return False
-    if "ref" not in parsed:
-        return False
-
-    # Inline syntax like "..., superimpose, ref=..." currently may omit an explicit
-    # superimpose property after parsing, so entries with ref are treated as
-    # superimposed by default.
-    if "superimpose" not in parsed:
-        return True
-
-    return _is_truthy_superimpose(parsed["superimpose"])
-
-
-def convert_element(
+def _convert_single_element(
     name: str,
     context: dict,
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
-    _allow_superimpose: bool = True,
 ) -> "cheetah.Element":
-    """Convert a parsed Bmad element dict to a cheetah Element.
-
-    :param name: Name of the (top-level) element to convert.
-    :param context: Context dictionary parsed from Bmad lattice file(s).
-    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
-        name. If `None` (default), a warning is raised for invalid names. Set to `True`
-        to sanitise, or `False` to silence the warning.
-    :param device: Device to put the element on. If `None`, the current default device
-        of PyTorch is used.
-    :param dtype: Data type to use for the element. If `None`, the current default dtype
-        of PyTorch is used.
-    :param _allow_superimpose: Internal recursion guard to prevent wrapping both the
-        base and marker elements repeatedly while constructing a `Superimposed` object.
-    :return: Converted cheetah Element. If you are calling this function yourself
-        as a user of Cheetah, this is most likely a `Segment`.
-    """
     factory_kwargs = {
         "device": device or torch.get_default_device(),
         "dtype": dtype or torch.get_default_dtype(),
@@ -153,9 +128,7 @@ def convert_element(
         )
     elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
         if bmad_parsed["element_type"] == "marker":
-            validate_understood_properties(
-                shared_properties + ["ref", "superimpose"], bmad_parsed
-            )
+            validate_understood_properties(shared_properties, bmad_parsed)
             return cheetah.Marker(
                 name=name, sanitize_name=sanitize_name, metadata=metadata
             )
@@ -207,8 +180,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(
-                shared_properties + ["l", "kick", "ref", "superimpose"],
-                bmad_parsed,
+                shared_properties + ["l", "kick"], bmad_parsed
             )
             return cheetah.HorizontalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
@@ -219,8 +191,7 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(
-                shared_properties + ["l", "kick", "ref", "superimpose"],
-                bmad_parsed,
+                shared_properties + ["l", "kick"], bmad_parsed
             )
             return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
@@ -418,6 +389,95 @@ def convert_element(
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
+
+
+def convert_element(
+    name: str,
+    context: dict,
+    sanitize_name: bool | None = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
+) -> "cheetah.Element":
+    """
+    Convert a parsed Bmad element dict to a Cheetah `Element`.
+
+    :param name: Name of the (top-level) element to convert.
+    :param context: Context dictionary parsed from Bmad lattice file(s).
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. If `None` (default), a warning is raised for invalid names. Set to `True`
+        to sanitise, or `False` to silence the warning.
+    :param device: Device to put the element on. If `None`, the current default device
+        of PyTorch is used.
+    :param dtype: Data type to use for the element. If `None`, the current default dtype
+        of PyTorch is used.
+    :return: Converted Cheetah `Element`. If you are calling this function yourself
+        as a user of Cheetah, this is most likely a `Segment`.
+    """
+    if "__superimposed_map__" not in context:
+        context["__superimposed_map__"] = _find_superimposed_elements(context)
+    superimposed_map = context["__superimposed_map__"]
+
+    base_element = _convert_single_element(
+        name, context, sanitize_name=sanitize_name, device=device, dtype=dtype
+    )
+
+    superimposed_names = superimposed_map.get(name, [])
+    if superimposed_names:
+        superimposed_entries = []
+        for super_name in superimposed_names:
+            candidate = _convert_single_element(
+                super_name,
+                context,
+                sanitize_name=sanitize_name,
+                device=device,
+                dtype=dtype,
+            )
+            if torch.allclose(candidate.length, torch.zeros_like(candidate.length)):
+                superimposed_entries.append((super_name, candidate))
+            else:
+                warnings.warn(
+                    f"Superimposed element {super_name} has non-zero length and "
+                    "cannot be superimposed. Skipping.",
+                    category=PhysicsWarning,
+                    stacklevel=2,
+                )
+
+        if superimposed_entries:
+            if len(superimposed_entries) == 1:
+                superimposed_element = superimposed_entries[0][1]
+            else:
+                superimposed_element = cheetah.Segment(
+                    elements=[entry[1] for entry in superimposed_entries],
+                    name=f"{name}_superimposed",
+                    sanitize_name=sanitize_name,
+                )
+            bmad_parsed = context[name]
+            metadata = (
+                {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
+                if isinstance(bmad_parsed, dict)
+                else {}
+            )
+            try:
+                return cheetah.Superimposed(
+                    base_element=base_element,
+                    superimposed_element=superimposed_element,
+                    name=name,
+                    sanitize_name=sanitize_name,
+                    metadata=metadata,
+                )
+            except ValueError as error:
+                super_names_str = ", ".join(
+                    [entry[0] for entry in superimposed_entries]
+                )
+                warnings.warn(
+                    f"Could not superimpose element(s) {super_names_str} on "
+                    f"{name}. Keeping only the base element. Reason: {error}",
+                    category=UnknownElementWarning,
+                    stacklevel=2,
+                )
+                return base_element
+
+    return base_element
 
 
 def convert_lattice(

@@ -13,15 +13,11 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class Superimposed(Element):
     """
     A segment that represents a superimposed structure in an accelerator, i.e. where one
-    element is placed over another at the center of the base element.
+    element is placed over another at the centre of the base element.
 
-    NOTE: Changing either `base_element` or `superimposed_element` after initialisation
-        will lead to unexpected behaviour. If you need to change either of these
-        elements, please create a new instance of `Superimposed`.
-
-    :param base_element: The base element at the center of which the superimposed
+    :param base_element: The base element at the centre of which the superimposed
         element is placed.
-    :param superimposed_element: Element to be placed at the center of the base element.
+    :param superimposed_element: Element to be placed at the centre of the base element.
         NOTE: The `superimposed_element` must have a length of zero.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
@@ -58,11 +54,17 @@ class Superimposed(Element):
         self.base_element = base_element
         self.superimposed_element = superimposed_element
 
-        base_element_halves = base_element.split(base_element.length / 2.0)
+        if not torch.allclose(
+            superimposed_element.length, torch.zeros_like(superimposed_element.length)
+        ):
+            raise ValueError("The superimposed element must have zero length.")
 
-        # Check to make sure the base element was split into two halves
+        base_element_halves = base_element.split(base_element.length / 2.0)
         if len(base_element_halves) != 2:
-            raise ValueError("The base element could not be split into two halves.")
+            raise ValueError(
+                f"The base element of type {base_element.__class__.__name__} "
+                "could not be split into two halves."
+            )
 
         # Add useful names for element halves such that they can be accessed in the
         # flattened segment. These are derived from the name of this `Superimposed`
@@ -71,23 +73,21 @@ class Superimposed(Element):
         base_element_halves[0].name = f"{self.name}_1"
         base_element_halves[1].name = f"{self.name}_2"
 
-        # If the base element has the same name as the `Superimposed` element, prepend
-        # an underscore to the base element's name to avoid naming conflicts in
-        # serialisation.
-        if self.base_element.name == name:
-            self.base_element.name = "_" + self.base_element.name
+        if isinstance(superimposed_element, Segment):
+            super_elements = superimposed_element.elements
+        else:
+            super_elements = [superimposed_element]
 
         self._segment = Segment(
-            elements=[
-                base_element_halves[0],
-                superimposed_element,
-                base_element_halves[1],
-            ],
+            elements=[half_1, *super_elements, half_2],
             name=f"{self.name}_segment",
-            sanitize_name=sanitize_name,
-        )
+            sanitize_name=False,
+        ).flattened()
 
-    def flattened(self) -> "Segment":
+    def flattened(self, skip_superimposed: bool = False) -> "Segment | Superimposed":
+        if skip_superimposed:
+            return self
+
         return self._segment.flattened()
 
     @property

@@ -172,7 +172,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert isinstance(converted.gunl0a.qa01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa01.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa01.superimposed_element, cheetah.Marker)
-    assert converted.gunl0a.qa01.base_element.name == "_qa01"
+    assert converted.gunl0a.qa01.base_element.name == "qa01"
 
     # Multiple superimposed elements
     assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
@@ -181,7 +181,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert len(converted.gunl0a.qa02.superimposed_element.elements) == 2
     assert isinstance(converted.gunl0a.qa02.superimposed_element.bpm5, cheetah.Marker)
     assert isinstance(converted.gunl0a.qa02.superimposed_element.otr3, cheetah.Marker)
-    assert converted.gunl0a.qa02.base_element.name == "_qa02"
+    assert converted.gunl0a.qa02.base_element.name == "qa02"
 
     # Multiple superimposed elements
     assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
@@ -192,7 +192,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert isinstance(
         converted.gunl0a.qe01.superimposed_element.trim, cheetah.HorizontalCorrector
     )
-    assert converted.gunl0a.qe01.base_element.name == "_qe01"
+    assert converted.gunl0a.qe01.base_element.name == "qe01"
 
     # Check flattened superimposed elements
     flattened_qe01 = converted.gunl0a.qe01.flattened()
