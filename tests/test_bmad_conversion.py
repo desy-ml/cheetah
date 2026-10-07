@@ -168,36 +168,46 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.tcxdg0.length.item() == pytest.approx(0.254)
 
     # Check superimposed elements
-    # Single superimposed element
     assert isinstance(converted.gunl0a.qa01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa01.base_element, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa01.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qa01.superimposed_element.name == "bpm4"
     assert converted.gunl0a.qa01.base_element.name == "qa01"
 
-    # Multiple superimposed elements
     assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Segment)
-    assert len(converted.gunl0a.qa02.superimposed_element.elements) == 2
-    assert isinstance(converted.gunl0a.qa02.superimposed_element.bpm5, cheetah.Marker)
-    assert isinstance(converted.gunl0a.qa02.superimposed_element.otr3, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qa02.superimposed_element.name == "bpm5"
     assert converted.gunl0a.qa02.base_element.name == "qa02"
 
-    # Multiple superimposed elements
     assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
     assert isinstance(converted.gunl0a.qe01.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Segment)
-    assert len(converted.gunl0a.qe01.superimposed_element.elements) == 2
-    assert isinstance(converted.gunl0a.qe01.superimposed_element.otr2, cheetah.Marker)
-    assert isinstance(
-        converted.gunl0a.qe01.superimposed_element.trim, cheetah.HorizontalCorrector
-    )
+    assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Marker)
+    assert converted.gunl0a.qe01.superimposed_element.name == "otr2"
     assert converted.gunl0a.qe01.base_element.name == "qe01"
 
     # Check flattened superimposed elements
     flattened_qe01 = converted.gunl0a.qe01.flattened()
     assert isinstance(flattened_qe01, cheetah.Segment)
-    assert flattened_qe01.element_names == ["qe01_1", "otr2", "trim", "qe01_2"]
+    assert flattened_qe01.element_names == ["qe01_1", "otr2", "qe01_2"]
+
+
+def test_multiple_superimposed_elements_warns():
+    """
+    Test that when multiple elements are superimposed on the same base element,
+    only the first is kept and subsequent ones are dropped with a warning.
+    """
+    context = {
+        "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
+        "bpm1": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
+        "bpm2": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
+    }
+
+    with pytest.warns(UnknownElementWarning, match="is already superimposed"):
+        converted = bmad_converter.convert_element("qa01", context)
+
+    assert isinstance(converted, cheetah.Superimposed)
+    assert converted.superimposed_element.name == "bpm1"
 
 
 def test_superimpose_non_zero_length_warns():

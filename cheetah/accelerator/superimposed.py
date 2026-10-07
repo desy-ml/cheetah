@@ -68,13 +68,8 @@ class Superimposed(Element):
         half_1.name = f"{base_element.name}_1"
         half_2.name = f"{base_element.name}_2"
 
-        if isinstance(superimposed_element, Segment):
-            super_elements = superimposed_element.elements
-        else:
-            super_elements = [superimposed_element]
-
         self._segment = Segment(
-            elements=[half_1, *super_elements, half_2],
+            elements=[half_1, superimposed_element, half_2],
             name=f"{self.name}_segment",
             sanitize_name=False,
         ).flattened()

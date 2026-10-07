@@ -14,9 +14,9 @@ from cheetah.converters.utils.fortran_namelist import (
 from cheetah.utils import UnknownElementWarning
 
 
-def _find_superimposed_elements(context: dict) -> dict[str, list[str]]:
+def _find_superimposed_elements(context: dict) -> dict[str, str]:
     """Build a mapping from reference element names to superimposed element names."""
-    superimposed_map: dict[str, list[str]] = {}
+    superimposed_map: dict[str, str] = {}
     for elem_name, elem_def in context.items():
         if not isinstance(elem_def, dict) or "ref" not in elem_def:
             continue
@@ -25,7 +25,17 @@ def _find_superimposed_elements(context: dict) -> dict[str, list[str]]:
             super_flag = super_flag.lower() in {"t", "true", "1"}
         if bool(super_flag):
             ref_name = elem_def["ref"]
-            superimposed_map.setdefault(ref_name, []).append(elem_name)
+            if ref_name in superimposed_map:
+                warnings.warn(
+                    f"Element {elem_name} is superimposed on {ref_name}, but "
+                    f"{superimposed_map[ref_name]} is already superimposed on "
+                    f"{ref_name}. Cheetah only supports a single superimposed element "
+                    f"per base element, so {elem_name} is dropped from the lattice.",
+                    category=UnknownElementWarning,
+                    stacklevel=2,
+                )
+                continue
+            superimposed_map[ref_name] = elem_name
     return superimposed_map
 
 
@@ -353,37 +363,16 @@ def convert_element(
         name, context, sanitize_name=sanitize_name, device=device, dtype=dtype
     )
 
-    superimposed_names = superimposed_map.get(name, [])
-    if superimposed_names:
-        superimposed_entries = []
-        for super_name in superimposed_names:
-            candidate = _convert_single_element(
-                super_name,
-                context,
-                sanitize_name=sanitize_name,
-                device=device,
-                dtype=dtype,
-            )
-            if (candidate.length == 0.0).all():
-                superimposed_entries.append((super_name, candidate))
-            else:
-                warnings.warn(
-                    f"Element {super_name} is superimposed on {name}, but has a "
-                    "non-zero length. Cheetah only supports superimposing zero-length "
-                    f"elements, so {super_name} is dropped from the lattice.",
-                    category=UnknownElementWarning,
-                    stacklevel=2,
-                )
-
-        if superimposed_entries:
-            if len(superimposed_entries) == 1:
-                superimposed_element = superimposed_entries[0][1]
-            else:
-                superimposed_element = cheetah.Segment(
-                    elements=[entry[1] for entry in superimposed_entries],
-                    name=f"{name}_superimposed",
-                    sanitize_name=sanitize_name,
-                )
+    super_name = superimposed_map.get(name)
+    if super_name is not None:
+        candidate = _convert_single_element(
+            super_name,
+            context,
+            sanitize_name=sanitize_name,
+            device=device,
+            dtype=dtype,
+        )
+        if (candidate.length == 0.0).all():
             bmad_parsed = context[name]
             metadata = (
                 {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
@@ -393,22 +382,27 @@ def convert_element(
             try:
                 return cheetah.Superimposed(
                     base_element=base_element,
-                    superimposed_element=superimposed_element,
+                    superimposed_element=candidate,
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
                 )
             except ValueError as error:
-                super_names_str = ", ".join(
-                    [entry[0] for entry in superimposed_entries]
-                )
                 warnings.warn(
-                    f"Could not superimpose element(s) {super_names_str} on "
-                    f"{name}. Keeping only the base element. Reason: {error}",
+                    f"Could not superimpose {super_name} on {name}. "
+                    f"Keeping only the base element. Reason: {error}",
                     category=UnknownElementWarning,
                     stacklevel=2,
                 )
                 return base_element
+        else:
+            warnings.warn(
+                f"Element {super_name} is superimposed on {name}, but has a "
+                "non-zero length. Cheetah only supports superimposing zero-length "
+                f"elements, so {super_name} is dropped from the lattice.",
+                category=UnknownElementWarning,
+                stacklevel=2,
+            )
 
     return base_element
 
