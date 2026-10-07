@@ -27,7 +27,9 @@ class Screen(Element):
         "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
         (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
         gradients and is incompatible with vectorisation, while both features are
-        supported by "kde" and "cloud-in-cell".
+       (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
+       gradients, which is
+       supported by "kde" and "cloud-in-cell".
 
     NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
         elements.
