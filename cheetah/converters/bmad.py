@@ -11,7 +11,7 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
-from cheetah.utils import UnknownElementWarning
+from cheetah.utils import PhysicsWarning, UnknownElementWarning
 
 
 def convert_element(
@@ -360,7 +360,7 @@ def _convert_superimposed(
             f"Element {superimposed_name} is superimposed on {name}, but has a "
             "non-zero length. Cheetah only supports superimposing zero-length "
             f"elements, so {superimposed_name} is dropped from the lattice.",
-            category=UnknownElementWarning,
+            category=PhysicsWarning,
             stacklevel=2,
         )
         return base_element
@@ -373,11 +373,11 @@ def _convert_superimposed(
             sanitize_name=sanitize_name,
             metadata=metadata,
         )
-    except ValueError as error:
+    except AssertionError as error:
         warnings.warn(
             f"Could not superimpose {superimposed_name} on {name}. "
             f"Keeping only the base element. Reason: {error}",
-            category=UnknownElementWarning,
+            category=PhysicsWarning,
             stacklevel=2,
         )
         return base_element
@@ -400,7 +400,7 @@ def _link_superimposed_elements(context: dict) -> None:
                             f"superimposed on {ref_name}. Cheetah only supports a "
                             "single superimposed element per base element, so "
                             f"{elem_name} is dropped from the lattice.",
-                            category=UnknownElementWarning,
+                            category=PhysicsWarning,
                             stacklevel=2,
                         )
                     else:

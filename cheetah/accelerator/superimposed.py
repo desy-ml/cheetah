@@ -55,11 +55,10 @@ class Superimposed(Element):
         self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
-        if len(base_element_halves) != 2:
-            raise ValueError(
-                f"The base element of type {base_element.__class__.__name__} could not "
-                "be split into two halves."
-            )
+        assert len(base_element_halves) == 2, (
+            f"The base element of type {base_element.__class__.__name__} could not be "
+            "split into two halves."
+        )
 
         # Add useful names for element halves such that they can be accessed in the
         # flattened segment

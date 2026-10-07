@@ -5,7 +5,7 @@ import cheetah
 import cheetah.converters.bmad as bmad_converter
 from cheetah.utils import (
     NotUnderstoodPropertyWarning,
-    UnknownElementWarning,
+    PhysicsWarning,
     is_mps_available_and_functional,
 )
 
@@ -203,7 +203,7 @@ def test_multiple_superimposed_elements_warns():
         "bpm2": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
     }
 
-    with pytest.warns(UnknownElementWarning, match="is already superimposed"):
+    with pytest.warns(PhysicsWarning, match="is already superimposed"):
         converted = bmad_converter.convert_element("qa01", context)
 
     assert isinstance(converted, cheetah.Superimposed)
@@ -226,7 +226,7 @@ def test_superimpose_non_zero_length_warns():
         },
     }
 
-    with pytest.warns(UnknownElementWarning, match="non-zero length"):
+    with pytest.warns(PhysicsWarning, match="non-zero length"):
         converted = bmad_converter.convert_element("qa01", context)
 
     assert isinstance(converted, cheetah.Quadrupole)
@@ -239,14 +239,14 @@ def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
     """
     file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
 
-    def _raise_superimpose_value_error(*args, **kwargs):
-        raise ValueError("forced split failure for test")
+    def _raise_superimpose_assertion_error(*args, **kwargs):
+        raise AssertionError("forced split failure for test")
 
     monkeypatch.setattr(
-        bmad_converter.cheetah, "Superimposed", _raise_superimpose_value_error
+        bmad_converter.cheetah, "Superimposed", _raise_superimpose_assertion_error
     )
 
-    with pytest.warns(UnknownElementWarning, match="Keeping only the base element"):
+    with pytest.warns(PhysicsWarning, match="Keeping only the base element"):
         converted = cheetah.Segment.from_bmad(file_path, dtype=torch.float64)
 
     assert isinstance(converted.gunl0a.qe01, cheetah.Quadrupole)
