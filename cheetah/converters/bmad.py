@@ -14,43 +14,39 @@ from cheetah.converters.utils.fortran_namelist import (
 from cheetah.utils import UnknownElementWarning
 
 
-def _find_superimposed_elements(context: dict) -> dict[str, str]:
-    """Build a mapping from reference element names to superimposed element names."""
-    superimposed_map: dict[str, str] = {}
-    for elem_name, elem_def in context.items():
-        if not isinstance(elem_def, dict) or "ref" not in elem_def:
-            continue
-        super_flag = elem_def.get("superimpose", True)
-        if isinstance(super_flag, str):
-            super_flag = super_flag.lower() in {"t", "true", "1"}
-        if bool(super_flag):
-            ref_name = elem_def["ref"]
-            if ref_name in superimposed_map:
-                warnings.warn(
-                    f"Element {elem_name} is superimposed on {ref_name}, but "
-                    f"{superimposed_map[ref_name]} is already superimposed on "
-                    f"{ref_name}. Cheetah only supports a single superimposed element "
-                    f"per base element, so {elem_name} is dropped from the lattice.",
-                    category=UnknownElementWarning,
-                    stacklevel=2,
-                )
-                continue
-            superimposed_map[ref_name] = elem_name
-    return superimposed_map
-
-
-def _convert_single_element(
+def convert_element(
     name: str,
     context: dict,
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
+    """
+    Convert a parsed Bmad element dict to a Cheetah `Element`.
+
+    :param name: Name of the (top-level) element to convert.
+    :param context: Context dictionary parsed from Bmad lattice file(s).
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. If `None` (default), a warning is raised for invalid names. Set to `True`
+        to sanitise, or `False` to silence the warning.
+    :param device: Device to put the element on. If `None`, the current default device
+        of PyTorch is used.
+    :param dtype: Data type to use for the element. If `None`, the current default dtype
+        of PyTorch is used.
+    :return: Converted Cheetah `Element`. If you are calling this function yourself
+        as a user of Cheetah, this is most likely a `Segment`.
+    """
+    if "_superimposed_linked" not in context:
+        _link_superimposed_elements(context)
+
+    bmad_parsed = context[name]
+    if isinstance(bmad_parsed, dict) and "superimposed_element" in bmad_parsed:
+        return _convert_superimposed(name, context, sanitize_name, device, dtype)
+
     factory_kwargs = {
         "device": device or torch.get_default_device(),
         "dtype": dtype or torch.get_default_dtype(),
     }
-    bmad_parsed = context[name]
     metadata = (
         {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
         if isinstance(bmad_parsed, dict)
@@ -333,78 +329,82 @@ def _convert_single_element(
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
 
 
-def convert_element(
+def _convert_superimposed(
     name: str,
     context: dict,
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
-    """
-    Convert a parsed Bmad element dict to a Cheetah `Element`.
-
-    :param name: Name of the (top-level) element to convert.
-    :param context: Context dictionary parsed from Bmad lattice file(s).
-    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
-        name. If `None` (default), a warning is raised for invalid names. Set to `True`
-        to sanitise, or `False` to silence the warning.
-    :param device: Device to put the element on. If `None`, the current default device
-        of PyTorch is used.
-    :param dtype: Data type to use for the element. If `None`, the current default dtype
-        of PyTorch is used.
-    :return: Converted Cheetah `Element`. If you are calling this function yourself
-        as a user of Cheetah, this is most likely a `Segment`.
-    """
-    if "__superimposed_map__" not in context:
-        context["__superimposed_map__"] = _find_superimposed_elements(context)
-    superimposed_map = context["__superimposed_map__"]
-
-    base_element = _convert_single_element(
-        name, context, sanitize_name=sanitize_name, device=device, dtype=dtype
+    bmad_parsed = context[name]
+    superimposed_name = bmad_parsed.pop("superimposed_element")
+    metadata = (
+        {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
+        if isinstance(bmad_parsed, dict)
+        else {}
     )
 
-    super_name = superimposed_map.get(name)
-    if super_name is not None:
-        candidate = _convert_single_element(
-            super_name,
-            context,
-            sanitize_name=sanitize_name,
-            device=device,
-            dtype=dtype,
-        )
-        if (candidate.length == 0.0).all():
-            bmad_parsed = context[name]
-            metadata = (
-                {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
-                if isinstance(bmad_parsed, dict)
-                else {}
-            )
-            try:
-                return cheetah.Superimposed(
-                    base_element=base_element,
-                    superimposed_element=candidate,
-                    name=name,
-                    sanitize_name=sanitize_name,
-                    metadata=metadata,
-                )
-            except ValueError as error:
-                warnings.warn(
-                    f"Could not superimpose {super_name} on {name}. "
-                    f"Keeping only the base element. Reason: {error}",
-                    category=UnknownElementWarning,
-                    stacklevel=2,
-                )
-                return base_element
-        else:
-            warnings.warn(
-                f"Element {super_name} is superimposed on {name}, but has a "
-                "non-zero length. Cheetah only supports superimposing zero-length "
-                f"elements, so {super_name} is dropped from the lattice.",
-                category=UnknownElementWarning,
-                stacklevel=2,
-            )
+    base_element = convert_element(
+        name, context, sanitize_name=sanitize_name, device=device, dtype=dtype
+    )
+    candidate = convert_element(
+        superimposed_name,
+        context,
+        sanitize_name=sanitize_name,
+        device=device,
+        dtype=dtype,
+    )
 
-    return base_element
+    if not (candidate.length == 0.0).all():
+        warnings.warn(
+            f"Element {superimposed_name} is superimposed on {name}, but has a "
+            "non-zero length. Cheetah only supports superimposing zero-length "
+            f"elements, so {superimposed_name} is dropped from the lattice.",
+            category=UnknownElementWarning,
+            stacklevel=2,
+        )
+        return base_element
+
+    try:
+        return cheetah.Superimposed(
+            base_element=base_element,
+            superimposed_element=candidate,
+            name=name,
+            sanitize_name=sanitize_name,
+            metadata=metadata,
+        )
+    except ValueError as error:
+        warnings.warn(
+            f"Could not superimpose {superimposed_name} on {name}. "
+            f"Keeping only the base element. Reason: {error}",
+            category=UnknownElementWarning,
+            stacklevel=2,
+        )
+        return base_element
+
+
+def _link_superimposed_elements(context: dict) -> None:
+    context["_superimposed_linked"] = True
+    for elem_name, elem_def in context.items():
+        if isinstance(elem_def, dict) and "ref" in elem_def:
+            superimpose_flag = elem_def.get("superimpose", True)
+            if isinstance(superimpose_flag, str):
+                superimpose_flag = superimpose_flag.lower() in {"t", "true", "1"}
+            if bool(superimpose_flag):
+                ref_name = elem_def["ref"]
+                if ref_name in context and isinstance(context[ref_name], dict):
+                    if "superimposed_element" in context[ref_name]:
+                        warnings.warn(
+                            f"Element {elem_name} is superimposed on {ref_name}, but "
+                            f"{context[ref_name]['superimposed_element']} is already "
+                            f"superimposed on {ref_name}. Cheetah only supports a "
+                            "single superimposed element per base element, so "
+                            f"{elem_name} is dropped from the lattice.",
+                            category=UnknownElementWarning,
+                            stacklevel=2,
+                        )
+                    else:
+                        context[ref_name]["superimposed_element"] = elem_name
 
 
 def convert_lattice(
