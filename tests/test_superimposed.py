@@ -102,10 +102,6 @@ def test_superimposed_serialization(tmp_path):
     so this also tests that the names of the base element halves are unchanged by the
     round trip.
     """
-
-    single_element_json = tmp_path / "superimposed_test.json"
-    segment_element_json = tmp_path / "superimposed_segment_test.json"
-
     # Test case where the superimposed element is a `BPM`
     superimposed = cheetah.Superimposed(
         base_element=cheetah.Quadrupole(
@@ -122,14 +118,18 @@ def test_superimposed_serialization(tmp_path):
         "superimposed_test_2",
     ]
 
-    segment.to_lattice_json(str(single_element_json))
-    deserialized = cheetah.Segment.from_lattice_json(str(single_element_json))
+    segment.to_lattice_json(str(tmp_path / "superimposed_test.json"))
+    deserialized = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "superimposed_test.json")
+    )
 
     assert isinstance(deserialized.elements[0], cheetah.Superimposed)
     superimposed_deserialized = deserialized.elements[0]
     assert superimposed_deserialized.name == "superimposed_test"
     assert isinstance(superimposed_deserialized.base_element, cheetah.Quadrupole)
-    assert superimposed_deserialized.base_element.name == "_superimposed_test"
+    assert (
+        superimposed_deserialized.base_element.name == "superimposed_test_base_element"
+    )
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.BPM)
     assert deserialized.flattened().element_names == [
@@ -149,35 +149,25 @@ def test_superimposed_serialization(tmp_path):
 
     superimposed = cheetah.Superimposed(
         base_element=cheetah.Quadrupole(
-            length=torch.tensor(1.0),
-            k1=torch.tensor(2.0),
-            name="q1",
+            length=torch.tensor(1.0), k1=torch.tensor(2.0), name="q1"
         ),
         superimposed_element=superimposed_segment,
         name="q1",
     )
     segment = cheetah.Segment(elements=[superimposed], name="test_segment_2")
 
-    assert segment.flattened().element_names == [
-        "q1_1",
-        "bpm1",
-        "marker1",
-        "q1_2",
-    ]
+    assert segment.flattened().element_names == ["q1_1", "bpm1", "marker1", "q1_2"]
 
-    segment.to_lattice_json(str(segment_element_json))
-    deserialized = cheetah.Segment.from_lattice_json(str(segment_element_json))
+    segment.to_lattice_json(str(tmp_path / "superimposed_segment_test.json"))
+    deserialized = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "superimposed_segment_test.json")
+    )
 
     assert isinstance(deserialized.elements[0], cheetah.Superimposed)
     superimposed_deserialized = deserialized.elements[0]
     assert superimposed_deserialized.name == "q1"
     assert isinstance(superimposed_deserialized.base_element, cheetah.Quadrupole)
-    assert superimposed_deserialized.base_element.name == "_q1"
+    assert superimposed_deserialized.base_element.name == "q1_base_element"
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.Segment)
-    assert deserialized.flattened().element_names == [
-        "q1_1",
-        "bpm1",
-        "marker1",
-        "q1_2"
-    ]
+    assert deserialized.flattened().element_names == ["q1_1", "bpm1", "marker1", "q1_2"]

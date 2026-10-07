@@ -11,7 +11,7 @@ from cheetah.converters.utils.fortran_namelist import (
     read_clean_lines,
     validate_understood_properties,
 )
-from cheetah.utils import PhysicsWarning, UnknownElementWarning
+from cheetah.utils import UnknownElementWarning
 
 
 def _find_superimposed_elements(context: dict) -> dict[str, list[str]]:
@@ -48,74 +48,6 @@ def _convert_single_element(
     )
 
     shared_properties = ["element_type", "alias", "type"]
-
-    if _allow_superimpose and isinstance(bmad_parsed, dict):
-        superimposed_entries = []
-        for other_name, other_parsed in context.items():
-            if other_name == name:
-                continue
-            if not _is_superimposed_definition(other_parsed):
-                continue
-            if other_parsed.get("ref") != name:
-                continue
-
-            candidate_superimposed = convert_element(
-                other_name,
-                context,
-                sanitize_name,
-                device,
-                dtype,
-                _allow_superimpose=False,
-            )
-            if (candidate_superimposed.length == 0.0).all():
-                superimposed_entries.append((other_name, candidate_superimposed))
-            else:
-                warnings.warn(
-                    f"Element {other_name} is superimposed on {name}, but has a "
-                    "non-zero length. Cheetah only supports superimposing zero-length "
-                    f"elements, so {other_name} is dropped from the lattice.",
-                    category=UnknownElementWarning,
-                    stacklevel=2,
-                )
-
-        if superimposed_entries:
-            if len(superimposed_entries) == 1:
-                superimposed_element = superimposed_entries[0][1]
-            else:
-                superimposed_element = cheetah.Segment(
-                    elements=[entry[1] for entry in superimposed_entries],
-                    name=f"{name}_superimposed",
-                    sanitize_name=sanitize_name,
-                )
-
-            base_element = convert_element(
-                name,
-                context,
-                sanitize_name,
-                device,
-                dtype,
-                _allow_superimpose=False,
-            )
-
-            try:
-                return cheetah.Superimposed(
-                    base_element=base_element,
-                    superimposed_element=superimposed_element,
-                    name=name,
-                    sanitize_name=sanitize_name,
-                    metadata=metadata,
-                )
-            except ValueError as error:
-                superimposed_names = ", ".join(
-                    [entry[0] for entry in superimposed_entries]
-                )
-                warnings.warn(
-                    f"Could not superimpose element(s) {superimposed_names} on "
-                    f"{name}. Keeping only the base element. Reason: {error}",
-                    category=UnknownElementWarning,
-                    stacklevel=2,
-                )
-                return base_element
 
     if isinstance(bmad_parsed, list):
         return cheetah.Segment(
@@ -436,9 +368,10 @@ def convert_element(
                 superimposed_entries.append((super_name, candidate))
             else:
                 warnings.warn(
-                    f"Superimposed element {super_name} has non-zero length and "
-                    "cannot be superimposed. Skipping.",
-                    category=PhysicsWarning,
+                    f"Element {super_name} is superimposed on {name}, but has a "
+                    "non-zero length. Cheetah only supports superimposing zero-length "
+                    f"elements, so {super_name} is dropped from the lattice.",
+                    category=UnknownElementWarning,
                     stacklevel=2,
                 )
 

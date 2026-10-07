@@ -47,10 +47,6 @@ class Superimposed(Element):
             name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
-        assert (
-            superimposed_element.length == 0.0
-        ).all(), "The superimposed element must have zero length."
-
         self.base_element = base_element
         self.superimposed_element = superimposed_element
 
@@ -62,16 +58,18 @@ class Superimposed(Element):
         base_element_halves = base_element.split(base_element.length / 2.0)
         if len(base_element_halves) != 2:
             raise ValueError(
-                f"The base element of type {base_element.__class__.__name__} "
-                "could not be split into two halves."
+                f"The base element of type {base_element.__class__.__name__} could not "
+                "be split into two halves."
             )
 
         # Add useful names for element halves such that they can be accessed in the
         # flattened segment. These are derived from the name of this `Superimposed`
-        # element rather than from `base_element.name`, because the latter may be
-        # renamed below and is therefore not stable across serialisation round trips.
-        base_element_halves[0].name = f"{self.name}_1"
-        base_element_halves[1].name = f"{self.name}_2"
+        # element rather than from `base_element.name`, because the latter may clash
+        # with `self.name` during serialisation.
+        half_1 = base_element_halves[0].clone()
+        half_2 = base_element_halves[1].clone()
+        half_1.name = f"{self.name}_1"
+        half_2.name = f"{self.name}_2"
 
         if isinstance(superimposed_element, Segment):
             super_elements = superimposed_element.elements
