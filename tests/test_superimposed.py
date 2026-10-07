@@ -15,6 +15,7 @@ def test_superimposed_base_split_length():
     )
 
     flattened = superimposed.flattened()
+
     assert len(flattened.elements) == 3
     assert isinstance(flattened.elements[0], cheetah.Quadrupole)
     assert isinstance(flattened.elements[1], cheetah.BPM)
@@ -22,13 +23,13 @@ def test_superimposed_base_split_length():
     assert flattened.elements[0].length == torch.tensor(0.5)
     assert flattened.elements[2].length == torch.tensor(0.5)
 
-    assert superimposed.length == torch.tensor(1.0)
+    assert superimposed.length == superimposed.base_element.length
 
 
 def test_superimposed_element_naming():
     """
     Test that the base element is not mutated when creating a `Superimposed` element,
-    and that the element halves in the flattened segment are named after the base 
+    and that the element halves in the flattened segment are named after the base
     element.
     """
     superimposed = cheetah.Superimposed(
