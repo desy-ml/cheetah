@@ -47,12 +47,12 @@ class Superimposed(Element):
             name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
-        self.base_element = base_element
-        self.superimposed_element = superimposed_element
-
         assert (
             superimposed_element.length == 0.0
         ).all(), "The superimposed element must have zero length."
+
+        self.base_element = base_element
+        self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
         if len(base_element_halves) != 2:
