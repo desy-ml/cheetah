@@ -47,6 +47,8 @@ class Quadrupole(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
     def __init__(
@@ -94,10 +96,21 @@ class Quadrupole(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        return self._first_order_map(self.length, energy, species)
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return self._first_order_map(-self.length, energy, species)
+
+    def _first_order_map(
+        self, length: torch.Tensor, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
         R = base_rmatrix(
-            length=self.length,
+            length=length,
             k1=self.k1,
-            hx=self.length.new_zeros(()),
+            hx=length.new_zeros(()),
             species=species,
             energy=energy,
         )

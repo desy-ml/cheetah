@@ -8,6 +8,7 @@ from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     compute_relativistic_factors,
+    invert_affine_map,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -35,6 +36,8 @@ class CombinedCorrector(Element):
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """
+
+    supported_backtracking_methods = ("linear",)
 
     supported_tracking_methods = ["linear"]
 
@@ -96,6 +99,12 @@ class CombinedCorrector(Element):
         tm[..., 4, 5] = -self.length / beta.square() * igamma2
 
         return tm
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return invert_affine_map(self.first_order_transfer_map(energy, species))
 
     @property
     def is_skippable(self) -> bool:

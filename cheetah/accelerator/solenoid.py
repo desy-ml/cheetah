@@ -39,6 +39,8 @@ class Solenoid(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear"]
 
     def __init__(
@@ -75,19 +77,28 @@ class Solenoid(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+        return self._first_order_map(self.length, energy, species)
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return self._first_order_map(-self.length, energy, species)
+
+    def _first_order_map(
+        self, length: torch.Tensor, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
         gamma, _, _ = compute_relativistic_factors(energy, species.mass_eV)
-        c = (self.length * self.k).cos()
-        s = (self.length * self.k).sin()
+        c = (length * self.k).cos()
+        s = (length * self.k).sin()
 
-        s_k = (self.length * self.k / torch.pi).sinc() * self.length
+        s_k = (length * self.k / torch.pi).sinc() * length
 
-        vector_shape = torch.broadcast_shapes(
-            self.length.shape, self.k.shape, energy.shape
-        )
+        vector_shape = torch.broadcast_shapes(length.shape, self.k.shape, energy.shape)
 
-        r56 = self.length / (1 - gamma.square())
+        r56 = length / (1 - gamma.square())
 
         R = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         R[..., 0, 0] = c.square()

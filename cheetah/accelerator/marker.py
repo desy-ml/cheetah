@@ -25,6 +25,8 @@ class Marker(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("marker",)
+
     def __init__(
         self,
         name: str | None = None,
@@ -48,6 +50,10 @@ class Marker(Element):
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )
+
+    def backtrack(self, incoming: Beam) -> Beam:
+        """Pass the beam through without updating diagnostic readings."""
+        return incoming.clone()
 
     def track(self, incoming: Beam) -> Beam:
         return incoming.clone()

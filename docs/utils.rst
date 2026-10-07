@@ -15,6 +15,10 @@ Utils
     :members:
     :undoc-members:
 
+.. automodule:: utils.invert_affine_map
+    :members:
+    :undoc-members:
+
 .. automodule:: utils.kde
     :members:
     :undoc-members:

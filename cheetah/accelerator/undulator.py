@@ -39,6 +39,8 @@ class Undulator(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear"]
 
     def __init__(
@@ -79,12 +81,23 @@ class Undulator(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+        return self._first_order_map(self.length, energy, species)
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return self._first_order_map(-self.length, energy, species)
+
+    def _first_order_map(
+        self, length: torch.Tensor, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        factory_kwargs = {"device": length.device, "dtype": length.dtype}
 
         gamma, igamma2, beta = compute_relativistic_factors(energy, species.mass_eV)
 
         vector_shape = torch.broadcast_shapes(
-            self.length.shape,
+            length.shape,
             igamma2.shape,
             self.kx.shape,
             self.ky.shape,
@@ -93,7 +106,7 @@ class Undulator(Element):
 
         tm = torch.eye(7, **factory_kwargs).repeat((*vector_shape, 1, 1))
         tm[..., 4, 5] = (
-            -self.length
+            -length
             * igamma2
             * (beta.square().reciprocal() + 0.5 * (self.kx.square() + self.ky.square()))
         )
@@ -106,20 +119,20 @@ class Undulator(Element):
 
         # Transverse focusing from vertical field (Kx > 0.0)
         omega_x = spatial_frequency * self.kx
-        cos_omega_x = (omega_x * self.length).cos()
+        cos_omega_x = (omega_x * length).cos()
 
         tm[..., 2, 2] = cos_omega_x
-        tm[..., 2, 3] = (omega_x * self.length / torch.pi).sinc() * self.length
-        tm[..., 3, 2] = -(omega_x * self.length).sin() * omega_x
+        tm[..., 2, 3] = (omega_x * length / torch.pi).sinc() * length
+        tm[..., 3, 2] = -(omega_x * length).sin() * omega_x
         tm[..., 3, 3] = cos_omega_x
 
         # Transverse focusing from horizontal field (Ky > 0.0)
         omega_y = spatial_frequency * self.ky
-        cos_omega_y = (omega_y * self.length).cos()
+        cos_omega_y = (omega_y * length).cos()
 
         tm[..., 0, 0] = cos_omega_y
-        tm[..., 0, 1] = (omega_y * self.length / torch.pi).sinc() * self.length
-        tm[..., 1, 0] = -(omega_y * self.length).sin() * omega_y
+        tm[..., 0, 1] = (omega_y * length / torch.pi).sinc() * length
+        tm[..., 1, 0] = -(omega_y * length).sin() * omega_y
         tm[..., 1, 1] = cos_omega_y
 
         return tm

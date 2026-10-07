@@ -7,7 +7,12 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils import (
+    UniqueNameGenerator,
+    bmadx,
+    cache_transfer_map,
+    invert_affine_map,
+)
 from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -52,6 +57,8 @@ class Dipole(Element):
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """
+
+    supported_backtracking_methods = ("linear",)
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
@@ -392,6 +399,12 @@ class Dipole(Element):
         R = rotation.mT @ R @ rotation
 
         return R
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return invert_affine_map(self.first_order_transfer_map(energy, species))
 
     @cache_transfer_map
     def second_order_transfer_map(

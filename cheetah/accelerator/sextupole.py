@@ -42,6 +42,8 @@ class Sextupole(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear", "second_order"]
 
     def __init__(
@@ -86,6 +88,12 @@ class Sextupole(Element):
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return drift_matrix(length=self.length, species=species, energy=energy)
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return drift_matrix(length=-self.length, species=species, energy=energy)
 
     @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
