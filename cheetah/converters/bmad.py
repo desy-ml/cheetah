@@ -364,7 +364,7 @@ def convert_element(
                 device=device,
                 dtype=dtype,
             )
-            if torch.allclose(candidate.length, torch.zeros_like(candidate.length)):
+            if (candidate.length == 0.0).all():
                 superimposed_entries.append((super_name, candidate))
             else:
                 warnings.warn(

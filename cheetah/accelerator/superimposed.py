@@ -50,10 +50,9 @@ class Superimposed(Element):
         self.base_element = base_element
         self.superimposed_element = superimposed_element
 
-        if not torch.allclose(
-            superimposed_element.length, torch.zeros_like(superimposed_element.length)
-        ):
-            raise ValueError("The superimposed element must have zero length.")
+        assert (
+            superimposed_element.length == 0.0
+        ).all(), "The superimposed element must have zero length."
 
         base_element_halves = base_element.split(base_element.length / 2.0)
         if len(base_element_halves) != 2:

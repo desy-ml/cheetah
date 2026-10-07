@@ -98,7 +98,7 @@ def test_superimposed_element_rejects_nonzero_length():
     element.
     """
     with pytest.raises(
-        ValueError, match="The superimposed element must have zero length."
+        AssertionError, match="The superimposed element must have zero length."
     ):
         _ = cheetah.Superimposed(
             base_element=cheetah.Quadrupole(length=torch.tensor(1.0)),
