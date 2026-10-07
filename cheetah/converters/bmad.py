@@ -36,6 +36,11 @@ def convert_element(
     :return: Converted Cheetah `Element`. If you are calling this function yourself
         as a user of Cheetah, this is most likely a `Segment`.
     """
+    factory_kwargs = {
+        "device": device or torch.get_default_device(),
+        "dtype": dtype or torch.get_default_dtype(),
+    }
+
     if "_superimposed_linked" not in context:
         _link_superimposed_elements(context)
 
@@ -43,10 +48,6 @@ def convert_element(
     if isinstance(bmad_parsed, dict) and "superimposed_element" in bmad_parsed:
         return _convert_superimposed(name, context, sanitize_name, device, dtype)
 
-    factory_kwargs = {
-        "device": device or torch.get_default_device(),
-        "dtype": dtype or torch.get_default_dtype(),
-    }
     metadata = (
         {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
         if isinstance(bmad_parsed, dict)
