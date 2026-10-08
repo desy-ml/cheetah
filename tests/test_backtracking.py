@@ -18,6 +18,7 @@ ELEMENTS = [
     "CombinedCorrector",
     "Dipole",
     "RBend",
+    "CustomTransferMap",
 ]
 DEVICES = [
     "cpu",
@@ -43,7 +44,16 @@ def make_element(name, dtype=torch.float64, batched=False, device="cpu"):
             [[0.3], [0.6]] if batched else 0.3, dtype=dtype, device=device
         )
     )
-    if name == "Quadrupole":
+    if name == "CustomTransferMap":
+        tm = torch.eye(7, dtype=dtype, device=device)
+        tm[0, 0] = 1.1
+        tm[0, 1] = 0.2
+        tm[2, 3] = 0.3
+        tm[:6, 6] = torch.tensor(
+            [2e-4, -3e-4, 1e-4, 2e-4, -1e-4, 1e-5], dtype=dtype, device=device
+        )
+        kwargs["predefined_transfer_map"] = tm
+    elif name == "Quadrupole":
         kwargs.update(
             k1=torch.tensor(0.7, dtype=dtype, device=device),
             tilt=torch.tensor(0.2, dtype=dtype, device=device),
@@ -361,7 +371,6 @@ def test_unsupported_tracking_method(name, method):
         cheetah.Aperture(is_active=True),
         cheetah.Aperture(is_active=False),
         cheetah.SpaceChargeKick(effect_length=torch.tensor(0.3)),
-        cheetah.CustomTransferMap(predefined_transfer_map=torch.eye(7)),
     ],
 )
 def test_unsupported_elements(element):
@@ -538,3 +547,42 @@ def test_backtracking_beam_gradients(beam_type, name):
     recovered[..., :6].square().sum().backward()
     assert coordinates.grad is not None
     assert torch.isfinite(coordinates.grad).all()
+
+
+@pytest.mark.parametrize("column", range(6))
+def test_custom_map_rejects_non_affine_row(column):
+    tm = torch.eye(7)
+    tm[6, column] = 0.1
+    with pytest.raises(AssertionError, match="seventh row"):
+        cheetah.CustomTransferMap(tm)
+
+
+def test_custom_map_singular_backtracking():
+    tm = torch.eye(7)
+    tm[0, 0] = 0.0
+    element = cheetah.CustomTransferMap(tm)
+    assert element.supports_backtracking
+    with pytest.raises(torch.linalg.LinAlgError):
+        element.backtrack(make_beam(cheetah.ParameterBeam))
+
+
+def test_custom_map_inverse_cache_and_gradients():
+    element = make_element("CustomTransferMap")
+    beam = make_beam(cheetah.ParameterBeam)
+    before = element.inverse_first_order_transfer_map(beam.energy, beam.species).clone()
+    element.predefined_transfer_map[0, 0] += 0.2
+    after = element.inverse_first_order_transfer_map(beam.energy, beam.species)
+    assert not torch.equal(before, after)
+    element.predefined_transfer_map = torch.nn.Parameter(
+        element.predefined_transfer_map.clone()
+    )
+    gradients = []
+    for _ in range(2):
+        element.zero_grad()
+        result = element.backtrack(beam)
+        result.mu[:6].square().sum().backward()
+        grad = element.predefined_transfer_map.grad.clone()
+        assert torch.isfinite(grad).all()
+        assert grad.abs().max() > 0.0
+        gradients.append(grad)
+    torch.testing.assert_close(gradients[0], gradients[1])
