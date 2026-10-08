@@ -7,12 +7,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import (
-    UniqueNameGenerator,
-    bmadx,
-    cache_transfer_map,
-    invert_affine_map,
-)
+from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
 from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -404,7 +399,23 @@ class Dipole(Element):
     def inverse_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return invert_affine_map(self.first_order_transfer_map(energy, species))
+        R_enter = self._transfer_map_enter()
+        R_exit = self._transfer_map_exit()
+        # ponytail: linear edges are shears; their inverse negates the two kicks.
+        for edge in (R_enter, R_exit):
+            edge[..., 1, 0] = -edge[..., 1, 0]
+            edge[..., 3, 2] = -edge[..., 3, 2]
+
+        R = base_rmatrix(
+            length=-self.length,
+            k1=self.k1,
+            hx=self.hx,  # Negating both bend angle and length preserves curvature.
+            species=species,
+            energy=energy,
+        )
+        R = R_enter @ R @ R_exit
+        rotation = rotation_matrix(self.tilt)
+        return rotation.mT @ R @ rotation
 
     @cache_transfer_map
     def second_order_transfer_map(

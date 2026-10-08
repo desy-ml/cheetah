@@ -200,6 +200,35 @@ def test_affine_inversion():
         invert_affine_map(torch.zeros(7, 7, dtype=tm.dtype))
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "HorizontalCorrector",
+        "VerticalCorrector",
+        "CombinedCorrector",
+        "Dipole",
+        "RBend",
+    ],
+)
+def test_analytic_inverse_without_matrix_inversion(name, monkeypatch):
+    element = make_element(name, batched=True)
+    beam = make_beam(cheetah.ParameterBeam, batched=True)
+    forward = element.first_order_transfer_map(beam.energy, beam.species).clone()
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError("Analytic backtracking must not invert or solve a matrix")
+
+    monkeypatch.setattr(torch.linalg, "inv", unexpected)
+    monkeypatch.setattr(torch.linalg, "solve", unexpected)
+    inverse = element.inverse_first_order_transfer_map(beam.energy, beam.species)
+    identity = torch.eye(7, dtype=forward.dtype).expand_as(forward)
+    assert torch.allclose(inverse @ forward, identity, rtol=1e-13, atol=1e-14)
+    assert torch.allclose(forward @ inverse, identity, rtol=1e-13, atol=1e-14)
+    assert torch.equal(
+        element.first_order_transfer_map(beam.energy, beam.species), forward
+    )
+
+
 @pytest.mark.parametrize("beam_type", [cheetah.ParticleBeam, cheetah.ParameterBeam])
 def test_nested_segment_and_superimposed(beam_type):
     bpm = cheetah.BPM(is_active=True, dtype=torch.float64)
@@ -366,7 +395,17 @@ def test_empty_segment():
 
 
 @pytest.mark.parametrize(
-    "name, parameter", [("Quadrupole", "k1"), ("HorizontalCorrector", "angle")]
+    "name, parameter",
+    [
+        ("Quadrupole", "k1"),
+        ("HorizontalCorrector", "angle"),
+        ("VerticalCorrector", "angle"),
+        ("CombinedCorrector", "vertical_angle"),
+        ("Dipole", "angle"),
+        ("Dipole", "length"),
+        ("Dipole", "fringe_integral_exit"),
+        ("RBend", "angle"),
+    ],
 )
 def test_backtracking_gradients_and_repeated_backward(name, parameter):
     element = make_element(name)

@@ -8,7 +8,6 @@ from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     compute_relativistic_factors,
-    invert_affine_map,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -84,7 +83,14 @@ class VerticalCorrector(Element):
     def inverse_first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return invert_affine_map(self.first_order_transfer_map(energy, species))
+        tm = self.first_order_transfer_map(energy, species).clone()
+        tm[..., 0, 1] = -self.length
+        tm[..., 2, 3] = -self.length
+        tm[..., 4, 5] = -tm[..., 4, 5]
+        # Undo the exit kick before drifting backwards.
+        tm[..., 3, 6] = -self.angle
+        tm[..., 2, 6] = self.length * self.angle
+        return tm
 
     @property
     def is_skippable(self) -> bool:
