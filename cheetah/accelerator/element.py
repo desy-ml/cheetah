@@ -170,14 +170,16 @@ class Element(ABC, nn.Module):
     def backtrack(self, incoming: Beam) -> Beam:
         """Undo supported tracking without changing the element's configuration.
 
-        Supports both ``ParticleBeam`` and ``ParameterBeam``. Unsupported
-        tracking methods raise ``NotImplementedError``.
+        Linear backtracking supports both beam types; second order supports only
+        ``ParticleBeam``. Unsupported methods raise ``NotImplementedError``.
         """
         if not self.supports_backtracking:
             raise NotImplementedError(
                 f"{type(self).__name__} '{self.name}' does not support backtracking "
                 f"with tracking_method={self.tracking_method!r}."
             )
+        if self.tracking_method == "second_order":
+            return self._backtrack_second_order(incoming)
         return self._backtrack_first_order(incoming)
 
     def inverse_first_order_transfer_map(
@@ -189,6 +191,12 @@ class Element(ABC, nn.Module):
         Subclasses must explicitly implement this method.
         """
 
+        raise NotImplementedError
+
+    def inverse_second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        """Return the backward quadratic map for explicitly supported elements."""
         raise NotImplementedError
 
     def _track_first_order(self, incoming: Beam) -> Beam:
@@ -241,17 +249,25 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
+        tm = self.second_order_transfer_map(incoming.energy, incoming.species)
+        return self._apply_second_order_map(incoming, tm, self.length)
+
+    def _backtrack_second_order(self, incoming: Beam) -> ParticleBeam:
+        """Apply the backward quadratic map and subtract the element length."""
+        tm = self.inverse_second_order_transfer_map(incoming.energy, incoming.species)
+        return self._apply_second_order_map(incoming, tm, -self.length)
+
+    def _apply_second_order_map(
+        self, incoming: Beam, tm: torch.Tensor, delta_s: torch.Tensor
+    ) -> ParticleBeam:
+        """Apply a quadratic map and signed path increment."""
         assert isinstance(
             incoming, ParticleBeam
         ), "Second-order tracking is currently only supported for `ParticleBeam`."
 
-        second_order_tm = self.second_order_transfer_map(
-            incoming.energy, incoming.species
-        )
-
         outgoing_particles = torch.einsum(
             "...ijk,...j,...k->...i",
-            second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
+            tm.unsqueeze(-4),  # Add broadcast dimension for particles
             incoming.particles,
             incoming.particles,
         )
@@ -261,7 +277,7 @@ class Element(ABC, nn.Module):
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            s=incoming.s + self.length,
+            s=incoming.s + delta_s,
             species=incoming.species,
         )
 

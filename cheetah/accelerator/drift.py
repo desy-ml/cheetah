@@ -35,7 +35,7 @@ class Drift(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("linear",)
+    supported_backtracking_methods = ("linear", "second_order")
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
@@ -76,16 +76,25 @@ class Drift(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        zero = self.length.new_zeros(())
+        return self._second_order_map(self.length, energy, species)
+
+    @cache_transfer_map
+    def inverse_second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return self._second_order_map(-self.length, energy, species)
+
+    def _second_order_map(
+        self, length: torch.Tensor, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        zero = length.new_zeros(())
 
         T = base_ttensor(
-            self.length, k1=zero, k2=zero, hx=zero, energy=energy, species=species
+            length, k1=zero, k2=zero, hx=zero, energy=energy, species=species
         )
 
         # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = drift_matrix(
-            length=self.length, energy=energy, species=species
-        )
+        T[..., :, 6, :] = drift_matrix(length=length, energy=energy, species=species)
 
         return T
 

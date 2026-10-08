@@ -357,6 +357,8 @@ def test_unsupported_tracking_method(name, method):
     if method not in element.supported_tracking_methods:
         pytest.skip("Method not available on this element")
     element.tracking_method = method
+    if method in element.supported_backtracking_methods:
+        pytest.skip("Backtracking is supported for this method")
     assert not element.supports_backtracking
     with pytest.raises(NotImplementedError, match=method):
         element.backtrack(make_beam(cheetah.ParameterBeam))
@@ -586,3 +588,79 @@ def test_custom_map_inverse_cache_and_gradients():
         assert grad.abs().max() > 0.0
         gradients.append(grad)
     torch.testing.assert_close(gradients[0], gradients[1])
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize("batched", [False, True])
+@pytest.mark.parametrize("length", [0.0, 0.3, -0.3])
+def test_second_order_drift_round_trip(dtype, batched, length):
+    element = make_element("Drift", dtype=dtype, batched=batched)
+    element.length = torch.full_like(element.length, length)
+    element.tracking_method = "second_order"
+    beam = make_beam(cheetah.ParticleBeam, dtype=dtype, batched=batched)
+    # Exercise chromatic and path-length terms well above roundoff.
+    beam.particles[..., 1] = 0.02
+    beam.particles[..., 3] = -0.03
+    beam.particles[..., 5] = 0.04
+    original = beam.clone()
+    assert element.supports_backtracking
+    linear = element._track_first_order(beam)
+    forward = element.track(beam)
+    if length != 0.0:
+        assert not torch.allclose(forward.particles, linear.particles)
+    for recovered in (
+        element.backtrack(forward),
+        element.track(element.backtrack(beam)),
+        cheetah.Segment([element]).backtrack(forward),
+    ):
+        torch.testing.assert_close(
+            recovered.particles,
+            beam.particles.expand_as(recovered.particles),
+            rtol=32 * torch.finfo(dtype).eps,
+            atol=32 * torch.finfo(dtype).eps * 0.04,
+        )
+        torch.testing.assert_close(recovered.s, beam.s.expand_as(recovered.s))
+        torch.testing.assert_close(recovered.energy, beam.energy)
+        torch.testing.assert_close(recovered.particle_charges, beam.particle_charges)
+        torch.testing.assert_close(
+            recovered.survival_probabilities, beam.survival_probabilities
+        )
+        assert recovered.species.name == beam.species.name
+    assert torch.equal(beam.particles, original.particles)
+    assert element.tracking_method == "second_order"
+
+
+@pytest.mark.parametrize("direction", ["track", "backtrack"])
+def test_second_order_drift_parameter_beam_rejected(direction):
+    element = make_element("Drift")
+    element.tracking_method = "second_order"
+    with pytest.raises(AssertionError, match="ParticleBeam"):
+        getattr(element, direction)(make_beam(cheetah.ParameterBeam))
+
+
+@pytest.mark.parametrize("direction", ["track", "backtrack"])
+def test_second_order_drift_gradients(direction):
+    element = make_element("Drift")
+    element.tracking_method = "second_order"
+    element.length = torch.nn.Parameter(element.length.clone())
+    beam = make_beam(cheetah.ParticleBeam)
+    beam.particles.requires_grad_()
+    for _ in range(2):
+        element.zero_grad()
+        beam.particles.grad = None
+        result = getattr(element, direction)(beam)
+        result.particles[..., :6].square().sum().backward()
+        assert torch.isfinite(element.length.grad).all()
+        assert element.length.grad.abs() > 0.0
+        assert torch.isfinite(beam.particles.grad).all()
+    step = 1e-5
+    gradient = element.length.grad.clone()
+    with torch.no_grad():
+        element.length.add_(step)
+        upper = getattr(element, direction)(beam).particles[..., :6].square().sum()
+        element.length.sub_(2.0 * step)
+        lower = getattr(element, direction)(beam).particles[..., :6].square().sum()
+        element.length.add_(step)
+    torch.testing.assert_close(
+        gradient, (upper - lower) / (2.0 * step), rtol=1e-5, atol=1e-12
+    )
