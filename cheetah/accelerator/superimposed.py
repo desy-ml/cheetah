@@ -85,6 +85,13 @@ class Superimposed(Element):
     ) -> torch.Tensor:
         return self._segment.first_order_transfer_map(energy, species)
 
+    @property
+    def supports_backtracking(self) -> bool:
+        return self._segment.supports_backtracking
+
+    def backtrack(self, incoming: Beam) -> Beam:
+        return self._segment.backtrack(incoming)
+
     def track(self, incoming: Beam) -> Beam:
         return self._segment.track(incoming)
 

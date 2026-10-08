@@ -4,7 +4,7 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map, invert_affine_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -28,6 +28,8 @@ class CustomTransferMap(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear"]
 
     def __init__(
@@ -48,14 +50,13 @@ class CustomTransferMap(Element):
         if length is not None:
             self.length = length
 
-        assert (predefined_transfer_map[..., -1, :-2] == 0.0).all() and (
+        assert predefined_transfer_map.shape[-2:] == (7, 7)
+        assert (predefined_transfer_map[..., -1, :-1] == 0.0).all() and (
             predefined_transfer_map[..., -1, -1] == 1.0
         ).all(), "The seventh row of the transfer map must be [0, 0, 0, 0, 0, 0, 1]."
         self.register_buffer_or_parameter(
             "predefined_transfer_map", predefined_transfer_map
         )
-
-        assert self.predefined_transfer_map.shape[-2:] == (7, 7)
 
     @classmethod
     def from_merging_elements(
@@ -112,6 +113,13 @@ class CustomTransferMap(Element):
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
         return self.predefined_transfer_map
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        """Invert the supplied affine map; singular linear blocks raise LinAlgError."""
+        return invert_affine_map(self.predefined_transfer_map)
 
     @property
     def is_skippable(self) -> bool:

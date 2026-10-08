@@ -53,6 +53,8 @@ class Dipole(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
     def __init__(
@@ -392,6 +394,28 @@ class Dipole(Element):
         R = rotation.mT @ R @ rotation
 
         return R
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        R_enter = self._transfer_map_enter()
+        R_exit = self._transfer_map_exit()
+        # ponytail: linear edges are shears; their inverse negates the two kicks.
+        for edge in (R_enter, R_exit):
+            edge[..., 1, 0] = -edge[..., 1, 0]
+            edge[..., 3, 2] = -edge[..., 3, 2]
+
+        R = base_rmatrix(
+            length=-self.length,
+            k1=self.k1,
+            hx=self.hx,  # Negating both bend angle and length preserves curvature.
+            species=species,
+            energy=energy,
+        )
+        R = R_enter @ R @ R_exit
+        rotation = rotation_matrix(self.tilt)
+        return rotation.mT @ R @ rotation
 
     @cache_transfer_map
     def second_order_transfer_map(

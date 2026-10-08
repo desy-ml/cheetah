@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ from torch.distributions import MultivariateNormal
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import (
+    PhysicsWarning,
     UniqueNameGenerator,
     cache_transfer_map,
     cloud_in_cell_charge_deposition,
@@ -59,6 +61,8 @@ class Screen(Element):
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """
+
+    supported_backtracking_methods = ("screen",)
 
     def __init__(
         self,
@@ -183,6 +187,19 @@ class Screen(Element):
         }
 
         return torch.eye(7, **factory_kwargs).repeat((*energy.shape, 1, 1))
+
+    def backtrack(self, incoming: Beam) -> Beam:
+        """Record the beam when active and pass it through without changing losses."""
+        outgoing = self.track(incoming)
+        if self.is_active and self.is_blocking:
+            warnings.warn(
+                f"Screen '{self.name}' is blocking; backtracking passes the beam "
+                "through without restoring lost charge or survival probabilities.",
+                PhysicsWarning,
+                stacklevel=2,
+            )
+            return incoming.clone()
+        return outgoing
 
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active

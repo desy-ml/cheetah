@@ -29,6 +29,8 @@ class BPM(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("bpm",)
+
     def __init__(
         self,
         is_active: bool = False,
@@ -73,6 +75,19 @@ class BPM(Element):
         return torch.eye(7, device=energy.device, dtype=energy.dtype).repeat(
             (*energy.shape, 1, 1)
         )
+
+    def backtrack(self, incoming: Beam) -> Beam:
+        """Pass the beam through backtracking."""
+        if self.is_active:
+            self.reading = torch.stack(
+                [
+                    incoming.mu_x - self.misalignment[..., 0],
+                    incoming.mu_y - self.misalignment[..., 1],
+                ],
+                dim=-1,
+            )
+
+        return incoming.clone()
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_active:

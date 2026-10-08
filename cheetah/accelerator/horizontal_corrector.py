@@ -34,6 +34,8 @@ class HorizontalCorrector(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ("linear",)
+
     supported_tracking_methods = ["linear"]
 
     def __init__(
@@ -75,6 +77,19 @@ class HorizontalCorrector(Element):
         tm[..., 2, 3] = self.length
         tm[..., 4, 5] = -self.length / beta.square() * igamma2
 
+        return tm
+
+    @cache_transfer_map
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        tm = self.first_order_transfer_map(energy, species).clone()
+        tm[..., 0, 1] = -self.length
+        tm[..., 2, 3] = -self.length
+        tm[..., 4, 5] = -tm[..., 4, 5]
+        # Undo the exit kick before drifting backwards.
+        tm[..., 1, 6] = -self.angle
+        tm[..., 0, 6] = self.length * self.angle
         return tm
 
     @property

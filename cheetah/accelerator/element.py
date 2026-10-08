@@ -31,6 +31,8 @@ class Element(ABC, nn.Module):
     :param dtype: Data type of the element's tensors.
     """
 
+    supported_backtracking_methods = ()
+
     def __init__(
         self,
         name: str | None = None,
@@ -156,19 +158,67 @@ class Element(ABC, nn.Module):
         """
         return self._track_first_order(incoming)
 
-    def _track_first_order(self, incoming: Beam) -> Beam:
-        """
-        Track particles through the element with linear transfer map. The input can be
-        a `ParameterBeam` or a `ParticleBeam`.
+    @property
+    def supports_backtracking(self) -> bool:
+        """Whether backtracking is implemented for the current tracking method.
 
-        :param incoming: Beam of particles entering the element.
-        :return: Beam of particles exiting the element.
+        Note: this is only a capability check.
+        It does not guarantee numerical invertibility.
         """
+        return self.tracking_method in self.supported_backtracking_methods
+
+    def backtrack(self, incoming: Beam) -> Beam:
+        """Undo supported tracking without changing the element's configuration.
+
+        Linear backtracking supports both beam types; second order supports only
+        ``ParticleBeam``. Unsupported methods raise ``NotImplementedError``.
+        """
+        if not self.supports_backtracking:
+            raise NotImplementedError(
+                f"{type(self).__name__} '{self.name}' does not support backtracking "
+                f"with tracking_method={self.tracking_method!r}."
+            )
+        if self.tracking_method == "second_order":
+            return self._backtrack_second_order(incoming)
+        return self._backtrack_first_order(incoming)
+
+    def inverse_first_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        """Return the inverse affine map used for backtracking, with shape
+            ``(..., 7, 7)``.
+
+        Subclasses must explicitly implement this method.
+        """
+
+        raise NotImplementedError
+
+    def inverse_second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        """Return the backward quadratic map for explicitly supported elements."""
+        raise NotImplementedError
+
+    def _track_first_order(self, incoming: Beam) -> Beam:
+        """Apply the forward linear map to a particle or parameter beam."""
+        if not isinstance(incoming, (ParticleBeam, ParameterBeam)):
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+        tm = self.first_order_transfer_map(incoming.energy, incoming.species)
+        return self._apply_linear_map(incoming, tm, self.length)
+
+    def _backtrack_first_order(self, incoming: Beam) -> Beam:
+        """Apply the inverse linear map and subtract the element length."""
+        tm = self.inverse_first_order_transfer_map(incoming.energy, incoming.species)
+        return self._apply_linear_map(incoming, tm, -self.length)
+
+    def _apply_linear_map(
+        self, incoming: Beam, tm: torch.Tensor, delta_s: torch.Tensor
+    ) -> Beam:
+        """Apply an affine map and signed path increment, preserving beam metadata."""
         if isinstance(incoming, ParameterBeam):
-            tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             new_cov = tm @ incoming.cov @ tm.mT
-            new_s = incoming.s + self.length
+            new_s = incoming.s + delta_s
             return ParameterBeam(
                 new_mu,
                 new_cov,
@@ -178,9 +228,8 @@ class Element(ABC, nn.Module):
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
-            tm = self.first_order_transfer_map(incoming.energy, incoming.species)
             new_particles = incoming.particles @ tm.mT
-            new_s = incoming.s + self.length
+            new_s = incoming.s + delta_s
             return ParticleBeam(
                 new_particles,
                 incoming.energy,
@@ -200,17 +249,25 @@ class Element(ABC, nn.Module):
         :param incoming: Beam of particles entering the element.
         :return: Beam of particles exiting the element.
         """
+        tm = self.second_order_transfer_map(incoming.energy, incoming.species)
+        return self._apply_second_order_map(incoming, tm, self.length)
+
+    def _backtrack_second_order(self, incoming: Beam) -> ParticleBeam:
+        """Apply the backward quadratic map and subtract the element length."""
+        tm = self.inverse_second_order_transfer_map(incoming.energy, incoming.species)
+        return self._apply_second_order_map(incoming, tm, -self.length)
+
+    def _apply_second_order_map(
+        self, incoming: Beam, tm: torch.Tensor, delta_s: torch.Tensor
+    ) -> ParticleBeam:
+        """Apply a quadratic map and signed path increment."""
         assert isinstance(
             incoming, ParticleBeam
         ), "Second-order tracking is currently only supported for `ParticleBeam`."
 
-        second_order_tm = self.second_order_transfer_map(
-            incoming.energy, incoming.species
-        )
-
         outgoing_particles = torch.einsum(
             "...ijk,...j,...k->...i",
-            second_order_tm.unsqueeze(-4),  # Add broadcast dimension for particles
+            tm.unsqueeze(-4),  # Add broadcast dimension for particles
             incoming.particles,
             incoming.particles,
         )
@@ -220,7 +277,7 @@ class Element(ABC, nn.Module):
             energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
-            s=incoming.s + self.length,
+            s=incoming.s + delta_s,
             species=incoming.species,
         )
 
