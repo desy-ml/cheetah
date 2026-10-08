@@ -189,7 +189,8 @@ class Screen(Element):
         return torch.eye(7, **factory_kwargs).repeat((*energy.shape, 1, 1))
 
     def backtrack(self, incoming: Beam) -> Beam:
-        """Pass the beam through without updating diagnostic readings."""
+        """Record the beam when active and pass it through without changing losses."""
+        outgoing = self.track(incoming)
         if self.is_active and self.is_blocking:
             warnings.warn(
                 f"Screen '{self.name}' is blocking; backtracking passes the beam "
@@ -197,7 +198,8 @@ class Screen(Element):
                 PhysicsWarning,
                 stacklevel=2,
             )
-        return incoming.clone()
+            return incoming.clone()
+        return outgoing
 
     def track(self, incoming: Beam) -> Beam:
         # Record the beam only when the screen is active
