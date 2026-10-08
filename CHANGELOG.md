@@ -15,6 +15,7 @@
 - Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
 - Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
+- Fix nan gradients due to zero denominator in `base_ttensor` and `Cavity` r55 calculation. (see #707) (@cr-xu)
 
 ### 🐆 Other
 

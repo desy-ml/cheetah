@@ -81,3 +81,30 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
     assert not outgoing.sigma_y.isnan().any()
     assert not outgoing.beta_x.isnan().any()
     assert not outgoing.beta_y.isnan().any()
+
+
+def test_standing_wave_r55_zero_voltage_gradients():
+    length = torch.nn.Parameter(torch.tensor(0.3, dtype=torch.float64))
+    voltage = torch.nn.Parameter(torch.tensor([0.0, 1e6], dtype=torch.float64))
+    cavity = cheetah.Cavity(
+        length=length,
+        voltage=voltage,
+        phase=torch.tensor(30.0, dtype=torch.float64),
+        frequency=torch.tensor(1.3e9, dtype=torch.float64),
+        cavity_type="standing_wave",
+    )
+    r55 = cavity.first_order_transfer_map(
+        torch.tensor(1e8, dtype=torch.float64), cheetah.Species("electron")
+    )[..., 4, 4]
+    assert torch.isfinite(r55).all()
+    assert r55[0] == 1.0
+    r55.sum().backward()
+    assert torch.isfinite(length.grad).all()
+    assert torch.isfinite(voltage.grad).all()
+    assert voltage.grad[0] == 0.0
+    torch.testing.assert_close(
+        length.grad,
+        (r55[1].detach() - 1.0) / length.detach(),
+        rtol=1e-6,
+        atol=1e-12,
+    )

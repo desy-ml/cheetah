@@ -1,6 +1,8 @@
 import pytest
 import torch
 
+from cheetah.particles import Species
+from cheetah.track_methods import base_ttensor
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     log1pdiv,
@@ -237,3 +239,27 @@ def test_sqrta2minusbdiva():
         check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
+
+
+@pytest.mark.parametrize(
+    "k1, hx",
+    [(0.0, 0.0), (-0.25, 0.5), (-0.05, 0.5)],
+    ids=["drift", "j3-zero", "jf-zero"],
+)
+def test_base_ttensor_zero_denominator_gradients(k1, hx):
+    length = torch.tensor(0.3, dtype=torch.float64, requires_grad=True)
+    species = Species("electron")
+
+    def loss(length):
+        tm = base_ttensor(
+            length,
+            length.new_tensor(k1),
+            length.new_tensor(2.0),
+            length.new_tensor(hx),
+            energy=length.new_tensor(1e8),
+            species=species,
+        )
+        assert torch.isfinite(tm).all()
+        return tm.square().sum()
+
+    assert torch.autograd.gradcheck(loss, (length,))

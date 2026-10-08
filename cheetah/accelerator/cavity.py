@@ -299,7 +299,7 @@ class Cavity(Element):
                 * beta0
                 * phi.tan()
                 * (Ei * Ef * (beta0 * beta1 - 1) + 1)
-                / (beta1 * Ef * dE)
+                / (beta1 * Ef * dE.where(dE != 0.0, 1.0))
             ).where(dE != 0.0, 0.0)
             r56 = (
                 -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)

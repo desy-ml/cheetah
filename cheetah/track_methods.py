@@ -137,7 +137,7 @@ def base_ttensor(
             - 1.5 * sx * cx.square()
             + kx2 * sx.pow(3)
         )
-        / (6.0 * kx2.pow(3))
+        / (6.0 * kx2.pow(3).where(kx2 != 0, 1.0))
     ).where(kx2 != 0, length.pow(7) / 56.0)
     j_denominator = kx2 - 4.0 * ky2
     jc = length.square() * cossqrtmcosdivdiff(
@@ -145,7 +145,9 @@ def base_ttensor(
     )
     js = length.pow(3) * simsidivdiff(kx2 * length.square(), ky2 * length.square())
     jd = length.pow(4) * si2msi2divdiff(kx2 * length.square(), ky2 * length.square())
-    jf = ((f2y - fx) / j_denominator).where(j_denominator != 0, length.pow(5) / 120.0)
+    jf = ((f2y - fx) / j_denominator.where(j_denominator != 0, 1.0)).where(
+        j_denominator != 0, length.pow(5) / 120.0
+    )
 
     khk = k2 + 2.0 * hx * k1
 
