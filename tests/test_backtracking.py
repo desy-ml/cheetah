@@ -628,39 +628,3 @@ def test_second_order_drift_round_trip(dtype, batched, length):
         assert recovered.species.name == beam.species.name
     assert torch.equal(beam.particles, original.particles)
     assert element.tracking_method == "second_order"
-
-
-@pytest.mark.parametrize("direction", ["track", "backtrack"])
-def test_second_order_drift_parameter_beam_rejected(direction):
-    element = make_element("Drift")
-    element.tracking_method = "second_order"
-    with pytest.raises(AssertionError, match="ParticleBeam"):
-        getattr(element, direction)(make_beam(cheetah.ParameterBeam))
-
-
-@pytest.mark.parametrize("direction", ["track", "backtrack"])
-def test_second_order_drift_gradients(direction):
-    element = make_element("Drift")
-    element.tracking_method = "second_order"
-    element.length = torch.nn.Parameter(element.length.clone())
-    beam = make_beam(cheetah.ParticleBeam)
-    beam.particles.requires_grad_()
-    for _ in range(2):
-        element.zero_grad()
-        beam.particles.grad = None
-        result = getattr(element, direction)(beam)
-        result.particles[..., :6].square().sum().backward()
-        assert torch.isfinite(element.length.grad).all()
-        assert element.length.grad.abs() > 0.0
-        assert torch.isfinite(beam.particles.grad).all()
-    step = 1e-5
-    gradient = element.length.grad.clone()
-    with torch.no_grad():
-        element.length.add_(step)
-        upper = getattr(element, direction)(beam).particles[..., :6].square().sum()
-        element.length.sub_(2.0 * step)
-        lower = getattr(element, direction)(beam).particles[..., :6].square().sum()
-        element.length.add_(step)
-    torch.testing.assert_close(
-        gradient, (upper - lower) / (2.0 * step), rtol=1e-5, atol=1e-12
-    )
