@@ -143,25 +143,21 @@ def evaluate_expression(expression: str, context: dict) -> Any:
     ):
         return expression[1:-1]
 
-    # Check against allowed keywords
-    if expression.lower() in [
-        "open",
-        "electron",
-        "t",
-        "f",
-        "true",
-        "false",
-        "traveling_wave",
-        "full",
-    ]:
+    # Check against boolean literals
+    if expression.lower() in ["t", "f", "true", "false"]:
         return expression.lower()
 
-    # Check against previously defined variables
+    # Check against previously defined variables or elements
     if expression in context:
+        if isinstance(context[expression], (dict, list)):
+            return expression
         return context[expression]
 
-    # Evaluate as a mathematical expression
+    # Check against standalone identifiers (e.g. element names or keyword options)
+    if expression.isidentifier():
+        return expression
 
+    # Evaluate as a mathematical expression
     try:
         return infix.evaluate_expression(expression, context)
     except SyntaxError:
@@ -219,16 +215,6 @@ def assign_property(line: str, context: dict) -> dict:
         if any(wildcard in object_name for wildcard in ["*", "%", "::"])
         else [object_name]
     )
-
-    if property_name == "ref":
-        reference_name = property_expression.strip("\"' ")
-
-        for name in object_names:
-            if name not in context:
-                context[name] = {}
-            context[name][property_name] = reference_name
-
-        return context
 
     expression_result = evaluate_expression(property_expression, context)
 
@@ -293,12 +279,9 @@ def define_element(line: str, context: dict) -> dict:
             property_name = property_name.strip()
             property_expression = property_expression.strip()
 
-            if property_name == "ref":
-                element_properties[property_name] = property_expression.strip("\"' ")
-            else:
-                element_properties[property_name] = evaluate_expression(
-                    property_expression, context
-                )
+            element_properties[property_name] = evaluate_expression(
+                property_expression, context
+            )
 
     context[element_name] = element_properties
 
