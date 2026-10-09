@@ -13,16 +13,12 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 class Superimposed(Element):
     """
     A segment that represents a superimposed structure in an accelerator, i.e. where one
-    element is placed over another at the center of the base element.
+    or more elements are placed over another at the centre of the base element.
 
-    NOTE: Changing either `base_element` or `superimposed_element` after initialisation
-        will lead to unexpected behaviour. If you need to change either of these
-        elements, please create a new instance of `Superimposed`.
-
-    :param base_element: The base element at the center of which the superimposed
-        element is placed.
-    :param superimposed_element: Element to be placed at the center of the base element.
-        NOTE: The `superimposed_element` must have a length of zero.
+    :param base_element: The base element at the centre of which the superimposed
+        elements are placed.
+    :param superimposed_element: Element or list of elements to be placed at the centre
+        of the base element. NOTE: All superimposed elements must have a length of zero.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -39,7 +35,7 @@ class Superimposed(Element):
     def __init__(
         self,
         base_element: Element,
-        superimposed_element: Element,
+        superimposed_element: Element | list[Element],
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
@@ -51,23 +47,34 @@ class Superimposed(Element):
             name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
-        assert superimposed_element.length == torch.tensor(
-            0.0
-        ), "The superimposed element must have zero length."
+        elements = (
+            [superimposed_element]
+            if isinstance(superimposed_element, Element)
+            else superimposed_element
+        )
+        for element in elements:
+            assert (
+                element.length == 0.0
+            ).all(), "The superimposed element must have zero length."
 
         self.base_element = base_element
-        self.superimposed_element = superimposed_element
+        self.superimposed_elements = elements
 
         base_element_halves = base_element.split(base_element.length / 2.0)
+        assert len(base_element_halves) == 2, (
+            f"The base element of type {base_element.__class__.__name__} could not be "
+            "split into exactly two halves."
+        )
+
         self._segment = Segment(
             elements=[
                 base_element_halves[0],
-                superimposed_element,
+                *elements,
                 base_element_halves[1],
             ],
             name=f"{self.name}_segment",
-            sanitize_name=sanitize_name,
-        )
+            sanitize_name=False,
+        ).flattened()
 
     def flattened(self) -> "Segment":
         return self._segment.flattened()
