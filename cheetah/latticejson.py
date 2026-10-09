@@ -57,6 +57,24 @@ def convert_element(
                 subelement_params["name"] = subelement_name
             elements_dict[storage_name] = [subelement_class, subelement_params]
             params[feature] = storage_name
+        elif isinstance(value, (list, tuple)) and all(
+            isinstance(v, cheetah.Element) for v in value
+        ):
+            subelement_names = []
+            for i, subelement in enumerate(value):
+                sub_name, sub_class, sub_params = convert_element(
+                    subelement, elements_dict
+                )
+                storage_name = sub_name
+                if storage_name == element.name or (
+                    storage_name in elements_dict
+                    and elements_dict[storage_name] != [sub_class, sub_params]
+                ):
+                    storage_name = f"{element.name}_{feature}_{i}"
+                    sub_params["name"] = sub_name
+                elements_dict[storage_name] = [sub_class, sub_params]
+                subelement_names.append(storage_name)
+            params[feature] = subelement_names
         else:
             params[feature] = feature2nontorch(value)
 
@@ -205,9 +223,14 @@ def parse_element(
 
     converted_params = {
         key: (
-            parse_element(value, lattice_dict, device=device, dtype=dtype)
-            if isinstance(value, str) and value in lattice_dict["elements"]
-            else nontorch2feature(value, device=device, dtype=dtype)
+            [parse_element(v, lattice_dict, device=device, dtype=dtype) for v in value]
+            if isinstance(value, list)
+            and all(isinstance(v, str) and v in lattice_dict["elements"] for v in value)
+            else (
+                parse_element(value, lattice_dict, device=device, dtype=dtype)
+                if isinstance(value, str) and value in lattice_dict["elements"]
+                else nontorch2feature(value, device=device, dtype=dtype)
+            )
         )
         for key, value in params.items()
         if key != "name"

@@ -12,7 +12,7 @@ from cheetah.utils import PhysicsWarning, UnknownElementWarning
 def convert_element(
     name: str,
     context: dict,
-    superimpositions: dict[str, str],
+    superimpositions: dict[str, list[str]],
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
@@ -22,8 +22,8 @@ def convert_element(
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
-    :param superimpositions: Mapping of base element names to superimposed element
-        names.
+    :param superimpositions: Mapping of base element names to lists of superimposed
+        element names.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. If `None` (default), a warning is raised for invalid names. Set to `True`
         to sanitise, or `False` to silence the warning.
@@ -339,19 +339,22 @@ def convert_element(
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
 
     if name in superimpositions:
-        superimposed_element = convert_element(
-            superimpositions[name],
-            context,
-            superimpositions,
-            sanitize_name=sanitize_name,
-            device=device,
-            dtype=dtype,
-        )
+        superimposed_elements = [
+            convert_element(
+                superimposed_name,
+                context,
+                superimpositions,
+                sanitize_name=sanitize_name,
+                device=device,
+                dtype=dtype,
+            )
+            for superimposed_name in superimpositions[name]
+        ]
 
         try:
             return cheetah.Superimposed(
                 base_element=element,
-                superimposed_element=superimposed_element,
+                superimposed_element=superimposed_elements,
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
@@ -367,14 +370,14 @@ def convert_element(
     return element
 
 
-def collect_superimpositions(context: dict) -> dict[str, str]:
+def collect_superimpositions(context: dict) -> dict[str, list[str]]:
     """
-    Map base element names to their superimposed element names from context.
+    Map base element names to lists of their superimposed element names from context.
 
     :param context: Context dictionary parsed from Bmad lattice file(s).
-    :return: Mapping of base element names to superimposed element names.
+    :return: Mapping of base element names to lists of superimposed element names.
     """
-    superimpositions: dict[str, str] = {}
+    superimpositions: dict[str, list[str]] = {}
     for elem_name, elem_def in context.items():
         if isinstance(elem_def, dict) and "ref" in elem_def:
             superimpose_flag = elem_def.get("superimpose", True)
@@ -383,18 +386,7 @@ def collect_superimpositions(context: dict) -> dict[str, str]:
             if bool(superimpose_flag):
                 ref_name = elem_def["ref"]
                 if ref_name in context and isinstance(context[ref_name], dict):
-                    if ref_name in superimpositions:
-                        warnings.warn(
-                            f"Element {elem_name} is superimposed on {ref_name}, but "
-                            f"{superimpositions[ref_name]} is already "
-                            f"superimposed on {ref_name}. Cheetah only supports a "
-                            "single superimposed element per base element, so "
-                            f"{elem_name} is dropped from the lattice.",
-                            category=PhysicsWarning,
-                            stacklevel=2,
-                        )
-                    else:
-                        superimpositions[ref_name] = elem_name
+                    superimpositions.setdefault(ref_name, []).append(elem_name)
 
     return superimpositions
 

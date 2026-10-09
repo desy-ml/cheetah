@@ -192,10 +192,10 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened_qe01.element_names == ["qe01_split_0", "otr2", "qe01_split_1"]
 
 
-def test_multiple_superimposed_elements_warns():
+def test_multiple_superimposed_elements():
     """
     Test that when multiple elements are superimposed on the same base element,
-    only the first is kept and subsequent ones are dropped with a warning.
+    they are all included in the superimposed element.
     """
     context = {
         "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
@@ -203,14 +203,21 @@ def test_multiple_superimposed_elements_warns():
         "bpm2": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
     }
 
-    with pytest.warns(PhysicsWarning, match="is already superimposed"):
-        superimpositions = bmad_converter.collect_superimpositions(context)
+    superimpositions = bmad_converter.collect_superimpositions(context)
     converted = bmad_converter.convert_element(
         "qa01", context, superimpositions=superimpositions
     )
 
     assert isinstance(converted, cheetah.Superimposed)
-    assert converted.superimposed_element.name == "bpm1"
+    assert len(converted.superimposed_elements) == 2
+    assert converted.superimposed_elements[0].name == "bpm1"
+    assert converted.superimposed_elements[1].name == "bpm2"
+    assert converted.flattened().element_names == [
+        "qa01_split_0",
+        "bpm1",
+        "bpm2",
+        "qa01_split_1",
+    ]
 
 
 def test_superimpose_non_zero_length_warns():
