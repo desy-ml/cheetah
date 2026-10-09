@@ -70,10 +70,7 @@ class Superimposed(Element):
             sanitize_name=False,
         ).flattened()
 
-    def flattened(self, skip_superimposed: bool = False) -> "Segment | Superimposed":
-        if skip_superimposed:
-            return self
-
+    def flattened(self) -> "Segment":
         return self._segment.flattened()
 
     @property
