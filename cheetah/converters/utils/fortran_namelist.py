@@ -214,10 +214,11 @@ def assign_property(line: str, context: dict) -> dict:
     property_name = match.group(2).strip()
     property_expression = match.group(3).strip()  # TODO: Evaluate expression first
 
-    if "*" in object_name or "%" in object_name or "::" in object_name:
-        object_names = resolve_object_name_wildcard(object_name, context)
-    else:
-        object_names = [object_name]
+    object_names = (
+        resolve_object_name_wildcard(object_name, context)
+        if any(wildcard in object_name for wildcard in ["*", "%", "::"])
+        else [object_name]
+    )
 
     if property_name == "ref":
         reference_name = property_expression.strip("\"' ")
