@@ -5,18 +5,14 @@ from pathlib import Path
 import torch
 
 import cheetah
-from cheetah.converters.utils.fortran_namelist import (
-    merge_delimiter_continued_lines,
-    parse_lines,
-    read_clean_lines,
-    validate_understood_properties,
-)
+from cheetah.converters.utils import fortran_namelist
 from cheetah.utils import PhysicsWarning, UnknownElementWarning
 
 
 def convert_element(
     name: str,
     context: dict,
+    superimpositions: dict[str, str],
     sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
@@ -26,6 +22,8 @@ def convert_element(
 
     :param name: Name of the (top-level) element to convert.
     :param context: Context dictionary parsed from Bmad lattice file(s).
+    :param superimpositions: Mapping of base element names to superimposed element
+        names.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. If `None` (default), a warning is raised for invalid names. Set to `True`
         to sanitise, or `False` to silence the warning.
@@ -41,25 +39,26 @@ def convert_element(
         "dtype": dtype or torch.get_default_dtype(),
     }
 
-    if "_superimposed_linked" not in context:
-        _link_superimposed_elements(context)
-
     bmad_parsed = context[name]
-    if isinstance(bmad_parsed, dict) and "superimposed_element" in bmad_parsed:
-        return _convert_superimposed(name, context, sanitize_name, device, dtype)
-
     metadata = (
         {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
         if isinstance(bmad_parsed, dict)
         else {}
     )
 
-    shared_properties = ["element_type", "alias", "type"]
+    shared_properties = ["element_type", "alias", "type", "ref", "superimpose"]
 
     if isinstance(bmad_parsed, list):
-        return cheetah.Segment(
+        element = cheetah.Segment(
             elements=[
-                convert_element(element_name, context, sanitize_name, device, dtype)
+                convert_element(
+                    element_name,
+                    context,
+                    sanitize_name=sanitize_name,
+                    device=device,
+                    dtype=dtype,
+                    superimpositions=superimpositions,
+                )
                 for element_name in bmad_parsed
             ],
             name=name,
@@ -67,61 +66,67 @@ def convert_element(
         )
     elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
         if bmad_parsed["element_type"] == "marker":
-            validate_understood_properties(shared_properties, bmad_parsed)
-            return cheetah.Marker(
+            fortran_namelist.validate_understood_properties(
+                shared_properties, bmad_parsed
+            )
+            element = cheetah.Marker(
                 name=name, sanitize_name=sanitize_name, metadata=metadata
             )
         elif bmad_parsed["element_type"] == "monitor":
-            validate_understood_properties(shared_properties + ["l"], bmad_parsed)
+            fortran_namelist.validate_understood_properties(
+                shared_properties + ["l"], bmad_parsed
+            )
             if "l" in bmad_parsed:
-                return cheetah.Drift(
+                element = cheetah.Drift(
                     length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
                 )
             else:
-                return cheetah.Marker(
+                element = cheetah.Marker(
                     name=name, sanitize_name=sanitize_name, metadata=metadata
                 )
         elif bmad_parsed["element_type"] == "instrument":
-            validate_understood_properties(shared_properties + ["l"], bmad_parsed)
+            fortran_namelist.validate_understood_properties(
+                shared_properties + ["l"], bmad_parsed
+            )
             if "l" in bmad_parsed:
-                return cheetah.Drift(
+                element = cheetah.Drift(
                     length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
                 )
             else:
-                return cheetah.Marker(
+                element = cheetah.Marker(
                     name=name, sanitize_name=sanitize_name, metadata=metadata
                 )
         elif bmad_parsed["element_type"] == "pipe":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "descrip"], bmad_parsed
             )
-            return cheetah.Drift(
+            element = cheetah.Drift(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "drift":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "descrip"], bmad_parsed
             )
-            return cheetah.Drift(
+            element = cheetah.Drift(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "hkicker":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "kick"], bmad_parsed
             )
-            return cheetah.HorizontalCorrector(
+            element = cheetah.HorizontalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
@@ -129,10 +134,10 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "vkicker":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "kick"], bmad_parsed
             )
-            return cheetah.VerticalCorrector(
+            element = cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
@@ -140,12 +145,12 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "sbend":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties
                 + ["hgap", "l", "angle", "e1", "e2", "fint", "fintx", "ref_tilt"],
                 bmad_parsed,
             )
-            return cheetah.Dipole(
+            element = cheetah.Dipole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 gap=torch.tensor(2 * bmad_parsed.get("hgap", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("angle", 0.0), **factory_kwargs),
@@ -165,10 +170,10 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "k1", "tilt"], bmad_parsed
             )
-            return cheetah.Quadrupole(
+            element = cheetah.Quadrupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k1=torch.tensor(bmad_parsed["k1"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
@@ -177,10 +182,10 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "sextupole":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "k2", "tilt"], bmad_parsed
             )
-            return cheetah.Sextupole(
+            element = cheetah.Sextupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k2=torch.tensor(bmad_parsed["k2"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
@@ -189,8 +194,10 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "solenoid":
-            validate_understood_properties(shared_properties + ["l", "ks"], bmad_parsed)
-            return cheetah.Solenoid(
+            fortran_namelist.validate_understood_properties(
+                shared_properties + ["l", "ks"], bmad_parsed
+            )
+            element = cheetah.Solenoid(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k=torch.tensor(bmad_parsed["ks"], **factory_kwargs),
                 name=name,
@@ -198,11 +205,11 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "lcavity":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "rf_frequency", "voltage", "phi0"],
                 bmad_parsed,
             )
-            return cheetah.Cavity(
+            element = cheetah.Cavity(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
                 phase=-(
@@ -217,11 +224,11 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "crab_cavity":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "rf_frequency", "voltage", "phi0"],
                 bmad_parsed,
             )
-            return cheetah.TransverseDeflectingCavity(
+            element = cheetah.TransverseDeflectingCavity(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
                 phase=-(torch.tensor(bmad_parsed.get("phi0", 0.0), **factory_kwargs)),
@@ -231,11 +238,11 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "x_limit", "y_limit"],
                 bmad_parsed,
             )
-            return cheetah.Segment(
+            element = cheetah.Segment(
                 elements=[
                     cheetah.Drift(
                         length=torch.tensor(
@@ -261,11 +268,11 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "ecollimator":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "x_limit", "y_limit"],
                 bmad_parsed,
             )
-            return cheetah.Segment(
+            element = cheetah.Segment(
                 elements=[
                     cheetah.Drift(
                         length=torch.tensor(
@@ -291,13 +298,13 @@ def convert_element(
                 metadata=metadata,
             )
         elif bmad_parsed["element_type"] == "wiggler":
-            validate_understood_properties(
+            fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "l_period"], bmad_parsed
             )
 
             # TODO: Map the magnetic strength `b_max of Bmad to the undulator
             # coefficient `kx`.
-            return cheetah.Undulator(
+            element = cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 period=torch.tensor(bmad_parsed["l_period"], **factory_kwargs),
                 name=name,
@@ -306,8 +313,10 @@ def convert_element(
             )
         elif bmad_parsed["element_type"] == "patch":
             # TODO: Does this need to be implemented in Cheetah in a more proper way?
-            validate_understood_properties(shared_properties + ["l"], bmad_parsed)
-            return cheetah.Drift(
+            fortran_namelist.validate_understood_properties(
+                shared_properties + ["l"], bmad_parsed
+            )
+            element = cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
@@ -320,7 +329,7 @@ def convert_element(
                 category=UnknownElementWarning,
                 stacklevel=2,
             )
-            return cheetah.Drift(
+            element = cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
@@ -329,63 +338,43 @@ def convert_element(
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
 
-
-def _convert_superimposed(
-    name: str,
-    context: dict,
-    sanitize_name: bool | None = None,
-    device: torch.device | None = None,
-    dtype: torch.dtype | None = None,
-) -> "cheetah.Element":
-    bmad_parsed = context[name]
-    superimposed_name = bmad_parsed.pop("superimposed_element")
-    metadata = (
-        {k: bmad_parsed[k] for k in ["alias", "type"] if k in bmad_parsed}
-        if isinstance(bmad_parsed, dict)
-        else {}
-    )
-
-    base_element = convert_element(
-        name, context, sanitize_name=sanitize_name, device=device, dtype=dtype
-    )
-    candidate = convert_element(
-        superimposed_name,
-        context,
-        sanitize_name=sanitize_name,
-        device=device,
-        dtype=dtype,
-    )
-
-    if not (candidate.length == 0.0).all():
-        warnings.warn(
-            f"Element {superimposed_name} is superimposed on {name}, but has a "
-            "non-zero length. Cheetah only supports superimposing zero-length "
-            f"elements, so {superimposed_name} is dropped from the lattice.",
-            category=PhysicsWarning,
-            stacklevel=2,
-        )
-        return base_element
-
-    try:
-        return cheetah.Superimposed(
-            base_element=base_element,
-            superimposed_element=candidate,
-            name=name,
+    if name in superimpositions:
+        superimposed_element = convert_element(
+            superimpositions[name],
+            context,
+            superimpositions,
             sanitize_name=sanitize_name,
-            metadata=metadata,
+            device=device,
+            dtype=dtype,
         )
-    except AssertionError as error:
-        warnings.warn(
-            f"Could not superimpose {superimposed_name} on {name}. "
-            f"Keeping only the base element. Reason: {error}",
-            category=PhysicsWarning,
-            stacklevel=2,
-        )
-        return base_element
+
+        try:
+            return cheetah.Superimposed(
+                base_element=element,
+                superimposed_element=superimposed_element,
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
+            )
+        except AssertionError as error:
+            warnings.warn(
+                f"Could not superimpose {superimpositions[name]} on {name}. "
+                f"Keeping only the base element. Reason: {error}",
+                category=PhysicsWarning,
+                stacklevel=2,
+            )
+
+    return element
 
 
-def _link_superimposed_elements(context: dict) -> None:
-    context["_superimposed_linked"] = True
+def collect_superimpositions(context: dict) -> dict[str, str]:
+    """
+    Map base element names to their superimposed element names from context.
+
+    :param context: Context dictionary parsed from Bmad lattice file(s).
+    :return: Mapping of base element names to superimposed element names.
+    """
+    superimpositions: dict[str, str] = {}
     for elem_name, elem_def in context.items():
         if isinstance(elem_def, dict) and "ref" in elem_def:
             superimpose_flag = elem_def.get("superimpose", True)
@@ -394,10 +383,10 @@ def _link_superimposed_elements(context: dict) -> None:
             if bool(superimpose_flag):
                 ref_name = elem_def["ref"]
                 if ref_name in context and isinstance(context[ref_name], dict):
-                    if "superimposed_element" in context[ref_name]:
+                    if ref_name in superimpositions:
                         warnings.warn(
                             f"Element {elem_name} is superimposed on {ref_name}, but "
-                            f"{context[ref_name]['superimposed_element']} is already "
+                            f"{superimpositions[ref_name]} is already "
                             f"superimposed on {ref_name}. Cheetah only supports a "
                             "single superimposed element per base element, so "
                             f"{elem_name} is dropped from the lattice.",
@@ -405,7 +394,9 @@ def _link_superimposed_elements(context: dict) -> None:
                             stacklevel=2,
                         )
                     else:
-                        context[ref_name]["superimposed_element"] = elem_name
+                        superimpositions[ref_name] = elem_name
+
+    return superimpositions
 
 
 def convert_lattice(
@@ -451,16 +442,16 @@ def convert_lattice(
     )
 
     # Read and clean the lattice file(s)
-    lines = read_clean_lines(resolved_lattice_file_path)
+    lines = fortran_namelist.read_clean_lines(resolved_lattice_file_path)
 
     # Merge multi-line statements
-    merged_lines = merge_delimiter_continued_lines(
+    merged_lines = fortran_namelist.merge_delimiter_continued_lines(
         lines, delimiter="&", remove_delimiter=True
     )
-    merged_lines = merge_delimiter_continued_lines(
+    merged_lines = fortran_namelist.merge_delimiter_continued_lines(
         merged_lines, delimiter=",", remove_delimiter=False
     )
-    merged_lines = merge_delimiter_continued_lines(
+    merged_lines = fortran_namelist.merge_delimiter_continued_lines(
         merged_lines, delimiter="{", remove_delimiter=False
     )
     assert len(merged_lines) <= len(
@@ -468,13 +459,16 @@ def convert_lattice(
     ), "Merging lines should never produce more lines than there were before."
 
     # Parse the lattice file(s), i.e. basically execute them
-    context = parse_lines(merged_lines)
+    context = fortran_namelist.parse_lines(merged_lines)
+
+    superimpositions = collect_superimpositions(context)
 
     # Convert the parsed lattice info to Cheetah elements
     return convert_element(
         name=context["__use__"],
         context=context,
         sanitize_name=sanitize_names,
+        superimpositions=superimpositions,
         device=device,
         dtype=dtype,
     )

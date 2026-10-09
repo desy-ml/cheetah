@@ -204,7 +204,10 @@ def test_multiple_superimposed_elements_warns():
     }
 
     with pytest.warns(PhysicsWarning, match="is already superimposed"):
-        converted = bmad_converter.convert_element("qa01", context)
+        superimpositions = bmad_converter.collect_superimpositions(context)
+    converted = bmad_converter.convert_element(
+        "qa01", context, superimpositions=superimpositions
+    )
 
     assert isinstance(converted, cheetah.Superimposed)
     assert converted.superimposed_element.name == "bpm1"
@@ -226,8 +229,11 @@ def test_superimpose_non_zero_length_warns():
         },
     }
 
-    with pytest.warns(PhysicsWarning, match="non-zero length"):
-        converted = bmad_converter.convert_element("qa01", context)
+    superimpositions = bmad_converter.collect_superimpositions(context)
+    with pytest.warns(PhysicsWarning, match="zero length"):
+        converted = bmad_converter.convert_element(
+            "qa01", context, superimpositions=superimpositions
+        )
 
     assert isinstance(converted, cheetah.Quadrupole)
 
