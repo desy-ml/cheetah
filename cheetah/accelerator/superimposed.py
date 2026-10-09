@@ -60,15 +60,12 @@ class Superimposed(Element):
             "split into two halves."
         )
 
-        # Add useful names for element halves such that they can be accessed in the
-        # flattened segment
-        half_1 = base_element_halves[0].clone()
-        half_2 = base_element_halves[1].clone()
-        half_1.name = f"{base_element.name}_1"
-        half_2.name = f"{base_element.name}_2"
-
         self._segment = Segment(
-            elements=[half_1, superimposed_element, half_2],
+            elements=[
+                base_element_halves[0],
+                superimposed_element,
+                base_element_halves[1],
+            ],
             name=f"{self.name}_segment",
             sanitize_name=False,
         ).flattened()

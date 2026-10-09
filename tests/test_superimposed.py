@@ -41,9 +41,9 @@ def test_superimposed_element_naming():
     assert superimposed.base_element.name == "q1"
 
     flattened = superimposed.flattened()
-    assert flattened.elements[0].name == "q1_1"
+    assert flattened.elements[0].name == "q1_split_0"
     assert flattened.elements[1].name == "bpm1"
-    assert flattened.elements[2].name == "q1_2"
+    assert flattened.elements[2].name == "q1_split_1"
 
 
 def test_superimposed_first_order_transfer_map():
@@ -127,9 +127,9 @@ def test_superimposed_serialization(tmp_path):
     segment = cheetah.Segment(elements=[superimposed], name="test_segment")
 
     assert segment.flattened().element_names == [
-        "superimposed_test_1",
+        "superimposed_test_split_0",
         "bpm0",
-        "superimposed_test_2",
+        "superimposed_test_split_1",
     ]
 
     segment.to_lattice_json(str(tmp_path / "superimposed_test.json"))
@@ -145,9 +145,9 @@ def test_superimposed_serialization(tmp_path):
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.BPM)
     assert deserialized.flattened().element_names == [
-        "superimposed_test_1",
+        "superimposed_test_split_0",
         "bpm0",
-        "superimposed_test_2",
+        "superimposed_test_split_1",
     ]
 
     # Test case where the superimposed element is a `Marker`
@@ -160,7 +160,7 @@ def test_superimposed_serialization(tmp_path):
     )
     segment = cheetah.Segment(elements=[superimposed], name="test_segment_2")
 
-    assert segment.flattened().element_names == ["q1_1", "marker1", "q1_2"]
+    assert segment.flattened().element_names == ["q1_split_0", "marker1", "q1_split_1"]
 
     segment.to_lattice_json(str(tmp_path / "superimposed_marker_test.json"))
     deserialized = cheetah.Segment.from_lattice_json(
@@ -174,4 +174,8 @@ def test_superimposed_serialization(tmp_path):
     assert superimposed_deserialized.base_element.name == "q1"
     assert superimposed_deserialized.base_element.k1 == torch.tensor(2.0)
     assert isinstance(superimposed_deserialized.superimposed_element, cheetah.Marker)
-    assert deserialized.flattened().element_names == ["q1_1", "marker1", "q1_2"]
+    assert deserialized.flattened().element_names == [
+        "q1_split_0",
+        "marker1",
+        "q1_split_1",
+    ]

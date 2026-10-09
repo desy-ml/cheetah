@@ -156,8 +156,8 @@ def test_cu_hxr_lcls_fixture_conversion():
 
     assert converted.gunl0a.qa01.base_element.k1.item() == pytest.approx(0.384840836193)
     assert converted.gunl0a.qa01.metadata["alias"] == "quad:in20:121"
-    assert flattened.qa01_1.k1.item() == pytest.approx(0.384840836193)
-    assert flattened.qa01_1.metadata["alias"] == "quad:in20:121"
+    assert flattened.qa01_split_0.k1.item() == pytest.approx(0.384840836193)
+    assert flattened.qa01_split_0.metadata["alias"] == "quad:in20:121"
 
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
@@ -189,7 +189,7 @@ def test_cu_hxr_lcls_fixture_conversion():
     # Check flattened superimposed elements
     flattened_qe01 = converted.gunl0a.qe01.flattened()
     assert isinstance(flattened_qe01, cheetah.Segment)
-    assert flattened_qe01.element_names == ["qe01_1", "otr2", "qe01_2"]
+    assert flattened_qe01.element_names == ["qe01_split_0", "otr2", "qe01_split_1"]
 
 
 def test_multiple_superimposed_elements_warns():
