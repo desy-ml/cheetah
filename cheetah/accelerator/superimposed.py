@@ -57,7 +57,7 @@ class Superimposed(Element):
         base_element_halves = base_element.split(base_element.length / 2.0)
         assert len(base_element_halves) == 2, (
             f"The base element of type {base_element.__class__.__name__} could not be "
-            "split into two halves."
+            "split into exactly two halves."
         )
 
         self._segment = Segment(
