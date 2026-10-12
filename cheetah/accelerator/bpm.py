@@ -29,7 +29,7 @@ class BPM(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("bpm",)
+    supported_backtracking_methods = ["bpm"]
 
     def __init__(
         self,

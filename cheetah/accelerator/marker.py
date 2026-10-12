@@ -25,7 +25,7 @@ class Marker(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("marker",)
+    supported_backtracking_methods = ["marker"]
 
     def __init__(
         self,

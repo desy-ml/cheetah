@@ -36,7 +36,7 @@ class CombinedCorrector(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("linear",)
+    supported_backtracking_methods = ["linear"]
 
     supported_tracking_methods = ["linear"]
 

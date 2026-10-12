@@ -62,7 +62,7 @@ class Screen(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("screen",)
+    supported_backtracking_methods = ["screen"]
 
     def __init__(
         self,

@@ -31,7 +31,7 @@ class Element(ABC, nn.Module):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ()
+    supported_backtracking_methods = []
 
     def __init__(
         self,

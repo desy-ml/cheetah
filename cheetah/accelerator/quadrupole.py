@@ -47,7 +47,7 @@ class Quadrupole(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("linear", "second_order")
+    supported_backtracking_methods = ["linear", "second_order"]
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
