@@ -42,7 +42,7 @@ class Sextupole(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("linear",)
+    supported_backtracking_methods = ("linear", "second_order")
 
     supported_tracking_methods = ["linear", "second_order"]
 
@@ -97,10 +97,17 @@ class Sextupole(Element):
 
     @cache_transfer_map
     def second_order_transfer_map(self, energy, species):
-        zero = self.length.new_zeros(())
+        return self._second_order_map(self.length, energy, species)
+
+    @cache_transfer_map
+    def inverse_second_order_transfer_map(self, energy, species):
+        return self._second_order_map(-self.length, energy, species)
+
+    def _second_order_map(self, length, energy, species):
+        zero = length.new_zeros(())
 
         T = base_ttensor(
-            length=self.length,
+            length=length,
             k1=zero,
             k2=self.k2,
             hx=zero,
@@ -109,9 +116,7 @@ class Sextupole(Element):
         )
 
         # Fill the first-order transfer map into the second-order transfer map
-        T[..., :, 6, :] = drift_matrix(
-            length=self.length, species=species, energy=energy
-        )
+        T[..., :, 6, :] = drift_matrix(length=length, species=species, energy=energy)
 
         # Apply misalignments and rotation to the entire second-order transfer map
         R_entry, R_exit = combined_rotation_misalignment_matrix(

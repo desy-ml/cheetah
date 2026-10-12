@@ -53,7 +53,7 @@ class Dipole(Element):
     :param dtype: Data type of the element's tensors.
     """
 
-    supported_backtracking_methods = ("linear",)
+    supported_backtracking_methods = ("linear", "second_order")
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
@@ -421,13 +421,34 @@ class Dipole(Element):
     def second_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
+        return self._second_order_map(self.length, energy, species)
+
+    @cache_transfer_map
+    def inverse_second_order_transfer_map(
+        self, energy: torch.Tensor, species: Species
+    ) -> torch.Tensor:
+        return self._second_order_map(-self.length, energy, species, inverse=True)
+
+    def _second_order_map(
+        self,
+        length: torch.Tensor,
+        energy: torch.Tensor,
+        species: Species,
+        inverse: bool = False,
+    ) -> torch.Tensor:
         R_enter = self._transfer_map_enter()
         R_exit = self._transfer_map_exit()
+        if inverse:
+            # Undo the exit edge before the body, then undo the entrance edge.
+            R_enter, R_exit = R_exit, R_enter
+            for edge in (R_enter, R_exit):
+                edge[..., 1, 0] = -edge[..., 1, 0]
+                edge[..., 3, 2] = -edge[..., 3, 2]
 
         T = base_ttensor(
-            length=self.length,
+            length=length,
             k1=self.k1,
-            k2=self.length.new_zeros(()),
+            k2=length.new_zeros(()),
             hx=self.hx,
             species=species,
             energy=energy,
@@ -435,7 +456,7 @@ class Dipole(Element):
 
         # Fill the first-order transfer map into the second-order transfer map
         T[..., :, 6, :] = base_rmatrix(
-            length=self.length, k1=self.k1, hx=self.hx, species=species, energy=energy
+            length=length, k1=self.k1, hx=self.hx, species=species, energy=energy
         )
 
         # Apply fringe fields

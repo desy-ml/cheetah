@@ -127,7 +127,8 @@ def make_beam(beam_type, dtype=torch.float64, batched=False, device="cpu"):
         for beam_type in (cheetah.ParticleBeam, cheetah.ParameterBeam)
     ]
     + [
-        (name, "second_order", cheetah.ParticleBeam) for name in ("Drift", "Quadrupole")
+        (name, "second_order", cheetah.ParticleBeam)
+        for name in ("Drift", "Quadrupole", "Sextupole", "Dipole", "RBend")
     ],
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
