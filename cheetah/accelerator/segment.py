@@ -565,6 +565,27 @@ class Segment(Element):
         else:
             return None
 
+    @property
+    def supports_backtracking(self) -> bool:
+        return all(element.supports_backtracking for element in self.elements)
+
+    def backtrack(self, incoming: Beam) -> Beam:
+        """Check all children before tracking through them in reverse order."""
+        if not self.supports_backtracking:
+            unsupported = ", ".join(
+                f"{type(element).__name__} '{element.name}' "
+                f"(tracking_method={element.tracking_method!r})"
+                for element in self.elements
+                if not element.supports_backtracking
+            )
+            raise NotImplementedError(
+                f"Segment '{self.name}' cannot backtrack: {unsupported}."
+            )
+
+        for element in reversed(self.elements):
+            incoming = element.backtrack(incoming)
+        return incoming
+
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
             return super()._track_first_order(incoming)

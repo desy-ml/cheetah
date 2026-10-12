@@ -5,7 +5,7 @@ from .device import is_mps_available_and_functional  # noqa: F401
 from .elementwise_linspace import elementwise_linspace  # noqa: F401
 from .kde import kde_histogram_1d, kde_histogram_2d  # noqa: F401
 from .names import UniqueNameGenerator, merge_element_names  # noqa: F401
-from .physics import compute_relativistic_factors  # noqa: F401
+from .physics import compute_relativistic_factors, invert_affine_map  # noqa: F401
 from .plot import (  # noqa: F401
     format_axis_as_percentage,
     format_axis_with_prefixed_unit,

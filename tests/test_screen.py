@@ -1,10 +1,55 @@
+from contextlib import nullcontext
+
 import numpy as np
 import pytest
 import torch
 
 import cheetah
+from cheetah.utils import PhysicsWarning
 
 from .resources import ARESlatticeStage3v1_9 as ocelot_lattice
+
+
+@pytest.mark.parametrize("beam_type", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+@pytest.mark.parametrize("is_blocking", [False, True])
+def test_backtracking_updates_reading(beam_type, is_blocking):
+    screen = cheetah.Screen(
+        resolution=(32, 32),
+        pixel_size=torch.tensor([1e-4, 1e-4]),
+        misalignment=torch.tensor([2e-4, -3e-4]),
+        is_active=True,
+        is_blocking=is_blocking,
+        dtype=torch.float64,
+    )
+    reference = screen.clone()
+    assert screen.get_read_beam() is None
+    assert torch.count_nonzero(screen.reading) == 0
+
+    for mu_x in (0.0, 5e-4):
+        beam = beam_type.from_parameters(
+            mu_x=torch.tensor(mu_x),
+            total_charge=torch.tensor(1e-9),
+            dtype=torch.float64,
+        )
+        original = beam.clone()
+        with pytest.warns(PhysicsWarning) if is_blocking else nullcontext():
+            outgoing = screen.backtrack(beam)
+        reference.track(beam)
+        # Check that forward and backward tracking produce the same reading
+        assert torch.allclose(screen.reading, reference.reading)
+        assert torch.any(screen.reading > 0.0)
+        assert torch.allclose(
+            screen.get_read_beam().mu_x, beam.mu_x - screen.misalignment[0]
+        )
+        assert torch.allclose(
+            screen.get_read_beam().mu_y, beam.mu_y - screen.misalignment[1]
+        )
+        non_module_features = [
+            feature for feature in beam.defining_features if feature != "species"
+        ]
+        for feature in non_module_features:
+            assert torch.equal(getattr(outgoing, feature), getattr(original, feature))
+            assert torch.equal(getattr(beam, feature), getattr(original, feature))
 
 
 @pytest.mark.parametrize("screen_method", ["histogram", "kde", "cloud-in-cell"])
