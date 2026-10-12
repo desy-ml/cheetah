@@ -204,14 +204,14 @@ class Element(ABC, nn.Module):
         if not isinstance(incoming, (ParticleBeam, ParameterBeam)):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
         tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-        return self._apply_linear_map(incoming, tm, self.length)
+        return self._apply_first_order_map(incoming, tm, self.length)
 
     def _backtrack_first_order(self, incoming: Beam) -> Beam:
         """Apply the inverse linear map and subtract the element length."""
         tm = self.inverse_first_order_transfer_map(incoming.energy, incoming.species)
-        return self._apply_linear_map(incoming, tm, -self.length)
+        return self._apply_first_order_map(incoming, tm, -self.length)
 
-    def _apply_linear_map(
+    def _apply_first_order_map(
         self, incoming: Beam, tm: torch.Tensor, delta_s: torch.Tensor
     ) -> Beam:
         """Apply an affine map and signed path increment, preserving beam metadata."""

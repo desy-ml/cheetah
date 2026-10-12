@@ -119,16 +119,26 @@ def make_beam(beam_type, dtype=torch.float64, batched=False, device="cpu"):
     return beam_type.from_parameters(**kwargs)
 
 
-@pytest.mark.parametrize("name", ELEMENTS)
-@pytest.mark.parametrize("beam_type", [cheetah.ParticleBeam, cheetah.ParameterBeam])
+@pytest.mark.parametrize(
+    "name,tracking_method,beam_type",
+    [
+        (name, "linear", beam_type)
+        for name in ELEMENTS
+        for beam_type in (cheetah.ParticleBeam, cheetah.ParameterBeam)
+    ]
+    + [
+        (name, "second_order", cheetah.ParticleBeam) for name in ("Drift", "Quadrupole")
+    ],
+)
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
 @pytest.mark.parametrize("batched", [False, True])
 @pytest.mark.parametrize("device", DEVICES)
-def test_element_round_trip(name, beam_type, dtype, batched, device):
+def test_element_round_trip(name, tracking_method, beam_type, dtype, batched, device):
     """Test that tracking followed by backtracking recovers the original beam."""
     if device == "mps" and dtype == torch.float64:
         pytest.skip("MPS does not support float64")
     element = make_element(name, dtype, batched, device)
+    element.tracking_method = tracking_method
     beam = make_beam(beam_type, dtype, batched, device)
     original = beam.clone()
     length = element.length.clone()
@@ -154,11 +164,17 @@ def test_element_round_trip(name, beam_type, dtype, batched, device):
                 scale = (
                     expected[..., :6] if feature in ("particles", "mu") else expected
                 )
+                # Quadratic maps compose to identity only through second order.
+                tolerance = (
+                    max(128 * eps, 1e-5)
+                    if tracking_method == "second_order" and feature == "particles"
+                    else 128 * eps
+                )
                 assert torch.allclose(
                     actual,
                     expected,
-                    rtol=128 * eps,
-                    atol=128 * eps * scale.abs().max().item(),
+                    rtol=tolerance,
+                    atol=tolerance * scale.abs().max().item(),
                 )
             else:
                 assert torch.allclose(actual, expected, rtol=0.0, atol=0.0)
@@ -170,7 +186,7 @@ def test_element_round_trip(name, beam_type, dtype, batched, device):
         beam.species.num_elementary_charges, original.species.num_elementary_charges
     )
     assert torch.allclose(element.length, length, rtol=0.0, atol=0.0)
-    assert element.tracking_method == "linear"
+    assert element.tracking_method == tracking_method
 
 
 @pytest.mark.parametrize("name", ELEMENTS)
