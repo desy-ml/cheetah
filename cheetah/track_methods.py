@@ -124,7 +124,7 @@ def base_ttensor(
     f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
     j1 = fx
-    j2 = length.pow(3) * sipsicos3mdiv(kx2 * length.square())
+    j2 = length.pow(5) * sipsicos3mdiv(kx2 * length.square())
     # NOTE: Previously, an effort has been made to implement a custom autograd function
     # for `j3` as `sicoskuddelmuddel15mdiv`, but it was found that no proper limit
     # exists. Instead, a different model will have to be found in the future that
@@ -141,10 +141,16 @@ def base_ttensor(
     ).where(kx2 != 0, length.pow(7) / 56.0)
     j_denominator = kx2 - 4.0 * ky2
     jc = length.square() * cossqrtmcosdivdiff(
-        kx2 * length.square(), ky2 * length.square()
+        kx2 * length.square(), 4.0 * ky2 * length.square()
     )
-    js = length.pow(3) * simsidivdiff(kx2 * length.square(), ky2 * length.square())
-    jd = length.pow(4) * si2msi2divdiff(kx2 * length.square(), ky2 * length.square())
+    js = length.pow(3) * simsidivdiff(
+        kx2 * length.square(), 4.0 * ky2 * length.square()
+    )
+    jd = (
+        length.pow(4)
+        / 8.0
+        * si2msi2divdiff(kx2 * length.square() / 4.0, ky2 * length.square())
+    )
     jf = ((f2y - fx) / j_denominator).where(j_denominator != 0, length.pow(5) / 120.0)
 
     khk = k2 + 2.0 * hx * k1
