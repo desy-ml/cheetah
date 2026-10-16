@@ -11,7 +11,13 @@ from .resources import ARESlatticeStage3v1_9 as ares
 
 
 @pytest.mark.parametrize("tracking_method", ["linear", "second_order"])
-def test_drift(tracking_method):
+@pytest.mark.parametrize(
+    "default_torch_dtype, atol, rtol",
+    [(torch.float32, 1e-10, 1e-6), (torch.float64, 1e-12, 1e-10)],
+    indirect=["default_torch_dtype"],
+    ids=["float32", "float64"],
+)
+def test_drift(tracking_method, default_torch_dtype, atol, rtol):
     """
     Test that the tracking results through a Cheetah `Drift` element match those through
     an Ocelot `Drift` element.
@@ -43,7 +49,8 @@ def test_drift(tracking_method):
     assert np.allclose(
         outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
-        atol=1e-6,
+        atol=atol,
+        rtol=rtol,
     )
 
 
@@ -434,6 +441,8 @@ def test_quadrupole(tracking_method, default_torch_dtype):
     assert np.allclose(
         outgoing_beam.particles[:, :6].cpu().numpy(),
         outgoing_p_array.rparticles.transpose(),
+        atol=1e-12,
+        rtol=1e-10,
     )
     assert np.allclose(
         outgoing_beam.particle_charges.cpu().numpy(), outgoing_p_array.q_array

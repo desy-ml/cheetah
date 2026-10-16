@@ -82,7 +82,7 @@ def test_sicos1mdiv():
 def test_sipsicos3mdiv():
     """
     Verify that the custom autograd function `sipsicos3mdiv` correctly implements the
-    derivative of `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x)`,
+    derivative of `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x**2)`,
     including removing the singularity at 0.
     """
     test_points = torch.tensor(

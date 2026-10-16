@@ -21,8 +21,8 @@ def sicos1mdiv(x: torch.Tensor) -> torch.Tensor:
 
 def sipsicos3mdiv(x: torch.Tensor) -> torch.Tensor:
     """
-    Calculate `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x)` with proper
-    removal of its singularity at 0.
+    Calculate `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x**2)` with
+    proper removal of its singularity at 0.
     """
     return SiPSiCos3MDiv.apply(x)
 
@@ -207,10 +207,22 @@ class SiCos1MDiv(torch.autograd.Function):
 
 
 class SiPSiCos3MDiv(torch.autograd.Function):
-    """
-    Custom autograd function for the compound expression
-    `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x). The singularity at 0
-    is replaced by its limit.
+    r"""
+    Custom autograd function for :math:`H(a)`, where ``a`` is the input ``x``:
+
+    .. math::
+        H(a) = \frac{3 - 4S(a) + S(a)C(a)}{2a^2}, \qquad
+        S(a) = \frac{\sin\sqrt{a}}{\sqrt{a}}, \quad C(a) = \cos\sqrt{a}.
+
+    Near zero, evaluate the Taylor series to avoid cancellation:
+
+    .. math::
+        H(a) = \frac{1}{20} - \frac{a}{168} + \frac{a^2}{2880}
+        - \frac{17a^3}{1330560} + \frac{31a^4}{94348800}
+        - \frac{a^5}{159667200} + O(a^6).
+
+    Thus :math:`H(0) = 1/20` and :math:`H'(0) = -1/168`.
+    The second-order map uses :math:`J_2 = L^5 H(k_x^2 L^2)`.
     """
 
     # Automatically generate a custom vmap implementation
@@ -225,33 +237,62 @@ class SiPSiCos3MDiv(torch.autograd.Function):
 
     @staticmethod
     def forward(x):
+        # Float32 needs a wider series interval to avoid cancellation.
+        small = x.abs() <= (0.1 if x.dtype == torch.float64 else 1.0)
+        regular_x = x.where(~small, 1.0)
         # Since x may be negative, we use complex arithmetic for the sqrt
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+        sqrt_x = torch.complex(regular_x, x.new_zeros(())).sqrt()
 
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
-        return ((3.0 - 4.0 * sx + sx * cx) / (2.0 * x)).where(x != 0, 0.0)
+        # ponytail: degree 5 covers these intervals; revalidate before widening them.
+        series_x = x.where(small, 0.0)
+        series = 1.0 / 20.0 + series_x * (
+            -1.0 / 168.0
+            + series_x
+            * (
+                1.0 / 2880.0
+                + series_x
+                * (
+                    -17.0 / 1330560.0
+                    + series_x * (31.0 / 94348800.0 - series_x / 159667200.0)
+                )
+            )
+        )
+        return ((3.0 - 4.0 * sx + sx * cx) / (2.0 * regular_x.square())).where(
+            ~small, series
+        )
 
     @staticmethod
     def backward(ctx, grad_output):
         x, _ = ctx.saved_tensors
 
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+        small = x.abs() <= (0.1 if x.dtype == torch.float64 else 1.0)
+        regular_x = x.where(~small, 1.0)
+        sqrt_x = torch.complex(regular_x, x.new_zeros(())).sqrt()
 
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
         grad = (
-            (
-                -sx * (x * sx + 2.0 * cx - 8.0)
-                - 6.0
-                + 4.0 * sx
-                + cx.square()
-                - (4.0 + sx) * cx
+            cx.square()
+            - 5.0 * sx * cx
+            - 4.0 * cx
+            + 20.0 * sx
+            - 12.0
+            - regular_x * sx.square()
+        ) / (4.0 * regular_x.pow(3))
+        series_x = x.where(small, 0.0)
+        series = -1.0 / 168.0 + series_x * (
+            1.0 / 1440.0
+            + series_x
+            * (
+                -17.0 / 443520.0
+                + series_x * (31.0 / 23587200.0 - series_x / 31933440.0)
             )
-            / (4.0 * x.square())
-        ).where(x != 0, 0.05)
+        )
+        grad = grad.where(~small, series)
 
         return grad_output * grad
 
@@ -259,21 +300,31 @@ class SiPSiCos3MDiv(torch.autograd.Function):
     def jvp(ctx, grad_input):
         x, _ = ctx.saved_tensors
 
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+        small = x.abs() <= (0.1 if x.dtype == torch.float64 else 1.0)
+        regular_x = x.where(~small, 1.0)
+        sqrt_x = torch.complex(regular_x, x.new_zeros(())).sqrt()
 
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
         grad = (
-            (
-                -sx * (x * sx + 2.0 * cx - 8.0)
-                - 6.0
-                + 4.0 * sx
-                + cx.square()
-                - (4.0 + sx) * cx
+            cx.square()
+            - 5.0 * sx * cx
+            - 4.0 * cx
+            + 20.0 * sx
+            - 12.0
+            - regular_x * sx.square()
+        ) / (4.0 * regular_x.pow(3))
+        series_x = x.where(small, 0.0)
+        series = -1.0 / 168.0 + series_x * (
+            1.0 / 1440.0
+            + series_x
+            * (
+                -17.0 / 443520.0
+                + series_x * (31.0 / 23587200.0 - series_x / 31933440.0)
             )
-            / (4.0 * x.square())
-        ).where(x != 0, 0.05)
+        )
+        grad = grad.where(~small, series)
 
         return grad * grad_input
 
