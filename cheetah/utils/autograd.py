@@ -27,16 +27,15 @@ def sipsicos3mdiv(x: torch.Tensor) -> torch.Tensor:
     return SiPSiCos3MDiv.apply(x)
 
 
-def sicoskuddelmuddel15mdiv(x: torch.Tensor) -> torch.Tensor:
+def normalized_j3(x: torch.Tensor) -> torch.Tensor:
     """
-    Calculate `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x)) * cos(sqrt(x)) - 1.5
-    * si(sqrt(x)) * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)` with proper removal of
-    its singularity at 0.
+    Evaluate the normalized cubic horizontal dispersion response integral.
 
-    # NOTE: Currently unused, but kept for possible future use. See comment on
-    # `track_methods.py` -> `base_ttensor` -> `j3`.
+    Calculate `(15 - 22*S + 9*S*C - 2*S*C**2) / (6*x**3)`, where
+    `S = si(sqrt(x))` and `C = cos(sqrt(x))`, with limit `1/56` at zero.
+    The dimensional integral is `J3 = L**7 * normalized_j3(kx2 * L**2)`.
     """
-    return SiCosKuddelMuddel15MDiv.apply(x)
+    return NormalizedJ3.apply(x)
 
 
 def cossqrtmcosdivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -329,84 +328,84 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         return grad * grad_input
 
 
-class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
-    """
-    Custom autograd function for the compound expression
-    `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x)) * cos(sqrt(x)) - 1.5 * si(sqrt(x))
-    * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)`. The singularity at 0 is replaced by
-    its limit.
+class NormalizedJ3(torch.autograd.Function):
+    r"""Dimensionless J3 integral :math:`H(a)`, with :math:`J_3 = L^7 H(KL^2)`.
 
-    # NOTE: Currently unused, but kept for possible future use. See comment on
-    # `track_methods.py` -> `base_ttensor` -> `j3`.
+    .. math::
+        H(a) = \frac{15 - 22S(a) + 9S(a)C(a) - 2S(a)C(a)^2}{6a^3},
+        \qquad S(a) = \frac{\sin\sqrt{a}}{\sqrt{a}},\quad C(a) = \cos\sqrt{a}.
+
+    The near-zero series starts at :math:`1/56 - a/288 + 7a^2/21120`.
+    Use its degree-seven polynomial for :math:`|a| \leq 1` in both precisions
+    to avoid cancellation near zero.
+    Differentiating :math:`J_3 = \int_0^L d(s)^3 ds` with respect to length gives
+    :math:`H'(a) = (D(a)^3 - 7H(a))/(2a)`, where
+    :math:`D(a) = (1-C(a))/a = \tfrac12\mathop{\text{sinc}}^2(\sqrt{a}/2)`.
     """
 
-    # Automatically generate a custom vmap implementation
     generate_vmap_rule = True
+
+    _coefficients = (
+        1.0 / 56.0,
+        -1.0 / 288.0,
+        7.0 / 21120.0,
+        -1.0 / 49140.0,
+        13.0 / 14515200.0,
+        -31.0 / 1034035200.0,
+        63047.0 / 79506601574400.0,
+        -1069.0 / 62768369664000.0,
+    )
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        (x,) = inputs  # inputs is always passed as a tuple
+        (x,) = inputs
 
         ctx.save_for_backward(x, output)
         ctx.save_for_forward(x, output)
 
     @staticmethod
     def forward(x):
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
+        small = x.abs() <= 1.0
+        regular_x = x.where(~small, 1.0)
+        sqrt_x = torch.complex(regular_x, x.new_zeros(())).sqrt()
 
         cx = sqrt_x.cos().real
         sx = (sqrt_x / torch.pi).sinc().real
 
+        series_x = x.where(small, 0.0)
+        coefficients = NormalizedJ3._coefficients
+        series = coefficients[-1]
+        for coefficient in reversed(coefficients[:-1]):
+            series = series * series_x + coefficient
         return (
-            (15.0 - 22.5 * sx + 9.0 * sx * cx - 1.5 * sx * cx.square() + x * sx.pow(3))
-            / x.pow(3)
-        ).where(x != 0, 1.0 / 56.0)
+            (15.0 - 22.0 * sx + 9.0 * sx * cx - 2.0 * sx * cx.square())
+            / (6.0 * regular_x.pow(3))
+        ).where(~small, series)
+
+    @staticmethod
+    def _derivative(x, fx):
+        small = x.abs() <= 1.0
+        regular_x = x.where(~small, 1.0)
+        sqrt_x = torch.complex(regular_x, x.new_zeros(())).sqrt()
+        d = 0.5 * (sqrt_x / (2.0 * torch.pi)).sinc().real.square()
+        grad = (d.pow(3) - 7.0 * fx) / (2.0 * regular_x)
+
+        series_x = x.where(small, 0.0)
+        coefficients = NormalizedJ3._coefficients
+        series = (len(coefficients) - 1) * coefficients[-1]
+        for n in range(len(coefficients) - 2, 0, -1):
+            series = series * series_x + n * coefficients[n]
+        return grad.where(~small, series)
 
     @staticmethod
     def backward(ctx, grad_output):
-        x, _ = ctx.saved_tensors
-
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-
-        cx = sqrt_x.cos().real
-        sx = (sqrt_x / torch.pi).sinc().real
-
-        grad = (
-            -2.0 * x * sx.pow(3)
-            + sx.square() * (1.5 * x * cx - 1.5 * x * sx)
-            + sx
-            * (-4.5 * x * sx + 4.5 * cx.square() + (1.5 * x * sx - 27.0) * cx + 67.5)
-            - 45.0
-            + 11.25 * sx
-            - 0.75 * cx.pow(3)
-            + (4.5 + 0.75 * sx) * cx.square()
-            + (-11.25 - 4.5 * sx) * cx
-        ) / (x.pow(4))
-
-        return grad_output * grad
+        x, fx = ctx.saved_tensors
+        return grad_output * NormalizedJ3._derivative(x, fx)
 
     @staticmethod
     def jvp(ctx, grad_input):
-        x, _ = ctx.saved_tensors
-
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-
-        cx = sqrt_x.cos().real
-        sx = (sqrt_x / torch.pi).sinc().real
-
-        grad = (
-            -2.0 * x * sx.pow(3)
-            + sx.square() * (1.5 * x * cx - 1.5 * x * sx)
-            + sx
-            * (-4.5 * x * sx + 4.5 * cx.square() + (1.5 * x * sx - 27.0) * cx + 67.5)
-            - 45.0
-            + 11.25 * sx
-            - -0.75 * cx.pow(3)
-            + (4.5 + 0.75 * sx) * cx.square()
-            + (-11.25 - 4.5 * sx) * cx
-        ) / (x.pow(4))
-
-        return grad * grad_input
+        x, fx = ctx.saved_tensors
+        return NormalizedJ3._derivative(x, fx) * grad_input
 
 
 class CosSqrtMCosDivDiff(torch.autograd.Function):

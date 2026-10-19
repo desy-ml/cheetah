@@ -1,13 +1,12 @@
-import pytest
 import torch
 
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     log1pdiv,
+    normalized_j3,
     si1mdiv,
     si2msi2divdiff,
     sicos1mdiv,
-    sicoskuddelmuddel15mdiv,
     simsidivdiff,
     sipsicos3mdiv,
     sqrta2minusbdiva,
@@ -102,32 +101,26 @@ def test_sipsicos3mdiv():
     )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "No proper limit exists for sicoskuddelmuddel15mdiv. A different model will "
-        "have to be found in the future that avoids these issues altogether."
-    )
-)
-def test_sicoskuddelmuddel15mdiv():
-    """
-    Verify that the custom autograd function `sicoskuddelmuddel15mdiv` correctly
-    implements the derivative of `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x))
-    * cos(sqrt(x)) - 1.5 * si(sqrt(x)) * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)`,
-    including removing the singularity at `x == 0`.
-    """
+def test_normalized_j3():
+    """Check J3 reverse/forward AD, including zero and both series boundaries."""
     test_points = torch.tensor(
-        [-0.5, 0.0, 1.0], dtype=torch.float64, requires_grad=True
+        [-4.0, -1.0, -1e-6, 0.0, 1e-6, 1.0, 4.0],
+        dtype=torch.float64,
+        requires_grad=True,
     )
 
     # Check gradient calculation using finite difference methods
     assert torch.autograd.gradcheck(
-        func=sicoskuddelmuddel15mdiv,
+        func=normalized_j3,
         inputs=test_points,
         check_backward_ad=True,
         check_forward_ad=True,
         check_batched_grad=True,
         check_batched_forward_grad=True,
         check_grad_dtypes=True,
+    )
+    assert torch.autograd.gradgradcheck(
+        normalized_j3, test_points, check_fwd_over_rev=True
     )
 
 

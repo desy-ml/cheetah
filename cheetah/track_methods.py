@@ -6,6 +6,7 @@ from cheetah.particles import Species
 from cheetah.utils import compute_relativistic_factors
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
+    normalized_j3,
     si1mdiv,
     si2msi2divdiff,
     sicos1mdiv,
@@ -125,20 +126,7 @@ def base_ttensor(
 
     j1 = fx
     j2 = length.pow(5) * sipsicos3mdiv(kx2 * length.square())
-    # NOTE: Previously, an effort has been made to implement a custom autograd function
-    # for `j3` as `sicoskuddelmuddel15mdiv`, but it was found that no proper limit
-    # exists. Instead, a different model will have to be found in the future that
-    # avoids these issues altogether.
-    j3 = (
-        (
-            15.0 * length
-            - 22.5 * sx
-            + 9.0 * sx * cx
-            - 1.5 * sx * cx.square()
-            + kx2 * sx.pow(3)
-        )
-        / (6.0 * kx2.pow(3))
-    ).where(kx2 != 0, length.pow(7) / 56.0)
+    j3 = length.pow(7) * normalized_j3(kx2 * length.square())
     j_denominator = kx2 - 4.0 * ky2
     jc = length.square() * cossqrtmcosdivdiff(
         kx2 * length.square(), 4.0 * ky2 * length.square()
