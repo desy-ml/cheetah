@@ -4,6 +4,7 @@ from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     log1pdiv,
     normalized_j3,
+    normalized_jf,
     si1mdiv,
     si2msi2divdiff,
     sicos1mdiv,
@@ -36,11 +37,11 @@ def test_log1plusxbyx():
 
 def test_siminus1xbyx():
     """
-    Verify that the custom autograd function `si1mdiv` correctly implements the
+    Verify that `si1mdiv` correctly implements the
     derivative of `(1 - si(sqrt(x))) / x`, including removing the singularity at 0.
     """
     test_points = torch.tensor(
-        [-0.5, 0.0, 1.0], dtype=torch.float64, requires_grad=True
+        [-2.0, -1.0, -0.5, 0.0, 1.0, 2.0], dtype=torch.float64, requires_grad=True
     )
 
     # Check gradient calculation using finite difference methods
@@ -54,6 +55,7 @@ def test_siminus1xbyx():
         check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
+    assert torch.autograd.gradgradcheck(si1mdiv, test_points, check_fwd_over_rev=True)
 
 
 def test_sicos1mdiv():
@@ -122,6 +124,31 @@ def test_normalized_j3():
     assert torch.autograd.gradgradcheck(
         normalized_j3, test_points, check_fwd_over_rev=True
     )
+
+
+def test_normalized_jf():
+    """Check Jf AD at zero, signed strengths, and exact/near nonzero resonance."""
+    a = torch.tensor(
+        [0.0, 0.0, -0.5, 1.0, 1.0, 2.0, 2.0 - 1e-8, 2.0 + 1e-8, -2.0, 2.0, 0.0],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+    b = torch.tensor(
+        [0.0, -0.5, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, -2.0, 1.8, 2.0],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+    assert torch.autograd.gradcheck(
+        normalized_jf,
+        (a, b),
+        check_backward_ad=True,
+        check_forward_ad=True,
+        check_batched_grad=True,
+        check_batched_forward_grad=True,
+        check_grad_dtypes=True,
+    )
+    assert torch.autograd.gradgradcheck(normalized_jf, (a, b), check_fwd_over_rev=True)
+    assert torch.autograd.gradcheck(normalized_jf, (a[:3, None], b[None, :3]))
 
 
 def test_cossqrtmcosdivdiff():

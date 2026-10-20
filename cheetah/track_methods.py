@@ -7,9 +7,9 @@ from cheetah.utils import compute_relativistic_factors
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     normalized_j3,
+    normalized_jf,
     si1mdiv,
     si2msi2divdiff,
-    sicos1mdiv,
     simsidivdiff,
     sipsicos3mdiv,
 )
@@ -122,12 +122,10 @@ def base_ttensor(
     dx = 0.5 * length.square() * r.square().real
 
     fx = length.pow(3) * si1mdiv(kx2 * length.square())
-    f2y = length.pow(3) * sicos1mdiv(ky2 * length.square())
 
     j1 = fx
     j2 = length.pow(5) * sipsicos3mdiv(kx2 * length.square())
     j3 = length.pow(7) * normalized_j3(kx2 * length.square())
-    j_denominator = kx2 - 4.0 * ky2
     jc = length.square() * cossqrtmcosdivdiff(
         kx2 * length.square(), 4.0 * ky2 * length.square()
     )
@@ -139,7 +137,9 @@ def base_ttensor(
         / 8.0
         * si2msi2divdiff(kx2 * length.square() / 4.0, ky2 * length.square())
     )
-    jf = ((f2y - fx) / j_denominator).where(j_denominator != 0, length.pow(5) / 120.0)
+    jf = length.pow(5) * normalized_jf(
+        kx2 * length.square(), 4.0 * ky2 * length.square()
+    )
 
     khk = k2 + 2.0 * hx * k1
 

@@ -7,8 +7,24 @@ def log1pdiv(x: torch.Tensor) -> torch.Tensor:
 
 
 def si1mdiv(x: torch.Tensor) -> torch.Tensor:
-    """Calculate `(1 - si(sqrt(x))) / x` with proper removal of its singularity at 0."""
-    return Si1MDiv.apply(x)
+    """Calculate `(1 - si(sqrt(x))) / x` with a Taylor series for `abs(x) <= 1`."""
+    small = x.abs() <= 1.0
+    regular_x = x.where(~small, 1.0)
+    sqrt_x = torch.complex(regular_x, x.new_zeros(())).sqrt()
+    sx = (sqrt_x.sin() / sqrt_x).real
+    series_x = x.where(small, 0.0)
+    coefficients = (
+        1.0 / 6.0,
+        -1.0 / 120.0,
+        1.0 / 5040.0,
+        -1.0 / 362880.0,
+        1.0 / 39916800.0,
+        -1.0 / 6227020800.0,
+    )
+    series = coefficients[-1]
+    for coefficient in reversed(coefficients[:-1]):
+        series = series * series_x + coefficient
+    return ((1.0 - sx) / regular_x).where(~small, series)
 
 
 def sicos1mdiv(x: torch.Tensor) -> torch.Tensor:
@@ -36,6 +52,76 @@ def normalized_j3(x: torch.Tensor) -> torch.Tensor:
     The dimensional integral is `J3 = L**7 * normalized_j3(kx2 * L**2)`.
     """
     return NormalizedJ3.apply(x)
+
+
+def normalized_jf(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Evaluate `(F(b) - F(a)) / (a - b)`, with `F = si1mdiv`.
+
+    The body map uses `Jf = L**5 * normalized_jf(kx2*L**2, 4*ky2*L**2)`.
+
+    Two removable singularities need different treatments: the origin has limit
+    1/120, whereas nonzero resonance (a == b) has a strength-dependent limit.
+    With M = max(abs(a), abs(b)), select one of three branches:
+
+    - M <= 1: (small) use the divided Taylor series
+      1/120 - (a + b)/5040 + (a**2 + a*b + b**2)/362880 - ...,
+      through total degree five. This avoids cancellation near the origin,
+      including when a == b.
+    - M > 1 and abs(a - b) <= 0.1*M: (near)use MAD-X's sum/difference-frequency
+      identity. Define S(x) = sin(sqrt(x))/sqrt(x), p = (sqrt(a) + sqrt(b))/2,
+      and m = (sqrt(a) - sqrt(b))/2. Then
+      Q = (sinc(p)*cos(m) - cos(p)*sinc(m))/(2*sqrt(a)*sqrt(b))
+      equals (S(b) - S(a))/(a - b), with sinc(t) = sin(t)/t. Evaluate Jf/L**5
+      as (F(b) - Q)/a, avoiding division by a - b. At a == b == q != 0,
+      this gives (2 + cos(sqrt(q)) - 3*S(q))/(2*q**2), rather than 1/120.
+      Complex square roots extend the identity to negative arguments.
+    - Otherwise, use the direct quotient (F(b) - F(a))/(a - b).
+
+    The difference-frequency sinc is evaluated as 1 - m**2*F(m**2) so its
+    second derivative remains finite at m == 0. Inactive branches receive safe
+    placeholder inputs because torch.where evaluates both alternatives.
+    """
+    a, b = torch.broadcast_tensors(a, b)
+    small = torch.maximum(a.abs(), b.abs()) <= 1.0
+    near = ~small & ((a - b).abs() <= 0.1 * torch.maximum(a.abs(), b.abs()))
+    far = ~(small | near)
+
+    # Series expansion for small arguments
+    series_a, series_b = a.where(small, 0.0), b.where(small, 0.0)
+    h = power_b = torch.ones_like(a)
+    series = h / 120.0
+    for coefficient in (
+        -1.0 / 5040.0,
+        1.0 / 362880.0,
+        -1.0 / 39916800.0,
+        1.0 / 6227020800.0,
+        -1.0 / 1307674368000.0,
+    ):
+        power_b = power_b * series_b
+        h = series_a * h + power_b
+        series = series + coefficient * h
+
+    # Direct output
+    fa, fb = si1mdiv(a), si1mdiv(b)
+    quotient = (fb - fa) / (a - b).where(far, 1.0)
+
+    # Near-resonance, a close to b, but not small, use the sum
+    # difference-frequency identity
+    near_a, near_b = a.where(near, 1.0), b.where(near, 1.0)
+    sqrt_a = torch.complex(near_a, near_a.new_zeros(())).sqrt()
+    sqrt_b = torch.complex(near_b, near_b.new_zeros(())).sqrt()
+    plus, minus = (sqrt_a + sqrt_b) / 2.0, (sqrt_a - sqrt_b) / 2.0
+    sp = (plus.sin() / plus).real
+    # Express sinc through F so its second derivative is finite at minus == 0.
+    m = minus.real.square() - minus.imag.square()
+    sm = 1.0 - m * si1mdiv(m)
+    # Real-component forms avoid unresolved conjugates in batched forward AD.
+    cp = plus.real.cos() * plus.imag.cosh()
+    cm = minus.real.cos() * minus.imag.cosh()
+    denominator = 2.0 * (near_a * near_b).sqrt() * near_a.sign()
+    js = (sp * cm - cp * sm) / denominator
+    resonant = (fb - js) / near_a
+    return quotient.where(far, resonant).where(~small, series)
 
 
 def cossqrtmcosdivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -102,47 +188,6 @@ class Log1PDiv(torch.autograd.Function):
     def jvp(ctx, grad_input):
         x, fx = ctx.saved_tensors
         return (((1.0 + x).reciprocal() - fx) / x).where(x != 0, -0.5) * grad_input
-
-
-class Si1MDiv(torch.autograd.Function):
-    """
-    Custom autograd function for the compound expression `(1 - si(sqrt(x))) / x`. The
-    singularity at 0 is replaced by its limit.
-    """
-
-    # Automatically generate a custom vmap implementation
-    generate_vmap_rule = True
-
-    @staticmethod
-    def setup_context(ctx, inputs, output):
-        (x,) = inputs  # inputs is always passed as a tuple
-
-        ctx.save_for_backward(x, output)
-        ctx.save_for_forward(x, output)
-
-    @staticmethod
-    def forward(x):
-        # Since x may be negative, we use complex arithmetic for the sqrt
-        sx = (torch.complex(x, x.new_zeros(())).sqrt() / torch.pi).sinc().real
-        return ((1.0 - sx) / x).where(x != 0, 1.0 / 6.0)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        x, fx = ctx.saved_tensors
-
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2.0 * x)
-
-        return grad_output * ((sx - fx) / x).where(x != 0, -1.0 / 120.0)
-
-    @staticmethod
-    def jvp(ctx, grad_input):
-        x, fx = ctx.saved_tensors
-
-        sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
-        sx = ((sqrt_x / torch.pi).sinc() - sqrt_x.cos()).real / (2.0 * x)
-
-        return ((sx - fx) / x).where(x != 0, -1.0 / 120.0) * grad_input
 
 
 class SiCos1MDiv(torch.autograd.Function):
