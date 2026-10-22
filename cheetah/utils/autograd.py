@@ -141,14 +141,52 @@ def simsidivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
 
 
 def si2msi2divdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """
-    Calculate `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)` with proper removal of its
-    singularity at `a == b`.
+    """Calculate `(S(b)**2 - S(a)**2) / (a - b)`, with `S(x) = sinc(sqrt(x))`.
 
-    NOTE: Forward mode AD currently doesn't work properly for a==0 or b==0, and might
-        return weird gradients in those cases.
+    Use a divided Taylor series for max(abs(a), abs(b)) <= 1. Near nonzero
+    resonance, set p = sqrt(a) + sqrt(b), m = sqrt(a) - sqrt(b), and use
+    `(S(b)**2 - sinc(p)*sinc(m)) / a`. This identity avoids division by a - b.
+    The near branch has same-sign, nonzero arguments, so p**2 and m**2 are real.
+    Express S(x) as `1 - x*si1mdiv(x)` to keep derivatives finite at zero.
     """
-    return Si2MSi2DivDiff.apply(a, b)
+    a, b = torch.broadcast_tensors(a, b)
+    magnitude = torch.maximum(a.abs(), b.abs())
+    small = magnitude <= 1.0
+    near = ~small & ((a - b).abs() <= 0.1 * magnitude)
+    far = ~(small | near)
+
+    series_a, series_b = a.where(small, 0.0), b.where(small, 0.0)
+    h = power_b = torch.ones_like(a)
+    series = h / 3.0
+    # ponytail: degree eight covers |a|, |b| <= 1; revalidate before widening.
+    for coefficient in (
+        -2.0 / 45.0,
+        1.0 / 315.0,
+        -2.0 / 14175.0,
+        2.0 / 467775.0,
+        -4.0 / 42567525.0,
+        1.0 / 638512875.0,
+        -2.0 / 97692469875.0,
+        2.0 / 9280784638125.0,
+    ):
+        power_b = power_b * series_b
+        h = series_a * h + power_b
+        series = series + coefficient * h
+
+    sa = 1.0 - a * si1mdiv(a)
+    sb = 1.0 - b * si1mdiv(b)
+    quotient = (sb.square() - sa.square()) / (a - b).where(far, 1.0)
+
+    near_a, near_b = a.where(near, 1.0), b.where(near, 1.0)
+    sqrt_a = torch.complex(near_a, near_a.new_zeros(())).sqrt()
+    sqrt_b = torch.complex(near_b, near_b.new_zeros(())).sqrt()
+    plus, minus = sqrt_a + sqrt_b, sqrt_a - sqrt_b
+    plus2 = plus.real.square() - plus.imag.square()
+    minus2 = minus.real.square() - minus.imag.square()
+    sp = 1.0 - plus2 * si1mdiv(plus2)
+    sm = 1.0 - minus2 * si1mdiv(minus2)
+    resonant = (sb.square() - sp * sm) / near_a
+    return quotient.where(far, resonant).where(~small, series)
 
 
 def sqrta2minusbdiva(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -636,112 +674,6 @@ class SiMSiDivDiff(torch.autograd.Function):
         ).where(
             (a != b).logical_and(a != 0).logical_and(b != 0), aeqb_or_a0_or_b0_limit
         )
-
-
-class Si2MSi2DivDiff(torch.autograd.Function):
-    """
-    Custom autograd function for the compound expression
-    `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)`. The singularity at`a == b` is replaced
-    by its limit.
-
-    NOTE: Forward mode AD currently doesn't work properly for a==0 or b==0, and might
-        return weird gradients in those cases.
-    """
-
-    # Automatically generate a custom vmap implementation
-    generate_vmap_rule = True
-
-    @staticmethod
-    def setup_context(ctx, inputs, output):
-        a, b = inputs
-
-        ctx.save_for_backward(a, b, output)
-        ctx.save_for_forward(a, b, output)
-
-    @staticmethod
-    def forward(a, b):
-        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
-        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
-
-        sa = (sqrt_a / torch.pi).sinc().real
-        sb = (sqrt_b / torch.pi).sinc().real
-        cb = sqrt_b.cos().real
-
-        aeqb_limit = ((1.0 - cb.square() - b * sb * cb) / b.square()).where(
-            b != 0, 1.0 / 3.0
-        )
-
-        return ((sb.square() - sa.square()) / (a - b)).where(a != b, aeqb_limit)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        a, b, _ = ctx.saved_tensors
-
-        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
-        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
-
-        sa = (sqrt_a / torch.pi).sinc().real
-        sb = (sqrt_b / torch.pi).sinc().real
-        ca = sqrt_a.cos().real
-        cb = sqrt_b.cos().real
-
-        ab = a - b
-
-        a0_limit = (b - 1 / 3 * b.square() + cb.square() - 1.0) / b.pow(3)
-        b0_limit = (a - 1 / 3 * a.square() + ca.square() - 1.0) / a.pow(3)
-        aeqbeq0_limit = -2.0 / 45.0
-        aeqb_limit = (
-            (5.0 * b * sb * cb - (b - 2.0) * (2.0 * cb.square() - 1.0) - 2.0)
-            / (4.0 * b.pow(3))
-        ).where(b != 0, aeqbeq0_limit)
-        aeqb_or_a0_limit = aeqb_limit.where(a == b, a0_limit)
-        aeqb_or_b0_limit = aeqb_limit.where(a == b, b0_limit)
-
-        grad_a = (
-            (-ab * sa * (ca - sa) / a + sa.square() - sb.square()) / ab.square()
-        ).where((a != b).logical_and(a != 0), aeqb_or_a0_limit)
-        grad_b = (
-            (ab * sb * (cb - sb) / b + sb.square() - sa.square()) / ab.square()
-        ).where((a != b).logical_and(b != 0), aeqb_or_b0_limit)
-
-        return grad_output * grad_a, grad_output * grad_b
-
-    @staticmethod
-    def jvp(ctx, grad_a, grad_b):
-        a, b, _ = ctx.saved_tensors
-
-        sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
-        sqrt_b = torch.complex(b, b.new_zeros(())).sqrt()
-
-        sa = (sqrt_a / torch.pi).sinc().real
-        sb = (sqrt_b / torch.pi).sinc().real
-        ca = sqrt_a.cos().real
-        cb = sqrt_b.cos().real
-
-        ab = a - b
-
-        # NOTE: There exists no two-sided limit for a==0 and b==0. The commented out
-        # lines are left here for documentation purposes. This may be fixed in the
-        # future.
-
-        # a0_limit = torch.nan
-        # b0_limit = torch.nan
-        # a0_or_b0_limit = a0_limit.where(a == 0, b0_limit)
-        aeqbeq0_limit = -2.0 / 45.0 * (grad_a + grad_b)
-        aeqb_limit = (
-            (sb * cb * 5.0 - cb.square() + (b - 4.0) * sb.square())
-            * (grad_a + grad_b)
-            / (4.0 * b.square())
-        ).where(b != 0, aeqbeq0_limit)
-        # aeqb_or_a0_or_b0_limit = aeqb_limit.where(a == 0, a0_or_b0_limit)
-
-        return (
-            (
-                (sa.square() - sb.square()) * (grad_a - grad_b)
-                + ab * (sb * grad_b * (cb - sb) / b - sa * grad_a * (ca - sa) / a)
-            )
-            / ab.square()
-        ).where(a != b, aeqb_limit)
 
 
 class SqrtA2MinusBDivA(torch.autograd.Function):

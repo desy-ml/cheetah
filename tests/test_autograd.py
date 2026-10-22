@@ -204,21 +204,15 @@ def test_simsidivdiff():
 
 
 def test_si2msi2divdiff():
-    """
-    Verify that the custom autograd function `si2msi2divdiff` correctly implements the
-    derivative of `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)`, including removing the
-    singularity at `a == b`.
+    """Check both AD modes at zero, series boundaries, and signed resonances."""
 
-    NOTE: Forward AD currently doesn't work for a==0 or b==0. That's why those checks
-        are disabled.
-    """
     test_points_a = torch.tensor(
-        [0.0, 0.0, -0.5, 0.1, 0.0, 1.0, 1.0, 2.0],
+        [0.0, 0.0, -0.5, 0.1, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, -2.0, -1.0],
         dtype=torch.float64,
         requires_grad=True,
     )
     test_points_b = torch.tensor(
-        [-0.5, 0.1, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0],
+        [-0.5, 0.1, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 2.0, 2.0 + 1e-8, -2.0, -1.0],
         dtype=torch.float64,
         requires_grad=True,
     )
@@ -227,12 +221,18 @@ def test_si2msi2divdiff():
     assert torch.autograd.gradcheck(
         func=si2msi2divdiff,
         inputs=(test_points_a, test_points_b),
-        rtol=0.01,
         check_backward_ad=True,
-        # check_forward_ad=True,
+        check_forward_ad=True,
         check_batched_grad=True,
-        # check_batched_forward_grad=True,
+        check_batched_forward_grad=True,
         check_grad_dtypes=True,
+    )
+    assert torch.autograd.gradgradcheck(
+        si2msi2divdiff, (test_points_a, test_points_b), check_fwd_over_rev=True
+    )
+    # Check that the function can handle broadcasting correctly
+    assert torch.autograd.gradcheck(
+        si2msi2divdiff, (test_points_a[:3, None], test_points_b[None, :3])
     )
 
 
