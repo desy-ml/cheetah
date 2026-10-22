@@ -1,13 +1,13 @@
-import pytest
 import torch
 
 from cheetah.utils.autograd import (
     cossqrtmcosdivdiff,
     log1pdiv,
+    normalized_j3,
+    normalized_jf,
     si1mdiv,
     si2msi2divdiff,
     sicos1mdiv,
-    sicoskuddelmuddel15mdiv,
     simsidivdiff,
     sipsicos3mdiv,
     sqrta2minusbdiva,
@@ -37,11 +37,11 @@ def test_log1plusxbyx():
 
 def test_siminus1xbyx():
     """
-    Verify that the custom autograd function `si1mdiv` correctly implements the
+    Verify that `si1mdiv` correctly implements the
     derivative of `(1 - si(sqrt(x))) / x`, including removing the singularity at 0.
     """
     test_points = torch.tensor(
-        [-0.5, 0.0, 1.0], dtype=torch.float64, requires_grad=True
+        [-2.0, -1.0, -0.5, 0.0, 1.0, 2.0], dtype=torch.float64, requires_grad=True
     )
 
     # Check gradient calculation using finite difference methods
@@ -55,6 +55,7 @@ def test_siminus1xbyx():
         check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
+    assert torch.autograd.gradgradcheck(si1mdiv, test_points, check_fwd_over_rev=True)
 
 
 def test_sicos1mdiv():
@@ -82,7 +83,7 @@ def test_sicos1mdiv():
 def test_sipsicos3mdiv():
     """
     Verify that the custom autograd function `sipsicos3mdiv` correctly implements the
-    derivative of `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x)`,
+    derivative of `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x**2)`,
     including removing the singularity at 0.
     """
     test_points = torch.tensor(
@@ -102,26 +103,17 @@ def test_sipsicos3mdiv():
     )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "No proper limit exists for sicoskuddelmuddel15mdiv. A different model will "
-        "have to be found in the future that avoids these issues altogether."
-    )
-)
-def test_sicoskuddelmuddel15mdiv():
-    """
-    Verify that the custom autograd function `sicoskuddelmuddel15mdiv` correctly
-    implements the derivative of `(15 - 22.5 * si(sqrt(x)) + 9 * si(sqrt(x))
-    * cos(sqrt(x)) - 1.5 * si(sqrt(x)) * cos^2(sqrt(x))) + x * si^3(sqrt(x)) / (x^3)`,
-    including removing the singularity at `x == 0`.
-    """
+def test_normalized_j3():
+    """Check J3 reverse/forward AD, including zero and both series boundaries."""
     test_points = torch.tensor(
-        [-0.5, 0.0, 1.0], dtype=torch.float64, requires_grad=True
+        [-4.0, -1.0, -1e-6, 0.0, 1e-6, 1.0, 4.0],
+        dtype=torch.float64,
+        requires_grad=True,
     )
 
     # Check gradient calculation using finite difference methods
     assert torch.autograd.gradcheck(
-        func=sicoskuddelmuddel15mdiv,
+        func=normalized_j3,
         inputs=test_points,
         check_backward_ad=True,
         check_forward_ad=True,
@@ -129,6 +121,34 @@ def test_sicoskuddelmuddel15mdiv():
         check_batched_forward_grad=True,
         check_grad_dtypes=True,
     )
+    assert torch.autograd.gradgradcheck(
+        normalized_j3, test_points, check_fwd_over_rev=True
+    )
+
+
+def test_normalized_jf():
+    """Check Jf AD at zero, signed strengths, and exact/near nonzero resonance."""
+    a = torch.tensor(
+        [0.0, 0.0, -0.5, 1.0, 1.0, 2.0, 2.0 - 1e-8, 2.0 + 1e-8, -2.0, 2.0, 0.0],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+    b = torch.tensor(
+        [0.0, -0.5, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, -2.0, 1.8, 2.0],
+        dtype=torch.float64,
+        requires_grad=True,
+    )
+    assert torch.autograd.gradcheck(
+        normalized_jf,
+        (a, b),
+        check_backward_ad=True,
+        check_forward_ad=True,
+        check_batched_grad=True,
+        check_batched_forward_grad=True,
+        check_grad_dtypes=True,
+    )
+    assert torch.autograd.gradgradcheck(normalized_jf, (a, b), check_fwd_over_rev=True)
+    assert torch.autograd.gradcheck(normalized_jf, (a[:3, None], b[None, :3]))
 
 
 def test_cossqrtmcosdivdiff():
@@ -184,21 +204,15 @@ def test_simsidivdiff():
 
 
 def test_si2msi2divdiff():
-    """
-    Verify that the custom autograd function `si2msi2divdiff` correctly implements the
-    derivative of `(si^2(sqrt(b)) - si^2(sqrt(a))) / (a - b)`, including removing the
-    singularity at `a == b`.
+    """Check both AD modes at zero, series boundaries, and signed resonances."""
 
-    NOTE: Forward AD currently doesn't work for a==0 or b==0. That's why those checks
-        are disabled.
-    """
     test_points_a = torch.tensor(
-        [0.0, 0.0, -0.5, 0.1, 0.0, 1.0, 1.0, 2.0],
+        [0.0, 0.0, -0.5, 0.1, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, -2.0, -1.0],
         dtype=torch.float64,
         requires_grad=True,
     )
     test_points_b = torch.tensor(
-        [-0.5, 0.1, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0],
+        [-0.5, 0.1, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 2.0, 2.0 + 1e-8, -2.0, -1.0],
         dtype=torch.float64,
         requires_grad=True,
     )
@@ -207,12 +221,18 @@ def test_si2msi2divdiff():
     assert torch.autograd.gradcheck(
         func=si2msi2divdiff,
         inputs=(test_points_a, test_points_b),
-        rtol=0.01,
         check_backward_ad=True,
-        # check_forward_ad=True,
+        check_forward_ad=True,
         check_batched_grad=True,
-        # check_batched_forward_grad=True,
+        check_batched_forward_grad=True,
         check_grad_dtypes=True,
+    )
+    assert torch.autograd.gradgradcheck(
+        si2msi2divdiff, (test_points_a, test_points_b), check_fwd_over_rev=True
+    )
+    # Check that the function can handle broadcasting correctly
+    assert torch.autograd.gradcheck(
+        si2msi2divdiff, (test_points_a[:3, None], test_points_b[None, :3])
     )
 
 

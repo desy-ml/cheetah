@@ -1,12 +1,19 @@
 from copy import deepcopy
 
 import ocelot
+import pytest
 import torch
 
 import cheetah
 
 
-def test_compare_sextupole_particle_beam_to_ocelot():
+@pytest.mark.parametrize(
+    "default_torch_dtype, atol, rtol",
+    [(torch.float32, 1e-10, 1e-6), (torch.float64, 1e-12, 1e-10)],
+    indirect=["default_torch_dtype"],
+    ids=["float32", "float64"],
+)
+def test_compare_sextupole_particle_beam_to_ocelot(default_torch_dtype, atol, rtol):
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
     `ParticleBeam` with second order effects in Ocelot.
@@ -38,11 +45,19 @@ def test_compare_sextupole_particle_beam_to_ocelot():
 
     # Compare the results
     assert torch.allclose(
-        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
+        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=atol, rtol=rtol
     )
 
 
-def test_compare_sextupole_particle_beam_to_ocelot_vectorized():
+@pytest.mark.parametrize(
+    "default_torch_dtype, atol, rtol",
+    [(torch.float32, 1e-10, 1e-6), (torch.float64, 1e-12, 1e-10)],
+    indirect=["default_torch_dtype"],
+    ids=["float32", "float64"],
+)
+def test_compare_sextupole_particle_beam_to_ocelot_vectorized(
+    default_torch_dtype, atol, rtol
+):
     """
     Compare the results of tracking through a sextupole in Cheetah and Ocelot. For a
     `ParticleBeam` with second order effects in Ocelot.
@@ -78,7 +93,7 @@ def test_compare_sextupole_particle_beam_to_ocelot_vectorized():
 
     # Compare the results
     assert torch.allclose(
-        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
+        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=atol, rtol=rtol
     )
 
 
