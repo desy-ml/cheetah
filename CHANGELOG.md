@@ -15,6 +15,7 @@
 - Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
 - Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
+- Fix coefficients changed by the autograd refactor and how the singularities in multiple terms are handled in the second-order maps. (see #710) (@cr-xu)
 
 ### 🐆 Other
 
