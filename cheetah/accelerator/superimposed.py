@@ -102,4 +102,4 @@ class Superimposed(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["base_element", "superimposed_element"]
+        return super().defining_features + ["base_element", "superimposed_elements"]
