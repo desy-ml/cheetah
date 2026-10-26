@@ -378,15 +378,15 @@ def collect_superimpositions(context: dict) -> dict[str, list[str]]:
     :return: Mapping of base element names to lists of superimposed element names.
     """
     superimpositions: dict[str, list[str]] = {}
-    for elem_name, elem_def in context.items():
-        if isinstance(elem_def, dict) and "ref" in elem_def:
-            superimpose_flag = elem_def.get("superimpose", True)
+    for element_name, element_definition in context.items():
+        if isinstance(element_definition, dict) and "ref" in element_definition:
+            superimpose_flag = element_definition.get("superimpose", True)
             if isinstance(superimpose_flag, str):
                 superimpose_flag = superimpose_flag.lower() in {"t", "true", "1"}
             if bool(superimpose_flag):
-                ref_name = elem_def["ref"]
+                ref_name = element_definition["ref"]
                 if ref_name in context and isinstance(context[ref_name], dict):
-                    superimpositions.setdefault(ref_name, []).append(elem_name)
+                    superimpositions.setdefault(ref_name, []).append(element_name)
 
     return superimpositions
 
