@@ -15,6 +15,10 @@ class Superimposed(Element):
     A segment that represents a superimposed structure in an accelerator, i.e. where one
     or more elements are placed over another at the centre of the base element.
 
+    NOTE: Changing `base_element` after initialisation will lead to unexpected
+        behaviour. If you need to change anything about `base_element`, please create a
+        new instance of `Superimposed`.
+
     :param base_element: The base element at the centre of which the superimposed
         elements are placed.
     :param superimposed_element: Element or list of elements to be placed at the centre
