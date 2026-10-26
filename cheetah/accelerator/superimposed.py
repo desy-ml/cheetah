@@ -49,6 +49,7 @@ class Superimposed(Element):
 
         if isinstance(superimposed_element, Element):
             superimposed_element = [superimposed_element]
+
         for element in superimposed_element:
             assert (
                 element.length == 0.0
