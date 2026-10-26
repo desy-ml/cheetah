@@ -49,27 +49,41 @@ def convert_element(
     shared_properties = ["element_type", "alias", "type", "ref", "superimpose"]
 
     if isinstance(bmad_parsed, list):
-        element = cheetah.Segment(
-            elements=[
-                convert_element(
-                    element_name,
-                    context,
-                    sanitize_name=sanitize_name,
-                    device=device,
-                    dtype=dtype,
-                    superimpositions=superimpositions,
+        elements = []
+        for element_name in bmad_parsed:
+            converted = convert_element(
+                element_name,
+                context,
+                superimpositions=superimpositions,
+                sanitize_name=sanitize_name,
+                device=device,
+                dtype=dtype,
+            )
+
+            if element_name in superimpositions:
+                elements.extend(
+                    apply_superimpositions(
+                        base_element=converted,
+                        element_name=element_name,
+                        context=context,
+                        superimpositions=superimpositions,
+                        sanitize_name=sanitize_name,
+                        device=device,
+                        dtype=dtype,
+                    )
                 )
-                for element_name in bmad_parsed
-            ],
-            name=name,
-            sanitize_name=sanitize_name,
+            else:
+                elements.append(converted)
+
+        return cheetah.Segment(
+            elements=elements, name=name, sanitize_name=sanitize_name
         )
     elif isinstance(bmad_parsed, dict) and "element_type" in bmad_parsed:
         if bmad_parsed["element_type"] == "marker":
             fortran_namelist.validate_understood_properties(
                 shared_properties, bmad_parsed
             )
-            element = cheetah.Marker(
+            return cheetah.Marker(
                 name=name, sanitize_name=sanitize_name, metadata=metadata
             )
         elif bmad_parsed["element_type"] == "monitor":
@@ -77,14 +91,14 @@ def convert_element(
                 shared_properties + ["l"], bmad_parsed
             )
             if "l" in bmad_parsed:
-                element = cheetah.Drift(
+                return cheetah.Drift(
                     length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
                 )
             else:
-                element = cheetah.Marker(
+                return cheetah.Marker(
                     name=name, sanitize_name=sanitize_name, metadata=metadata
                 )
         elif bmad_parsed["element_type"] == "instrument":
@@ -92,21 +106,21 @@ def convert_element(
                 shared_properties + ["l"], bmad_parsed
             )
             if "l" in bmad_parsed:
-                element = cheetah.Drift(
+                return cheetah.Drift(
                     length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
                 )
             else:
-                element = cheetah.Marker(
+                return cheetah.Marker(
                     name=name, sanitize_name=sanitize_name, metadata=metadata
                 )
         elif bmad_parsed["element_type"] == "pipe":
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "descrip"], bmad_parsed
             )
-            element = cheetah.Drift(
+            return cheetah.Drift(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
@@ -116,7 +130,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "descrip"], bmad_parsed
             )
-            element = cheetah.Drift(
+            return cheetah.Drift(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
@@ -126,7 +140,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "kick"], bmad_parsed
             )
-            element = cheetah.HorizontalCorrector(
+            return cheetah.HorizontalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
@@ -137,7 +151,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "kick"], bmad_parsed
             )
-            element = cheetah.VerticalCorrector(
+            return cheetah.VerticalCorrector(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("kick", 0.0), **factory_kwargs),
                 name=name,
@@ -150,7 +164,7 @@ def convert_element(
                 + ["hgap", "l", "angle", "e1", "e2", "fint", "fintx", "ref_tilt"],
                 bmad_parsed,
             )
-            element = cheetah.Dipole(
+            return cheetah.Dipole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 gap=torch.tensor(2 * bmad_parsed.get("hgap", 0.0), **factory_kwargs),
                 angle=torch.tensor(bmad_parsed.get("angle", 0.0), **factory_kwargs),
@@ -173,7 +187,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "k1", "tilt"], bmad_parsed
             )
-            element = cheetah.Quadrupole(
+            return cheetah.Quadrupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k1=torch.tensor(bmad_parsed["k1"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
@@ -185,7 +199,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "k2", "tilt"], bmad_parsed
             )
-            element = cheetah.Sextupole(
+            return cheetah.Sextupole(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k2=torch.tensor(bmad_parsed["k2"], **factory_kwargs),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
@@ -197,7 +211,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l", "ks"], bmad_parsed
             )
-            element = cheetah.Solenoid(
+            return cheetah.Solenoid(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 k=torch.tensor(bmad_parsed["ks"], **factory_kwargs),
                 name=name,
@@ -209,7 +223,7 @@ def convert_element(
                 shared_properties + ["l", "rf_frequency", "voltage", "phi0"],
                 bmad_parsed,
             )
-            element = cheetah.Cavity(
+            return cheetah.Cavity(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
                 phase=-(
@@ -228,7 +242,7 @@ def convert_element(
                 shared_properties + ["l", "rf_frequency", "voltage", "phi0"],
                 bmad_parsed,
             )
-            element = cheetah.TransverseDeflectingCavity(
+            return cheetah.TransverseDeflectingCavity(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 voltage=torch.tensor(bmad_parsed.get("voltage", 0.0), **factory_kwargs),
                 phase=-(torch.tensor(bmad_parsed.get("phi0", 0.0), **factory_kwargs)),
@@ -242,7 +256,7 @@ def convert_element(
                 shared_properties + ["l", "x_limit", "y_limit"],
                 bmad_parsed,
             )
-            element = cheetah.Segment(
+            return cheetah.Segment(
                 elements=[
                     cheetah.Drift(
                         length=torch.tensor(
@@ -272,7 +286,7 @@ def convert_element(
                 shared_properties + ["l", "x_limit", "y_limit"],
                 bmad_parsed,
             )
-            element = cheetah.Segment(
+            return cheetah.Segment(
                 elements=[
                     cheetah.Drift(
                         length=torch.tensor(
@@ -304,7 +318,7 @@ def convert_element(
 
             # TODO: Map the magnetic strength `b_max of Bmad to the undulator
             # coefficient `kx`.
-            element = cheetah.Undulator(
+            return cheetah.Undulator(
                 length=torch.tensor(bmad_parsed["l"], **factory_kwargs),
                 period=torch.tensor(bmad_parsed["l_period"], **factory_kwargs),
                 name=name,
@@ -316,7 +330,7 @@ def convert_element(
             fortran_namelist.validate_understood_properties(
                 shared_properties + ["l"], bmad_parsed
             )
-            element = cheetah.Drift(
+            return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
@@ -329,7 +343,7 @@ def convert_element(
                 category=UnknownElementWarning,
                 stacklevel=2,
             )
-            element = cheetah.Drift(
+            return cheetah.Drift(
                 length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
                 name=name,
                 sanitize_name=sanitize_name,
@@ -338,36 +352,77 @@ def convert_element(
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
 
-    if name in superimpositions:
-        superimposed_elements = [
-            convert_element(
-                superimposed_name,
-                context,
-                superimpositions,
-                sanitize_name=sanitize_name,
-                device=device,
-                dtype=dtype,
-            )
-            for superimposed_name in superimpositions[name]
-        ]
 
-        try:
-            return cheetah.Superimposed(
-                base_element=element,
-                superimposed_element=superimposed_elements,
-                name=name,
-                sanitize_name=sanitize_name,
-                metadata=metadata,
-            )
-        except AssertionError as error:
+def apply_superimpositions(
+    base_element: "cheetah.Element",
+    element_name: str,
+    context: dict,
+    superimpositions: dict[str, list[str]],
+    sanitize_name: bool | None = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
+) -> list["cheetah.Element"]:
+    """
+    Inline zero-length superimposed elements into a base element by splitting it.
+
+    :param base_element: Converted base element to superimpose on.
+    :param element_name: Name of the base element.
+    :param context: Context dictionary parsed from Bmad lattice file(s).
+    :param superimpositions: Mapping of base element names to lists of superimposed
+        element names.
+    :param sanitize_name: Whether to sanitise element names.
+    :param device: Device to put elements on.
+    :param dtype: Data type to use for elements.
+    :return: List of elements with superimpositions inlined, or `[base_element]` if
+        superimposition fails.
+    """
+    try:
+        base_element_halves = base_element.split(base_element.length / 2.0)
+        assert (
+            len(base_element_halves) == 2
+        ), "Base element could not be split into two halves."
+    except (AssertionError, AttributeError) as error:
+        names_str = ", ".join(superimpositions[element_name])
+        warnings.warn(
+            f"Could not superimpose {names_str} on {element_name}. "
+            f"Keeping only the base element. Reason: {error}",
+            category=PhysicsWarning,
+            stacklevel=2,
+        )
+        return [base_element]
+
+    superimposed_elements = [
+        convert_element(
+            superimposed_name,
+            context,
+            superimpositions=superimpositions,
+            sanitize_name=sanitize_name,
+            device=device,
+            dtype=dtype,
+        )
+        for superimposed_name in superimpositions[element_name]
+    ]
+
+    valid_superimposed_elements = []
+    for element in superimposed_elements:
+        if (element.length == 0.0).all():
+            valid_superimposed_elements.append(element)
+        else:
             warnings.warn(
-                f"Could not superimpose {superimpositions[name]} on {name}. "
-                f"Keeping only the base element. Reason: {error}",
+                f"Could not superimpose {element.name} on {element_name}. "
+                "Superimposed element must have zero length.",
                 category=PhysicsWarning,
                 stacklevel=2,
             )
 
-    return element
+    if valid_superimposed_elements:
+        return [
+            base_element_halves[0],
+            *valid_superimposed_elements,
+            base_element_halves[1],
+        ]
+
+    return [base_element]
 
 
 def collect_superimpositions(context: dict) -> dict[str, list[str]]:

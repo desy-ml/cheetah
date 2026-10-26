@@ -6,9 +6,8 @@
 
 ### 🚀 Features
 
-- Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
-- Support conversion of Bmad superimposed elements into Cheetah `Superimposed` elements, and serialise superimposed elements in LatticeJSON. (see #665) (@roussel-ryan, @jank324, @cr-xu)
+- Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu).
 
 ### 🐛 Bug fixes
 

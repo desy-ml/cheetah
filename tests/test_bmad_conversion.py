@@ -154,8 +154,8 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert converted.name == "cu_hxr"
     assert isinstance(flattened.bx11, cheetah.Dipole)
 
-    assert converted.gunl0a.qa01.base_element.k1.item() == pytest.approx(0.384840836193)
-    assert converted.gunl0a.qa01.metadata["alias"] == "quad:in20:121"
+    assert converted.gunl0a.qa01_split_0.k1.item() == pytest.approx(0.384840836193)
+    assert converted.gunl0a.qa01_split_0.metadata["alias"] == "quad:in20:121"
     assert flattened.qa01_split_0.k1.item() == pytest.approx(0.384840836193)
     assert flattened.qa01_split_0.metadata["alias"] == "quad:in20:121"
 
@@ -167,57 +167,39 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.tcxdg0.frequency.item() == pytest.approx(2.856e9)
     assert flattened.tcxdg0.length.item() == pytest.approx(0.254)
 
-    # Check superimposed elements
-    assert isinstance(converted.gunl0a.qa01, cheetah.Superimposed)
-    assert isinstance(converted.gunl0a.qa01.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qa01.superimposed_element, cheetah.Marker)
-    assert converted.gunl0a.qa01.superimposed_element.name == "bpm4"
-    assert converted.gunl0a.qa01.base_element.name == "qa01"
+    # Check superimposed elements expanded directly into gunl0a
+    assert isinstance(converted.gunl0a.qa01_split_0, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.bpm4, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qa01_split_1, cheetah.Quadrupole)
 
-    assert isinstance(converted.gunl0a.qa02, cheetah.Superimposed)
-    assert isinstance(converted.gunl0a.qa02.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qa02.superimposed_element, cheetah.Marker)
-    assert converted.gunl0a.qa02.superimposed_element.name == "bpm5"
-    assert converted.gunl0a.qa02.base_element.name == "qa02"
+    assert isinstance(converted.gunl0a.qa02_split_0, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.bpm5, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qa02_split_1, cheetah.Quadrupole)
 
-    assert isinstance(converted.gunl0a.qe01, cheetah.Superimposed)
-    assert isinstance(converted.gunl0a.qe01.base_element, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.qe01.superimposed_element, cheetah.Marker)
-    assert converted.gunl0a.qe01.superimposed_element.name == "otr2"
-    assert converted.gunl0a.qe01.base_element.name == "qe01"
-
-    # Check flattened superimposed elements
-    flattened_qe01 = converted.gunl0a.qe01.flattened()
-    assert isinstance(flattened_qe01, cheetah.Segment)
-    assert flattened_qe01.element_names == ["qe01_split_0", "otr2", "qe01_split_1"]
+    assert isinstance(converted.gunl0a.qe01_split_0, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.otr2, cheetah.Marker)
+    assert isinstance(converted.gunl0a.qe01_split_1, cheetah.Quadrupole)
 
 
 def test_multiple_superimposed_elements():
     """
     Test that when multiple elements are superimposed on the same base element,
-    they are all included in the superimposed element.
+    they are all inlined between the base element halves.
     """
     context = {
         "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
         "bpm1": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
         "bpm2": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
+        "line1": ["qa01"],
     }
 
     superimpositions = bmad_converter.collect_superimpositions(context)
     converted = bmad_converter.convert_element(
-        "qa01", context, superimpositions=superimpositions
+        "line1", context, superimpositions=superimpositions
     )
 
-    assert isinstance(converted, cheetah.Superimposed)
-    assert len(converted.superimposed_element) == 2
-    assert converted.superimposed_element[0].name == "bpm1"
-    assert converted.superimposed_element[1].name == "bpm2"
-    assert converted.flattened().element_names == [
-        "qa01_split_0",
-        "bpm1",
-        "bpm2",
-        "qa01_split_1",
-    ]
+    assert isinstance(converted, cheetah.Segment)
+    assert converted.element_names == ["qa01_split_0", "bpm1", "bpm2", "qa01_split_1"]
 
 
 def test_superimpose_non_zero_length_warns():
@@ -234,15 +216,46 @@ def test_superimpose_non_zero_length_warns():
             "superimpose": "T",
             "ref": "qa01",
         },
+        "line1": ["qa01"],
     }
 
     superimpositions = bmad_converter.collect_superimpositions(context)
     with pytest.warns(PhysicsWarning, match="zero length"):
         converted = bmad_converter.convert_element(
-            "qa01", context, superimpositions=superimpositions
+            "line1", context, superimpositions=superimpositions
         )
 
-    assert isinstance(converted, cheetah.Quadrupole)
+    assert isinstance(converted, cheetah.Segment)
+    assert converted.element_names == ["qa01"]
+    assert isinstance(converted.elements[0], cheetah.Quadrupole)
+
+
+def test_partial_superimpose_non_zero_length_skips_only_non_zero():
+    """
+    Test that when multiple elements are superimposed on the same base element,
+    only the non-zero-length ones are skipped, while zero-length ones are superimposed.
+    """
+    context = {
+        "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
+        "bpm1": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
+        "trim": {
+            "element_type": "hkicker",
+            "l": 0.05,
+            "kick": 1e-4,
+            "superimpose": "T",
+            "ref": "qa01",
+        },
+        "line1": ["qa01"],
+    }
+
+    superimpositions = bmad_converter.collect_superimpositions(context)
+    with pytest.warns(PhysicsWarning, match="zero length"):
+        converted = bmad_converter.convert_element(
+            "line1", context, superimpositions=superimpositions
+        )
+
+    assert isinstance(converted, cheetah.Segment)
+    assert converted.element_names == ["qa01_split_0", "bpm1", "qa01_split_1"]
 
 
 def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
@@ -252,12 +265,10 @@ def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
     """
     file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
 
-    def _raise_superimpose_assertion_error(*args, **kwargs):
+    def _raise_split_assertion_error(self, resolution):
         raise AssertionError("forced split failure for test")
 
-    monkeypatch.setattr(
-        bmad_converter.cheetah, "Superimposed", _raise_superimpose_assertion_error
-    )
+    monkeypatch.setattr(cheetah.Quadrupole, "split", _raise_split_assertion_error)
 
     with pytest.warns(PhysicsWarning, match="Keeping only the base element"):
         converted = cheetah.Segment.from_bmad(file_path, dtype=torch.float64)
