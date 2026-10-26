@@ -209,9 +209,9 @@ def test_multiple_superimposed_elements():
     )
 
     assert isinstance(converted, cheetah.Superimposed)
-    assert len(converted.superimposed_elements) == 2
-    assert converted.superimposed_elements[0].name == "bpm1"
-    assert converted.superimposed_elements[1].name == "bpm2"
+    assert len(converted.superimposed_element) == 2
+    assert converted.superimposed_element[0].name == "bpm1"
+    assert converted.superimposed_element[1].name == "bpm2"
     assert converted.flattened().element_names == [
         "qa01_split_0",
         "bpm1",

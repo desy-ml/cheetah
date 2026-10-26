@@ -47,18 +47,15 @@ class Superimposed(Element):
             name=name, sanitize_name=sanitize_name, metadata=metadata, **factory_kwargs
         )
 
-        elements = (
-            [superimposed_element]
-            if isinstance(superimposed_element, Element)
-            else superimposed_element
-        )
-        for element in elements:
+        if isinstance(superimposed_element, Element):
+            superimposed_element = [superimposed_element]
+        for element in superimposed_element:
             assert (
                 element.length == 0.0
             ).all(), "The superimposed element must have zero length."
 
         self.base_element = base_element
-        self.superimposed_elements = elements
+        self.superimposed_element = superimposed_element
 
         base_element_halves = base_element.split(base_element.length / 2.0)
         assert len(base_element_halves) == 2, (
@@ -69,7 +66,7 @@ class Superimposed(Element):
         self._segment = Segment(
             elements=[
                 base_element_halves[0],
-                *elements,
+                *superimposed_element,
                 base_element_halves[1],
             ],
             name=f"{self.name}_segment",
@@ -102,4 +99,4 @@ class Superimposed(Element):
 
     @property
     def defining_features(self) -> list[str]:
-        return super().defining_features + ["base_element", "superimposed_elements"]
+        return super().defining_features + ["base_element", "superimposed_element"]
