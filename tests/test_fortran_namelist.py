@@ -75,3 +75,16 @@ def test_skip_control_definitions():
     assert "q1" in context
     assert "o_q1" not in context
     assert "g_all" not in context
+
+
+def test_define_element_bare_flags():
+    """Test that bare flags in element definitions are parsed as boolean True."""
+    lines = [
+        "bpm4: marker, superimpose, ref = qa01",
+    ]
+
+    context = parse_lines(lines)
+
+    assert context["bpm4"]["element_type"] == "marker"
+    assert context["bpm4"]["superimpose"] is True
+    assert context["bpm4"]["ref"] == "qa01"
