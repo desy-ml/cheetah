@@ -58,7 +58,6 @@ class Superimposed(Element):
             ).all(), "The superimposed element must have zero length."
 
         self.base_element = base_element
-        self.superimposed_element = superimposed_element
         self.superimposed_elements = elements
 
         base_element_halves = base_element.split(base_element.length / 2.0)
@@ -79,7 +78,7 @@ class Superimposed(Element):
 
     def flattened(self) -> "Segment":
         return self._segment.flattened()
-    
+
     @property
     def is_skippable(self) -> bool:
         return self._segment.is_skippable
