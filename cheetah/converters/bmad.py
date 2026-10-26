@@ -377,16 +377,25 @@ def collect_superimpositions(context: dict) -> dict[str, list[str]]:
     :param context: Context dictionary parsed from Bmad lattice file(s).
     :return: Mapping of base element names to lists of superimposed element names.
     """
-    superimpositions: dict[str, list[str]] = {}
-    for element_name, element_definition in context.items():
-        if isinstance(element_definition, dict) and "ref" in element_definition:
-            superimpose_flag = element_definition.get("superimpose", True)
-            if isinstance(superimpose_flag, str):
-                superimpose_flag = superimpose_flag.lower() in {"t", "true", "1"}
-            if bool(superimpose_flag):
-                ref_name = element_definition["ref"]
-                if ref_name in context and isinstance(context[ref_name], dict):
-                    superimpositions.setdefault(ref_name, []).append(element_name)
+    superimpositions = {}
+    for variable_name, variable_definition in context.items():
+        if isinstance(variable_definition, dict):  # Is an element definition
+            if "superimpose" in variable_definition:
+                superimpose_flag = variable_definition["superimpose"]
+                if isinstance(superimpose_flag, str):
+                    superimpose_flag = superimpose_flag.lower() in {"t", "true", "1"}
+
+                if superimpose_flag:
+                    assert (
+                        "ref" in variable_definition
+                    ), f"Superimposed element {variable_name} is missing ref property."
+                    ref_name = variable_definition["ref"]
+                    if ref_name in context:
+                        assert isinstance(context[ref_name], dict), (
+                            f"Ref {ref_name} of superimposed element {variable_name} is"
+                            " not an element."
+                        )
+                        superimpositions.setdefault(ref_name, []).append(variable_name)
 
     return superimpositions
 
