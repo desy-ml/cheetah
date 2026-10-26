@@ -268,20 +268,25 @@ def define_element(line: str, context: dict) -> dict:
         element_properties_string = match.group(4).strip()
 
         property_pattern = (
-            r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9_]+\s*\=\s*[^\=\,\"]+)"
+            r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9_]+\s*\=\s*[^\=\,\"]+|[a-z0-9_]+)"
         )
         property_matches = re.findall(property_pattern, element_properties_string)
 
         for property_string in property_matches:
             property_string = property_string.strip()
 
-            property_name, property_expression = property_string.split("=", maxsplit=1)
-            property_name = property_name.strip()
-            property_expression = property_expression.strip()
+            if "=" in property_string:
+                property_name, property_expression = property_string.split(
+                    "=", maxsplit=1
+                )
+                property_name = property_name.strip()
+                property_expression = property_expression.strip()
 
-            element_properties[property_name] = evaluate_expression(
-                property_expression, context
-            )
+                element_properties[property_name] = evaluate_expression(
+                    property_expression, context
+                )
+            else:
+                element_properties[property_string] = True
 
     context[element_name] = element_properties
 
