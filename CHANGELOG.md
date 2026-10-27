@@ -6,6 +6,7 @@
 
 ### 🚀 Features
 
+- Add a `backtrack` method to elements for backtracking beam in first and second order (see #706) (@cr-xu)
 - Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)

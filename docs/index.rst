@@ -40,6 +40,7 @@ We provide some examples to demonstrate some features of *Cheetah* and show how 
     examples/gradientbased
     examples/including_metadata
     examples/custom_elements
+    examples/backtracking
 
 
 Getting Started

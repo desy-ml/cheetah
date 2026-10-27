@@ -17,6 +17,9 @@ def cache_transfer_map(func):
         if any(
             x.requires_grad
             for x in (energy, species.num_elementary_charges, species.mass_eV)
+        ) or any(
+            isinstance(feature, torch.Tensor) and feature.requires_grad
+            for feature in (getattr(self, name) for name in self.defining_features)
         ):
             return func(self, energy, species)
 
