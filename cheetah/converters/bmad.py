@@ -61,7 +61,10 @@ def convert_element(
         if bmad_parsed["element_type"] == "marker":
             validate_understood_properties(shared_properties, bmad_parsed)
             return cheetah.Marker(
-                name=name, sanitize_name=sanitize_name, metadata=metadata
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "monitor":
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
@@ -71,10 +74,14 @@ def convert_element(
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
+                    **factory_kwargs,
                 )
             else:
                 return cheetah.Marker(
-                    name=name, sanitize_name=sanitize_name, metadata=metadata
+                    name=name,
+                    sanitize_name=sanitize_name,
+                    metadata=metadata,
+                    **factory_kwargs,
                 )
         elif bmad_parsed["element_type"] == "instrument":
             validate_understood_properties(shared_properties + ["l"], bmad_parsed)
@@ -84,10 +91,14 @@ def convert_element(
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
+                    **factory_kwargs,
                 )
             else:
                 return cheetah.Marker(
-                    name=name, sanitize_name=sanitize_name, metadata=metadata
+                    name=name,
+                    sanitize_name=sanitize_name,
+                    metadata=metadata,
+                    **factory_kwargs,
                 )
         elif bmad_parsed["element_type"] == "pipe":
             validate_understood_properties(
@@ -98,6 +109,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "drift":
             validate_understood_properties(
@@ -108,6 +120,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "hkicker":
             validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
@@ -117,6 +130,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             validate_understood_properties(shared_properties + ["kick"], bmad_parsed)
@@ -126,6 +140,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "sbend":
             validate_understood_properties(
@@ -151,6 +166,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
             validate_understood_properties(
@@ -163,6 +179,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "sextupole":
             validate_understood_properties(
@@ -175,6 +192,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "solenoid":
             validate_understood_properties(shared_properties + ["l", "ks"], bmad_parsed)
@@ -184,6 +202,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "lcavity":
             validate_understood_properties(
@@ -203,6 +222,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "crab_cavity":
             validate_understood_properties(
@@ -217,6 +237,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
             validate_understood_properties(
@@ -231,6 +252,7 @@ def convert_element(
                         ),
                         name=name + "_drift",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -242,6 +264,7 @@ def convert_element(
                         shape="rectangular",
                         name=name + "_aperture",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                 ],
                 name=name,
@@ -261,6 +284,7 @@ def convert_element(
                         ),
                         name=name + "_drift",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -272,6 +296,7 @@ def convert_element(
                         shape="elliptical",
                         name=name + "_aperture",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                 ],
                 name=name,
@@ -291,6 +316,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "patch":
             # TODO: Does this need to be implemented in Cheetah in a more proper way?
@@ -300,6 +326,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         else:
             warnings.warn(
@@ -313,6 +340,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251

@@ -17,6 +17,7 @@
 - Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
 - Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
+- Fix `dtype` and `device` of default attributes in Bmad, Elegant, and Ocelot import. (see #698) (@Hespe)
 
 ### 🐆 Other
 
