@@ -196,5 +196,5 @@ def test_lattice_json_sanitize_name_warning(tmp_path, sanitize_names):
         with warnings.catch_warnings():
             warnings.simplefilter("error", DirtyNameWarning)
             _ = cheetah.Segment.from_lattice_json(
-                str(tmp_path / "dirty_lattice.json"), sanitize_names=sanitize_names
+                tmp_path / "dirty_lattice.json", sanitize_names=sanitize_names
             )
