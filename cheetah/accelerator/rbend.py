@@ -97,7 +97,7 @@ class RBend(Dipole):
             name=name,
             sanitize_name=sanitize_name,
             metadata=metadata,
-            **factory_kwargs
+            **factory_kwargs,
         )
 
     @property

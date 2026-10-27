@@ -16,17 +16,17 @@ def test_fodo_import():
     """Test importing a FODO lattice defined in the Elegant file format."""
     file_path = "tests/resources/fodo.lte"
 
-    with pytest.warns(
-        NoBeamPropertiesInLatticeWarning, match=("c.*charge")
-    ), pytest.warns(DirtyNameWarning, match="long-name-quad"), pytest.warns(
-        DirtyNameWarning, match="a:q3"
-    ), pytest.warns(
-        NotUnderstoodPropertyWarning, match="nonsense"
+    with (
+        pytest.warns(NoBeamPropertiesInLatticeWarning, match=("c.*charge")),
+        pytest.warns(DirtyNameWarning, match="long-name-quad"),
+        pytest.warns(DirtyNameWarning, match="a:q3"),
+        pytest.warns(NotUnderstoodPropertyWarning, match="nonsense"),
     ):
         converted = cheetah.Segment.from_elegant(file_path, "fodo")
 
-    with pytest.warns(DirtyNameWarning, match="long-name-quad"), pytest.warns(
-        DirtyNameWarning, match="a:q3"
+    with (
+        pytest.warns(DirtyNameWarning, match="long-name-quad"),
+        pytest.warns(DirtyNameWarning, match="a:q3"),
     ):
         correct_lattice = cheetah.Segment(
             [
@@ -141,9 +141,13 @@ def test_reverse_beamline_import():
 def test_cavity_import():
     """Test importing an accelerating cavity defined in the Elegant file format."""
     file_path = "tests/resources/cavity.lte"
-    with pytest.warns(
-        NotUnderstoodPropertyWarning, match="(end[12]_focus|body_focus_model|change_p0)"
-    ), pytest.warns(PhysicsWarning, match="srs"):
+    with (
+        pytest.warns(
+            NotUnderstoodPropertyWarning,
+            match="(end[12]_focus|body_focus_model|change_p0)",
+        ),
+        pytest.warns(PhysicsWarning, match="srs"),
+    ):
         converted = cheetah.Segment.from_elegant(file_path, "cavity")
 
     assert np.isclose(converted.c1.length, 0.7)
