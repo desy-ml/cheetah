@@ -7,3 +7,7 @@ markers = [
     "for_every_element: Runs a test with an example of each Cheetah `Element` subclass.",
     "fail_because_no_test_case_defined: Mark a test to fail because no test cases are defined for the given `Element` subclass.",
 ]
+
+[tool.pyrefly]
+project-includes = ["cheetah"]
+ignore-missing-imports = ["*"]
