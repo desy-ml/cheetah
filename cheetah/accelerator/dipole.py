@@ -55,6 +55,16 @@ class Dipole(Element):
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
+    angle: torch.Tensor
+    k1: torch.Tensor
+    _e1: torch.Tensor
+    _e2: torch.Tensor
+    fringe_integral: torch.Tensor
+    fringe_integral_exit: torch.Tensor
+    gap: torch.Tensor
+    gap_exit: torch.Tensor
+    tilt: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -180,7 +190,7 @@ class Dipole(Element):
                 "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
-    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: Beam) -> ParticleBeam:
         """
         Track particles through the quadrupole element using the Drift_kick_drift
             tracking method.
@@ -251,8 +261,15 @@ class Dipole(Element):
         z: torch.Tensor,
         pz: torch.Tensor,
         p0c: torch.Tensor,
-        mc2: float,
-    ) -> list[torch.Tensor]:
+        mc2: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         """
         Track particle coordinates through bend body.
 
@@ -342,7 +359,7 @@ class Dipole(Element):
         px: torch.Tensor,
         y: torch.Tensor,
         py: torch.Tensor,
-    ) -> list[torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Tracks linear fringe.
 

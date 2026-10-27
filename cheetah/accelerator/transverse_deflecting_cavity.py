@@ -49,6 +49,12 @@ class TransverseDeflectingCavity(Element):
 
     supported_tracking_methods = ["linear", "drift_kick_drift"]
 
+    voltage: torch.Tensor
+    phase: torch.Tensor
+    frequency: torch.Tensor
+    misalignment: torch.Tensor
+    tilt: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -100,7 +106,7 @@ class TransverseDeflectingCavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.voltage != 0).any().item()
+        return bool((self.voltage != 0).any().item())
 
     @property
     def is_skippable(self) -> bool:

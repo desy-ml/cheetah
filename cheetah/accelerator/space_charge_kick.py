@@ -51,6 +51,11 @@ class SpaceChargeKick(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    effect_length: torch.Tensor
+    grid_extent_x: torch.Tensor
+    grid_extent_y: torch.Tensor
+    grid_extent_tau: torch.Tensor
+
     def __init__(
         self,
         effect_length: torch.Tensor,

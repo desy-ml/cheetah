@@ -35,6 +35,9 @@ class Species(nn.Module):
         "deuteron": {"num_elementary_charges": 1, "mass_eV": deuteron_mass_eV},
     }
 
+    num_elementary_charges: torch.Tensor
+    mass_eV: torch.Tensor
+
     def __init__(
         self,
         name: str,
@@ -84,11 +87,17 @@ class Species(nn.Module):
             ), "Only one of mass_eV and mass_kg should be provided."
 
             self.name = name
+            if num_elementary_charges is None:
+                assert charge_coulomb is not None
+                num_elementary_charges = charge_coulomb / elementary_charge
+            if mass_eV is None:
+                assert mass_kg is not None
+                mass_eV = mass_kg * eV_to_kg
+
             self.register_buffer_or_parameter(
-                "num_elementary_charges",
-                num_elementary_charges or charge_coulomb / elementary_charge,
+                "num_elementary_charges", num_elementary_charges
             )
-            self.register_buffer_or_parameter("mass_eV", mass_eV or mass_kg * eV_to_kg)
+            self.register_buffer_or_parameter("mass_eV", mass_eV)
 
     @property
     def mass_kg(self) -> torch.Tensor:

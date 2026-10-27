@@ -35,6 +35,14 @@ class Beam(ABC, nn.Module):
     # others are assumed to be scalar (when not vectorised).
     UNVECTORIZED_NUM_ATTR_DIMS = {}
 
+    energy: torch.Tensor
+    species: Species
+    total_charge: torch.Tensor
+    s: torch.Tensor
+    survival_probabilities: torch.Tensor
+    mu: torch.Tensor
+    cov: torch.Tensor
+
     @classmethod
     @abstractmethod
     def from_parameters(

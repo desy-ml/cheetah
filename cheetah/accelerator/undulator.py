@@ -41,6 +41,10 @@ class Undulator(Element):
 
     supported_tracking_methods = ["linear"]
 
+    period: torch.Tensor
+    kx: torch.Tensor
+    ky: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -73,7 +77,7 @@ class Undulator(Element):
 
     @property
     def is_active(self) -> bool:
-        return torch.logical_or(self.kx != 0.0, self.ky != 0.0).any().item()
+        return bool(torch.logical_or(self.kx != 0.0, self.ky != 0.0).any().item())
 
     @cache_transfer_map
     def first_order_transfer_map(

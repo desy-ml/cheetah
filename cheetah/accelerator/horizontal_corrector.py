@@ -36,6 +36,8 @@ class HorizontalCorrector(Element):
 
     supported_tracking_methods = ["linear"]
 
+    angle: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -83,7 +85,7 @@ class HorizontalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.angle != 0).any().item()
+        return bool((self.angle != 0).any().item())
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None

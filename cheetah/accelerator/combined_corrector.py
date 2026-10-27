@@ -38,6 +38,9 @@ class CombinedCorrector(Element):
 
     supported_tracking_methods = ["linear"]
 
+    horizontal_angle: torch.Tensor
+    vertical_angle: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,

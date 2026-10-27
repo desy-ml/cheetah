@@ -41,6 +41,9 @@ class Solenoid(Element):
 
     supported_tracking_methods = ["linear"]
 
+    k: torch.Tensor
+    misalignment: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -117,7 +120,7 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k != 0).any().item()
+        return bool((self.k != 0).any().item())
 
     @property
     def is_skippable(self) -> bool:
@@ -140,7 +143,9 @@ class Solenoid(Element):
             for i in range(num_splits)
         ]
 
-    def merge(self, other: "Solenoid") -> "Solenoid | None":
+    def merge(self, other: Element) -> "Solenoid | None":
+        if not isinstance(other, Solenoid):
+            return None
         if not self.misalignment.equal(other.misalignment):
             return None
 

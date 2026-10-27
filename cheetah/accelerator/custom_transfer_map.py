@@ -30,6 +30,8 @@ class CustomTransferMap(Element):
 
     supported_tracking_methods = ["linear"]
 
+    predefined_transfer_map: torch.Tensor
+
     def __init__(
         self,
         predefined_transfer_map: torch.Tensor,

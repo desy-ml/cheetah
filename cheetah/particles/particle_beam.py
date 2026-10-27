@@ -57,6 +57,9 @@ class ParticleBeam(Beam):
         "p": 1,
     }
 
+    particles: torch.Tensor
+    particle_charges: torch.Tensor
+
     def __init__(
         self,
         particles: torch.Tensor,

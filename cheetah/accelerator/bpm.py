@@ -29,6 +29,8 @@ class BPM(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    misalignment: torch.Tensor
+
     def __init__(
         self,
         is_active: bool = False,
@@ -87,17 +89,27 @@ class BPM(Element):
         return incoming.clone()
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2
         patch = Rectangle(
-            (plot_s, -0.3), 0, 0.3 * 2, color="darkkhaki", alpha=alpha, zorder=2
+            (float(plot_s), -0.3),
+            0.0,
+            0.3 * 2.0,
+            color="darkkhaki",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

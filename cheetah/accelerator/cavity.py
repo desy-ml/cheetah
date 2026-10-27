@@ -48,6 +48,10 @@ class Cavity(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    voltage: torch.Tensor
+    phase: torch.Tensor
+    frequency: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -85,7 +89,7 @@ class Cavity(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.voltage != 0).any().item()
+        return bool((self.voltage != 0).any().item())
 
     @property
     def is_skippable(self) -> bool:
@@ -98,6 +102,7 @@ class Cavity(Element):
         return self._cavity_rmatrix(energy, species)
 
     def track(self, incoming: Beam) -> Beam:
+        assert isinstance(incoming, (ParameterBeam, ParticleBeam))
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
@@ -108,7 +113,7 @@ class Cavity(Element):
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = tm @ incoming.cov @ tm.mT
-        else:  # ParticleBeam
+        elif isinstance(incoming, ParticleBeam):
             outgoing_particles = incoming.particles @ tm.mT
         delta_energy = (
             self.voltage * phi.cos() * incoming.species.num_elementary_charges * -1
@@ -125,13 +130,15 @@ class Cavity(Element):
         )
 
         if isinstance(incoming, ParameterBeam):
+            assert outgoing_mu is not None and outgoing_cov is not None
             outgoing_mu[..., 5] = incoming.mu[..., 5] * incoming.energy * beta0 / (
                 outgoing_energy * beta1
             ) + self.voltage * beta0 / (outgoing_energy * beta1) * (
                 (-incoming.mu[..., 4] * beta0 * k + phi).cos() - phi.cos()
             )
             outgoing_cov[..., 5, 5] = incoming.cov[..., 5, 5]
-        else:  # ParticleBeam
+        elif isinstance(incoming, ParticleBeam):
+            assert outgoing_particles is not None
             outgoing_particles[..., 5] = incoming.particles[
                 ..., 5
             ] * incoming.energy.unsqueeze(-1) * beta0.unsqueeze(-1) / (
@@ -216,7 +223,8 @@ class Cavity(Element):
                 + T555 * incoming.cov[..., 4, 4].square()
             )
             outgoing_cov[..., 5, 4] = outgoing_cov[..., 4, 5]
-        else:  # ParticleBeam
+        elif isinstance(incoming, ParticleBeam):
+            assert outgoing_particles is not None
             outgoing_particles[..., 4] = outgoing_particles[..., 4] + (
                 T566.unsqueeze(-1) * incoming.particles[..., 5].square()
                 + T556.unsqueeze(-1)
@@ -226,6 +234,7 @@ class Cavity(Element):
             )
 
         if isinstance(incoming, ParameterBeam):
+            assert outgoing_mu is not None and outgoing_cov is not None
             outgoing = ParameterBeam(
                 mu=outgoing_mu,
                 cov=outgoing_cov,
@@ -237,7 +246,8 @@ class Cavity(Element):
                 dtype=outgoing_mu.dtype,
             )
             return outgoing
-        else:  # ParticleBeam
+        elif isinstance(incoming, ParticleBeam):
+            assert outgoing_particles is not None
             outgoing = ParticleBeam(
                 particles=outgoing_particles,
                 energy=outgoing_energy,
@@ -358,20 +368,30 @@ class Cavity(Element):
         return R
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
         alpha = 1 if self.is_active else 0.2
         height = 0.4
 
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="gold", alpha=alpha, zorder=2
+            (float(plot_s), 0.0),
+            float(plot_length),
+            height,
+            color="gold",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

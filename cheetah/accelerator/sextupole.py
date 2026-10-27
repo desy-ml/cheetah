@@ -44,6 +44,10 @@ class Sextupole(Element):
 
     supported_tracking_methods = ["linear", "second_order"]
 
+    k2: torch.Tensor
+    misalignment: torch.Tensor
+    tilt: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -130,7 +134,9 @@ class Sextupole(Element):
     def is_active(self) -> bool:
         return (self.k2 != 0.0).any().item()
 
-    def merge(self, other: "Sextupole") -> "Sextupole | None":
+    def merge(self, other: Element) -> "Sextupole | None":
+        if not isinstance(other, Sextupole):
+            return None
         if not (
             self.tracking_method == other.tracking_method
             and self.k2.equal(other.k2)

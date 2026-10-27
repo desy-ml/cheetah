@@ -60,6 +60,11 @@ class Screen(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    pixel_size: torch.Tensor
+    misalignment: torch.Tensor
+    kde_bandwidth: torch.Tensor
+    cached_reading: torch.Tensor
+
     def __init__(
         self,
         resolution: tuple[int, int] | list[int] = (1024, 1024),
