@@ -173,7 +173,7 @@ def test_save_and_reload_superimposed_element(tmp_path):
 
 @pytest.mark.parametrize("sanitize_names", [None, True, False])
 def test_lattice_json_sanitize_name_warning(tmp_path, sanitize_names):
-    """Test that the DirtyNameWarning is suppressed by the sanitize_name argument."""
+    """Test that the `DirtyNameWarning` is suppressed by the `sanitize_name` argument."""
     original_segment = cheetah.Segment(
         elements=[
             cheetah.Drift(
