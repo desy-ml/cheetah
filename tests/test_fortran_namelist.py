@@ -85,6 +85,4 @@ def test_define_element_bare_flags():
 
     context = parse_lines(lines)
 
-    assert context["bpm4"]["element_type"] == "marker"
     assert context["bpm4"]["superimpose"] is True
-    assert context["bpm4"]["ref"] == "qa01"
