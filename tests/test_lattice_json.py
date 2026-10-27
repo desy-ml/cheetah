@@ -1,7 +1,10 @@
+import warnings
+
 import pytest
 import torch
 
 import cheetah
+from cheetah.utils import DirtyNameWarning
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
@@ -120,3 +123,31 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
         for element in reloaded_segment.elements
         for feature in element.defining_tensors
     )
+
+@pytest.mark.parametrize("sanitize_names", [None, True, False])
+def test_lattice_json_sanitize_name_warning(tmp_path, sanitize_names):
+    """
+    Test that the `DirtyNameWarning` is suppressed by the `sanitize_name` argument.
+    """
+    original_segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(
+                length=torch.tensor(1.0), name="dirty:drift#1", sanitize_name=False
+            )
+        ],
+        name="dirty!segment",
+        sanitize_name=False,
+    )
+    original_segment.to_lattice_json(tmp_path / "dirty_lattice.json")
+
+    if sanitize_names is None:
+        with pytest.warns(DirtyNameWarning):
+            _ = cheetah.Segment.from_lattice_json(
+                tmp_path / "dirty_lattice.json", sanitize_names=sanitize_names
+            )
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DirtyNameWarning)
+            _ = cheetah.Segment.from_lattice_json(
+                tmp_path / "dirty_lattice.json", sanitize_names=sanitize_names
+            )

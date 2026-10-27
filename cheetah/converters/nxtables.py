@@ -251,7 +251,7 @@ def convert_lattice(filepath: Path) -> "cheetah.Element":
             filled_with_drifts.append(
                 cheetah.Drift(
                     name=f"DRIFT_{previous['element'].name}_{current['element'].name}",
-                    length=torch.as_tensor([drift_length]),
+                    length=torch.as_tensor(drift_length),
                 )
             )
 
