@@ -276,10 +276,4 @@ def load_cheetah_model(
 
     root_name = lattice_dict["root"]
 
-    return parse_segment(
-        root_name,
-        lattice_dict,
-        sanitize_names=sanitize_names,
-        device=device,
-        dtype=dtype,
-    )
+    return parse_segment(root_name, lattice_dict, sanitize_names, device, dtype)
