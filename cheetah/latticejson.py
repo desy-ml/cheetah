@@ -202,11 +202,9 @@ def parse_element(
 
     converted_params = {
         key: (
-            parse_element(
-                value, lattice_dict, sanitize_name, device=device, dtype=dtype
-            )
+            parse_element(value, lattice_dict, sanitize_name, device, dtype)
             if isinstance(value, str) and value in lattice_dict["elements"]
-            else nontorch2feature(value, device=device, dtype=dtype)
+            else nontorch2feature(value, device, dtype)
         )
         for key, value in params.items()
     }
