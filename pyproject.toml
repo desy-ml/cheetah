@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [
     { name = "Jan Kaiser", email = "jan.kaiser@desy.de" },
-    { name = "Chenran Xu" },
-    { name = "Christian Hespe" },
+    { name = "Chenran Xu", email = "chenran.xu@anl.gov" },
+    { name = "Christian Hespe", email = "christian.hespe@desy.de" },
 ]
 dependencies = [
     "matplotlib>=3.5",
