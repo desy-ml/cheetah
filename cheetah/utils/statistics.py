@@ -2,7 +2,10 @@ import torch
 
 
 def unbiased_weighted_covariance(
-    inputs1: torch.Tensor, inputs2: torch.Tensor, weights: torch.Tensor, dim: int = None
+    inputs1: torch.Tensor,
+    inputs2: torch.Tensor,
+    weights: torch.Tensor,
+    dim: int | None = None,
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted covariance of two tensors.
@@ -28,7 +31,7 @@ def unbiased_weighted_covariance(
 
 
 def unbiased_weighted_variance(
-    inputs: torch.Tensor, weights: torch.Tensor, dim: int = None
+    inputs: torch.Tensor, weights: torch.Tensor, dim: int | None = None
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted variance of a tensor.
@@ -49,7 +52,7 @@ def unbiased_weighted_variance(
 
 
 def unbiased_weighted_std(
-    inputs: torch.Tensor, weights: torch.Tensor, dim: int = None
+    inputs: torch.Tensor, weights: torch.Tensor, dim: int | None = None
 ) -> torch.Tensor:
     """
     Compute the unbiased weighted standard deviation of a tensor.

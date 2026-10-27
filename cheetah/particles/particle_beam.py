@@ -1689,7 +1689,7 @@ class ParticleBeam(Beam):
         return self.survival_probabilities.sum(dim=-1)
 
     @property
-    def x(self) -> torch.Tensor | None:
+    def x(self) -> torch.Tensor:
         return self.particles[..., 0]
 
     @x.setter
@@ -1697,7 +1697,7 @@ class ParticleBeam(Beam):
         self.particles[..., 0] = value
 
     @property
-    def mu_x(self) -> torch.Tensor | None:
+    def mu_x(self) -> torch.Tensor:
         """
         Mean of the :math:`x` coordinates of the particles, weighted by their
         survival probability.
@@ -1707,7 +1707,7 @@ class ParticleBeam(Beam):
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_x(self) -> torch.Tensor | None:
+    def sigma_x(self) -> torch.Tensor:
         """
         Standard deviation of the :math:`x` coordinates of the particles, weighted
         by their survival probability.
@@ -1717,7 +1717,7 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def px(self) -> torch.Tensor | None:
+    def px(self) -> torch.Tensor:
         return self.particles[..., 1]
 
     @px.setter
@@ -1725,7 +1725,7 @@ class ParticleBeam(Beam):
         self.particles[..., 1] = value
 
     @property
-    def mu_px(self) -> torch.Tensor | None:
+    def mu_px(self) -> torch.Tensor:
         """
         Mean of the :math:`px` coordinates of the particles, weighted by their
         survival probability.
@@ -1735,7 +1735,7 @@ class ParticleBeam(Beam):
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_px(self) -> torch.Tensor | None:
+    def sigma_px(self) -> torch.Tensor:
         """
         Standard deviation of the :math:`px` coordinates of the particles, weighted
         by their survival probability.
@@ -1745,7 +1745,7 @@ class ParticleBeam(Beam):
         )
 
     @property
-    def y(self) -> torch.Tensor | None:
+    def y(self) -> torch.Tensor:
         return self.particles[..., 2]
 
     @y.setter
@@ -1753,19 +1753,19 @@ class ParticleBeam(Beam):
         self.particles[..., 2] = value
 
     @property
-    def mu_y(self) -> float | None:
+    def mu_y(self) -> torch.Tensor:
         return (self.y * self.survival_probabilities).sum(
             dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_y(self) -> torch.Tensor | None:
+    def sigma_y(self) -> torch.Tensor:
         return unbiased_weighted_std(
             self.y, weights=self.survival_probabilities, dim=-1
         )
 
     @property
-    def py(self) -> torch.Tensor | None:
+    def py(self) -> torch.Tensor:
         return self.particles[..., 3]
 
     @py.setter
@@ -1773,19 +1773,19 @@ class ParticleBeam(Beam):
         self.particles[..., 3] = value
 
     @property
-    def mu_py(self) -> torch.Tensor | None:
+    def mu_py(self) -> torch.Tensor:
         return (self.py * self.survival_probabilities).sum(
             dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_py(self) -> torch.Tensor | None:
+    def sigma_py(self) -> torch.Tensor:
         return unbiased_weighted_std(
             self.py, weights=self.survival_probabilities, dim=-1
         )
 
     @property
-    def tau(self) -> torch.Tensor | None:
+    def tau(self) -> torch.Tensor:
         return self.particles[..., 4]
 
     @tau.setter
@@ -1793,19 +1793,19 @@ class ParticleBeam(Beam):
         self.particles[..., 4] = value
 
     @property
-    def mu_tau(self) -> torch.Tensor | None:
+    def mu_tau(self) -> torch.Tensor:
         return (self.tau * self.survival_probabilities).sum(
             dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_tau(self) -> torch.Tensor | None:
+    def sigma_tau(self) -> torch.Tensor:
         return unbiased_weighted_std(
             self.tau, weights=self.survival_probabilities, dim=-1
         )
 
     @property
-    def p(self) -> torch.Tensor | None:
+    def p(self) -> torch.Tensor:
         return self.particles[..., 5]
 
     @p.setter
@@ -1813,13 +1813,13 @@ class ParticleBeam(Beam):
         self.particles[..., 5] = value
 
     @property
-    def mu_p(self) -> torch.Tensor | None:
+    def mu_p(self) -> torch.Tensor:
         return (self.p * self.survival_probabilities).sum(
             dim=-1
         ) / self.survival_probabilities.sum(dim=-1)
 
     @property
-    def sigma_p(self) -> torch.Tensor | None:
+    def sigma_p(self) -> torch.Tensor:
         return unbiased_weighted_std(
             self.p, weights=self.survival_probabilities, dim=-1
         )

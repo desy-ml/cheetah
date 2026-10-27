@@ -42,9 +42,11 @@ class Segment(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    elements: nn.ModuleList
+
     def __init__(
         self,
-        elements: list[Element],
+        elements: list[Element] | nn.ModuleList,
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,

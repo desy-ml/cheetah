@@ -5,8 +5,11 @@ double_precision_epsilon = torch.finfo(torch.float64).eps
 
 
 def cheetah_to_bmad_z_pz(
-    tau: torch.Tensor, delta: torch.Tensor, ref_energy: torch.Tensor, mc2: float
-) -> torch.Tensor:
+    tau: torch.Tensor,
+    delta: torch.Tensor,
+    ref_energy: torch.Tensor,
+    mc2: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms Cheetah longitudinal coordinates to Bmad coordinates
     and computes p0c.
@@ -30,8 +33,11 @@ def cheetah_to_bmad_z_pz(
 
 
 def bmad_to_cheetah_z_pz(
-    z: torch.Tensor, pz: torch.Tensor, p0c: torch.Tensor, mc2: float
-) -> tuple[torch.Tensor]:
+    z: torch.Tensor,
+    pz: torch.Tensor,
+    p0c: torch.Tensor,
+    mc2: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms Bmad longitudinal coordinates to Cheetah coordinates
     and computes reference energy.
@@ -56,7 +62,7 @@ def bmad_to_cheetah_z_pz(
 
 def cheetah_to_bmad_coords(
     cheetah_coords: torch.Tensor, ref_energy: torch.Tensor, mc2: torch.Tensor
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Transforms Cheetah coordinates to Bmad coordinates.
 
@@ -84,7 +90,7 @@ def cheetah_to_bmad_coords(
 
 def bmad_to_cheetah_coords(
     bmad_coords: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Transforms Bmad coordinates to Cheetah coordinates.
 
@@ -119,7 +125,7 @@ def offset_particle_set(
     px_lab: torch.Tensor,
     y_lab: torch.Tensor,
     py_lab: torch.Tensor,
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms particle coordinates from lab to element frame.
 
@@ -152,7 +158,7 @@ def offset_particle_unset(
     px_ele: torch.Tensor,
     y_ele: torch.Tensor,
     py_ele: torch.Tensor,
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms particle coordinates from element to lab frame.
 
@@ -220,7 +226,7 @@ def calculate_quadrupole_coefficients(
     length: torch.Tensor,
     rel_p: torch.Tensor,
     eps: float = double_precision_epsilon,
-) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+) -> tuple[list[list[torch.Tensor]], list[torch.Tensor]]:
     """
     Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
     change in z position.
@@ -271,7 +277,7 @@ def track_a_drift(
     pz_in: torch.Tensor,
     p0c: torch.Tensor,
     mc2: torch.Tensor,
-) -> tuple[torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Exact drift tracking used in different elements."""
 
     P = 1.0 + pz_in  # Particle's total momentum over p0

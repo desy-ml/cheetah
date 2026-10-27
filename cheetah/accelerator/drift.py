@@ -40,9 +40,9 @@ class Drift(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        tracking_method: Literal[
-            "linear", "second_order", "drift_kick_drift"
-        ] = "linear",
+        tracking_method: (
+            Literal["linear", "second_order", "drift_kick_drift"] | str
+        ) = "linear",
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
@@ -103,7 +103,7 @@ class Drift(Element):
                 "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
-    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: Beam) -> ParticleBeam:
         """
         Track particles through the dipole element using the Drift_kick_drift method.
 
@@ -172,7 +172,9 @@ class Drift(Element):
             for i in range(num_splits)
         ]
 
-    def merge(self, other: "Drift") -> "Drift | None":
+    def merge(self, other: Element) -> "Drift | None":
+        if not isinstance(other, Drift):
+            return None
         if not (self.tracking_method == other.tracking_method):
             return None
 

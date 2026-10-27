@@ -31,6 +31,10 @@ class Element(ABC, nn.Module):
     :param dtype: Data type of the element's tensors.
     """
 
+    name: str
+    metadata: dict
+    length: torch.Tensor
+
     def __init__(
         self,
         name: str | None = None,

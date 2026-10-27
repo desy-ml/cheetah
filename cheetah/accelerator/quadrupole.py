@@ -49,6 +49,10 @@ class Quadrupole(Element):
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
+    k1: torch.Tensor
+    tilt: torch.Tensor
+    misalignment: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
