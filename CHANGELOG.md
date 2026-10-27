@@ -20,12 +20,12 @@
 
 ### 🐆 Other
 
-- Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #704) (@jank324)
 - Update openPMD dependency to renamed package (see #684) (@jank324)
 - Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
+- Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #704) (@jank324)
 
 ### 🌟 First Time Contributors
 
