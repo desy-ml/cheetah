@@ -109,4 +109,6 @@ def test_different_species_in_different_elements(species, cheetah_element):
         / f"x_tao_{species.name}_{cheetah_element.__class__.__name__}.pt"
     )
 
-    assert torch.allclose(outgoing_bmad_coordinates, x_tao, atol=1e-14)
+    torch.testing.assert_close(
+        outgoing_bmad_coordinates.squeeze(0), x_tao, atol=1e-14, rtol=1e-5
+    )

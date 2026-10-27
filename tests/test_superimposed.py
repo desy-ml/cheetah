@@ -40,7 +40,7 @@ def test_superimposed_first_order_transfer_map():
     tm_superimposed = superimposed.first_order_transfer_map(energy, species)
     tm_quadrupole = quadrupole.first_order_transfer_map(energy, species)
 
-    assert torch.allclose(tm_superimposed, tm_quadrupole)
+    torch.testing.assert_close(tm_superimposed, tm_quadrupole)
 
 
 def test_not_flattening():

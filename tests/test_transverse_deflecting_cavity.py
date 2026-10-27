@@ -31,7 +31,7 @@ def test_transverse_deflecting_cavity_off(tracking_method):
     outgoing_tdc = tdc.track(incoming)
     outgoing_drift = full_drift.track(incoming)
 
-    assert torch.allclose(outgoing_tdc.particles, outgoing_drift.particles)
+    torch.testing.assert_close(outgoing_tdc.particles, outgoing_drift.particles)
 
 
 @pytest.mark.parametrize(
@@ -63,9 +63,9 @@ def test_transverse_deflecting_cavity_drift_kick_drift_tracking(dtype):
         weights_only=False,
     )
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam.particles,
-        outgoing_bmadx.to(dtype),
+        outgoing_bmadx.to(dtype).squeeze(0),
         atol=1e-14 if dtype == torch.float64 else 0.00001,
         rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )

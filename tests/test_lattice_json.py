@@ -65,11 +65,11 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     # segment was tested in a different test.
     reloaded_custom_transfer_map_element = reloaded_segment.elements[0]
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         custom_transfer_map_element.predefined_transfer_map,
         reloaded_custom_transfer_map_element.predefined_transfer_map,
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         custom_transfer_map_element.length, reloaded_custom_transfer_map_element.length
     )
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
@@ -162,8 +162,10 @@ def test_save_and_reload_superimposed_element(tmp_path):
     # Check base element
     assert isinstance(reloaded_superimposed.base_element, cheetah.Quadrupole)
     assert reloaded_superimposed.base_element.name == "quadrupole_base"
-    assert torch.allclose(reloaded_superimposed.base_element.length, torch.tensor(1.0))
-    assert torch.allclose(reloaded_superimposed.base_element.k1, torch.tensor(4.2))
+    torch.testing.assert_close(
+        reloaded_superimposed.base_element.length, torch.tensor(1.0)
+    )
+    torch.testing.assert_close(reloaded_superimposed.base_element.k1, torch.tensor(4.2))
 
     # Check superimposed element
     assert isinstance(reloaded_superimposed.superimposed_element, cheetah.BPM)

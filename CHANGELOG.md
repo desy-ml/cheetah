@@ -20,6 +20,7 @@
 
 ### 🐆 Other
 
+- Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #704) (@jank324)
 - Update openPMD dependency to renamed package (see #684) (@jank324)
 - Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)

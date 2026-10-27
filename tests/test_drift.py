@@ -33,7 +33,7 @@ def test_diverging_particle_beam():
 
     assert outgoing_beam.sigma_x > incoming_beam.sigma_x
     assert outgoing_beam.sigma_y > incoming_beam.sigma_y
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam.particle_charges, incoming_beam.particle_charges
     )
 
@@ -61,9 +61,9 @@ def test_drift_drift_kick_drift_tracking(dtype):
         "tests/resources/bmadx/outgoing_drift.pt", weights_only=False
     )
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam.particles,
-        outgoing_bmadx.to(dtype),
+        outgoing_bmadx.to(dtype).squeeze(0),
         atol=1e-14 if dtype == torch.float64 else 0.00001,
         rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )
@@ -87,7 +87,7 @@ def test_length_as_parameter():
         feature for feature in outgoing.defining_features if feature != "species"
     ]
     for feature in non_module_features:
-        assert torch.allclose(
+        torch.testing.assert_close(
             getattr(outgoing, feature), getattr(outgoing_parameter, feature)
         )
 
@@ -112,4 +112,6 @@ def test_inversion_with_negative_length():
         feature for feature in outgoing.defining_features if feature != "species"
     ]
     for feature in non_module_features:
-        assert torch.allclose(getattr(incoming, feature), getattr(outgoing, feature))
+        torch.testing.assert_close(
+            getattr(incoming, feature), getattr(outgoing, feature)
+        )

@@ -11,7 +11,7 @@ def test_tracking_marker_only():
 
     beam_out = segment.track(beam_in)
 
-    assert torch.allclose(beam_out.particles, beam_in.particles)
+    torch.testing.assert_close(beam_out.particles, beam_in.particles)
 
 
 # Only length-less elements between non-skippable elements
