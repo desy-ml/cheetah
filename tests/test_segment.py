@@ -347,3 +347,54 @@ def test_flatten_skips_superimposed():
 
     assert len(flattened.elements) == 2
     assert isinstance(flattened.elements[1], cheetah.Superimposed)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        pytest.param(lambda seg: seg.subcell(), id="subcell"),
+        pytest.param(lambda seg: seg.flattened(), id="flattened"),
+        pytest.param(lambda seg: seg.reversed(), id="reversed"),
+        pytest.param(
+            lambda seg: seg.transfer_maps_merged(
+                cheetah.ParameterBeam.from_parameters()
+            ),
+            id="transfer_maps_merged",
+        ),
+        pytest.param(
+            lambda seg: seg.without_inactive_markers(), id="without_inactive_markers"
+        ),
+        pytest.param(
+            lambda seg: seg.without_inactive_zero_length_elements(),
+            id="without_inactive_zero_length_elements",
+        ),
+        pytest.param(
+            lambda seg: seg.inactive_elements_as_drifts(),
+            id="inactive_elements_as_drifts",
+        ),
+    ],
+)
+def test_metadata_preserved_by_segment_transforms(transform):
+    """Test that methods returning new segments preserve the segment metadata."""
+    segment = cheetah.Segment(
+        elements=[cheetah.Marker(name="M1"), cheetah.Marker(name="M2")],
+        metadata={"key": "value"},
+    )
+
+    result = transform(segment)
+
+    assert result.metadata == {"key": "value"}
+
+
+def test_partition_at_preserves_metadata():
+    """Test that `partition_at` preserves the segment metadata on both subcells."""
+    metadata = {"key": "value"}
+    segment = cheetah.Segment(
+        elements=[cheetah.Marker(name="M1"), cheetah.Marker(name="M2")],
+        metadata=metadata,
+    )
+
+    pre_cell, _, post_cell = segment.partition_at("M1", mode="both")
+
+    assert pre_cell.metadata == metadata
+    assert post_cell.metadata == metadata

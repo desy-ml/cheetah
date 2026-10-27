@@ -139,6 +139,7 @@ def convert_element(
             phase=torch.tensor(element.phi, **factory_kwargs),
             cavity_type="standing_wave",
             name=element.id,
+            sanitize_name=sanitize_name,
             **factory_kwargs,
         )
     elif isinstance(element, ocelot.TWCavity):
