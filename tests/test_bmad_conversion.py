@@ -214,8 +214,8 @@ def test_superimpose_non_zero_length_warns():
 
 def test_partial_superimpose_non_zero_length_skips_only_non_zero():
     """
-    Test that when multiple elements are superimposed on the same base element,
-    only the non-zero-length ones are skipped, while zero-length ones are superimposed.
+    Test that when multiple elements are superimposed on the same base element, only the
+    non-zero-length ones are skipped, while zero-length ones are superimposed.
     """
     context = {
         "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
@@ -242,8 +242,7 @@ def test_partial_superimpose_non_zero_length_skips_only_non_zero():
 
 def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
     """
-    Test that superimpose conversion falls back to the
-    base element on split errors.
+    Test that superimpose conversion falls back to the base element on split errors.
     """
     file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
 
