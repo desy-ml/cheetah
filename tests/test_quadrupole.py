@@ -19,7 +19,7 @@ def test_quadrupole_off():
     quadrupole.k1 = torch.tensor(1.0, device=quadrupole.k1.device)
     outgoing_beam_quadrupole_on = quadrupole.track(incoming_beam)
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam_quadrupole_off.sigma_x, outgoing_beam_drift.sigma_x
     )
     assert not torch.allclose(
@@ -104,7 +104,7 @@ def test_tilted_quadrupole_vectorized():
     outgoing = segment.track(incoming)
 
     # Check that pi/4 and 5/4*pi rotations is the same for quadrupole
-    assert torch.allclose(outgoing.particles[0], outgoing.particles[2])
+    torch.testing.assert_close(outgoing.particles[0], outgoing.particles[2])
 
     # Check that pi/2 rotation is different
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
@@ -141,9 +141,9 @@ def test_tilted_quadrupole_multiple_vector_dimensions():
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
 
     # Check that same tilts give same results
-    assert torch.allclose(outgoing.particles[0, 0], outgoing.particles[1, 2])
-    assert torch.allclose(outgoing.particles[0, 1], outgoing.particles[1, 1])
-    assert torch.allclose(outgoing.particles[0, 2], outgoing.particles[1, 0])
+    torch.testing.assert_close(outgoing.particles[0, 0], outgoing.particles[1, 2])
+    torch.testing.assert_close(outgoing.particles[0, 1], outgoing.particles[1, 1])
+    torch.testing.assert_close(outgoing.particles[0, 2], outgoing.particles[1, 0])
 
 
 def test_quadrupole_length_multiple_vector_dimensions():
@@ -166,7 +166,7 @@ def test_quadrupole_length_multiple_vector_dimensions():
     outgoing = segment.track(incoming)
 
     assert outgoing.particles.shape == (2, 3, 10_000, 7)
-    assert torch.allclose(outgoing.particles[0, 2], outgoing.particles[1, 1])
+    torch.testing.assert_close(outgoing.particles[0, 2], outgoing.particles[1, 1])
 
 
 @pytest.mark.parametrize(
@@ -199,7 +199,7 @@ def test_quadrupole_drift_kick_drift_tracking(dtype):
         "tests/resources/bmadx/outgoing_quadrupole.pt", weights_only=False
     )
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing.particles,
         outgoing_bmadx.to(dtype),
         atol=1e-14 if dtype == torch.float64 else 1e-5,
@@ -288,5 +288,5 @@ def test_tilted_quad_transfer_matrix_precision(dtype):
     tm_drift = drift.first_order_transfer_map(energy, species)
 
     # Check that the transfer matrices are equal to the precision of the dtype
-    assert torch.allclose(tm_drift, tm_quad, atol=2e-7)
-    assert torch.allclose(tm_drift, tm_skew_quad, atol=2e-7)
+    torch.testing.assert_close(tm_drift, tm_quad, atol=2e-7, rtol=1e-5)
+    torch.testing.assert_close(tm_drift, tm_skew_quad, atol=2e-7, rtol=1e-5)

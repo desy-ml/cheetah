@@ -24,15 +24,17 @@ def test_element_end(original):
     outgoing_beam_split = split.track(incoming_beam)
     outgoing_beam_merged = merged.track(incoming_beam)
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam_original.particles,
         outgoing_beam_merged.particles,
         rtol=1e-2 if original.tracking_method == "second_order" else 1e-5,
+        atol=1e-8,
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam_split.particles,
         outgoing_beam_merged.particles,
         rtol=1e-2 if original.tracking_method == "second_order" else 1e-5,
+        atol=1e-8,
     )
 
 

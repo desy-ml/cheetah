@@ -25,10 +25,10 @@ def test_undulator_off():
     undulator.ky = torch.tensor(1.0)
     outgoing_beam_undulator_on_x = undulator.track(incoming_beam)
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam_undulator_off.sigma_x, outgoing_beam_drift.sigma_x
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_beam_undulator_off.sigma_y, outgoing_beam_drift.sigma_y
     )
     assert not torch.allclose(

@@ -66,18 +66,18 @@ def test_merged_transfer_maps_tracking_vectorized():
     original_beam = original_segment.track(incoming_beam)
     merged_beam = merged_segment.track(incoming_beam)
 
-    assert torch.allclose(original_beam.mu_x, merged_beam.mu_x)
-    assert torch.allclose(original_beam.mu_px, merged_beam.mu_px)
-    assert torch.allclose(original_beam.mu_y, merged_beam.mu_y)
-    assert torch.allclose(original_beam.mu_py, merged_beam.mu_py)
-    assert torch.allclose(original_beam.sigma_x, merged_beam.sigma_x)
-    assert torch.allclose(original_beam.sigma_px, merged_beam.sigma_px)
-    assert torch.allclose(original_beam.sigma_y, merged_beam.sigma_y)
-    assert torch.allclose(original_beam.sigma_py, merged_beam.sigma_py)
-    assert torch.allclose(original_beam.sigma_tau, merged_beam.sigma_tau)
-    assert torch.allclose(original_beam.sigma_p, merged_beam.sigma_p)
-    assert torch.allclose(original_beam.energy, merged_beam.energy)
-    assert torch.allclose(original_beam.total_charge, merged_beam.total_charge)
+    torch.testing.assert_close(original_beam.mu_x, merged_beam.mu_x)
+    torch.testing.assert_close(original_beam.mu_px, merged_beam.mu_px)
+    torch.testing.assert_close(original_beam.mu_y, merged_beam.mu_y)
+    torch.testing.assert_close(original_beam.mu_py, merged_beam.mu_py)
+    torch.testing.assert_close(original_beam.sigma_x, merged_beam.sigma_x)
+    torch.testing.assert_close(original_beam.sigma_px, merged_beam.sigma_px)
+    torch.testing.assert_close(original_beam.sigma_y, merged_beam.sigma_y)
+    torch.testing.assert_close(original_beam.sigma_py, merged_beam.sigma_py)
+    torch.testing.assert_close(original_beam.sigma_tau, merged_beam.sigma_tau)
+    torch.testing.assert_close(original_beam.sigma_p, merged_beam.sigma_p)
+    torch.testing.assert_close(original_beam.energy, merged_beam.energy)
+    torch.testing.assert_close(original_beam.total_charge, merged_beam.total_charge)
 
 
 def test_merged_transfer_maps_num_elements():
@@ -140,7 +140,7 @@ def test_inactive_magnet_is_replaced_by_drift():
     assert all(
         isinstance(element, cheetah.Drift) for element in optimized_segment.elements
     )
-    assert torch.allclose(segment.length, optimized_segment.length)
+    torch.testing.assert_close(segment.length, optimized_segment.length)
 
 
 def test_active_elements_not_replaced_by_drift():
@@ -232,7 +232,7 @@ def test_skippable_elements_reset():
         energy=incoming_beam.energy, species=incoming_beam.species
     )
 
-    assert torch.allclose(original_tm, merged_tm)
+    torch.testing.assert_close(original_tm, merged_tm)
 
 
 def test_without_zero_length_elements():
@@ -259,5 +259,5 @@ def test_without_zero_length_elements():
     assert len(segment.elements) == 7
     assert len(pruned.elements) == 4
     assert len(pruned_except.elements) == 5
-    assert torch.allclose(segment.length, pruned.length)
-    assert torch.allclose(segment.length, pruned_except.length)
+    torch.testing.assert_close(segment.length, pruned.length)
+    torch.testing.assert_close(segment.length, pruned_except.length)

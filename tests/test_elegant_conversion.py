@@ -177,7 +177,9 @@ def test_custom_transfer_map_import():
         ]
     )
 
-    assert torch.allclose(converted.c1e.predefined_transfer_map, correct_transfer_map)
+    torch.testing.assert_close(
+        converted.c1e.predefined_transfer_map, correct_transfer_map
+    )
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")

@@ -119,9 +119,24 @@ def test_vectorized_cold_uniform_beam_expansion():
     )
     outgoing = segment.track(incoming)
 
-    assert torch.allclose(outgoing.sigma_x, 2 * incoming.sigma_x, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_y, 2 * incoming.sigma_y, rtol=2e-2)
-    assert torch.allclose(outgoing.sigma_tau, 2 * incoming.sigma_tau, rtol=2e-2)
+    torch.testing.assert_close(
+        outgoing.sigma_x,
+        torch.broadcast_to(2 * incoming.sigma_x, outgoing.sigma_x.shape),
+        rtol=2e-2,
+        atol=1e-8,
+    )
+    torch.testing.assert_close(
+        outgoing.sigma_y,
+        torch.broadcast_to(2 * incoming.sigma_y, outgoing.sigma_y.shape),
+        rtol=2e-2,
+        atol=1e-8,
+    )
+    torch.testing.assert_close(
+        outgoing.sigma_tau,
+        torch.broadcast_to(2 * incoming.sigma_tau, outgoing.sigma_tau.shape),
+        rtol=2e-2,
+        atol=1e-8,
+    )
 
 
 def test_vectorized():
@@ -196,7 +211,7 @@ def test_incoming_beam_not_modified():
     # Final beam properties
     incoming_beam_after = incoming_beam.particles
 
-    assert torch.allclose(incoming_beam_before, incoming_beam_after)
+    torch.testing.assert_close(incoming_beam_before, incoming_beam_after)
 
 
 def test_gradient_value_backward_ad():
@@ -258,7 +273,9 @@ def test_gradient_value_backward_ad():
     # Theoretical formula obtained by conservation of energy in the beam frame
     expected_dradius_dlength = (Nb * electron_radius / R0).sqrt() / gamma
 
-    assert torch.allclose(dradius_dlength, expected_dradius_dlength, rtol=0.1)
+    torch.testing.assert_close(
+        dradius_dlength, expected_dradius_dlength, rtol=0.1, atol=1e-8
+    )
 
 
 def test_gradient_value_forward_ad():
@@ -324,7 +341,9 @@ def test_gradient_value_forward_ad():
         # Theoretical formula obtained by conservation of energy in the beam frame
         expected_dradius_dlength = ((Nb * electron_radius) / R0).sqrt() / gamma
 
-        assert torch.allclose(dradius_dlength, expected_dradius_dlength, rtol=0.1)
+        torch.testing.assert_close(
+            dradius_dlength, expected_dradius_dlength, rtol=0.1, atol=1e-8
+        )
 
 
 def test_does_not_break_segment_length():
@@ -346,7 +365,7 @@ def test_does_not_break_segment_length():
     )
 
     assert segment.length.shape == torch.Size([])
-    assert torch.allclose(segment.length, torch.tensor(1.0))
+    torch.testing.assert_close(segment.length, torch.tensor(1.0))
 
 
 def test_space_charge_with_ares_astra_beam():
