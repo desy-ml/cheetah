@@ -78,7 +78,7 @@ def test_skip_control_definitions():
 
 
 def test_define_element_bare_flags():
-    """Test that bare flags in element definitions are parsed as boolean True."""
+    """Test that bare flags in element definitions are parsed as boolean `True`."""
     lines = [
         "bpm4: marker, superimpose, ref = qa01",
     ]
