@@ -63,7 +63,7 @@ def test_drift_drift_kick_drift_tracking(dtype):
 
     torch.testing.assert_close(
         outgoing_beam.particles,
-        outgoing_bmadx.to(dtype).squeeze(0),
+        outgoing_bmadx.to(dtype),
         atol=1e-14 if dtype == torch.float64 else 0.00001,
         rtol=1e-14 if dtype == torch.float64 else 1e-6,
     )
