@@ -24,4 +24,5 @@ def test_length():
     """
     segment = cheetah.Segment.from_nx_tables("tests/resources/Stage4v3_9.txt")
 
+    assert segment.length.shape == torch.Size([])
     assert torch.allclose(segment.length, torch.tensor(44.2215))

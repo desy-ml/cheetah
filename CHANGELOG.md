@@ -12,6 +12,7 @@
 
 ### 🐛 Bug fixes
 
+- Fix NX Tables converter creating 1D drift lengths instead of scalar tensors (@jank324)
 - Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
 - Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
 - Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
