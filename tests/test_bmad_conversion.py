@@ -152,10 +152,25 @@ def test_cu_hxr_lcls_fixture_conversion():
 
     assert isinstance(converted, cheetah.Segment)
     assert converted.name == "cu_hxr"
-    assert isinstance(flattened.bx11, cheetah.Dipole)
+    assert converted.gunl0a.element_names == [
+        "beggunb",
+        "l0a",
+        "l0b",
+        "qa01_split_0",
+        "bpm4",
+        "qa01_split_1",
+        "d_mid",
+        "qa02_split_0",
+        "bpm5",
+        "qa02_split_1",
+        "qe01_split_0",
+        "otr2",
+        "qe01_split_1",
+    ]
+    assert isinstance(converted.gunl0a.qa01_split_0, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.bpm4, cheetah.Marker)
 
-    assert converted.gunl0a.qa01_split_0.k1.item() == pytest.approx(0.384840836193)
-    assert converted.gunl0a.qa01_split_0.metadata["alias"] == "quad:in20:121"
+    assert isinstance(flattened.bx11, cheetah.Dipole)
     assert flattened.qa01_split_0.k1.item() == pytest.approx(0.384840836193)
     assert flattened.qa01_split_0.metadata["alias"] == "quad:in20:121"
 
@@ -166,19 +181,6 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.tcxdg0.metadata["type"] == "stcav_x"
     assert flattened.tcxdg0.frequency.item() == pytest.approx(2.856e9)
     assert flattened.tcxdg0.length.item() == pytest.approx(0.254)
-
-    # Check superimposed elements expanded directly into gunl0a
-    assert isinstance(converted.gunl0a.qa01_split_0, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.bpm4, cheetah.Marker)
-    assert isinstance(converted.gunl0a.qa01_split_1, cheetah.Quadrupole)
-
-    assert isinstance(converted.gunl0a.qa02_split_0, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.bpm5, cheetah.Marker)
-    assert isinstance(converted.gunl0a.qa02_split_1, cheetah.Quadrupole)
-
-    assert isinstance(converted.gunl0a.qe01_split_0, cheetah.Quadrupole)
-    assert isinstance(converted.gunl0a.otr2, cheetah.Marker)
-    assert isinstance(converted.gunl0a.qe01_split_1, cheetah.Quadrupole)
 
 
 def test_multiple_superimposed_elements():

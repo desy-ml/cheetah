@@ -124,6 +124,7 @@ def test_desired_dtype(tmp_path, desired_dtype: torch.dtype):
         for feature in element.defining_tensors
     )
 
+
 @pytest.mark.parametrize("sanitize_names", [None, True, False])
 def test_lattice_json_sanitize_name_warning(tmp_path, sanitize_names):
     """
