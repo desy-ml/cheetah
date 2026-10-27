@@ -8,6 +8,7 @@
 
 - Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
+- `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 
 ### 🐛 Bug fixes
 
@@ -15,6 +16,7 @@
 - Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
 - Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
+- Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
 
 ### 🐆 Other
 
