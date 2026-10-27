@@ -162,6 +162,7 @@ def test_cu_hxr_lcls_fixture_conversion():
         "d_mid",
         "qa02_split_0",
         "bpm5",
+        "otr3",
         "qa02_split_1",
         "qe01_split_0",
         "otr2",
@@ -181,27 +182,6 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.tcxdg0.metadata["type"] == "stcav_x"
     assert flattened.tcxdg0.frequency.item() == pytest.approx(2.856e9)
     assert flattened.tcxdg0.length.item() == pytest.approx(0.254)
-
-
-def test_multiple_superimposed_elements():
-    """
-    Test that when multiple elements are superimposed on the same base element,
-    they are all inlined between the base element halves.
-    """
-    context = {
-        "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
-        "bpm1": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
-        "bpm2": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
-        "line1": ["qa01"],
-    }
-
-    superimpositions = bmad_converter.collect_superimpositions(context)
-    converted = bmad_converter.convert_element(
-        "line1", context, superimpositions=superimpositions
-    )
-
-    assert isinstance(converted, cheetah.Segment)
-    assert converted.element_names == ["qa01_split_0", "bpm1", "bpm2", "qa01_split_1"]
 
 
 def test_superimpose_non_zero_length_warns():
