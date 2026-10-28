@@ -130,10 +130,11 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
         :link: /getting_started/tracking_methods
         :link-type: doc
 
-        Learn about first- and second-order transfer maps, thin/thick lens modeling, and 3D space charge kicks.
+        Learn about first- and second-order transfer maps, thin/thick lens modeling, 3D space charge kicks, and virtual diagnostics.
 
         * :doc:`/getting_started/tracking_methods`
         * :doc:`/getting_started/space_charge`
+        * :doc:`/getting_started/diagnostics`
 
     .. grid-item-card:: 🧠 Differentiable Physics & ML
         :link: /getting_started/gradientbased
@@ -186,6 +187,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
 
     getting_started/tracking_methods.md
     getting_started/space_charge.md
+    getting_started/diagnostics.md
 
 .. toctree::
     :maxdepth: 1
