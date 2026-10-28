@@ -123,7 +123,13 @@ mesh, _ = segment.to_mesh(
 mesh.show()
 ```
 
-![Animated Mesh](https://github.com/desy-ml/cheetah/raw/master/images/animated_mesh.gif)
+<a href="https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/plotting_visualization.html">
+  <picture>
+    <source type="image/webp" srcset="images/animated_mesh.webp">
+    <img alt="Interactive 3D Lattice Model" src="images/animated_mesh.gif" width="100%">
+  </picture>
+</a>
+<p align="center"><em>Click the render above to inspect and rotate the model interactively in 3D in the documentation.</em></p>
 
 ```python
 mesh.export(file_obj="my_first_cheetah_mesh.glb", file_type="glb")
