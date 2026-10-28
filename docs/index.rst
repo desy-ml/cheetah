@@ -119,9 +119,10 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
         :link: /getting_started/simple
         :link-type: doc
 
-        Essential walkthroughs for defining lattices, visualising beams, and understanding coordinate frames.
+        Essential walkthroughs for defining lattices, choosing beam representations, and understanding coordinates.
 
         * :doc:`/getting_started/simple`
+        * :doc:`/getting_started/beam_representations`
         * :doc:`/getting_started/plotting_visualization`
         * :doc:`/getting_started/coordinate_system`
 
@@ -174,6 +175,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
     :caption: Getting Started
 
     getting_started/simple
+    getting_started/beam_representations.md
     getting_started/plotting_visualization
     getting_started/coordinate_system.md
 
