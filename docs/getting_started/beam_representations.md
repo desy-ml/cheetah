@@ -134,3 +134,42 @@ To compute the equivalent statistical centroids and covariance matrix from a par
 ```python
 parameter_beam = particle_beam.to_parameter_beam()
 ```
+
+---
+
+## Modeling Particle Loss with `Aperture`
+
+While `ParameterBeam` assumes lossless linear transport, a `ParticleBeam` can track physical collimation and boundary losses via [`Aperture`](../accelerator.rst):
+
+```python
+import torch
+import cheetah
+
+# Define an aperture (rectangular or elliptical)
+collimator = cheetah.Aperture(
+    x_max=torch.tensor(2e-6),  # Horizontal half-width in meters
+    y_max=torch.tensor(2e-6),  # Vertical half-height in meters
+    shape="elliptical",  # "rectangular" or "elliptical"
+    is_active=True,
+)
+
+# Track particle beam through collimator
+outgoing_beam = collimator.track(beam)
+
+# Inspect survival metrics
+print("Initial particles:", beam.num_particles)
+print("Survived particles:", outgoing_beam.num_particles_survived.item())
+print(
+    "Transmission (%):",
+    (outgoing_beam.num_particles_survived / beam.num_particles * 100.0).item(),
+)
+```
+
+### Survival Probabilities and Downstream Moments
+
+Cheetah models collimation using particle survival probabilities:
+
+- **`beam.survival_probabilities`**: A 1D tensor tracking the survival weight (or binary mask) of each macroparticle.
+- **`beam.num_particles_survived`**: Total number of surviving particles (`survival_probabilities.sum()`).
+- **Automatic moment reweighting**: All statistical properties on the surviving beam (`mu_x`, `sigma_x`, emittances, and `total_charge`) are automatically weighted by `survival_probabilities`. Particles stopped by the aperture do not contribute to downstream envelope measurements.
+- **ParameterBeam warning**: Passing a `ParameterBeam` through an active `Aperture` emits a `PhysicsWarning` because moment-based beams cannot model transverse clipping.
