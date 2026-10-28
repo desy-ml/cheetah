@@ -1,6 +1,49 @@
 [build-system]
-requires = ["setuptools >= 64"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "cheetah-accelerator"
+dynamic = ["version"]
+description = "Fast and differentiable particle accelerator optics simulation for reinforcement learning and optimisation applications."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Jan Kaiser", email = "jan.kaiser@desy.de" },
+    { name = "Chenran Xu", email = "chenran.xu@anl.gov" },
+    { name = "Christian Hespe", email = "christian.hespe@desy.de" },
+]
+dependencies = [
+    "matplotlib>=3.5",
+    "numpy>=1.23.3",
+    "scipy>=1.10.1",
+    "torch[opt-einsum]>=2.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/desy-ml/cheetah"
+Documentation = "https://cheetah-accelerator.readthedocs.io/"
+Repository = "https://github.com/desy-ml/cheetah"
+
+[project.optional-dependencies]
+3d-visualization = [
+    "trimesh>=4.4.0",
+    "requests>=2.32.2",
+    "tqdm>=4.66.0",
+]
+openpmd = [
+    "openpmd-beamphysics>=0.14.0",
+]
+sdds = [
+    "soliday.sdds>=5.7.0",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "cheetah._version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cheetah*"]
 
 [tool.pytest.ini_options]
 markers = [
