@@ -58,6 +58,39 @@ Simply install *Cheetah* from PyPI by running the following command.
     pip install cheetah-accelerator
 
 
+Quickstart
+----------
+
+Define a beamline, generate a beam, and track it with PyTorch:
+
+.. code-block:: python
+
+    import torch
+    import cheetah
+
+    # Define a simple lattice segment
+    lattice = cheetah.Segment(
+        elements=[
+            cheetah.Quadrupole(length=torch.tensor(0.1), k1=torch.tensor(10.0)),
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Quadrupole(length=torch.tensor(0.1), k1=torch.tensor(-10.0)),
+            cheetah.Screen(name="screen"),
+        ]
+    )
+
+    # Sample a particle beam from Twiss parameters
+    beam = cheetah.ParticleBeam.from_twiss(
+        beta_x=torch.tensor(3.14),
+        beta_y=torch.tensor(4.2),
+        energy=torch.tensor(100e6),
+        num_particles=10_000,
+    )
+
+    # Track through the lattice
+    outgoing_beam = lattice.track(beam)
+
+
+
 Supported Elements
 ------------------
 
