@@ -112,8 +112,65 @@ User Guide
 
 These guides explain how to use *Cheetah* and provide an overview of its features, from basics to advanced topics.
 
+.. grid:: 1 2 2 3
+    :gutter: 2
+
+    .. grid-item-card:: 🚀 Getting Started
+        :link: /getting_started/simple
+        :link-type: doc
+
+        Essential walkthroughs for defining lattices, visualising beams, and understanding coordinate frames.
+
+        * :doc:`/getting_started/simple`
+        * :doc:`/getting_started/plotting_visualization`
+        * :doc:`/getting_started/coordinate_system`
+
+    .. grid-item-card:: ⚛️ Physics
+        :link: /getting_started/tracking_methods
+        :link-type: doc
+
+        Learn about first- and second-order transfer maps, thin/thick lens modeling, and 3D space charge kicks.
+
+        * :doc:`/getting_started/tracking_methods`
+        * :doc:`/getting_started/space_charge`
+
+    .. grid-item-card:: 🧠 Differentiable Physics & ML
+        :link: /getting_started/gradientbased
+        :link-type: doc
+
+        Combine Cheetah with PyTorch automatic differentiation (`autograd`) for gradient-based optimization and ML workflows.
+
+        * :doc:`/getting_started/gradientbased`
+
+    .. grid-item-card:: ⚡ Optimising Simulation Speed
+        :link: /getting_started/vectorized_simulations
+        :link-type: doc
+
+        Techniques for vectorised parameter sweeps, GPU acceleration, mixed precision, and PyTorch compilation.
+
+        * :doc:`/getting_started/vectorized_simulations`
+        * :doc:`/getting_started/optimising_speed`
+
+    .. grid-item-card:: 🔌 Interoperability
+        :link: /getting_started/importing_from_other_codes
+        :link-type: doc
+
+        Convert lattices from Bmad, Elegant, and Ocelot, or integrate with live control systems like DOOCS.
+
+        * :doc:`/getting_started/importing_from_other_codes`
+        * :doc:`/getting_started/control_systems`
+
+    .. grid-item-card:: 🧩 Extending Cheetah
+        :link: /getting_started/custom_elements
+        :link-type: doc
+
+        Implement custom accelerator elements by subclassing `Element` with transfer maps or tracking logic.
+
+        * :doc:`/getting_started/custom_elements`
+
 .. toctree::
     :maxdepth: 1
+    :hidden:
     :caption: Getting Started
 
     getting_started/simple
@@ -122,6 +179,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
 
 .. toctree::
     :maxdepth: 1
+    :hidden:
     :caption: Physics
 
     getting_started/tracking_methods.md
@@ -129,12 +187,14 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
 
 .. toctree::
     :maxdepth: 1
+    :hidden:
     :caption: Differentiable Physics & ML
 
     getting_started/gradientbased
 
 .. toctree::
     :maxdepth: 1
+    :hidden:
     :caption: Optimising Simulation Speed
 
     getting_started/vectorized_simulations
@@ -142,6 +202,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
 
 .. toctree::
     :maxdepth: 1
+    :hidden:
     :caption: Interoperability
 
     getting_started/importing_from_other_codes.md
@@ -149,6 +210,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
 
 .. toctree::
     :maxdepth: 1
+    :hidden:
     :caption: Extending Cheetah
 
     getting_started/custom_elements

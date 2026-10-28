@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.autosummary",  # To automatically generate recursively
     "myst_parser",  # To parse markdown files
     "sphinx_copybutton",  # To add copy buttons to code blocks
+    "sphinx_design",  # To create grid cards and responsive UI components
 ]
 myst_enable_extensions = ["dollarmath", "amsmath"]  # Enable math typesetting
 

@@ -3,3 +3,4 @@ ipykernel
 myst-parser
 nbsphinx
 sphinx-copybutton
+sphinx-design
