@@ -45,31 +45,56 @@ Cheetah currently supports the following accelerator elements:
 * **Correctors**: :class:`~cheetah.HorizontalCorrector`, :class:`~cheetah.VerticalCorrector`, :class:`~cheetah.CombinedCorrector`
 * **RF Cavities**: :class:`~cheetah.Cavity`, :class:`~cheetah.TransverseDeflectingCavity`
 * **Diagnostics**: :class:`~cheetah.BPM` (Beam Position Monitor), :class:`~cheetah.Screen`
-* **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`, :class:`~cheetah.Superimposed`
+* **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`
 
 If you need an element that is not yet supported, you can open an issue on the `GitHub repository <https://github.com/desy-ml/cheetah>`_ or implement a custom element by subclassing :class:`~cheetah.Element` and implementing the required methods. See :doc:`/getting_started/custom_elements` for more information.
 
 For the full element API documentation, see the :doc:`/accelerator` API Reference.
 
-Getting Started
----------------
+User Guide
+----------
 
-These pages explain how to get started with *Cheetah* and provide a nice guided overview over many of its features.
+These guides explain how to use *Cheetah* and provide an overview of its features, from basics to advanced topics.
 
 .. toctree::
     :maxdepth: 1
     :caption: Getting Started
-    
+
     getting_started/simple
-    getting_started/coordinate_system.md
-    getting_started/tracking_methods.md
-    getting_started/importing_from_other_codes.md
-    getting_started/vectorized_simulations
-    getting_started/gradientbased
-    getting_started/space_charge.md
-    getting_started/optimising_speed
     getting_started/plotting_visualization
+    getting_started/coordinate_system.md
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Physics
+
+    getting_started/tracking_methods.md
+    getting_started/space_charge.md
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Differentiable Physics & ML
+
+    getting_started/gradientbased
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Optimising Simulation Speed
+
+    getting_started/vectorized_simulations
+    getting_started/optimising_speed
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Interoperability
+
+    getting_started/importing_from_other_codes.md
     getting_started/control_systems.md
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Extending Cheetah
+
     getting_started/custom_elements
 
 API Reference
