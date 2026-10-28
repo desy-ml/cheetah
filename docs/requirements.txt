@@ -2,5 +2,6 @@ furo
 ipykernel
 myst-parser
 nbsphinx
+plotly
 sphinx-copybutton
 sphinx-design
