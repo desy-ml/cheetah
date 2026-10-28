@@ -13,6 +13,19 @@ Cheetah uses the **integrated Green's function method** to compute space charge 
 
 Note that `SpaceChargeKick` only modifies the **momenta** (divergence and energy spread) of the beam and not the positions. It should be interleaved with elements that update the positions (like `Drift`).
 
+## Interactive 3D Cloud-in-Cell Visualisation
+
+The interactive 3D model below illustrates the Cloud-in-Cell (CIC) spatial discretization:
+- The particle bunch (cyan points) resides inside the rectangular 3D simulation box.
+- An individual macroparticle (gold sphere) deposits its charge onto the 8 surrounding grid nodes (red spheres) via trilinear interpolation weights $W_{ijk}$.
+- The Poisson solver and gradient computation produce repulsive radial force vectors (purple arrows) delivering the space charge kicks $\Delta p_x, \Delta p_y$:
+
+<iframe src="../_static/space_charge_3d.html" width="100%" height="460px" frameborder="0" style="border-radius: 8px; border: 1px solid rgba(127, 127, 127, 0.2);"></iframe>
+
+<p style="text-align: center; font-size: 0.85em; color: gray; margin-top: 6px;">
+    <em>Interactive 3D view: click and drag to orbit, scroll to zoom, right-click to pan. Use the buttons to toggle grid wireframes and electric field vectors.</em>
+</p>
+
 ## Prerequisites
 
 Because space charge calculations rely on particle density distribution, this feature **only supports `ParticleBeam`** and cannot be used with `ParameterBeam`.
