@@ -32,6 +32,16 @@ $$ \delta= \frac{E-E_0}{p_0 c} = \frac{E}{p_0 c} - \frac{1}{\beta_0} $$
 
 Here, $E$ is the energy of a particle. $E_0$ is the energy of the reference particle, i.e. _reference energy_. $p_0$ is the reference momentum.
 
+## Interactive 3D Coordinate Frame Visualisation
+
+The interactive visualization below illustrates the relationship between the global laboratory Cartesian axes and the curvilinear Frenet-Serret reference frame along a bending trajectory $s$:
+
+<iframe src="../_static/coordinate_frame_3d.html" width="100%" height="460px" frameborder="0" style="border-radius: 8px; border: 1px solid rgba(127, 127, 127, 0.2);"></iframe>
+
+<p style="text-align: center; font-size: 0.85em; color: gray; margin-top: 6px;">
+    <em>Interactive 3D view: click and drag to orbit, scroll to zoom, right-click to pan. Use the button to pause or resume trajectory animation.</em>
+</p>
+
 ## Relation with Coordinates in Other Simulation Tools
 
 ### OCELOT
