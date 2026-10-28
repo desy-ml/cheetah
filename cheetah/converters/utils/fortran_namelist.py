@@ -143,16 +143,21 @@ def evaluate_expression(expression: str, context: dict) -> Any:
     ):
         return expression[1:-1]
 
-    # Check against allowed keywords
-    if expression in ["open", "electron", "t", "f", "traveling_wave", "full"]:
-        return expression
+    # Check against boolean literals
+    if expression.lower() in ["t", "f", "true", "false"]:
+        return expression.lower()
 
-    # Check against previously defined variables
+    # Check against previously defined variables or elements
     if expression in context:
+        if isinstance(context[expression], (dict, list)):
+            return expression
         return context[expression]
 
-    # Evaluate as a mathematical expression
+    # Check against standalone identifiers (e.g. element names or keyword options)
+    if expression.isidentifier():
+        return expression
 
+    # Evaluate as a mathematical expression
     try:
         return infix.evaluate_expression(expression, context)
     except SyntaxError:
@@ -205,10 +210,11 @@ def assign_property(line: str, context: dict) -> dict:
     property_name = match.group(2).strip()
     property_expression = match.group(3).strip()  # TODO: Evaluate expression first
 
-    if "*" in object_name or "%" in object_name or "::" in object_name:
-        object_names = resolve_object_name_wildcard(object_name, context)
-    else:
-        object_names = [object_name]
+    object_names = (
+        resolve_object_name_wildcard(object_name, context)
+        if any(wildcard in object_name for wildcard in ["*", "%", "::"])
+        else [object_name]
+    )
 
     expression_result = evaluate_expression(property_expression, context)
 
@@ -262,20 +268,25 @@ def define_element(line: str, context: dict) -> dict:
         element_properties_string = match.group(4).strip()
 
         property_pattern = (
-            r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9_]+\s*\=\s*[^\=\,\"]+)"
+            r"([a-z0-9_]+\s*\=\s*\"[^\"]+\"|[a-z0-9_]+\s*\=\s*[^\=\,\"]+|[a-z0-9_]+)"
         )
         property_matches = re.findall(property_pattern, element_properties_string)
 
         for property_string in property_matches:
             property_string = property_string.strip()
 
-            property_name, property_expression = property_string.split("=", maxsplit=1)
-            property_name = property_name.strip()
-            property_expression = property_expression.strip()
+            if "=" in property_string:
+                property_name, property_expression = property_string.split(
+                    "=", maxsplit=1
+                )
+                property_name = property_name.strip()
+                property_expression = property_expression.strip()
 
-            element_properties[property_name] = evaluate_expression(
-                property_expression, context
-            )
+                element_properties[property_name] = evaluate_expression(
+                    property_expression, context
+                )
+            else:
+                element_properties[property_string] = True
 
     context[element_name] = element_properties
 
