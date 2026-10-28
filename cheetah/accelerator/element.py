@@ -332,6 +332,7 @@ class Element(ABC, nn.Module):
                 for feature in self.defining_features
             },
             metadata=deepcopy(self.metadata),
+            sanitize_name=False,
         )
 
     def split(self, resolution: torch.Tensor) -> list["Element"]:
@@ -344,6 +345,17 @@ class Element(ABC, nn.Module):
         :return: Ordered sequence of sliced elements.
         """
         return [self]
+
+    def merge(self, other: "Element") -> "Element | None":
+        """
+        Attempt to merge this element with another element of the same type. Returns the
+        merged element if successful, or `None` if the elements cannot be merged or
+        merging is not supported for this element type.
+
+        :param other: Element to merge with.
+        :return: Merged element or `None`.
+        """
+        return None
 
     def sanitize_name(self) -> None:
         """

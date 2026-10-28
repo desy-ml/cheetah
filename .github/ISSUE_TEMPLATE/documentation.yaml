@@ -1,0 +1,47 @@
+name: "📚 Documentation"
+description: Report errors, missing sections, or suggest improvements to the documentation
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Before submitting
+        - Please check [existing documentation issues](https://github.com/desy-ml/cheetah/issues?q=is%3Aissue+label%3Adocumentation) to see if this has already been reported.
+        - Check the latest [Cheetah Documentation](https://cheetah-accelerator.readthedocs.io/).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 📚 Location & Description of the Issue
+      description: |
+        Which page or tutorial needs improvement? Please link to the page on [Read the Docs](https://cheetah-accelerator.readthedocs.io/) or the file in the repository.
+        Describe what is unclear, missing, or incorrect.
+      placeholder: |
+        - Page / URL: 
+        - Description:
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: ✍️ Proposed Change or Improvement
+      description: What should the documentation say instead? A concrete suggestion or example is very helpful.
+      placeholder: |
+        Proposed wording or code snippet...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      options:
+        - label: I have checked [existing issues](https://github.com/desy-ml/cheetah/issues?q=is%3Aissue+label%3Adocumentation) to make sure this hasn't already been reported.
+          required: true
+        - label: I have read and followed the [AI Policy](https://github.com/desy-ml/cheetah/blob/master/AI_POLICY.md) if AI tools were used to prepare this report.
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve Cheetah's documentation! 🎉

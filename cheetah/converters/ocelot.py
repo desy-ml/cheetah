@@ -130,6 +130,7 @@ def convert_element(
             phase=torch.tensor(element.phi, **factory_kwargs),
             cavity_type="standing_wave",
             name=element.id,
+            sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.TWCavity):
         return cheetah.Cavity(
@@ -142,12 +143,13 @@ def convert_element(
             sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.TDCavity):
-        # TODO: Better replacement at some point?
-        return cheetah.Cavity(
+        return cheetah.TransverseDeflectingCavity(
             length=torch.tensor(element.l, **factory_kwargs),
             voltage=torch.tensor(element.v, **factory_kwargs) * 1e9,
             frequency=torch.tensor(element.freq, **factory_kwargs),
-            phase=torch.tensor(element.phi, **factory_kwargs),
+            phase=torch.tensor(element.phi, **factory_kwargs).deg2rad()
+            / (2.0 * torch.pi),
+            tilt=torch.tensor(element.tilt, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )
@@ -173,7 +175,10 @@ def convert_element(
         return cheetah.Marker(name=element.id, sanitize_name=sanitize_name)
     elif isinstance(element, ocelot.Undulator):
         return cheetah.Undulator(
-            torch.tensor(element.l, **factory_kwargs),
+            length=torch.tensor(element.l, **factory_kwargs),
+            period=torch.tensor(element.lperiod, **factory_kwargs),
+            kx=torch.tensor(element.Kx, **factory_kwargs),
+            ky=torch.tensor(element.Ky, **factory_kwargs),
             name=element.id,
             sanitize_name=sanitize_name,
         )

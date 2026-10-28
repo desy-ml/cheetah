@@ -100,7 +100,13 @@ class CustomTransferMap(Element):
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
-        return cls(tm, length=combined_length, name=combined_name, **factory_kwargs)
+        return cls(
+            tm,
+            length=combined_length,
+            name=combined_name,
+            sanitize_name=False,
+            **factory_kwargs,
+        )
 
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species

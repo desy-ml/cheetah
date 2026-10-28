@@ -1,8 +1,10 @@
+import warnings
+
 import pytest
 import torch
 
 import cheetah
-from cheetah.utils.warnings import PhysicsWarning
+from cheetah.utils.warnings import DirtyNameWarning, PhysicsWarning
 
 
 def test_subcell_start_end():
@@ -262,3 +264,116 @@ def test_element_index_raises_for_none():
 
     with pytest.raises(ValueError):
         segment.element_index("some_nonexistent_element")
+
+
+def test_no_name_warning_on_segment_methods():
+    """Test that `Segment` transforming methods do not raise a `DirtyNameWarning`."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(
+                length=torch.tensor(0.5), name=f"dirty:drift:{i}", sanitize_name=False
+            )
+            for i in range(10)
+        ],
+        name="dirty:segment",
+        sanitize_name=False,
+    )
+    incoming_beam = cheetah.ParameterBeam.from_parameters()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DirtyNameWarning)
+
+        _ = segment.flattened()
+        _ = segment.reversed()
+        _ = segment.clone()
+
+        _ = segment.subcell(start="dirty:drift:3", end="dirty:drift:6")
+        _ = segment.partition_at("dirty:drift:3")
+
+        _ = segment.without_inactive_markers()
+        _ = segment.without_inactive_zero_length_elements()
+        _ = segment.with_consecutive_elements_merged()
+        _ = segment.inactive_elements_as_drifts()
+
+        _ = segment.transfer_maps_merged(incoming_beam)
+        _ = segment.track(incoming_beam)
+
+
+def test_partition_example():
+    """Test `partition_at` on a simple example."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    pre_cell, element, post_cell = segment.partition_at("drift_3", mode="both")
+
+    assert len(pre_cell.elements) == 3
+    assert element.name == "drift_3"
+    assert len(post_cell.elements) == 6
+
+
+def test_partition_unknown_element():
+    """Test that partitioning on an unknown element raises an error."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5), name=f"drift_{i}")
+            for i in range(10)
+        ]
+    )
+
+    with pytest.raises(ValueError):
+        segment.partition_at("drift_42")
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        pytest.param(lambda seg: seg.subcell(), id="subcell"),
+        pytest.param(lambda seg: seg.flattened(), id="flattened"),
+        pytest.param(lambda seg: seg.reversed(), id="reversed"),
+        pytest.param(
+            lambda seg: seg.transfer_maps_merged(
+                cheetah.ParameterBeam.from_parameters()
+            ),
+            id="transfer_maps_merged",
+        ),
+        pytest.param(
+            lambda seg: seg.without_inactive_markers(), id="without_inactive_markers"
+        ),
+        pytest.param(
+            lambda seg: seg.without_inactive_zero_length_elements(),
+            id="without_inactive_zero_length_elements",
+        ),
+        pytest.param(
+            lambda seg: seg.inactive_elements_as_drifts(),
+            id="inactive_elements_as_drifts",
+        ),
+    ],
+)
+def test_metadata_preserved_by_segment_transforms(transform):
+    """Test that methods returning new segments preserve the segment metadata."""
+    segment = cheetah.Segment(
+        elements=[cheetah.Marker(name="M1"), cheetah.Marker(name="M2")],
+        metadata={"key": "value"},
+    )
+
+    result = transform(segment)
+
+    assert result.metadata == {"key": "value"}
+
+
+def test_partition_at_preserves_metadata():
+    """Test that `partition_at` preserves the segment metadata on both subcells."""
+    metadata = {"key": "value"}
+    segment = cheetah.Segment(
+        elements=[cheetah.Marker(name="M1"), cheetah.Marker(name="M2")],
+        metadata=metadata,
+    )
+
+    pre_cell, _, post_cell = segment.partition_at("M1", mode="both")
+
+    assert pre_cell.metadata == metadata
+    assert post_cell.metadata == metadata

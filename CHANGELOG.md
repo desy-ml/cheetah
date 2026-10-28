@@ -1,6 +1,35 @@
 # Changelog
 
-## v0.8.4 [🚧 Work in Progress]
+## v0.8.5 [🚧 Work in Progress]
+
+### 🚨 Breaking Changes
+
+### 🚀 Features
+
+- `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
+- `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
+- Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
+
+### 🐛 Bug fixes
+
+- Fix Bmad lattice conversion issues with overlay and group definitions, wildcard element references, scientific notation in expressions, unary signs, and mapping of `type` and `alias` fields to element `metadata`. (see #663) (@roussel-ryan, @jank324)
+- Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
+- Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
+- Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
+- Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
+- Fix NX Tables converter creating 1D drift lengths instead of scalar tensors (see #713) (@jank324)
+
+### 🐆 Other
+
+- Update openPMD dependency to renamed package (see #684) (@jank324)
+- Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
+- Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
+- Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
+- Update Ponytail to version 5.3.2 (see #711) (@jank324)
+
+### 🌟 First Time Contributors
+
+## [v0.8.4](https://github.com/desy-ml/cheetah/releases/tag/v0.8.4) (2026-07-23)
 
 ### 🚨 Breaking Changes
 
@@ -9,6 +38,9 @@
 ### 🚀 Features
 
 - Improve the speed of `SpaceChargeKick` by up to 2x by replacing its custom Cloud-in-Cell implementation with the new general implementation (see #653) (@jank324)
+- Implement `Undulator` transverse focusing effect on charged particle beam (see #659) (@Hespe)
+- Add `Segment.partition_at` method to divide a `Segment` into subcells before and after a given named `Element` (see #666) (@Hespe, @jank324)
+- Add `Segment.with_consecutive_elements_merged` method to merge consecutive elements of the same type, and a `.merge` method to `Element` subclasses to merge two elements of the same type. (see #667) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -16,14 +48,13 @@
 - Fix issue where `ParticleBeam.randomly_subsampled` method would not be stochastic if the `random_state` argument was not passed. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@jank324, @Hespe)
 - Fix a bug where some magnet names that are invalid identifiers (i.e. cannot be used with the `segment.element_name` syntax) would not be sanitised correctly (e.g. when they start with a digit). (see #658) (@jank324, @Hespe)
 - Fix KDE stability issue leading to NaNs (see #660) (@jp-ga)
+- Methods of `Element` and `Segment` that internally construct new instances no longer emit `DirtyNameWarning`s (see #669) (@Hespe)
 
 ### 🐆 Other
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
 - New _Getting Started_ guide in the documentation with a more comprehensive overview of Cheetah's features and capabilities etc. (see #651) (@jank324)
-
-### 🌟 First Time Contributors
 
 ## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
 

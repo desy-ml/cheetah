@@ -127,19 +127,36 @@ ELEMENT_SUBCLASSES_ARGS = {
         }
     },
     cheetah.SpaceChargeKick: {"default": {"effect_length": torch.tensor(1.0)}},
-    cheetah.Superimposed: {
+    cheetah.TransverseDeflectingCavity: {
+        "inactive": {
+            "length": torch.tensor(0.5),
+            "voltage": torch.tensor(0.0),
+            "frequency": torch.tensor(1.3e9),
+            "phase": torch.tensor(0.0),
+            "tracking_method": "linear",
+        },
+        "linear": {
+            "length": torch.tensor(0.5),
+            "voltage": torch.tensor(1e6),
+            "frequency": torch.tensor(1.3e9),
+            "phase": torch.tensor(0.0),
+            "tracking_method": "linear",
+        },
+        "drift_kick_drift": {
+            "length": torch.tensor(0.5),
+            "voltage": torch.tensor(1e6),
+            "frequency": torch.tensor(1.3e9),
+            "phase": torch.tensor(0.0),
+            "tracking_method": "drift_kick_drift",
+        },
+    },
+    cheetah.Undulator: {
         "default": {
-            "base_element": cheetah.Quadrupole(
-                length=torch.tensor(1.0), k1=torch.tensor(0.5)
-            ),
-            "superimposed_element": cheetah.BPM(),
+            "length": torch.tensor(1.0),
+            "period": torch.tensor(0.1),
+            "kx": torch.tensor(1.3),
         }
     },
-    cheetah.TransverseDeflectingCavity: {
-        "inactive": {"length": torch.tensor(1.0), "voltage": torch.tensor(0.0)},
-        "active": {"length": torch.tensor(1.0), "voltage": torch.tensor(1e6)},
-    },
-    cheetah.Undulator: {"default": {"length": torch.tensor(1.0)}},
     cheetah.VerticalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },

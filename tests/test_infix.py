@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from cheetah.converters.utils import infix
@@ -93,6 +95,40 @@ def test_infix_expression_with_function_call():
     expression = "sqrt(16) + abs(-4)"
 
     assert infix.evaluate_expression(expression) == 8
+
+
+def test_infix_expression_with_unary_minus_before_function_call():
+    """
+    Test that an infix expression with a unary minus directly in front of a function
+    call is correctly evaluated.
+    """
+    expression = "-sin(argw)*sqrt(kqwig)"
+    context = {"argw": math.pi / 2.0, "kqwig": 4.0}
+
+    assert infix.evaluate_expression(expression, context) == pytest.approx(-2.0)
+
+
+def test_infix_unary_sign_exponentiation_precedence():
+    """
+    Test that exponentiation has higher precedence than unary signs (e.g. -2^2 == -4).
+    """
+    assert infix.evaluate_expression("-2^2") == -4.0
+    assert infix.evaluate_expression("(-2)^2") == 4.0
+    assert infix.evaluate_expression("2^-3") == pytest.approx(0.125)
+
+    context = {"x": math.pi / 2.0}
+    assert infix.evaluate_expression("-sin(x)^2", context) == pytest.approx(-1.0)
+    assert infix.evaluate_expression("(-sin(x))^2", context) == pytest.approx(1.0)
+
+
+def test_infix_scientific_notation():
+    """
+    Test that numbers in scientific notation with standard ('e'/'E') exponents are
+    correctly parsed and evaluated.
+    """
+    expression = "1.0e-3 + 2.5e-3 - 0.5E-3"
+
+    assert infix.evaluate_expression(expression) == pytest.approx(3.0e-3)
 
 
 def test_infix_expression_with_var_conflict():
