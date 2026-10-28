@@ -23,3 +23,13 @@
 .institution-logos img:hover {
   transform: scale(1.05);
 }
+
+/* 3D Model viewer interactive frame */
+model-viewer {
+  width: 100%;
+  height: 450px;
+  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  --poster-color: transparent;
+}

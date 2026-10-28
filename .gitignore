@@ -19,3 +19,4 @@ docs/_build
 
 dev*
 *.glb
+!docs/_static/*.glb

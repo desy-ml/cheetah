@@ -54,3 +54,10 @@ html_logo = "_static/logo.png"
 html_static_path = ["_static"]
 
 html_css_files = ["custom.css"]
+
+html_js_files = [
+    (
+        "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js",
+        {"type": "module"},
+    ),
+]
