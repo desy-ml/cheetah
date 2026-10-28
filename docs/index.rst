@@ -6,6 +6,29 @@
 Welcome to Cheetah's documentation!
 ===================================
 
+|pypi| |pyversions| |ci| |license| |discord|
+
+.. |pypi| image:: https://img.shields.io/pypi/v/cheetah-accelerator.svg
+    :target: https://pypi.org/project/cheetah-accelerator/
+    :alt: PyPI Version
+
+.. |pyversions| image:: https://img.shields.io/pypi/pyversions/cheetah-accelerator.svg
+    :target: https://pypi.org/project/cheetah-accelerator/
+    :alt: Python Versions
+
+.. |ci| image:: https://github.com/desy-ml/cheetah/actions/workflows/pytest.yaml/badge.svg
+    :target: https://github.com/desy-ml/cheetah/actions/workflows/pytest.yaml
+    :alt: CI Status
+
+.. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
+    :target: https://www.gnu.org/licenses/gpl-3.0
+    :alt: License: GPL v3
+
+.. |discord| image:: https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white
+    :target: https://discord.gg/7k7kzSDwpn
+    :alt: Discord
+
+
 *Cheetah* is a high-speed, differentiable particle tracking engine designed specifically for machine learning applications in accelerator physics, such as reinforcement learning, system identification, and magnet tuning.
 
 Resources & Links
