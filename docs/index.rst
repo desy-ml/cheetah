@@ -313,49 +313,40 @@ Institutions
 
 The development of Cheetah is a joint effort by members of the following institutions:
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/desy.png
-    :alt: DESY
-    :width: 5em
+.. container:: institution-logos
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/kit.png
-    :alt: KIT
-    :width: 7em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/desy.png
+        :alt: DESY
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/lbnl.png
-    :alt: LBNL
-    :width: 11em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/kit.png
+        :alt: KIT
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_chicago.png
-    :alt: University of Chicago
-    :width: 11em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/lbnl.png
+        :alt: LBNL
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/slac.png
-    :alt: SLAC
-    :width: 9em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_chicago.png
+        :alt: University of Chicago
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png
-    :alt: University of Liverpool
-    :width: 10em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/slac.png
+        :alt: SLAC
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png
-    :alt: Cockcroft Institute
-    :width: 7em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/university_of_liverpool.png
+        :alt: University of Liverpool
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png
-    :alt: Hamburg University of Technology
-    :width: 5em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/cockcroft.png
+        :alt: Cockcroft Institute
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png
-    :alt: Science and Technology Facilities Council
-    :width: 8em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/tuhh.png
+        :alt: Hamburg University of Technology
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/argonne.png
-    :alt: Argonne National Laboratory
-    :width: 9em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/stfc_ukri.png
+        :alt: Science and Technology Facilities Council
 
-.. image:: https://github.com/desy-ml/cheetah/raw/master/images/hoou.png
-    :alt: Hamburg Open Online University
-    :width: 7em
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/argonne.png
+        :alt: Argonne National Laboratory
+
+    .. image:: https://github.com/desy-ml/cheetah/raw/master/images/hoou.png
+        :alt: Hamburg Open Online University
 
 Funding
 ~~~~~~~
