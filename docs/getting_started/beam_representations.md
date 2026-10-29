@@ -2,21 +2,19 @@
 
 Cheetah provides two distinct beam classes for tracking charged particle bunches: `ParameterBeam` and `ParticleBeam`. Choosing the right beam representation allows you to balance physical fidelity against computational speed and memory consumption.
 
-Both classes subclass PyTorch's `torch.nn.Module`, are fully differentiable via `autograd`, and natively support GPU execution (`.to(device="cuda")`) and batching over multiple simulation runs.
-
 ---
 
 ## Comparison: `ParameterBeam` vs. `ParticleBeam`
 
-| Feature | `ParameterBeam` | `ParticleBeam` |
-| :--- | :--- | :--- |
-| **Data Representation** | 7D centroid vector $\mu$ & $7 \times 7$ covariance matrix $\Sigma$ | $N \times 7$ tensor of individual macroparticles |
-| **Computational Complexity** | $O(1)$ constant time ($7 \times 7$ matrix multiplications) | $O(N)$ linear in particle count (or $O(N + M \log M)$ with space charge) |
-| **Memory Footprint** | Extremely low (~few hundred bytes) | Proportional to macroparticle count $N$ |
-| **Physical Scope** | Linear transfer maps and 2nd-order aberrations | All maps, nonlinear apertures, and 3D space charge kicks |
-| **Particle Loss & Collimation** | Not modeled | Tracks lost particles through `Aperture` elements |
-| **Differentiability** | Fully differentiable (`autograd`) | Fully differentiable (`autograd`) |
-| **Primary Use Cases** | Fast envelope matching, Bayesian optimisation, online tuning | High-intensity space charge, realistic phase space distributions |
+| Feature                         | `ParameterBeam`                                                    | `ParticleBeam`                                                           |
+| :------------------------------ | :----------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| **Data Representation**         | 7D centroid vector $\mu$ & $7 \times 7$ covariance matrix $\Sigma$ | $N \times 7$ tensor of individual macroparticles                         |
+| **Computational Complexity**    | $O(1)$ constant time ($7 \times 7$ matrix multiplications)         | $O(N)$ linear in particle count (or $O(N + M \log M)$ with space charge) |
+| **Memory Footprint**            | Extremely low (~few hundred bytes)                                 | Proportional to macroparticle count $N$                                  |
+| **Physical Scope**              | Linear transfer maps and 2nd-order aberrations                     | All maps, nonlinear apertures, and 3D space charge kicks                 |
+| **Particle Loss & Collimation** | Not modeled                                                        | Tracks lost particles through `Aperture` elements                        |
+| **Differentiability**           | Fully differentiable (`autograd`)                                  | Fully differentiable (`autograd`)                                        |
+| **Primary Use Cases**           | Fast envelope matching, Bayesian optimisation, online tuning       | High-intensity space charge, realistic phase space distributions         |
 
 ---
 

@@ -144,7 +144,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
         :link: /getting_started/gradientbased
         :link-type: doc
 
-        Combine Cheetah with PyTorch automatic differentiation (`autograd`) for gradient-based optimization and ML workflows.
+        Combine Cheetah with PyTorch automatic differentiation (`autograd`) for gradient-based optimisation and ML workflows.
 
         * :doc:`/getting_started/gradientbased`
 
