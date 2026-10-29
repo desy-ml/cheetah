@@ -30,6 +30,12 @@ setup(
     long_description_content_type="text/markdown",
     packages=[package for package in find_packages() if package.startswith("cheetah")],
     python_requires=">=3.11",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+    ],
     install_requires=[
         "matplotlib>=3.5",
         "numpy>=1.23.3",

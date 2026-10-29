@@ -6,15 +6,19 @@
 Welcome to Cheetah's documentation!
 ===================================
 
-|pypi| |pyversions| |ci| |license| |discord|
+|pypi| |downloads| |pyversions| |ci| |license| |discord|
 
 .. |pypi| image:: https://img.shields.io/pypi/v/cheetah-accelerator.svg
     :target: https://pypi.org/project/cheetah-accelerator/
     :alt: PyPI Version
 
-.. |pyversions| image:: https://img.shields.io/pypi/pyversions/cheetah-accelerator.svg
+.. |downloads| image:: https://img.shields.io/pypi/dm/cheetah-accelerator.svg
     :target: https://pypi.org/project/cheetah-accelerator/
-    :alt: Python Versions
+    :alt: PyPI Downloads
+
+.. |pyversions| image:: https://img.shields.io/badge/python-%E2%89%A53.11-blue.svg?logo=python&logoColor=white
+    :target: https://pypi.org/project/cheetah-accelerator/
+    :alt: Python Version
 
 .. |ci| image:: https://github.com/desy-ml/cheetah/actions/workflows/pytest.yaml/badge.svg
     :target: https://github.com/desy-ml/cheetah/actions/workflows/pytest.yaml
