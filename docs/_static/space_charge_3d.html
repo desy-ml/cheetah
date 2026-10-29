@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>3D Cloud-in-Cell Space Charge Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      user-select: none;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+    .hud {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      max-width: 260px;
+    }
+    .hud h4 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      color: #38bdf8;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+    .legend-badge {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .controls-panel {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .controls-btn {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .controls-btn:hover {
+      background: #334155;
+      border-color: #38bdf8;
+    }
+    .controls-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="hud">
+    <h4>3D Cloud-in-Cell (CIC) Deposition</h4>
+    <div class="legend-item"><span class="legend-badge" style="background: #e2e8f0;"></span> <strong>3D Grid</strong>: Rectangular mesh</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #38bdf8;"></span> <strong>Bunch Cloud</strong>: Macroparticles</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #facc15;"></span> <strong>Sample Particle</strong>: Active charge</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #ef4444;"></span> <strong>8 Cell Nodes</strong>: Trilinear weights</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #a855f7;"></span> <strong>Force Vectors</strong>: Repulsive kicks</div>
+  </div>
+
+  <div class="controls-panel">
+    <button id="toggle-fields" class="controls-btn active">Toggle Space Charge Fields</button>
+    <button id="toggle-grid" class="controls-btn active">Toggle 3D Grid</button>
+  </div>
+
+  <script>
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(6, 4.5, 7);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 15, 10);
+    scene.add(dirLight);
+
+    // 3D Simulation Box Wireframe
+    const boxSize = 3.6;
+    const boxGeo = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+    const boxWire = new THREE.LineSegments(
+      new THREE.EdgesGeometry(boxGeo),
+      new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.5 })
+    );
+    scene.add(boxWire);
+
+    // 3D Internal Mesh Grid Lines
+    const gridGroup = new THREE.Group();
+    const divisions = 6;
+    const step = boxSize / divisions;
+    const half = boxSize / 2;
+    const gridLineMat = new THREE.LineBasicMaterial({ color: 0x1e293b, transparent: true, opacity: 0.7 });
+
+    for (let i = -half; i <= half; i += step) {
+      for (let j = -half; j <= half; j += step) {
+        // X-parallel lines
+        let g1 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-half, i, j), new THREE.Vector3(half, i, j)]);
+        gridGroup.add(new THREE.Line(g1, gridLineMat));
+        // Y-parallel lines
+        let g2 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -half, j), new THREE.Vector3(i, half, j)]);
+        gridGroup.add(new THREE.Line(g2, gridLineMat));
+        // Z-parallel lines
+        let g3 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, j, -half), new THREE.Vector3(i, j, half)]);
+        gridGroup.add(new THREE.Line(g3, gridLineMat));
+      }
+    }
+    scene.add(gridGroup);
+
+    // Generate Gaussian macroparticle distribution
+    const numParticles = 650;
+    const particlePositions = [];
+    const particleGeo = new THREE.BufferGeometry();
+    const particleColors = [];
+
+    for (let i = 0; i < numParticles; i++) {
+      // Box-Muller transform for 3D Gaussian
+      let u1 = Math.random(), u2 = Math.random(), u3 = Math.random(), u4 = Math.random();
+      let rx = Math.sqrt(-2 * Math.log(u1 + 1e-9)) * Math.cos(2 * Math.PI * u2) * 0.7;
+      let ry = Math.sqrt(-2 * Math.log(u1 + 1e-9)) * Math.sin(2 * Math.PI * u2) * 0.7;
+      let rz = Math.sqrt(-2 * Math.log(u3 + 1e-9)) * Math.cos(2 * Math.PI * u4) * 0.9;
+
+      if (Math.abs(rx) < half && Math.abs(ry) < half && Math.abs(rz) < half) {
+        particlePositions.push(rx, ry, rz);
+        let dist = Math.sqrt(rx * rx + ry * ry + rz * rz);
+        // Color gradient from center (white/cyan) to edge (darker blue)
+        let c = new THREE.Color().setHSL(0.55 + dist * 0.05, 0.85, 0.75 - dist * 0.2);
+        particleColors.push(c.r, c.g, c.b);
+      }
+    }
+
+    particleGeo.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
+    particleGeo.setAttribute('color', new THREE.Float32BufferAttribute(particleColors, 3));
+
+    const particleMat = new THREE.PointsMaterial({
+      size: 0.065,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.75,
+    });
+    const particleCloud = new THREE.Points(particleGeo, particleMat);
+    scene.add(particleCloud);
+
+    // Active macroparticle for Cloud-in-Cell demonstration
+    const samplePos = new THREE.Vector3(0.25 * step, 0.35 * step, 0.15 * step);
+    const sampleParticle = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 16, 16),
+      new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xa16207 })
+    );
+    sampleParticle.position.copy(samplePos);
+    scene.add(sampleParticle);
+
+    // Surrounding single grid cell wireframe
+    const cellBoxGeo = new THREE.BoxGeometry(step, step, step);
+    const cellWire = new THREE.LineSegments(
+      new THREE.EdgesGeometry(cellBoxGeo),
+      new THREE.LineBasicMaterial({ color: 0xe2e8f0, linewidth: 2 })
+    );
+    cellWire.position.set(0.5 * step, 0.5 * step, 0.5 * step);
+    scene.add(cellWire);
+
+    // 8 Grid Nodes with trilinear weights
+    const nodeCoords = [
+      [0, 0, 0], [step, 0, 0], [0, step, 0], [step, step, 0],
+      [0, 0, step], [step, 0, step], [0, step, step], [step, step, step]
+    ];
+
+    const nodesGroup = new THREE.Group();
+    const nodeMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b });
+
+    nodeCoords.forEach(coords => {
+      // Trilinear weight based on distance
+      let dx = Math.abs(coords[0] - samplePos.x) / step;
+      let dy = Math.abs(coords[1] - samplePos.y) / step;
+      let dz = Math.abs(coords[2] - samplePos.z) / step;
+      let weight = (1 - dx) * (1 - dy) * (1 - dz);
+
+      let nodeMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.04 + weight * 0.08, 12, 12),
+        nodeMat
+      );
+      nodeMesh.position.set(coords[0], coords[1], coords[2]);
+      nodesGroup.add(nodeMesh);
+
+      // Connecting dashed line to particle
+      let lineMat = new THREE.LineDashedMaterial({ color: 0xf87171, dashSize: 0.05, gapSize: 0.03, opacity: 0.8 });
+      let lineGeo = new THREE.BufferGeometry().setFromPoints([samplePos, nodeMesh.position]);
+      let dashedLine = new THREE.Line(lineGeo, lineMat);
+      dashedLine.computeLineDistances();
+      nodesGroup.add(dashedLine);
+    });
+    scene.add(nodesGroup);
+
+    // Outward repulsive electric field vectors (Space Charge Kicks)
+    const fieldGroup = new THREE.Group();
+    for (let theta = 0; theta < Math.PI * 2; theta += Math.PI / 4) {
+      for (let z = -1.2; z <= 1.2; z += 0.8) {
+        let r = 1.4;
+        let origin = new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z);
+        let dir = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0).normalize();
+        let arrow = new THREE.ArrowHelper(dir, origin, 0.6, 0xa855f7, 0.15, 0.1);
+        fieldGroup.add(arrow);
+      }
+    }
+    scene.add(fieldGroup);
+
+    // Button interactions
+    let showFields = true;
+    let showGrid = true;
+
+    const btnFields = document.getElementById('toggle-fields');
+    btnFields.addEventListener('click', () => {
+      showFields = !showFields;
+      fieldGroup.visible = showFields;
+      btnFields.classList.toggle('active', showFields);
+    });
+
+    const btnGrid = document.getElementById('toggle-grid');
+    btnGrid.addEventListener('click', () => {
+      showGrid = !showGrid;
+      gridGroup.visible = showGrid;
+      btnGrid.classList.toggle('active', showGrid);
+    });
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

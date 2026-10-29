@@ -1,0 +1,35 @@
+/* Container for institution partner logos */
+.institution-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.institution-logos img {
+  max-height: 3.5rem;
+  width: auto;
+  object-fit: contain;
+  transition:
+    filter 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+}
+
+.institution-logos img:hover {
+  transform: scale(1.05);
+}
+
+/* 3D Model viewer interactive frame */
+model-viewer {
+  width: 100%;
+  height: 450px;
+  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  --poster-color: transparent;
+}
