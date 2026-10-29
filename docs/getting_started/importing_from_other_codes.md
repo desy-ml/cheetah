@@ -61,7 +61,7 @@ import cheetah
 segment = cheetah.Segment.from_bmad("path/to/lattice.bmad")
 ```
 
-Bmad lattices define parameters such as reference particle type and reference energy/momentum, which will be parsed. Any properties or elements that are not currently understood or supported by Cheetah will trigger a warning, but the conversion will proceed.
+Bmad lattices define parameters such as reference particle type and reference energy/momentum, which will be parsed. Superimposed elements in Bmad are automatically handled by splitting and layering elements along the beamline. Any properties or elements that are not currently understood or supported by Cheetah will trigger a warning, but the conversion will proceed.
 
 ### Elegant
 

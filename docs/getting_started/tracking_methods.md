@@ -9,7 +9,7 @@ The primary tracking methods supported by Cheetah elements are:
 1. **`"linear"` (First-Order)**
    - Uses first-order transfer matrix ($R$-matrix) multiplication to propagate the beam.
    - Provides by far the fastest computation speed.
-   - Supported by: `Drift`, `Dipole`, `Quadrupole`, `Sextupole`, `Solenoid`, `HorizontalCorrector`, `VerticalCorrector`, `CombinedCorrector`, `Undulator`.
+   - Supported by: `Drift`, `Dipole`, `Quadrupole`, `Sextupole`, `Solenoid`, `HorizontalCorrector`, `VerticalCorrector`, `CombinedCorrector`, `TransverseDeflectingCavity`, `Undulator`.
 
 2. **`"second_order"` (Second-Order)**
    - Uses second-order transfer tensor ($T$-tensor) multiplication to capture chromatic and geometric aberrations.
@@ -23,7 +23,7 @@ The primary tracking methods supported by Cheetah elements are:
    - Some elements (such as diagnostics or custom physical models) use custom tracking routines that do not fall into the three categories above.
    - For these elements, their `supported_tracking_methods` is usually (but not always) a single-item list containing their own lowercase class name.
    - In the latter case you typically cannot/should not change the tracking method.
-   - E.g.: `"aperture"`, `"screen"`, `"spacechargekick"`.
+   - E.g.: `"cavity"`, `"aperture"`, `"screen"`, `"spacechargekick"`.
 
 ## Configuring Tracking Methods
 
