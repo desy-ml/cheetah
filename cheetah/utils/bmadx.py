@@ -296,6 +296,45 @@ def track_a_drift(
     return x_out, y_out, z_out
 
 
+def track_a_drift_cheetah(
+    length: torch.Tensor,
+    x_in: torch.Tensor,
+    px_in: torch.Tensor,
+    y_in: torch.Tensor,
+    py_in: torch.Tensor,
+    tau_in: torch.Tensor,
+    delta_in: torch.Tensor,
+    p0c: torch.Tensor,
+    mc2: float | torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Exact drift tracking in Cheetah coordinates."""
+    e_tot = (p0c.square() + mc2.square()).sqrt()
+    energy = e_tot.unsqueeze(-1) + delta_in * p0c.unsqueeze(-1)
+    p = (energy.square() - mc2.square()).sqrt()
+    beta = p / energy
+    P = p / p0c.unsqueeze(-1)
+    pz = P - 1.0
+
+    Px = px_in / P
+    Py = py_in / P
+    Pxy2 = Px.square() + Py.square()
+    Pl = (1.0 - Pxy2).sqrt()
+
+    dz = length.unsqueeze(-1) * (
+        sqrt_one(
+            (mc2.square() * (2.0 * pz + pz.square()))
+            / ((p0c.unsqueeze(-1) * P).square() + mc2.square())
+        )
+        + sqrt_one(-Pxy2) / Pl
+    )
+
+    x_out = x_in + length.unsqueeze(-1) * Px / Pl
+    y_out = y_in + length.unsqueeze(-1) * Py / Pl
+    tau_out = tau_in - dz / beta
+
+    return x_out, y_out, tau_out
+
+
 def particle_rf_time(z, pz, p0c, mc2):
     """Returns rf time of Particle p."""
     beta = (

@@ -176,7 +176,6 @@ class TransverseDeflectingCavity(Element):
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
 
-        # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
         y = incoming.y
@@ -185,19 +184,21 @@ class TransverseDeflectingCavity(Element):
         delta = incoming.p
         mc2 = incoming.species.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
+        p0c = (incoming.energy.square() - mc2.square()).sqrt()
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
 
-        # Begin Bmad-X tracking
         x, px, y, py = bmadx.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        x, y, z = bmadx.track_a_drift(self.length / 2.0, x, px, y, py, z, pz, p0c, mc2)
+        half_length = self.length / 2.0
+        x, y, tau = bmadx.track_a_drift_cheetah(
+            half_length, x, px, y, py, tau, delta, p0c, mc2
+        )
 
-        voltage = self.voltage * -1 * incoming.species.num_elementary_charges / p0c
+        voltage = self.voltage * -1.0 * incoming.species.num_elementary_charges / p0c
         k_rf = 2.0 * torch.pi * self.frequency / speed_of_light
         # Phase that the particle sees
         phase = (
@@ -205,47 +206,26 @@ class TransverseDeflectingCavity(Element):
             * torch.pi
             * (
                 self.phase.unsqueeze(-1)
-                - (
-                    bmadx.particle_rf_time(z, pz, p0c, mc2)
-                    * self.frequency.unsqueeze(-1)
-                )
+                - (tau / speed_of_light) * self.frequency.unsqueeze(-1)
             )
         )
 
-        # TODO: Assigning px to px is really bad practice and should be separated into
-        # two separate variables
         px = px + voltage.unsqueeze(-1) * phase.sin()
+        delta = delta + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(-1) * x
 
-        beta_old = (
-            (1 + pz)
-            * p0c.unsqueeze(-1)
-            / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
+        x, y, tau = bmadx.track_a_drift_cheetah(
+            half_length, x, px, y, py, tau, delta, p0c, mc2
         )
-        E_old = (1 + pz) * p0c.unsqueeze(-1) / beta_old
-        E_new = E_old + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(
-            -1
-        ) * x * p0c.unsqueeze(-1)
-        pc = (E_new.square() - mc2.square()).sqrt()
-        beta = pc / E_new
-
-        pz = (pc - p0c.unsqueeze(-1)) / p0c.unsqueeze(-1)
-        z = z * beta / beta_old
-
-        x, y, z = bmadx.track_a_drift(self.length / 2.0, x, px, y, py, z, pz, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
-        # End of Bmad-X tracking
-
-        # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
 
         outgoing_beam = ParticleBeam(
             particles=torch.stack(
                 (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
             ),
-            energy=ref_energy,
+            energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
