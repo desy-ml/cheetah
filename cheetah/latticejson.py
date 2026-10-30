@@ -38,7 +38,7 @@ def convert_element(
     if elements_dict is None:
         elements_dict = {}
 
-    params = {}
+    params: dict[str, Any] = {}
     for feature in element.defining_features:
         if feature == "name":
             continue
@@ -114,7 +114,7 @@ def save_cheetah_model(
     if title is None:
         title = segment.name if segment.name is not None else "Unnamed Lattice"
 
-    metadata = {
+    metadata: dict[str, Any] = {
         "version": "cheetah-0.8",
         "title": title,
         "info": info,
@@ -139,18 +139,19 @@ class CompactJSONEncoder(json.JSONEncoder):
     Taken from https://github.com/nobeam/latticejson/blob/main/latticejson/format.py
     """
 
-    def encode(self, obj, level=0):
-        if isinstance(obj, dict) and level < 2:
-            items_indent = (level + 1) * self.indent * " "
+    def encode(self, o: Any, level: int = 0) -> str:
+        indent = self.indent if isinstance(self.indent, int) else 4
+        if isinstance(o, dict) and level < 2:
+            items_indent = (level + 1) * indent * " "
             items_string = ",\n".join(
                 f"{items_indent}{json.dumps(key)}: {self.encode(value, level=level + 1)}"  # noqa: E501
-                for key, value in obj.items()
+                for key, value in o.items()
             )
-            dict_indent = level * self.indent * " "
+            dict_indent = level * indent * " "
             newline = "\n" if level == 0 else ""
             return f"{{\n{items_string}\n{dict_indent}}}{newline}"
         else:
-            return json.dumps(obj)
+            return json.dumps(o)
 
 
 def nontorch2feature(

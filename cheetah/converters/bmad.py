@@ -461,7 +461,7 @@ def convert_lattice(
     sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
-) -> "cheetah.Element":
+) -> "cheetah.Segment":
     """
     Convert a Bmad lattice file to a Cheetah `Segment`.
 
@@ -520,7 +520,7 @@ def convert_lattice(
     superimpositions = collect_superimpositions(context)
 
     # Convert the parsed lattice info to Cheetah elements
-    return convert_element(
+    root_element = convert_element(
         name=context["__use__"],
         context=context,
         sanitize_name=sanitize_names,
@@ -528,3 +528,5 @@ def convert_lattice(
         device=device,
         dtype=dtype,
     )
+    assert isinstance(root_element, cheetah.Segment)
+    return root_element

@@ -31,6 +31,9 @@ class Element(ABC, nn.Module):
     :param dtype: Data type of the element's tensors.
     """
 
+    name: str
+    metadata: dict
+
     def __init__(
         self,
         name: str | None = None,
@@ -374,7 +377,10 @@ class Element(ABC, nn.Module):
 
     @abstractmethod
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.

@@ -417,7 +417,7 @@ def convert_lattice(
     sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
-) -> "cheetah.Element":
+) -> "cheetah.Segment":
     """
     Convert a Elegant lattice file to a Cheetah `Segment`.
 
@@ -456,7 +456,9 @@ def convert_lattice(
     context = fortran_namelist.parse_lines(merged_lines)
 
     # Convert the parsed lattice info to Cheetah elements
-    return convert_element(name, context, sanitize_names, device, dtype)
+    root_element = convert_element(name, context, sanitize_names, device, dtype)
+    assert isinstance(root_element, cheetah.Segment)
+    return root_element
 
 
 def convert_beam(

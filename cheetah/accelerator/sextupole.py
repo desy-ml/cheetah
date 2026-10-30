@@ -44,13 +44,17 @@ class Sextupole(Element):
 
     supported_tracking_methods = ["linear", "second_order"]
 
+    k2: torch.Tensor
+    misalignment: torch.Tensor
+    tilt: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
         k2: torch.Tensor | None = None,
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
-        tracking_method: Literal["linear", "second_order"] = "second_order",
+        tracking_method: Literal["linear", "second_order"] | str = "second_order",
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
@@ -128,9 +132,11 @@ class Sextupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k2 != 0.0).any().item()
+        return bool((self.k2 != 0.0).any().item())
 
-    def merge(self, other: "Sextupole") -> "Sextupole | None":
+    def merge(self, other: Element) -> "Sextupole | None":
+        if not isinstance(other, Sextupole):
+            return None
         if not (
             self.tracking_method == other.tracking_method
             and self.k2.equal(other.k2)
@@ -153,33 +159,44 @@ class Sextupole(Element):
         )
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
+        v_idx = vector_idx or ()
         plot_k2 = (
-            self.k2[squash_index_for_unavailable_dims(vector_idx, self.k2.shape)]
+            self.k2[squash_index_for_unavailable_dims(v_idx, self.k2.shape)]
             if len(self.k2.shape) > 0
             else self.k2
         )
 
         plot_s = (
-            s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
-            if len(s.shape) > 0
+            s[squash_index_for_unavailable_dims(v_idx, s.shape)]
+            if isinstance(s, torch.Tensor) and len(s.shape) > 0
             else s
         )
         plot_length = (
-            self.length[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            self.length[squash_index_for_unavailable_dims(v_idx, self.length.shape)]
             if len(self.length.shape) > 0
             else self.length
         )
 
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (plot_k2.sign() if self.is_active else 1)
+        alpha = 1.0 if self.is_active else 0.2
+        height = 0.8 * float(plot_k2.sign().item() if self.is_active else 1.0)
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
+            (float(plot_s), 0.0),
+            float(plot_length),
+            height,
+            color="tab:orange",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:
