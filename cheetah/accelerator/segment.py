@@ -140,25 +140,15 @@ class Segment(Element):
 
         return self.__class__(subcell, metadata=deepcopy(self.metadata))
 
-    def flattened(self, skip_superimposed: bool = False) -> "Segment":
+    def flattened(self) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
         resolved and their elements entered into a top-level segment.
-
-        :param skip_superimposed: If `True`, `Superimposed` elements are not flattened,
-            otherwise they are flattened like nested `Segment`s.
         """
-        # Import Superimposed lazily to avoid circular imports at module load time.
-        from cheetah.accelerator.superimposed import Superimposed
-
         flattened_elements = []
         for element in self.elements:
-            if skip_superimposed and isinstance(element, Superimposed):
-                flattened_elements.append(element)
-            elif isinstance(element, Segment):
-                flattened_elements += element.flattened(
-                    skip_superimposed=skip_superimposed
-                ).elements
+            if isinstance(element, Segment):
+                flattened_elements += element.flattened().elements
             elif hasattr(element, "flattened"):
                 flattened_elements += element.flattened().elements
             else:
@@ -393,6 +383,7 @@ class Segment(Element):
     def from_lattice_json(
         cls,
         filepath: str,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -400,11 +391,18 @@ class Segment(Element):
         Load a Cheetah model from a JSON file.
 
         :param filepath: Path of the file to load the lattice from.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return latticejson.load_cheetah_model(filepath, device=device, dtype=dtype)
+        return latticejson.load_cheetah_model(
+            filepath, sanitize_names=sanitize_names, device=device, dtype=dtype
+        )
 
     def to_lattice_json(
         self,

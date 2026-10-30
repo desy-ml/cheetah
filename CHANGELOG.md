@@ -6,8 +6,9 @@
 
 ### 🚀 Features
 
-- Add a `skip_superimposed` flag to `segment.flattened()` to allow the user to flatten segments without flattening superimposed elements (see #664) (@roussel-ryan)
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
+- `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
+- Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
 - Add vectorized histogramming (see #680) (@jp-ga)
 
 ### 🐛 Bug fixes
@@ -16,6 +17,8 @@
 - Fix the Ocelot import method to properly import a `TDCavity` to `TransverseDeflectingCavity` (see #676) (@cr-xu)
 - Fix `Element.merge` to properly merge the source metadata instead of dropping it (see #702) (@Hespe)
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
+- Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
+- Fix NX Tables converter creating 1D drift lengths instead of scalar tensors (see #713) (@jank324)
 
 ### 🐆 Other
 
@@ -23,6 +26,7 @@
 - Fix quadrupole strength units in the `Quadrupole` docstring (see #685) (@roussel-ryan)
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
+- Update Ponytail to version 5.3.2 (see #711) (@jank324)
 
 ### 🌟 First Time Contributors
 
