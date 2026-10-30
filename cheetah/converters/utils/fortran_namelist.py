@@ -90,29 +90,24 @@ def merge_delimiter_continued_lines(
     :param remove_delimitter: Whether to remove the delimitter from the merged line.
     :return: List of lines with ampersand-continued lines merged.
     """
-    merged_lines = deepcopy(lines)
+    merged_lines: list[str | None] = [line for line in lines]
     for i in range(len(merged_lines) - 1):
-        if merged_lines[i] is not None and merged_lines[i].endswith(delimiter):
+        current = merged_lines[i]
+        if current is not None and current.endswith(delimiter):
             num_added_lines = 1
-            while merged_lines[i].endswith(delimiter):
+            while current is not None and current.endswith(delimiter):
+                next_line = merged_lines[i + num_added_lines]
+                assert next_line is not None
                 if remove_delimiter:
-                    merged_lines[i] = (
-                        merged_lines[i][:-1] + merged_lines[i + num_added_lines]
-                    )
+                    current = current[:-1] + next_line
                 else:
-                    merged_lines[i] = (
-                        merged_lines[i] + merged_lines[i + num_added_lines]
-                    )
+                    current = current + next_line
+                merged_lines[i] = current
                 merged_lines[i + num_added_lines] = None
                 num_added_lines += 1
 
-    # Prune None lines
-    merged_lines = [line for line in merged_lines if line is not None]
-
-    # Remove spaces again, because some may now have appeared
-    merged_lines = [line.strip() for line in merged_lines]
-
-    return merged_lines
+    # Prune None lines and remove spaces again
+    return [line.strip() for line in merged_lines if line is not None]
 
 
 def evaluate_expression(expression: str, context: dict) -> Any:
@@ -205,6 +200,7 @@ def assign_property(line: str, context: dict) -> dict:
     :return: Updated context.
     """
     match = re.fullmatch(PROPERTY_ASSIGNMENT_PATTERN, line)
+    assert match is not None
 
     object_name = match.group(1).strip()
     property_name = match.group(2).strip()
@@ -236,6 +232,7 @@ def assign_variable(line: str, context: dict) -> dict:
     :return: Updated context.
     """
     match = re.fullmatch(VARIABLE_ASSIGNMENT_PATTERN, line)
+    assert match is not None
 
     variable_name = match.group(1).strip()
     variable_expression = match.group(2).strip()
@@ -255,6 +252,7 @@ def define_element(line: str, context: dict) -> dict:
     :return: Updated context.
     """
     match = re.fullmatch(ELEMENT_DEFINITION_PATTERN, line)
+    assert match is not None
 
     element_name = match.group(1).strip('" ')
     element_type = match.group(2).strip()
@@ -304,6 +302,7 @@ def define_line(line: str, context: dict) -> dict:
     :return: Updated context.
     """
     match = re.fullmatch(LINE_DEFINITION_PATTERN, line)
+    assert match is not None
 
     line_name = match.group(1).strip('" ')
     line_elements_string = match.group(2).strip()
@@ -329,6 +328,7 @@ def parse_use_line(line: str, context: dict) -> dict:
     :return: Updated context.
     """
     match = re.fullmatch(USE_LINE_PATTERN, line)
+    assert match is not None
 
     use_line_name = match.group(1).strip('" ')
     context["__use__"] = use_line_name
@@ -336,7 +336,7 @@ def parse_use_line(line: str, context: dict) -> dict:
     return context
 
 
-def parse_lines(lines: str) -> dict:
+def parse_lines(lines: list[str]) -> dict:
     """
     Parse a list of lines from a Bmad or Elegant lattice file. They should be cleaned
     and merged before being passed to this function.

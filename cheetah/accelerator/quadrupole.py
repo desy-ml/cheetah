@@ -60,9 +60,9 @@ class Quadrupole(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
-        tracking_method: Literal[
-            "linear", "second_order", "drift_kick_drift"
-        ] = "linear",
+        tracking_method: (
+            Literal["linear", "second_order", "drift_kick_drift"] | str
+        ) = "linear",
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
@@ -169,7 +169,7 @@ class Quadrupole(Element):
                 "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
-    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: Beam) -> ParticleBeam:
         """
         Track particles through the quadrupole element using the Drift_kick_drift
             tracking method.
@@ -260,7 +260,7 @@ class Quadrupole(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k1 != 0).any().item()
+        return bool((self.k1 != 0).any().item())
 
     def split(self, resolution: torch.Tensor) -> list[Element]:
         num_splits = (self.length.abs().max() / resolution).ceil().int()
@@ -281,7 +281,9 @@ class Quadrupole(Element):
             for i in range(num_splits)
         ]
 
-    def merge(self, other: "Quadrupole") -> "Quadrupole | None":
+    def merge(self, other: Element) -> "Quadrupole | None":
+        if not isinstance(other, Quadrupole):
+            return None
         if not (
             self.tracking_method == other.tracking_method
             and self.misalignment.equal(other.misalignment)
@@ -305,33 +307,44 @@ class Quadrupole(Element):
         )
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
+        v_idx = vector_idx or ()
         plot_k1 = (
-            self.k1[squash_index_for_unavailable_dims(vector_idx, self.k1.shape)]
+            self.k1[squash_index_for_unavailable_dims(v_idx, self.k1.shape)]
             if len(self.k1.shape) > 0
             else self.k1
         )
 
         plot_s = (
-            s[squash_index_for_unavailable_dims(vector_idx, s.shape)]
-            if len(s.shape) > 0
+            s[squash_index_for_unavailable_dims(v_idx, s.shape)]
+            if isinstance(s, torch.Tensor) and len(s.shape) > 0
             else s
         )
         plot_length = (
-            self.length[squash_index_for_unavailable_dims(vector_idx, s.shape)]
+            self.length[squash_index_for_unavailable_dims(v_idx, self.length.shape)]
             if len(self.length.shape) > 0
             else self.length
         )
 
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (plot_k1.sign() if self.is_active else 1)
+        alpha = 1.0 if self.is_active else 0.2
+        height = 0.8 * float(plot_k1.sign().item() if self.is_active else 1.0)
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:red", alpha=alpha, zorder=2
+            (float(plot_s), 0.0),
+            float(plot_length),
+            height,
+            color="tab:red",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     def to_mesh(
         self,
@@ -351,16 +364,17 @@ class Quadrupole(Element):
         # NOTE: The quadrupole's tilt and misalignment have no effect on where the next
         # element is placed.
 
-        # Rotate according to tilt
-        rotation_matrix = trimesh.transformations.rotation_matrix(
-            -self.tilt.item(), [0, 0, 1], [0, 0, 0]
-        )
-        mesh.apply_transform(rotation_matrix)
+        if mesh is not None:
+            # Rotate according to tilt
+            rotation_matrix = trimesh.transformations.rotation_matrix(
+                -self.tilt.item(), [0, 0, 1], [0, 0, 0]
+            )
+            mesh.apply_transform(rotation_matrix)
 
-        # Apply misalignment in x and y directions
-        mesh.apply_translation(
-            [self.misalignment[0].item(), self.misalignment[1].item(), 0.0]
-        )
+            # Apply misalignment in x and y directions
+            mesh.apply_translation(
+                [self.misalignment[0].item(), self.misalignment[1].item(), 0.0]
+            )
 
         return mesh, output_transform
 

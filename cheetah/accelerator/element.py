@@ -33,7 +33,6 @@ class Element(ABC, nn.Module):
 
     name: str
     metadata: dict
-    length: torch.Tensor
 
     def __init__(
         self,

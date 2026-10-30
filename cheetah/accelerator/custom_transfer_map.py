@@ -98,7 +98,9 @@ class CustomTransferMap(Element):
             )
             incoming_beam = element.track(incoming_beam)
 
-        combined_length = sum(element.length for element in elements)
+        combined_length = sum(
+            (element.length for element in elements[1:]), start=elements[0].length
+        )
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
@@ -124,14 +126,25 @@ class CustomTransferMap(Element):
         return super().defining_features + ["length", "predefined_transfer_map"]
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
         height = 0.4
 
-        patch = Rectangle((plot_s, 0), plot_length, height, color="tab:olive", zorder=2)
+        patch = Rectangle(
+            (float(plot_s), 0.0),
+            float(plot_length),
+            height,
+            color="tab:olive",
+            zorder=2,
+        )
         ax.add_patch(patch)
+
+        return ax

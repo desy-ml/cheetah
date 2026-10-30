@@ -1,14 +1,16 @@
+from typing import cast
+
 import torch
 
 
 def log1pdiv(x: torch.Tensor) -> torch.Tensor:
     """Calculate `log(1 + x) / x` with proper removal of its singularity at 0."""
-    return Log1PDiv.apply(x)
+    return cast(torch.Tensor, Log1PDiv.apply(x))
 
 
 def si1mdiv(x: torch.Tensor) -> torch.Tensor:
     """Calculate `(1 - si(sqrt(x))) / x` with proper removal of its singularity at 0."""
-    return Si1MDiv.apply(x)
+    return cast(torch.Tensor, Si1MDiv.apply(x))
 
 
 def sicos1mdiv(x: torch.Tensor) -> torch.Tensor:
@@ -16,7 +18,7 @@ def sicos1mdiv(x: torch.Tensor) -> torch.Tensor:
     Calculate `(1 - si(sqrt(x)) * cos(sqrt(x))) / x` with proper removal of its
     singularity at 0.
     """
-    return SiCos1MDiv.apply(x)
+    return cast(torch.Tensor, SiCos1MDiv.apply(x))
 
 
 def sipsicos3mdiv(x: torch.Tensor) -> torch.Tensor:
@@ -24,7 +26,7 @@ def sipsicos3mdiv(x: torch.Tensor) -> torch.Tensor:
     Calculate `(3 - 4 * si(sqrt(x)) + si(sqrt(x)) * cos(sqrt(x))) / (2 * x)` with proper
     removal of its singularity at 0.
     """
-    return SiPSiCos3MDiv.apply(x)
+    return cast(torch.Tensor, SiPSiCos3MDiv.apply(x))
 
 
 def sicoskuddelmuddel15mdiv(x: torch.Tensor) -> torch.Tensor:
@@ -36,7 +38,7 @@ def sicoskuddelmuddel15mdiv(x: torch.Tensor) -> torch.Tensor:
     # NOTE: Currently unused, but kept for possible future use. See comment on
     # `track_methods.py` -> `base_ttensor` -> `j3`.
     """
-    return SiCosKuddelMuddel15MDiv.apply(x)
+    return cast(torch.Tensor, SiCosKuddelMuddel15MDiv.apply(x))
 
 
 def cossqrtmcosdivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -44,7 +46,7 @@ def cossqrtmcosdivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     Calculate `(cos(sqrt(b)) - cos(sqrt(a))) / (a - b)` with proper removal of its
     singularity at `a == b`.
     """
-    return CosSqrtMCosDivDiff.apply(a, b)
+    return cast(torch.Tensor, CosSqrtMCosDivDiff.apply(a, b))
 
 
 def simsidivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -52,7 +54,7 @@ def simsidivdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     Calculate `(si(sqrt(a)) - si(sqrt(b))) / (b - a)` with proper removal of its
     singularity at `a == b`.
     """
-    return SiMSiDivDiff.apply(a, b)
+    return cast(torch.Tensor, SiMSiDivDiff.apply(a, b))
 
 
 def si2msi2divdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -63,7 +65,7 @@ def si2msi2divdiff(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     NOTE: Forward mode AD currently doesn't work properly for a==0 or b==0, and might
         return weird gradients in those cases.
     """
-    return Si2MSi2DivDiff.apply(a, b)
+    return cast(torch.Tensor, Si2MSi2DivDiff.apply(a, b))
 
 
 def sqrta2minusbdiva(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -71,7 +73,7 @@ def sqrta2minusbdiva(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     Calculate `(sqrt(a^2 + b) - a) / b` with proper removal of its singularity at
     `b == 0`.
     """
-    return SqrtA2MinusBDivA.apply(a, b)
+    return cast(torch.Tensor, SqrtA2MinusBDivA.apply(a, b))
 
 
 class Log1PDiv(torch.autograd.Function):
@@ -95,12 +97,12 @@ class Log1PDiv(torch.autograd.Function):
         return (x.log1p() / x).where(x != 0, 1.0)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         x, fx = ctx.saved_tensors
         return grad_output * (((1.0 + x).reciprocal() - fx) / x).where(x != 0, -0.5)
 
     @staticmethod
-    def jvp(ctx, grad_input):
+    def jvp(ctx, grad_input):  # type: ignore[override]
         x, fx = ctx.saved_tensors
         return (((1.0 + x).reciprocal() - fx) / x).where(x != 0, -0.5) * grad_input
 
@@ -128,7 +130,7 @@ class Si1MDiv(torch.autograd.Function):
         return ((1.0 - sx) / x).where(x != 0, 1.0 / 6.0)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         x, fx = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -137,7 +139,7 @@ class Si1MDiv(torch.autograd.Function):
         return grad_output * ((sx - fx) / x).where(x != 0, -1.0 / 120.0)
 
     @staticmethod
-    def jvp(ctx, grad_input):
+    def jvp(ctx, grad_input):  # type: ignore[override]
         x, fx = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -174,7 +176,7 @@ class SiCos1MDiv(torch.autograd.Function):
         return ((1.0 - sx * cx) / x).where(x != 0, 1.0 / 6.0)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         x, _ = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -190,7 +192,7 @@ class SiCos1MDiv(torch.autograd.Function):
         return grad_output * grad
 
     @staticmethod
-    def jvp(ctx, grad_input):
+    def jvp(ctx, grad_input):  # type: ignore[override]
         x, _ = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -234,7 +236,7 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         return ((3.0 - 4.0 * sx + sx * cx) / (2.0 * x)).where(x != 0, 0.0)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         x, _ = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -256,7 +258,7 @@ class SiPSiCos3MDiv(torch.autograd.Function):
         return grad_output * grad
 
     @staticmethod
-    def jvp(ctx, grad_input):
+    def jvp(ctx, grad_input):  # type: ignore[override]
         x, _ = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -312,7 +314,7 @@ class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
         ).where(x != 0, 1.0 / 56.0)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         x, _ = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -335,7 +337,7 @@ class SiCosKuddelMuddel15MDiv(torch.autograd.Function):
         return grad_output * grad
 
     @staticmethod
-    def jvp(ctx, grad_input):
+    def jvp(ctx, grad_input):  # type: ignore[override]
         x, _ = ctx.saved_tensors
 
         sqrt_x = torch.complex(x, x.new_zeros(())).sqrt()
@@ -387,7 +389,7 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
         return ((cb - ca) / (a - b)).where(a != b, 0.5 * sa)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
@@ -408,7 +410,7 @@ class CosSqrtMCosDivDiff(torch.autograd.Function):
         return grad_output * grad_a, grad_output * grad_b
 
     @staticmethod
-    def jvp(ctx, grad_a, grad_b):
+    def jvp(ctx, grad_a, grad_b):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
@@ -461,7 +463,7 @@ class SiMSiDivDiff(torch.autograd.Function):
         )
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
@@ -491,7 +493,7 @@ class SiMSiDivDiff(torch.autograd.Function):
         return grad_output * grad_a, grad_output * grad_b
 
     @staticmethod
-    def jvp(ctx, grad_a, grad_b):
+    def jvp(ctx, grad_a, grad_b):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
@@ -579,7 +581,7 @@ class Si2MSi2DivDiff(torch.autograd.Function):
         return ((sb.square() - sa.square()) / (a - b)).where(a != b, aeqb_limit)
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
@@ -612,7 +614,7 @@ class Si2MSi2DivDiff(torch.autograd.Function):
         return grad_output * grad_a, grad_output * grad_b
 
     @staticmethod
-    def jvp(ctx, grad_a, grad_b):
+    def jvp(ctx, grad_a, grad_b):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         sqrt_a = torch.complex(a, a.new_zeros(())).sqrt()
@@ -670,7 +672,7 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
         return (((a.square() + b).sqrt() - a) / b).where(b != 0, (2.0 * a).reciprocal())
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         grad_a = ((a / (a.square() + b).sqrt() - 1) / b).where(
@@ -684,7 +686,7 @@ class SqrtA2MinusBDivA(torch.autograd.Function):
         return grad_output * grad_a, grad_output * grad_b
 
     @staticmethod
-    def jvp(ctx, grad_a, grad_b):
+    def jvp(ctx, grad_a, grad_b):  # type: ignore[override]
         a, b, _ = ctx.saved_tensors
 
         return (

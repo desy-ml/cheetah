@@ -415,7 +415,10 @@ class ParameterBeam(Beam):
 
     @classmethod
     def from_ocelot(
-        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        parray,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
         """Load an Ocelot ParticleArray `parray` as a Cheetah Beam."""
         factory_kwargs = {
@@ -443,7 +446,10 @@ class ParameterBeam(Beam):
 
     @classmethod
     def from_astra(
-        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        path: str,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParameterBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astra import from_astrabeam

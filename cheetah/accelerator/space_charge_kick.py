@@ -3,7 +3,7 @@ import torch
 from scipy.constants import elementary_charge, epsilon_0, speed_of_light
 
 from cheetah.accelerator.element import Element
-from cheetah.particles import ParticleBeam
+from cheetah.particles import Beam, ParticleBeam
 from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
 
 
@@ -332,7 +332,7 @@ class SpaceChargeKick(Element):
         xp_coordinates: torch.Tensor,
         cell_size: torch.Tensor,
         grid_dimensions: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Computes the force field from the potential and the particle positions and
         velocities, as in https://doi.org/10.1063/1.2837054.
@@ -479,7 +479,7 @@ class SpaceChargeKick(Element):
 
         return accumulated_forces
 
-    def track(self, incoming: ParticleBeam) -> ParticleBeam:
+    def track(self, incoming: Beam) -> Beam:
         """
         Tracks particles through the element. The input must be a `ParticleBeam`.
 
@@ -595,13 +595,17 @@ class SpaceChargeKick(Element):
         return False
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
 
-        ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="orange", linestyle="-")
+        ax.axvline(float(plot_s), ymin=0.01, ymax=0.99, color="orange", linestyle="-")
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

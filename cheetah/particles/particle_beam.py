@@ -1,10 +1,11 @@
 import itertools
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from scipy import constants
 from scipy.ndimage import gaussian_filter
 from torch.distributions import MultivariateNormal
@@ -19,6 +20,11 @@ from cheetah.utils import (
     unbiased_weighted_covariance_matrix,
     unbiased_weighted_std,
 )
+
+if TYPE_CHECKING:
+    import beamphysics as openpmd
+
+    from cheetah.particles.parameter_beam import ParameterBeam
 
 
 class ParticleBeam(Beam):
@@ -91,7 +97,7 @@ class ParticleBeam(Beam):
                 if particle_charges is not None
                 else torch.full(
                     (particles.shape[-2],),
-                    self.species.charge_coulomb,
+                    float(self.species.charge_coulomb),
                     **factory_kwargs,
                 )
             ),
@@ -109,7 +115,7 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_parameters(
+    def from_parameters(  # type: ignore[override]
         cls,
         num_particles: int = 100_000,
         mu_x: torch.Tensor | None = None,
@@ -434,7 +440,7 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_twiss(
+    def from_twiss(  # type: ignore[override]
         cls,
         num_particles: int = 100_000,
         beta_x: torch.Tensor | None = None,
@@ -805,8 +811,11 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_ocelot(
-        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+    def from_ocelot(  # type: ignore[override]
+        cls,
+        parray,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         factory_kwargs = {
@@ -835,8 +844,11 @@ class ParticleBeam(Beam):
         )
 
     @classmethod
-    def from_astra(
-        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+    def from_astra(  # type: ignore[override]
+        cls,
+        path: str,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         from cheetah.converters.astra import from_astrabeam
@@ -871,8 +883,8 @@ class ParticleBeam(Beam):
     def from_elegant(
         cls,
         file_path: Path | str,
-        device: torch.device = None,
-        dtype: torch.dtype = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "ParticleBeam":
         """
         Load an Elegant particle distribution as a Cheetah `ParticleBeam`.
@@ -1034,7 +1046,7 @@ class ParticleBeam(Beam):
 
         return particle_group
 
-    def transformed_to(
+    def transformed_to(  # type: ignore[override]
         self,
         mu_x: torch.Tensor | None = None,
         mu_px: torch.Tensor | None = None,
@@ -1204,8 +1216,6 @@ class ParticleBeam(Beam):
             sigma_p=self.sigma_p,
             energy=self.energy,
             total_charge=self.total_charge,
-            particle_charges=self.particle_charges,
-            survival_probabilities=self.survival_probabilities,
             s=self.s,
             species=self.species,
             device=self.particles.device,
@@ -1273,7 +1283,7 @@ class ParticleBeam(Beam):
         species: Species | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
-    ) -> torch.Tensor:
+    ) -> "ParticleBeam":
         """
         Create a beam from a tensor of position and momentum coordinates in SI units.
         This tensor should have shape (..., num_particles, 7), where the last dimension
@@ -1352,7 +1362,7 @@ class ParticleBeam(Beam):
         self,
         dimension: Literal["x", "px", "y", "py", "tau", "p"],
         bins: int = 100,
-        bin_range: tuple[float] | None = None,
+        bin_range: tuple[float, float] | None = None,
         smoothing: float = 0.0,
         plot_kws: dict | None = None,
         ax: plt.Axes | None = None,
@@ -1381,19 +1391,17 @@ class ParticleBeam(Beam):
         if smoothing:
             histogram = gaussian_filter(histogram, smoothing)
 
+        plot_kwargs: dict[str, Any] = {"color": "black", **(plot_kws or {})}
         ax.plot(
             centers,
             histogram / histogram.max(),
-            **{"color": "black"} | (plot_kws or {}),
+            **plot_kwargs,
         )
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[dimension]}")
 
         # Handle units
         if dimension in ("x", "y", "tau"):
-            base_unit = "m"
-
-        if dimension in ("x", "y", "tau"):
-            format_axis_with_prefixed_unit(ax.xaxis, base_unit, centers)
+            format_axis_with_prefixed_unit(ax.xaxis, "m", centers)
 
         return ax
 
@@ -1403,7 +1411,11 @@ class ParticleBeam(Beam):
         y_dimension: Literal["x", "px", "y", "py", "tau", "p"],
         style: Literal["histogram", "contour"] = "histogram",
         bins: int = 100,
-        bin_ranges: tuple[tuple[float]] | None = None,
+        bin_ranges: (
+            tuple[tuple[float, float], tuple[float, float]]
+            | list[tuple[float, float]]
+            | None
+        ) = None,
         histogram_smoothing: float = 0.0,
         contour_smoothing: float = 3.0,
         pcolormesh_kws: dict | None = None,
@@ -1446,20 +1458,25 @@ class ParticleBeam(Beam):
         smoothed_histogram = gaussian_filter(histogram, histogram_smoothing)
         clipped_histogram = np.where(smoothed_histogram > 1, smoothed_histogram, np.nan)
         if style == "histogram":
+            pcolormesh_kwargs: dict[str, Any] = {
+                "cmap": "rainbow",
+                **(pcolormesh_kws or {}),
+            }
             ax.pcolormesh(
                 x_edges,
                 y_edges,
                 clipped_histogram.T / smoothed_histogram.max(),
-                **{"cmap": "rainbow"} | (pcolormesh_kws or {}),
+                **pcolormesh_kwargs,
             )
         elif style == "contour":
             contour_histogram = gaussian_filter(histogram, contour_smoothing)
 
+            contour_kwargs: dict[str, Any] = {"levels": 3, **(contour_kws or {})}
             ax.contour(
                 x_centers,
                 y_centers,
                 contour_histogram.T / contour_histogram.max(),
-                **{"levels": 3} | (contour_kws or {}),
+                **contour_kwargs,
             )
 
         ax.set_xlabel(f"{self.PRETTY_DIMENSION_LABELS[x_dimension]}")
@@ -1467,27 +1484,33 @@ class ParticleBeam(Beam):
 
         # Handle units
         if x_dimension in ("x", "y", "tau"):
-            x_base_unit = "m"
+            format_axis_with_prefixed_unit(ax.xaxis, "m", x_centers)
 
         if y_dimension in ("x", "y", "tau"):
-            y_base_unit = "m"
-
-        if x_dimension in ("x", "y", "tau"):
-            format_axis_with_prefixed_unit(ax.xaxis, x_base_unit, x_centers)
-
-        if y_dimension in ("x", "y", "tau"):
-            format_axis_with_prefixed_unit(ax.yaxis, y_base_unit, y_centers)
+            format_axis_with_prefixed_unit(ax.yaxis, "m", y_centers)
 
         return ax
 
     def plot_distribution(
         self,
-        dimensions: tuple[str, ...] = ("x", "px", "y", "py", "tau", "p"),
+        dimensions: tuple[Literal["x", "px", "y", "py", "tau", "p"], ...] = (
+            "x",
+            "px",
+            "y",
+            "py",
+            "tau",
+            "p",
+        ),
         bins: int = 100,
-        bin_ranges: Literal["same"] | tuple[float] | list[tuple[float]] | None = None,
+        bin_ranges: (
+            Literal["same", "unit_same"]
+            | tuple[float, float]
+            | list[tuple[float, float]]
+            | None
+        ) = None,
         plot_1d_kws: dict | None = None,
         plot_2d_kws: dict | None = None,
-        axs: list[plt.Axes] | None = None,
+        axs: np.ndarray | None = None,
     ) -> tuple[plt.Figure, np.ndarray]:
         """
         Plot of coordinates projected into 2D planes.
@@ -1505,7 +1528,7 @@ class ParticleBeam(Beam):
             `ParticleBeam.plot_1d_distribution` for plotting 1D histograms.
         :param plot_2d_kws: Additional keyword arguments to be passed to
             `ParticleBeam.plot_2d_distribution` for plotting 2D histograms.
-        :param axs: List of Matplotlib axes objects to use for plotting. If set to
+        :param axs: Array of Matplotlib axes objects to use for plotting. If set to
             `None`, a new figure is created. Must have the shape `(len(dimensions),
             len(dimensions))`.
         :return: Matplotlib figure and axes objects with the plot.
@@ -1531,34 +1554,42 @@ class ParticleBeam(Beam):
             .numpy()
         )
         if bin_ranges is None:
-            bin_ranges = [
+            resolved_bin_ranges = [
                 (
-                    full_tensor[i, :].min()
-                    - (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
-                    full_tensor[i, :].max()
-                    + (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10,
+                    float(
+                        full_tensor[i, :].min()
+                        - (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10
+                    ),
+                    float(
+                        full_tensor[i, :].max()
+                        + (full_tensor[i, :].max() - full_tensor[i, :].min()) / 10
+                    ),
                 )
                 for i in range(full_tensor.shape[-2])
             ]
-        if bin_ranges == "unit_same":
+        elif bin_ranges == "unit_same":
             spacial_idxs = [
                 i
                 for i, dimension in enumerate(dimensions)
                 if dimension in ["x", "y", "tau"]
             ]
             spacial_bin_range = (
-                full_tensor[spacial_idxs, :].min()
-                - (
+                float(
+                    full_tensor[spacial_idxs, :].min()
+                    - (
+                        full_tensor[spacial_idxs, :].max()
+                        - full_tensor[spacial_idxs, :].min()
+                    )
+                    / 10
+                ),
+                float(
                     full_tensor[spacial_idxs, :].max()
-                    - full_tensor[spacial_idxs, :].min()
-                )
-                / 10,
-                full_tensor[spacial_idxs, :].max()
-                + (
-                    full_tensor[spacial_idxs, :].max()
-                    - full_tensor[spacial_idxs, :].min()
-                )
-                / 10,
+                    + (
+                        full_tensor[spacial_idxs, :].max()
+                        - full_tensor[spacial_idxs, :].min()
+                    )
+                    / 10
+                ),
             )
             unitless_idxs = [
                 i
@@ -1566,18 +1597,22 @@ class ParticleBeam(Beam):
                 if dimension in ["px", "py", "p"]
             ]
             unitless_bin_range = (
-                full_tensor[unitless_idxs, :].min()
-                - (
+                float(
+                    full_tensor[unitless_idxs, :].min()
+                    - (
+                        full_tensor[unitless_idxs, :].max()
+                        - full_tensor[unitless_idxs, :].min()
+                    )
+                    / 10
+                ),
+                float(
                     full_tensor[unitless_idxs, :].max()
-                    - full_tensor[unitless_idxs, :].min()
-                )
-                / 10,
-                full_tensor[unitless_idxs, :].max()
-                + (
-                    full_tensor[unitless_idxs, :].max()
-                    - full_tensor[unitless_idxs, :].min()
-                )
-                / 10,
+                    + (
+                        full_tensor[unitless_idxs, :].max()
+                        - full_tensor[unitless_idxs, :].min()
+                    )
+                    / 10
+                ),
             )
             bin_range_dict = {
                 "x": spacial_bin_range,
@@ -1587,16 +1622,28 @@ class ParticleBeam(Beam):
                 "tau": spacial_bin_range,
                 "p": unitless_bin_range,
             }
-            bin_ranges = [bin_range_dict[dimension] for dimension in dimensions]
-        if np.asarray(bin_ranges).shape == (2,):
-            bin_ranges = [bin_ranges] * len(dimensions)
-        assert len(bin_ranges) == len(dimensions) and all(
-            len(e) == 2 for e in bin_ranges
-        )
+            resolved_bin_ranges = [bin_range_dict[d] for d in dimensions]
+        elif (
+            isinstance(bin_ranges, (list, tuple))
+            and len(bin_ranges) == 2
+            and isinstance(bin_ranges[0], (int, float))
+        ):
+            resolved_bin_ranges = [(float(bin_ranges[0]), float(bin_ranges[1]))] * len(
+                dimensions
+            )
+        else:
+            assert isinstance(bin_ranges, (list, tuple))
+            resolved_bin_ranges = [
+                (float(r[0]), float(r[1]))
+                for r in bin_ranges
+                if isinstance(r, (list, tuple))
+            ]
 
         # Plot diagonal 1D histograms on the diagonal
         diagonal_axs = [axs[i, i] for i, _ in enumerate(dimensions)]
-        for dimension, bin_range, ax in zip(dimensions, bin_ranges, diagonal_axs):
+        for dimension, bin_range, ax in zip(
+            dimensions, resolved_bin_ranges, diagonal_axs
+        ):
             self.plot_1d_distribution(
                 dimension=dimension,
                 bins=bins,
@@ -1611,7 +1658,7 @@ class ParticleBeam(Beam):
                 x_dimension=dimensions[i],
                 y_dimension=dimensions[j],
                 bins=bins,
-                bin_ranges=(bin_ranges[i], bin_ranges[j]),
+                bin_ranges=(resolved_bin_ranges[i], resolved_bin_ranges[j]),
                 ax=axs[j, i],
                 **(plot_2d_kws or {}),
             )
@@ -1652,6 +1699,7 @@ class ParticleBeam(Beam):
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(projection="3d")
+        assert isinstance(ax, Axes3D)
 
         x = self.x.cpu().detach().numpy()
         tau = self.tau.cpu().detach().numpy()
@@ -1676,6 +1724,10 @@ class ParticleBeam(Beam):
     def total_charge(self) -> torch.Tensor:
         """Total charge of the beam in C, taking into account particle losses."""
         return (self.particle_charges * self.survival_probabilities).sum(dim=-1)
+
+    @total_charge.setter
+    def total_charge(self, value: torch.Tensor) -> None:
+        raise AttributeError("Cannot set total_charge of ParticleBeam directly.")
 
     @property
     def num_particles(self) -> int:

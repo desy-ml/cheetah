@@ -5,6 +5,7 @@ from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from torch import nn
 
@@ -352,9 +353,11 @@ class Segment(Element):
         if except_for is None:
             except_for = []
 
-        merged_elements = []
-        current = self.elements[0]
+        merged_elements: list[Element] = []
+        assert isinstance(self.elements[0], Element)
+        current: Element = self.elements[0]
         for next_element in self.elements[1:]:
+            assert isinstance(next_element, Element)
             if current.name not in except_for:
                 if type(current) is Segment:
                     current = current.with_consecutive_elements_merged(
@@ -470,7 +473,7 @@ class Segment(Element):
     @classmethod
     def from_bmad(
         cls,
-        bmad_lattice_file_path: str,
+        bmad_lattice_file_path: Path | str,
         environment_variables: dict | None = None,
         sanitize_names: bool | None = None,
         device: torch.device | None = None,
@@ -496,15 +499,15 @@ class Segment(Element):
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Bmad lattice.
         """
-        bmad_lattice_file_path = Path(bmad_lattice_file_path)
+        bmad_path = Path(bmad_lattice_file_path)
         return bmad.convert_lattice(
-            bmad_lattice_file_path, environment_variables, sanitize_names, device, dtype
+            bmad_path, environment_variables, sanitize_names, device, dtype
         )
 
     @classmethod
     def from_elegant(
         cls,
-        elegant_lattice_file_path: str,
+        elegant_lattice_file_path: Path | str,
         name: str,
         sanitize_names: bool | None = None,
         device: torch.device | None = None,
@@ -524,9 +527,9 @@ class Segment(Element):
         :param dtype: Data type to use for the lattice elements.
         :return: Cheetah `Segment` representing the Elegant lattice.
         """
-        elegant_lattice_file_path = Path(elegant_lattice_file_path)
+        elegant_path = Path(elegant_lattice_file_path)
         return elegant.convert_lattice(
-            elegant_lattice_file_path, name, sanitize_names, device, dtype
+            elegant_path, name, sanitize_names, device, dtype
         )
 
     @classmethod
@@ -554,6 +557,10 @@ class Segment(Element):
         lengths = [element.length for element in self.elements]
         return reduce(torch.add, lengths)
 
+    @length.setter
+    def length(self, value: torch.Tensor) -> None:
+        raise AttributeError("Cannot set length of Segment directly.")
+
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
@@ -563,7 +570,9 @@ class Segment(Element):
                 tm = element.first_order_transfer_map(energy, species) @ tm
             return tm
         else:
-            return None
+            raise NotImplementedError(
+                "First order transfer map is not defined for non-skippable segments."
+            )
 
     def track(self, incoming: Beam) -> Beam:
         if self.is_skippable:
@@ -611,7 +620,9 @@ class Segment(Element):
             for split_element in element.split(resolution)
         ]
 
-    def merge(self, other: "Segment") -> "Segment | None":
+    def merge(self, other: "Element") -> "Segment | None":
+        if not isinstance(other, Segment):
+            return None
         return self.__class__(
             elements=self.elements + other.elements,
             name=merge_element_names(self.name, other.name),
@@ -635,6 +646,8 @@ class Segment(Element):
             the segment is split before and/or after the named element.
         """
         index = self.element_index(element_name)
+        element_at_index = self.elements[index]
+        assert isinstance(element_at_index, Element)
         pre_cell = (
             self.__class__(self.elements[: index + 1], metadata=deepcopy(self.metadata))
             if mode == "after"
@@ -648,7 +661,7 @@ class Segment(Element):
             )
         )
         return (
-            (pre_cell, self.elements[index], post_cell)  # Two splits: before and after
+            (pre_cell, element_at_index, post_cell)  # Two splits: before and after
             if mode == "both"
             else (pre_cell, post_cell)  # One split: before or after
         )
@@ -671,7 +684,8 @@ class Segment(Element):
         # If a resolution is passed, run this method for the split Segment
         if resolution is not None:
             yield from self.__class__(
-                elements=self.split(resolution), name=f"{self.name}_split"
+                elements=self.split(torch.as_tensor(resolution)),
+                name=f"{self.name}_split",
             ).beam_along_segment_generator(incoming)
         else:
             yield incoming
@@ -749,7 +763,10 @@ class Segment(Element):
                 )
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
@@ -772,16 +789,16 @@ class Segment(Element):
         # function without an incoming beam.
         plot_ss = (
             s_positions[
-                squash_index_for_unavailable_dims(vector_idx, s_positions.shape)
+                squash_index_for_unavailable_dims(vector_idx or (), s_positions.shape)
             ]
             if s_positions.dim() > 1
             else s_positions
         ).detach()
 
-        ax.plot([0, plot_ss[-1]], [0, 0], "--", color="black")
+        ax.plot([0.0, float(plot_ss[-1])], [0.0, 0.0], "--", color="black")
 
-        for element, s in zip(self.elements, plot_ss[:-1]):
-            element.plot(s, vector_idx, ax)
+        for element, s_elem in zip(self.elements, plot_ss[:-1]):
+            element.plot(s_elem, vector_idx, ax)
 
         ax.set_ylim(-1, 1)
         ax.set_xlabel("s (m)")
@@ -880,6 +897,7 @@ class Segment(Element):
             fig = plt.figure()
         gs = fig.add_gridspec(3, hspace=0, height_ratios=[2, 2, 1])
         axs = gs.subplots(sharex=True)
+        assert isinstance(axs, np.ndarray)
 
         axs[0].set_title("Beam Position and Size")
         self.plot_mean_and_std(
@@ -971,6 +989,7 @@ class Segment(Element):
             fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
+        assert isinstance(axs, np.ndarray)
 
         self.plot_beam_attrs(
             incoming=incoming,
@@ -1045,6 +1064,7 @@ class Segment(Element):
             fig = plt.figure(figsize=(8, 4))
         gs = fig.add_gridspec(2, hspace=0, height_ratios=[3, 1])
         axs = gs.subplots(sharex=True)
+        assert isinstance(axs, np.ndarray)
 
         self.plot_twiss(incoming, vector_idx=vector_idx, ax=axs[0])
         self.plot(s=0.0, vector_idx=vector_idx, ax=axs[1])

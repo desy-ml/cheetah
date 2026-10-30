@@ -110,6 +110,9 @@ class Cavity(Element):
         phi = self.phase.deg2rad()
 
         tm = self.first_order_transfer_map(incoming.energy, incoming.species)
+        outgoing_mu: torch.Tensor | None = None
+        outgoing_cov: torch.Tensor | None = None
+        outgoing_particles: torch.Tensor | None = None
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = tm @ incoming.cov @ tm.mT
@@ -207,6 +210,7 @@ class Cavity(Element):
             )
 
         if isinstance(incoming, ParameterBeam):
+            assert outgoing_mu is not None and outgoing_cov is not None
             outgoing_mu[..., 4] = outgoing_mu[..., 4] + (
                 T566 * incoming.mu[..., 5].square()
                 + T556 * incoming.mu[..., 4] * incoming.mu[..., 5]
