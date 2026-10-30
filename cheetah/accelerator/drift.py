@@ -8,8 +8,8 @@ from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
-    bmadx,
     cache_transfer_map,
+    drift_kick_drift,
     merge_element_names,
 )
 
@@ -125,7 +125,9 @@ class Drift(Element):
 
         p0c = (incoming.energy.square() - mc2.square()).sqrt()
 
-        x, y, tau = bmadx.track_a_drift(self.length, x, px, y, py, tau, delta, p0c, mc2)
+        x, y, tau = drift_kick_drift.track_a_drift(
+            self.length, x, px, y, py, tau, delta, p0c, mc2
+        )
 
         # Broadcast to align their shapes so that they can be stacked
         x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)

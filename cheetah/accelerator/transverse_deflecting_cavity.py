@@ -10,9 +10,9 @@ from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import combined_rotation_misalignment_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
-    bmadx,
     cache_transfer_map,
     compute_relativistic_factors,
+    drift_kick_drift,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -189,12 +189,14 @@ class TransverseDeflectingCavity(Element):
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
 
-        x, px, y, py = bmadx.offset_particle_set(
+        x, px, y, py = drift_kick_drift.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
         half_length = self.length / 2.0
-        x, y, tau = bmadx.track_a_drift(half_length, x, px, y, py, tau, delta, p0c, mc2)
+        x, y, tau = drift_kick_drift.track_a_drift(
+            half_length, x, px, y, py, tau, delta, p0c, mc2
+        )
 
         voltage = self.voltage * -1.0 * incoming.species.num_elementary_charges / p0c
         k_rf = 2.0 * torch.pi * self.frequency / speed_of_light
@@ -211,9 +213,11 @@ class TransverseDeflectingCavity(Element):
         px = px + voltage.unsqueeze(-1) * phase.sin()
         delta = delta + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(-1) * x
 
-        x, y, tau = bmadx.track_a_drift(half_length, x, px, y, py, tau, delta, p0c, mc2)
+        x, y, tau = drift_kick_drift.track_a_drift(
+            half_length, x, px, y, py, tau, delta, p0c, mc2
+        )
 
-        x, px, y, py = bmadx.offset_particle_unset(
+        x, px, y, py = drift_kick_drift.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 

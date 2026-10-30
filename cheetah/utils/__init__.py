@@ -1,4 +1,5 @@
-from . import autograd, bmadx  # noqa: F401
+from . import autograd, drift_kick_drift  # noqa: F401
+from . import drift_kick_drift as bmadx  # noqa: F401
 from .cache import cache_transfer_map  # noqa: F401
 from .cloud_in_cell import cloud_in_cell_charge_deposition  # noqa: F401
 from .device import is_mps_available_and_functional  # noqa: F401

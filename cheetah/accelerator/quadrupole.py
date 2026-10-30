@@ -13,8 +13,8 @@ from cheetah.track_methods import (
 )
 from cheetah.utils import (
     UniqueNameGenerator,
-    bmadx,
     cache_transfer_map,
+    drift_kick_drift,
     merge_element_names,
     squash_index_for_unavailable_dims,
 )
@@ -199,14 +199,18 @@ class Quadrupole(Element):
         step_length = self.length / self.num_steps
         b1 = self.k1 * self.length
 
-        x, px, y, py = bmadx.offset_particle_set(
+        x, px, y, py = drift_kick_drift.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
         k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
-        tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
-        ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
-        dz_low = bmadx.low_energy_z_correction(pz, p0c, mc2, step_length)
+        tx, dzx = drift_kick_drift.calculate_quadrupole_coefficients(
+            -k1, step_length, rel_p
+        )
+        ty, dzy = drift_kick_drift.calculate_quadrupole_coefficients(
+            k1, step_length, rel_p
+        )
+        dz_low = drift_kick_drift.low_energy_z_correction(pz, p0c, mc2, step_length)
 
         dz_geom_sum = torch.zeros_like(x)
         for _ in range(self.num_steps):
@@ -230,7 +234,7 @@ class Quadrupole(Element):
         tau = tau - (dz_geom_sum + self.num_steps * dz_low) / beta
 
         # s = s + l
-        x, px, y, py = bmadx.offset_particle_unset(
+        x, px, y, py = drift_kick_drift.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 

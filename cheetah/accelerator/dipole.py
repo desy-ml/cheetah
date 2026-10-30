@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, bmadx, cache_transfer_map
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map, drift_kick_drift
 from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -214,15 +214,19 @@ class Dipole(Element):
         beta0 = p0c / incoming.energy
 
         # Begin tracking
-        x, px, y, py = bmadx.offset_particle_set(zero, zero, self.tilt, x, px, y, py)
+        x, px, y, py = drift_kick_drift.offset_particle_set(
+            zero, zero, self.tilt, x, px, y, py
+        )
 
         if self.fringe_at == "entrance" or self.fringe_at == "both":
-            px, py = self._bmadx_fringe_linear("entrance", x, px, y, py)
-        x, px, y, py, tau = self._bmadx_body(x, px, y, py, tau, delta, beta0)
+            px, py = self._drift_kick_drift_fringe_linear("entrance", x, px, y, py)
+        x, px, y, py, tau = self._drift_kick_drift_body(x, px, y, py, tau, delta, beta0)
         if self.fringe_at == "exit" or self.fringe_at == "both":
-            px, py = self._bmadx_fringe_linear("exit", x, px, y, py)
+            px, py = self._drift_kick_drift_fringe_linear("exit", x, px, y, py)
 
-        x, px, y, py = bmadx.offset_particle_unset(zero, zero, self.tilt, x, px, y, py)
+        x, px, y, py = drift_kick_drift.offset_particle_unset(
+            zero, zero, self.tilt, x, px, y, py
+        )
         # End of tracking
 
         # Broadcast to align their shapes so that they can be stacked
@@ -240,7 +244,7 @@ class Dipole(Element):
         )
         return outgoing_beam
 
-    def _bmadx_body(
+    def _drift_kick_drift_body(
         self,
         x: torch.Tensor,
         px: torch.Tensor,
@@ -249,7 +253,7 @@ class Dipole(Element):
         tau: torch.Tensor,
         delta: torch.Tensor,
         beta0: torch.Tensor,
-    ) -> list[torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Track particle coordinates through bend body.
 
@@ -273,18 +277,18 @@ class Dipole(Element):
             * (1.0 + g.unsqueeze(-1) * x)
             * (self.angle.unsqueeze(-1) + phi1).sin()
             * self.length.unsqueeze(-1)
-            * bmadx.sinc(self.angle).unsqueeze(-1)
+            * drift_kick_drift.sinc(self.angle).unsqueeze(-1)
             - gp
             * (
                 (1.0 + g.unsqueeze(-1) * x)
                 * self.length.unsqueeze(-1)
-                * bmadx.sinc(self.angle).unsqueeze(-1)
+                * drift_kick_drift.sinc(self.angle).unsqueeze(-1)
             ).square()
         )
 
         x2_t1 = x * self.angle.cos().unsqueeze(-1) + self.length.unsqueeze(
             -1
-        ).square() * g.unsqueeze(-1) * bmadx.cosc(self.angle.unsqueeze(-1))
+        ).square() * g.unsqueeze(-1) * drift_kick_drift.cosc(self.angle.unsqueeze(-1))
 
         x2_t2 = (((self.angle.unsqueeze(-1) + phi1).cos().square()) + gp * alpha).sqrt()
         x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
@@ -300,20 +304,20 @@ class Dipole(Element):
             x2
             - self.length.square().unsqueeze(-1)
             * g.unsqueeze(-1)
-            * bmadx.cosc(self.angle.unsqueeze(-1))
+            * drift_kick_drift.cosc(self.angle.unsqueeze(-1))
             - x * (self.angle.cos().unsqueeze(-1))
         )
 
-        Lcv = -self.length.unsqueeze(-1) * bmadx.sinc(self.angle.unsqueeze(-1)) - x * (
-            self.angle.sin().unsqueeze(-1)
-        )
+        Lcv = -self.length.unsqueeze(-1) * drift_kick_drift.sinc(
+            self.angle.unsqueeze(-1)
+        ) - x * (self.angle.sin().unsqueeze(-1))
 
         theta_p = 2.0 * (
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2.0 - torch.arctan2(Lcv, Lcu)
         )
 
         Lc = (Lcu.square() + Lcv.square()).sqrt()
-        Lp = Lc / bmadx.sinc(theta_p / 2.0)
+        Lp = Lc / drift_kick_drift.sinc(theta_p / 2.0)
 
         x_f = x2
         px_f = px_norm * (self.angle.unsqueeze(-1) + phi1 - theta_p).sin()
@@ -326,7 +330,7 @@ class Dipole(Element):
 
         return x_f, px_f, y_f, py, tau_f
 
-    def _bmadx_fringe_linear(
+    def _drift_kick_drift_fringe_linear(
         self,
         location: Literal["entrance", "exit"],
         x: torch.Tensor,

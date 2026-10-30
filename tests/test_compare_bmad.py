@@ -76,7 +76,7 @@ def test_different_species_in_different_elements(species, cheetah_element):
         weights_only=False,
     )
 
-    # Track with Cheetah using bmadx routines
+    # Track with Cheetah using drift_kick_drift routines
     outgoing = cheetah_element.track(incoming)
 
     # Load Bmad results
