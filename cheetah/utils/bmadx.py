@@ -1,5 +1,4 @@
 import torch
-from scipy.constants import speed_of_light
 
 double_precision_epsilon = torch.finfo(torch.float64).eps
 
@@ -267,41 +266,6 @@ def track_a_drift(
     px_in: torch.Tensor,
     y_in: torch.Tensor,
     py_in: torch.Tensor,
-    z_in: torch.Tensor,
-    pz_in: torch.Tensor,
-    p0c: torch.Tensor,
-    mc2: torch.Tensor,
-) -> tuple[torch.Tensor]:
-    """Exact drift tracking used in different elements."""
-
-    P = 1.0 + pz_in  # Particle's total momentum over p0
-    Px = px_in / P  # Particle's 'x' momentum over p0
-    Py = py_in / P  # Particle's 'y' momentum over p0
-    Pxy2 = Px.square() + Py.square()  # Particle's transverse mometum^2 over p0^2
-    Pl = (1.0 - Pxy2).sqrt()  # Particle's longitudinal momentum over p0
-
-    # z = z + L * ( beta / beta_ref - 1.0 / Pl ) but numerically accurate:
-    dz = length.unsqueeze(-1) * (
-        sqrt_one(
-            (mc2.square() * (2 * pz_in + pz_in.square()))
-            / ((p0c.unsqueeze(-1) * P).square() + mc2.square())
-        )
-        + sqrt_one(-Pxy2) / Pl
-    )
-
-    x_out = x_in + length.unsqueeze(-1) * Px / Pl
-    y_out = y_in + length.unsqueeze(-1) * Py / Pl
-    z_out = z_in + dz
-
-    return x_out, y_out, z_out
-
-
-def track_a_drift_cheetah(
-    length: torch.Tensor,
-    x_in: torch.Tensor,
-    px_in: torch.Tensor,
-    y_in: torch.Tensor,
-    py_in: torch.Tensor,
     tau_in: torch.Tensor,
     delta_in: torch.Tensor,
     p0c: torch.Tensor,
@@ -333,18 +297,6 @@ def track_a_drift_cheetah(
     tau_out = tau_in - dz / beta
 
     return x_out, y_out, tau_out
-
-
-def particle_rf_time(z, pz, p0c, mc2):
-    """Returns rf time of Particle p."""
-    beta = (
-        (1 + pz)
-        * p0c.unsqueeze(-1)
-        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
-    )
-    time = -z / (beta * speed_of_light)
-
-    return time
 
 
 def sinc(x):

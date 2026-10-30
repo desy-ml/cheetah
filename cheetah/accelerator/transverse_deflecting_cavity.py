@@ -194,9 +194,7 @@ class TransverseDeflectingCavity(Element):
         )
 
         half_length = self.length / 2.0
-        x, y, tau = bmadx.track_a_drift_cheetah(
-            half_length, x, px, y, py, tau, delta, p0c, mc2
-        )
+        x, y, tau = bmadx.track_a_drift(half_length, x, px, y, py, tau, delta, p0c, mc2)
 
         voltage = self.voltage * -1.0 * incoming.species.num_elementary_charges / p0c
         k_rf = 2.0 * torch.pi * self.frequency / speed_of_light
@@ -213,9 +211,7 @@ class TransverseDeflectingCavity(Element):
         px = px + voltage.unsqueeze(-1) * phase.sin()
         delta = delta + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(-1) * x
 
-        x, y, tau = bmadx.track_a_drift_cheetah(
-            half_length, x, px, y, py, tau, delta, p0c, mc2
-        )
+        x, y, tau = bmadx.track_a_drift(half_length, x, px, y, py, tau, delta, p0c, mc2)
 
         x, px, y, py = bmadx.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
