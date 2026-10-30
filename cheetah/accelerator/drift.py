@@ -8,8 +8,8 @@ from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_ttensor, drift_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
-    bmadx,
     cache_transfer_map,
+    drift_kick_drift,
     merge_element_names,
 )
 
@@ -105,7 +105,7 @@ class Drift(Element):
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the dipole element using the Drift_kick_drift method.
+        Track particles through the drift element using the drift_kick_drift method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
@@ -115,27 +115,18 @@ class Drift(Element):
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
 
-        # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
         y = incoming.y
         py = incoming.py
         tau = incoming.tau
         delta = incoming.p
+        mc2 = incoming.species.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(
-            tau, delta, incoming.energy, incoming.species.mass_eV
-        )
+        p0c = (incoming.energy.square() - mc2.square()).sqrt()
 
-        # Begin Bmad-X tracking
-        x, y, z = bmadx.track_a_drift(
-            self.length, x, px, y, py, z, pz, p0c, incoming.species.mass_eV
-        )
-        # End of Bmad-X tracking
-
-        # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(
-            z, pz, p0c, incoming.species.mass_eV
+        x, y, tau = drift_kick_drift.track_a_drift(
+            self.length, x, px, y, py, tau, delta, p0c, mc2
         )
 
         # Broadcast to align their shapes so that they can be stacked
@@ -145,7 +136,7 @@ class Drift(Element):
             particles=torch.stack(
                 [x, px, y, py, tau, delta, torch.ones_like(x)], dim=-1
             ),
-            energy=ref_energy,
+            energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
