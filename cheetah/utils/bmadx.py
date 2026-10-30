@@ -1,7 +1,5 @@
 import torch
 
-double_precision_epsilon = torch.finfo(torch.float64).eps
-
 
 def offset_particle_set(
     x_offset: torch.Tensor,
@@ -11,7 +9,7 @@ def offset_particle_set(
     px_lab: torch.Tensor,
     y_lab: torch.Tensor,
     py_lab: torch.Tensor,
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms particle coordinates from lab to element frame.
 
@@ -44,7 +42,7 @@ def offset_particle_unset(
     px_ele: torch.Tensor,
     y_ele: torch.Tensor,
     py_ele: torch.Tensor,
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms particle coordinates from element to lab frame.
 
@@ -79,23 +77,26 @@ def low_energy_z_correction(
     :param p0c: Reference particle momentum in eV.
     :param mc2: Particle mass in eV.
     :param ds: Drift length.
-    :return: dz=(ds-d_particle) + ds*(beta - beta_ref)/beta_ref
+    :return: Change in z-coordinate.
     """
     beta = (
-        (1 + pz)
+        (1.0 + pz)
         * p0c.unsqueeze(-1)
-        / (((1 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
+        / (((1.0 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
     )
     beta0 = p0c / (p0c.square() + mc2.square()).sqrt()
     e_tot = (p0c.square() + mc2.square()).sqrt()
 
     evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
     dz = ds.unsqueeze(-1) * pz * (
-        1
-        - 3 * (pz * beta0.square().unsqueeze(-1)) / 2
+        1.0
+        - 3.0 * (pz * beta0.square().unsqueeze(-1)) / 2.0
         + pz.square()
         * beta0.square().unsqueeze(-1)
-        * (2 * beta0.square().unsqueeze(-1) - (mc2 / e_tot.unsqueeze(-1)).square() / 2)
+        * (
+            2.0 * beta0.square().unsqueeze(-1)
+            - (mc2 / e_tot.unsqueeze(-1)).square() / 2.0
+        )
     ) * (mc2 / e_tot.unsqueeze(-1)).square() * (
         evaluation < 3e-7 * e_tot.unsqueeze(-1)
     ) + (
@@ -111,7 +112,6 @@ def calculate_quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     rel_p: torch.Tensor,
-    eps: float = double_precision_epsilon,
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
     Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
@@ -122,7 +122,6 @@ def calculate_quadrupole_coefficients(
     :param k1: Quadrupole strength (k1 > 0 ==> defocus).
     :param length: Quadrupole length.
     :param rel_p: Relative momentum P/P0.
-    :param eps: Machine precision epsilon, default to double precision.
     :return: Tuple of transfer matrix elements and coefficients.
         a11, a12, a21, a22: Transfer matrix elements.
         c1, c2, c3: Second order derivatives of z such that
@@ -138,17 +137,22 @@ def calculate_quadrupole_coefficients(
     a21 = k1 * sx * rel_p
     a22 = cx
 
-    c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4
-    c2 = -k1 * sx.square() / (2 * rel_p)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4 * rel_p.square())
+    c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4.0
+    c2 = -k1 * sx.square() / (2.0 * rel_p)
+    c3 = -(cx * sx + length.unsqueeze(-1)) / (4.0 * rel_p.square())
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
 
-def sqrt_one(x):
-    """Routine to calculate Sqrt[1+x] - 1 to machine precision."""
-    sq = (1 + x).sqrt()
-    rad = sq + 1
+def sqrt_one(x: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `sqrt(1 + x) - 1` to machine precision.
+
+    :param x: Input tensor.
+    :return: Resulting tensor.
+    """
+    sq = (1.0 + x).sqrt()
+    rad = sq + 1.0
 
     return x / rad
 
@@ -164,7 +168,20 @@ def track_a_drift(
     p0c: torch.Tensor,
     mc2: float | torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Exact drift tracking in Cheetah coordinates."""
+    """
+    Exact drift tracking in Cheetah coordinates.
+
+    :param length: Drift length.
+    :param x_in: Input x-coordinate.
+    :param px_in: Input x-momentum.
+    :param y_in: Input y-coordinate.
+    :param py_in: Input y-momentum.
+    :param tau_in: Input tau coordinate.
+    :param delta_in: Input delta momentum.
+    :param p0c: Reference particle momentum in eV.
+    :param mc2: Particle mass in eV.
+    :return: Output x, y, and tau coordinates.
+    """
     e_tot = (p0c.square() + mc2.square()).sqrt()
     energy = e_tot.unsqueeze(-1) + delta_in * p0c.unsqueeze(-1)
     p = (energy.square() - mc2.square()).sqrt()
@@ -192,11 +209,21 @@ def track_a_drift(
     return x_out, y_out, tau_out
 
 
-def sinc(x):
-    """sinc(x) = sin(x)/x."""
+def sinc(x: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `sinc(x) = sin(x) / x`.
+
+    :param x: Input tensor.
+    :return: Cardinal sine of the input.
+    """
     return (x / torch.pi).sinc()
 
 
-def cosc(x):
-    """cosc(x) = (cos(x)-1)/x^2 = -1/2 [sinc(x/2)]^2"""
-    return -0.5 * sinc(x / 2).square()
+def cosc(x: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate `cosc(x) = (cos(x) - 1) / x^2 = -0.5 * sinc(x / 2)^2`.
+
+    :param x: Input tensor.
+    :return: Resulting tensor.
+    """
+    return -0.5 * sinc(x / 2.0).square()
