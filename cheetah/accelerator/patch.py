@@ -121,15 +121,14 @@ class Patch(Element):
         vector_shape = torch.broadcast_shapes(
             self.vector_shape, incoming.particles.shape[:-2], incoming.energy.shape
         )
-        num_particles = incoming.particles.shape[-2]
         outgoing_particles = incoming.particles.expand(
-            *vector_shape, num_particles, 7
+            *vector_shape, incoming.num_particles, 7
         ).clone()
 
         outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
         outgoing_particles[..., [1, 3]] = particle_momenta[..., [0, 1]]
         time_offset_z = (self.time_offset * speed_of_light).unsqueeze(-1)
-        outgoing_particles[..., 4] = incoming.particles[..., 4] + time_offset_z
+        outgoing_particles[..., 4] = incoming.tau + time_offset_z
 
         # Track particles to the end of the patch
         if self.drift_to_exit:
