@@ -121,10 +121,10 @@ class Patch(Element):
         particle_positions = shifted_positions @ rotation_matrix
         particle_momenta = particle_momenta @ rotation_matrix
 
-        batch_shape = particle_positions.shape[:-2]
+        vector_shape = particle_positions.shape[:-2]
         num_particles = particle_positions.shape[-2]
         outgoing_particles = incoming.particles.expand(
-            *batch_shape, num_particles, 7
+            *vector_shape, num_particles, 7
         ).clone()
 
         outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
@@ -195,7 +195,7 @@ class Patch(Element):
         :param species: Particle species of the beam.
         :return: First-order 7x7 transfer map.
         """
-        broadcast_batch = torch.broadcast_shapes(
+        vector_shape = torch.broadcast_shapes(
             self.offset.shape[:-1],
             self.pitch.shape[:-1],
             self.tilt.shape,
@@ -205,9 +205,9 @@ class Patch(Element):
 
         offset = self.offset
         time_offset = self.time_offset
-        if broadcast_batch:
-            offset = offset.expand(*broadcast_batch, 3)
-            time_offset = time_offset.expand(broadcast_batch)
+        if vector_shape:
+            offset = offset.expand(*vector_shape, 3)
+            time_offset = time_offset.expand(vector_shape)
 
         rotation_matrix = self._rotation_matrix()
         rotation_matrix_inverse = rotation_matrix.mT
@@ -233,7 +233,7 @@ class Patch(Element):
             + rotation_matrix_inverse[..., 1, 2] * offset[..., 2]
         )
 
-        transfer_map = torch.eye(7, **factory_kwargs).repeat(*broadcast_batch, 1, 1)
+        transfer_map = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
 
         transfer_map[..., 1, 1] = rotation_matrix_inverse[..., 0, 0]
         transfer_map[..., 1, 3] = rotation_matrix_inverse[..., 0, 1]
@@ -372,29 +372,29 @@ class Patch(Element):
         """
         Compute the rotation matrix for the `Patch` element based on its pitch and tilt.
         """
-        broadcast_batch = torch.broadcast_shapes(self.pitch.shape[:-1], self.tilt.shape)
+        vector_shape = torch.broadcast_shapes(self.pitch.shape[:-1], self.tilt.shape)
 
         pitch = self.pitch
         tilt = self.tilt
-        if broadcast_batch:
-            pitch = pitch.expand(*broadcast_batch, 2)
-            tilt = tilt.expand(broadcast_batch)
+        if vector_shape:
+            pitch = pitch.expand(*vector_shape, 2)
+            tilt = tilt.expand(vector_shape)
 
-        rotation_y = pitch.new_zeros((*broadcast_batch, 3, 3))
+        rotation_y = pitch.new_zeros((*vector_shape, 3, 3))
         rotation_y[..., 0, 0] = pitch[..., 0].cos()
         rotation_y[..., 0, 2] = pitch[..., 0].sin()
         rotation_y[..., 1, 1] = 1.0
         rotation_y[..., 2, 0] = -pitch[..., 0].sin()
         rotation_y[..., 2, 2] = pitch[..., 0].cos()
 
-        rotation_negative_x = pitch.new_zeros((*broadcast_batch, 3, 3))
+        rotation_negative_x = pitch.new_zeros((*vector_shape, 3, 3))
         rotation_negative_x[..., 0, 0] = 1.0
         rotation_negative_x[..., 1, 1] = pitch[..., 1].cos()
         rotation_negative_x[..., 1, 2] = pitch[..., 1].sin()
         rotation_negative_x[..., 2, 1] = -pitch[..., 1].sin()
         rotation_negative_x[..., 2, 2] = pitch[..., 1].cos()
 
-        rotation_z = tilt.new_zeros((*broadcast_batch, 3, 3))
+        rotation_z = tilt.new_zeros((*vector_shape, 3, 3))
         rotation_z[..., 0, 0] = tilt.cos()
         rotation_z[..., 0, 1] = -tilt.sin()
         rotation_z[..., 1, 0] = tilt.sin()

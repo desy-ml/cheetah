@@ -238,8 +238,8 @@ def test_patch_lattice_json_roundtrip(tmp_path):
 
 
 def test_vectorized_patch():
-    """Test tracking with a batched `Patch` element."""
-    batched_patch = cheetah.Patch(
+    """Test tracking with a vectorized `Patch` element."""
+    vectorized_patch = cheetah.Patch(
         offset=torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
         pitch=torch.tensor([[0.1, -0.1], [0.2, -0.2]]),
         tilt=torch.tensor([0.1, 0.2]),
@@ -247,7 +247,7 @@ def test_vectorized_patch():
     incoming = cheetah.ParticleBeam(
         particles=torch.zeros(20, 7), energy=torch.tensor(1.0e9)
     )
-    outgoing = batched_patch.track(incoming)
+    outgoing = vectorized_patch.track(incoming)
     assert outgoing.particles.shape == (2, 20, 7)
     assert outgoing.s.shape == (2,)
 
