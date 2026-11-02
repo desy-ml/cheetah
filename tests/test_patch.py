@@ -289,3 +289,25 @@ def test_patch_track_invalid_type():
     patch = cheetah.Patch()
     with pytest.raises(TypeError, match="Parameter incoming is of invalid type"):
         patch.track("invalid_beam")
+
+
+def test_patch_is_active_and_skippable():
+    """Test that `is_active` and `is_skippable` reflect the element state."""
+    default_patch = cheetah.Patch()
+    assert not default_patch.is_active
+    assert default_patch.is_skippable
+
+    assert cheetah.Patch(position_offset=torch.tensor([1.0, 0.0, 0.0])).is_active
+    assert not cheetah.Patch(position_offset=torch.tensor([1.0, 0.0, 0.0])).is_skippable
+
+    assert cheetah.Patch(pitch=torch.tensor([0.1, 0.0])).is_active
+    assert not cheetah.Patch(pitch=torch.tensor([0.1, 0.0])).is_skippable
+
+    assert cheetah.Patch(tilt=torch.tensor(0.1)).is_active
+    assert not cheetah.Patch(tilt=torch.tensor(0.1)).is_skippable
+
+    assert cheetah.Patch(time_offset=torch.tensor(1.0e-9)).is_active
+    assert not cheetah.Patch(time_offset=torch.tensor(1.0e-9)).is_skippable
+
+    assert cheetah.Patch(energy_offset=torch.tensor(1.0e6)).is_active
+    assert not cheetah.Patch(energy_offset=torch.tensor(1.0e6)).is_skippable

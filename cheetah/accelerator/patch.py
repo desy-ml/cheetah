@@ -13,9 +13,9 @@ class Patch(Element):
 
     :param position_offset: Exit face spatial displacement `(x, y, z)` from the
         entrance in meters.
-    :param time_offset: Reference time offset in seconds.
     :param pitch: Exit face pitch angles `(x_pitch, y_pitch)` in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
+    :param time_offset: Reference time offset in seconds.
     :param energy_offset: Reference energy offset in eV.
     :param drift_to_exit: Whether to drift particles to the exit face plane.
     :param name: Unique identifier of the element.
@@ -32,9 +32,9 @@ class Patch(Element):
     def __init__(
         self,
         position_offset: torch.Tensor | None = None,
-        time_offset: torch.Tensor | None = None,
         pitch: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
+        time_offset: torch.Tensor | None = None,
         energy_offset: torch.Tensor | None = None,
         drift_to_exit: bool = True,
         name: str | None = None,
@@ -59,14 +59,6 @@ class Patch(Element):
             ),
         )
         self.register_buffer_or_parameter(
-            "time_offset",
-            (
-                time_offset
-                if time_offset is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer_or_parameter(
             "pitch",
             (
                 pitch
@@ -76,6 +68,14 @@ class Patch(Element):
         )
         self.register_buffer_or_parameter(
             "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
+        )
+        self.register_buffer_or_parameter(
+            "time_offset",
+            (
+                time_offset
+                if time_offset is not None
+                else torch.tensor(0.0, **factory_kwargs)
+            ),
         )
         self.register_buffer_or_parameter(
             "energy_offset",
@@ -418,16 +418,28 @@ class Patch(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + [
             "position_offset",
-            "time_offset",
             "pitch",
             "tilt",
+            "time_offset",
             "energy_offset",
             "drift_to_exit",
         ]
 
     @property
+    def is_active(self) -> bool:
+        """Whether the `Patch` has any non-zero offsets or rotation angles."""
+        return (
+            (self.position_offset != 0.0).any()
+            or (self.pitch != 0.0).any()
+            or (self.tilt != 0.0).any()
+            or (self.time_offset != 0.0).any()
+            or (self.energy_offset != 0.0).any()
+        ).item()
+
+    @property
     def is_skippable(self) -> bool:
-        return False  # Patch elements cannot be skipped
+        """Whether the `Patch` can be skipped during tracking."""
+        return not self.is_active
 
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
