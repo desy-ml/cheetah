@@ -24,9 +24,7 @@ def feature2nontorch(value: Any) -> Any:
 
 
 def convert_element(
-    element: "cheetah.Element",
-    elements_dict: dict | None = None,
-    lattices_dict: dict | None = None,
+    element: "cheetah.Element", elements_dict: dict | None = None
 ) -> tuple[str, str, dict]:
     """
     Deconstruct an element into its name, class and parameters for saving to JSON. If a
@@ -35,13 +33,10 @@ def convert_element(
 
     :param element: Cheetah element
     :param elements_dict: Optional dictionary to accumulate sub-elements.
-    :param lattices_dict: Optional dictionary to accumulate sub-segments.
     :return: Tuple of element name, element class, and element parameters.
     """
     if elements_dict is None:
         elements_dict = {}
-    if lattices_dict is None:
-        lattices_dict = {}
 
     params = {}
     for feature in element.defining_features:
@@ -49,15 +44,9 @@ def convert_element(
             continue
 
         value = getattr(element, feature)
-        if isinstance(value, cheetah.Segment):
-            segment_elements, segment_lattices = convert_segment(value)
-            elements_dict.update(segment_elements)
-            lattices_dict.update(segment_lattices)
-            params[feature] = value.name
-
-        elif isinstance(value, cheetah.Element):
+        if isinstance(value, cheetah.Element):
             subelement_name, subelement_class, subelement_params = convert_element(
-                value, elements_dict, lattices_dict
+                value, elements_dict
             )
             elements_dict[subelement_name] = [subelement_class, subelement_params]
             params[feature] = subelement_name
@@ -93,9 +82,7 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
             elements.update(segment_elements)
             lattices.update(segment_lattices)
         else:
-            _, element_class, element_params = convert_element(
-                element, elements, lattices
-            )
+            _, element_class, element_params = convert_element(element, elements)
 
             elements[element_name] = [element_class, element_params]
 
@@ -194,6 +181,7 @@ def nontorch2feature(
 def parse_element(
     name: str,
     lattice_dict: dict,
+    sanitize_name: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Element":
@@ -202,6 +190,10 @@ def parse_element(
 
     :param name: Name of the `Element` to parse.
     :param lattice_dict: Dictionary containing the lattice information.
+    :param sanitize_name: Whether to sanitise the name to be a valid Python variable
+        name. This is needed if you want to use the `segment.element_name` syntax to
+        access the element in a segment. If `None` (default), a warning is raised for
+        invalid names. Set to `True` to sanitise, or `False` to silence the warning.
     :param device: Device to place the lattice elements on.
     :param dtype: Data type to use for the lattice elements.
     """
@@ -210,23 +202,20 @@ def parse_element(
 
     converted_params = {
         key: (
-            parse_element(value, lattice_dict, device=device, dtype=dtype)
+            parse_element(value, lattice_dict, sanitize_name, device, dtype)
             if isinstance(value, str) and value in lattice_dict["elements"]
-            else (
-                parse_segment(value, lattice_dict, device=device, dtype=dtype)
-                if isinstance(value, str) and value in lattice_dict["lattices"]
-                else nontorch2feature(value, device=device, dtype=dtype)
-            )
+            else nontorch2feature(value, device, dtype)
         )
         for key, value in params.items()
     }
 
-    return element_class(name=name, **converted_params)
+    return element_class(name=name, sanitize_name=sanitize_name, **converted_params)
 
 
 def parse_segment(
     name: str,
     lattice_dict: dict,
+    sanitize_names: bool | None = None,
     device: torch.device | None = None,
     dtype: torch.dtype | None = None,
 ) -> "cheetah.Segment":
@@ -235,6 +224,11 @@ def parse_segment(
 
     :param name: Name of the `Segment` to parse.
     :param lattice_dict: Dictionary containing the lattice information.
+    :param sanitize_names: Whether to sanitise the names of the elements to be valid
+        Python variable names. This is needed if you want to use the
+        `segment.element_name` syntax to access the element in a segment. If `None`
+        (default), a warning is raised for invalid names. Set to `True` to sanitise or
+        `False` to silence the warning.
     :param device: Device to place the lattice elements on.
     :param dtype: Data type to use for the lattice elements.
     """
@@ -243,26 +237,34 @@ def parse_segment(
         # Construct new element
         if element_name in lattice_dict["lattices"]:
             new_element = parse_segment(
-                element_name, lattice_dict, device=device, dtype=dtype
+                element_name, lattice_dict, sanitize_names, device=device, dtype=dtype
             )
         else:
             new_element = parse_element(
-                element_name, lattice_dict, device=device, dtype=dtype
+                element_name, lattice_dict, sanitize_names, device=device, dtype=dtype
             )
 
         # Append the element to the list of elements
         elements.append(new_element)
 
-    return cheetah.Segment(elements=elements, name=name)
+    return cheetah.Segment(elements=elements, name=name, sanitize_name=sanitize_names)
 
 
 def load_cheetah_model(
-    filename: str, device: torch.device | None = None, dtype: torch.dtype | None = None
+    filename: str,
+    sanitize_names: bool | None = None,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
 ) -> "cheetah.Segment":
     """
     Load a Cheetah model from a JSON file.
 
     :param filename: Name/path of the file to load the lattice from.
+    :param sanitize_names: Whether to sanitise the names of the elements to be valid
+        Python variable names. This is needed if you want to use the
+        `segment.element_name` syntax to access the element in a segment. If `None`
+        (default), a warning is raised for invalid names. Set to `True` to sanitise or
+        `False` to silence the warning.
     :param device: Device to place the lattice elements on.
     :param dtype: Data type to use for the lattice elements.
     :return: Loaded Cheetah `Segment`.
@@ -274,4 +276,4 @@ def load_cheetah_model(
 
     root_name = lattice_dict["root"]
 
-    return parse_segment(root_name, lattice_dict, device=device, dtype=dtype)
+    return parse_segment(root_name, lattice_dict, sanitize_names, device, dtype)

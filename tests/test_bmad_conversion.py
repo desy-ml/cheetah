@@ -2,7 +2,12 @@ import pytest
 import torch
 
 import cheetah
-from cheetah.utils import NotUnderstoodPropertyWarning, is_mps_available_and_functional
+import cheetah.converters.bmad as bmad_converter
+from cheetah.utils import (
+    NotUnderstoodPropertyWarning,
+    PhysicsWarning,
+    is_mps_available_and_functional,
+)
 
 
 def test_bmad_tutorial():
@@ -147,10 +152,28 @@ def test_cu_hxr_lcls_fixture_conversion():
 
     assert isinstance(converted, cheetah.Segment)
     assert converted.name == "cu_hxr"
-    assert isinstance(flattened.bx11, cheetah.Dipole)
+    assert converted.gunl0a.element_names == [
+        "beggunb",
+        "l0a",
+        "l0b",
+        "qa01_split_0",
+        "bpm4",
+        "qa01_split_1",
+        "d_mid",
+        "qa02_split_0",
+        "bpm5",
+        "otr3",
+        "qa02_split_1",
+        "qe01_split_0",
+        "otr2",
+        "qe01_split_1",
+    ]
+    assert isinstance(converted.gunl0a.qa01_split_0, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.bpm4, cheetah.Marker)
 
-    assert flattened.qa01.k1.item() == pytest.approx(0.384840836193)
-    assert flattened.qa01.metadata["alias"] == "quad:in20:121"
+    assert isinstance(flattened.bx11, cheetah.Dipole)
+    assert flattened.qa01_split_0.k1.item() == pytest.approx(0.384840836193)
+    assert flattened.qa01_split_0.metadata["alias"] == "quad:in20:121"
 
     assert flattened.l0a.phase.item() == pytest.approx(-3600.0)
     assert flattened.l0b.phase.item() == pytest.approx(-3600.0)
@@ -159,3 +182,77 @@ def test_cu_hxr_lcls_fixture_conversion():
     assert flattened.tcxdg0.metadata["type"] == "stcav_x"
     assert flattened.tcxdg0.frequency.item() == pytest.approx(2.856e9)
     assert flattened.tcxdg0.length.item() == pytest.approx(0.254)
+
+
+def test_superimpose_non_zero_length_warns():
+    """
+    Test that a superimposed element with a non-zero length is dropped with a warning,
+    because Cheetah can only superimpose zero-length elements.
+    """
+    context = {
+        "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
+        "trim": {
+            "element_type": "hkicker",
+            "l": 0.05,
+            "kick": 1e-4,
+            "superimpose": "T",
+            "ref": "qa01",
+        },
+        "line1": ["qa01"],
+    }
+
+    superimpositions = bmad_converter.collect_superimpositions(context)
+    with pytest.warns(PhysicsWarning, match="zero length"):
+        converted = bmad_converter.convert_element(
+            "line1", context, superimpositions=superimpositions
+        )
+
+    assert isinstance(converted, cheetah.Segment)
+    assert converted.element_names == ["qa01"]
+    assert isinstance(converted.elements[0], cheetah.Quadrupole)
+
+
+def test_partial_superimpose_non_zero_length_skips_only_non_zero():
+    """
+    Test that when multiple elements are superimposed on the same base element, only the
+    non-zero-length ones are skipped, while zero-length ones are superimposed.
+    """
+    context = {
+        "qa01": {"element_type": "quadrupole", "l": 0.1, "k1": 1.0},
+        "bpm1": {"element_type": "marker", "superimpose": "T", "ref": "qa01"},
+        "trim": {
+            "element_type": "hkicker",
+            "l": 0.05,
+            "kick": 1e-4,
+            "superimpose": "T",
+            "ref": "qa01",
+        },
+        "line1": ["qa01"],
+    }
+
+    superimpositions = bmad_converter.collect_superimpositions(context)
+    with pytest.warns(PhysicsWarning, match="zero length"):
+        converted = bmad_converter.convert_element(
+            "line1", context, superimpositions=superimpositions
+        )
+
+    assert isinstance(converted, cheetah.Segment)
+    assert converted.element_names == ["qa01_split_0", "bpm1", "qa01_split_1"]
+
+
+def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
+    """
+    Test that superimpose conversion falls back to the base element on split errors.
+    """
+    file_path = "tests/resources/lcls/cu_hxr.lat.bmad"
+
+    def _raise_split_assertion_error(self, resolution):
+        raise AssertionError("forced split failure for test")
+
+    monkeypatch.setattr(cheetah.Quadrupole, "split", _raise_split_assertion_error)
+
+    with pytest.warns(PhysicsWarning, match="Keeping only the base element"):
+        converted = cheetah.Segment.from_bmad(file_path, dtype=torch.float64)
+
+    assert isinstance(converted.gunl0a.qe01, cheetah.Quadrupole)
+    assert isinstance(converted.gunl0a.qa02, cheetah.Quadrupole)

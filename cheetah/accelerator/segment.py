@@ -138,34 +138,27 @@ class Segment(Element):
             if is_in_subcell:
                 subcell.append(element)
 
-        return self.__class__(subcell)
+        return self.__class__(subcell, metadata=deepcopy(self.metadata))
 
-    def flattened(self, skip_superimposed: bool = False) -> "Segment":
+    def flattened(self) -> "Segment":
         """
         Return a flattened version of the segment, i.e. one where all subsegments are
         resolved and their elements entered into a top-level segment.
-
-        :param skip_superimposed: If `True`, `Superimposed` elements are not flattened,
-            otherwise they are flattened like nested `Segment`s.
         """
-        # Import Superimposed lazily to avoid circular imports at module load time.
-        from cheetah.accelerator.superimposed import Superimposed
-
         flattened_elements = []
         for element in self.elements:
-            if skip_superimposed and isinstance(element, Superimposed):
-                flattened_elements.append(element)
-            elif isinstance(element, Segment):
-                flattened_elements += element.flattened(
-                    skip_superimposed=skip_superimposed
-                ).elements
+            if isinstance(element, Segment):
+                flattened_elements += element.flattened().elements
             elif hasattr(element, "flattened"):
                 flattened_elements += element.flattened().elements
             else:
                 flattened_elements.append(element)
 
         return self.__class__(
-            elements=flattened_elements, name=self.name, sanitize_name=False
+            elements=flattened_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def reversed(self) -> "Segment":
@@ -186,6 +179,7 @@ class Segment(Element):
             elements=reversed_elements,
             name=f"{self.name}_reversed",
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def transfer_maps_merged(
@@ -237,7 +231,10 @@ class Segment(Element):
             )
 
         return self.__class__(
-            elements=merged_elements, name=self.name, sanitize_name=False
+            elements=merged_elements,
+            name=self.name,
+            sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def without_inactive_markers(
@@ -266,6 +263,7 @@ class Segment(Element):
             ],
             name=self.name,
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def without_inactive_zero_length_elements(
@@ -295,6 +293,7 @@ class Segment(Element):
             ],
             name=self.name,
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def inactive_elements_as_drifts(
@@ -327,12 +326,14 @@ class Segment(Element):
                         device=element.length.device,
                         dtype=element.length.dtype,
                         sanitize_name=False,
+                        metadata=deepcopy(element.metadata),
                     )
                 )
                 for element in self.elements
             ],
             name=self.name,
             sanitize_name=False,
+            metadata=deepcopy(self.metadata),
         )
 
     def with_consecutive_elements_merged(
@@ -382,6 +383,7 @@ class Segment(Element):
     def from_lattice_json(
         cls,
         filepath: str,
+        sanitize_names: bool | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
     ) -> "Segment":
@@ -389,11 +391,18 @@ class Segment(Element):
         Load a Cheetah model from a JSON file.
 
         :param filepath: Path of the file to load the lattice from.
+        :param sanitize_names: Whether to sanitise the names of the elements to be valid
+            Python variable names. This is needed if you want to use the
+            `segment.element_name` syntax to access the element in a segment. If `None`
+            (default), a warning is raised for invalid names. Set to `True` to sanitise,
+            or `False` to silence the warning.
         :param device: Device to place the lattice elements on.
         :param dtype: Data type to use for the lattice elements.
         :return: Loaded Cheetah `Segment`.
         """
-        return latticejson.load_cheetah_model(filepath, device=device, dtype=dtype)
+        return latticejson.load_cheetah_model(
+            filepath, sanitize_names=sanitize_names, device=device, dtype=dtype
+        )
 
     def to_lattice_json(
         self,
@@ -605,7 +614,7 @@ class Segment(Element):
             elements=self.elements + other.elements,
             name=merge_element_names(self.name, other.name),
             sanitize_name=False,
-            metadata=other.metadata.update(self.metadata),
+            metadata={**other.metadata, **self.metadata},
         )
 
     def partition_at(
@@ -625,14 +634,16 @@ class Segment(Element):
         """
         index = self.element_index(element_name)
         pre_cell = (
-            self.__class__(self.elements[: index + 1])
+            self.__class__(self.elements[: index + 1], metadata=deepcopy(self.metadata))
             if mode == "after"
-            else self.__class__(self.elements[:index])
+            else self.__class__(self.elements[:index], metadata=deepcopy(self.metadata))
         )
         post_cell = (
-            self.__class__(self.elements[index:])
+            self.__class__(self.elements[index:], metadata=deepcopy(self.metadata))
             if mode == "before"
-            else self.__class__(self.elements[index + 1 :])
+            else self.__class__(
+                self.elements[index + 1 :], metadata=deepcopy(self.metadata)
+            )
         )
         return (
             (pre_cell, self.elements[index], post_cell)  # Two splits: before and after

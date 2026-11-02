@@ -27,7 +27,7 @@ class Quadrupole(Element):
     Quadrupole magnet in a particle accelerator.
 
     :param length: Length in meters.
-    :param k1: Strength of the quadrupole in 1/m^-2.
+    :param k1: Strength of the quadrupole in 1/m^2.
     :param misalignment: Misalignment vector of the quadrupole in x- and y-directions.
     :param tilt: Tilt angle of the quadrupole in x-y plane in radians. pi/4 for
         skew-quadrupole.
@@ -295,7 +295,7 @@ class Quadrupole(Element):
             tracking_method=self.tracking_method,
             name=merge_element_names(self.name, other.name),
             sanitize_name=False,
-            metadata=other.metadata.update(self.metadata),
+            metadata={**other.metadata, **self.metadata},
             dtype=self.length.dtype,
             device=self.length.device,
         )
