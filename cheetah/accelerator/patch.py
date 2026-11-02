@@ -163,12 +163,13 @@ class Patch(Element):
                 outgoing_energy, incoming.species.mass_eV
             )
             p_ratio = (incoming.energy * beta0) / (outgoing_energy * beta1)
-            p_ratio_u = p_ratio.unsqueeze(-1)
+            p_ratio_particles = p_ratio[..., None, None]
             outgoing_particles[..., [1, 3]] = (
-                outgoing_particles[..., [1, 3]] * p_ratio_u
+                outgoing_particles[..., [1, 3]] * p_ratio_particles
             )
             outgoing_particles[..., 5] = (
-                outgoing_particles[..., 5] * p_ratio_u + (p_ratio_u - 1.0)
+                outgoing_particles[..., 5] * p_ratio_particles.squeeze(-1)
+                + (p_ratio_particles.squeeze(-1) - 1.0)
             )
         else:
             outgoing_energy = incoming.energy

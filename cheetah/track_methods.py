@@ -559,8 +559,8 @@ def patch_transfer_map(
                 outgoing_energy, species.mass_eV
             )
             p_ratio = (energy * beta0) / (outgoing_energy * beta1)
-            p_ratio_u = p_ratio.unsqueeze(-1)
-            tm[..., [1, 3], :] = tm[..., [1, 3], :] * p_ratio_u
+            p_ratio_matrix = p_ratio[..., None, None]
+            tm[..., [1, 3], :] = tm[..., [1, 3], :] * p_ratio_matrix
             tm[..., 5, 5] = p_ratio
             tm[..., 5, 6] = p_ratio - 1.0
 
