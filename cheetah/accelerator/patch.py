@@ -106,14 +106,7 @@ class Patch(Element):
             relative_momentum.square() - incoming.px.square() - incoming.py.square()
         )
         pz = pz_squared.clamp(min=0.0).sqrt()
-        particle_momenta = torch.stack(
-            [
-                incoming.px,
-                incoming.py,
-                pz,
-            ],
-            dim=-1,
-        )
+        particle_momenta = torch.stack([incoming.px, incoming.py, pz], dim=-1)
 
         rotation_matrix = self._rotation_matrix()
         offset_x = self.offset[..., 0].unsqueeze(-1)
