@@ -155,3 +155,117 @@ def test_jacobian():
     )
 
     assert torch.allclose(J[:6, :6], gt_J, atol=5e-4, rtol=1e-4)
+
+
+def test_transform_parameters():
+    """
+    Test that tracking a `ParameterBeam` through a `Patch` matches the mean and
+    covariance of a tracked `ParticleBeam`.
+    """
+    patch = cheetah.Patch(
+        offset=torch.tensor([0.1, 0.2, 0.3]),
+        pitch=torch.tensor([0.5, -0.5]),
+        tilt=torch.tensor(0.75),
+    )
+    energy = torch.tensor(1.0e9)
+
+    particles = torch.randn(100_000, 7) * 1.0e-4
+    particles[:, 6] = 1.0
+    p_beam = cheetah.ParticleBeam(particles=particles, energy=energy)
+    param_beam = p_beam.as_parameter_beam()
+
+    p_out = patch.track(p_beam)
+    param_out = patch.track(param_beam)
+    p_out_as_param = p_out.as_parameter_beam()
+
+    assert torch.allclose(param_out.mu, p_out_as_param.mu, atol=1.0e-5)
+    assert torch.allclose(
+        param_out.cov[:6, :6], p_out_as_param.cov[:6, :6], atol=1.0e-7, rtol=5.0e-2
+    )
+
+
+def test_patch_clone():
+    """Test that `Patch.clone` preserves all defining features."""
+    patch = cheetah.Patch(
+        offset=torch.tensor([0.1, 0.2, 0.3]),
+        time_offset=torch.tensor(1.0e-9),
+        pitch=torch.tensor([0.05, -0.05]),
+        tilt=torch.tensor(0.2),
+        energy_offset=torch.tensor(1.0e6),
+        energy_setpoint=torch.tensor(2.0e6),
+        drift_to_exit=False,
+        name="test_patch",
+    )
+    cloned = patch.clone()
+
+    assert cloned.name == patch.name
+    assert torch.equal(cloned.offset, patch.offset)
+    assert torch.equal(cloned.time_offset, patch.time_offset)
+    assert torch.equal(cloned.pitch, patch.pitch)
+    assert torch.equal(cloned.tilt, patch.tilt)
+    assert torch.equal(cloned.energy_offset, patch.energy_offset)
+    assert torch.equal(cloned.energy_setpoint, patch.energy_setpoint)
+    assert cloned.drift_to_exit == patch.drift_to_exit
+
+
+def test_patch_lattice_json_roundtrip(tmp_path):
+    """Test serialising a `Patch` to LatticeJSON and reloading it."""
+    patch = cheetah.Patch(
+        offset=torch.tensor([0.1, 0.2, 0.3]),
+        time_offset=torch.tensor(1.0e-9),
+        pitch=torch.tensor([0.05, -0.05]),
+        tilt=torch.tensor(0.2),
+        energy_offset=torch.tensor(1.0e6),
+        energy_setpoint=torch.tensor(2.0e6),
+        drift_to_exit=False,
+        name="my_patch",
+    )
+    segment = cheetah.Segment([patch], name="patch_segment")
+    json_path = tmp_path / "patch_lattice.json"
+    segment.to_lattice_json(json_path)
+
+    reloaded = cheetah.Segment.from_lattice_json(json_path)
+    reloaded_patch = reloaded.my_patch
+
+    assert isinstance(reloaded_patch, cheetah.Patch)
+    assert torch.allclose(reloaded_patch.offset, patch.offset)
+    assert torch.allclose(reloaded_patch.time_offset, patch.time_offset)
+    assert torch.allclose(reloaded_patch.pitch, patch.pitch)
+    assert torch.allclose(reloaded_patch.tilt, patch.tilt)
+    assert torch.allclose(reloaded_patch.energy_offset, patch.energy_offset)
+    assert torch.allclose(reloaded_patch.energy_setpoint, patch.energy_setpoint)
+    assert reloaded_patch.drift_to_exit == patch.drift_to_exit
+
+
+def test_vectorized_patch():
+    """Test tracking with a batched `Patch` element."""
+    batched_patch = cheetah.Patch(
+        offset=torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
+        pitch=torch.tensor([[0.1, -0.1], [0.2, -0.2]]),
+        tilt=torch.tensor([0.1, 0.2]),
+    )
+    incoming = cheetah.ParticleBeam(
+        particles=torch.zeros(20, 7), energy=torch.tensor(1.0e9)
+    )
+    outgoing = batched_patch.track(incoming)
+    assert outgoing.particles.shape == (2, 20, 7)
+    assert outgoing.s.shape == (2,)
+
+
+def test_patch_energy_offset_and_setpoint():
+    """Test that energy offsets and setpoints scale momentum deviations properly."""
+    patch_offset = cheetah.Patch(energy_offset=torch.tensor(2.0e8))
+    patch_setpoint = cheetah.Patch(energy_setpoint=torch.tensor(1.2e9))
+
+    incoming = cheetah.ParticleBeam(
+        particles=torch.zeros(10, 7), energy=torch.tensor(1.0e9)
+    )
+    # Give initial delta of 0.05
+    incoming.particles[:, 5] = 0.05
+
+    out_offset = patch_offset.track(incoming)
+    out_setpoint = patch_setpoint.track(incoming)
+
+    assert torch.isclose(out_offset.energy, torch.tensor(1.2e9))
+    assert torch.isclose(out_setpoint.energy, torch.tensor(1.2e9))
+    assert torch.allclose(out_offset.particles, out_setpoint.particles)
