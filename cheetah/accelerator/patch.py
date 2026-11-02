@@ -137,25 +137,21 @@ class Patch(Element):
         reference_exit = -(
             rotation_matrix_inverse @ self.position_offset.unsqueeze(-1)
         ).squeeze(-1)
-        reference_x_exit = reference_exit[..., 0]
-        reference_y_exit = reference_exit[..., 1]
         reference_z = reference_exit[..., 2]
 
         reference_momentum = rotation_matrix_inverse[..., :, 2]
-        reference_px = reference_momentum[..., 0]
-        reference_py = reference_momentum[..., 1]
         reference_pz = reference_momentum[..., 2]
 
         transfer_map = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
 
         transfer_map[..., 1, [1, 3, 5]] = rotation_matrix_inverse[..., 0, :]
         transfer_map[..., 3, [1, 3, 5]] = rotation_matrix_inverse[..., 1, :]
-        transfer_map[..., 1, 6] = reference_px
-        transfer_map[..., 3, 6] = reference_py
+        transfer_map[..., [1, 3], 6] = reference_momentum[..., :2]
 
         if self.drift_to_exit:
-            reference_slope_x = reference_px / reference_pz
-            reference_slope_y = reference_py / reference_pz
+            reference_slopes = reference_momentum[..., :2] / reference_pz.unsqueeze(-1)
+            reference_slope_x = reference_slopes[..., 0]
+            reference_slope_y = reference_slopes[..., 1]
             reference_drift_distance = reference_z / reference_pz
 
             # Spatial coordinates (columns 0 and 2: x, y).
@@ -191,8 +187,9 @@ class Patch(Element):
                 - rotation_matrix_inverse[..., 2, :] / reference_pz.unsqueeze(-1)
             )
 
-            transfer_map[..., 0, 6] = reference_x_exit - reference_z * reference_slope_x
-            transfer_map[..., 2, 6] = reference_y_exit - reference_z * reference_slope_y
+            transfer_map[..., [0, 2], 6] = (
+                reference_exit[..., :2] - reference_z.unsqueeze(-1) * reference_slopes
+            )
             transfer_map[..., 4, 6] = (
                 self.time_offset * speed_of_light
                 + reference_drift_distance
@@ -201,8 +198,7 @@ class Patch(Element):
         else:
             transfer_map[..., 0, [0, 2]] = rotation_matrix_inverse[..., 0, [0, 1]]
             transfer_map[..., 2, [0, 2]] = rotation_matrix_inverse[..., 1, [0, 1]]
-            transfer_map[..., 0, 6] = reference_x_exit
-            transfer_map[..., 2, 6] = reference_y_exit
+            transfer_map[..., [0, 2], 6] = reference_exit[..., :2]
             transfer_map[..., 4, 6] = self.time_offset * speed_of_light
 
         if (self.energy_offset != 0.0).any():
