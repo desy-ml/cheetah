@@ -103,10 +103,9 @@ class Patch(Element):
     def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
         # Momentum coordinates
         relative_momentum = incoming.p + 1.0  # Convert delta to p / p0
-        pz_squared = (
+        pz = (
             relative_momentum.square() - incoming.px.square() - incoming.py.square()
-        )
-        pz = pz_squared.clamp(min=0.0).sqrt()
+        ).sqrt()
         particle_momenta = torch.stack([incoming.px, incoming.py, pz], dim=-1)
 
         rotation_matrix = self._rotation_matrix()
