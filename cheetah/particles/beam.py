@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 import torch
 from torch import nn
@@ -587,6 +588,81 @@ class Beam(ABC, nn.Module):
             self.register_parameter(name, value)
         else:
             self.register_buffer(name, value)
+
+    def summary(self, as_string: bool = False) -> dict[str, Any] | str:
+        """
+        Return a compact summary of the beam properties.
+
+        :param as_string: Whether to return a formatted string instead of a
+            dictionary.
+        :return: A dictionary of key beam properties or a formatted string
+            representation.
+        """
+
+        def _to_scalar_or_list(val: Any) -> Any:
+            if isinstance(val, torch.Tensor):
+                val = val.detach().cpu()
+                if val.numel() == 1:
+                    return float(val.item())
+                return val.tolist()
+            return val
+
+        data: dict[str, Any] = {
+            "type": self.__class__.__name__,
+            "species": self.species.name,
+            "energy": _to_scalar_or_list(self.energy),
+            "s": _to_scalar_or_list(self.s),
+            "total_charge": _to_scalar_or_list(self.total_charge),
+            "mu_x": _to_scalar_or_list(self.mu_x),
+            "sigma_x": _to_scalar_or_list(self.sigma_x),
+            "mu_y": _to_scalar_or_list(self.mu_y),
+            "sigma_y": _to_scalar_or_list(self.sigma_y),
+            "beta_x": _to_scalar_or_list(self.beta_x),
+            "beta_y": _to_scalar_or_list(self.beta_y),
+            "emittance_x": _to_scalar_or_list(self.emittance_x),
+            "emittance_y": _to_scalar_or_list(self.emittance_y),
+        }
+        if hasattr(self, "num_particles"):
+            data["num_particles"] = self.num_particles
+        if hasattr(self, "num_particles_survived"):
+            data["num_particles_survived"] = _to_scalar_or_list(
+                self.num_particles_survived
+            )
+
+        if not as_string:
+            return data
+
+        def _fmt(val: Any) -> str:
+            if isinstance(val, float):
+                return f"{val:.4e}"
+            return str(val)
+
+        particles_str = ""
+        if "num_particles" in data:
+            survived = data.get("num_particles_survived", data["num_particles"])
+            particles_str = f" | Particles: {survived} / {data['num_particles']}"
+
+        lines = [
+            f"Beam Summary ({data['type']}):",
+            (
+                f"  Species: {data['species']} | Energy: {_fmt(data['energy'])} eV "
+                f"| s: {_fmt(data['s'])} m"
+            ),
+            f"  Charge: {_fmt(data['total_charge'])} C{particles_str}",
+            (
+                f"  Horizontal: mu_x = {_fmt(data['mu_x'])} m, "
+                f"sigma_x = {_fmt(data['sigma_x'])} m, "
+                f"beta_x = {_fmt(data['beta_x'])} m, "
+                f"eps_x = {_fmt(data['emittance_x'])} m*rad"
+            ),
+            (
+                f"  Vertical:   mu_y = {_fmt(data['mu_y'])} m, "
+                f"sigma_y = {_fmt(data['sigma_y'])} m, "
+                f"beta_y = {_fmt(data['beta_y'])} m, "
+                f"eps_y = {_fmt(data['emittance_y'])} m*rad"
+            ),
+        ]
+        return "\n".join(lines)
 
     def __repr__(self) -> str:
         raise NotImplementedError
