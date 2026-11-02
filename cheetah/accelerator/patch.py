@@ -248,8 +248,7 @@ class Patch(Element):
         transfer_map[..., 5, 5] = 1.0
 
         if self.drift_to_exit:
-            reference_pz_safe = reference_pz.clamp(min=1e-12)
-            reference_pz_squared = reference_pz_safe.square()
+            reference_pz_squared = reference_pz.square()
 
             for column, delta_r_index, delta_p_index, delta_delta in [
                 (0, 0, None, 0.0),
@@ -271,21 +270,19 @@ class Patch(Element):
                 )
 
                 term_rx = (
-                    delta_r[..., 0]
-                    - (reference_px / reference_pz_safe) * delta_r[..., 2]
+                    delta_r[..., 0] - (reference_px / reference_pz) * delta_r[..., 2]
                 )
                 term_px = -reference_z * (
-                    delta_p[..., 0] / reference_pz_safe
+                    delta_p[..., 0] / reference_pz
                     - reference_px * delta_p[..., 2] / reference_pz_squared
                 )
                 transfer_map[..., 0, column] = term_rx + term_px
 
                 term_ry = (
-                    delta_r[..., 1]
-                    - (reference_py / reference_pz_safe) * delta_r[..., 2]
+                    delta_r[..., 1] - (reference_py / reference_pz) * delta_r[..., 2]
                 )
                 term_py = -reference_z * (
-                    delta_p[..., 1] / reference_pz_safe
+                    delta_p[..., 1] / reference_pz
                     - reference_py * delta_p[..., 2] / reference_pz_squared
                 )
                 transfer_map[..., 2, column] = term_ry + term_py
@@ -293,27 +290,25 @@ class Patch(Element):
                 delta_tau = 1.0 if column == 4 else 0.0
                 term_tau = (
                     delta_tau
-                    + delta_r[..., 2] / reference_pz_safe
+                    + delta_r[..., 2] / reference_pz
                     + reference_z
                     * (
-                        delta_delta / reference_pz_safe
+                        delta_delta / reference_pz
                         - delta_p[..., 2] / reference_pz_squared
                     )
                 )
                 transfer_map[..., 4, column] = term_tau
 
             transfer_map[..., 0, 6] = (
-                reference_x_exit - reference_z * reference_px / reference_pz_safe
+                reference_x_exit - reference_z * reference_px / reference_pz
             )
             transfer_map[..., 1, 6] = reference_px
             transfer_map[..., 2, 6] = (
-                reference_y_exit - reference_z * reference_py / reference_pz_safe
+                reference_y_exit - reference_z * reference_py / reference_pz
             )
             transfer_map[..., 3, 6] = reference_py
             transfer_map[..., 4, 6] = (
-                time_offset * speed_of_light
-                + reference_z / reference_pz_safe
-                + self.length
+                time_offset * speed_of_light + reference_z / reference_pz + self.length
             )
         else:
             transfer_map[..., 0, 0] = rotation_matrix_inverse[..., 0, 0]
