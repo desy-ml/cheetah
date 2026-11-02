@@ -123,9 +123,7 @@ class Patch(Element):
         particle_momenta = particle_momenta @ rotation_matrix
 
         vector_shape = torch.broadcast_shapes(
-            self.vector_shape,
-            incoming.particles.shape[:-2],
-            incoming.energy.shape,
+            self.vector_shape, incoming.particles.shape[:-2], incoming.energy.shape
         )
         num_particles = incoming.particles.shape[-2]
         outgoing_particles = incoming.particles.expand(
