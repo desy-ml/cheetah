@@ -1,0 +1,72 @@
+name: Release 🚀
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to publish (e.g. 0.8.5)"
+        required: true
+        type: string
+      next_version:
+        description: "Next version for WIP changelog (e.g. 0.8.6; defaults to next patch)"
+        required: false
+        type: string
+
+jobs:
+  release:
+    name: Prepare and publish release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Update CHANGELOG.md and extract release notes
+        run: |
+          python scripts/release.py ${{ inputs.version }} \
+            ${{ inputs.next_version && format('--next-version {0}', inputs.next_version) || '' }} \
+            --changelog-only
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit, tag and publish release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          TAG="v${VERSION#v}"
+          git add CHANGELOG.md
+          git commit -m "Prepare ${TAG} release"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+
+          # Attempt direct push to master (succeeds if using RELEASE_TOKEN or bot has bypass permission)
+          if git push origin master "${TAG}"; then
+            gh release create "${TAG}" --title "${TAG}" --notes-file RELEASE_NOTES.md
+            rm -f RELEASE_NOTES.md
+          else
+            echo "Direct push to master was blocked by branch protection."
+            echo "Pushing release branch and opening a pull request instead..."
+            git tag -d "${TAG}"
+            BRANCH="release-${TAG}"
+            git checkout -b "${BRANCH}"
+            git push -u origin "${BRANCH}"
+            gh pr create \
+              --title "Release ${TAG}" \
+              --body "Automated release preparation for ${TAG}. Once merged, push tag ${TAG} to trigger PyPI publishing." \
+              --base master \
+              --head "${BRANCH}"
+          fi
