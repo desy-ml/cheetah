@@ -137,15 +137,15 @@ class Patch(Element):
         if self.drift_to_exit:
             delta_z_exit = particle_positions[..., 2:3]
             pz_exit = particle_momenta[..., 2:3]
+            drift_factor = delta_z_exit / pz_exit
             outgoing_particles[..., [0, 2]] -= (
-                delta_z_exit * particle_momenta[..., [0, 1]] / pz_exit
+                drift_factor * particle_momenta[..., [0, 1]]
             )
             patch_length = (
                 self.length.unsqueeze(-1) if self.length.ndim > 0 else self.length
             )
             outgoing_particles[..., 4] += (
-                delta_z_exit.squeeze(-1) * relative_momentum / pz_exit.squeeze(-1)
-                + patch_length
+                drift_factor.squeeze(-1) * relative_momentum + patch_length
             )
 
         if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
@@ -381,28 +381,27 @@ class Patch(Element):
             pitch = pitch.expand(*vector_shape, 2)
             tilt = tilt.expand(vector_shape)
 
-        rotation_y = pitch.new_zeros((*vector_shape, 3, 3))
-        rotation_y[..., 0, 0] = pitch[..., 0].cos()
-        rotation_y[..., 0, 2] = pitch[..., 0].sin()
-        rotation_y[..., 1, 1] = 1.0
-        rotation_y[..., 2, 0] = -pitch[..., 0].sin()
-        rotation_y[..., 2, 2] = pitch[..., 0].cos()
+        cos_x = pitch[..., 0].cos()
+        sin_x = pitch[..., 0].sin()
+        cos_y = pitch[..., 1].cos()
+        sin_y = pitch[..., 1].sin()
+        cos_z = tilt.cos()
+        sin_z = tilt.sin()
 
-        rotation_negative_x = pitch.new_zeros((*vector_shape, 3, 3))
-        rotation_negative_x[..., 0, 0] = 1.0
-        rotation_negative_x[..., 1, 1] = pitch[..., 1].cos()
-        rotation_negative_x[..., 1, 2] = pitch[..., 1].sin()
-        rotation_negative_x[..., 2, 1] = -pitch[..., 1].sin()
-        rotation_negative_x[..., 2, 2] = pitch[..., 1].cos()
+        rotation_matrix = pitch.new_zeros((*vector_shape, 3, 3))
+        rotation_matrix[..., 0, 0] = cos_x * cos_z - sin_x * sin_y * sin_z
+        rotation_matrix[..., 0, 1] = -cos_x * sin_z - sin_x * sin_y * cos_z
+        rotation_matrix[..., 0, 2] = sin_x * cos_y
 
-        rotation_z = tilt.new_zeros((*vector_shape, 3, 3))
-        rotation_z[..., 0, 0] = tilt.cos()
-        rotation_z[..., 0, 1] = -tilt.sin()
-        rotation_z[..., 1, 0] = tilt.sin()
-        rotation_z[..., 1, 1] = tilt.cos()
-        rotation_z[..., 2, 2] = 1.0
+        rotation_matrix[..., 1, 0] = cos_y * sin_z
+        rotation_matrix[..., 1, 1] = cos_y * cos_z
+        rotation_matrix[..., 1, 2] = sin_y
 
-        return rotation_y @ rotation_negative_x @ rotation_z
+        rotation_matrix[..., 2, 0] = -sin_x * cos_z - cos_x * sin_y * sin_z
+        rotation_matrix[..., 2, 1] = sin_x * sin_z - cos_x * sin_y * cos_z
+        rotation_matrix[..., 2, 2] = cos_x * cos_y
+
+        return rotation_matrix
 
     @property
     def length(self) -> torch.Tensor:
