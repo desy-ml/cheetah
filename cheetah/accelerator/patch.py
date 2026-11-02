@@ -229,7 +229,19 @@ class Patch(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        return (self._rotation_matrix().inverse()[-1, 0:3] * self.offset).sum()
+        return (self._rotation_matrix()[..., :, 2] * self.offset).sum(dim=-1)
+
+    @property
+    def defining_features(self) -> list[str]:
+        return super().defining_features + [
+            "offset",
+            "time_offset",
+            "pitch",
+            "tilt",
+            "energy_offset",
+            "energy_setpoint",
+            "drift_to_exit",
+        ]
 
     @property
     def is_skippable(self) -> bool:
