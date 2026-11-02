@@ -53,36 +53,45 @@ class Patch(Element):
 
         self.register_buffer_or_parameter(
             "offset",
-            torch.as_tensor(
-                offset if offset is not None else [0.0, 0.0, 0.0], **factory_kwargs
+            (
+                offset
+                if offset is not None
+                else torch.tensor([0.0, 0.0, 0.0], **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "time_offset",
-            torch.as_tensor(
-                time_offset if time_offset is not None else 0.0, **factory_kwargs
+            (
+                time_offset
+                if time_offset is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "pitch",
-            torch.as_tensor(
-                pitch if pitch is not None else [0.0, 0.0], **factory_kwargs
+            (
+                pitch
+                if pitch is not None
+                else torch.tensor([0.0, 0.0], **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
-            "tilt", torch.as_tensor(tilt if tilt is not None else 0.0, **factory_kwargs)
+            "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
         )
         self.register_buffer_or_parameter(
             "energy_offset",
-            torch.as_tensor(
-                energy_offset if energy_offset is not None else 0.0, **factory_kwargs
+            (
+                energy_offset
+                if energy_offset is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
         self.register_buffer_or_parameter(
             "energy_setpoint",
-            torch.as_tensor(
-                energy_setpoint if energy_setpoint is not None else 0.0,
-                **factory_kwargs,
+            (
+                energy_setpoint
+                if energy_setpoint is not None
+                else torch.tensor(0.0, **factory_kwargs)
             ),
         )
 
