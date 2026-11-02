@@ -93,47 +93,56 @@ class Patch(Element):
     def _transform_particles(self, incoming: ParticleBeam) -> Beam:
         # Momentum coordinates
         rel_p = incoming.p + 1.0  # Convert delta to p / p0
+        pz_sq = rel_p.square() - incoming.px.square() - incoming.py.square()
+        pz = torch.clamp(pz_sq, min=0.0).sqrt()
         particle_momenta = torch.stack(
             [
                 incoming.px,
                 incoming.py,
-                (rel_p.square() - incoming.px.square() - incoming.py.square()).sqrt(),
+                pz,
             ],
             dim=-1,
         )
 
-        # Compute the exit positions and momentum
-        # NOTE: These computations follow Bmad coordinates
-        rotation_matrix_inverse = self._rotation_matrix().inverse()
-        particle_positions = torch.stack(
-            (
-                incoming.x - self.offset[0],
-                incoming.y - self.offset[1],
-                -self.offset[2].expand(incoming.x.shape),
-            ),
-            dim=-1,
-        )
-        particle_positions = (rotation_matrix_inverse @ particle_positions.mT).mT
-        particle_momenta = (rotation_matrix_inverse @ particle_momenta.mT).mT
+        R = self._rotation_matrix()
+        offset_x = self.offset[..., 0].unsqueeze(-1)
+        offset_y = self.offset[..., 1].unsqueeze(-1)
+        offset_z = self.offset[..., 2].unsqueeze(-1)
 
-        outgoing_particles = incoming.particles.clone()
+        dx = incoming.x - offset_x
+        dy = incoming.y - offset_y
+        dz_in = -offset_z.expand_as(dx)
+        shifted_positions = torch.stack([dx, dy, dz_in], dim=-1)
+
+        # Coordinate transformation to exit frame: (r_entrance - offset) @ R
+        particle_positions = shifted_positions @ R
+        particle_momenta = particle_momenta @ R
+
+        batch_shape = particle_positions.shape[:-2]
+        num_particles = particle_positions.shape[-2]
+        outgoing_particles = incoming.particles.expand(
+            *batch_shape, num_particles, 7
+        ).clone()
+
         outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
         outgoing_particles[..., [1, 3]] = particle_momenta[..., [0, 1]]
-        outgoing_particles[..., 4] = (
-            incoming.particles[..., 4] + self.time_offset * speed_of_light
-        )
+        time_offset_z = (self.time_offset * speed_of_light).unsqueeze(-1)
+        outgoing_particles[..., 4] = incoming.particles[..., 4] + time_offset_z
 
         # Track particles to the end of the patch
         if self.drift_to_exit:
-            outgoing_particles[..., [0, 2]] = outgoing_particles[..., [0, 2]] - (
-                particle_positions[..., 2].unsqueeze(-1)
-                * particle_momenta[..., [0, 1]]
-                / particle_momenta[..., 2].unsqueeze(-1)
+            dz_exit = particle_positions[..., 2:3]
+            pz_exit = particle_momenta[..., 2:3]
+            outgoing_particles[..., [0, 2]] -= (
+                dz_exit * particle_momenta[..., [0, 1]] / pz_exit
             )
-            outgoing_particles[..., 4] = (
-                outgoing_particles[..., 4]
-                + particle_positions[..., 2] * rel_p / particle_momenta[..., 2]
-                + self.length
+            len_patch = (
+                self.length.unsqueeze(-1)
+                if self.length.ndim > 0
+                else self.length
+            )
+            outgoing_particles[..., 4] += (
+                dz_exit.squeeze(-1) * rel_p / pz_exit.squeeze(-1) + len_patch
             )
 
         return ParticleBeam(
