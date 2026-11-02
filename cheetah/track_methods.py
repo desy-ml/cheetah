@@ -430,6 +430,10 @@ def patch_transfer_map(
     tilt: torch.Tensor,
     time_offset: torch.Tensor,
     drift_to_exit: bool = True,
+    energy_offset: torch.Tensor | None = None,
+    energy_setpoint: torch.Tensor | None = None,
+    energy: torch.Tensor | None = None,
+    species: Species | None = None,
 ) -> torch.Tensor:
     """
     Compute the first-order 7x7 transfer map for a `Patch` element.
@@ -439,6 +443,10 @@ def patch_transfer_map(
     :param tilt: Tilt angle in radians.
     :param time_offset: Reference time offset in seconds.
     :param drift_to_exit: Whether to drift particles to the exit face.
+    :param energy_offset: Reference energy offset in eV.
+    :param energy_setpoint: Target reference energy setpoint in eV.
+    :param energy: Incoming reference energy in eV.
+    :param species: Particle species of the beam.
     :return: First-order transfer map of shape `(..., 7, 7)`.
     """
     broadcast_batch = torch.broadcast_shapes(
@@ -534,5 +542,26 @@ def patch_transfer_map(
         tm[..., 2, 6] = y_exit0
         tm[..., 3, 6] = py0
         tm[..., 4, 6] = time_offset * speed_of_light
+
+    if energy is not None and species is not None:
+        e_set = (
+            energy_setpoint
+            if energy_setpoint is not None
+            else energy.new_tensor(0.0)
+        )
+        e_off = (
+            energy_offset if energy_offset is not None else energy.new_tensor(0.0)
+        )
+        if torch.any(e_set > 0.0) or torch.any(e_off != 0.0):
+            outgoing_energy = torch.where(e_set > 0.0, e_set, energy + e_off)
+            _, _, beta0 = compute_relativistic_factors(energy, species.mass_eV)
+            _, _, beta1 = compute_relativistic_factors(
+                outgoing_energy, species.mass_eV
+            )
+            p_ratio = (energy * beta0) / (outgoing_energy * beta1)
+            p_ratio_u = p_ratio.unsqueeze(-1)
+            tm[..., [1, 3], :] = tm[..., [1, 3], :] * p_ratio_u
+            tm[..., 5, 5] = p_ratio
+            tm[..., 5, 6] = p_ratio - 1.0
 
     return tm

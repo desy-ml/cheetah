@@ -5,7 +5,7 @@ from scipy.constants import speed_of_light
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import patch_rotation_matrix, patch_transfer_map
-from cheetah.utils import UniqueNameGenerator
+from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -144,9 +144,35 @@ class Patch(Element):
                 dz_exit.squeeze(-1) * rel_p / pz_exit.squeeze(-1) + len_patch
             )
 
+        if (
+            torch.any(self.energy_setpoint > 0.0)
+            or torch.any(self.energy_offset != 0.0)
+        ):
+            outgoing_energy = torch.where(
+                self.energy_setpoint > 0.0,
+                self.energy_setpoint,
+                incoming.energy + self.energy_offset,
+            )
+            _, _, beta0 = compute_relativistic_factors(
+                incoming.energy, incoming.species.mass_eV
+            )
+            _, _, beta1 = compute_relativistic_factors(
+                outgoing_energy, incoming.species.mass_eV
+            )
+            p_ratio = (incoming.energy * beta0) / (outgoing_energy * beta1)
+            p_ratio_u = p_ratio.unsqueeze(-1)
+            outgoing_particles[..., [1, 3]] = (
+                outgoing_particles[..., [1, 3]] * p_ratio_u
+            )
+            outgoing_particles[..., 5] = (
+                outgoing_particles[..., 5] * p_ratio_u + (p_ratio_u - 1.0)
+            )
+        else:
+            outgoing_energy = incoming.energy
+
         return ParticleBeam(
             particles=outgoing_particles,
-            energy=incoming.energy + self.energy_offset,
+            energy=outgoing_energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
@@ -171,6 +197,10 @@ class Patch(Element):
             tilt=self.tilt,
             time_offset=self.time_offset,
             drift_to_exit=self.drift_to_exit,
+            energy_offset=self.energy_offset,
+            energy_setpoint=self.energy_setpoint,
+            energy=energy,
+            species=species,
         )
 
     def _transform_parameters(self, incoming: ParameterBeam) -> ParameterBeam:
@@ -179,10 +209,22 @@ class Patch(Element):
         new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         new_cov = tm @ incoming.cov @ tm.mT
 
+        if (
+            torch.any(self.energy_setpoint > 0.0)
+            or torch.any(self.energy_offset != 0.0)
+        ):
+            outgoing_energy = torch.where(
+                self.energy_setpoint > 0.0,
+                self.energy_setpoint,
+                incoming.energy + self.energy_offset,
+            )
+        else:
+            outgoing_energy = incoming.energy
+
         return ParameterBeam(
             mu=new_mu,
             cov=new_cov,
-            energy=incoming.energy + self.energy_offset,
+            energy=outgoing_energy,
             total_charge=incoming.total_charge,
             s=incoming.s + self.length,
             species=incoming.species,
