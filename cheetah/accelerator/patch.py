@@ -161,66 +161,48 @@ class Patch(Element):
         transfer_map[..., 3, 6] = reference_py
 
         if self.drift_to_exit:
-            reference_pz_squared = reference_pz.square()
+            reference_slope_x = reference_px / reference_pz
+            reference_slope_y = reference_py / reference_pz
+            reference_drift_distance = reference_z / reference_pz
 
-            for column, delta_r_index, delta_p_index, delta_delta in [
-                (0, 0, None, 0.0),
-                (1, None, 0, 0.0),
-                (2, 1, None, 0.0),
-                (3, None, 1, 0.0),
-                (4, None, None, 0.0),
-                (5, None, 2, 1.0),
-            ]:
-                delta_r = (
-                    rotation_matrix_inverse[..., :, delta_r_index]
-                    if delta_r_index is not None
-                    else torch.zeros_like(reference_momentum)
-                )
-                delta_p = (
-                    rotation_matrix_inverse[..., :, delta_p_index]
-                    if delta_p_index is not None
-                    else torch.zeros_like(reference_momentum)
-                )
-
-                term_rx = (
-                    delta_r[..., 0] - (reference_px / reference_pz) * delta_r[..., 2]
-                )
-                term_px = -reference_z * (
-                    delta_p[..., 0] / reference_pz
-                    - reference_px * delta_p[..., 2] / reference_pz_squared
-                )
-                transfer_map[..., 0, column] = term_rx + term_px
-
-                term_ry = (
-                    delta_r[..., 1] - (reference_py / reference_pz) * delta_r[..., 2]
-                )
-                term_py = -reference_z * (
-                    delta_p[..., 1] / reference_pz
-                    - reference_py * delta_p[..., 2] / reference_pz_squared
-                )
-                transfer_map[..., 2, column] = term_ry + term_py
-
-                delta_tau = 1.0 if column == 4 else 0.0
-                term_tau = (
-                    delta_tau
-                    + delta_r[..., 2] / reference_pz
-                    + reference_z
-                    * (
-                        delta_delta / reference_pz
-                        - delta_p[..., 2] / reference_pz_squared
-                    )
-                )
-                transfer_map[..., 4, column] = term_tau
-
-            transfer_map[..., 0, 6] = (
-                reference_x_exit - reference_z * reference_px / reference_pz
+            # Spatial coordinates (columns 0 and 2: x, y).
+            spatial_rotation = rotation_matrix_inverse[..., :, [0, 1]]
+            transfer_map[..., 0, [0, 2]] = (
+                spatial_rotation[..., 0, :]
+                - reference_slope_x.unsqueeze(-1) * spatial_rotation[..., 2, :]
             )
-            transfer_map[..., 2, 6] = (
-                reference_y_exit - reference_z * reference_py / reference_pz
+            transfer_map[..., 2, [0, 2]] = (
+                spatial_rotation[..., 1, :]
+                - reference_slope_y.unsqueeze(-1) * spatial_rotation[..., 2, :]
             )
+            transfer_map[..., 4, [0, 2]] = spatial_rotation[
+                ..., 2, :
+            ] / reference_pz.unsqueeze(-1)
+
+            # Momentum coordinates and dispersion (columns 1, 3, 5: px, py, delta).
+            dispersion_vector = torch.tensor([0.0, 0.0, 1.0], **factory_kwargs)
+            transfer_map[..., 0, [1, 3, 5]] = -reference_drift_distance.unsqueeze(
+                -1
+            ) * (
+                rotation_matrix_inverse[..., 0, :]
+                - reference_slope_x.unsqueeze(-1) * rotation_matrix_inverse[..., 2, :]
+            )
+            transfer_map[..., 2, [1, 3, 5]] = -reference_drift_distance.unsqueeze(
+                -1
+            ) * (
+                rotation_matrix_inverse[..., 1, :]
+                - reference_slope_y.unsqueeze(-1) * rotation_matrix_inverse[..., 2, :]
+            )
+            transfer_map[..., 4, [1, 3, 5]] = reference_drift_distance.unsqueeze(-1) * (
+                dispersion_vector
+                - rotation_matrix_inverse[..., 2, :] / reference_pz.unsqueeze(-1)
+            )
+
+            transfer_map[..., 0, 6] = reference_x_exit - reference_z * reference_slope_x
+            transfer_map[..., 2, 6] = reference_y_exit - reference_z * reference_slope_y
             transfer_map[..., 4, 6] = (
                 self.time_offset * speed_of_light
-                + reference_z / reference_pz
+                + reference_drift_distance
                 + self.length
             )
         else:
