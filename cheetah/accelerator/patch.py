@@ -109,14 +109,9 @@ class Patch(Element):
         particle_momenta = torch.stack([incoming.px, incoming.py, pz], dim=-1)
 
         rotation_matrix = self._rotation_matrix()
-        offset_x = self.position_offset[..., 0].unsqueeze(-1)
-        offset_y = self.position_offset[..., 1].unsqueeze(-1)
-        offset_z = self.position_offset[..., 2].unsqueeze(-1)
-
-        delta_x = incoming.x - offset_x
-        delta_y = incoming.y - offset_y
-        delta_z_entrance = -offset_z.expand_as(delta_x)
-        shifted_positions = torch.stack([delta_x, delta_y, delta_z_entrance], dim=-1)
+        shifted_positions = torch.stack(
+            [incoming.x, incoming.y, torch.zeros_like(incoming.x)], dim=-1
+        ) - self.position_offset.unsqueeze(-2)
 
         # Transform coordinates to exit frame: (r_entrance - offset) @ rotation_matrix
         particle_positions = shifted_positions @ rotation_matrix
@@ -203,35 +198,19 @@ class Patch(Element):
             "dtype": self.position_offset.dtype,
         }
 
-        position_offset = self.position_offset
-        time_offset = self.time_offset
-        if vector_shape:
-            position_offset = position_offset.expand(*vector_shape, 3)
-            time_offset = time_offset.expand(vector_shape)
+        rotation_matrix_inverse = self._rotation_matrix().mT
 
-        rotation_matrix = self._rotation_matrix()
-        rotation_matrix_inverse = rotation_matrix.mT
+        reference_exit = -(
+            rotation_matrix_inverse @ self.position_offset.unsqueeze(-1)
+        ).squeeze(-1)
+        reference_x_exit = reference_exit[..., 0]
+        reference_y_exit = reference_exit[..., 1]
+        reference_z = reference_exit[..., 2]
 
         reference_momentum = rotation_matrix_inverse[..., :, 2]
         reference_px = reference_momentum[..., 0]
         reference_py = reference_momentum[..., 1]
         reference_pz = reference_momentum[..., 2]
-
-        reference_z = -(
-            rotation_matrix_inverse[..., 2, 0] * position_offset[..., 0]
-            + rotation_matrix_inverse[..., 2, 1] * position_offset[..., 1]
-            + rotation_matrix_inverse[..., 2, 2] * position_offset[..., 2]
-        )
-        reference_x_exit = -(
-            rotation_matrix_inverse[..., 0, 0] * position_offset[..., 0]
-            + rotation_matrix_inverse[..., 0, 1] * position_offset[..., 1]
-            + rotation_matrix_inverse[..., 0, 2] * position_offset[..., 2]
-        )
-        reference_y_exit = -(
-            rotation_matrix_inverse[..., 1, 0] * position_offset[..., 0]
-            + rotation_matrix_inverse[..., 1, 1] * position_offset[..., 1]
-            + rotation_matrix_inverse[..., 1, 2] * position_offset[..., 2]
-        )
 
         transfer_map = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
 
@@ -306,7 +285,9 @@ class Patch(Element):
             )
             transfer_map[..., 3, 6] = reference_py
             transfer_map[..., 4, 6] = (
-                time_offset * speed_of_light + reference_z / reference_pz + self.length
+                self.time_offset * speed_of_light
+                + reference_z / reference_pz
+                + self.length
             )
         else:
             transfer_map[..., 0, 0] = rotation_matrix_inverse[..., 0, 0]
@@ -317,7 +298,7 @@ class Patch(Element):
             transfer_map[..., 1, 6] = reference_px
             transfer_map[..., 2, 6] = reference_y_exit
             transfer_map[..., 3, 6] = reference_py
-            transfer_map[..., 4, 6] = time_offset * speed_of_light
+            transfer_map[..., 4, 6] = self.time_offset * speed_of_light
 
         if (self.energy_offset != 0.0).any():
             outgoing_energy = energy + self.energy_offset
@@ -364,20 +345,14 @@ class Patch(Element):
         """
         vector_shape = torch.broadcast_shapes(self.pitch.shape[:-1], self.tilt.shape)
 
-        pitch = self.pitch
-        tilt = self.tilt
-        if vector_shape:
-            pitch = pitch.expand(*vector_shape, 2)
-            tilt = tilt.expand(vector_shape)
+        cos_x = self.pitch[..., 0].cos()
+        sin_x = self.pitch[..., 0].sin()
+        cos_y = self.pitch[..., 1].cos()
+        sin_y = self.pitch[..., 1].sin()
+        cos_z = self.tilt.cos()
+        sin_z = self.tilt.sin()
 
-        cos_x = pitch[..., 0].cos()
-        sin_x = pitch[..., 0].sin()
-        cos_y = pitch[..., 1].cos()
-        sin_y = pitch[..., 1].sin()
-        cos_z = tilt.cos()
-        sin_z = tilt.sin()
-
-        rotation_matrix = pitch.new_zeros((*vector_shape, 3, 3))
+        rotation_matrix = self.pitch.new_zeros((*vector_shape, 3, 3))
         rotation_matrix[..., 0, 0] = cos_x * cos_z - sin_x * sin_y * sin_z
         rotation_matrix[..., 0, 1] = -cos_x * sin_z - sin_x * sin_y * cos_z
         rotation_matrix[..., 0, 2] = sin_x * cos_y
