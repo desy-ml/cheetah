@@ -11,8 +11,8 @@ class Patch(Element):
     """
     `Patch` element that shifts the reference orbit and time.
 
-    :param position_offset: Exit face spatial displacement `(x, y, z)` from the
-        entrance in meters.
+    :param position_offset: Exit face spatial displacement `(x, y, z)` from the entrance
+        in meters.
     :param pitch: Exit face pitch angles `(x_pitch, y_pitch)` in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
     :param time_offset: Reference time offset in seconds.
