@@ -10,6 +10,7 @@
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
 - Add compact inspection and summary APIs `Segment.summary` and `Beam.summary` supporting dictionary and string representations
+- Add Cheetah agent skill and stdio Model Context Protocol (MCP) server for automated beamline inspection and tuning
 
 ### 🐛 Bug fixes
 
