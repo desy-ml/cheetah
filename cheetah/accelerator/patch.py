@@ -148,15 +148,8 @@ class Patch(Element):
 
         transfer_map = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
 
-        transfer_map[..., 1, 1] = rotation_matrix_inverse[..., 0, 0]
-        transfer_map[..., 1, 3] = rotation_matrix_inverse[..., 0, 1]
-        transfer_map[..., 1, 5] = rotation_matrix_inverse[..., 0, 2]
-
-        transfer_map[..., 3, 1] = rotation_matrix_inverse[..., 1, 0]
-        transfer_map[..., 3, 3] = rotation_matrix_inverse[..., 1, 1]
-        transfer_map[..., 3, 5] = rotation_matrix_inverse[..., 1, 2]
-
-        transfer_map[..., 5, 5] = 1.0
+        transfer_map[..., 1, [1, 3, 5]] = rotation_matrix_inverse[..., 0, :]
+        transfer_map[..., 3, [1, 3, 5]] = rotation_matrix_inverse[..., 1, :]
         transfer_map[..., 1, 6] = reference_px
         transfer_map[..., 3, 6] = reference_py
 
@@ -206,10 +199,8 @@ class Patch(Element):
                 + self.length
             )
         else:
-            transfer_map[..., 0, 0] = rotation_matrix_inverse[..., 0, 0]
-            transfer_map[..., 0, 2] = rotation_matrix_inverse[..., 0, 1]
-            transfer_map[..., 2, 0] = rotation_matrix_inverse[..., 1, 0]
-            transfer_map[..., 2, 2] = rotation_matrix_inverse[..., 1, 1]
+            transfer_map[..., 0, [0, 2]] = rotation_matrix_inverse[..., 0, [0, 1]]
+            transfer_map[..., 2, [0, 2]] = rotation_matrix_inverse[..., 1, [0, 1]]
             transfer_map[..., 0, 6] = reference_x_exit
             transfer_map[..., 2, 6] = reference_y_exit
             transfer_map[..., 4, 6] = self.time_offset * speed_of_light
@@ -291,17 +282,12 @@ class Patch(Element):
             outgoing_particles[..., [0, 2]] -= (
                 drift_factor * particle_momenta[..., [0, 1]]
             )
-            patch_length = length.unsqueeze(-1) if length.ndim > 0 else length
-            outgoing_particles[..., 4] += (
-                drift_factor.squeeze(-1) * relative_momentum + patch_length
-            )
+            outgoing_particles[..., 4] += drift_factor.squeeze(
+                -1
+            ) * relative_momentum + length.unsqueeze(-1)
 
-        outgoing_energy = (
-            incoming.energy + self.energy_offset
-            if (self.energy_offset != 0.0).any()
-            else incoming.energy
-        )
         if (self.energy_offset != 0.0).any():
+            outgoing_energy = incoming.energy + self.energy_offset
             _, _, incoming_beta = compute_relativistic_factors(
                 incoming.energy, incoming.species.mass_eV
             )
@@ -311,15 +297,15 @@ class Patch(Element):
             momentum_ratio = (incoming.energy * incoming_beta) / (
                 outgoing_energy * outgoing_beta
             )
-            momentum_ratio_particles = momentum_ratio[..., None, None]
-            outgoing_particles[..., [1, 3]] = (
-                outgoing_particles[..., [1, 3]] * momentum_ratio_particles
-            )
+            momentum_ratio_particles = momentum_ratio.unsqueeze(-1)
+            outgoing_particles[..., [1, 3]] = outgoing_particles[
+                ..., [1, 3]
+            ] * momentum_ratio_particles.unsqueeze(-1)
             outgoing_particles[..., 5] = outgoing_particles[
                 ..., 5
-            ] * momentum_ratio_particles.squeeze(-1) + (
-                momentum_ratio_particles.squeeze(-1) - 1.0
-            )
+            ] * momentum_ratio_particles + (momentum_ratio_particles - 1.0)
+        else:
+            outgoing_energy = incoming.energy
 
         return ParticleBeam(
             particles=outgoing_particles,
