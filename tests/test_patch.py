@@ -199,12 +199,12 @@ def test_patch_clone():
     cloned = patch.clone()
 
     assert cloned.name == patch.name
-    assert torch.equal(cloned.offset, patch.offset)
-    assert torch.equal(cloned.time_offset, patch.time_offset)
-    assert torch.equal(cloned.pitch, patch.pitch)
-    assert torch.equal(cloned.tilt, patch.tilt)
-    assert torch.equal(cloned.energy_offset, patch.energy_offset)
-    assert torch.equal(cloned.energy_setpoint, patch.energy_setpoint)
+    assert cloned.offset.equal(patch.offset)
+    assert cloned.time_offset.equal(patch.time_offset)
+    assert cloned.pitch.equal(patch.pitch)
+    assert cloned.tilt.equal(patch.tilt)
+    assert cloned.energy_offset.equal(patch.energy_offset)
+    assert cloned.energy_setpoint.equal(patch.energy_setpoint)
     assert cloned.drift_to_exit == patch.drift_to_exit
 
 

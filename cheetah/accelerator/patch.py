@@ -97,7 +97,7 @@ class Patch(Element):
         pz_squared = (
             relative_momentum.square() - incoming.px.square() - incoming.py.square()
         )
-        pz = torch.clamp(pz_squared, min=0.0).sqrt()
+        pz = pz_squared.clamp(min=0.0).sqrt()
         particle_momenta = torch.stack(
             [
                 incoming.px,
@@ -147,12 +147,9 @@ class Patch(Element):
                 + patch_length
             )
 
-        if torch.any(self.energy_setpoint > 0.0) or torch.any(
-            self.energy_offset != 0.0
-        ):
-            outgoing_energy = torch.where(
+        if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
+            outgoing_energy = self.energy_setpoint.where(
                 self.energy_setpoint > 0.0,
-                self.energy_setpoint,
                 incoming.energy + self.energy_offset,
             )
             _, _, incoming_beta = compute_relativistic_factors(
@@ -327,12 +324,9 @@ class Patch(Element):
             transfer_map[..., 3, 6] = reference_py
             transfer_map[..., 4, 6] = time_offset * speed_of_light
 
-        if torch.any(self.energy_setpoint > 0.0) or torch.any(
-            self.energy_offset != 0.0
-        ):
-            outgoing_energy = torch.where(
+        if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
+            outgoing_energy = self.energy_setpoint.where(
                 self.energy_setpoint > 0.0,
-                self.energy_setpoint,
                 energy + self.energy_offset,
             )
             _, _, incoming_beta = compute_relativistic_factors(energy, species.mass_eV)
@@ -357,12 +351,9 @@ class Patch(Element):
         outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
 
-        if torch.any(self.energy_setpoint > 0.0) or torch.any(
-            self.energy_offset != 0.0
-        ):
-            outgoing_energy = torch.where(
+        if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
+            outgoing_energy = self.energy_setpoint.where(
                 self.energy_setpoint > 0.0,
-                self.energy_setpoint,
                 incoming.energy + self.energy_offset,
             )
         else:
@@ -382,7 +373,6 @@ class Patch(Element):
         Compute the rotation matrix for the `Patch` element based on its pitch and tilt.
         """
         broadcast_batch = torch.broadcast_shapes(self.pitch.shape[:-1], self.tilt.shape)
-        factory_kwargs = {"device": self.pitch.device, "dtype": self.pitch.dtype}
 
         pitch = self.pitch
         tilt = self.tilt
@@ -390,21 +380,21 @@ class Patch(Element):
             pitch = pitch.expand(*broadcast_batch, 2)
             tilt = tilt.expand(broadcast_batch)
 
-        rotation_y = torch.zeros((*broadcast_batch, 3, 3), **factory_kwargs)
+        rotation_y = pitch.new_zeros((*broadcast_batch, 3, 3))
         rotation_y[..., 0, 0] = pitch[..., 0].cos()
         rotation_y[..., 0, 2] = pitch[..., 0].sin()
         rotation_y[..., 1, 1] = 1.0
         rotation_y[..., 2, 0] = -pitch[..., 0].sin()
         rotation_y[..., 2, 2] = pitch[..., 0].cos()
 
-        rotation_negative_x = torch.zeros((*broadcast_batch, 3, 3), **factory_kwargs)
+        rotation_negative_x = pitch.new_zeros((*broadcast_batch, 3, 3))
         rotation_negative_x[..., 0, 0] = 1.0
         rotation_negative_x[..., 1, 1] = pitch[..., 1].cos()
         rotation_negative_x[..., 1, 2] = pitch[..., 1].sin()
         rotation_negative_x[..., 2, 1] = -pitch[..., 1].sin()
         rotation_negative_x[..., 2, 2] = pitch[..., 1].cos()
 
-        rotation_z = torch.zeros((*broadcast_batch, 3, 3), **factory_kwargs)
+        rotation_z = tilt.new_zeros((*broadcast_batch, 3, 3))
         rotation_z[..., 0, 0] = tilt.cos()
         rotation_z[..., 0, 1] = -tilt.sin()
         rotation_z[..., 1, 0] = tilt.sin()
