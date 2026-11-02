@@ -86,97 +86,37 @@ class Patch(Element):
             ),
         )
 
-    def track(self, incoming: Beam) -> Beam:
+    @property
+    def is_active(self) -> bool:
+        """Whether the `Patch` has any non-zero offsets or rotation angles."""
+        return (
+            (self.position_offset != 0.0).any()
+            or (self.pitch != 0.0).any()
+            or (self.tilt != 0.0).any()
+            or (self.time_offset != 0.0).any()
+            or (self.energy_offset != 0.0).any()
+        ).item()
+
+    @property
+    def is_skippable(self) -> bool:
+        """Whether the `Patch` can be skipped during tracking."""
+        return not self.is_active
+
+    @property
+    def length(self) -> torch.Tensor:
+        return (self._rotation_matrix()[..., :, 2] * self.position_offset).sum(dim=-1)
+
+    @property
+    def vector_shape(self) -> torch.Size:
         """
-        Track particles through the `Patch` element.
-
-        :param incoming: Beam entering the element.
-        :return: Beam exiting the element.
+        Broadcasting vector shape of the `Patch` element across all its features.
         """
-        if isinstance(incoming, ParticleBeam):
-            return self._track_particle_beam(incoming)
-        elif isinstance(incoming, ParameterBeam):
-            return self._track_parameter_beam(incoming)
-        else:
-            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
-
-    def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
-        """Track a `ParticleBeam` through the `Patch` element."""
-        # Momentum coordinates
-        relative_momentum = incoming.p + 1.0  # Convert delta to p / p0
-        pz = (
-            relative_momentum.square() - incoming.px.square() - incoming.py.square()
-        ).sqrt()
-        particle_momenta = torch.stack([incoming.px, incoming.py, pz], dim=-1)
-
-        rotation_matrix = self._rotation_matrix()
-        shifted_positions = torch.stack(
-            [incoming.x, incoming.y, torch.zeros_like(incoming.x)], dim=-1
-        ) - self.position_offset.unsqueeze(-2)
-
-        # Transform coordinates to exit frame: (r_entrance - offset) @ rotation_matrix
-        particle_positions = shifted_positions @ rotation_matrix
-        particle_momenta = particle_momenta @ rotation_matrix
-
-        vector_shape = torch.broadcast_shapes(
-            self.vector_shape, incoming.particles.shape[:-2], incoming.energy.shape
-        )
-        outgoing_particles = incoming.particles.expand(
-            *vector_shape, incoming.num_particles, 7
-        ).clone()
-
-        outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
-        outgoing_particles[..., [1, 3]] = particle_momenta[..., [0, 1]]
-        time_offset_z = (self.time_offset * speed_of_light).unsqueeze(-1)
-        outgoing_particles[..., 4] = incoming.tau + time_offset_z
-
-        # Track particles to the end of the patch
-        if self.drift_to_exit:
-            delta_z_exit = particle_positions[..., 2:3]
-            pz_exit = particle_momenta[..., 2:3]
-            drift_factor = delta_z_exit / pz_exit
-            outgoing_particles[..., [0, 2]] -= (
-                drift_factor * particle_momenta[..., [0, 1]]
-            )
-            patch_length = (
-                self.length.unsqueeze(-1) if self.length.ndim > 0 else self.length
-            )
-            outgoing_particles[..., 4] += (
-                drift_factor.squeeze(-1) * relative_momentum + patch_length
-            )
-
-        outgoing_energy = (
-            incoming.energy + self.energy_offset
-            if (self.energy_offset != 0.0).any()
-            else incoming.energy
-        )
-        if (self.energy_offset != 0.0).any():
-            _, _, incoming_beta = compute_relativistic_factors(
-                incoming.energy, incoming.species.mass_eV
-            )
-            _, _, outgoing_beta = compute_relativistic_factors(
-                outgoing_energy, incoming.species.mass_eV
-            )
-            momentum_ratio = (incoming.energy * incoming_beta) / (
-                outgoing_energy * outgoing_beta
-            )
-            momentum_ratio_particles = momentum_ratio[..., None, None]
-            outgoing_particles[..., [1, 3]] = (
-                outgoing_particles[..., [1, 3]] * momentum_ratio_particles
-            )
-            outgoing_particles[..., 5] = outgoing_particles[
-                ..., 5
-            ] * momentum_ratio_particles.squeeze(-1) + (
-                momentum_ratio_particles.squeeze(-1) - 1.0
-            )
-
-        return ParticleBeam(
-            particles=outgoing_particles,
-            energy=outgoing_energy,
-            particle_charges=incoming.particle_charges,
-            survival_probabilities=incoming.survival_probabilities,
-            s=incoming.s + self.length,
-            species=incoming.species.clone(),
+        return torch.broadcast_shapes(
+            self.position_offset.shape[:-1],
+            self.pitch.shape[:-1],
+            self.tilt.shape,
+            self.time_offset.shape,
+            self.energy_offset.shape,
         )
 
     @cache_transfer_map
@@ -316,6 +256,98 @@ class Patch(Element):
 
         return transfer_map
 
+    def track(self, incoming: Beam) -> Beam:
+        """
+        Track particles through the `Patch` element.
+
+        :param incoming: Beam entering the element.
+        :return: Beam exiting the element.
+        """
+        if isinstance(incoming, ParticleBeam):
+            return self._track_particle_beam(incoming)
+        elif isinstance(incoming, ParameterBeam):
+            return self._track_parameter_beam(incoming)
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
+        """Track a `ParticleBeam` through the `Patch` element."""
+        # Momentum coordinates
+        relative_momentum = incoming.p + 1.0  # Convert delta to p / p0
+        pz = (
+            relative_momentum.square() - incoming.px.square() - incoming.py.square()
+        ).sqrt()
+        particle_momenta = torch.stack([incoming.px, incoming.py, pz], dim=-1)
+
+        rotation_matrix = self._rotation_matrix()
+        shifted_positions = torch.stack(
+            [incoming.x, incoming.y, torch.zeros_like(incoming.x)], dim=-1
+        ) - self.position_offset.unsqueeze(-2)
+
+        # Transform coordinates to exit frame: (r_entrance - offset) @ rotation_matrix
+        particle_positions = shifted_positions @ rotation_matrix
+        particle_momenta = particle_momenta @ rotation_matrix
+
+        vector_shape = torch.broadcast_shapes(
+            self.vector_shape, incoming.particles.shape[:-2], incoming.energy.shape
+        )
+        outgoing_particles = incoming.particles.expand(
+            *vector_shape, incoming.num_particles, 7
+        ).clone()
+
+        outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
+        outgoing_particles[..., [1, 3]] = particle_momenta[..., [0, 1]]
+        time_offset_z = (self.time_offset * speed_of_light).unsqueeze(-1)
+        outgoing_particles[..., 4] = incoming.tau + time_offset_z
+
+        length = self.length
+        # Track particles to the end of the patch
+        if self.drift_to_exit:
+            delta_z_exit = particle_positions[..., 2:3]
+            pz_exit = particle_momenta[..., 2:3]
+            drift_factor = delta_z_exit / pz_exit
+            outgoing_particles[..., [0, 2]] -= (
+                drift_factor * particle_momenta[..., [0, 1]]
+            )
+            patch_length = length.unsqueeze(-1) if length.ndim > 0 else length
+            outgoing_particles[..., 4] += (
+                drift_factor.squeeze(-1) * relative_momentum + patch_length
+            )
+
+        outgoing_energy = (
+            incoming.energy + self.energy_offset
+            if (self.energy_offset != 0.0).any()
+            else incoming.energy
+        )
+        if (self.energy_offset != 0.0).any():
+            _, _, incoming_beta = compute_relativistic_factors(
+                incoming.energy, incoming.species.mass_eV
+            )
+            _, _, outgoing_beta = compute_relativistic_factors(
+                outgoing_energy, incoming.species.mass_eV
+            )
+            momentum_ratio = (incoming.energy * incoming_beta) / (
+                outgoing_energy * outgoing_beta
+            )
+            momentum_ratio_particles = momentum_ratio[..., None, None]
+            outgoing_particles[..., [1, 3]] = (
+                outgoing_particles[..., [1, 3]] * momentum_ratio_particles
+            )
+            outgoing_particles[..., 5] = outgoing_particles[
+                ..., 5
+            ] * momentum_ratio_particles.squeeze(-1) + (
+                momentum_ratio_particles.squeeze(-1) - 1.0
+            )
+
+        return ParticleBeam(
+            particles=outgoing_particles,
+            energy=outgoing_energy,
+            particle_charges=incoming.particle_charges,
+            survival_probabilities=incoming.survival_probabilities,
+            s=incoming.s + length,
+            species=incoming.species.clone(),
+        )
+
     def _track_parameter_beam(self, incoming: ParameterBeam) -> ParameterBeam:
         """Track a `ParameterBeam` through the `Patch` element."""
         transfer_map = self.first_order_transfer_map(incoming.energy, incoming.species)
@@ -365,22 +397,14 @@ class Patch(Element):
 
         return rotation_matrix
 
-    @property
-    def vector_shape(self) -> torch.Size:
+    def plot(
+        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+    ) -> plt.Axes:
         """
-        Broadcasting vector shape of the `Patch` element across all its features.
+        Plot a representation of this element into a `matplotlib` Axes at position `s`.
         """
-        return torch.broadcast_shapes(
-            self.position_offset.shape[:-1],
-            self.pitch.shape[:-1],
-            self.tilt.shape,
-            self.time_offset.shape,
-            self.energy_offset.shape,
-        )
-
-    @property
-    def length(self) -> torch.Tensor:
-        return (self._rotation_matrix()[..., :, 2] * self.position_offset).sum(dim=-1)
+        ax = ax or plt.subplot(111)
+        return ax
 
     @property
     def defining_features(self) -> list[str]:
@@ -392,28 +416,3 @@ class Patch(Element):
             "energy_offset",
             "drift_to_exit",
         ]
-
-    @property
-    def is_active(self) -> bool:
-        """Whether the `Patch` has any non-zero offsets or rotation angles."""
-        return (
-            (self.position_offset != 0.0).any()
-            or (self.pitch != 0.0).any()
-            or (self.tilt != 0.0).any()
-            or (self.time_offset != 0.0).any()
-            or (self.energy_offset != 0.0).any()
-        ).item()
-
-    @property
-    def is_skippable(self) -> bool:
-        """Whether the `Patch` can be skipped during tracking."""
-        return not self.is_active
-
-    def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
-    ) -> plt.Axes:
-        """
-        Plot a representation of this element into a `matplotlib` Axes at position `s`.
-        """
-        ax = ax or plt.subplot(111)
-        return ax
