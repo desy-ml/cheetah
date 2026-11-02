@@ -139,17 +139,14 @@ class Patch(Element):
                 dz_exit * particle_momenta[..., [0, 1]] / pz_exit
             )
             len_patch = (
-                self.length.unsqueeze(-1)
-                if self.length.ndim > 0
-                else self.length
+                self.length.unsqueeze(-1) if self.length.ndim > 0 else self.length
             )
             outgoing_particles[..., 4] += (
                 dz_exit.squeeze(-1) * rel_p / pz_exit.squeeze(-1) + len_patch
             )
 
-        if (
-            torch.any(self.energy_setpoint > 0.0)
-            or torch.any(self.energy_offset != 0.0)
+        if torch.any(self.energy_setpoint > 0.0) or torch.any(
+            self.energy_offset != 0.0
         ):
             outgoing_energy = torch.where(
                 self.energy_setpoint > 0.0,
@@ -167,10 +164,9 @@ class Patch(Element):
             outgoing_particles[..., [1, 3]] = (
                 outgoing_particles[..., [1, 3]] * p_ratio_particles
             )
-            outgoing_particles[..., 5] = (
-                outgoing_particles[..., 5] * p_ratio_particles.squeeze(-1)
-                + (p_ratio_particles.squeeze(-1) - 1.0)
-            )
+            outgoing_particles[..., 5] = outgoing_particles[
+                ..., 5
+            ] * p_ratio_particles.squeeze(-1) + (p_ratio_particles.squeeze(-1) - 1.0)
         else:
             outgoing_energy = incoming.energy
 
@@ -213,9 +209,8 @@ class Patch(Element):
         new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         new_cov = tm @ incoming.cov @ tm.mT
 
-        if (
-            torch.any(self.energy_setpoint > 0.0)
-            or torch.any(self.energy_offset != 0.0)
+        if torch.any(self.energy_setpoint > 0.0) or torch.any(
+            self.energy_offset != 0.0
         ):
             outgoing_energy = torch.where(
                 self.energy_setpoint > 0.0,

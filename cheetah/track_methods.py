@@ -383,9 +383,7 @@ def combined_rotation_misalignment_matrix(
     return tm_entry, tm_exit
 
 
-def patch_rotation_matrix(
-    pitch: torch.Tensor, tilt: torch.Tensor
-) -> torch.Tensor:
+def patch_rotation_matrix(pitch: torch.Tensor, tilt: torch.Tensor) -> torch.Tensor:
     """
     Compute the 3D rotation matrix for a patch element based on its pitch and tilt.
 
@@ -545,19 +543,13 @@ def patch_transfer_map(
 
     if energy is not None and species is not None:
         e_set = (
-            energy_setpoint
-            if energy_setpoint is not None
-            else energy.new_tensor(0.0)
+            energy_setpoint if energy_setpoint is not None else energy.new_tensor(0.0)
         )
-        e_off = (
-            energy_offset if energy_offset is not None else energy.new_tensor(0.0)
-        )
+        e_off = energy_offset if energy_offset is not None else energy.new_tensor(0.0)
         if torch.any(e_set > 0.0) or torch.any(e_off != 0.0):
             outgoing_energy = torch.where(e_set > 0.0, e_set, energy + e_off)
             _, _, beta0 = compute_relativistic_factors(energy, species.mass_eV)
-            _, _, beta1 = compute_relativistic_factors(
-                outgoing_energy, species.mass_eV
-            )
+            _, _, beta1 = compute_relativistic_factors(outgoing_energy, species.mass_eV)
             p_ratio = (energy * beta0) / (outgoing_energy * beta1)
             p_ratio_matrix = p_ratio[..., None, None]
             tm[..., [1, 3], :] = tm[..., [1, 3], :] * p_ratio_matrix
