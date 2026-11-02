@@ -60,11 +60,7 @@ class Patch(Element):
         )
         self.register_buffer_or_parameter(
             "pitch",
-            (
-                pitch
-                if pitch is not None
-                else torch.tensor([0.0, 0.0], **factory_kwargs)
-            ),
+            pitch if pitch is not None else torch.tensor([0.0, 0.0], **factory_kwargs),
         )
         self.register_buffer_or_parameter(
             "tilt", tilt if tilt is not None else torch.tensor(0.0, **factory_kwargs)
@@ -150,8 +146,7 @@ class Patch(Element):
 
         if self.drift_to_exit:
             reference_slopes = reference_momentum[..., :2] / reference_pz.unsqueeze(-1)
-            reference_slope_x = reference_slopes[..., 0]
-            reference_slope_y = reference_slopes[..., 1]
+            reference_slope_x, reference_slope_y = reference_slopes.unbind(dim=-1)
             reference_drift_distance = reference_z / reference_pz
 
             # Spatial coordinates (columns 0 and 2: x, y).
@@ -211,9 +206,7 @@ class Patch(Element):
                 outgoing_energy * outgoing_beta
             )
             momentum_ratio_matrix = momentum_ratio[..., None, None]
-            transfer_map[..., [1, 3], :] = (
-                transfer_map[..., [1, 3], :] * momentum_ratio_matrix
-            )
+            transfer_map[..., [1, 3], :] *= momentum_ratio_matrix
             transfer_map[..., 5, 5] = momentum_ratio
             transfer_map[..., 5, 6] = momentum_ratio - 1.0
 
@@ -293,9 +286,7 @@ class Patch(Element):
                 outgoing_energy * outgoing_beta
             )
             momentum_ratio_particles = momentum_ratio.unsqueeze(-1)
-            outgoing_particles[..., [1, 3]] = outgoing_particles[
-                ..., [1, 3]
-            ] * momentum_ratio_particles.unsqueeze(-1)
+            outgoing_particles[..., [1, 3]] *= momentum_ratio_particles.unsqueeze(-1)
             outgoing_particles[..., 5] = outgoing_particles[
                 ..., 5
             ] * momentum_ratio_particles + (momentum_ratio_particles - 1.0)
