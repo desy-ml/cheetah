@@ -42,3 +42,25 @@ Never cut: validation at trust boundaries, error handling that prevents data los
 - **Code References**: Docstrings, comments, changelog entries, and documentation should try to put class names and similar code elements in backticks (`...`) to apply code style.
 - **Simulations**: All simulations must be as fast as possible (and optimised to achieve that), and they must be fully differentiable and have usable smooth gradients.
 - **Docstrings**: All function, method and class definitions must have a docstring. If they are only for internal use and the arguments' meanings are reasonably obvious, a short docstring suffices; otherwise, a proper docstring with argument and return descriptions is needed.
+
+## Physics & Simulation Invariants for Cheetah
+
+- **7D Coordinate System**: Particle states are 7D vectors $\vec{x} = (x, px, y, py, \tau, \delta, 1)$:
+  - $x, y$: Horizontal and vertical positions in meters ($m$).
+  - $px = P_x / p_0, py = P_y / p_0$: Normalized transverse momenta (dimensionless).
+  - $\tau = ct - s/\beta_0$: Longitudinal position relative to reference particle ($m$); bunch head has $\tau < 0$.
+  - $\delta = (E - E_0) / (p_0 c)$: Relative energy deviation (dimensionless).
+  - $1$: Trailing affine coordinate for thin-lens kicks and transverse misalignments.
+  - **Energy Units**: Always expressed in electronvolts ($eV$) (unlike Ocelot which uses $GeV$).
+- **Differentiability Invariants**:
+  - All particle tracking, transfer maps, and element transformations must support PyTorch automatic differentiation with smooth gradients.
+  - Avoid in-place tensor mutations (e.g. `x[...] = ...`, `tensor.add_()`) that break autograd computational graph backwards passes.
+  - Preserve `device` and `dtype` consistency across all element buffers, parameters, and beam states via factory kwargs.
+- **Element Architecture**:
+  - All accelerator elements subclass `Element` (which subclasses `torch.nn.Module`).
+  - Element physical attributes (length, strength, tilt, misalignments) must be registered with `register_buffer_or_parameter`.
+  - Transfer map methods should be decorated with `@cache_transfer_map`.
+  - Supported tracking methods must be listed in class attribute `supported_tracking_methods`.
+- **Testing & Verification**:
+  - When modifying an element, test it directly via `pytest tests/test_<element_name>.py` to keep agent feedback loops fast.
+  - Hamiltonian beamline elements with linear transfer maps must satisfy the symplectic condition $R^T J R = J$ for the canonical 6x6 phase space variables.

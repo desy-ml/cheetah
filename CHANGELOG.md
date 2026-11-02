@@ -9,6 +9,8 @@
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
+- Add compact inspection and summary APIs `Segment.summary` and `Beam.summary` supporting dictionary and string representations
+- Add Cheetah agent skill and stdio Model Context Protocol (MCP) server for automated beamline inspection and tuning
 
 ### 🐛 Bug fixes
 
@@ -26,6 +28,10 @@
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
+- Add llms.txt documentation file for AI agent context discovery
+- Add PEP 561 py.typed marker to Cheetah package for static type checking
+- Expand AGENTS.md with core physics and differentiability invariants for AI agents
+- Add universal element verification fixture and tests in tests/test_elements.py for clone independence, autograd gradient flow, and symplecticity
 
 ### 🌟 First Time Contributors
 

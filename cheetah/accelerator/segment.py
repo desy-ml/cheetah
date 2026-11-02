@@ -1081,6 +1081,92 @@ class Segment(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
 
+    def summary(self, as_string: bool = False) -> dict[str, Any] | str:
+        """
+        Return a compact summary of the segment elements and cumulative positions.
+
+        :param as_string: Whether to return a formatted table string instead of a
+            dictionary.
+        :return: A dictionary describing the segment or a formatted string table.
+        """
+        elements_info: list[dict[str, Any]] = []
+        current_s = 0.0
+        for i, elem in enumerate(self.elements):
+            length = (
+                float(elem.length.item())
+                if hasattr(elem, "length") and isinstance(elem.length, torch.Tensor)
+                else 0.0
+            )
+            info: dict[str, Any] = {
+                "index": i,
+                "name": elem.name,
+                "type": elem.__class__.__name__,
+                "s": current_s,
+                "length": length,
+            }
+            if (
+                hasattr(elem, "k1")
+                and isinstance(elem.k1, torch.Tensor)
+                and elem.k1.numel() == 1
+            ):
+                info["k1"] = float(elem.k1.item())
+            if (
+                hasattr(elem, "angle")
+                and isinstance(elem.angle, torch.Tensor)
+                and elem.angle.numel() == 1
+            ):
+                info["angle"] = float(elem.angle.item())
+            if (
+                hasattr(elem, "voltage")
+                and isinstance(elem.voltage, torch.Tensor)
+                and elem.voltage.numel() == 1
+            ):
+                info["voltage"] = float(elem.voltage.item())
+            elements_info.append(info)
+            current_s += length
+
+        total_length = (
+            float(self.length.item())
+            if len(self.elements) > 0 and isinstance(self.length, torch.Tensor)
+            else 0.0
+        )
+        data = {
+            "name": self.name,
+            "total_length": total_length,
+            "num_elements": len(self.elements),
+            "elements": elements_info,
+        }
+        if not as_string:
+            return data
+
+        lines = [
+            f"Segment Summary: {self.name if self.name is not None else 'Unnamed'}",
+            (
+                f"{'Index':<6} {'Name':<20} {'Type':<18} {'s [m]':<10} "
+                f"{'Length [m]':<12} Details"
+            ),
+            "-" * 75,
+        ]
+        for item in elements_info:
+            name_str = item["name"] if item["name"] is not None else "-"
+            details = []
+            if "k1" in item:
+                details.append(f"k1={item['k1']:.4g}")
+            if "angle" in item:
+                details.append(f"angle={item['angle']:.4g}")
+            if "voltage" in item:
+                details.append(f"voltage={item['voltage']:.4g}")
+            detail_str = ", ".join(details) if details else "-"
+            lines.append(
+                f"{item['index']:<6} {name_str:<20} {item['type']:<18} "
+                f"{item['s']:<10.4f} {item['length']:<12.4f} {detail_str}"
+            )
+        lines.append("-" * 75)
+        lines.append(
+            f"Total length: {total_length:.4f} m ({len(self.elements)} elements)"
+        )
+        return "\n".join(lines)
+
     def __repr__(self) -> str:
         num_elements = len(self.elements)
         if num_elements <= 5:

@@ -29,6 +29,8 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=[package for package in find_packages() if package.startswith("cheetah")],
+    package_data={"cheetah": ["py.typed"]},
+    include_package_data=True,
     python_requires=">=3.11",
     install_requires=[
         "matplotlib>=3.5",

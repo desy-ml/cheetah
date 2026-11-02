@@ -43,3 +43,20 @@ def test_transformed_beam_dtype(BeamClass):
 
     for feature in non_module_features:
         assert getattr(transformed_beam, feature).dtype == torch.float64
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+def test_beam_summary(BeamClass):
+    """Test that `Beam.summary` returns expected dict and string representations."""
+    beam = BeamClass.from_parameters()
+    data = beam.summary(as_string=False)
+    assert isinstance(data, dict)
+    assert data["type"] == BeamClass.__name__
+    assert "species" in data
+    assert "energy" in data
+    assert "sigma_x" in data
+
+    string_summary = beam.summary(as_string=True)
+    assert isinstance(string_summary, str)
+    assert f"Beam Summary ({BeamClass.__name__}):" in string_summary
+    assert "Species:" in string_summary
