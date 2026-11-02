@@ -58,9 +58,9 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Marker: {"default": {}},
     cheetah.Patch: {
         "default": {},
-        "with_offsets": {"offset": torch.tensor([1.0, -1.0, 0.5])},
+        "with_offsets": {"position_offset": torch.tensor([1.0, -1.0, 0.5])},
         "very_vectorized": {
-            "offset": torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
+            "position_offset": torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
             "time_offset": torch.tensor([0.0, 1.0e-9]),
             "pitch": torch.tensor([[0.0, 0.1], [0.2, 0.3]]),
             "tilt": torch.tensor([0.0, 0.1]),

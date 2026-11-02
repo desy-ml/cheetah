@@ -275,7 +275,7 @@ def test_bmad_patch_conversion(tmp_path):
     patch = segment.elements[0]
     assert isinstance(patch, cheetah.Patch)
     assert patch.name == "p1"
-    assert torch.allclose(patch.offset, torch.tensor([0.01, -0.02, 0.5]))
+    assert torch.allclose(patch.position_offset, torch.tensor([0.01, -0.02, 0.5]))
     assert torch.allclose(patch.pitch, torch.tensor([0.003, -0.004]))
     assert torch.isclose(patch.tilt, torch.tensor(0.1))
     assert torch.isclose(patch.time_offset, torch.tensor(1.0e-9))

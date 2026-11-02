@@ -352,7 +352,7 @@ def convert_element(
             return cheetah.Patch(
                 name=name,
                 sanitize_name=sanitize_name,
-                offset=torch.tensor(
+                position_offset=torch.tensor(
                     [
                         bmad_parsed.get("x_offset", 0.0),
                         bmad_parsed.get("y_offset", 0.0),

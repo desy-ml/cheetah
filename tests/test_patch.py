@@ -38,7 +38,7 @@ def test_length():
     case with no rotation, where the length should equal the z-offset.
     """
     correct_length = 0.3
-    patch = cheetah.Patch(offset=torch.tensor([0.1, 0.2, correct_length]))
+    patch = cheetah.Patch(position_offset=torch.tensor([0.1, 0.2, correct_length]))
 
     assert torch.isclose(patch.length, torch.tensor(correct_length))
 
@@ -53,7 +53,7 @@ def test_transform_particles():
         particles=torch.zeros(10, 7), energy=torch.tensor(1.0)
     )
 
-    patch = cheetah.Patch(offset=torch.tensor([0.1, 0.2, 0.3]))
+    patch = cheetah.Patch(position_offset=torch.tensor([0.1, 0.2, 0.3]))
 
     outgoing = patch.track(incoming)
 
@@ -69,7 +69,7 @@ def test_transform_particles():
 def test_transform_particles_with_angles():
     # test with angles (no tilt)
     patch_with_angles = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
+        position_offset=torch.tensor([0.1, 0.2, 0.3]),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.0),
     )
@@ -100,7 +100,7 @@ def test_transform_particles_with_angles():
         )
 
     patch_with_angles = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.0]),
+        position_offset=torch.tensor([0.1, 0.2, 0.0]),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.75),
     )
@@ -126,7 +126,7 @@ def test_transform_particles_with_angles():
 
 def test_jacobian():
     patch_with_angles = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
+        position_offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
         pitch=torch.tensor((0.5, -0.5)),
         tilt=torch.tensor(0.75),
@@ -162,7 +162,7 @@ def test_transform_parameters():
     covariance of a tracked `ParticleBeam`.
     """
     patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
+        position_offset=torch.tensor([0.1, 0.2, 0.3]),
         pitch=torch.tensor([0.5, -0.5]),
         tilt=torch.tensor(0.75),
     )
@@ -186,7 +186,7 @@ def test_transform_parameters():
 def test_patch_clone():
     """Test that `Patch.clone` preserves all defining features."""
     patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
+        position_offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(1.0e-9),
         pitch=torch.tensor([0.05, -0.05]),
         tilt=torch.tensor(0.2),
@@ -197,7 +197,7 @@ def test_patch_clone():
     cloned = patch.clone()
 
     assert cloned.name == patch.name
-    assert cloned.offset.equal(patch.offset)
+    assert cloned.position_offset.equal(patch.position_offset)
     assert cloned.time_offset.equal(patch.time_offset)
     assert cloned.pitch.equal(patch.pitch)
     assert cloned.tilt.equal(patch.tilt)
@@ -208,7 +208,7 @@ def test_patch_clone():
 def test_patch_lattice_json_roundtrip(tmp_path):
     """Test serialising a `Patch` to LatticeJSON and reloading it."""
     patch = cheetah.Patch(
-        offset=torch.tensor([0.1, 0.2, 0.3]),
+        position_offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(1.0e-9),
         pitch=torch.tensor([0.05, -0.05]),
         tilt=torch.tensor(0.2),
@@ -224,7 +224,7 @@ def test_patch_lattice_json_roundtrip(tmp_path):
     reloaded_patch = reloaded.my_patch
 
     assert isinstance(reloaded_patch, cheetah.Patch)
-    assert torch.allclose(reloaded_patch.offset, patch.offset)
+    assert torch.allclose(reloaded_patch.position_offset, patch.position_offset)
     assert torch.allclose(reloaded_patch.time_offset, patch.time_offset)
     assert torch.allclose(reloaded_patch.pitch, patch.pitch)
     assert torch.allclose(reloaded_patch.tilt, patch.tilt)
@@ -235,7 +235,7 @@ def test_patch_lattice_json_roundtrip(tmp_path):
 def test_vectorized_patch():
     """Test tracking with a vectorized `Patch` element."""
     vectorized_patch = cheetah.Patch(
-        offset=torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
+        position_offset=torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
         pitch=torch.tensor([[0.1, -0.1], [0.2, -0.2]]),
         tilt=torch.tensor([0.1, 0.2]),
     )

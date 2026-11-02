@@ -11,7 +11,8 @@ class Patch(Element):
     """
     `Patch` element that shifts the reference orbit and time.
 
-    :param offset: Exit face offset `(x, y, z)` from the entrance in meters.
+    :param position_offset: Exit face spatial displacement `(x, y, z)` from the
+        entrance in meters.
     :param time_offset: Reference time offset in seconds.
     :param pitch: Exit face pitch angles `(x_pitch, y_pitch)` in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
@@ -30,7 +31,7 @@ class Patch(Element):
 
     def __init__(
         self,
-        offset: torch.Tensor | None = None,
+        position_offset: torch.Tensor | None = None,
         time_offset: torch.Tensor | None = None,
         pitch: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
@@ -50,10 +51,10 @@ class Patch(Element):
         self.drift_to_exit = drift_to_exit
 
         self.register_buffer_or_parameter(
-            "offset",
+            "position_offset",
             (
-                offset
-                if offset is not None
+                position_offset
+                if position_offset is not None
                 else torch.tensor([0.0, 0.0, 0.0], **factory_kwargs)
             ),
         )
@@ -109,9 +110,9 @@ class Patch(Element):
         particle_momenta = torch.stack([incoming.px, incoming.py, pz], dim=-1)
 
         rotation_matrix = self._rotation_matrix()
-        offset_x = self.offset[..., 0].unsqueeze(-1)
-        offset_y = self.offset[..., 1].unsqueeze(-1)
-        offset_z = self.offset[..., 2].unsqueeze(-1)
+        offset_x = self.position_offset[..., 0].unsqueeze(-1)
+        offset_y = self.position_offset[..., 1].unsqueeze(-1)
+        offset_z = self.position_offset[..., 2].unsqueeze(-1)
 
         delta_x = incoming.x - offset_x
         delta_y = incoming.y - offset_y
@@ -194,17 +195,20 @@ class Patch(Element):
         :return: First-order 7x7 transfer map.
         """
         vector_shape = torch.broadcast_shapes(
-            self.offset.shape[:-1],
+            self.position_offset.shape[:-1],
             self.pitch.shape[:-1],
             self.tilt.shape,
             self.time_offset.shape,
         )
-        factory_kwargs = {"device": self.offset.device, "dtype": self.offset.dtype}
+        factory_kwargs = {
+            "device": self.position_offset.device,
+            "dtype": self.position_offset.dtype,
+        }
 
-        offset = self.offset
+        position_offset = self.position_offset
         time_offset = self.time_offset
         if vector_shape:
-            offset = offset.expand(*vector_shape, 3)
+            position_offset = position_offset.expand(*vector_shape, 3)
             time_offset = time_offset.expand(vector_shape)
 
         rotation_matrix = self._rotation_matrix()
@@ -216,19 +220,19 @@ class Patch(Element):
         reference_pz = reference_momentum[..., 2]
 
         reference_z = -(
-            rotation_matrix_inverse[..., 2, 0] * offset[..., 0]
-            + rotation_matrix_inverse[..., 2, 1] * offset[..., 1]
-            + rotation_matrix_inverse[..., 2, 2] * offset[..., 2]
+            rotation_matrix_inverse[..., 2, 0] * position_offset[..., 0]
+            + rotation_matrix_inverse[..., 2, 1] * position_offset[..., 1]
+            + rotation_matrix_inverse[..., 2, 2] * position_offset[..., 2]
         )
         reference_x_exit = -(
-            rotation_matrix_inverse[..., 0, 0] * offset[..., 0]
-            + rotation_matrix_inverse[..., 0, 1] * offset[..., 1]
-            + rotation_matrix_inverse[..., 0, 2] * offset[..., 2]
+            rotation_matrix_inverse[..., 0, 0] * position_offset[..., 0]
+            + rotation_matrix_inverse[..., 0, 1] * position_offset[..., 1]
+            + rotation_matrix_inverse[..., 0, 2] * position_offset[..., 2]
         )
         reference_y_exit = -(
-            rotation_matrix_inverse[..., 1, 0] * offset[..., 0]
-            + rotation_matrix_inverse[..., 1, 1] * offset[..., 1]
-            + rotation_matrix_inverse[..., 1, 2] * offset[..., 2]
+            rotation_matrix_inverse[..., 1, 0] * position_offset[..., 0]
+            + rotation_matrix_inverse[..., 1, 1] * position_offset[..., 1]
+            + rotation_matrix_inverse[..., 1, 2] * position_offset[..., 2]
         )
 
         transfer_map = torch.eye(7, **factory_kwargs).repeat(*vector_shape, 1, 1)
@@ -396,12 +400,12 @@ class Patch(Element):
 
     @property
     def length(self) -> torch.Tensor:
-        return (self._rotation_matrix()[..., :, 2] * self.offset).sum(dim=-1)
+        return (self._rotation_matrix()[..., :, 2] * self.position_offset).sum(dim=-1)
 
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + [
-            "offset",
+            "position_offset",
             "time_offset",
             "pitch",
             "tilt",
