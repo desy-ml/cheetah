@@ -269,3 +269,10 @@ def test_patch_energy_offset_and_setpoint():
     assert torch.isclose(out_offset.energy, torch.tensor(1.2e9))
     assert torch.isclose(out_setpoint.energy, torch.tensor(1.2e9))
     assert torch.allclose(out_offset.particles, out_setpoint.particles)
+
+
+def test_patch_track_invalid_type():
+    """Test that tracking an invalid beam type raises a TypeError."""
+    patch = cheetah.Patch()
+    with pytest.raises(TypeError, match="Parameter incoming is of invalid type"):
+        patch.track("invalid_beam")

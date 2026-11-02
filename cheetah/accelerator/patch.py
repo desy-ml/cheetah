@@ -86,12 +86,20 @@ class Patch(Element):
         )
 
     def track(self, incoming: Beam) -> Beam:
-        if isinstance(incoming, ParticleBeam):
-            return self._transform_particles(incoming)
-        elif isinstance(incoming, ParameterBeam):
-            return self._transform_parameters(incoming)
+        """
+        Track particles through the `Patch` element.
 
-    def _transform_particles(self, incoming: ParticleBeam) -> Beam:
+        :param incoming: Beam entering the element.
+        :return: Beam exiting the element.
+        """
+        if isinstance(incoming, ParticleBeam):
+            return self._track_particle_beam(incoming)
+        elif isinstance(incoming, ParameterBeam):
+            return self._track_parameter_beam(incoming)
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
         # Momentum coordinates
         relative_momentum = incoming.p + 1.0  # Convert delta to p / p0
         pz_squared = (
@@ -179,7 +187,7 @@ class Patch(Element):
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
-            species=incoming.species,
+            species=incoming.species.clone(),
         )
 
     @cache_transfer_map
@@ -345,8 +353,8 @@ class Patch(Element):
 
         return transfer_map
 
-    def _transform_parameters(self, incoming: ParameterBeam) -> ParameterBeam:
-        """Transform a `ParameterBeam` through the `Patch` element."""
+    def _track_parameter_beam(self, incoming: ParameterBeam) -> ParameterBeam:
+        """Track a `ParameterBeam` through the `Patch` element."""
         transfer_map = self.first_order_transfer_map(incoming.energy, incoming.species)
         outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
@@ -365,7 +373,7 @@ class Patch(Element):
             energy=outgoing_energy,
             total_charge=incoming.total_charge,
             s=incoming.s + self.length,
-            species=incoming.species,
+            species=incoming.species.clone(),
         )
 
     def _rotation_matrix(self) -> torch.Tensor:
