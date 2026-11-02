@@ -123,8 +123,12 @@ class Patch(Element):
         particle_positions = shifted_positions @ rotation_matrix
         particle_momenta = particle_momenta @ rotation_matrix
 
-        vector_shape = particle_positions.shape[:-2]
-        num_particles = particle_positions.shape[-2]
+        vector_shape = torch.broadcast_shapes(
+            self.vector_shape,
+            incoming.particles.shape[:-2],
+            incoming.energy.shape,
+        )
+        num_particles = incoming.particles.shape[-2]
         outgoing_particles = incoming.particles.expand(
             *vector_shape, num_particles, 7
         ).clone()
@@ -194,12 +198,7 @@ class Patch(Element):
         :param species: Particle species of the beam.
         :return: First-order 7x7 transfer map.
         """
-        vector_shape = torch.broadcast_shapes(
-            self.position_offset.shape[:-1],
-            self.pitch.shape[:-1],
-            self.tilt.shape,
-            self.time_offset.shape,
-        )
+        vector_shape = torch.broadcast_shapes(self.vector_shape, energy.shape)
         factory_kwargs = {
             "device": self.position_offset.device,
             "dtype": self.position_offset.dtype,
@@ -397,6 +396,19 @@ class Patch(Element):
         rotation_matrix[..., 2, 2] = cos_x * cos_y
 
         return rotation_matrix
+
+    @property
+    def vector_shape(self) -> torch.Size:
+        """
+        Broadcasting vector shape of the `Patch` element across all its features.
+        """
+        return torch.broadcast_shapes(
+            self.position_offset.shape[:-1],
+            self.pitch.shape[:-1],
+            self.tilt.shape,
+            self.time_offset.shape,
+            self.energy_offset.shape,
+        )
 
     @property
     def length(self) -> torch.Tensor:

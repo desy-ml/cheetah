@@ -238,6 +238,8 @@ def test_vectorized_patch():
         position_offset=torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
         pitch=torch.tensor([[0.1, -0.1], [0.2, -0.2]]),
         tilt=torch.tensor([0.1, 0.2]),
+        time_offset=torch.tensor([0.0, 1.0e-9]),
+        energy_offset=torch.tensor([0.0, 1.0e6]),
     )
     incoming = cheetah.ParticleBeam(
         particles=torch.zeros(20, 7), energy=torch.tensor(1.0e9)
@@ -245,6 +247,15 @@ def test_vectorized_patch():
     outgoing = vectorized_patch.track(incoming)
     assert outgoing.particles.shape == (2, 20, 7)
     assert outgoing.s.shape == (2,)
+
+    transfer_map = vectorized_patch.first_order_transfer_map(
+        incoming.energy, incoming.species
+    )
+    assert transfer_map.shape == (2, 7, 7)
+
+    outgoing_param = vectorized_patch.track(incoming.as_parameter_beam())
+    assert outgoing_param.mu.shape == (2, 7)
+    assert outgoing_param.cov.shape == (2, 7, 7)
 
 
 def test_patch_energy_offset():
