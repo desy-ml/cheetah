@@ -17,4 +17,6 @@ distributions
 
 docs/_build
 
+cheetah/_version.py
+
 dev*

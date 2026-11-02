@@ -9,9 +9,12 @@ import os
 import sys
 
 # Source code directory, relative to this file, for sphinx-autobuild
-sys.path.insert(0, os.path.abspath("../cheetah"))
+sys.path.insert(0, os.path.abspath(".."))
 
-from _version import __version__  # noqa: E402  # type: ignore
+try:
+    from cheetah import __version__
+except ImportError:
+    __version__ = "unknown"
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information

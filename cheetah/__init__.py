@@ -1,5 +1,14 @@
 from . import converters  # noqa: F401
-from ._version import __version__  # noqa: F401
+
+try:
+    from ._version import __version__  # noqa: F401
+except ImportError:
+    try:
+        from setuptools_scm import get_version
+
+        __version__ = get_version(root="..", relative_to=__file__)
+    except Exception:
+        __version__ = "unknown"
 from .accelerator import (  # noqa: F401
     BPM,
     Aperture,

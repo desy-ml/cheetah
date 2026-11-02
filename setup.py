@@ -6,19 +6,9 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 
-def get_version():
-    version_file_path = this_directory / "cheetah" / "_version.py"
-    version_file_content = version_file_path.read_text()
-    for line in version_file_content.splitlines():
-        if line.startswith("__version__"):
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
-    raise RuntimeError("Unable to find version string.")
-
-
 setup(
     name="cheetah-accelerator",
-    version=get_version(),
+    use_scm_version=True,
     author="Jan Kaiser, Chenran Xu and Christian Hespe",
     author_email="jan.kaiser@desy.de",
     url="https://github.com/desy-ml/cheetah",
