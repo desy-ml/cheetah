@@ -101,6 +101,7 @@ class Patch(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
     def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
+        """Track a `ParticleBeam` through the `Patch` element."""
         # Momentum coordinates
         relative_momentum = incoming.p + 1.0  # Convert delta to p / p0
         pz = (
@@ -223,6 +224,8 @@ class Patch(Element):
         transfer_map[..., 3, 5] = rotation_matrix_inverse[..., 1, 2]
 
         transfer_map[..., 5, 5] = 1.0
+        transfer_map[..., 1, 6] = reference_px
+        transfer_map[..., 3, 6] = reference_py
 
         if self.drift_to_exit:
             reference_pz_squared = reference_pz.square()
@@ -279,11 +282,9 @@ class Patch(Element):
             transfer_map[..., 0, 6] = (
                 reference_x_exit - reference_z * reference_px / reference_pz
             )
-            transfer_map[..., 1, 6] = reference_px
             transfer_map[..., 2, 6] = (
                 reference_y_exit - reference_z * reference_py / reference_pz
             )
-            transfer_map[..., 3, 6] = reference_py
             transfer_map[..., 4, 6] = (
                 self.time_offset * speed_of_light
                 + reference_z / reference_pz
@@ -295,9 +296,7 @@ class Patch(Element):
             transfer_map[..., 2, 0] = rotation_matrix_inverse[..., 1, 0]
             transfer_map[..., 2, 2] = rotation_matrix_inverse[..., 1, 1]
             transfer_map[..., 0, 6] = reference_x_exit
-            transfer_map[..., 1, 6] = reference_px
             transfer_map[..., 2, 6] = reference_y_exit
-            transfer_map[..., 3, 6] = reference_py
             transfer_map[..., 4, 6] = self.time_offset * speed_of_light
 
         if (self.energy_offset != 0.0).any():
@@ -414,5 +413,8 @@ class Patch(Element):
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
+        """
+        Plot a representation of this element into a `matplotlib` Axes at position `s`.
+        """
         ax = ax or plt.subplot(111)
         return ax
