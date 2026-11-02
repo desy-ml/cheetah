@@ -31,6 +31,7 @@
 - Add llms.txt documentation file for AI agent context discovery
 - Add PEP 561 py.typed marker to Cheetah package for static type checking
 - Expand AGENTS.md with core physics and differentiability invariants for AI agents
+- Add universal element verification fixture and tests in tests/test_elements.py for clone independence, autograd gradient flow, and symplecticity
 
 ### 🌟 First Time Contributors
 
