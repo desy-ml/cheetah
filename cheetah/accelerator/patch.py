@@ -108,9 +108,7 @@ class Patch(Element):
 
     @property
     def vector_shape(self) -> torch.Size:
-        """
-        Broadcasting vector shape of the `Patch` element across all its features.
-        """
+        """Broadcasting vector shape of the `Patch` element across all its features."""
         return torch.broadcast_shapes(
             self.position_offset.shape[:-1],
             self.pitch.shape[:-1],
