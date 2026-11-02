@@ -9,7 +9,7 @@ from cheetah.utils import cache_transfer_map, compute_relativistic_factors
 
 class Patch(Element):
     """
-    Patch element that shifts the reference orbit and time.
+    `Patch` element that shifts the reference orbit and time.
 
     :param offset: Exit face offset `(x, y, z)` from the entrance in meters.
     :param time_offset: Reference time offset in seconds.
@@ -93,9 +93,11 @@ class Patch(Element):
 
     def _transform_particles(self, incoming: ParticleBeam) -> Beam:
         # Momentum coordinates
-        rel_p = incoming.p + 1.0  # Convert delta to p / p0
-        pz_sq = rel_p.square() - incoming.px.square() - incoming.py.square()
-        pz = torch.clamp(pz_sq, min=0.0).sqrt()
+        relative_momentum = incoming.p + 1.0  # Convert delta to p / p0
+        pz_squared = (
+            relative_momentum.square() - incoming.px.square() - incoming.py.square()
+        )
+        pz = torch.clamp(pz_squared, min=0.0).sqrt()
         particle_momenta = torch.stack(
             [
                 incoming.px,
@@ -105,19 +107,19 @@ class Patch(Element):
             dim=-1,
         )
 
-        R = self._rotation_matrix()
+        rotation_matrix = self._rotation_matrix()
         offset_x = self.offset[..., 0].unsqueeze(-1)
         offset_y = self.offset[..., 1].unsqueeze(-1)
         offset_z = self.offset[..., 2].unsqueeze(-1)
 
-        dx = incoming.x - offset_x
-        dy = incoming.y - offset_y
-        dz_in = -offset_z.expand_as(dx)
-        shifted_positions = torch.stack([dx, dy, dz_in], dim=-1)
+        delta_x = incoming.x - offset_x
+        delta_y = incoming.y - offset_y
+        delta_z_entrance = -offset_z.expand_as(delta_x)
+        shifted_positions = torch.stack([delta_x, delta_y, delta_z_entrance], dim=-1)
 
-        # Coordinate transformation to exit frame: (r_entrance - offset) @ R
-        particle_positions = shifted_positions @ R
-        particle_momenta = particle_momenta @ R
+        # Transform coordinates to exit frame: (r_entrance - offset) @ rotation_matrix
+        particle_positions = shifted_positions @ rotation_matrix
+        particle_momenta = particle_momenta @ rotation_matrix
 
         batch_shape = particle_positions.shape[:-2]
         num_particles = particle_positions.shape[-2]
@@ -132,16 +134,17 @@ class Patch(Element):
 
         # Track particles to the end of the patch
         if self.drift_to_exit:
-            dz_exit = particle_positions[..., 2:3]
+            delta_z_exit = particle_positions[..., 2:3]
             pz_exit = particle_momenta[..., 2:3]
             outgoing_particles[..., [0, 2]] -= (
-                dz_exit * particle_momenta[..., [0, 1]] / pz_exit
+                delta_z_exit * particle_momenta[..., [0, 1]] / pz_exit
             )
-            len_patch = (
+            patch_length = (
                 self.length.unsqueeze(-1) if self.length.ndim > 0 else self.length
             )
             outgoing_particles[..., 4] += (
-                dz_exit.squeeze(-1) * rel_p / pz_exit.squeeze(-1) + len_patch
+                delta_z_exit.squeeze(-1) * relative_momentum / pz_exit.squeeze(-1)
+                + patch_length
             )
 
         if torch.any(self.energy_setpoint > 0.0) or torch.any(
@@ -152,20 +155,24 @@ class Patch(Element):
                 self.energy_setpoint,
                 incoming.energy + self.energy_offset,
             )
-            _, _, beta0 = compute_relativistic_factors(
+            _, _, incoming_beta = compute_relativistic_factors(
                 incoming.energy, incoming.species.mass_eV
             )
-            _, _, beta1 = compute_relativistic_factors(
+            _, _, outgoing_beta = compute_relativistic_factors(
                 outgoing_energy, incoming.species.mass_eV
             )
-            p_ratio = (incoming.energy * beta0) / (outgoing_energy * beta1)
-            p_ratio_particles = p_ratio[..., None, None]
+            momentum_ratio = (incoming.energy * incoming_beta) / (
+                outgoing_energy * outgoing_beta
+            )
+            momentum_ratio_particles = momentum_ratio[..., None, None]
             outgoing_particles[..., [1, 3]] = (
-                outgoing_particles[..., [1, 3]] * p_ratio_particles
+                outgoing_particles[..., [1, 3]] * momentum_ratio_particles
             )
             outgoing_particles[..., 5] = outgoing_particles[
                 ..., 5
-            ] * p_ratio_particles.squeeze(-1) + (p_ratio_particles.squeeze(-1) - 1.0)
+            ] * momentum_ratio_particles.squeeze(-1) + (
+                momentum_ratio_particles.squeeze(-1) - 1.0
+            )
         else:
             outgoing_energy = incoming.energy
 
@@ -185,7 +192,7 @@ class Patch(Element):
         species: Species,
     ) -> torch.Tensor:
         """
-        Compute the first-order transfer map for the patch element.
+        Compute the first-order transfer map for the `Patch` element.
 
         :param energy: Incoming reference energy in eV.
         :param species: Particle species of the beam.
@@ -205,45 +212,47 @@ class Patch(Element):
             offset = offset.expand(*broadcast_batch, 3)
             time_offset = time_offset.expand(broadcast_batch)
 
-        R = self._rotation_matrix()
-        RT = R.mT
+        rotation_matrix = self._rotation_matrix()
+        rotation_matrix_inverse = rotation_matrix.mT
 
-        p0 = RT[..., :, 2]
-        px0, py0, pz0 = p0[..., 0], p0[..., 1], p0[..., 2]
+        reference_momentum = rotation_matrix_inverse[..., :, 2]
+        reference_px = reference_momentum[..., 0]
+        reference_py = reference_momentum[..., 1]
+        reference_pz = reference_momentum[..., 2]
 
-        z0 = -(
-            RT[..., 2, 0] * offset[..., 0]
-            + RT[..., 2, 1] * offset[..., 1]
-            + RT[..., 2, 2] * offset[..., 2]
+        reference_z = -(
+            rotation_matrix_inverse[..., 2, 0] * offset[..., 0]
+            + rotation_matrix_inverse[..., 2, 1] * offset[..., 1]
+            + rotation_matrix_inverse[..., 2, 2] * offset[..., 2]
         )
-        x_exit0 = -(
-            RT[..., 0, 0] * offset[..., 0]
-            + RT[..., 0, 1] * offset[..., 1]
-            + RT[..., 0, 2] * offset[..., 2]
+        reference_x_exit = -(
+            rotation_matrix_inverse[..., 0, 0] * offset[..., 0]
+            + rotation_matrix_inverse[..., 0, 1] * offset[..., 1]
+            + rotation_matrix_inverse[..., 0, 2] * offset[..., 2]
         )
-        y_exit0 = -(
-            RT[..., 1, 0] * offset[..., 0]
-            + RT[..., 1, 1] * offset[..., 1]
-            + RT[..., 1, 2] * offset[..., 2]
+        reference_y_exit = -(
+            rotation_matrix_inverse[..., 1, 0] * offset[..., 0]
+            + rotation_matrix_inverse[..., 1, 1] * offset[..., 1]
+            + rotation_matrix_inverse[..., 1, 2] * offset[..., 2]
         )
 
-        tm = torch.eye(7, **factory_kwargs).repeat(*broadcast_batch, 1, 1)
+        transfer_map = torch.eye(7, **factory_kwargs).repeat(*broadcast_batch, 1, 1)
 
-        tm[..., 1, 1] = RT[..., 0, 0]
-        tm[..., 1, 3] = RT[..., 0, 1]
-        tm[..., 1, 5] = RT[..., 0, 2]
+        transfer_map[..., 1, 1] = rotation_matrix_inverse[..., 0, 0]
+        transfer_map[..., 1, 3] = rotation_matrix_inverse[..., 0, 1]
+        transfer_map[..., 1, 5] = rotation_matrix_inverse[..., 0, 2]
 
-        tm[..., 3, 1] = RT[..., 1, 0]
-        tm[..., 3, 3] = RT[..., 1, 1]
-        tm[..., 3, 5] = RT[..., 1, 2]
+        transfer_map[..., 3, 1] = rotation_matrix_inverse[..., 1, 0]
+        transfer_map[..., 3, 3] = rotation_matrix_inverse[..., 1, 1]
+        transfer_map[..., 3, 5] = rotation_matrix_inverse[..., 1, 2]
 
-        tm[..., 5, 5] = 1.0
+        transfer_map[..., 5, 5] = 1.0
 
         if self.drift_to_exit:
-            pz0_safe = pz0.clamp(min=1e-12)
-            pz0_sq = pz0_safe.square()
+            reference_pz_safe = reference_pz.clamp(min=1e-12)
+            reference_pz_squared = reference_pz_safe.square()
 
-            for col, dr_idx, dp_idx, ddelta in [
+            for column, delta_r_index, delta_p_index, delta_delta in [
                 (0, 0, None, 0.0),
                 (1, None, 0, 0.0),
                 (2, 1, None, 0.0),
@@ -251,40 +260,72 @@ class Patch(Element):
                 (4, None, None, 0.0),
                 (5, None, 2, 1.0),
             ]:
-                dr = RT[..., :, dr_idx] if dr_idx is not None else torch.zeros_like(p0)
-                dp = RT[..., :, dp_idx] if dp_idx is not None else torch.zeros_like(p0)
-
-                term_rx = dr[..., 0] - (px0 / pz0_safe) * dr[..., 2]
-                term_px = -z0 * (dp[..., 0] / pz0_safe - px0 * dp[..., 2] / pz0_sq)
-                tm[..., 0, col] = term_rx + term_px
-
-                term_ry = dr[..., 1] - (py0 / pz0_safe) * dr[..., 2]
-                term_py = -z0 * (dp[..., 1] / pz0_safe - py0 * dp[..., 2] / pz0_sq)
-                tm[..., 2, col] = term_ry + term_py
-
-                dtau = 1.0 if col == 4 else 0.0
-                term_tau = (
-                    dtau
-                    + dr[..., 2] / pz0_safe
-                    + z0 * (ddelta / pz0_safe - dp[..., 2] / pz0_sq)
+                delta_r = (
+                    rotation_matrix_inverse[..., :, delta_r_index]
+                    if delta_r_index is not None
+                    else torch.zeros_like(reference_momentum)
                 )
-                tm[..., 4, col] = term_tau
+                delta_p = (
+                    rotation_matrix_inverse[..., :, delta_p_index]
+                    if delta_p_index is not None
+                    else torch.zeros_like(reference_momentum)
+                )
 
-            tm[..., 0, 6] = x_exit0 - z0 * px0 / pz0_safe
-            tm[..., 1, 6] = px0
-            tm[..., 2, 6] = y_exit0 - z0 * py0 / pz0_safe
-            tm[..., 3, 6] = py0
-            tm[..., 4, 6] = time_offset * speed_of_light + z0 / pz0_safe + self.length
+                term_rx = (
+                    delta_r[..., 0]
+                    - (reference_px / reference_pz_safe) * delta_r[..., 2]
+                )
+                term_px = -reference_z * (
+                    delta_p[..., 0] / reference_pz_safe
+                    - reference_px * delta_p[..., 2] / reference_pz_squared
+                )
+                transfer_map[..., 0, column] = term_rx + term_px
+
+                term_ry = (
+                    delta_r[..., 1]
+                    - (reference_py / reference_pz_safe) * delta_r[..., 2]
+                )
+                term_py = -reference_z * (
+                    delta_p[..., 1] / reference_pz_safe
+                    - reference_py * delta_p[..., 2] / reference_pz_squared
+                )
+                transfer_map[..., 2, column] = term_ry + term_py
+
+                delta_tau = 1.0 if column == 4 else 0.0
+                term_tau = (
+                    delta_tau
+                    + delta_r[..., 2] / reference_pz_safe
+                    + reference_z
+                    * (
+                        delta_delta / reference_pz_safe
+                        - delta_p[..., 2] / reference_pz_squared
+                    )
+                )
+                transfer_map[..., 4, column] = term_tau
+
+            transfer_map[..., 0, 6] = (
+                reference_x_exit - reference_z * reference_px / reference_pz_safe
+            )
+            transfer_map[..., 1, 6] = reference_px
+            transfer_map[..., 2, 6] = (
+                reference_y_exit - reference_z * reference_py / reference_pz_safe
+            )
+            transfer_map[..., 3, 6] = reference_py
+            transfer_map[..., 4, 6] = (
+                time_offset * speed_of_light
+                + reference_z / reference_pz_safe
+                + self.length
+            )
         else:
-            tm[..., 0, 0] = RT[..., 0, 0]
-            tm[..., 0, 2] = RT[..., 0, 1]
-            tm[..., 2, 0] = RT[..., 1, 0]
-            tm[..., 2, 2] = RT[..., 1, 1]
-            tm[..., 0, 6] = x_exit0
-            tm[..., 1, 6] = px0
-            tm[..., 2, 6] = y_exit0
-            tm[..., 3, 6] = py0
-            tm[..., 4, 6] = time_offset * speed_of_light
+            transfer_map[..., 0, 0] = rotation_matrix_inverse[..., 0, 0]
+            transfer_map[..., 0, 2] = rotation_matrix_inverse[..., 0, 1]
+            transfer_map[..., 2, 0] = rotation_matrix_inverse[..., 1, 0]
+            transfer_map[..., 2, 2] = rotation_matrix_inverse[..., 1, 1]
+            transfer_map[..., 0, 6] = reference_x_exit
+            transfer_map[..., 1, 6] = reference_px
+            transfer_map[..., 2, 6] = reference_y_exit
+            transfer_map[..., 3, 6] = reference_py
+            transfer_map[..., 4, 6] = time_offset * speed_of_light
 
         if torch.any(self.energy_setpoint > 0.0) or torch.any(
             self.energy_offset != 0.0
@@ -294,21 +335,27 @@ class Patch(Element):
                 self.energy_setpoint,
                 energy + self.energy_offset,
             )
-            _, _, beta0 = compute_relativistic_factors(energy, species.mass_eV)
-            _, _, beta1 = compute_relativistic_factors(outgoing_energy, species.mass_eV)
-            p_ratio = (energy * beta0) / (outgoing_energy * beta1)
-            p_ratio_matrix = p_ratio[..., None, None]
-            tm[..., [1, 3], :] = tm[..., [1, 3], :] * p_ratio_matrix
-            tm[..., 5, 5] = p_ratio
-            tm[..., 5, 6] = p_ratio - 1.0
+            _, _, incoming_beta = compute_relativistic_factors(energy, species.mass_eV)
+            _, _, outgoing_beta = compute_relativistic_factors(
+                outgoing_energy, species.mass_eV
+            )
+            momentum_ratio = (energy * incoming_beta) / (
+                outgoing_energy * outgoing_beta
+            )
+            momentum_ratio_matrix = momentum_ratio[..., None, None]
+            transfer_map[..., [1, 3], :] = (
+                transfer_map[..., [1, 3], :] * momentum_ratio_matrix
+            )
+            transfer_map[..., 5, 5] = momentum_ratio
+            transfer_map[..., 5, 6] = momentum_ratio - 1.0
 
-        return tm
+        return transfer_map
 
     def _transform_parameters(self, incoming: ParameterBeam) -> ParameterBeam:
         """Transform a `ParameterBeam` through the `Patch` element."""
-        tm = self.first_order_transfer_map(incoming.energy, incoming.species)
-        new_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-        new_cov = tm @ incoming.cov @ tm.mT
+        transfer_map = self.first_order_transfer_map(incoming.energy, incoming.species)
+        outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+        outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
 
         if torch.any(self.energy_setpoint > 0.0) or torch.any(
             self.energy_offset != 0.0
@@ -322,8 +369,8 @@ class Patch(Element):
             outgoing_energy = incoming.energy
 
         return ParameterBeam(
-            mu=new_mu,
-            cov=new_cov,
+            mu=outgoing_mu,
+            cov=outgoing_cov,
             energy=outgoing_energy,
             total_charge=incoming.total_charge,
             s=incoming.s + self.length,
@@ -332,7 +379,7 @@ class Patch(Element):
 
     def _rotation_matrix(self) -> torch.Tensor:
         """
-        Compute the rotation matrix for the patch element based on its pitch and tilt.
+        Compute the rotation matrix for the `Patch` element based on its pitch and tilt.
         """
         broadcast_batch = torch.broadcast_shapes(self.pitch.shape[:-1], self.tilt.shape)
         factory_kwargs = {"device": self.pitch.device, "dtype": self.pitch.dtype}
@@ -350,12 +397,12 @@ class Patch(Element):
         rotation_y[..., 2, 0] = -pitch[..., 0].sin()
         rotation_y[..., 2, 2] = pitch[..., 0].cos()
 
-        rotation_neg_x = torch.zeros((*broadcast_batch, 3, 3), **factory_kwargs)
-        rotation_neg_x[..., 0, 0] = 1.0
-        rotation_neg_x[..., 1, 1] = pitch[..., 1].cos()
-        rotation_neg_x[..., 1, 2] = pitch[..., 1].sin()
-        rotation_neg_x[..., 2, 1] = -pitch[..., 1].sin()
-        rotation_neg_x[..., 2, 2] = pitch[..., 1].cos()
+        rotation_negative_x = torch.zeros((*broadcast_batch, 3, 3), **factory_kwargs)
+        rotation_negative_x[..., 0, 0] = 1.0
+        rotation_negative_x[..., 1, 1] = pitch[..., 1].cos()
+        rotation_negative_x[..., 1, 2] = pitch[..., 1].sin()
+        rotation_negative_x[..., 2, 1] = -pitch[..., 1].sin()
+        rotation_negative_x[..., 2, 2] = pitch[..., 1].cos()
 
         rotation_z = torch.zeros((*broadcast_batch, 3, 3), **factory_kwargs)
         rotation_z[..., 0, 0] = tilt.cos()
@@ -364,7 +411,7 @@ class Patch(Element):
         rotation_z[..., 1, 1] = tilt.cos()
         rotation_z[..., 2, 2] = 1.0
 
-        return rotation_y @ rotation_neg_x @ rotation_z
+        return rotation_y @ rotation_negative_x @ rotation_z
 
     @property
     def length(self) -> torch.Tensor:
