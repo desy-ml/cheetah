@@ -153,8 +153,12 @@ class Patch(Element):
                 drift_factor.squeeze(-1) * relative_momentum + patch_length
             )
 
+        outgoing_energy = (
+            incoming.energy + self.energy_offset
+            if (self.energy_offset != 0.0).any()
+            else incoming.energy
+        )
         if (self.energy_offset != 0.0).any():
-            outgoing_energy = incoming.energy + self.energy_offset
             _, _, incoming_beta = compute_relativistic_factors(
                 incoming.energy, incoming.species.mass_eV
             )
@@ -173,8 +177,6 @@ class Patch(Element):
             ] * momentum_ratio_particles.squeeze(-1) + (
                 momentum_ratio_particles.squeeze(-1) - 1.0
             )
-        else:
-            outgoing_energy = incoming.energy
 
         return ParticleBeam(
             particles=outgoing_particles,
@@ -349,10 +351,11 @@ class Patch(Element):
         outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
 
-        if (self.energy_offset != 0.0).any():
-            outgoing_energy = incoming.energy + self.energy_offset
-        else:
-            outgoing_energy = incoming.energy
+        outgoing_energy = (
+            incoming.energy + self.energy_offset
+            if (self.energy_offset != 0.0).any()
+            else incoming.energy
+        )
 
         return ParameterBeam(
             mu=outgoing_mu,
