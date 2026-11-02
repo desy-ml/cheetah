@@ -106,17 +106,6 @@ class Patch(Element):
     def length(self) -> torch.Tensor:
         return (self._rotation_matrix()[..., :, 2] * self.position_offset).sum(dim=-1)
 
-    @property
-    def vector_shape(self) -> torch.Size:
-        """Broadcasting vector shape of the `Patch` element across all its features."""
-        return torch.broadcast_shapes(
-            self.position_offset.shape[:-1],
-            self.pitch.shape[:-1],
-            self.tilt.shape,
-            self.time_offset.shape,
-            self.energy_offset.shape,
-        )
-
     @cache_transfer_map
     def first_order_transfer_map(
         self,
@@ -130,7 +119,14 @@ class Patch(Element):
         :param species: Particle species of the beam.
         :return: First-order 7x7 transfer map.
         """
-        vector_shape = torch.broadcast_shapes(self.vector_shape, energy.shape)
+        vector_shape = torch.broadcast_shapes(
+            self.position_offset.shape[:-1],
+            self.pitch.shape[:-1],
+            self.tilt.shape,
+            self.time_offset.shape,
+            self.energy_offset.shape,
+            energy.shape,
+        )
         factory_kwargs = {
             "device": self.position_offset.device,
             "dtype": self.position_offset.dtype,
@@ -287,7 +283,13 @@ class Patch(Element):
         particle_momenta = particle_momenta @ rotation_matrix
 
         vector_shape = torch.broadcast_shapes(
-            self.vector_shape, incoming.particles.shape[:-2], incoming.energy.shape
+            self.position_offset.shape[:-1],
+            self.pitch.shape[:-1],
+            self.tilt.shape,
+            self.time_offset.shape,
+            self.energy_offset.shape,
+            incoming.particles.shape[:-2],
+            incoming.energy.shape,
         )
         outgoing_particles = incoming.particles.expand(
             *vector_shape, incoming.num_particles, 7
