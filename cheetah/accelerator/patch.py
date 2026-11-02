@@ -5,9 +5,7 @@ from scipy.constants import speed_of_light
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.track_methods import patch_rotation_matrix, patch_transfer_map
-from cheetah.utils import UniqueNameGenerator, compute_relativistic_factors
-
-generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
+from cheetah.utils import compute_relativistic_factors
 
 
 class Patch(Element):
@@ -259,4 +257,5 @@ class Patch(Element):
     def plot(
         self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
     ) -> plt.Axes:
-        pass  # Patch element does not have a visual representation
+        ax = ax or plt.subplot(111)
+        return ax
