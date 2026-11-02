@@ -12,16 +12,21 @@ class Patch(Element):
     """
     Patch element that shifts the reference orbit and time.
 
-    :param offset: Exit face offset in (x, y, z) from the entrance in meters.
+    :param offset: Exit face offset `(x, y, z)` from the entrance in meters.
     :param time_offset: Reference time offset in seconds.
-    :param pitch: Exit face orientation (x, y, z) from the entrance in radians.
+    :param pitch: Exit face pitch angles `(x_pitch, y_pitch)` in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
-    :param energy_offset: Energy offset in eV.
-    :param energy_setpoint: Energy setpoint in eV.
+    :param energy_offset: Reference energy offset in eV.
+    :param energy_setpoint: Target reference energy setpoint in eV.
+    :param drift_to_exit: Whether to drift particles to the exit face plane.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
         access the element in a segment.
+    :param metadata: Dictionary of arbitrary, serialisable annotations attached to the
+        element.
+    :param device: Device on which to create the element's tensors.
+    :param dtype: Data type of the element's tensors.
     """
 
     def __init__(
