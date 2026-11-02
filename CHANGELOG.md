@@ -29,6 +29,7 @@
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
 - Add llms.txt documentation file for AI agent context discovery
+- Add PEP 561 py.typed marker to Cheetah package for static type checking
 
 ### 🌟 First Time Contributors
 
