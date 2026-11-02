@@ -266,15 +266,14 @@ class Patch(Element):
 
         outgoing_particles[..., [0, 2]] = particle_positions[..., [0, 1]]
         outgoing_particles[..., [1, 3]] = particle_momenta[..., [0, 1]]
-        time_offset_z = (self.time_offset * speed_of_light).unsqueeze(-1)
-        outgoing_particles[..., 4] = incoming.tau + time_offset_z
+        outgoing_particles[..., 4] = incoming.tau + (
+            self.time_offset * speed_of_light
+        ).unsqueeze(-1)
 
         length = self.length
         # Track particles to the end of the patch
         if self.drift_to_exit:
-            delta_z_exit = particle_positions[..., 2:3]
-            pz_exit = particle_momenta[..., 2:3]
-            drift_factor = delta_z_exit / pz_exit
+            drift_factor = particle_positions[..., 2:3] / particle_momenta[..., 2:3]
             outgoing_particles[..., [0, 2]] -= (
                 drift_factor * particle_momenta[..., [0, 1]]
             )
@@ -339,10 +338,8 @@ class Patch(Element):
         """
         vector_shape = torch.broadcast_shapes(self.pitch.shape[:-1], self.tilt.shape)
 
-        cos_x = self.pitch[..., 0].cos()
-        sin_x = self.pitch[..., 0].sin()
-        cos_y = self.pitch[..., 1].cos()
-        sin_y = self.pitch[..., 1].sin()
+        cos_x, cos_y = self.pitch.cos().unbind(dim=-1)
+        sin_x, sin_y = self.pitch.sin().unbind(dim=-1)
         cos_z = self.tilt.cos()
         sin_z = self.tilt.sin()
 
