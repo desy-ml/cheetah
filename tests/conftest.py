@@ -65,7 +65,6 @@ ELEMENT_SUBCLASSES_ARGS = {
             "pitch": torch.tensor([[0.0, 0.1], [0.2, 0.3]]),
             "tilt": torch.tensor([0.0, 0.1]),
             "energy_offset": torch.tensor([0.0, 1.0e6]),
-            "energy_setpoint": torch.tensor([0.0, 1.0e6]),
         },
     },
     cheetah.Quadrupole: {

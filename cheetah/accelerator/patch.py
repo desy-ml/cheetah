@@ -16,7 +16,6 @@ class Patch(Element):
     :param pitch: Exit face pitch angles `(x_pitch, y_pitch)` in radians.
     :param tilt: Tilt angle in the x-y plane in radians.
     :param energy_offset: Reference energy offset in eV.
-    :param energy_setpoint: Target reference energy setpoint in eV.
     :param drift_to_exit: Whether to drift particles to the exit face plane.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
@@ -36,7 +35,6 @@ class Patch(Element):
         pitch: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         energy_offset: torch.Tensor | None = None,
-        energy_setpoint: torch.Tensor | None = None,
         drift_to_exit: bool = True,
         name: str | None = None,
         sanitize_name: bool | None = None,
@@ -83,14 +81,6 @@ class Patch(Element):
             (
                 energy_offset
                 if energy_offset is not None
-                else torch.tensor(0.0, **factory_kwargs)
-            ),
-        )
-        self.register_buffer_or_parameter(
-            "energy_setpoint",
-            (
-                energy_setpoint
-                if energy_setpoint is not None
                 else torch.tensor(0.0, **factory_kwargs)
             ),
         )
@@ -158,11 +148,8 @@ class Patch(Element):
                 drift_factor.squeeze(-1) * relative_momentum + patch_length
             )
 
-        if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
-            outgoing_energy = self.energy_setpoint.where(
-                self.energy_setpoint > 0.0,
-                incoming.energy + self.energy_offset,
-            )
+        if (self.energy_offset != 0.0).any():
+            outgoing_energy = incoming.energy + self.energy_offset
             _, _, incoming_beta = compute_relativistic_factors(
                 incoming.energy, incoming.species.mass_eV
             )
@@ -335,11 +322,8 @@ class Patch(Element):
             transfer_map[..., 3, 6] = reference_py
             transfer_map[..., 4, 6] = time_offset * speed_of_light
 
-        if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
-            outgoing_energy = self.energy_setpoint.where(
-                self.energy_setpoint > 0.0,
-                energy + self.energy_offset,
-            )
+        if (self.energy_offset != 0.0).any():
+            outgoing_energy = energy + self.energy_offset
             _, _, incoming_beta = compute_relativistic_factors(energy, species.mass_eV)
             _, _, outgoing_beta = compute_relativistic_factors(
                 outgoing_energy, species.mass_eV
@@ -362,11 +346,8 @@ class Patch(Element):
         outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
 
-        if (self.energy_setpoint > 0.0).any() or (self.energy_offset != 0.0).any():
-            outgoing_energy = self.energy_setpoint.where(
-                self.energy_setpoint > 0.0,
-                incoming.energy + self.energy_offset,
-            )
+        if (self.energy_offset != 0.0).any():
+            outgoing_energy = incoming.energy + self.energy_offset
         else:
             outgoing_energy = incoming.energy
 
@@ -425,7 +406,6 @@ class Patch(Element):
             "pitch",
             "tilt",
             "energy_offset",
-            "energy_setpoint",
             "drift_to_exit",
         ]
 

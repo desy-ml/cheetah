@@ -328,9 +328,27 @@ def convert_element(
         elif bmad_parsed["element_type"] == "patch":
             fortran_namelist.validate_understood_properties(
                 shared_properties
-                + ["x_offset", "y_offset", "z_offset", "tilt", "x_pitch", "y_pitch"],
+                + [
+                    "x_offset",
+                    "y_offset",
+                    "z_offset",
+                    "tilt",
+                    "x_pitch",
+                    "y_pitch",
+                    "t_offset",
+                    "e_tot_offset",
+                    "e_tot_set",
+                ],
                 bmad_parsed,
             )
+            if "e_tot_set" in bmad_parsed:
+                warnings.warn(
+                    f"Element {name} has `e_tot_set={bmad_parsed['e_tot_set']}`, but "
+                    "energy setpoints are currently not supported for `Patch` in "
+                    "Cheetah. The setpoint will be ignored.",
+                    category=PhysicsWarning,
+                    stacklevel=2,
+                )
             return cheetah.Patch(
                 name=name,
                 sanitize_name=sanitize_name,
@@ -347,6 +365,12 @@ def convert_element(
                     **factory_kwargs,
                 ),
                 tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
+                time_offset=torch.tensor(
+                    bmad_parsed.get("t_offset", 0.0), **factory_kwargs
+                ),
+                energy_offset=torch.tensor(
+                    bmad_parsed.get("e_tot_offset", 0.0), **factory_kwargs
+                ),
                 metadata=metadata,
             )
         else:

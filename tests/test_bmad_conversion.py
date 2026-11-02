@@ -262,7 +262,8 @@ def test_bmad_patch_conversion(tmp_path):
     """Test importing a Bmad lattice containing a patch element."""
     bmad_content = (
         "p1: patch, x_offset = 0.01, y_offset = -0.02, z_offset = 0.5, &\n"
-        "    x_pitch = 0.003, y_pitch = -0.004, tilt = 0.1\n"
+        "    x_pitch = 0.003, y_pitch = -0.004, tilt = 0.1, &\n"
+        "    t_offset = 1.0e-9, e_tot_offset = 5.0e6\n"
         "lat: line = (p1)\n"
         "use, lat\n"
     )
@@ -277,3 +278,18 @@ def test_bmad_patch_conversion(tmp_path):
     assert torch.allclose(patch.offset, torch.tensor([0.01, -0.02, 0.5]))
     assert torch.allclose(patch.pitch, torch.tensor([0.003, -0.004]))
     assert torch.isclose(patch.tilt, torch.tensor(0.1))
+    assert torch.isclose(patch.time_offset, torch.tensor(1.0e-9))
+    assert torch.isclose(patch.energy_offset, torch.tensor(5.0e6))
+
+
+def test_bmad_patch_conversion_warns_on_energy_setpoint(tmp_path):
+    """Test that a warning is raised when converting a patch with e_tot_set."""
+    bmad_content = "p1: patch, e_tot_set = 1.0e9\n" "lat: line = (p1)\n" "use, lat\n"
+    bmad_file = tmp_path / "patch_setpoint.bmad"
+    bmad_file.write_text(bmad_content)
+
+    with pytest.warns(cheetah.utils.PhysicsWarning, match="energy setpoint"):
+        segment = cheetah.Segment.from_bmad(bmad_file)
+
+    assert len(segment.elements) == 1
+    assert isinstance(segment.elements[0], cheetah.Patch)
