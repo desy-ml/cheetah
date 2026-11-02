@@ -50,3 +50,4 @@ html_theme = "furo"
 html_logo = "_static/logo.png"
 
 html_static_path = ["_static"]
+html_extra_path = ["llms.txt"]
