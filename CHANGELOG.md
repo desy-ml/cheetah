@@ -30,6 +30,7 @@
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
 - Add llms.txt documentation file for AI agent context discovery
 - Add PEP 561 py.typed marker to Cheetah package for static type checking
+- Expand AGENTS.md with core physics and differentiability invariants for AI agents
 
 ### 🌟 First Time Contributors
 
