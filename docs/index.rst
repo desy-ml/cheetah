@@ -105,9 +105,9 @@ Cheetah currently supports the following accelerator elements:
 * **Correctors**: :class:`~cheetah.HorizontalCorrector`, :class:`~cheetah.VerticalCorrector`, :class:`~cheetah.CombinedCorrector`
 * **RF Cavities**: :class:`~cheetah.Cavity`, :class:`~cheetah.TransverseDeflectingCavity`
 * **Diagnostics**: :class:`~cheetah.BPM` (Beam Position Monitor), :class:`~cheetah.Screen`
-* **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`
+* **Other**: :class:`~cheetah.Aperture`, :class:`~cheetah.Undulator`, :class:`~cheetah.Marker`, :class:`~cheetah.SpaceChargeKick`, :class:`~cheetah.CustomTransferMap`
 
-If you need an element that is not yet supported, you can open an issue on the `GitHub repository <https://github.com/desy-ml/cheetah>`_ or implement a custom element by subclassing :class:`~cheetah.Element` and implementing the required methods. See :doc:`/getting_started/custom_elements` for more information.
+If you need an element that is not yet supported, you can open an issue on the `GitHub repository <https://github.com/desy-ml/cheetah>`_. If your element can be described by a linear transfer map, use :class:`~cheetah.CustomTransferMap` with a predefined matrix. Otherwise, implement a custom element by subclassing :class:`~cheetah.Element` and implementing the required methods. See :doc:`/getting_started/custom_elements` for more information.
 
 For the full element API documentation, see the :doc:`/accelerator` API Reference.
 
