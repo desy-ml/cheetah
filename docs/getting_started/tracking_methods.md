@@ -60,5 +60,5 @@ To switch the tracking order for an entire `Segment`, iterate over its elements 
 
 ```python
 # Configure the entire segment to track using second-order maps where possible
-segment.set_attrs_on_every_element("tracking_method", "second_order")
+segment.set_attrs_on_every_element(tracking_method="second_order")
 ```
