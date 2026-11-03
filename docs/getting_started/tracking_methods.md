@@ -32,6 +32,7 @@ The primary tracking methods supported by Cheetah elements are:
 You can set the tracking method during element creation:
 
 ```python
+import torch
 import cheetah
 
 # Create a quadrupole using second-order tracking
