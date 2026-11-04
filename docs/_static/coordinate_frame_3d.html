@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>3D Accelerator Coordinate System</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #111827;
+      color: #f3f4f6;
+      user-select: none;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+    .hud {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+    .hud h4 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      color: #60a5fa;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .legend-badge {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .controls-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .controls-btn:hover {
+      background: #1d4ed8;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="hud">
+    <h4>Curvilinear Beam Coordinates</h4>
+    <div class="legend-item"><span class="legend-badge" style="background: #eab308;"></span> <strong>s</strong>: Reference Orbit / Trajectory</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #ef4444;"></span> <strong>x</strong>: Horizontal Offset (Outward Normal)</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #3b82f6;"></span> <strong>y</strong>: Vertical Offset</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #10b981;"></span> <strong>ŝ</strong>: Beam Direction (Tangential)</div>
+    <div class="legend-item"><span class="legend-badge" style="background: #06b6d4;"></span> <strong>(x, y, τ)</strong>: Sample Particle</div>
+  </div>
+  <button id="toggle-anim" class="controls-btn">Pause Orbit Animation</button>
+
+  <script>
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(7, 5, 9);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Ambient and Directional Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 15);
+    scene.add(dirLight);
+
+    // Global laboratory grid
+    const grid = new THREE.GridHelper(12, 12, 0x334155, 0x1e293b);
+    grid.position.y = -0.01;
+    scene.add(grid);
+
+    // Global Lab Frame Axes (X, Y, Z)
+    const labAxes = new THREE.AxesHelper(2.5);
+    labAxes.material.linewidth = 2;
+    scene.add(labAxes);
+
+    // Build curved reference trajectory: Straight -> Arc (Bend) -> Straight
+    const curvePoints = [];
+    // Straight 1
+    for (let t = -3.5; t <= 0; t += 0.1) {
+      curvePoints.push(new THREE.Vector3(t, 0, 0));
+    }
+    // Dipole bend (radius R = 3)
+    const R = 3.0;
+    for (let a = 0; a <= Math.PI / 4; a += 0.05) {
+      curvePoints.push(new THREE.Vector3(R * Math.sin(a), 0, R * (1 - Math.cos(a))));
+    }
+    // Straight 2
+    const endArc = curvePoints[curvePoints.length - 1];
+    const angle = Math.PI / 4;
+    const tangent = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+    for (let d = 0.1; d <= 3.5; d += 0.1) {
+      curvePoints.push(endArc.clone().add(tangent.clone().multiplyScalar(d)));
+    }
+
+    const curve = new THREE.CatmullRomCurve3(curvePoints);
+    const pathGeometry = new THREE.TubeGeometry(curve, 100, 0.04, 8, false);
+    const pathMaterial = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3 });
+    const pathMesh = new THREE.Mesh(pathGeometry, pathMaterial);
+    scene.add(pathMesh);
+
+    // Reference particle (Gold sphere)
+    const refSphereGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    const refSphereMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x854d0e });
+    const refParticle = new THREE.Mesh(refSphereGeo, refSphereMat);
+    scene.add(refParticle);
+
+    // Frenet-Serret local coordinate frame arrows
+    const arrowDirS = new THREE.Vector3();
+    const arrowDirX = new THREE.Vector3();
+    const arrowDirY = new THREE.Vector3(0, 1, 0);
+
+    const arrowS = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.2, 0x10b981, 0.25, 0.15);
+    const arrowX = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 1.2, 0xef4444, 0.25, 0.15);
+    const arrowY = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1.2, 0x3b82f6, 0.25, 0.15);
+    scene.add(arrowS);
+    scene.add(arrowX);
+    scene.add(arrowY);
+
+    // Sample beam particle displaced from reference particle
+    const sampleParticleGeo = new THREE.SphereGeometry(0.09, 16, 16);
+    const sampleParticleMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2 });
+    const sampleParticle = new THREE.Mesh(sampleParticleGeo, sampleParticleMat);
+    scene.add(sampleParticle);
+
+    // Dashed line connecting reference particle to sample particle
+    const lineMat = new THREE.LineDashedMaterial({ color: 0x38bdf8, dashSize: 0.1, gapSize: 0.05 });
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+    const offsetLine = new THREE.Line(lineGeo, lineMat);
+    scene.add(offsetLine);
+
+    let progress = 0.45;
+    let isAnimated = true;
+
+    function updatePositions() {
+      const pos = curve.getPointAt(progress);
+      const tang = curve.getTangentAt(progress).normalize();
+
+      refParticle.position.copy(pos);
+
+      // Normal is perpendicular to tangent in horizontal plane
+      const normal = new THREE.Vector3(-tang.z, 0, tang.x).normalize();
+      const binormal = new THREE.Vector3(0, 1, 0);
+
+      arrowS.position.copy(pos);
+      arrowS.setDirection(tang);
+
+      arrowX.position.copy(pos);
+      arrowX.setDirection(normal);
+
+      arrowY.position.copy(pos);
+      arrowY.setDirection(binormal);
+
+      // Particle offset (x = 0.5m, y = 0.4m, tau = -0.3m)
+      const partPos = pos.clone()
+        .add(normal.clone().multiplyScalar(0.55))
+        .add(binormal.clone().multiplyScalar(0.45))
+        .add(tang.clone().multiplyScalar(-0.35));
+
+      sampleParticle.position.copy(partPos);
+
+      // Update connecting dashed line
+      offsetLine.geometry.dispose();
+      offsetLine.geometry = new THREE.BufferGeometry().setFromPoints([pos, partPos]);
+      offsetLine.computeLineDistances();
+    }
+
+    updatePositions();
+
+    const btn = document.getElementById('toggle-anim');
+    btn.addEventListener('click', () => {
+      isAnimated = !isAnimated;
+      btn.innerText = isAnimated ? 'Pause Orbit Animation' : 'Resume Orbit Animation';
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (isAnimated) {
+        progress += 0.0012;
+        if (progress > 0.85) progress = 0.15;
+        updatePositions();
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
