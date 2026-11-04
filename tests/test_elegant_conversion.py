@@ -216,9 +216,9 @@ def test_lattice_device(device: torch.device):
 
     # Check that the properties of the loaded elements are on the correct device
     for element in converted.elements:
-        for buffer in element.buffers():
+        for feature in element.defining_tensors:
             assert (
-                buffer.device.type == device.type
+                getattr(element, feature).device.type == device.type
             ), f"Wrong device in element {element.name}"
 
 
@@ -242,8 +242,10 @@ def test_lattice_dtype(dtype: torch.dtype):
 
     # Check that the properties of the loaded elements are of the correct dtype
     for element in converted.elements:
-        for buffer in element.buffers():
-            assert buffer.dtype == dtype, f"Wrong dtype in element {element.name}"
+        for feature in element.defining_tensors:
+            assert (
+                getattr(element, feature).dtype == dtype
+            ), f"Wrong dtype in element {element.name}"
 
 
 @pytest.mark.filterwarnings("ignore:.*long-name-quad.*:cheetah.utils.DirtyNameWarning")
@@ -269,9 +271,9 @@ def test_lattice_default_dtype(default_torch_dtype):
 
     # Check that the properties of the loaded elements are of the correct dtype
     for element in converted.elements:
-        for buffer in element.buffers():
+        for feature in element.defining_tensors:
             assert (
-                buffer.dtype == default_torch_dtype
+                getattr(element, feature).dtype == default_torch_dtype
             ), f"Wrong dtype in element {element.name}"
 
 

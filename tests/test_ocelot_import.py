@@ -151,9 +151,9 @@ def test_ocelot_lattice_import_device(demo_cell, device: torch.device):
 
     # Check that the properties of the loaded elements are on the correct device
     for element in segment.elements:
-        for buffer in element.buffers():
+        for feature in element.defining_tensors:
             assert (
-                buffer.device.type == device.type
+                getattr(element, feature).device.type == device.type
             ), f"Wrong device in element {element.name}"
 
 
@@ -166,5 +166,7 @@ def test_ocelot_lattice_import_dtype(demo_cell, dtype: torch.dtype):
 
     # Check that the properties of the loaded elements are of the correct dtype
     for element in segment.elements:
-        for buffer in element.buffers():
-            assert buffer.dtype == dtype, f"Wrong dtype in element {element.name}"
+        for feature in element.defining_tensors:
+            assert (
+                getattr(element, feature).dtype == dtype
+            ), f"Wrong dtype in element {element.name}"
