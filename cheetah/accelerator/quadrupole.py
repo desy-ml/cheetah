@@ -13,8 +13,8 @@ from cheetah.track_methods import (
 )
 from cheetah.utils import (
     UniqueNameGenerator,
-    bmadx,
     cache_transfer_map,
+    drift_kick_drift,
     merge_element_names,
     squash_index_for_unavailable_dims,
 )
@@ -178,7 +178,6 @@ class Quadrupole(Element):
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
 
-        # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
         y = incoming.y
@@ -187,7 +186,12 @@ class Quadrupole(Element):
         delta = incoming.p
         mc2 = incoming.species.mass_eV
 
-        z, pz, p0c = bmadx.cheetah_to_bmad_z_pz(tau, delta, incoming.energy, mc2)
+        p0c = (incoming.energy.square() - mc2.square()).sqrt()
+        energy = incoming.energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
+        p = (energy.square() - mc2.square()).sqrt()
+        beta = p / energy
+        rel_p = p / p0c.unsqueeze(-1)
+        pz = rel_p - 1.0
 
         x_offset = self.misalignment[..., 0]
         y_offset = self.misalignment[..., 1]
@@ -195,27 +199,30 @@ class Quadrupole(Element):
         step_length = self.length / self.num_steps
         b1 = self.k1 * self.length
 
-        # Begin Bmad-X tracking
-        x, px, y, py = bmadx.offset_particle_set(
+        x, px, y, py = drift_kick_drift.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
+        k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
+        tx, dzx = drift_kick_drift.calculate_quadrupole_coefficients(
+            -k1, step_length, rel_p
+        )
+        ty, dzy = drift_kick_drift.calculate_quadrupole_coefficients(
+            k1, step_length, rel_p
+        )
+        dz_low = drift_kick_drift.low_energy_z_correction(pz, p0c, mc2, step_length)
+
+        dz_geom_sum = torch.zeros_like(x)
         for _ in range(self.num_steps):
-            rel_p = 1 + pz  # Particle's relative momentum (P/P0)
-            k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
-
-            tx, dzx = bmadx.calculate_quadrupole_coefficients(-k1, step_length, rel_p)
-            ty, dzy = bmadx.calculate_quadrupole_coefficients(k1, step_length, rel_p)
-
-            z = (
-                z
-                + dzx[0] * x.square()
+            dz_geom = (
+                dzx[0] * x.square()
                 + dzx[1] * x * px
                 + dzx[2] * px.square()
                 + dzy[0] * y.square()
                 + dzy[1] * y * py
                 + dzy[2] * py.square()
             )
+            dz_geom_sum = dz_geom_sum + dz_geom
 
             x_next = tx[0][0] * x + tx[0][1] * px
             px_next = tx[1][0] * x + tx[1][1] * px
@@ -224,25 +231,20 @@ class Quadrupole(Element):
 
             x, px, y, py = x_next, px_next, y_next, py_next
 
-            z = z + bmadx.low_energy_z_correction(pz, p0c, mc2, step_length)
+        tau = tau - (dz_geom_sum + self.num_steps * dz_low) / beta
 
         # s = s + l
-        x, px, y, py = bmadx.offset_particle_unset(
+        x, px, y, py = drift_kick_drift.offset_particle_unset(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        # pz is unaffected by tracking, therefore needs to match vector dimensions
-        pz, _ = torch.broadcast_tensors(pz, x)
-        # End of Bmad-X tracking
-
-        # Convert back to Cheetah coordinates
-        tau, delta, ref_energy = bmadx.bmad_to_cheetah_z_pz(z, pz, p0c, mc2)
+        x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)
 
         outgoing_beam = ParticleBeam(
             particles=torch.stack(
                 (x, px, y, py, tau, delta, torch.ones_like(x)), dim=-1
             ),
-            energy=ref_energy,
+            energy=incoming.energy,
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + self.length,
