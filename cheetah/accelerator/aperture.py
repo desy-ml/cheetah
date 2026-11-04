@@ -36,6 +36,9 @@ class Aperture(Element):
     :param dtype: Data type of the element's tensors.
     """
 
+    x_max: torch.Tensor
+    y_max: torch.Tensor
+
     def __init__(
         self,
         x_max: torch.Tensor | None = None,
@@ -132,11 +135,14 @@ class Aperture(Element):
         )
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2
         height = 0.4
@@ -144,9 +150,16 @@ class Aperture(Element):
         dummy_length = 0.0
 
         patch = Rectangle(
-            (plot_s, 0), dummy_length, height, color="tab:pink", alpha=alpha, zorder=2
+            (float(plot_s), 0.0),
+            dummy_length,
+            height,
+            color="tab:pink",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

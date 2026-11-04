@@ -430,7 +430,7 @@ def _cloud_in_cell_nd(
     strides = [math.prod(histogram_shape[d + 1 :]) for d in range(num_hist_dims)]
 
     for corner in itertools.product([0, 1], repeat=num_hist_dims):
-        corner_idx = 0
+        corner_idx = torch.zeros_like(positions_in_bin_space_int_components_dims[0])
         corner_weight = masked_charges.clone()
         for d in range(num_hist_dims):
             use_right = corner[d]

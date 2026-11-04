@@ -38,6 +38,9 @@ class CombinedCorrector(Element):
 
     supported_tracking_methods = ["linear"]
 
+    horizontal_angle: torch.Tensor
+    vertical_angle: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -103,30 +106,35 @@ class CombinedCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return (
+        return bool(
             torch.any(self.horizontal_angle != 0).item()
             or torch.any(self.vertical_angle != 0).item()
         )
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
-        alpha = 1 if self.is_active else 0.2
+        alpha = 1.0 if self.is_active else 0.2
 
         patch = Rectangle(
-            (plot_s, -0.6),
-            plot_length,
-            0.6 * 2,
+            (float(plot_s), -0.6),
+            float(plot_length),
+            0.6 * 2.0,
             color="chocolate",
             alpha=alpha,
             zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

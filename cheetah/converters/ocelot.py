@@ -1,4 +1,5 @@
 import warnings
+from typing import Literal
 
 import torch
 
@@ -183,7 +184,10 @@ def convert_element(
             sanitize_name=sanitize_name,
         )
     elif isinstance(element, ocelot.Aperture):
-        shape_translation = {"rect": "rectangular", "elip": "elliptical"}
+        shape_translation: dict[str, Literal["rectangular", "elliptical"]] = {
+            "rect": "rectangular",
+            "elip": "elliptical",
+        }
         return cheetah.Aperture(
             x_max=torch.tensor(element.xmax, **factory_kwargs),
             y_max=torch.tensor(element.ymax, **factory_kwargs),

@@ -344,7 +344,7 @@ def misalignment_matrix(
 
 def combined_rotation_misalignment_matrix(
     angle: torch.Tensor, misalignment: torch.Tensor
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Apply misalignment and then rotation in the x-y plane.
 

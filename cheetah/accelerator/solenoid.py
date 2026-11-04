@@ -41,6 +41,9 @@ class Solenoid(Element):
 
     supported_tracking_methods = ["linear"]
 
+    k: torch.Tensor
+    misalignment: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -117,7 +120,7 @@ class Solenoid(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.k != 0).any().item()
+        return bool((self.k != 0).any().item())
 
     @property
     def is_skippable(self) -> bool:
@@ -140,7 +143,9 @@ class Solenoid(Element):
             for i in range(num_splits)
         ]
 
-    def merge(self, other: "Solenoid") -> "Solenoid | None":
+    def merge(self, other: Element) -> "Solenoid | None":
+        if not isinstance(other, Solenoid):
+            return None
         if not self.misalignment.equal(other.misalignment):
             return None
 
@@ -157,20 +162,30 @@ class Solenoid(Element):
         )
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
-        alpha = 1 if self.is_active else 0.2
+        alpha = 1.0 if self.is_active else 0.2
         height = 0.8
 
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:orange", alpha=alpha, zorder=2
+            (float(plot_s), 0.0),
+            float(plot_length),
+            height,
+            color="tab:orange",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

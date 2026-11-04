@@ -1,4 +1,5 @@
 import functools
+from typing import Any
 
 import torch
 
@@ -20,11 +21,12 @@ def cache_transfer_map(func):
         ):
             return func(self, energy, species)
 
-        if not hasattr(self, "_cache"):
-            self._cache = {}
-        if func.__name__ not in self._cache:
-            self._cache[func.__name__] = {}
-        cache = self._cache[func.__name__]
+        if "_cache" not in self.__dict__:
+            self.__dict__["_cache"] = {}
+        cache_dict: dict[str, dict[str, Any]] = self.__dict__["_cache"]
+        if func.__name__ not in cache_dict:
+            cache_dict[func.__name__] = {}
+        cache: dict[str, Any] = cache_dict[func.__name__]
 
         # Build a validity key to check if element features have changed
         feature_validity_key = tuple()
@@ -41,7 +43,8 @@ def cache_transfer_map(func):
 
         # Recompute the transfer map if element features have changed
         if feature_validity_key != cache.get("feature_validity_key", None) or any(
-            not (
+            cached is None
+            or not (
                 passed.dtype == cached.dtype
                 and passed.device == cached.device
                 and passed.requires_grad == cached.requires_grad

@@ -18,6 +18,7 @@ generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
 class Screen(Element):
+    _read_beam: Beam | None
     """
     Diagnostic screen in a particle accelerator.
 
@@ -59,6 +60,11 @@ class Screen(Element):
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """
+
+    pixel_size: torch.Tensor
+    misalignment: torch.Tensor
+    kde_bandwidth: torch.Tensor
+    cached_reading: torch.Tensor | None
 
     def __init__(
         self,
@@ -190,6 +196,7 @@ class Screen(Element):
             copy_of_incoming = incoming.clone()
 
             if isinstance(incoming, ParameterBeam):
+                assert isinstance(copy_of_incoming, ParameterBeam)
                 broadcasted_mu, _ = torch.broadcast_tensors(
                     copy_of_incoming.mu, self.misalignment[..., 0]
                 )
@@ -198,6 +205,7 @@ class Screen(Element):
                 copy_of_incoming.mu[..., 0] -= self.misalignment[..., 0]
                 copy_of_incoming.mu[..., 2] -= self.misalignment[..., 1]
             elif isinstance(incoming, ParticleBeam):
+                assert isinstance(copy_of_incoming, ParticleBeam)
                 broadcasted_particles, _ = torch.broadcast_tensors(
                     copy_of_incoming.particles,
                     self.misalignment[..., 0].unsqueeze(-1).unsqueeze(-1),
@@ -235,6 +243,7 @@ class Screen(Element):
                     s=incoming.s,
                     species=incoming.species.clone(),
                 )
+            raise TypeError(f"Unsupported beam type: {type(incoming)}")
         else:
             return incoming.clone()
 
@@ -282,8 +291,20 @@ class Screen(Element):
             top = self.extent[3]
             vstep = self.pixel_size[1] * self.binning
             x, y = torch.meshgrid(
-                torch.arange(left, right, hstep),
-                torch.arange(bottom, top, vstep),
+                torch.arange(
+                    float(left),
+                    float(right),
+                    float(hstep),
+                    device=self.misalignment.device,
+                    dtype=self.misalignment.dtype,
+                ),
+                torch.arange(
+                    float(bottom),
+                    float(top),
+                    float(vstep),
+                    device=self.misalignment.device,
+                    dtype=self.misalignment.dtype,
+                ),
                 indexing="ij",
             )
             pos = torch.dstack((x, y))
@@ -337,19 +358,21 @@ class Screen(Element):
                     extent=self.extent.reshape(2, 2),
                     charges=broadcasted_weights,
                 ).mT
+            else:
+                raise ValueError(f"Invalid method {self.method}")
         else:
             raise TypeError(f"Read beam is of invalid type {type(read_beam)}")
 
         self.cached_reading = image
         return image
 
-    def get_read_beam(self) -> Beam:
+    def get_read_beam(self) -> Beam | None:
         # Using these get and set methods instead of Python's property decorator to
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
         return self._read_beam
 
-    def set_read_beam(self, value: Beam) -> None:
+    def set_read_beam(self, value: Beam | None) -> None:
         # Using these get and set methods instead of Python's property decorator to
         # prevent `nn.Module` from intercepting the read beam, which is itself an
         # `nn.Module`, and registering it as a submodule of the screen.
@@ -357,18 +380,27 @@ class Screen(Element):
         self.cached_reading = None
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
 
-        alpha = 1 if self.is_active else 0.2
+        alpha = 1.0 if self.is_active else 0.2
 
         patch = Rectangle(
-            (plot_s, -0.6), 0, 0.6 * 2, color="tab:green", alpha=alpha, zorder=2
+            (float(plot_s), -0.6),
+            0.0,
+            0.6 * 2.0,
+            color="tab:green",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

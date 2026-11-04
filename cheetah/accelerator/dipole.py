@@ -55,6 +55,16 @@ class Dipole(Element):
 
     supported_tracking_methods = ["linear", "second_order", "drift_kick_drift"]
 
+    angle: torch.Tensor
+    k1: torch.Tensor
+    _e1: torch.Tensor
+    _e2: torch.Tensor
+    fringe_integral: torch.Tensor
+    fringe_integral_exit: torch.Tensor
+    gap: torch.Tensor
+    gap_exit: torch.Tensor
+    tilt: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -156,7 +166,7 @@ class Dipole(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.angle != 0).any().item()
+        return bool((self.angle != 0).any().item())
 
     def track(self, incoming: Beam) -> Beam:
         """
@@ -180,7 +190,7 @@ class Dipole(Element):
                 "Replace them with 'linear' and 'drift_kick_drift', respectively."
             )
 
-    def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
+    def _track_drift_kick_drift(self, incoming: Beam) -> ParticleBeam:
         """
         Track particles through the quadrupole element using the Drift_kick_drift
             tracking method.
@@ -251,8 +261,15 @@ class Dipole(Element):
         z: torch.Tensor,
         pz: torch.Tensor,
         p0c: torch.Tensor,
-        mc2: float,
-    ) -> list[torch.Tensor]:
+        mc2: torch.Tensor,
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         """
         Track particle coordinates through bend body.
 
@@ -342,7 +359,7 @@ class Dipole(Element):
         px: torch.Tensor,
         y: torch.Tensor,
         py: torch.Tensor,
-    ) -> list[torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Tracks linear fringe.
 
@@ -466,21 +483,30 @@ class Dipole(Element):
         return tm
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor | float,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if s.dim() > 0 else s
+        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
+        alpha = 1.0 if self.is_active else 0.2
+        height = 0.8 * float(plot_angle.sign() if self.is_active else 1.0)
 
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:green", alpha=alpha, zorder=2
+            (float(plot_s), 0.0),
+            float(plot_length),
+            height,
+            color="tab:green",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+        return ax
 
     def to_mesh(
         self,
@@ -501,7 +527,8 @@ class Dipole(Element):
         mesh_rotation = trimesh.transformations.rotation_matrix(
             -self.angle.item() / 2.0, [0, 1, 0], [0, 0, 0]
         )
-        mesh.apply_transform(mesh_rotation)
+        if mesh is not None:
+            mesh.apply_transform(mesh_rotation)
 
         # Rotate the output transform by the full bending angle
         output_transform = (
