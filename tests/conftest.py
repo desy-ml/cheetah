@@ -127,14 +127,6 @@ ELEMENT_SUBCLASSES_ARGS = {
         }
     },
     cheetah.SpaceChargeKick: {"default": {"effect_length": torch.tensor(1.0)}},
-    cheetah.Superimposed: {
-        "default": {
-            "base_element": cheetah.Quadrupole(
-                length=torch.tensor(1.0), k1=torch.tensor(0.5)
-            ),
-            "superimposed_element": cheetah.BPM(),
-        }
-    },
     cheetah.TransverseDeflectingCavity: {
         "inactive": {
             "length": torch.tensor(0.5),

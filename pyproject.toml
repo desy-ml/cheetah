@@ -13,6 +13,12 @@ authors = [
     { name = "Chenran Xu", email = "chenran.xu@anl.gov" },
     { name = "Christian Hespe", email = "christian.hespe@desy.de" },
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
     "matplotlib>=3.5",
     "numpy>=1.23.3",
