@@ -8,13 +8,16 @@ from cheetah.utils import DefaultParameterWarning, is_mps_available_and_function
 
 from .resources import ARESlatticeStage3v1_9 as ares
 
-DEMO_CELL = [
-    ocelot.Drift(l=0.3),
-    ocelot.Quadrupole(l=0.2),
-    ocelot.Drift(l=1.0),
-    ocelot.Sextupole(l=0.4),
-    ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0, tilt=1.57),
-]
+
+@pytest.fixture
+def demo_cell():
+    return [
+        ocelot.Drift(l=0.3),
+        ocelot.Quadrupole(l=0.2),
+        ocelot.Drift(l=1.0),
+        ocelot.Sextupole(l=0.4),
+        ocelot.TDCavity(l=1.0, v=0.01, freq=1e9, phi=30.0, tilt=1.57),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -105,10 +108,10 @@ def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype)
     assert beam.total_charge.dtype == correct_dtype
 
 
-def test_ocelot_lattice_import():
+def test_ocelot_lattice_import(demo_cell):
     """Tests if a lattice is correctly imported from Ocelot."""
 
-    segment = cheetah.Segment.from_ocelot(cell=DEMO_CELL)
+    segment = cheetah.Segment.from_ocelot(demo_cell)
 
     assert isinstance(segment.elements[0], cheetah.Drift)
     assert isinstance(segment.elements[1], cheetah.Quadrupole)
@@ -142,9 +145,9 @@ def test_ocelot_lattice_import():
     ],
     ids=["cpu", "cuda", "mps"],
 )
-def test_ocelot_lattice_import_device(device: torch.device):
+def test_ocelot_lattice_import_device(demo_cell, device: torch.device):
     """Test that the device is properly used during the Ocelot conversion."""
-    segment = cheetah.Segment.from_ocelot(cell=DEMO_CELL, device=device)
+    segment = cheetah.Segment.from_ocelot(demo_cell, device=device)
 
     # Check that the properties of the loaded elements are on the correct device
     for element in segment.elements:
@@ -157,9 +160,9 @@ def test_ocelot_lattice_import_device(device: torch.device):
 @pytest.mark.parametrize(
     "dtype", [torch.float32, torch.float64], ids=["float32", "float64"]
 )
-def test_ocelot_lattice_import_dtype(dtype: torch.dtype):
+def test_ocelot_lattice_import_dtype(demo_cell, dtype: torch.dtype):
     """Test that the dtype is properly used during the Ocelot conversion."""
-    segment = cheetah.Segment.from_ocelot(cell=DEMO_CELL, dtype=dtype)
+    segment = cheetah.Segment.from_ocelot(demo_cell, dtype=dtype)
 
     # Check that the properties of the loaded elements are of the correct dtype
     for element in segment.elements:
