@@ -29,7 +29,7 @@ def test_unbiased_weighted_variance_with_same_weights():
     expected_variance = torch.var(data)
     computed_variance = unbiased_weighted_variance(data, weights)
 
-    assert torch.allclose(computed_variance, expected_variance)
+    torch.testing.assert_close(computed_variance, expected_variance)
 
 
 def test_unbiased_weighted_variance_with_different_weights():
@@ -40,7 +40,7 @@ def test_unbiased_weighted_variance_with_different_weights():
     expected_variance = torch.var(torch.tensor([1.0, 2.0, 3.0]))
     computed_variance = unbiased_weighted_variance(data, weights)
 
-    assert torch.allclose(computed_variance, expected_variance)
+    torch.testing.assert_close(computed_variance, expected_variance)
 
 
 def test_unbiased_weighted_variance_with_zero_weights():
@@ -61,7 +61,7 @@ def test_unbiased_weighted_variance_with_small_numbers():
     expected_variance = torch.var(data)
     computed_variance = unbiased_weighted_variance(data, weights)
 
-    assert torch.allclose(computed_variance, expected_variance)
+    torch.testing.assert_close(computed_variance, expected_variance)
 
 
 def test_unbiased_weighted_covariance_reduced_to_variance():
@@ -75,7 +75,7 @@ def test_unbiased_weighted_covariance_reduced_to_variance():
     variance = unbiased_weighted_variance(data, weights)
     covariance = unbiased_weighted_covariance(data, data, weights)
 
-    assert torch.allclose(covariance, variance)
+    torch.testing.assert_close(covariance, variance)
 
 
 def test_unbiased_weighted_covariance_matrix_reduced_to_scalar():
@@ -89,7 +89,7 @@ def test_unbiased_weighted_covariance_matrix_reduced_to_scalar():
     matrix = unbiased_weighted_covariance_matrix(data.unsqueeze(-1), weights)
     variance = unbiased_weighted_variance(data, weights)
 
-    assert torch.allclose(matrix.squeeze(), variance)
+    torch.testing.assert_close(matrix.squeeze(), variance)
 
 
 def test_unbiased_weighted_covariance_matrix_elementwise_reduction():
@@ -108,7 +108,7 @@ def test_unbiased_weighted_covariance_matrix_elementwise_reduction():
             covariance = unbiased_weighted_covariance(
                 data[:, i], data[:, j], weights, dim=-1
             )
-            assert torch.allclose(matrix[:, i, j], covariance)
+            torch.testing.assert_close(matrix[:, i, j], covariance)
 
 
 def test_unbiased_weighted_covariance_matrix_torch():
@@ -123,7 +123,7 @@ def test_unbiased_weighted_covariance_matrix_torch():
     expected_covariance_matrix = torch.cov(data.mT, aweights=weights)
     computed_covariance_matrix = unbiased_weighted_covariance_matrix(data, weights)
 
-    assert torch.allclose(computed_covariance_matrix, expected_covariance_matrix)
+    torch.testing.assert_close(computed_covariance_matrix, expected_covariance_matrix)
 
 
 def test_match_distribution_moments():
@@ -154,5 +154,5 @@ def test_match_distribution_moments():
     transformed_cov = unbiased_weighted_covariance_matrix(transformed_samples, weights)
 
     # Check if moments match
-    assert torch.allclose(transformed_mu, target_mu)
-    assert torch.allclose(transformed_cov, target_cov)
+    torch.testing.assert_close(transformed_mu, target_mu)
+    torch.testing.assert_close(transformed_cov, target_cov)
