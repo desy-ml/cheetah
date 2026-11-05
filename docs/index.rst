@@ -281,13 +281,13 @@ Install the cheetah package as editable with development dependencies (requires 
 .. code-block:: sh
 
     pip install --upgrade "pip>=25.1.1"
-    pip install -e . --group dev
+    pip install -e ".[all]" --group dev
 
-To also install all optional dependencies, run:
+To install without optional dependencies, run:
 
 .. code-block:: sh
 
-    pip install -e ".[3d-visualization,openpmd,sdds]" --group dev
+    pip install -e . --group dev
 
 We suggest installing pre-commit hooks to automatically conform with the code formatting in commits:
 

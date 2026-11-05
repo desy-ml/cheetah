@@ -29,6 +29,7 @@
 - Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #712) (@jank324, @Hespe)
 - Migrate package configuration from `setup.py` to `pyproject.toml` (see #716) (@jank324, @Hespe)
 - Quote `pip` dependencies in documentation and CI workflows (@jank324, @cr-xu)
+- Add `all` optional dependencies extra and recommend it in developer setup instructions (@jank324, @cr-xu)
 
 ### 🌟 First Time Contributors
 

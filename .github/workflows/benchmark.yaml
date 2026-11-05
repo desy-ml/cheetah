@@ -20,7 +20,7 @@ jobs:
       - name: Install pip dependencies
         run: |
           python -m pip install --upgrade "pip>=25.1.1"
-          pip install -e ".[3d-visualization,openpmd,sdds]"
+          pip install -e ".[all]"
           pip install --group test
 
       - name: Run benchmark
