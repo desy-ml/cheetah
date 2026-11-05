@@ -121,19 +121,19 @@ def test_vectorized_cold_uniform_beam_expansion():
 
     torch.testing.assert_close(
         outgoing.sigma_x,
-        torch.broadcast_to(2 * incoming.sigma_x, outgoing.sigma_x.shape),
+        torch.broadcast_to(2.0 * incoming.sigma_x, outgoing.sigma_x.shape),
         rtol=2e-2,
         atol=1e-8,
     )
     torch.testing.assert_close(
         outgoing.sigma_y,
-        torch.broadcast_to(2 * incoming.sigma_y, outgoing.sigma_y.shape),
+        torch.broadcast_to(2.0 * incoming.sigma_y, outgoing.sigma_y.shape),
         rtol=2e-2,
         atol=1e-8,
     )
     torch.testing.assert_close(
         outgoing.sigma_tau,
-        torch.broadcast_to(2 * incoming.sigma_tau, outgoing.sigma_tau.shape),
+        torch.broadcast_to(2.0 * incoming.sigma_tau, outgoing.sigma_tau.shape),
         rtol=2e-2,
         atol=1e-8,
     )
