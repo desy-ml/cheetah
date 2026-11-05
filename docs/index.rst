@@ -280,7 +280,7 @@ Install the cheetah package as editable with development dependencies (requires 
 
 .. code-block:: sh
 
-    pip install --upgrade "pip>=25.1.1"
+    pip install --upgrade pip>=25.1.1
     pip install -e . --group dev
 
 To also install all optional dependencies, run:

@@ -173,7 +173,7 @@ Activate your virtual environment. (Optional)
 Install the `cheetah` package as editable with development dependencies (requires `pip>=25.1.1`):
 
 ```sh
-pip install --upgrade "pip>=25.1.1"
+pip install --upgrade pip>=25.1.1
 pip install -e . --group dev
 ```
 
