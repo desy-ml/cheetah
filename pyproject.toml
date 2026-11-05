@@ -38,7 +38,7 @@ openpmd = ["openpmd-beamphysics>=0.14.0"]
 sdds = ["soliday.sdds>=5.7.0"]
 
 [dependency-groups]
-lint = ["black", "flake8", "isort"]
+lint = ["black", "flake8", "flake8-bugbear", "flake8-black", "isort"]
 test = ["ocelot-collab", "pytest", "pytest-benchmark", "pytest-cov"]
 dev = [{ include-group = "lint" }, { include-group = "test" }]
 
