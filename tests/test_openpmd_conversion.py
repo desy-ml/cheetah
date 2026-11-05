@@ -27,10 +27,10 @@ def test_particlebeam_to_and_from_particlegroup():
     )
 
     assert original_cheetah_beam.num_particles == loaded_cheetah_beam.num_particles
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_cheetah_beam.particles, loaded_cheetah_beam.particles
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_cheetah_beam.particle_charges, loaded_cheetah_beam.particle_charges
     )
 
@@ -59,9 +59,9 @@ def test_particlebeam_to_and_from_openpmd_h5(tmp_path):
     )
 
     assert original_cheetah_beam.num_particles == loaded_cheetah_beam.num_particles
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_cheetah_beam.particles, loaded_cheetah_beam.particles
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_cheetah_beam.particle_charges, loaded_cheetah_beam.particle_charges
     )

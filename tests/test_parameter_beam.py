@@ -175,11 +175,11 @@ def test_conversion_to_and_from_particle_beam():
     assert particle_beam.num_particles == 10_000_000
 
     # Check that reconstructed `ParameterBeam` has the same parameters as the original
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_parameter_beam.cov,
         reconstructed_parameter_beam.cov,
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_parameter_beam.mu,
         reconstructed_parameter_beam.mu,
     )

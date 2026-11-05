@@ -26,7 +26,9 @@
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
-- Switch version management to dynamic VCS versioning via `setuptools-scm`, and add release automation workflow and script. (@jank324)
+- Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #712) (@jank324, @Hespe)
+- Migrate package configuration from `setup.py` to `pyproject.toml` (see #716) (@jank324, @Hespe)
+- Switch version management to dynamic VCS versioning via `setuptools-scm`, and add release automation workflow and script. (see #722) (@jank324)
 
 ### 🌟 First Time Contributors
 
@@ -55,6 +57,7 @@
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
+- New _Getting Started_ guide in the documentation with a more comprehensive overview of Cheetah's features and capabilities etc. (see #651) (@jank324)
 
 ## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
 

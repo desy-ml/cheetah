@@ -20,3 +20,5 @@ docs/_build
 cheetah/_version.py
 
 dev*
+*.glb
+!docs/_static/*.glb
