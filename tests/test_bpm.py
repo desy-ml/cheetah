@@ -30,4 +30,4 @@ def test_bpm_misalignment():
 
     _ = bpm.track(incoming)
 
-    assert torch.allclose(bpm.reading, -torch.tensor([0.1, 0.2]))
+    torch.testing.assert_close(bpm.reading, -torch.tensor([0.1, 0.2]))
