@@ -28,6 +28,7 @@
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
 - Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #712) (@jank324, @Hespe)
 - Migrate package configuration from `setup.py` to `pyproject.toml` (see #716) (@jank324, @Hespe)
+- Quote `pip` dependencies in documentation and CI workflows (@jank324, @cr-xu)
 
 ### 🌟 First Time Contributors
 
