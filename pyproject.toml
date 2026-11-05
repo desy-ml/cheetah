@@ -37,6 +37,11 @@ Repository = "https://github.com/desy-ml/cheetah"
 openpmd = ["openpmd-beamphysics>=0.14.0"]
 sdds = ["soliday.sdds>=5.7.0"]
 
+[dependency-groups]
+lint = ["black", "flake8", "isort"]
+test = ["ocelot-collab", "pytest", "pytest-benchmark", "pytest-cov"]
+dev = [{ include-group = "lint" }, { include-group = "test" }]
+
 [tool.setuptools.dynamic]
 version = { attr = "cheetah._version.__version__" }
 
