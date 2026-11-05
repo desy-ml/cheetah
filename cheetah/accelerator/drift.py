@@ -190,7 +190,7 @@ class Drift(Element):
 
     def plot(
         self,
-        s: torch.Tensor | float,
+        s: torch.Tensor,
         vector_idx: tuple | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:

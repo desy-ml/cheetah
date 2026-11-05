@@ -764,7 +764,7 @@ class Segment(Element):
 
     def plot(
         self,
-        s: torch.Tensor | float,
+        s: torch.Tensor,
         vector_idx: tuple | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
@@ -795,7 +795,7 @@ class Segment(Element):
             else s_positions
         ).detach()
 
-        ax.plot([0.0, float(plot_ss[-1])], [0.0, 0.0], "--", color="black")
+        ax.plot([0.0, plot_ss[-1].item()], [0.0, 0.0], "--", color="black")
 
         for element, s_elem in zip(self.elements, plot_ss[:-1]):
             element.plot(s_elem, vector_idx, ax)

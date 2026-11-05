@@ -596,15 +596,15 @@ class SpaceChargeKick(Element):
 
     def plot(
         self,
-        s: torch.Tensor | float,
+        s: torch.Tensor,
         vector_idx: tuple | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
+        plot_s = s[vector_idx] if s.dim() > 0 else s
 
-        ax.axvline(float(plot_s), ymin=0.01, ymax=0.99, color="orange", linestyle="-")
+        ax.axvline(plot_s.item(), ymin=0.01, ymax=0.99, color="orange", linestyle="-")
         return ax
 
     @property

@@ -90,17 +90,17 @@ class BPM(Element):
 
     def plot(
         self,
-        s: torch.Tensor | float,
+        s: torch.Tensor,
         vector_idx: tuple | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
+        plot_s = s[vector_idx] if s.dim() > 0 else s
 
         alpha = 1 if self.is_active else 0.2
         patch = Rectangle(
-            (float(plot_s), -0.3),
+            (plot_s.item(), -0.3),
             0.0,
             0.3 * 2.0,
             color="darkkhaki",

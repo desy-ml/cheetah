@@ -308,7 +308,7 @@ class Quadrupole(Element):
 
     def plot(
         self,
-        s: torch.Tensor | float,
+        s: torch.Tensor,
         vector_idx: tuple | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
@@ -322,9 +322,7 @@ class Quadrupole(Element):
         )
 
         plot_s = (
-            s[squash_index_for_unavailable_dims(v_idx, s.shape)]
-            if isinstance(s, torch.Tensor) and len(s.shape) > 0
-            else s
+            s[squash_index_for_unavailable_dims(v_idx, s.shape)] if s.dim() > 0 else s
         )
         plot_length = (
             self.length[squash_index_for_unavailable_dims(v_idx, self.length.shape)]
@@ -335,7 +333,7 @@ class Quadrupole(Element):
         alpha = 1.0 if self.is_active else 0.2
         height = 0.8 * float(plot_k1.sign().item() if self.is_active else 1.0)
         patch = Rectangle(
-            (float(plot_s), 0.0),
+            (plot_s.item(), 0.0),
             float(plot_length),
             height,
             color="tab:red",

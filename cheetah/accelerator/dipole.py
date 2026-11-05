@@ -484,13 +484,13 @@ class Dipole(Element):
 
     def plot(
         self,
-        s: torch.Tensor | float,
+        s: torch.Tensor,
         vector_idx: tuple | None = None,
         ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
-        plot_s = s[vector_idx] if isinstance(s, torch.Tensor) and s.dim() > 0 else s
+        plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
@@ -498,7 +498,7 @@ class Dipole(Element):
         height = 0.8 * float(plot_angle.sign() if self.is_active else 1.0)
 
         patch = Rectangle(
-            (float(plot_s), 0.0),
+            (plot_s.item(), 0.0),
             float(plot_length),
             height,
             color="tab:green",
