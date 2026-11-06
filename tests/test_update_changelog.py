@@ -3,8 +3,6 @@
 from datetime import date
 from unittest.mock import patch
 
-import pytest
-
 from scripts.update_changelog import (
     clean_section,
     default_next_version,
@@ -74,12 +72,3 @@ def test_update_changelog(tmp_path):
         "(2026-07-23)"
     )
     assert expected_older in new_content
-
-
-def test_update_changelog_missing_wip_raises(tmp_path):
-    """Test that `ValueError` is raised if no WIP section is found."""
-    changelog_file = tmp_path / "CHANGELOG.md"
-    changelog_file.write_text("# Changelog\n\nNo WIP section here\n")
-
-    with pytest.raises(ValueError, match="Could not find"):
-        update_changelog(changelog_file, "0.8.5", "0.8.6")

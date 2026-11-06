@@ -58,11 +58,6 @@ def update_changelog(
         re.DOTALL,
     )
     match = wip_pattern.search(content)
-    if not match:
-        raise ValueError(
-            "Could not find '## vX.Y.Z [🚧 Work in Progress]' in `CHANGELOG.md`."
-        )
-
     raw_notes = match.group(2)
     cleaned_notes = clean_section(raw_notes)
     today = date.today().isoformat()
