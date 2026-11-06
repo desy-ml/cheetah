@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -53,20 +52,5 @@ jobs:
           git add CHANGELOG.md
           git commit -m "Prepare ${TAG} release"
           git tag -a "${TAG}" -m "Release ${TAG}"
-
-          # Attempt direct push to master (succeeds if using RELEASE_TOKEN or bot has bypass permission)
-          if git push origin master "${TAG}"; then
-            gh release create "${TAG}" --title "${TAG}" --notes "$NOTES"
-          else
-            echo "Direct push to master was blocked by branch protection."
-            echo "Pushing release branch and opening a pull request instead..."
-            git tag -d "${TAG}"
-            BRANCH="release-${TAG}"
-            git checkout -b "${BRANCH}"
-            git push -u origin "${BRANCH}"
-            gh pr create \
-              --title "Release ${TAG}" \
-              --body "Automated release preparation for ${TAG}. Once merged, push tag ${TAG} to trigger PyPI publishing." \
-              --base master \
-              --head "${BRANCH}"
-          fi
+          git push origin master "${TAG}"
+          gh release create "${TAG}" --title "${TAG}" --notes "$NOTES"
