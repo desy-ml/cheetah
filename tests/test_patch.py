@@ -111,20 +111,11 @@ def test_transform_particles_with_angles():
 
     outgoing = patch_with_angles.track(incoming)
     bmad_offsets = torch.tensor(
-        [
-            -1.950462e-01,
-            -6.400071e-02,
-            -1.297652e-01,
-            6.346425e-01,
-            1.605987e-02,
-            0.0,
-        ]
+        [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, 1.605987e-02, 0.0]
     )
     for i, offset in enumerate(bmad_offsets):
         assert torch.allclose(
-            outgoing.particles[..., i],
-            incoming.particles[..., i] + offset,
-            atol=1e-6,
+            outgoing.particles[..., i], incoming.particles[..., i] + offset, atol=1e-6
         )
 
 
