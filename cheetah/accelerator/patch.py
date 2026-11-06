@@ -233,6 +233,7 @@ class Patch(Element):
         outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
 
+        # NOTE: The following makes this method different from standard first order tracking
         outgoing_energy = (
             incoming.energy + self.energy_offset
             if (self.energy_offset != 0.0).any()
