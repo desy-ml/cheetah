@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print actions without modifying files",
     )
+    
     return parser.parse_args()
 
 
