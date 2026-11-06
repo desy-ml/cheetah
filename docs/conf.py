@@ -5,11 +5,11 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import os
 import sys
+from pathlib import Path
 
-# Source code directory, relative to this file, for sphinx-autobuild
-sys.path.insert(0, os.path.abspath(".."))
+# Add repository root relative to this file for Sphinx autodoc
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 try:
     from cheetah import __version__
