@@ -31,9 +31,9 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Update CHANGELOG.md and extract release notes
+      - name: Advance CHANGELOG.md and extract release notes
         id: changelog
-        run: python scripts/update_changelog.py ${{ inputs.version }} ${{ inputs.next_version }}
+        run: python scripts/advance_changelog.py ${{ inputs.version }} ${{ inputs.next_version }}
 
       - name: Commit, tag and publish release
         env:

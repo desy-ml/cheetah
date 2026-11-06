@@ -6,10 +6,10 @@ from pathlib import Path
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command line arguments for the changelog update script."""
+    """Parse command line arguments for advancing the changelog."""
     parser = argparse.ArgumentParser(
         description=(
-            "Update CHANGELOG.md and extract release notes for a Cheetah release."
+            "Advance CHANGELOG.md and extract release notes for a Cheetah release."
         )
     )
     parser.add_argument("version", help="Version to release (e.g. 0.8.5)")
@@ -64,14 +64,14 @@ def advance_changelog(content: str, version: str, next_version: str) -> tuple[st
 
 
 def main() -> None:
-    """Update changelog and write release notes."""
+    """Advance changelog and write release notes."""
     args = parse_args()
     changelog_path = Path("CHANGELOG.md")
     content = changelog_path.read_text(encoding="utf-8")
     new_content, notes = advance_changelog(content, args.version, args.next_version)
 
     if args.dry_run:
-        print(f"[dry-run] Would update `CHANGELOG.md` for v{args.version}")
+        print(f"[dry-run] Would advance `CHANGELOG.md` for v{args.version}")
         print(f"[dry-run] Next WIP version would be v{args.next_version}")
         print("\n[dry-run] Release notes:\n" + notes)
         return
@@ -80,7 +80,7 @@ def main() -> None:
     if "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
             f.write(f"release_notes<<EOF\n{notes}\nEOF\n")
-    print(f"Updated `CHANGELOG.md` for v{args.version}")
+    print(f"Advanced `CHANGELOG.md` for v{args.version}")
 
 
 if __name__ == "__main__":
