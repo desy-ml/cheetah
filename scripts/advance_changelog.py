@@ -60,6 +60,7 @@ def advance_changelog(content: str, version: str, next_version: str) -> tuple[st
 
     replacement = f"{new_wip_section}{new_release_header}\n\n{cleaned_notes}\n"
     new_content = content[: match.start()] + replacement + content[match.end() :]
+    
     return new_content, cleaned_notes
 
 
