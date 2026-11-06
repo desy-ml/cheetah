@@ -87,16 +87,20 @@ def test_transform_particles_with_angles():
 
     outgoing = patch_with_angles.track(incoming)
 
-    # Expected offsets from Bmad - note potential issue with the change in energy here
-    # TODO: fix potential energy issue
+    # Expected offsets from Bmad
     bmad_offsets = torch.tensor(
-        [-5.426011e-02, -4.794255e-01, -2.278988e-01, 4.207355e-01, -5.28948e-02]
+        [
+            -5.426011e-02,
+            -4.794255e-01,
+            -2.278988e-01,
+            4.207355e-01,
+            -5.28948e-02,
+            0.0,
+        ]
     )
-    for i, offset in zip(range(5), bmad_offsets):
+    for i, offset in enumerate(bmad_offsets):
         assert torch.allclose(
-            outgoing.particles[..., i],
-            incoming.particles[..., i] + offset,
-            atol=1e-6,
+            outgoing.particles[..., i], incoming.particles[..., i] + offset, atol=1e-6
         )
 
     patch_with_angles = cheetah.Patch(
@@ -114,9 +118,16 @@ def test_transform_particles_with_angles():
 
     outgoing = patch_with_angles.track(incoming)
     bmad_offsets = torch.tensor(
-        [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, 1.605987e-02]
+        [
+            -1.950462e-01,
+            -6.400071e-02,
+            -1.297652e-01,
+            6.346425e-01,
+            1.605987e-02,
+            0.0,
+        ]
     )
-    for i, offset in zip(range(5), bmad_offsets):
+    for i, offset in enumerate(bmad_offsets):
         assert torch.allclose(
             outgoing.particles[..., i],
             incoming.particles[..., i] + offset,
