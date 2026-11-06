@@ -14,22 +14,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("version", help="Version to release (e.g. 0.8.5)")
     parser.add_argument(
-        "--next-version",
-        help="Next version for WIP changelog (defaults to next patch version)",
+        "next_version", help="Next version for WIP changelog (e.g. 0.8.6)"
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print actions without modifying files",
     )
-    
+
     return parser.parse_args()
-
-
-def default_next_version(version: str) -> str:
-    """Calculate the default next patch version string."""
-    *head, patch = version.split(".")
-    return f"{'.'.join(head)}.{int(patch) + 1}"
 
 
 def remove_empty_subsections(text: str) -> str:
@@ -77,15 +70,14 @@ def update_changelog(
 def main() -> None:
     """Update changelog and write release notes."""
     args = parse_args()
-    version = args.version
-    next_version = args.next_version or default_next_version(version)
-
     changelog_path = Path("CHANGELOG.md")
-    new_content, notes = update_changelog(changelog_path, version, next_version)
+    new_content, notes = update_changelog(
+        changelog_path, args.version, args.next_version
+    )
 
     if args.dry_run:
-        print(f"[dry-run] Would update `CHANGELOG.md` for v{version}")
-        print(f"[dry-run] Next WIP version would be v{next_version}")
+        print(f"[dry-run] Would update `CHANGELOG.md` for v{args.version}")
+        print(f"[dry-run] Next WIP version would be v{args.next_version}")
         print("\n[dry-run] Release notes:\n" + notes)
         return
 
@@ -93,7 +85,7 @@ def main() -> None:
     if "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
             f.write(f"release_notes<<EOF\n{notes}\nEOF\n")
-    print(f"Updated `CHANGELOG.md` for v{version}")
+    print(f"Updated `CHANGELOG.md` for v{args.version}")
 
 
 if __name__ == "__main__":

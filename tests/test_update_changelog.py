@@ -1,17 +1,7 @@
 from datetime import date
 from unittest.mock import patch
 
-from scripts.update_changelog import (
-    default_next_version,
-    remove_empty_subsections,
-    update_changelog,
-)
-
-
-def test_default_next_version():
-    """Test default next patch version incrementation."""
-    assert default_next_version("0.8.5") == "0.8.6"
-    assert default_next_version("1.0.0") == "1.0.1"
+from scripts.update_changelog import remove_empty_subsections, update_changelog
 
 
 def test_remove_empty_subsections():

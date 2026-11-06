@@ -8,8 +8,8 @@ on:
         required: true
         type: string
       next_version:
-        description: "Next version for WIP changelog (e.g. 0.8.6; defaults to next patch)"
-        required: false
+        description: "Next version for WIP changelog (e.g. 0.8.6)"
+        required: true
         type: string
 
 jobs:
@@ -33,9 +33,7 @@ jobs:
 
       - name: Update CHANGELOG.md and extract release notes
         id: changelog
-        run: |
-          python scripts/update_changelog.py ${{ inputs.version }} \
-            ${{ inputs.next_version && format('--next-version {0}', inputs.next_version) || '' }}
+        run: python scripts/update_changelog.py ${{ inputs.version }} ${{ inputs.next_version }}
 
       - name: Commit, tag and publish release
         env:
