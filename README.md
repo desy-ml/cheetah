@@ -112,7 +112,7 @@ segment.plot_overview(incoming=astra_beam, resolution=0.05)
 
 where the keyword argument `incoming` is the incoming beam represented by the reference particles.
 
-You can also visualise your segment in 3D. **Note** that this requires that you installed Cheetah as `pip install cheetah-accelerator[3d-visualization]`.
+You can also visualise your segment in 3D. **Note** that this requires that you installed Cheetah as `pip install "cheetah-accelerator[3d-visualization]"`.
 
 Use `mesh.show` to view the mesh and `mesh.export` to export it to a file.
 
@@ -173,14 +173,14 @@ Activate your virtual environment. (Optional)
 Install the `cheetah` package as editable with development dependencies (requires `pip>=25.1.1`):
 
 ```sh
-pip install --upgrade pip>=25.1.1
-pip install -e . --group dev
+pip install --upgrade "pip>=25.1.1"
+pip install -e ".[all]" --group dev
 ```
 
-To also install all optional dependencies, run:
+To install without optional dependencies, run:
 
 ```sh
-pip install -e .[3d-visualization,openpmd,sdds] --group dev
+pip install -e . --group dev
 ```
 
 We suggest installing pre-commit hooks to automatically conform with the code formatting in commits:
