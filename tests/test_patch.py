@@ -89,14 +89,7 @@ def test_transform_particles_with_angles():
 
     # Expected offsets from Bmad
     bmad_offsets = torch.tensor(
-        [
-            -5.426011e-02,
-            -4.794255e-01,
-            -2.278988e-01,
-            4.207355e-01,
-            -5.28948e-02,
-            0.0,
-        ]
+        [-5.426011e-02, -4.794255e-01, -2.278988e-01, 4.207355e-01, -5.28948e-02, 0.0]
     )
     for i, offset in enumerate(bmad_offsets):
         assert torch.allclose(
