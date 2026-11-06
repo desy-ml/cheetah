@@ -16,7 +16,7 @@ def test_element_buffer_contents_and_location(element):
         mwe_feature = getattr(element, feature)
         clone_feature = getattr(clone, feature)
 
-        assert torch.allclose(mwe_feature, clone_feature, equal_nan=True)
+        torch.testing.assert_close(mwe_feature, clone_feature, equal_nan=True)
         assert not mwe_feature.data_ptr() == clone_feature.data_ptr()
 
 
@@ -54,7 +54,7 @@ def test_beam_buffer_contents_and_location(BeamClass):
         beam_feature = getattr(beam, feature)
         cloned_feature = getattr(clone, feature)
 
-        assert torch.allclose(beam_feature, cloned_feature)
+        torch.testing.assert_close(beam_feature, cloned_feature)
         assert not beam_feature.data_ptr() == cloned_feature.data_ptr()
 
     assert beam.species.name == clone.species.name

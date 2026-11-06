@@ -65,11 +65,11 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     # segment was tested in a different test.
     reloaded_custom_transfer_map_element = reloaded_segment.elements[0]
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         custom_transfer_map_element.predefined_transfer_map,
         reloaded_custom_transfer_map_element.predefined_transfer_map,
     )
-    assert torch.allclose(
+    torch.testing.assert_close(
         custom_transfer_map_element.length, reloaded_custom_transfer_map_element.length
     )
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
