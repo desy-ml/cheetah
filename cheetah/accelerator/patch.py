@@ -233,7 +233,8 @@ class Patch(Element):
         outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
         outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
 
-        # NOTE: The following makes this method different from standard first order tracking
+        # NOTE: The following makes this method different from standard first-order
+        # tracking.
         outgoing_energy = (
             incoming.energy + self.energy_offset
             if (self.energy_offset != 0.0).any()
@@ -359,6 +360,28 @@ class Patch(Element):
         """
         ax = ax or plt.subplot(111)
         return ax
+
+    def to_mesh(
+        self,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
+    ) -> "tuple[trimesh.Trimesh | None, np.ndarray]":  # noqa: F821 # type: ignore
+        """
+        Return the 3D mesh representation of the element and its output transform.
+        """
+        import numpy as np
+
+        rotation_matrix = (
+            self._rotation_matrix().reshape(-1, 3, 3)[0].detach().cpu().numpy()
+        )
+        position_offset = self.position_offset.reshape(-1, 3)[0].detach().cpu().numpy()
+
+        output_transform = np.eye(4)
+        output_transform[:3, :3] = rotation_matrix
+        output_transform[:3, 3] = position_offset
+
+        return None, output_transform
 
     @property
     def defining_features(self) -> list[str]:
