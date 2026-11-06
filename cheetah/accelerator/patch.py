@@ -100,6 +100,7 @@ class Patch(Element):
 
     @property
     def length(self) -> torch.Tensor:
+        """Reference trajectory length through the patch in meters."""
         return (self._rotation_matrix()[..., :, 2] * self.position_offset).sum(dim=-1)
 
     @cache_transfer_map

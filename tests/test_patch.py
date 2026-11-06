@@ -34,7 +34,7 @@ def test_rotation_matrix(pitch, tilt, correct_rotation_matrix):
 
 def test_length():
     """
-    Test that the Patch element's length property is computed correctly using a simple
+    Test that the `Patch` element's length property is computed correctly using a simple
     case with no rotation, where the length should equal the z-offset.
     """
     correct_length = 0.3
@@ -45,7 +45,7 @@ def test_length():
 
 def test_transform_particles():
     """
-    Test that tracking a beam through a Patch element correctly applies the offset to
+    Test that tracking a beam through a `Patch` element correctly applies the offset to
     particles placed at the origin.
     """
     # Beam with 10 particles placed at the origin
@@ -67,7 +67,10 @@ def test_transform_particles():
 
 
 def test_transform_particles_with_angles():
-    # test with angles (no tilt)
+    """
+    Test tracking through a `Patch` with non-zero pitch angles and tilt against expected
+    Bmad reference coordinates.
+    """
     patch_with_angles = cheetah.Patch(
         position_offset=torch.tensor([0.1, 0.2, 0.3]),
         pitch=torch.tensor((0.5, -0.5)),
@@ -120,6 +123,7 @@ def test_transform_particles_with_angles():
 
 
 def test_jacobian():
+    """Test that the autograd Jacobian matches the analytical transfer map."""
     patch_with_angles = cheetah.Patch(
         position_offset=torch.tensor([0.1, 0.2, 0.3]),
         time_offset=torch.tensor(0.0),
