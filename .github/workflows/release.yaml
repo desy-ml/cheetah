@@ -37,17 +37,14 @@ jobs:
           python scripts/update_changelog.py ${{ inputs.version }} \
             ${{ inputs.next_version && format('--next-version {0}', inputs.next_version) || '' }}
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Commit, tag and publish release
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
           NOTES: ${{ steps.changelog.outputs.release_notes }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           TAG="v${VERSION#v}"
           git add CHANGELOG.md
           git commit -m "Prepare ${TAG} release"

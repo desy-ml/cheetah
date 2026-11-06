@@ -5,8 +5,6 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import sys
-import uuid
 from datetime import date
 from pathlib import Path
 
@@ -33,12 +31,8 @@ def parse_args() -> argparse.Namespace:
 
 def default_next_version(version: str) -> str:
     """Calculate the default next patch version string."""
-    parts = version.split(".")
-    try:
-        parts[-1] = str(int(parts[-1]) + 1)
-        return ".".join(parts)
-    except ValueError:
-        return f"{version}.1"
+    *head, patch = version.split(".")
+    return f"{'.'.join(head)}.{int(patch) + 1}"
 
 
 def clean_section(text: str) -> str:
@@ -59,7 +53,7 @@ def update_changelog(
     content = changelog_path.read_text(encoding="utf-8")
 
     wip_pattern = re.compile(
-        r"(##\s+v?([0-9.]+)\s+\[🚧 Work in Progress\]\s*\n)(.*?)"
+        r"(##\s+v?[0-9.]+\s+\[🚧 Work in Progress\]\s*\n)(.*?)"
         r"(?=\n##\s+\[v|\n##\s+v|\Z)",
         re.DOTALL,
     )
@@ -69,7 +63,7 @@ def update_changelog(
             "Could not find '## vX.Y.Z [🚧 Work in Progress]' in `CHANGELOG.md`."
         )
 
-    raw_notes = match.group(3)
+    raw_notes = match.group(2)
     cleaned_notes = clean_section(raw_notes)
     today = date.today().isoformat()
 
@@ -90,7 +84,7 @@ def update_changelog(
     return new_content, cleaned_notes
 
 
-def main() -> int:
+def main() -> None:
     """Update changelog and write release notes."""
     args = parse_args()
     version = args.version.lstrip("v")
@@ -107,16 +101,14 @@ def main() -> int:
         print(f"[dry-run] Would update `CHANGELOG.md` for v{version}")
         print(f"[dry-run] Next WIP version would be v{next_version}")
         print("\n[dry-run] Release notes:\n" + notes)
-        return 0
+        return
 
     changelog_path.write_text(new_content, encoding="utf-8")
     if "GITHUB_OUTPUT" in os.environ:
-        delimiter = uuid.uuid4().hex
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-            f.write(f"release_notes<<{delimiter}\n{notes}\n{delimiter}\n")
+            f.write(f"release_notes<<EOF\n{notes}\nEOF\n")
     print(f"Updated `CHANGELOG.md` for v{version}")
-    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
