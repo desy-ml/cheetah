@@ -1,7 +1,7 @@
 from datetime import date
 from unittest.mock import patch
 
-from scripts.update_changelog import remove_empty_subsections, update_changelog
+from scripts.update_changelog import advance_changelog, remove_empty_subsections
 
 
 def test_remove_empty_subsections():
@@ -18,7 +18,7 @@ def test_remove_empty_subsections():
     assert cleaned == expected
 
 
-def test_update_changelog(tmp_path):
+def test_advance_changelog(tmp_path):
     """Test advancing the changelog and extracting release notes."""
     sample_changelog = (
         "# Changelog\n\n"
@@ -38,7 +38,7 @@ def test_update_changelog(tmp_path):
 
     with patch("scripts.update_changelog.date") as mock_date:
         mock_date.today.return_value = date(2026, 11, 6)
-        new_content, notes = update_changelog(changelog_file, "0.8.5", "0.8.6")
+        new_content, notes = advance_changelog(changelog_file, "0.8.5", "0.8.6")
 
     # Assert new WIP header exists at the top
     assert "## v0.8.6 [🚧 Work in Progress]" in new_content

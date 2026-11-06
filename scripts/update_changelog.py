@@ -30,7 +30,7 @@ def remove_empty_subsections(text: str) -> str:
     return re.sub(r"###\s+[^\n]+\n+(?=\s*###|\s*$)", "", text).strip()
 
 
-def update_changelog(
+def advance_changelog(
     changelog_path: Path, version: str, next_version: str
 ) -> tuple[str, str]:
     """Advance the changelog, freeze current WIP release, and add new template.
@@ -71,7 +71,7 @@ def main() -> None:
     """Update changelog and write release notes."""
     args = parse_args()
     changelog_path = Path("CHANGELOG.md")
-    new_content, notes = update_changelog(
+    new_content, notes = advance_changelog(
         changelog_path, args.version, args.next_version
     )
 
