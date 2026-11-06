@@ -1,0 +1,51 @@
+name: Release 🚀
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to publish (e.g. 0.8.5)"
+        required: true
+        type: string
+      next_version:
+        description: "Next version for WIP changelog (e.g. 0.8.6)"
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Prepare and publish release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Advance CHANGELOG.md and extract release notes
+        id: changelog
+        run: python scripts/advance_changelog.py ${{ inputs.version }} ${{ inputs.next_version }}
+
+      - name: Commit, tag and publish release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          NOTES: ${{ steps.changelog.outputs.release_notes }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="v${VERSION}"
+          git add CHANGELOG.md
+          git commit -m "Prepare ${TAG} release"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin master "${TAG}"
+          gh release create "${TAG}" --title "${TAG}" --notes "$NOTES"

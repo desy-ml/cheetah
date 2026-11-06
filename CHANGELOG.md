@@ -30,6 +30,7 @@
 - Migrate package configuration from `setup.py` to `pyproject.toml` (see #716, #723) (@jank324, @Hespe, @cr-xu)
 - Add `all` optional dependencies extra and recommend it in developer setup instructions (see #723) (@jank324, @cr-xu, @Hespe)
 - Update pre-commit hook versions to latest releases (see #723) (@jank324, @cr-xu, @Hespe)
+- Switch version management to dynamic VCS versioning via `setuptools-scm`, and add release automation workflow and script. (see #722) (@jank324)
 
 ### 🌟 First Time Contributors
 

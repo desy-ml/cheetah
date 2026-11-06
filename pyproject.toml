@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -43,8 +43,7 @@ lint = ["black", "flake8", "flake8-bugbear", "flake8-black", "isort"]
 test = ["ocelot-collab", "pytest", "pytest-benchmark", "pytest-cov"]
 dev = [{ include-group = "lint" }, { include-group = "test" }]
 
-[tool.setuptools.dynamic]
-version = { attr = "cheetah._version.__version__" }
+[tool.setuptools_scm]
 
 [tool.setuptools.packages.find]
 where = ["."]
