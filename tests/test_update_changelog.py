@@ -2,8 +2,8 @@ from datetime import date
 from unittest.mock import patch
 
 from scripts.update_changelog import (
-    clean_section,
     default_next_version,
+    remove_empty_subsections,
     update_changelog,
 )
 
@@ -14,7 +14,7 @@ def test_default_next_version():
     assert default_next_version("1.0.0") == "1.0.1"
 
 
-def test_clean_section():
+def test_remove_empty_subsections():
     """Test removing empty markdown subsections while keeping populated ones."""
     sample = (
         "### 🚨 Breaking Changes\n\n"
@@ -23,7 +23,7 @@ def test_clean_section():
         "### 🐛 Bug fixes\n\n"
         "### 🌟 First Time Contributors\n\n"
     )
-    cleaned = clean_section(sample)
+    cleaned = remove_empty_subsections(sample)
     expected = "### 🚀 Features\n\n- Add shiny new feature"
     assert cleaned == expected
 

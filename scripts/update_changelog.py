@@ -31,7 +31,7 @@ def default_next_version(version: str) -> str:
     return f"{'.'.join(head)}.{int(patch) + 1}"
 
 
-def clean_section(text: str) -> str:
+def remove_empty_subsections(text: str) -> str:
     """Remove empty `###` subsections from markdown text."""
     return re.sub(r"###\s+[^\n]+\n+(?=\s*###|\s*$)", "", text).strip()
 
@@ -53,7 +53,7 @@ def update_changelog(
     )
     match = wip_pattern.search(content)
     raw_notes = match.group(2)
-    cleaned_notes = clean_section(raw_notes)
+    cleaned_notes = remove_empty_subsections(raw_notes)
     today = date.today().isoformat()
 
     release_url = f"https://github.com/desy-ml/cheetah/releases/tag/v{version}"
