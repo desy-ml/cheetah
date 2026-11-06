@@ -219,12 +219,33 @@ class Patch(Element):
         :param incoming: Beam entering the element.
         :return: Beam exiting the element.
         """
-        if isinstance(incoming, ParticleBeam):
-            return self._track_particle_beam(incoming)
-        elif isinstance(incoming, ParameterBeam):
+        if isinstance(incoming, ParameterBeam):
             return self._track_parameter_beam(incoming)
+        elif isinstance(incoming, ParticleBeam):
+            return self._track_particle_beam(incoming)
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+    def _track_parameter_beam(self, incoming: ParameterBeam) -> ParameterBeam:
+        """Track a `ParameterBeam` through the `Patch` element."""
+        transfer_map = self.first_order_transfer_map(incoming.energy, incoming.species)
+        outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
+        outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
+
+        outgoing_energy = (
+            incoming.energy + self.energy_offset
+            if (self.energy_offset != 0.0).any()
+            else incoming.energy
+        )
+
+        return ParameterBeam(
+            mu=outgoing_mu,
+            cov=outgoing_cov,
+            energy=outgoing_energy,
+            total_charge=incoming.total_charge,
+            s=incoming.s + self.length,
+            species=incoming.species.clone(),
+        )
 
     def _track_particle_beam(self, incoming: ParticleBeam) -> ParticleBeam:
         """Track a `ParticleBeam` through the `Patch` element."""
@@ -299,27 +320,6 @@ class Patch(Element):
             particle_charges=incoming.particle_charges,
             survival_probabilities=incoming.survival_probabilities,
             s=incoming.s + length,
-            species=incoming.species.clone(),
-        )
-
-    def _track_parameter_beam(self, incoming: ParameterBeam) -> ParameterBeam:
-        """Track a `ParameterBeam` through the `Patch` element."""
-        transfer_map = self.first_order_transfer_map(incoming.energy, incoming.species)
-        outgoing_mu = (transfer_map @ incoming.mu.unsqueeze(-1)).squeeze(-1)
-        outgoing_cov = transfer_map @ incoming.cov @ transfer_map.mT
-
-        outgoing_energy = (
-            incoming.energy + self.energy_offset
-            if (self.energy_offset != 0.0).any()
-            else incoming.energy
-        )
-
-        return ParameterBeam(
-            mu=outgoing_mu,
-            cov=outgoing_cov,
-            energy=outgoing_energy,
-            total_charge=incoming.total_charge,
-            s=incoming.s + self.length,
             species=incoming.species.clone(),
         )
 
