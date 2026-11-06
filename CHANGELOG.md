@@ -27,7 +27,9 @@
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
 - Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #712) (@jank324, @Hespe)
-- Migrate package configuration from `setup.py` to `pyproject.toml` (see #716) (@jank324, @Hespe)
+- Migrate package configuration from `setup.py` to `pyproject.toml` (see #716, #723) (@jank324, @Hespe, @cr-xu)
+- Add `all` optional dependencies extra and recommend it in developer setup instructions (see #723) (@jank324, @cr-xu, @Hespe)
+- Update pre-commit hook versions to latest releases (see #723) (@jank324, @cr-xu, @Hespe)
 - Switch version management to dynamic VCS versioning via `setuptools-scm`, and add release automation workflow and script. (see #722) (@jank324)
 
 ### 🌟 First Time Contributors
