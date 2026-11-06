@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse
 import os
 import re
@@ -51,9 +49,7 @@ def update_changelog(
     content = changelog_path.read_text(encoding="utf-8")
 
     wip_pattern = re.compile(
-        r"(##\s+v?[0-9.]+\s+\[🚧 Work in Progress\]\s*\n)(.*?)"
-        r"(?=\n##\s+\[v|\n##\s+v|\Z)",
-        re.DOTALL,
+        r"(##\s+v?[0-9.]+\s+\[🚧 Work in Progress\]\s*\n)(.*?)(?=\n##\s|\Z)", re.DOTALL
     )
     match = wip_pattern.search(content)
     raw_notes = match.group(2)

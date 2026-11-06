@@ -45,7 +45,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG="v${VERSION#v}"
+          TAG="v${VERSION}"
           git add CHANGELOG.md
           git commit -m "Prepare ${TAG} release"
           git tag -a "${TAG}" -m "Release ${TAG}"
