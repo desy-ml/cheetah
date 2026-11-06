@@ -33,6 +33,7 @@ jobs:
           python-version: "3.14"
 
       - name: Update CHANGELOG.md and extract release notes
+        id: changelog
         run: |
           python scripts/update_changelog.py ${{ inputs.version }} \
             ${{ inputs.next_version && format('--next-version {0}', inputs.next_version) || '' }}
@@ -46,6 +47,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
+          NOTES: ${{ steps.changelog.outputs.release_notes }}
         run: |
           TAG="v${VERSION#v}"
           git add CHANGELOG.md
@@ -54,8 +56,7 @@ jobs:
 
           # Attempt direct push to master (succeeds if using RELEASE_TOKEN or bot has bypass permission)
           if git push origin master "${TAG}"; then
-            gh release create "${TAG}" --title "${TAG}" --notes-file RELEASE_NOTES.md
-            rm -f RELEASE_NOTES.md
+            gh release create "${TAG}" --title "${TAG}" --notes "$NOTES"
           else
             echo "Direct push to master was blocked by branch protection."
             echo "Pushing release branch and opening a pull request instead..."

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -13,7 +15,7 @@ def parse_args() -> argparse.Namespace:
     """Parse command line arguments for the changelog update script."""
     parser = argparse.ArgumentParser(
         description=(
-            "Update CHANGELOG.md and write RELEASE_NOTES.md for a Cheetah release."
+            "Update CHANGELOG.md and extract release notes for a Cheetah release."
         )
     )
     parser.add_argument("version", help="Version to release (e.g. 0.8.5)")
@@ -108,9 +110,11 @@ def main() -> int:
         return 0
 
     changelog_path.write_text(new_content, encoding="utf-8")
-    notes_path = Path("RELEASE_NOTES.md")
-    notes_path.write_text(notes + "\n", encoding="utf-8")
-    print(f"Updated `CHANGELOG.md` and wrote `RELEASE_NOTES.md` for v{version}")
+    if "GITHUB_OUTPUT" in os.environ:
+        delimiter = uuid.uuid4().hex
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+            f.write(f"release_notes<<{delimiter}\n{notes}\n{delimiter}\n")
+    print(f"Updated `CHANGELOG.md` for v{version}")
     return 0
 
 
