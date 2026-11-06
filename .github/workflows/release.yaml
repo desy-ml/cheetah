@@ -34,9 +34,8 @@ jobs:
 
       - name: Update CHANGELOG.md and extract release notes
         run: |
-          python scripts/release.py ${{ inputs.version }} \
-            ${{ inputs.next_version && format('--next-version {0}', inputs.next_version) || '' }} \
-            --changelog-only
+          python scripts/update_changelog.py ${{ inputs.version }} \
+            ${{ inputs.next_version && format('--next-version {0}', inputs.next_version) || '' }}
 
       - name: Configure Git
         run: |

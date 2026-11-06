@@ -1,18 +1,21 @@
-"""Automate cutting a new Cheetah release."""
+"""Update CHANGELOG.md and extract release notes for a Cheetah release."""
 
 from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 from datetime import date
 from pathlib import Path
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command line arguments for the release script."""
-    parser = argparse.ArgumentParser(description="Prepare and cut a Cheetah release.")
+    """Parse command line arguments for the changelog update script."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Update CHANGELOG.md and write RELEASE_NOTES.md for a Cheetah release."
+        )
+    )
     parser.add_argument("version", help="Version to release (e.g. 0.8.5)")
     parser.add_argument(
         "--next-version",
@@ -21,12 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print actions without modifying files or running git commands",
-    )
-    parser.add_argument(
-        "--changelog-only",
-        action="store_true",
-        help="Only update CHANGELOG.md and write RELEASE_NOTES.md without git commands",
+        help="Print actions without modifying files",
     )
     return parser.parse_args()
 
@@ -91,7 +89,7 @@ def update_changelog(
 
 
 def main() -> int:
-    """Run the release workflow."""
+    """Update changelog and write release notes."""
     args = parse_args()
     version = args.version.lstrip("v")
     next_version = (
@@ -112,31 +110,7 @@ def main() -> int:
     changelog_path.write_text(new_content, encoding="utf-8")
     notes_path = Path("RELEASE_NOTES.md")
     notes_path.write_text(notes + "\n", encoding="utf-8")
-
-    if args.changelog_only:
-        print(f"Updated `CHANGELOG.md` and wrote `RELEASE_NOTES.md` for v{version}")
-        return 0
-
-    tag = f"v{version}"
-    subprocess.run(["git", "add", "CHANGELOG.md"], check=True)
-    subprocess.run(["git", "commit", "-m", f"Prepare {tag} release"], check=True)
-    subprocess.run(["git", "tag", "-a", tag, "-m", f"Release {tag}"], check=True)
-    subprocess.run(["git", "push", "origin", "master", tag], check=True)
-    subprocess.run(
-        [
-            "gh",
-            "release",
-            "create",
-            tag,
-            "--title",
-            tag,
-            "--notes-file",
-            str(notes_path),
-        ],
-        check=True,
-    )
-    notes_path.unlink(missing_ok=True)
-    print(f"Successfully released {tag}!")
+    print(f"Updated `CHANGELOG.md` and wrote `RELEASE_NOTES.md` for v{version}")
     return 0
 
 
