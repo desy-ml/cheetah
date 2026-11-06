@@ -8,13 +8,10 @@
 import sys
 from pathlib import Path
 
-# Add repository root relative to this file for Sphinx autodoc
+# Source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-try:
-    from cheetah import __version__
-except ImportError:
-    __version__ = "unknown"
+from cheetah import __version__  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
