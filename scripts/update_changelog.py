@@ -80,12 +80,8 @@ def update_changelog(
 def main() -> None:
     """Update changelog and write release notes."""
     args = parse_args()
-    version = args.version.lstrip("v")
-    next_version = (
-        args.next_version.lstrip("v")
-        if args.next_version
-        else default_next_version(version)
-    )
+    version = args.version
+    next_version = args.next_version or default_next_version(version)
 
     changelog_path = Path("CHANGELOG.md")
     new_content, notes = update_changelog(changelog_path, version, next_version)
