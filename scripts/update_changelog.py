@@ -1,5 +1,3 @@
-"""Update CHANGELOG.md and extract release notes for a Cheetah release."""
-
 from __future__ import annotations
 
 import argparse
