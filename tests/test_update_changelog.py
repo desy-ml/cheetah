@@ -18,7 +18,7 @@ def test_remove_empty_subsections():
     assert cleaned == expected
 
 
-def test_advance_changelog(tmp_path):
+def test_advance_changelog():
     """Test advancing the changelog and extracting release notes."""
     sample_changelog = (
         "# Changelog\n\n"
@@ -33,12 +33,10 @@ def test_advance_changelog(tmp_path):
         "(2026-07-23)\n\n"
         "- Older release note\n"
     )
-    changelog_file = tmp_path / "CHANGELOG.md"
-    changelog_file.write_text(sample_changelog, encoding="utf-8")
 
     with patch("scripts.update_changelog.date") as mock_date:
         mock_date.today.return_value = date(2026, 11, 6)
-        new_content, notes = advance_changelog(changelog_file, "0.8.5", "0.8.6")
+        new_content, notes = advance_changelog(sample_changelog, "0.8.5", "0.8.6")
 
     # Assert new WIP header exists at the top
     assert "## v0.8.6 [🚧 Work in Progress]" in new_content

@@ -30,18 +30,14 @@ def remove_empty_subsections(text: str) -> str:
     return re.sub(r"###\s+[^\n]+\n+(?=\s*###|\s*$)", "", text).strip()
 
 
-def advance_changelog(
-    changelog_path: Path, version: str, next_version: str
-) -> tuple[str, str]:
+def advance_changelog(content: str, version: str, next_version: str) -> tuple[str, str]:
     """Advance the changelog, freeze current WIP release, and add new template.
 
-    :param changelog_path: Path to `CHANGELOG.md`
+    :param content: Current `CHANGELOG.md` content
     :param version: Version being released
     :param next_version: Version for the new work-in-progress section
     :return: Tuple of (new `CHANGELOG.md` text, extracted release notes text)
     """
-    content = changelog_path.read_text(encoding="utf-8")
-
     wip_pattern = re.compile(
         r"(##\s+v?[0-9.]+\s+\[🚧 Work in Progress\]\s*\n)(.*?)(?=\n##\s|\Z)", re.DOTALL
     )
@@ -71,9 +67,8 @@ def main() -> None:
     """Update changelog and write release notes."""
     args = parse_args()
     changelog_path = Path("CHANGELOG.md")
-    new_content, notes = advance_changelog(
-        changelog_path, args.version, args.next_version
-    )
+    content = changelog_path.read_text(encoding="utf-8")
+    new_content, notes = advance_changelog(content, args.version, args.next_version)
 
     if args.dry_run:
         print(f"[dry-run] Would update `CHANGELOG.md` for v{args.version}")
