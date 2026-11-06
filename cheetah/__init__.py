@@ -1,9 +1,11 @@
-from . import converters  # noqa: F401
+from importlib.metadata import PackageNotFoundError, version
 
 try:
-    from ._version import __version__  # noqa: F401
-except ImportError:
+    __version__ = version("cheetah-accelerator")
+except PackageNotFoundError:
     __version__ = "unknown"
+
+from . import converters  # noqa: F401
 from .accelerator import (  # noqa: F401
     BPM,
     Aperture,

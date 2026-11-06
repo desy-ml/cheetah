@@ -44,7 +44,6 @@ test = ["ocelot-collab", "pytest", "pytest-benchmark", "pytest-cov"]
 dev = [{ include-group = "lint" }, { include-group = "test" }]
 
 [tool.setuptools_scm]
-version_file = "cheetah/_version.py"
 
 [tool.setuptools.packages.find]
 where = ["."]

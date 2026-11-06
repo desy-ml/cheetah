@@ -4,8 +4,7 @@ exclude =
     __pycache__,
     build,
     dist,
-    .ipynb_checkpoints,
-    cheetah/_version.py
+    .ipynb_checkpoints
 max-line-length = 88
 extend-ignore = E203, W503
 ignore = BLK100
