@@ -1,5 +1,3 @@
-"""Tests for `scripts/update_changelog.py`."""
-
 from datetime import date
 from unittest.mock import patch
 
