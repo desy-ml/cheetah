@@ -332,17 +332,15 @@ def convert_element(
                     "x_offset",
                     "y_offset",
                     "z_offset",
-                    "tilt",
                     "x_pitch",
                     "y_pitch",
+                    "tilt",
                     "t_offset",
                     "e_tot_offset",
                 ],
                 bmad_parsed,
             )
             return cheetah.Patch(
-                name=name,
-                sanitize_name=sanitize_name,
                 position_offset=torch.tensor(
                     [
                         bmad_parsed.get("x_offset", 0.0),
@@ -362,6 +360,8 @@ def convert_element(
                 energy_offset=torch.tensor(
                     bmad_parsed.get("e_tot_offset", 0.0), **factory_kwargs
                 ),
+                name=name,
+                sanitize_name=sanitize_name,
                 metadata=metadata,
             )
         else:
