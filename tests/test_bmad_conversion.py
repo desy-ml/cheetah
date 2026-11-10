@@ -271,6 +271,7 @@ def test_bmad_patch_conversion(tmp_path):
     bmad_file.write_text(bmad_content)
 
     segment = cheetah.Segment.from_bmad(bmad_file)
+
     assert len(segment.elements) == 1
     assert isinstance(segment.p1, cheetah.Patch)
     assert segment.p1.name == "p1"
