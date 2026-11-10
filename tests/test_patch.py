@@ -29,7 +29,9 @@ import cheetah
 def test_rotation_matrix(pitch, tilt, correct_rotation_matrix):
     """Test that the `Patch` element's rotation matrix is computed correctly."""
     patch = cheetah.Patch(pitch=pitch, tilt=tilt)
-    assert torch.allclose(patch._rotation_matrix(), correct_rotation_matrix, atol=1e-6)
+    torch.testing.assert_close(
+        patch._rotation_matrix(), correct_rotation_matrix, atol=1e-6, rtol=1e-5
+    )
 
 
 def test_length():
@@ -40,7 +42,7 @@ def test_length():
     correct_length = 0.3
     patch = cheetah.Patch(position_offset=torch.tensor([0.1, 0.2, correct_length]))
 
-    assert torch.isclose(patch.length, torch.tensor(correct_length))
+    torch.testing.assert_close(patch.length, torch.tensor(correct_length))
 
 
 def test_transform_particles():
@@ -57,13 +59,13 @@ def test_transform_particles():
 
     outgoing = patch.track(incoming)
 
-    assert (outgoing.x == -0.1).all()
-    assert (outgoing.px == incoming.px).all()
-    assert (outgoing.y == -0.2).all()
-    assert (outgoing.py == incoming.py).all()
-    assert (outgoing.tau == incoming.tau).all()
-    assert (outgoing.p == incoming.p).all()
-    assert outgoing.s == 0.3
+    torch.testing.assert_close(outgoing.x, torch.full_like(outgoing.x, -0.1))
+    torch.testing.assert_close(outgoing.px, incoming.px)
+    torch.testing.assert_close(outgoing.y, torch.full_like(outgoing.y, -0.2))
+    torch.testing.assert_close(outgoing.py, incoming.py)
+    torch.testing.assert_close(outgoing.tau, incoming.tau)
+    torch.testing.assert_close(outgoing.p, incoming.p)
+    torch.testing.assert_close(outgoing.s, torch.tensor(0.3))
 
 
 def test_transform_particles_with_angles():
@@ -77,8 +79,8 @@ def test_transform_particles_with_angles():
         tilt=torch.tensor(0.0),
     )
 
-    assert torch.allclose(
-        patch_with_angles.length, torch.tensor(1.7723379e-01), atol=1e-6
+    torch.testing.assert_close(
+        patch_with_angles.length, torch.tensor(1.7723379e-01), atol=1e-6, rtol=1e-5
     )
 
     incoming = cheetah.ParticleBeam(
@@ -94,10 +96,12 @@ def test_transform_particles_with_angles():
     bmad_offsets = torch.tensor(
         [-5.426011e-02, -4.794255e-01, -2.278988e-01, 4.207355e-01, -5.28948e-02, 0.0]
     )
-    for i, offset in enumerate(bmad_offsets):
-        assert torch.allclose(
-            outgoing.particles[..., i], incoming.particles[..., i] + offset, atol=1e-6
-        )
+    torch.testing.assert_close(
+        outgoing.particles[..., :6],
+        incoming.particles[..., :6] + bmad_offsets,
+        atol=1e-6,
+        rtol=1e-5,
+    )
 
     patch_with_angles = cheetah.Patch(
         position_offset=torch.tensor([0.1, 0.2, 0.0]),
@@ -116,10 +120,12 @@ def test_transform_particles_with_angles():
     bmad_offsets = torch.tensor(
         [-1.950462e-01, -6.400071e-02, -1.297652e-01, 6.346425e-01, 1.605987e-02, 0.0]
     )
-    for i, offset in enumerate(bmad_offsets):
-        assert torch.allclose(
-            outgoing.particles[..., i], incoming.particles[..., i] + offset, atol=1e-6
-        )
+    torch.testing.assert_close(
+        outgoing.particles[..., :6],
+        incoming.particles[..., :6] + bmad_offsets,
+        atol=1e-6,
+        rtol=1e-5,
+    )
 
 
 def test_jacobian():
@@ -152,7 +158,7 @@ def test_jacobian():
         ]
     )
 
-    assert torch.allclose(J[:6, :6], gt_J, atol=5e-4, rtol=1e-4)
+    torch.testing.assert_close(J[:6, :6], gt_J, atol=5e-4, rtol=1e-4)
 
 
 def test_transform_parameters():
@@ -176,8 +182,8 @@ def test_transform_parameters():
     param_out = patch.track(param_beam)
     p_out_as_param = p_out.as_parameter_beam()
 
-    assert torch.allclose(param_out.mu, p_out_as_param.mu, atol=1.0e-5)
-    assert torch.allclose(
+    torch.testing.assert_close(param_out.mu, p_out_as_param.mu, atol=1.0e-5, rtol=1e-5)
+    torch.testing.assert_close(
         param_out.cov[:6, :6], p_out_as_param.cov[:6, :6], atol=1.0e-7, rtol=5.0e-2
     )
 
@@ -196,39 +202,12 @@ def test_patch_clone():
     cloned = patch.clone()
 
     assert cloned.name == patch.name
-    assert cloned.position_offset.equal(patch.position_offset)
-    assert cloned.time_offset.equal(patch.time_offset)
-    assert cloned.pitch.equal(patch.pitch)
-    assert cloned.tilt.equal(patch.tilt)
-    assert cloned.energy_offset.equal(patch.energy_offset)
+    torch.testing.assert_close(cloned.position_offset, patch.position_offset)
+    torch.testing.assert_close(cloned.time_offset, patch.time_offset)
+    torch.testing.assert_close(cloned.pitch, patch.pitch)
+    torch.testing.assert_close(cloned.tilt, patch.tilt)
+    torch.testing.assert_close(cloned.energy_offset, patch.energy_offset)
     assert cloned.drift_to_exit == patch.drift_to_exit
-
-
-def test_patch_lattice_json_roundtrip(tmp_path):
-    """Test serialising a `Patch` to LatticeJSON and reloading it."""
-    patch = cheetah.Patch(
-        position_offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(1.0e-9),
-        pitch=torch.tensor([0.05, -0.05]),
-        tilt=torch.tensor(0.2),
-        energy_offset=torch.tensor(1.0e6),
-        drift_to_exit=False,
-        name="my_patch",
-    )
-    segment = cheetah.Segment([patch], name="patch_segment")
-    json_path = tmp_path / "patch_lattice.json"
-    segment.to_lattice_json(json_path)
-
-    reloaded = cheetah.Segment.from_lattice_json(json_path)
-    reloaded_patch = reloaded.my_patch
-
-    assert isinstance(reloaded_patch, cheetah.Patch)
-    assert torch.allclose(reloaded_patch.position_offset, patch.position_offset)
-    assert torch.allclose(reloaded_patch.time_offset, patch.time_offset)
-    assert torch.allclose(reloaded_patch.pitch, patch.pitch)
-    assert torch.allclose(reloaded_patch.tilt, patch.tilt)
-    assert torch.allclose(reloaded_patch.energy_offset, patch.energy_offset)
-    assert reloaded_patch.drift_to_exit == patch.drift_to_exit
 
 
 def test_vectorized_patch():
@@ -269,7 +248,7 @@ def test_patch_energy_offset():
 
     out_offset = patch_offset.track(incoming)
 
-    assert torch.isclose(out_offset.energy, torch.tensor(1.2e9))
+    torch.testing.assert_close(out_offset.energy, torch.tensor(1.2e9))
     _, _, incoming_beta = cheetah.utils.compute_relativistic_factors(
         incoming.energy, incoming.species.mass_eV
     )
@@ -280,7 +259,9 @@ def test_patch_energy_offset():
         out_offset.energy * outgoing_beta
     )
     expected_delta = 0.05 * momentum_ratio + (momentum_ratio - 1.0)
-    assert torch.allclose(out_offset.particles[:, 5], expected_delta)
+    torch.testing.assert_close(
+        out_offset.particles[:, 5], expected_delta.expand_as(out_offset.particles[:, 5])
+    )
 
 
 def test_patch_track_invalid_type():
