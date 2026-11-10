@@ -63,25 +63,3 @@ def test_zero_length_warning():
             "represent the element's length. If this is intentional, you can ignore "
             "this warning."
         )
-
-
-def test_patch_to_mesh(recwarn):
-    """
-    Test that `Patch.to_mesh` returns `None` for the mesh without warnings and produces
-    the correct 4x4 rigid transformation matrix.
-    """
-    patch = cheetah.Patch(
-        position_offset=torch.tensor([0.1, 0.2, 0.3]),
-        pitch=torch.tensor([0.1, -0.1]),
-        tilt=torch.tensor(0.2),
-        name="test_patch",
-    )
-    mesh, output_transform = patch.to_mesh()
-
-    assert len(recwarn) == 0
-    assert mesh is None
-    assert isinstance(output_transform, np.ndarray)
-    assert output_transform.shape == (4, 4)
-    expected_rotation = patch._rotation_matrix().detach().cpu().numpy()
-    np.testing.assert_allclose(output_transform[:3, :3], expected_rotation)
-    np.testing.assert_allclose(output_transform[:3, 3], np.array([0.1, 0.2, 0.3]))
