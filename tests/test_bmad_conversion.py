@@ -288,7 +288,7 @@ def test_bmad_patch_conversion_warns_on_energy_setpoint(tmp_path):
     bmad_file = tmp_path / "patch_setpoint.bmad"
     bmad_file.write_text(bmad_content)
 
-    with pytest.warns(cheetah.utils.PhysicsWarning, match="energy setpoint"):
+    with pytest.warns(cheetah.utils.NotUnderstoodPropertyWarning, match="e_tot_set"):
         segment = cheetah.Segment.from_bmad(bmad_file)
 
     assert len(segment.elements) == 1

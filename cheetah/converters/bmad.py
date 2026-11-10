@@ -337,18 +337,9 @@ def convert_element(
                     "y_pitch",
                     "t_offset",
                     "e_tot_offset",
-                    "e_tot_set",
                 ],
                 bmad_parsed,
             )
-            if "e_tot_set" in bmad_parsed:
-                warnings.warn(
-                    f"Element {name} has `e_tot_set={bmad_parsed['e_tot_set']}`, but "
-                    "energy setpoints are currently not supported for `Patch` in "
-                    "Cheetah. The setpoint will be ignored.",
-                    category=PhysicsWarning,
-                    stacklevel=2,
-                )
             return cheetah.Patch(
                 name=name,
                 sanitize_name=sanitize_name,
