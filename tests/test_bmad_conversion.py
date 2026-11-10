@@ -272,14 +272,15 @@ def test_bmad_patch_conversion(tmp_path):
 
     segment = cheetah.Segment.from_bmad(bmad_file)
     assert len(segment.elements) == 1
-    patch = segment.elements[0]
-    assert isinstance(patch, cheetah.Patch)
-    assert patch.name == "p1"
-    assert torch.allclose(patch.position_offset, torch.tensor([0.01, -0.02, 0.5]))
-    assert torch.allclose(patch.pitch, torch.tensor([0.003, -0.004]))
-    assert torch.isclose(patch.tilt, torch.tensor(0.1))
-    assert torch.isclose(patch.time_offset, torch.tensor(1.0e-9))
-    assert torch.isclose(patch.energy_offset, torch.tensor(5.0e6))
+    assert isinstance(segment.p1, cheetah.Patch)
+    assert segment.p1.name == "p1"
+    torch.testing.assert_close(
+        segment.p1.position_offset, torch.tensor([0.01, -0.02, 0.5])
+    )
+    torch.testing.assert_close(segment.p1.pitch, torch.tensor([0.003, -0.004]))
+    torch.testing.assert_close(segment.p1.tilt, torch.tensor(0.1))
+    torch.testing.assert_close(segment.p1.time_offset, torch.tensor(1.0e-9))
+    torch.testing.assert_close(segment.p1.energy_offset, torch.tensor(5.0e6))
 
 
 def test_bmad_patch_conversion_warns_on_energy_setpoint(tmp_path):
@@ -288,8 +289,8 @@ def test_bmad_patch_conversion_warns_on_energy_setpoint(tmp_path):
     bmad_file = tmp_path / "patch_setpoint.bmad"
     bmad_file.write_text(bmad_content)
 
-    with pytest.warns(cheetah.utils.NotUnderstoodPropertyWarning, match="e_tot_set"):
+    with pytest.warns(NotUnderstoodPropertyWarning, match="e_tot_set"):
         segment = cheetah.Segment.from_bmad(bmad_file)
 
     assert len(segment.elements) == 1
-    assert isinstance(segment.elements[0], cheetah.Patch)
+    assert isinstance(segment.p1, cheetah.Patch)
