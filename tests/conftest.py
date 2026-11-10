@@ -59,7 +59,7 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Patch: {
         "default": {},
         "with_offsets": {"position_offset": torch.tensor([1.0, -1.0, 0.5])},
-        "very_vectorized": {
+        "vectorized": {
             "position_offset": torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
             "pitch": torch.tensor([[0.0, 0.1], [0.2, 0.3]]),
             "tilt": torch.tensor([0.0, 0.1]),
