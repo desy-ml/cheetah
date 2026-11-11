@@ -182,8 +182,7 @@ class TransverseDeflectingCavity(Element):
 
         p0c = (incoming.energy.square() - mc2.square()).sqrt()
 
-        x_offset = self.misalignment[..., 0]
-        y_offset = self.misalignment[..., 1]
+        x_offset, y_offset = self.misalignment.unbind(dim=-1)
 
         x, px, y, py = drift_kick_drift.offset_particle_set(
             x_offset, y_offset, self.tilt, x, px, y, py

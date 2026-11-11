@@ -188,8 +188,7 @@ class Quadrupole(Element):
         rel_p = p / p0c.unsqueeze(-1)
         pz = rel_p - 1.0
 
-        x_offset = self.misalignment[..., 0]
-        y_offset = self.misalignment[..., 1]
+        x_offset, y_offset = self.misalignment.unbind(dim=-1)
 
         step_length = self.length / self.num_steps
         b1 = self.k1 * self.length
