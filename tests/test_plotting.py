@@ -159,3 +159,169 @@ def test_plot_particle_beam_point_cloud():
 
     # Run the plotting to see if it raises an exception
     _ = beam.plot_point_cloud()
+
+
+def test_plot_floor_space_basic():
+    """
+    Test that `Segment.plot_floor_space` renders basic elements without raising an
+    exception.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Quadrupole(length=torch.tensor(0.3), name="quad1"),
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Cavity(length=torch.tensor(0.8), name="cav1"),
+            cheetah.BPM(name="bpm1"),
+            cheetah.Screen(name="screen1"),
+            cheetah.Aperture(name="aper1"),
+            cheetah.Marker(name="mark1"),
+            cheetah.HorizontalCorrector(length=torch.tensor(0.2), name="hcor1"),
+            cheetah.VerticalCorrector(length=torch.tensor(0.2), name="vcor1"),
+            cheetah.Solenoid(length=torch.tensor(0.4), name="sol1"),
+            cheetah.Undulator(length=torch.tensor(1.0), name="und1"),
+        ]
+    )
+
+    ax = segment.plot_floor_space()
+    assert ax is not None
+
+
+def test_plot_floor_space_dipoles():
+    """
+    Test that `Segment.plot_floor_space` handles bending dipoles correctly without
+    raising an exception.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Dipole(
+                length=torch.tensor(1.0),
+                angle=torch.tensor(0.5),
+                name="bend1",
+            ),
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.RBend(
+                length=torch.tensor(1.0),
+                angle=torch.tensor(-0.5),
+                name="rbend1",
+            ),
+            cheetah.Dipole(
+                length=torch.tensor(0.5),
+                angle=torch.tensor(0.0),
+                name="zero_bend",
+            ),
+            cheetah.Drift(length=torch.tensor(1.0)),
+        ]
+    )
+
+    ax = segment.plot_floor_space()
+    assert ax is not None
+
+
+def test_plot_floor_space_vectorized():
+    """
+    Test that `Segment.plot_floor_space` handles vectorized parameters with
+    `vector_idx`.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor([1.0, 2.0])),
+            cheetah.Quadrupole(
+                length=torch.tensor([0.3, 0.4]),
+                k1=torch.tensor([5.0, -5.0]),
+            ),
+            cheetah.Dipole(
+                length=torch.tensor([1.0, 1.0]),
+                angle=torch.tensor([0.2, -0.2]),
+            ),
+        ]
+    )
+
+    ax = segment.plot_floor_space(vector_idx=(1,))
+    assert ax is not None
+
+
+def test_plot_floor_space_nested():
+    """Test that `Segment.plot_floor_space` handles nested subsegments."""
+    subsegment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Quadrupole(length=torch.tensor(0.2), name="nested_quad"),
+            cheetah.Drift(length=torch.tensor(0.5)),
+        ],
+        name="sub",
+    )
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            subsegment,
+            cheetah.Drift(length=torch.tensor(1.0)),
+        ]
+    )
+
+    ax = segment.plot_floor_space()
+    assert ax is not None
+
+
+def test_plot_floor_space_empty():
+    """Test that `Segment.plot_floor_space` handles an empty segment gracefully."""
+    segment = cheetah.Segment(elements=[])
+    ax = segment.plot_floor_space()
+    assert ax is not None
+
+
+@pytest.mark.filterwarnings("ignore::cheetah.utils.DefaultParameterWarning")
+def test_plot_floor_space_ares():
+    """Test that `Segment.plot_floor_space` handles the full ARES lattice."""
+    segment = cheetah.Segment.from_ocelot(ares.cell)
+    ax = segment.plot_floor_space()
+    assert ax is not None
+
+
+def test_plot_floor_space_options_and_alias():
+    """
+    Test `Segment.plot_floor_space` with custom options including labels, legend,
+    custom widths, custom colors, and the `plot_floor_plan` alias.
+    """
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(1.0)),
+            cheetah.Quadrupole(length=torch.tensor(0.4), name="Q1"),
+            cheetah.Dipole(
+                length=torch.tensor(0.8),
+                angle=torch.tensor(0.2),
+                name="D1",
+            ),
+            cheetah.BPM(name="B1"),
+        ]
+    )
+
+    # Test options
+    ax = segment.plot_floor_space(
+        show_labels=True,
+        show_legend=True,
+        element_width={"Q1": 0.5, "Dipole": 0.6},
+        element_color={"Q1": "purple", "D1": "navy"},
+        start_position=(1.0, 2.0),
+        start_angle=0.1,
+    )
+    assert ax is not None
+
+    # Test plot_floor_plan alias
+    ax_alias = segment.plot_floor_plan()
+    assert ax_alias is not None
+
+
+def test_plot_floor_space_invalid_style():
+    """
+    Test that `Segment.plot_floor_space` raises appropriate errors for unimplemented
+    or invalid styles.
+    """
+    segment = cheetah.Segment(elements=[cheetah.Drift(length=torch.tensor(1.0))])
+
+    with pytest.raises(NotImplementedError):
+        segment.plot_floor_space(style="sprites")
+
+    with pytest.raises(ValueError):
+        segment.plot_floor_space(style="invalid")

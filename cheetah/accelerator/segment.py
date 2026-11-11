@@ -5,14 +5,20 @@ from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
+from matplotlib.patches import Patch, Polygon
 from torch import nn
 
 from cheetah import latticejson
+from cheetah.accelerator.aperture import Aperture
+from cheetah.accelerator.bpm import BPM
 from cheetah.accelerator.custom_transfer_map import CustomTransferMap
+from cheetah.accelerator.dipole import Dipole
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
+from cheetah.accelerator.screen import Screen
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
 from cheetah.utils import (
@@ -22,6 +28,26 @@ from cheetah.utils import (
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
+
+DEFAULT_ELEMENT_COLORS: dict[str, str] = {
+    "Dipole": "tab:green",
+    "RBend": "tab:green",
+    "Quadrupole": "tab:red",
+    "Sextupole": "tab:orange",
+    "Cavity": "gold",
+    "TransverseDeflectingCavity": "olive",
+    "Solenoid": "tab:orange",
+    "Undulator": "tab:purple",
+    "HorizontalCorrector": "tab:blue",
+    "VerticalCorrector": "tab:cyan",
+    "CombinedCorrector": "chocolate",
+    "CustomTransferMap": "tab:olive",
+    "Screen": "tab:green",
+    "BPM": "darkkhaki",
+    "Aperture": "tab:pink",
+    "SpaceChargeKick": "orange",
+    "Marker": "tab:grey",
+}
 
 
 class Segment(Element):
@@ -1048,6 +1074,356 @@ class Segment(Element):
         self.plot(s=0.0, vector_idx=vector_idx, ax=axs[1])
 
         return fig
+
+    def plot_floor_space(
+        self,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
+        start_position: tuple[float, float] = (0.0, 0.0),
+        start_angle: float = 0.0,
+        element_width: float | dict | None = None,
+        element_color: dict | None = None,
+        draw_trajectory: bool = True,
+        trajectory_kwargs: dict | None = None,
+        show_labels: bool = False,
+        show_legend: bool = False,
+        style: Literal["shapes", "sprites"] = "shapes",
+    ) -> plt.Axes:
+        """
+        Plot a 2D floor space representation of the accelerator segment.
+
+        :param vector_idx: Index of the vector dimension to plot. If the model has more
+            than one vector dimension, this can be used to select a specific one. In the
+            case of present vector dimension but no index provided, the first one is
+            used by default.
+        :param ax: Matplotlib axes to plot into. If `None`, a new subplot is created.
+        :param start_position: Tuple of `(z, x)` coordinates in meters where the segment
+            begins in the laboratory floor plane.
+        :param start_angle: Initial angle of the beam trajectory in radians relative
+            to the z-axis. A value of 0.0 means the beam travels in the positive
+            z-direction.
+        :param element_width: Transverse width of the drawn elements in meters. Can be a
+            float applied to all elements, or a dictionary mapping element names, types,
+            or `"*"` to custom widths. If `None`, a sensible default based on total
+            segment length is used.
+        :param element_color: Dictionary mapping element names, types, or `"*"` to
+            matplotlib color specifications. If `None`, default element colors are used.
+        :param draw_trajectory: Whether to draw the centerline trajectory of the beam.
+        :param trajectory_kwargs: Keyword arguments passed to `ax.plot` for the
+            trajectory line.
+        :param show_labels: Whether to annotate elements with their names.
+        :param show_legend: Whether to display a legend indicating element types.
+        :param style: Rendering style to use. Currently only `"shapes"` is supported.
+        :return: Matplotlib axes containing the floor space plot.
+        """
+        if style == "sprites":
+            raise NotImplementedError(
+                "Sprite-based rendering with pre-rendered assets is not yet "
+                "implemented. Please use style='shapes'."
+            )
+        elif style != "shapes":
+            raise ValueError(
+                f"Unknown style '{style}'. Supported styles are: 'shapes'."
+            )
+
+        if ax is None:
+            _, ax = plt.subplots()
+
+        flattened_elements = self.flattened().elements
+        if not flattened_elements:
+            return ax
+
+        def _extract_scalar(val: Any) -> float:
+            if val is None:
+                return 0.0
+            if isinstance(val, (int, float)):
+                return float(val)
+            if isinstance(val, torch.Tensor):
+                if val.numel() == 1:
+                    return val.item()
+                if vector_idx is not None:
+                    try:
+                        return val[vector_idx].item()
+                    except (IndexError, TypeError):
+                        pass
+                return val.flatten()[0].item()
+            return float(val)
+
+        total_length = sum(
+            _extract_scalar(e.length)
+            for e in flattened_elements
+            if hasattr(e, "length")
+        )
+        default_width = max(0.3, total_length * 0.015) if total_length > 0.0 else 0.3
+
+        def _get_element_width(element: Element) -> float:
+            if isinstance(element_width, (int, float)):
+                return float(element_width)
+            if isinstance(element_width, dict):
+                if element.name in element_width:
+                    return float(element_width[element.name])
+                if element.__class__ in element_width:
+                    return float(element_width[element.__class__])
+                if element.__class__.__name__ in element_width:
+                    return float(element_width[element.__class__.__name__])
+                if "*" in element_width:
+                    return float(element_width["*"])
+            return default_width
+
+        def _get_element_color(element: Element) -> str:
+            if element_color is not None:
+                if element.name in element_color:
+                    return element_color[element.name]
+                if element.__class__ in element_color:
+                    return element_color[element.__class__]
+                if element.__class__.__name__ in element_color:
+                    return element_color[element.__class__.__name__]
+                if "*" in element_color:
+                    return element_color["*"]
+            return DEFAULT_ELEMENT_COLORS.get(element.__class__.__name__, "tab:blue")
+
+        z = float(start_position[0])
+        x = float(start_position[1])
+        theta = float(start_angle)
+        trajectory_points: list[tuple[float, float]] = [(z, x)]
+        plotted_element_types: dict[str, str] = {}
+
+        for element in flattened_elements:
+            length = (
+                _extract_scalar(element.length) if hasattr(element, "length") else 0.0
+            )
+            w = _get_element_width(element)
+            color = _get_element_color(element)
+            elem_type = element.__class__.__name__
+
+            if isinstance(element, Drift):
+                z_exit = z + length * np.cos(theta)
+                x_exit = x + length * np.sin(theta)
+                z, x = float(z_exit), float(x_exit)
+                trajectory_points.append((z, x))
+                continue
+
+            if isinstance(element, Dipole):
+                angle = (
+                    _extract_scalar(element.angle) if hasattr(element, "angle") else 0.0
+                )
+                if abs(angle) > 1e-12:
+                    plotted_element_types[elem_type] = color
+                    omega = -angle / length if length > 0.0 else 0.0
+                    if length > 0.0 and abs(omega) > 1e-12:
+                        num_points = max(5, int(abs(angle) / 0.05))
+                        s_vals = np.linspace(0.0, length, num_points)
+                        theta_s = theta + omega * s_vals
+                        zs = z + (np.sin(theta_s) - np.sin(theta)) / omega
+                        xs = x - (np.cos(theta_s) - np.cos(theta)) / omega
+                        normals = np.column_stack([-np.sin(theta_s), np.cos(theta_s)])
+                        inner = np.column_stack([zs, xs]) - (w / 2.0) * normals
+                        outer = np.column_stack([zs, xs]) + (w / 2.0) * normals
+                        verts = np.vstack([inner, outer[::-1]])
+                        patch = Polygon(
+                            verts,
+                            closed=True,
+                            facecolor=color,
+                            edgecolor="black",
+                            linewidth=0.5,
+                            alpha=0.85,
+                            zorder=2,
+                        )
+                        ax.add_patch(patch)
+                        for pt in zip(zs[1:], xs[1:]):
+                            trajectory_points.append((float(pt[0]), float(pt[1])))
+                        if show_labels and element.name:
+                            mid_idx = num_points // 2
+                            label_pos = (
+                                np.array([zs[mid_idx], xs[mid_idx]])
+                                + (w * 0.8) * normals[mid_idx]
+                            )
+                            rot = np.degrees(theta_s[mid_idx])
+                            if rot > 90.0:
+                                rot -= 180.0
+                            elif rot < -90.0:
+                                rot += 180.0
+                            ax.text(
+                                label_pos[0],
+                                label_pos[1],
+                                element.name,
+                                fontsize=7,
+                                ha="center",
+                                va="center",
+                                rotation=rot,
+                                zorder=4,
+                            )
+                        z, x = float(zs[-1]), float(xs[-1])
+                        theta = float(theta_s[-1])
+                    else:
+                        # Thin dipole kick
+                        theta -= angle
+                    continue
+
+            if length > 0.0:
+                plotted_element_types[elem_type] = color
+                z_exit = z + length * np.cos(theta)
+                x_exit = x + length * np.sin(theta)
+                normal = np.array([-np.sin(theta), np.cos(theta)])
+                p0 = np.array([z, x])
+                p1 = np.array([z_exit, x_exit])
+                verts = np.array(
+                    [
+                        p0 - (w / 2.0) * normal,
+                        p1 - (w / 2.0) * normal,
+                        p1 + (w / 2.0) * normal,
+                        p0 + (w / 2.0) * normal,
+                    ]
+                )
+                patch = Polygon(
+                    verts,
+                    closed=True,
+                    facecolor=color,
+                    edgecolor="black",
+                    linewidth=0.5,
+                    alpha=0.85,
+                    zorder=2,
+                )
+                ax.add_patch(patch)
+                if show_labels and element.name:
+                    center = (p0 + p1) / 2.0
+                    label_pos = center + (w * 0.8) * normal
+                    rot = np.degrees(theta)
+                    if rot > 90.0:
+                        rot -= 180.0
+                    elif rot < -90.0:
+                        rot += 180.0
+                    ax.text(
+                        label_pos[0],
+                        label_pos[1],
+                        element.name,
+                        fontsize=7,
+                        ha="center",
+                        va="center",
+                        rotation=rot,
+                        zorder=4,
+                    )
+                z, x = float(z_exit), float(x_exit)
+                trajectory_points.append((z, x))
+                continue
+
+            # Lengthless or zero-length elements
+            plotted_element_types[elem_type] = color
+            normal = np.array([-np.sin(theta), np.cos(theta)])
+            if isinstance(element, Screen):
+                p_start = np.array([z, x]) - (w / 2.0) * normal
+                p_end = np.array([z, x]) + (w / 2.0) * normal
+                ax.plot(
+                    [p_start[0], p_end[0]],
+                    [p_start[1], p_end[1]],
+                    color=color,
+                    linewidth=2.0,
+                    zorder=3,
+                )
+            elif isinstance(element, BPM):
+                ax.scatter(
+                    [z],
+                    [x],
+                    marker="D",
+                    s=40.0,
+                    facecolor=color,
+                    edgecolor="black",
+                    linewidth=0.5,
+                    zorder=3,
+                )
+            elif isinstance(element, Aperture):
+                p_center = np.array([z, x])
+                # Two jaw markers on either side
+                p1_outer = p_center - (w / 2.0) * normal
+                p1_inner = p_center - (w * 0.2) * normal
+                p2_inner = p_center + (w * 0.2) * normal
+                p2_outer = p_center + (w / 2.0) * normal
+                ax.plot(
+                    [p1_outer[0], p1_inner[0]],
+                    [p1_outer[1], p1_inner[1]],
+                    color=color,
+                    linewidth=2.5,
+                    zorder=3,
+                )
+                ax.plot(
+                    [p2_inner[0], p2_outer[0]],
+                    [p2_inner[1], p2_outer[1]],
+                    color=color,
+                    linewidth=2.5,
+                    zorder=3,
+                )
+            elif isinstance(element, Marker):
+                p_start = np.array([z, x]) - (w * 0.4) * normal
+                p_end = np.array([z, x]) + (w * 0.4) * normal
+                ax.plot(
+                    [p_start[0], p_end[0]],
+                    [p_start[1], p_end[1]],
+                    color=color,
+                    linestyle=":",
+                    linewidth=1.0,
+                    zorder=3,
+                )
+            else:
+                p_start = np.array([z, x]) - (w / 2.0) * normal
+                p_end = np.array([z, x]) + (w / 2.0) * normal
+                ax.plot(
+                    [p_start[0], p_end[0]],
+                    [p_start[1], p_end[1]],
+                    color=color,
+                    linewidth=1.5,
+                    zorder=3,
+                )
+
+            if show_labels and element.name:
+                label_pos = np.array([z, x]) + (w * 0.8) * normal
+                rot = np.degrees(theta)
+                if rot > 90.0:
+                    rot -= 180.0
+                elif rot < -90.0:
+                    rot += 180.0
+                ax.text(
+                    label_pos[0],
+                    label_pos[1],
+                    element.name,
+                    fontsize=7,
+                    ha="center",
+                    va="center",
+                    rotation=rot,
+                    zorder=4,
+                )
+
+        if draw_trajectory and len(trajectory_points) > 1:
+            traj_opts = {
+                "color": "black",
+                "linestyle": "--",
+                "linewidth": 1.0,
+                "zorder": 1,
+            }
+            if trajectory_kwargs is not None:
+                traj_opts.update(trajectory_kwargs)
+            tz, tx = zip(*trajectory_points)
+            ax.plot(tz, tx, **traj_opts)
+
+        if show_legend and plotted_element_types:
+            handles = [
+                Patch(
+                    facecolor=plotted_element_types[name],
+                    edgecolor="black",
+                    linewidth=0.5,
+                    label=name,
+                )
+                for name in sorted(plotted_element_types.keys())
+            ]
+            ax.legend(handles=handles)
+
+        ax.set_aspect("equal")
+        ax.set_xlabel("z (m)")
+        ax.set_ylabel("x (m)")
+        ax.autoscale_view()
+
+        return ax
+
+    plot_floor_plan = plot_floor_space
 
     def to_mesh(
         self,
