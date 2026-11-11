@@ -91,31 +91,25 @@ def test_transform_parameters():
     )
 
 
-def test_patch_energy_offset():
+def test_energy_offset():
     """Test that energy offset scales momentum deviations properly."""
-    patch_offset = cheetah.Patch(energy_offset=torch.tensor(2.0e8))
-
     incoming = cheetah.ParticleBeam(
         particles=torch.zeros(10, 7), energy=torch.tensor(1.0e9)
     )
-    # Give initial delta of 0.05
-    incoming.particles[:, 5] = 0.05
+    incoming.particles[..., 5] = 0.05  # Give initial delta of 0.05
 
-    out_offset = patch_offset.track(incoming)
+    patch = cheetah.Patch(energy_offset=torch.tensor(2.0e8))
 
-    torch.testing.assert_close(out_offset.energy, torch.tensor(1.2e9))
-    _, _, incoming_beta = cheetah.utils.compute_relativistic_factors(
-        incoming.energy, incoming.species.mass_eV
-    )
-    _, _, outgoing_beta = cheetah.utils.compute_relativistic_factors(
-        out_offset.energy, incoming.species.mass_eV
-    )
-    momentum_ratio = (incoming.energy * incoming_beta) / (
-        out_offset.energy * outgoing_beta
+    outgoing = patch.track(incoming)
+
+    momentum_ratio = (incoming.energy * incoming.relativistic_beta) / (
+        outgoing.energy * outgoing.relativistic_beta
     )
     expected_delta = 0.05 * momentum_ratio + (momentum_ratio - 1.0)
+
+    torch.testing.assert_close(outgoing.energy, torch.tensor(1.2e9))
     torch.testing.assert_close(
-        out_offset.particles[:, 5], expected_delta.expand_as(out_offset.particles[:, 5])
+        outgoing.particles[..., 5], expected_delta.expand_as(outgoing.particles[..., 5])
     )
 
 
