@@ -111,7 +111,7 @@ def low_energy_z_correction(
 def calculate_quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
-    rel_p: torch.Tensor,
+    p_norm: torch.Tensor,
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
     Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
@@ -121,7 +121,7 @@ def calculate_quadrupole_coefficients(
 
     :param k1: Quadrupole strength (k1 > 0 ==> defocus).
     :param length: Quadrupole length.
-    :param rel_p: Relative momentum P/P0.
+    :param p_norm: Normalized momentum P/P0.
     :return: Tuple of transfer matrix elements and coefficients.
         a11, a12, a21, a22: Transfer matrix elements.
         c1, c2, c3: Second order derivatives of z such that
@@ -133,13 +133,13 @@ def calculate_quadrupole_coefficients(
     sx = ((kx * length.unsqueeze(-1) / torch.pi).sinc() * length.unsqueeze(-1)).real
 
     a11 = cx
-    a12 = sx / rel_p
-    a21 = k1 * sx * rel_p
+    a12 = sx / p_norm
+    a21 = k1 * sx * p_norm
     a22 = cx
 
     c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4.0
-    c2 = -k1 * sx.square() / (2.0 * rel_p)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4.0 * rel_p.square())
+    c2 = -k1 * sx.square() / (2.0 * p_norm)
+    c3 = -(cx * sx + length.unsqueeze(-1)) / (4.0 * p_norm.square())
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
@@ -186,18 +186,18 @@ def track_a_drift(
     energy = e_tot.unsqueeze(-1) + delta_in * p0c.unsqueeze(-1)
     p = (energy.square() - mc2.square()).sqrt()
     beta = p / energy
-    P = p / p0c.unsqueeze(-1)
-    pz = P - 1.0
+    p_norm = p / p0c.unsqueeze(-1)
+    pz = p_norm - 1.0
 
-    Px = px_in / P
-    Py = py_in / P
+    Px = px_in / p_norm
+    Py = py_in / p_norm
     Pxy2 = Px.square() + Py.square()
     Pl = (1.0 - Pxy2).sqrt()
 
     dz = length.unsqueeze(-1) * (
         sqrt_one(
             (mc2.square() * (2.0 * pz + pz.square()))
-            / ((p0c.unsqueeze(-1) * P).square() + mc2.square())
+            / ((p0c.unsqueeze(-1) * p_norm).square() + mc2.square())
         )
         + sqrt_one(-Pxy2) / Pl
     )

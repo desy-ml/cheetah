@@ -185,8 +185,8 @@ class Quadrupole(Element):
         energy = incoming.energy.unsqueeze(-1) + delta * p0c.unsqueeze(-1)
         p = (energy.square() - mc2.square()).sqrt()
         beta = p / energy
-        rel_p = p / p0c.unsqueeze(-1)
-        pz = rel_p - 1.0
+        p_norm = p / p0c.unsqueeze(-1)
+        pz = p_norm - 1.0
 
         x_offset, y_offset = self.misalignment.unbind(dim=-1)
 
@@ -197,12 +197,12 @@ class Quadrupole(Element):
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
-        k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * rel_p)
+        k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * p_norm)
         tx, dzx = drift_kick_drift.calculate_quadrupole_coefficients(
-            -k1, step_length, rel_p
+            -k1, step_length, p_norm
         )
         ty, dzy = drift_kick_drift.calculate_quadrupole_coefficients(
-            k1, step_length, rel_p
+            k1, step_length, p_norm
         )
         dz_low = drift_kick_drift.low_energy_z_correction(pz, p0c, mc2, step_length)
 
