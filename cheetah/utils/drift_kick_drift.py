@@ -108,13 +108,13 @@ def low_energy_z_correction(
     return dz
 
 
-def calculate_quadrupole_coefficients(
+def compute_quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     p_norm: torch.Tensor,
 ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
     """
-    Returns 2x2 transfer matrix elements aij and the coefficients to calculate the
+    Returns 2x2 transfer matrix elements aij and the coefficients to compute the
     change in z position.
 
     NOTE: Accumulated error due to machine epsilon.
