@@ -90,10 +90,9 @@ def test_save_and_reload_patch(tmp_path):
         name="my_patch",
     )
     segment = cheetah.Segment([patch], name="test_segment")
-    json_path = tmp_path / "patch_lattice.json"
-    segment.to_lattice_json(json_path)
+    segment.to_lattice_json(tmp_path / "patch_lattice.json")
 
-    reloaded_segment = cheetah.Segment.from_lattice_json(json_path)
+    reloaded_segment = cheetah.Segment.from_lattice_json(tmp_path / "patch_lattice.json")
     reloaded_patch = reloaded_segment.my_patch
 
     assert isinstance(reloaded_patch, cheetah.Patch)
