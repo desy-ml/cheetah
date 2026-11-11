@@ -61,25 +61,33 @@ def test_transform_parameters():
     Test that tracking a `ParameterBeam` through a `Patch` matches the mean and
     covariance of a tracked `ParticleBeam`.
     """
+    incoming_particle_beam = cheetah.ParticleBeam(
+        particles=torch.randn(100_000, 7) * 1.0e-4, energy=torch.tensor(1.0e9)
+    )
+    incoming_parameter_beam = incoming_particle_beam.as_parameter_beam()
+
     patch = cheetah.Patch(
         position_offset=torch.tensor([0.1, 0.2, 0.3]),
         pitch=torch.tensor([0.5, -0.5]),
         tilt=torch.tensor(0.75),
     )
-    energy = torch.tensor(1.0e9)
 
-    particles = torch.randn(100_000, 7) * 1.0e-4
-    particles[:, 6] = 1.0
-    p_beam = cheetah.ParticleBeam(particles=particles, energy=energy)
-    param_beam = p_beam.as_parameter_beam()
+    outgoing_parameter_beam = patch.track(incoming_parameter_beam)
+    expected_outgoing_parameter_beam = patch.track(
+        incoming_particle_beam
+    ).as_parameter_beam()
 
-    p_out = patch.track(p_beam)
-    param_out = patch.track(param_beam)
-    p_out_as_param = p_out.as_parameter_beam()
-
-    torch.testing.assert_close(param_out.mu, p_out_as_param.mu, atol=1.0e-5, rtol=1e-5)
     torch.testing.assert_close(
-        param_out.cov[:6, :6], p_out_as_param.cov[:6, :6], atol=1.0e-7, rtol=5.0e-2
+        outgoing_parameter_beam.mu,
+        expected_outgoing_parameter_beam.mu,
+        atol=1.0e-5,
+        rtol=1e-5,
+    )
+    torch.testing.assert_close(
+        outgoing_parameter_beam.cov,
+        expected_outgoing_parameter_beam.cov,
+        atol=1.0e-7,
+        rtol=5.0e-2,
     )
 
 
