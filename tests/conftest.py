@@ -12,6 +12,15 @@ from cheetah.utils import is_mps_available_and_functional
 ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Aperture: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
+    cheetah.Branch: {
+        "active_branch": {
+            "branches": [
+                cheetah.Segment([cheetah.Drift(length=torch.tensor(0.5))]),
+                cheetah.Segment([cheetah.Drift(length=torch.tensor(1.0))]),
+            ],
+            "active_branch": 0,
+        }
+    },
     cheetah.Cavity: {"default": {"length": torch.tensor(1.0)}},
     cheetah.CombinedCorrector: {
         "default": {

@@ -149,8 +149,10 @@ class Segment(Element):
         for element in self.elements:
             if isinstance(element, Segment):
                 flattened_elements += element.flattened().elements
-            elif hasattr(element, "flattened"):
+            elif hasattr(element, "flattened") and hasattr(element, "elements"):
                 flattened_elements += element.flattened().elements
+            elif hasattr(element, "flattened"):
+                flattened_elements.append(element.flattened())
             else:
                 flattened_elements.append(element)
 
@@ -590,7 +592,15 @@ class Segment(Element):
                 todos.append(self.__class__(elements=continuous_skippable_elements))
 
             for todo in todos:
-                incoming = todo.track(incoming)
+                if isinstance(incoming, dict):
+                    incoming = incoming.__class__(
+                        {
+                            branch_name: todo.track(branch_beam)
+                            for branch_name, branch_beam in incoming.items()
+                        }
+                    )
+                else:
+                    incoming = todo.track(incoming)
 
             return incoming
 
