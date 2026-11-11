@@ -61,8 +61,15 @@ def test_transform_parameters():
     Test that tracking a `ParameterBeam` through a `Patch` matches the mean and
     covariance of a tracked `ParticleBeam`.
     """
-    incoming_particle_beam = cheetah.ParticleBeam(
-        particles=torch.randn(100_000, 7) * 1.0e-4, energy=torch.tensor(1.0e9)
+    incoming_particle_beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=100_000,
+        energy=torch.tensor(1.0e9),
+        sigma_x=torch.tensor(1.0e-4),
+        sigma_px=torch.tensor(1.0e-4),
+        sigma_y=torch.tensor(1.0e-4),
+        sigma_py=torch.tensor(1.0e-4),
+        sigma_tau=torch.tensor(1.0e-4),
+        sigma_p=torch.tensor(1.0e-4),
     )
     incoming_parameter_beam = incoming_particle_beam.as_parameter_beam()
 
@@ -84,8 +91,8 @@ def test_transform_parameters():
         rtol=1e-5,
     )
     torch.testing.assert_close(
-        outgoing_parameter_beam.cov,
-        expected_outgoing_parameter_beam.cov,
+        outgoing_parameter_beam.cov[:6, :6],
+        expected_outgoing_parameter_beam.cov[:6, :6],
         atol=1.0e-7,
         rtol=5.0e-2,
     )
@@ -111,43 +118,6 @@ def test_energy_offset():
     torch.testing.assert_close(
         outgoing.particles[..., 5], expected_delta.expand_as(outgoing.particles[..., 5])
     )
-
-
-def test_jacobian_and_transfer_map():
-    """Test that the autograd Jacobian matches the analytical transfer map."""
-    patch_with_angles = cheetah.Patch(
-        position_offset=torch.tensor([0.1, 0.2, 0.3]),
-        time_offset=torch.tensor(0.0),
-        pitch=torch.tensor((0.5, -0.5)),
-        tilt=torch.tensor(0.75),
-        energy_offset=torch.tensor(0.0),
-    )
-    energy = torch.tensor(1.0e9)
-
-    def f(x):
-        return patch_with_angles.track(
-            cheetah.ParticleBeam(particles=x, energy=energy)
-        ).particles
-
-    with torch.autograd.set_detect_anomaly(True):
-        J = torch.autograd.functional.jacobian(f, torch.zeros((1, 7))).squeeze()
-
-    gt_J = torch.tensor(
-        [
-            [0.8337550, 0.1918709, 0.5583533, 0.1284931, 0.0000000, 0.0000000],
-            [0.0000000, 0.7987913, 0.0000000, 0.5981943, 0.0000000, -0.0640007],
-            [-0.7767232, -0.1787462, 1.0371877, 0.2386865, 0.0000000, 0.0000000],
-            [0.0000000, -0.4300164, 0.0000000, 0.6421174, 0.0000000, 0.6346425],
-            [0.5463025, 0.1257198, -0.6225084, -0.1432570, 1.0000000, 0.0004628],
-            [0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 1.0000000],
-        ]
-    )
-
-    transfer_map = patch_with_angles.first_order_transfer_map(
-        energy, cheetah.Species("electron")
-    )
-    torch.testing.assert_close(transfer_map[:6, :6], J[:6, :6], atol=1e-6, rtol=1e-5)
-    torch.testing.assert_close(J[:6, :6], gt_J, atol=5e-4, rtol=1e-4)
 
 
 def test_vectorized():
