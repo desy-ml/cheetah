@@ -205,9 +205,9 @@ class Quadrupole(Element):
         )
         dz_low = drift_kick_drift.low_energy_z_correction(pz, p0c, mc2, step_length)
 
-        dz_geom_sum = torch.zeros_like(x)
+        dz_geometric_sum = torch.zeros_like(x)
         for _ in range(self.num_steps):
-            dz_geom = (
+            dz_geometric = (
                 dzx[0] * x.square()
                 + dzx[1] * x * px
                 + dzx[2] * px.square()
@@ -215,7 +215,7 @@ class Quadrupole(Element):
                 + dzy[1] * y * py
                 + dzy[2] * py.square()
             )
-            dz_geom_sum = dz_geom_sum + dz_geom
+            dz_geometric_sum = dz_geometric_sum + dz_geometric
 
             x_next = tx[0][0] * x + tx[0][1] * px
             px_next = tx[1][0] * x + tx[1][1] * px
@@ -224,7 +224,7 @@ class Quadrupole(Element):
 
             x, px, y, py = x_next, px_next, y_next, py_next
 
-        tau = tau - (dz_geom_sum + self.num_steps * dz_low) / beta
+        tau = tau - (dz_geometric_sum + self.num_steps * dz_low) / beta
 
         # s = s + l
         x, px, y, py = drift_kick_drift.element_to_lab_coordinates(
