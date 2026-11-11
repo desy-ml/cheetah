@@ -1,9 +1,11 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from torch import nn
 
@@ -481,6 +483,65 @@ class Element(ABC, nn.Module):
         )
 
         return mesh, output_transform
+
+    def _get_mesh_transforms(self) -> tuple[np.ndarray | None, np.ndarray]:
+        """
+        Return the local mesh transformation matrix and the downstream output
+        transformation matrix for this element in Cheetah coordinates.
+
+        :return: Tuple containing the local 4x4 rigid transformation matrix applied
+            to the element's own mesh (or None if the element has no mesh), and the 4x4
+            transformation matrix needed to align downstream elements.
+        """
+        local_transform = np.eye(4, dtype=float)
+        output_transform = np.eye(4, dtype=float)
+        output_transform[2, 3] = float(self.length.item())
+        return local_transform, output_transform
+
+    def to_blender(
+        self,
+        filepath: str | Path | None = None,
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
+        blender_path: str | Path | None = None,
+    ) -> Path:
+        """
+        Export the element to a Blender (.blend) file.
+
+        :param filepath: Path to save the resulting .blend file to. If None, defaults
+            to '<name>.blend'.
+        :param cuteness: Scaling factor for the mesh. May be float applied to all
+            elements, or a dictionary mapping element names and types to scaling
+            factors.
+        :param asset_version: The branch or tag name for the version of the 3D assets
+            repository to use.
+        :param show_download_progress: If True, show download progress for missing
+            assets.
+        :param blender_path: Path to the Blender executable. If None, it will be
+            auto-detected.
+        :return: Path to the generated .blend file.
+        """
+        from cheetah.accelerator.segment import Segment
+
+        if filepath is None:
+            name = (
+                self.name
+                if self.name
+                else "".join(
+                    "_" + c.lower() if c.isupper() else c
+                    for c in self.__class__.__name__
+                ).lstrip("_")
+            )
+            filepath = f"{name}.blend"
+
+        return Segment(elements=[self]).to_blender(
+            filepath=filepath,
+            cuteness=cuteness,
+            asset_version=asset_version,
+            show_download_progress=show_download_progress,
+            blender_path=blender_path,
+        )
 
     def __repr__(self) -> str:
         feature_list = [

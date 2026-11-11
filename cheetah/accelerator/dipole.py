@@ -1,6 +1,7 @@
 from typing import Literal
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 
@@ -512,6 +513,39 @@ class Dipole(Element):
         )
 
         return mesh, output_transform
+
+    def _get_mesh_transforms(self) -> tuple[np.ndarray | None, np.ndarray]:
+        local_transform, output_transform = super()._get_mesh_transforms()
+
+        # Rotate the mesh by half the bending angle around y-axis
+        angle_half = -float(self.angle.item()) / 2.0
+        cos_h, sin_h = np.cos(angle_half), np.sin(angle_half)
+        r_half = np.array(
+            [
+                [cos_h, 0.0, sin_h, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [-sin_h, 0.0, cos_h, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=float,
+        )
+
+        # Rotate the output transform by the full bending angle around y-axis
+        angle_full = -float(self.angle.item())
+        cos_f, sin_f = np.cos(angle_full), np.sin(angle_full)
+        r_full = np.array(
+            [
+                [cos_f, 0.0, sin_f, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [-sin_f, 0.0, cos_f, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=float,
+        )
+
+        local_transform = r_half
+        output_transform = r_full @ output_transform
+        return local_transform, output_transform
 
     @property
     def defining_features(self) -> list[str]:

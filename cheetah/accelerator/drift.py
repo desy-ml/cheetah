@@ -1,6 +1,7 @@
 from typing import Literal
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 
 from cheetah.accelerator.element import Element
@@ -211,6 +212,11 @@ class Drift(Element):
             [0.0, 0.0, self.length.item()]
         )
 
+        return None, output_transform
+
+    def _get_mesh_transforms(self) -> tuple[np.ndarray | None, np.ndarray]:
+        output_transform = np.eye(4, dtype=float)
+        output_transform[2, 3] = float(self.length.item())
         return None, output_transform
 
     @property
