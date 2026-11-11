@@ -207,23 +207,3 @@ def track_a_drift(
     tau_out = tau_in - dz / beta
 
     return x_out, y_out, tau_out
-
-
-def sinc(x: torch.Tensor) -> torch.Tensor:
-    """
-    Calculate `sinc(x) = sin(x) / x`.
-
-    :param x: Input tensor.
-    :return: Cardinal sine of the input.
-    """
-    return (x / torch.pi).sinc()
-
-
-def cosc(x: torch.Tensor) -> torch.Tensor:
-    """
-    Calculate `cosc(x) = (cos(x) - 1) / x^2 = -0.5 * sinc(x / 2)^2`.
-
-    :param x: Input tensor.
-    :return: Resulting tensor.
-    """
-    return -0.5 * sinc(x / 2.0).square()

@@ -7,7 +7,8 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map, drift_kick_drift
+from cheetah.utils import (UniqueNameGenerator, cache_transfer_map,
+                           drift_kick_drift)
 from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -268,24 +269,27 @@ class Dipole(Element):
         phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
+        sinc_angle = (self.angle / torch.pi).sinc().unsqueeze(-1)
+        cosc_angle = -0.5 * (self.angle / (2.0 * torch.pi)).sinc().square().unsqueeze(
+            -1
+        )
 
         alpha = (
             2.0
             * (1.0 + g.unsqueeze(-1) * x)
             * (self.angle.unsqueeze(-1) + phi1).sin()
             * self.length.unsqueeze(-1)
-            * drift_kick_drift.sinc(self.angle).unsqueeze(-1)
+            * sinc_angle
             - gp
             * (
-                (1.0 + g.unsqueeze(-1) * x)
-                * self.length.unsqueeze(-1)
-                * drift_kick_drift.sinc(self.angle).unsqueeze(-1)
+                (1.0 + g.unsqueeze(-1) * x) * self.length.unsqueeze(-1) * sinc_angle
             ).square()
         )
 
-        x2_t1 = x * self.angle.cos().unsqueeze(-1) + self.length.unsqueeze(
-            -1
-        ).square() * g.unsqueeze(-1) * drift_kick_drift.cosc(self.angle.unsqueeze(-1))
+        x2_t1 = (
+            x * self.angle.cos().unsqueeze(-1)
+            + self.length.unsqueeze(-1).square() * g.unsqueeze(-1) * cosc_angle
+        )
 
         x2_t2 = (((self.angle.unsqueeze(-1) + phi1).cos().square()) + gp * alpha).sqrt()
         x2_t3 = (self.angle.unsqueeze(-1) + phi1).cos()
@@ -299,22 +303,20 @@ class Dipole(Element):
 
         Lcu = (
             x2
-            - self.length.square().unsqueeze(-1)
-            * g.unsqueeze(-1)
-            * drift_kick_drift.cosc(self.angle.unsqueeze(-1))
+            - self.length.square().unsqueeze(-1) * g.unsqueeze(-1) * cosc_angle
             - x * (self.angle.cos().unsqueeze(-1))
         )
 
-        Lcv = -self.length.unsqueeze(-1) * drift_kick_drift.sinc(
-            self.angle.unsqueeze(-1)
-        ) - x * (self.angle.sin().unsqueeze(-1))
+        Lcv = -self.length.unsqueeze(-1) * sinc_angle - x * (
+            self.angle.sin().unsqueeze(-1)
+        )
 
         theta_p = 2.0 * (
             self.angle.unsqueeze(-1) + phi1 - torch.pi / 2.0 - torch.arctan2(Lcv, Lcu)
         )
 
         Lc = (Lcu.square() + Lcv.square()).sqrt()
-        Lp = Lc / drift_kick_drift.sinc(theta_p / 2.0)
+        Lp = Lc / (theta_p / (2.0 * torch.pi)).sinc()
 
         x_f = x2
         px_f = px_norm * (self.angle.unsqueeze(-1) + phi1 - theta_p).sin()
