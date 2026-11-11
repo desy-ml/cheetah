@@ -202,7 +202,7 @@ class Dipole(Element):
         p0c = (incoming.energy.square() - mc2.square()).sqrt()
         beta0 = p0c / incoming.energy
 
-        x, px, y, py = drift_kick_drift.offset_particle_set(
+        x, px, y, py = drift_kick_drift.lab_to_element_coordinates(
             zero, zero, self.tilt, x, px, y, py
         )
 
@@ -212,7 +212,7 @@ class Dipole(Element):
         if self.fringe_at == "exit" or self.fringe_at == "both":
             px, py = self._drift_kick_drift_fringe_linear("exit", x, px, y, py)
 
-        x, px, y, py = drift_kick_drift.offset_particle_unset(
+        x, px, y, py = drift_kick_drift.element_to_lab_coordinates(
             zero, zero, self.tilt, x, px, y, py
         )
 

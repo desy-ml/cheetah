@@ -184,7 +184,7 @@ class TransverseDeflectingCavity(Element):
 
         x_offset, y_offset = self.misalignment.unbind(dim=-1)
 
-        x, px, y, py = drift_kick_drift.offset_particle_set(
+        x, px, y, py = drift_kick_drift.lab_to_element_coordinates(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
@@ -212,7 +212,7 @@ class TransverseDeflectingCavity(Element):
             half_length, x, px, y, py, tau, delta, p0c, mc2
         )
 
-        x, px, y, py = drift_kick_drift.offset_particle_unset(
+        x, px, y, py = drift_kick_drift.element_to_lab_coordinates(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 

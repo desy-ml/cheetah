@@ -1,7 +1,7 @@
 import torch
 
 
-def offset_particle_set(
+def lab_to_element_coordinates(
     x_offset: torch.Tensor,
     y_offset: torch.Tensor,
     tilt: torch.Tensor,
@@ -34,7 +34,7 @@ def offset_particle_set(
     return x_ele, px_ele, y_ele, py_ele
 
 
-def offset_particle_unset(
+def element_to_lab_coordinates(
     x_offset: torch.Tensor,
     y_offset: torch.Tensor,
     tilt: torch.Tensor,

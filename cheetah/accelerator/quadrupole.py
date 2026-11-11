@@ -193,7 +193,7 @@ class Quadrupole(Element):
         step_length = self.length / self.num_steps
         b1 = self.k1 * self.length
 
-        x, px, y, py = drift_kick_drift.offset_particle_set(
+        x, px, y, py = drift_kick_drift.lab_to_element_coordinates(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
@@ -224,7 +224,7 @@ class Quadrupole(Element):
         tau = tau - (dz_geom_sum + self.num_steps * dz_low) / beta
 
         # s = s + l
-        x, px, y, py = drift_kick_drift.offset_particle_unset(
+        x, px, y, py = drift_kick_drift.element_to_lab_coordinates(
             x_offset, y_offset, self.tilt, x, px, y, py
         )
 
