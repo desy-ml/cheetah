@@ -213,7 +213,6 @@ class Dipole(Element):
         p0c = (incoming.energy.square() - mc2.square()).sqrt()
         beta0 = p0c / incoming.energy
 
-        # Begin tracking
         x, px, y, py = drift_kick_drift.offset_particle_set(
             zero, zero, self.tilt, x, px, y, py
         )
@@ -227,7 +226,6 @@ class Dipole(Element):
         x, px, y, py = drift_kick_drift.offset_particle_unset(
             zero, zero, self.tilt, x, px, y, py
         )
-        # End of tracking
 
         # Broadcast to align their shapes so that they can be stacked
         x, px, y, py, tau, delta = torch.broadcast_tensors(x, px, y, py, tau, delta)
