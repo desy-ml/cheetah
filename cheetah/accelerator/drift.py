@@ -105,8 +105,8 @@ class Drift(Element):
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the drift element using the drift-kick-drift
-            tracking method.
+        Track particles through the drift element using the drift-kick-drift tracking
+        method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
