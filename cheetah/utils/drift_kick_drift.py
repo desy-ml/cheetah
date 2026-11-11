@@ -108,7 +108,7 @@ def low_energy_z_correction(
     return dz
 
 
-def compute_quadrupole_coefficients(
+def quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     p_norm: torch.Tensor,

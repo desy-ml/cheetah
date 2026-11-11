@@ -198,12 +198,8 @@ class Quadrupole(Element):
         )
 
         k1 = b1.unsqueeze(-1) / (self.length.unsqueeze(-1) * p_norm)
-        tx, dzx = drift_kick_drift.compute_quadrupole_coefficients(
-            -k1, step_length, p_norm
-        )
-        ty, dzy = drift_kick_drift.compute_quadrupole_coefficients(
-            k1, step_length, p_norm
-        )
+        tx, dzx = drift_kick_drift.quadrupole_coefficients(-k1, step_length, p_norm)
+        ty, dzy = drift_kick_drift.quadrupole_coefficients(k1, step_length, p_norm)
         dz_low = drift_kick_drift.low_energy_z_correction(pz, p0c, mc2, step_length)
 
         dz_geom_sum = torch.zeros_like(x)
