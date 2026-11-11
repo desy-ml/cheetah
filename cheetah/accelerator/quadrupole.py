@@ -1,6 +1,7 @@
 from typing import Literal
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 
@@ -359,6 +360,30 @@ class Quadrupole(Element):
         )
 
         return mesh, output_transform
+
+    def _get_mesh_transforms(self) -> tuple[np.ndarray | None, np.ndarray]:
+        local_transform, output_transform = super()._get_mesh_transforms()
+
+        # Rotation matrix for tilt (around z-axis)
+        tilt_angle = -float(self.tilt.item())
+        cos_t, sin_t = np.cos(tilt_angle), np.sin(tilt_angle)
+        r_tilt = np.array(
+            [
+                [cos_t, -sin_t, 0.0, 0.0],
+                [sin_t, cos_t, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=float,
+        )
+
+        # Translation matrix for misalignment (in x and y directions)
+        t_misalign = np.eye(4, dtype=float)
+        t_misalign[0, 3] = float(self.misalignment[0].item())
+        t_misalign[1, 3] = float(self.misalignment[1].item())
+
+        local_transform = t_misalign @ r_tilt
+        return local_transform, output_transform
 
     @property
     def defining_features(self) -> list[str]:

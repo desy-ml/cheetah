@@ -1,9 +1,12 @@
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import requests
-import trimesh
 from tqdm import tqdm
+
+if TYPE_CHECKING:
+    import trimesh
 
 # This follows the way PyTorch and Torchvision download model weights and store them in
 # a cache directory, which is typically something like `~/.cache/cheetah`.
@@ -83,18 +86,19 @@ def download_url_to_file(
             pbar.update(len(chunk))
 
 
-def load_3d_asset(
+def get_3d_asset_path(
     name: str, branch_or_tag: str = "v1.2.0", show_download_progress: bool = True
-) -> trimesh.Trimesh | None:
+) -> Path | None:
     """
-    Get a 3D asset by file name.
+    Get the local path to a 3D asset, downloading it from GitHub if not cached.
 
-    :param name: The name of the asset file (e.g., "Quadrupole.glb").
+    :param name: The name of the asset file (e.g. "quadrupole.blend",
+        "quadrupole.glb").
     :param branch_or_tag: The branch or tag name for the version of the 3D assets
         repository.
     :param show_download_progress: If True and the asset is not cached, show a progress
         bar during the download.
-    :return: A trimesh.Trimesh object representing the 3D asset.
+    :return: The local `Path` to the cached asset file, or None if download failed.
     """
     assets_dir = get_cheetah_cache_dir() / "3d-assets" / branch_or_tag
     asset_path = assets_dir / name
@@ -113,5 +117,31 @@ def load_3d_asset(
             )
         except requests.HTTPError:
             return None
+
+    return asset_path
+
+
+def load_3d_asset(
+    name: str, branch_or_tag: str = "v1.2.0", show_download_progress: bool = True
+) -> "trimesh.Trimesh | None":
+    """
+    Get a 3D asset by file name.
+
+    :param name: The name of the asset file (e.g., "quadrupole.glb").
+    :param branch_or_tag: The branch or tag name for the version of the 3D assets
+        repository.
+    :param show_download_progress: If True and the asset is not cached, show a progress
+        bar during the download.
+    :return: A `trimesh.Trimesh` object representing the 3D asset.
+    """
+    import trimesh
+
+    asset_path = get_3d_asset_path(
+        name,
+        branch_or_tag=branch_or_tag,
+        show_download_progress=show_download_progress,
+    )
+    if asset_path is None:
+        return None
 
     return trimesh.load_mesh(asset_path, file_type="glb")

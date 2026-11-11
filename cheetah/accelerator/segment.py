@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
@@ -5,6 +6,7 @@ from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from torch import nn
 
@@ -1076,6 +1078,152 @@ class Segment(Element):
         segment_output_transform = input_transform
 
         return scene, segment_output_transform
+
+    def to_blender(
+        self,
+        filepath: str | Path = "lattice.blend",
+        cuteness: float | dict = 1.0,
+        asset_version: str = "v1.2.0",
+        show_download_progress: bool = True,
+        blender_path: str | Path | None = None,
+    ) -> Path:
+        """
+        Export the segment to a Blender (.blend) file.
+
+        :param filepath: Path to save the resulting .blend file to.
+        :param cuteness: Scaling factor for the mesh. May be float applied to all
+            elements, or a dictionary mapping element names and types to scaling
+            factors. Names have precedence over types. The `"*"` key can be used
+            to specify a default scaling factor.
+        :param asset_version: The branch or tag name for the version of the 3D assets
+            repository to use.
+        :param show_download_progress: If True, show download progress for missing
+            assets.
+        :param blender_path: Path to the Blender executable. If None, it will be
+            auto-detected.
+        :return: Path to the generated .blend file.
+        """
+        from cheetah.utils import VisualizationWarning, assets, blender
+
+        actual_blender_path = blender.find_blender_binary(blender_path)
+
+        # Basis change matrix from Cheetah (z-forward, y-up) to Blender
+        # (y-forward, z-up) where beam travels along negative y in Blender asset
+        # coordinate frame.
+        coord_change = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=float,
+        )
+        coord_change_inv = np.linalg.inv(coord_change)
+
+        def collect_elements(
+            elements: list[Element], current_transform: np.ndarray
+        ) -> tuple[list[dict], np.ndarray]:
+            collected = []
+            for element in elements:
+                if isinstance(element, Segment):
+                    sub_collected, current_transform = collect_elements(
+                        list(element.elements), current_transform
+                    )
+                    collected.extend(sub_collected)
+                    continue
+
+                local_transform, output_transform = element._get_mesh_transforms()
+
+                # If element has no mesh representation (e.g. Drift), advance transform
+                if local_transform is None:
+                    current_transform = current_transform @ output_transform
+                    continue
+
+                snake_case_name = "".join(
+                    "_" + c.lower() if c.isupper() else c
+                    for c in element.__class__.__name__
+                ).lstrip("_")
+                asset_path = assets.get_3d_asset_path(
+                    f"{snake_case_name}.blend",
+                    branch_or_tag=asset_version,
+                    show_download_progress=show_download_progress,
+                )
+
+                if asset_path is None:
+                    warnings.warn(
+                        f"Could not load 3D mesh for element {element.name} of "
+                        f"type {element.__class__.__name__}. The element will not be "
+                        "visualised.",
+                        category=VisualizationWarning,
+                        stacklevel=3,
+                    )
+                    current_transform = current_transform @ output_transform
+                    continue
+
+                # Scale warning for zero length elements
+                if (
+                    hasattr(element, "length")
+                    and element.length == 0.0
+                    and "length" in element.defining_features
+                ):
+                    warnings.warn(
+                        f"Element {element.name} of type "
+                        f"{element.__class__.__name__} has a length of zero. The mesh "
+                        "is therefore scaled to a default size and does not accurately "
+                        "represent the element's length. If this is intentional, you "
+                        "can ignore this warning.",
+                        category=VisualizationWarning,
+                        stacklevel=3,
+                    )
+
+                # Determine element cuteness scale
+                scale_cuteness = 1.0
+                if isinstance(cuteness, (int, float)):
+                    scale_cuteness = float(cuteness)
+                elif isinstance(cuteness, dict):
+                    if element.name in cuteness:
+                        scale_cuteness = float(cuteness[element.name])
+                    elif element.__class__ in cuteness:
+                        scale_cuteness = float(cuteness[element.__class__])
+                    elif "*" in cuteness:
+                        scale_cuteness = float(cuteness["*"])
+
+                world_transform = current_transform @ local_transform
+                blender_transform = coord_change @ world_transform @ coord_change_inv
+
+                collected.append(
+                    {
+                        "name": element.name or snake_case_name,
+                        "type": element.__class__.__name__,
+                        "asset_path": str(asset_path),
+                        "length": (
+                            float(element.length.item())
+                            if hasattr(element, "length")
+                            else 0.0
+                        ),
+                        "cuteness": scale_cuteness,
+                        "matrix": blender_transform.tolist(),
+                    }
+                )
+
+                current_transform = current_transform @ output_transform
+
+            return collected, current_transform
+
+        initial_transform = np.eye(4, dtype=float)
+        elements_data, _ = collect_elements(list(self.elements), initial_transform)
+
+        dest_path = Path(filepath).resolve()
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        blender.assemble_blender_scene(
+            elements_data=elements_data,
+            output_filepath=dest_path,
+            blender_path=actual_blender_path,
+        )
+
+        return dest_path
 
     @property
     def defining_features(self) -> list[str]:
