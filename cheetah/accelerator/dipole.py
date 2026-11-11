@@ -193,20 +193,10 @@ class Dipole(Element):
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
 
-        # TODO: The renaming of the components of `incoming` to just the component name
-        # makes things hard to read. The reuse and overwriting of those component names
-        # throughout the function makes it even harder, is bad practice and should
-        # really be fixed!
-
         # Zero constant for later use to save on tensor allocations
         zero = self.tilt.new_zeros(())
 
-        x = incoming.x
-        px = incoming.px
-        y = incoming.y
-        py = incoming.py
-        tau = incoming.tau
-        delta = incoming.p
+        x, px, y, py, tau, delta = incoming.particles[..., :6].unbind(dim=-1)
         mc2 = incoming.species.mass_eV
 
         p0c = (incoming.energy.square() - mc2.square()).sqrt()

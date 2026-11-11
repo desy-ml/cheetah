@@ -178,12 +178,7 @@ class Quadrupole(Element):
             incoming, ParticleBeam
         ), "Drift-kick-drift tracking is currently only supported for `ParticleBeam`."
 
-        x = incoming.x
-        px = incoming.px
-        y = incoming.y
-        py = incoming.py
-        tau = incoming.tau
-        delta = incoming.p
+        x, px, y, py, tau, delta = incoming.particles[..., :6].unbind(dim=-1)
         mc2 = incoming.species.mass_eV
 
         p0c = (incoming.energy.square() - mc2.square()).sqrt()
