@@ -264,8 +264,8 @@ class Dipole(Element):
         :param beta0: Reference particle beta.
         :return: x, px, y, py, tau final coordinates.
         """
-        P = (1.0 + 2.0 * delta / beta0.unsqueeze(-1) + delta.square()).sqrt()
-        px_norm = (P.square() - py.square()).sqrt()  # For simplicity
+        rel_p = (1.0 + 2.0 * delta / beta0.unsqueeze(-1) + delta.square()).sqrt()
+        px_norm = (rel_p.square() - py.square()).sqrt()  # For simplicity
         phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
