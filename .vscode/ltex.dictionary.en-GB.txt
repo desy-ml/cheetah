@@ -54,3 +54,6 @@ dtype
 DOOCS
 subclassing
 openPMD
+backpropagation
+autograd
+paraxial

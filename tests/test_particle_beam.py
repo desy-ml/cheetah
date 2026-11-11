@@ -227,11 +227,11 @@ def test_generate_uniform_ellipsoid_vectorized():
     assert torch.all(beam.x.abs().transpose(0, 1) <= radius_x)
     assert torch.all(beam.y.abs().transpose(0, 1) <= radius_y)
     assert torch.all(beam.tau.abs().transpose(0, 1) <= radius_tau)
-    assert torch.allclose(beam.sigma_px, sigma_px)
-    assert torch.allclose(beam.sigma_py, sigma_py)
-    assert torch.allclose(beam.sigma_p, sigma_p)
-    assert torch.allclose(beam.energy, energy)
-    assert torch.allclose(beam.total_charge, total_charge)
+    torch.testing.assert_close(beam.sigma_px, sigma_px)
+    torch.testing.assert_close(beam.sigma_py, sigma_py)
+    torch.testing.assert_close(beam.sigma_p, sigma_p)
+    torch.testing.assert_close(beam.energy, energy)
+    torch.testing.assert_close(beam.total_charge, total_charge)
 
 
 def test_only_sigma_vectorized():
@@ -293,11 +293,17 @@ def test_indexing_with_vectorized_incoming_beam():
     assert sub_beam.particle_charges.shape == torch.Size([3, 2, 1_000])
     assert sub_beam.survival_probabilities.shape == torch.Size([3, 2, 1_000])
 
-    assert torch.allclose(sub_beam.particles, outgoing.particles[:3])
-    assert torch.allclose(sub_beam.energy, outgoing.energy[:3])
-    assert torch.allclose(sub_beam.particle_charges, outgoing.particle_charges)
-    assert torch.allclose(
-        sub_beam.survival_probabilities, outgoing.survival_probabilities
+    torch.testing.assert_close(sub_beam.particles, outgoing.particles[:3])
+    torch.testing.assert_close(sub_beam.energy, outgoing.energy[:3])
+    torch.testing.assert_close(
+        sub_beam.particle_charges,
+        torch.broadcast_to(outgoing.particle_charges, sub_beam.particle_charges.shape),
+    )
+    torch.testing.assert_close(
+        sub_beam.survival_probabilities,
+        torch.broadcast_to(
+            outgoing.survival_probabilities, sub_beam.survival_probabilities.shape
+        ),
     )
 
 
@@ -468,20 +474,26 @@ def test_vectorized_conversion_to_parameter_beam_and_back():
     )
 
     assert isinstance(roundtrip_converted_beam, cheetah.ParticleBeam)
-    assert torch.allclose(original_beam.mu_x, roundtrip_converted_beam.mu_x)
-    assert torch.allclose(original_beam.mu_px, roundtrip_converted_beam.mu_px)
-    assert torch.allclose(original_beam.mu_y, roundtrip_converted_beam.mu_y)
-    assert torch.allclose(original_beam.mu_py, roundtrip_converted_beam.mu_py)
-    assert torch.allclose(original_beam.mu_tau, roundtrip_converted_beam.mu_tau)
-    assert torch.allclose(original_beam.mu_p, roundtrip_converted_beam.mu_p)
-    assert torch.allclose(original_beam.sigma_x, roundtrip_converted_beam.sigma_x)
-    assert torch.allclose(original_beam.sigma_px, roundtrip_converted_beam.sigma_px)
-    assert torch.allclose(original_beam.sigma_y, roundtrip_converted_beam.sigma_y)
-    assert torch.allclose(original_beam.sigma_py, roundtrip_converted_beam.sigma_py)
-    assert torch.allclose(original_beam.sigma_tau, roundtrip_converted_beam.sigma_tau)
-    assert torch.allclose(original_beam.sigma_p, roundtrip_converted_beam.sigma_p)
-    assert torch.allclose(original_beam.energy, roundtrip_converted_beam.energy)
-    assert torch.allclose(
+    torch.testing.assert_close(original_beam.mu_x, roundtrip_converted_beam.mu_x)
+    torch.testing.assert_close(original_beam.mu_px, roundtrip_converted_beam.mu_px)
+    torch.testing.assert_close(original_beam.mu_y, roundtrip_converted_beam.mu_y)
+    torch.testing.assert_close(original_beam.mu_py, roundtrip_converted_beam.mu_py)
+    torch.testing.assert_close(original_beam.mu_tau, roundtrip_converted_beam.mu_tau)
+    torch.testing.assert_close(original_beam.mu_p, roundtrip_converted_beam.mu_p)
+    torch.testing.assert_close(original_beam.sigma_x, roundtrip_converted_beam.sigma_x)
+    torch.testing.assert_close(
+        original_beam.sigma_px, roundtrip_converted_beam.sigma_px
+    )
+    torch.testing.assert_close(original_beam.sigma_y, roundtrip_converted_beam.sigma_y)
+    torch.testing.assert_close(
+        original_beam.sigma_py, roundtrip_converted_beam.sigma_py
+    )
+    torch.testing.assert_close(
+        original_beam.sigma_tau, roundtrip_converted_beam.sigma_tau
+    )
+    torch.testing.assert_close(original_beam.sigma_p, roundtrip_converted_beam.sigma_p)
+    torch.testing.assert_close(original_beam.energy, roundtrip_converted_beam.energy)
+    torch.testing.assert_close(
         original_beam.total_charge, roundtrip_converted_beam.total_charge
     )
-    assert torch.allclose(original_beam.s, roundtrip_converted_beam.s)
+    torch.testing.assert_close(original_beam.s, roundtrip_converted_beam.s)

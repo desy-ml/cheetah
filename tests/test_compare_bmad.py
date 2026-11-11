@@ -88,4 +88,4 @@ def test_different_species_in_different_elements(species, cheetah_element):
         weights_only=False,
     )
 
-    assert torch.allclose(outgoing.particles, x_tao, atol=1e-14)
+    torch.testing.assert_close(outgoing.particles, x_tao, atol=1e-14, rtol=1e-5)
