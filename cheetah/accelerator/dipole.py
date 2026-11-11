@@ -7,8 +7,7 @@ from matplotlib.patches import Rectangle
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParticleBeam, Species
 from cheetah.track_methods import base_rmatrix, base_ttensor, rotation_matrix
-from cheetah.utils import (UniqueNameGenerator, cache_transfer_map,
-                           drift_kick_drift)
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map, drift_kick_drift
 from cheetah.utils.autograd import sqrta2minusbdiva
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -183,7 +182,7 @@ class Dipole(Element):
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the quadrupole element using the Drift_kick_drift
+        Track particles through the dipole element using the drift-kick-drift
             tracking method.
 
         :param incoming: Beam entering the element. Currently only supports

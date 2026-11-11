@@ -167,7 +167,7 @@ class Quadrupole(Element):
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the quadrupole element using the Drift_kick_drift
+        Track particles through the quadrupole element using the drift-kick-drift
             tracking method.
 
         :param incoming: Beam entering the element. Currently only supports

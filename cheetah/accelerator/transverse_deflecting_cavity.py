@@ -166,7 +166,8 @@ class TransverseDeflectingCavity(Element):
 
     def _track_drift_kick_drift(self, incoming: ParticleBeam) -> ParticleBeam:
         """
-        Track particles through the TDC element using the Bmad-X tracking method.
+        Track particles through the TDC element using the drift-kick-drift
+            tracking method.
 
         :param incoming: Beam entering the element. Currently only supports
             `ParticleBeam`.
