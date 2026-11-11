@@ -121,26 +121,28 @@ def test_energy_offset():
 
 
 def test_vectorized():
-    """Test tracking with a vectorized `Patch` element."""
-    vectorized_patch = cheetah.Patch(
+    """
+    Test tracking that tracking through a vectorised `Patch` element results in the
+    correct shapes on the outputs.
+    """
+    incoming_particle_beam = cheetah.ParticleBeam(
+        particles=torch.zeros(20, 7), energy=torch.tensor(1.0e9)
+    )
+    incoming_parameter_beam = incoming_particle_beam.as_parameter_beam()
+
+    patch = cheetah.Patch(
         position_offset=torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
         pitch=torch.tensor([[0.1, -0.1], [0.2, -0.2]]),
         tilt=torch.tensor([0.1, 0.2]),
         time_offset=torch.tensor([0.0, 1.0e-9]),
         energy_offset=torch.tensor([0.0, 1.0e6]),
     )
-    incoming = cheetah.ParticleBeam(
-        particles=torch.zeros(20, 7), energy=torch.tensor(1.0e9)
-    )
-    outgoing = vectorized_patch.track(incoming)
-    assert outgoing.particles.shape == (2, 20, 7)
-    assert outgoing.s.shape == (2,)
 
-    transfer_map = vectorized_patch.first_order_transfer_map(
-        incoming.energy, incoming.species
-    )
-    assert transfer_map.shape == (2, 7, 7)
+    outgoing_particle_beam = patch.track(incoming_particle_beam)
+    outgoing_parameter_beam = patch.track(incoming_parameter_beam)
 
-    outgoing_param = vectorized_patch.track(incoming.as_parameter_beam())
-    assert outgoing_param.mu.shape == (2, 7)
-    assert outgoing_param.cov.shape == (2, 7, 7)
+    assert outgoing_particle_beam.particles.shape == (2, 20, 7)
+    assert outgoing_particle_beam.s.shape == (2,)
+
+    assert outgoing_parameter_beam.mu.shape == (2, 7)
+    assert outgoing_parameter_beam.cov.shape == (2, 7, 7)
