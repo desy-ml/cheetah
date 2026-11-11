@@ -9,7 +9,7 @@
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
-- Integrate Cheetah with Blender via `to_blender` method on `Segment` and `Element`, exporting lattices into `.blend` scenes using models from `3d-assets`. (@jank324)
+- Integrate Cheetah with Blender via `to_blender` method on `Segment` and `Element`, exporting lattices into `.blend` scenes using models from `3d-assets`. (see #726) (@jank324)
 
 ### 🐛 Bug fixes
 
