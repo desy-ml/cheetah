@@ -201,7 +201,6 @@ class Dipole(Element):
         # Zero constant for later use to save on tensor allocations
         zero = self.tilt.new_zeros(())
 
-        # Compute Bmad coordinates and p0c
         x = incoming.x
         px = incoming.px
         y = incoming.y
@@ -264,8 +263,8 @@ class Dipole(Element):
         :param beta0: Reference particle beta.
         :return: x, px, y, py, tau final coordinates.
         """
-        rel_p = (1.0 + 2.0 * delta / beta0.unsqueeze(-1) + delta.square()).sqrt()
-        px_norm = (rel_p.square() - py.square()).sqrt()  # For simplicity
+        p_norm = (1.0 + 2.0 * delta / beta0.unsqueeze(-1) + delta.square()).sqrt()
+        px_norm = (p_norm.square() - py.square()).sqrt()  # For simplicity
         phi1 = (px / px_norm).arcsin()
         g = self.angle / self.length
         gp = g.unsqueeze(-1) / px_norm
