@@ -296,9 +296,8 @@ class Dipole(Element):
 
         c1 = x2_t1 + alpha / (x2_t2 + x2_t3)
         c2 = x2_t1 + alpha * sqrta2minusbdiva(x2_t3, gp * alpha)
-        temp = (self.angle.unsqueeze(-1) + phi1).abs()
         x2 = c1.where(
-            temp < torch.pi / 2.0, c2
+            (self.angle.unsqueeze(-1) + phi1).abs() < torch.pi / 2.0, c2
         )  # Branch allowed because both sides contain the same inputs
 
         Lcu = (
