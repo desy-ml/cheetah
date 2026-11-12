@@ -12,18 +12,13 @@ def vectorized_histogram_2d(
     Compute vectorised 2D histograms for coordinate pairs ``(x1, x2)``.
 
     :param x1: First coordinate tensor with shape ``(*vector_shape, num_particles)``.
-    :param x2: Second coordinate tensor, broadcastable with ``x1``.
+    :param x2: Second coordinate tensor with shape ``(*vector_shape, num_particles)``.
     :param bins1: Bin centers for the first axis, shape ``(num_bins_x1,)``.
     :param bins2: Bin centers for the second axis, shape ``(num_bins_x2,)``.
-    :param weights: Optional weights, broadcastable with ``x1`` and ``x2``.
+    :param weights: Optional weights, broadcastable with ``x1``.
     :returns: Histogram of shape
-        ``(*broadcast_vector_shape, num_bins_x1, num_bins_x2)``.
+        ``(*vector_shape, num_bins_x1, num_bins_x2)``.
     """
-    if weights is None:
-        weights = torch.ones_like(x1)
-
-    x1, x2, weights = torch.broadcast_tensors(x1, x2, weights)
-
     vector_shape = x1.shape[:-1]
 
     x1 = x1.contiguous()
@@ -46,7 +41,9 @@ def vectorized_histogram_2d(
         & (x2 >= x2_edges[0])
         & (x2 <= x2_edges[-1])
     )
-    masked_weights = weights * in_bounds_mask
+    masked_weights = (
+        in_bounds_mask.to(x1.dtype) if weights is None else weights * in_bounds_mask
+    )
 
     histogram = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
     histogram.view(*vector_shape, -1).scatter_add_(
