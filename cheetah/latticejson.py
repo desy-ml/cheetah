@@ -1,4 +1,8 @@
+import ast
+import inspect
 import json
+import math
+from collections.abc import Mapping
 from typing import Any
 
 import torch
@@ -60,27 +64,119 @@ def convert_element(
     return element.name, element.__class__.__name__, params
 
 
-def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
+def _extract_rule_expression(rule: Any) -> str:
+    """
+    Extract the source code expression from a callable rule.
+
+    For lambdas and simple functions, this extracts the expression as a string
+    that can be evaluated using the math module and variables dict.
+
+    :param rule: A callable rule function or string expression
+    :return: String representation of the rule expression
+    :raises ValueError: If the rule cannot be extracted or is too complex
+    """
+    # If rule is already a string, use it directly
+    if isinstance(rule, str):
+        return rule
+
+    try:
+        source = inspect.getsource(rule).strip()
+    except (OSError, TypeError):
+        # If we can't get source, raise a more helpful error
+        raise ValueError(
+            f"Cannot serialize rule {rule}: no source available. "
+            "Rules defined in interactive mode cannot be serialized. "
+            "Please define overlay rules in a module file, or consider using "
+            "a string expression for the rule."
+        )
+
+    # Handle lambda: extract the part after "lambda vars:" or similar
+    if "lambda" in source:
+        # Find the colon that ends the lambda signature
+        colon_idx = source.find(":")
+        if colon_idx == -1:
+            raise ValueError(f"Cannot parse lambda rule: {source}")
+        # Extract everything after the colon and signature
+        expr = source[colon_idx + 1 :].strip()
+        
+        # Remove trailing characters that are part of surrounding code syntax.
+        # We need to be careful not to remove closing brackets that are part of the expression.
+        # Strategy: remove only trailing chars that would make the expression unbalanced.
+        while expr:
+            # Check if removing the last char would balance the expression better
+            last_char = expr[-1]
+            if last_char in ",}])":
+                # Try compiling without it to see if it's part of the expression
+                try:
+                    compile(expr[:-1], "<test>", "eval")
+                    # If it compiles, this char was likely not part of the expression
+                    expr = expr[:-1].rstrip()
+                except SyntaxError:
+                    # If it doesn't compile, this char is part of the expression
+                    break
+            else:
+                break
+        
+        return expr
+    else:
+        raise ValueError(
+            f"Rule must be a lambda function, got: {source}. "
+            "Complex functions cannot be serialized to JSON."
+        )
+
+
+def convert_overlay(overlay: "cheetah.Overlay") -> tuple[str, dict]:
+    """
+    Deconstruct an overlay into its name, variables, and serialized rules.
+
+    :param overlay: Cheetah overlay object
+    :return: Tuple of overlay name and overlay data dict
+    """
+    # Serialize variables as simple values
+    variables = {}
+    for var_name, var_value in overlay.variables.items():
+        variables[var_name] = feature2nontorch(var_value)
+
+    # Serialize targets and their rule expressions
+    targets = {}
+    for (element_name, attr_name), rule in overlay._rules.items():
+        rule_expr = _extract_rule_expression(rule)
+        target_key = f"{element_name}.{attr_name}"
+        targets[target_key] = rule_expr
+
+    overlay_data = {
+        "variables": variables,
+        "targets": targets,
+    }
+
+    return overlay.name, overlay_data
+
+
+def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict, dict]:
     """
     Deconstruct a segment into its name, a list of its elements and a dictionary of its
     element parameters for saving to JSON.
 
     :param segment: Cheetah segment.
-    :return: Tuple of elments and lattices dictionaries found in segment, including the
-        segment itself.
+    :return: Tuple of elements, lattices, and overlays dictionaries found in segment,
+        including the segment itself.
     """
     elements = {}
     lattices = {}
+    overlays = {}
 
     cell = []
 
     for element in segment.elements:
         element_name = element.name
         if isinstance(element, cheetah.Segment):
-            segment_elements, segment_lattices = convert_segment(element)
+            segment_elements, segment_lattices, segment_overlays = convert_segment(
+                element
+            )
 
             elements.update(segment_elements)
             lattices.update(segment_lattices)
+            overlays.update(segment_overlays)
         else:
             _, element_class, element_params = convert_element(element, elements)
 
@@ -90,7 +186,12 @@ def convert_segment(segment: "cheetah.Segment") -> tuple[dict, dict]:
 
     lattices[segment.name] = cell
 
-    return elements, lattices
+    # Serialize overlays
+    for overlay in segment.overlays:
+        overlay_name, overlay_data = convert_overlay(overlay)
+        overlays[overlay_name] = overlay_data
+
+    return elements, lattices, overlays
 
 
 def save_cheetah_model(
@@ -123,9 +224,12 @@ def save_cheetah_model(
 
     lattice_dict = metadata.copy()
 
-    elements, lattices = convert_segment(segment)
+    elements, lattices, overlays = convert_segment(segment)
     lattice_dict["elements"] = elements
     lattice_dict["lattices"] = lattices
+    if overlays:
+        lattice_dict["overlays"] = overlays
+
 
     with open(filename, "w") as f:
         s = json.dumps(lattice_dict, cls=CompactJSONEncoder, indent=4)
@@ -212,6 +316,85 @@ def parse_element(
     return element_class(name=name, sanitize_name=sanitize_name, **converted_params)
 
 
+def _compile_rule_expression(expr: str) -> Any:
+    """
+    Compile a rule expression string into a callable using the math module.
+
+    :param expr: String representation of the rule expression (e.g., "vars['x'] * 2")
+    :return: A callable that takes a variables dict and returns a value
+    """
+    # Create a safe namespace with math functions and the variables mapping
+    namespace = {
+        "vars": None,  # Placeholder, will be filled at runtime
+        **math.__dict__,  # All math functions like sin, cos, sqrt, etc.
+    }
+
+    # Compile the expression
+    try:
+        code = compile(expr, filename="<rule>", mode="eval")
+    except SyntaxError as e:
+        raise ValueError(f"Invalid rule expression: {expr}. Syntax error: {e}")
+
+    # Return a lambda that executes the compiled code with the variables dict
+    def rule(variables: Mapping[str, torch.Tensor]) -> torch.Tensor:
+        # Convert tensors to scalars for math operations, create local namespace
+        local_ns = dict(namespace)
+        local_ns["vars"] = variables
+        # Also provide individual variable names directly for convenience
+        for name, value in variables.items():
+            if isinstance(value, torch.Tensor):
+                local_ns[name] = value.item() if value.numel() == 1 else value
+            else:
+                local_ns[name] = value
+        try:
+            result = eval(code, {"__builtins__": {}}, local_ns)
+            return result
+        except Exception as e:
+            raise ValueError(
+                f"Error evaluating rule expression '{expr}' with variables {variables}: {e}"
+            )
+
+    return rule
+
+
+def parse_overlay(
+    name: str,
+    lattice_dict: dict,
+    device: torch.device | None = None,
+    dtype: torch.dtype | None = None,
+) -> "cheetah.Overlay":
+    """
+    Parse an `Overlay` named `name` from a `lattice_dict`.
+
+    :param name: Name of the `Overlay` to parse.
+    :param lattice_dict: Dictionary containing the lattice information.
+    :param device: Device to place overlay buffers on.
+    :param dtype: Data type to use for overlay buffers.
+    :return: Parsed Cheetah `Overlay` object.
+    """
+    overlay_data = lattice_dict["overlays"][name]
+
+    # Parse variables - convert to tensors with specified dtype/device
+    variables = {}
+    for var_name, var_value in overlay_data["variables"].items():
+        variables[var_name] = nontorch2feature(var_value, device, dtype)
+
+    # Parse targets - reconstruct the (element_name, attribute) tuple -> rule mapping
+    targets = {}
+    for target_key, rule_expr in overlay_data["targets"].items():
+        # Split "element_name.attribute" back into (element_name, attribute)
+        element_name, attr_name = target_key.rsplit(".", 1)
+        # Compile the rule expression into a callable
+        rule = _compile_rule_expression(rule_expr)
+        targets[(element_name, attr_name)] = rule
+
+    return cheetah.Overlay(
+        name=name,
+        variables=variables,
+        targets=targets,
+    )
+
+
 def parse_segment(
     name: str,
     lattice_dict: dict,
@@ -247,7 +430,18 @@ def parse_segment(
         # Append the element to the list of elements
         elements.append(new_element)
 
-    return cheetah.Segment(elements=elements, name=name, sanitize_name=sanitize_names)
+    # Parse overlays if they exist at this segment level
+    overlays = []
+    if "overlays" in lattice_dict:
+        # Find overlays that belong to this segment (those defined at this level)
+        for overlay_name in lattice_dict.get("overlays", {}):
+            overlays.append(
+                parse_overlay(overlay_name, lattice_dict, device=device, dtype=dtype)
+            )
+
+    return cheetah.Segment(
+        elements=elements, name=name, sanitize_name=sanitize_names, overlays=overlays
+    )
 
 
 def load_cheetah_model(

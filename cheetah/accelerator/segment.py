@@ -13,6 +13,7 @@ from cheetah.accelerator.custom_transfer_map import CustomTransferMap
 from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.accelerator.marker import Marker
+from cheetah.accelerator.overlay import Overlay
 from cheetah.converters import bmad, elegant, nxtables
 from cheetah.particles import Beam, Species
 from cheetah.utils import (
@@ -38,6 +39,9 @@ class Segment(Element):
         element (e.g. control-system addresses or PVs). This information is *not* used
         in simulation and may contain any extra data the user wants to store along with
         the lattice. See :doc:`/getting_started/control_systems` for more information.
+    :param overlays: Optional list of `Overlay` objects to control element attributes
+        dynamically. Overlays can be nested such that one overlay targets another
+        overlay\'s variables. Default is an empty list.
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
     """
@@ -48,6 +52,7 @@ class Segment(Element):
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
+        overlays: list[Overlay] | None = None,
     ) -> None:
         super().__init__(name=name, sanitize_name=sanitize_name, metadata=metadata)
 
@@ -70,6 +75,19 @@ class Segment(Element):
             else:
                 self.__dict__[element.name] = element
 
+        self.overlays = overlays if overlays is not None else []
+        for overlay in self.overlays:
+            # Bind overlay to segment so it can reference elements and other overlays
+            overlay._bind(self)
+            # Make overlays accessible via .name attribute like elements
+            if overlay.name in self.__dict__:
+                if isinstance(self.__dict__[overlay.name], list):
+                    self.__dict__[overlay.name].append(overlay)
+                else:
+                    self.__dict__[overlay.name] = [self.__dict__[overlay.name], overlay]
+            else:
+                self.__dict__[overlay.name] = overlay
+
     @property
     def element_names(self) -> list[str]:
         """
@@ -78,6 +96,64 @@ class Segment(Element):
         :return: Ordered list of names of the elements in the segment.
         """
         return [element.name for element in self.elements]
+
+    @property
+    def overlay_names(self) -> list[str]:
+        """
+        Ordered list of names of the overlays in the segment.
+
+        :return: Ordered list of names of the overlays in the segment.
+        """
+        return [overlay.name for overlay in self.overlays]
+
+    def add_overlay(self, overlay: "Overlay") -> None:
+        """
+        Add an overlay to this segment. The overlay can reference variables from
+        other overlays in this segment for nestable overlay support.
+
+        :param overlay: The overlay to add to this segment.
+        """
+        if overlay.name in self.overlay_names:
+            raise ValueError(f"Overlay with name '{overlay.name}' already exists.")
+        self.overlays.append(overlay)
+        # Bind overlay to segment so it can reference elements and other overlays
+        overlay._bind(self)
+        # Make overlay accessible via .name attribute
+        if overlay.name in self.__dict__:
+            if isinstance(self.__dict__[overlay.name], list):
+                self.__dict__[overlay.name].append(overlay)
+            else:
+                self.__dict__[overlay.name] = [self.__dict__[overlay.name], overlay]
+        else:
+            self.__dict__[overlay.name] = overlay
+
+    def remove_overlay(self, overlay_name: str) -> "Overlay":
+        """
+        Remove an overlay from this segment by name.
+
+        :param overlay_name: Name of the overlay to remove.
+        :return: The removed overlay.
+        """
+        for i, overlay in enumerate(self.overlays):
+            if overlay.name == overlay_name:
+                removed = self.overlays.pop(i)
+                # Remove from __dict__ access as well
+                if overlay_name in self.__dict__:
+                    del self.__dict__[overlay_name]
+                return removed
+        raise ValueError(f"Overlay '{overlay_name}' not found in segment.")
+
+    def get_overlay(self, overlay_name: str) -> "Overlay":
+        """
+        Get an overlay from this segment by name.
+
+        :param overlay_name: Name of the overlay to retrieve.
+        :return: The overlay with the specified name.
+        """
+        for overlay in self.overlays:
+            if overlay.name == overlay_name:
+                return overlay
+        raise ValueError(f"Overlay '{overlay_name}' not found in segment.")
 
     def element_index(self, element_name: str) -> int:
         """
