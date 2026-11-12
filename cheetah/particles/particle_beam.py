@@ -1727,6 +1727,7 @@ class ParticleBeam(Beam):
 
     @total_charge.setter
     def total_charge(self, value: torch.Tensor) -> None:
+        """Prevent setting total_charge directly since it is dynamically computed."""
         raise AttributeError("Cannot set total_charge of ParticleBeam directly.")
 
     @property

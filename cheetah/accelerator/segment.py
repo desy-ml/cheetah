@@ -559,6 +559,7 @@ class Segment(Element):
 
     @length.setter
     def length(self, value: torch.Tensor) -> None:
+        """Prevent setting length directly since it is computed from elements."""
         raise AttributeError("Cannot set length of Segment directly.")
 
     def first_order_transfer_map(
