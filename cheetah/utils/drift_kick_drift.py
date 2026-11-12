@@ -68,44 +68,52 @@ def element_to_lab_coordinates(
 
 
 def low_energy_z_correction(
-    pz: torch.Tensor, p0c: torch.Tensor, mc2: torch.Tensor, ds: torch.Tensor
+    pz: torch.Tensor,
+    p0c: torch.Tensor,
+    mc2: torch.Tensor,
+    ds: torch.Tensor,
 ) -> torch.Tensor:
     """
-    Corrects the change in z-coordinate due to speed < speed_of_light.
+    Calculates the longitudinal coordinate correction for particles with speed < c.
 
-    :param pz: Particle longitudinal momentum.
-    :param p0c: Reference particle momentum in eV.
-    :param mc2: Particle mass in eV.
-    :param ds: Drift length.
-    :return: Change in z-coordinate.
+    For small momentum deviations `pz`, a Taylor expansion is used to avoid
+    loss of precision from catastrophic cancellation when computing `beta - beta0`.
+
+    :param pz: Relative longitudinal momentum deviation delta = (p - p0) / p0.
+    :param p0c: Reference particle momentum times speed of light [eV].
+    :param mc2: Particle rest mass energy [eV].
+    :param ds: Step length along the reference trajectory [m].
+    :return: Longitudinal position change dz [m].
     """
-    beta = (
-        (1.0 + pz)
-        * p0c.unsqueeze(-1)
-        / (((1.0 + pz) * p0c.unsqueeze(-1)).square() + mc2.square()).sqrt()
-    )
+    p0c_expanded = p0c.unsqueeze(-1)
     beta0 = p0c / (p0c.square() + mc2.square()).sqrt()
     e_tot = (p0c.square() + mc2.square()).sqrt()
 
-    evaluation = mc2 * (beta0.unsqueeze(-1) * pz).square()
-    dz = ds.unsqueeze(-1) * pz * (
-        1.0
-        - 3.0 * (pz * beta0.square().unsqueeze(-1)) / 2.0
-        + pz.square()
-        * beta0.square().unsqueeze(-1)
-        * (
-            2.0 * beta0.square().unsqueeze(-1)
-            - (mc2 / e_tot.unsqueeze(-1)).square() / 2.0
-        )
-    ) * (mc2 / e_tot.unsqueeze(-1)).square() * (
-        evaluation < 3e-7 * e_tot.unsqueeze(-1)
-    ) + (
-        ds.unsqueeze(-1) * (beta - beta0.unsqueeze(-1)) / beta0.unsqueeze(-1)
-    ) * (
-        evaluation >= 3e-7 * e_tot.unsqueeze(-1)
-    )
+    beta0_expanded = beta0.unsqueeze(-1)
+    beta0_sq = beta0_expanded.square()
+    e_tot_expanded = e_tot.unsqueeze(-1)
+    mass_ratio_sq = (mc2 / e_tot_expanded).square()
 
-    return dz
+    # Relativistic beta for each particle
+    p_particle = (1.0 + pz) * p0c_expanded
+    beta = p_particle / (p_particle.square() + mc2.square()).sqrt()
+
+    # Threshold criterion for Taylor expansion regime
+    criterion = mc2 * (beta0_expanded * pz).square()
+    threshold = 3.0e-7 * e_tot_expanded
+
+    dz_taylor = (
+        pz
+        * (
+            1.0
+            - 1.5 * pz * beta0_sq
+            + pz.square() * beta0_sq * (2.0 * beta0_sq - 0.5 * mass_ratio_sq)
+        )
+        * mass_ratio_sq
+    )
+    dz_exact = (beta - beta0_expanded) / beta0_expanded
+
+    return ds.unsqueeze(-1) * torch.where(criterion < threshold, dz_taylor, dz_exact)
 
 
 def quadrupole_coefficients(
