@@ -41,13 +41,13 @@ def vectorized_histogram_2d(
     idx = ix1 * num_bins_x2 + ix2
 
     # Filter out-of-bounds particles without dynamically sized tensor allocations
-    valid = (
+    in_bounds_mask = (
         (x1 >= x1_edges[0])
         & (x1 <= x1_edges[-1])
         & (x2 >= x2_edges[0])
         & (x2 <= x2_edges[-1])
     )
-    masked_weights = (weights * valid).to(dtype)
+    masked_weights = (weights * in_bounds_mask).to(dtype)
 
     hist = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
     hist.view(*vector_shape, -1).scatter_add_(dim=-1, index=idx, src=masked_weights)
