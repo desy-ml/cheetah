@@ -119,34 +119,33 @@ def quadrupole_coefficients(
     k1: torch.Tensor,
     length: torch.Tensor,
     p_norm: torch.Tensor,
-) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+) -> tuple[list[list[torch.Tensor]], list[torch.Tensor]]:
     """
-    Returns 2x2 transfer matrix elements aij and the coefficients to compute the
-    change in z position.
+    Returns 2x2 transfer matrix elements and geometric path length coefficients.
 
-    NOTE: Accumulated error due to machine epsilon.
-
-    :param k1: Quadrupole strength (k1 > 0 ==> defocus).
-    :param length: Quadrupole length.
+    :param k1: Chromatic quadrupole strength [1/m^2] (k1 > 0 ==> defocusing).
+    :param length: Quadrupole segment length [m].
     :param p_norm: Normalized momentum P/P0.
-    :return: Tuple of transfer matrix elements and coefficients.
-        a11, a12, a21, a22: Transfer matrix elements.
-        c1, c2, c3: Second order derivatives of z such that
-            z = c1 * x_0^2 + c2 * x_0 * px_0 + c3 * px_0^2.
+    :return: Tuple of transfer matrix and path length coefficients:
+        [[a11, a12], [a21, a22]]: 2x2 transfer matrix.
+        [c1, c2, c3]: Coefficients such that dz = c1 * u^2 + c2 * u * pu + c3 * pu^2.
     """
+    length = length.unsqueeze(-1)
+
     # The sign of k1 is flipped compared to track_methods by convention
-    kx = (torch.complex(-k1, torch.zeros_like(k1))).sqrt()
-    cx = (kx * length.unsqueeze(-1)).cos().real
-    sx = ((kx * length.unsqueeze(-1) / torch.pi).sinc() * length.unsqueeze(-1)).real
+    k = (torch.complex(-k1, torch.zeros_like(k1))).sqrt()
+    c = (k * length).cos().real
+    s = ((k * length / torch.pi).sinc() * length).real
 
-    a11 = cx
-    a12 = sx / p_norm
-    a21 = k1 * sx * p_norm
-    a22 = cx
+    a11 = c
+    a12 = s / p_norm
+    a21 = k1 * s * p_norm
+    a22 = c
 
-    c1 = k1 * (-cx * sx + length.unsqueeze(-1)) / 4.0
-    c2 = -k1 * sx.square() / (2.0 * p_norm)
-    c3 = -(cx * sx + length.unsqueeze(-1)) / (4.0 * p_norm.square())
+    cs = c * s
+    c1 = k1 * (length - cs) / 4.0
+    c2 = -k1 * s.square() / (2.0 * p_norm)
+    c3 = -(length + cs) / (4.0 * p_norm.square())
 
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
