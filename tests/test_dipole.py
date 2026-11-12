@@ -21,7 +21,7 @@ def test_dipole_off():
     outbeam_dipole_on = dipole.track(incoming_beam)
 
     assert dipole.name is not None
-    assert torch.allclose(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
+    torch.testing.assert_close(outbeam_dipole_off.sigma_x, outbeam_drift.sigma_x)
     assert not torch.allclose(outbeam_dipole_on.sigma_x, outbeam_drift.sigma_x)
 
 
@@ -41,7 +41,7 @@ def test_dipole_focussing():
     outbeam_dipole_off = dipole.track(incoming_beam)
 
     assert dipole.name is not None
-    assert torch.allclose(outbeam_dipole_on.sigma_x, outbeam_quadrupole.sigma_x)
+    torch.testing.assert_close(outbeam_dipole_on.sigma_x, outbeam_quadrupole.sigma_x)
     assert not torch.allclose(outbeam_dipole_off.sigma_x, outbeam_quadrupole.sigma_x)
 
 
@@ -70,7 +70,7 @@ def test_dipole_vectorized_execution(DipoleType):
     assert outgoing.mu_x.shape == torch.Size([3])
 
     # Check that dipole with same bend angle produce same output
-    assert torch.allclose(outgoing.particles[0], outgoing.particles[2])
+    torch.testing.assert_close(outgoing.particles[0], outgoing.particles[2])
 
     # Check different angles do make a difference
     assert not torch.allclose(outgoing.particles[0], outgoing.particles[1])
@@ -142,7 +142,7 @@ def test_dipole_drift_kick_drift_tracking(dtype):
         "tests/resources/bmadx/outgoing_dipole.pt", weights_only=False
     )
 
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_cheetah_bmadx.particles,
         outgoing_bmadx.to(dtype),
         rtol=1e-14 if dtype == torch.float64 else 0.00001,
@@ -215,6 +215,6 @@ def test_dipole_tilt_sanity(tracking_method):
     )
 
     # Check that the two outgoing beams are equal
-    assert torch.allclose(
+    torch.testing.assert_close(
         tilted_dipole_outgoing_beam.particles, non_tilted_dipole_outgoing_beam.particles
     )
