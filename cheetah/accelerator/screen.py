@@ -12,6 +12,7 @@ from cheetah.utils import (
     cache_transfer_map,
     cloud_in_cell_charge_deposition,
     kde_histogram_2d,
+    vectorized_histogram_2d,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -25,8 +26,7 @@ class Screen(Element):
         terms of performance, with "histogram" being the fastest, followed by
         "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
         (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
-        gradients and is incompatible with vectorisation, while both features are
-        supported by "kde" and "cloud-in-cell".
+        gradients, which are supported by "kde" and "cloud-in-cell".
 
     NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
         elements.
@@ -290,25 +290,16 @@ class Screen(Element):
             image = dist.log_prob(pos).exp().mT
         elif isinstance(read_beam, ParticleBeam):
             if self.method == "histogram":
-                # Catch vectorisation, which is currently not supported by "histogram"
-                if (
-                    len(read_beam.particles.shape) > 2
-                    or len(read_beam.particle_charges.shape) > 1
-                    or len(read_beam.energy.shape) > 0
-                ):
-                    raise NotImplementedError(
-                        "The `'histogram'` method of `Screen` does not support "
-                        "vectorization. Use `'kde'` instead. If this is a feature you "
-                        "would like to see, please open an issue on GitHub."
-                    )
-
-                image_transposed, _ = torch.histogramdd(
-                    torch.stack((read_beam.x, read_beam.y)).mT,
-                    bins=self.pixel_bin_edges,
-                    weight=read_beam.particle_charges.abs()
-                    * read_beam.survival_probabilities,
+                weights = (
+                    read_beam.particle_charges.abs() * read_beam.survival_probabilities
                 )
-                image = image_transposed.mT
+                image = vectorized_histogram_2d(
+                    x1=read_beam.x,
+                    x2=read_beam.y,
+                    bins=self.effective_resolution,
+                    extent=self.extent.reshape(2, 2),
+                    weights=weights,
+                ).mT
             elif self.method == "kde":
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
