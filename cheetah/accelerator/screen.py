@@ -26,10 +26,7 @@ class Screen(Element):
         terms of performance, with "histogram" being the fastest, followed by
         "cloud-in-cell" (ca. 1.5x slower than "histogram"), and "kde" being the slowest
         (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
-        gradients and is incompatible with vectorisation, while both features are
-       (ca. 280x slower than "histogram"). However, "histogram" does not provide useful
-       gradients, which is
-       supported by "kde" and "cloud-in-cell".
+        gradients, which are supported by "kde" and "cloud-in-cell".
 
     NOTE: Vectorised `ParameterBeam`s can currently not be recorded by `Screen`
         elements.
@@ -296,15 +293,13 @@ class Screen(Element):
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
                 )
-                broadcasted_x, broadcasted_y, broadcasted_weights = (
-                    torch.broadcast_tensors(read_beam.x, read_beam.y, weights)
-                )
+                bin_centers_x, bin_centers_y = self.pixel_bin_centers
                 image = vectorized_histogram_2d(
-                    x1=broadcasted_x,
-                    x2=broadcasted_y,
-                    bins1=self.pixel_bin_centers[0],
-                    bins2=self.pixel_bin_centers[1],
-                    weights=broadcasted_weights,
+                    x1=read_beam.x,
+                    x2=read_beam.y,
+                    bins1=bin_centers_x,
+                    bins2=bin_centers_y,
+                    weights=weights,
                 ).mT
             elif self.method == "kde":
                 weights = (

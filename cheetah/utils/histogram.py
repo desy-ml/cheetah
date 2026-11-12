@@ -7,10 +7,13 @@ def _bin_centers_to_edges(centers: torch.Tensor) -> torch.Tensor:
         raise ValueError("Need at least 2 bin centers to infer edges.")
 
     step = centers[1] - centers[0]
-    left_edge = centers[0] - step / 2
-    right_edge = centers[-1] + step / 2
-    midpoints = (centers[1:] + centers[:-1]) / 2
-    return torch.cat([left_edge.unsqueeze(0), midpoints, right_edge.unsqueeze(0)])
+    return torch.linspace(
+        centers[0] - step / 2.0,
+        centers[-1] + step / 2.0,
+        centers.numel() + 1,
+        device=centers.device,
+        dtype=centers.dtype,
+    )
 
 
 def vectorized_histogram_2d(
@@ -21,27 +24,27 @@ def vectorized_histogram_2d(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Compute batched 2D histograms for coordinate pairs ``(x1, x2)``.
+    Compute vectorised 2D histograms for coordinate pairs ``(x1, x2)``.
 
-    :param x1: First coordinate tensor with shape ``(*batch_shape, N)``.
+    :param x1: First coordinate tensor with shape ``(*vector_shape, N)``.
     :param x2: Second coordinate tensor, broadcastable with ``x1``.
     :param bins1: Bin centers for the first axis, shape ``(N_bins1,)``.
     :param bins2: Bin centers for the second axis, shape ``(N_bins2,)``.
     :param weights: Optional weights, broadcastable with ``x1`` and ``x2``.
-    :returns: Histogram of shape ``(*broadcast_batch_shape, N_bins1, N_bins2)``.
+    :returns: Histogram of shape ``(*broadcast_vector_shape, N_bins1, N_bins2)``.
     """
     if weights is None:
         weights = torch.ones_like(x1)
 
     x1, x2, weights = torch.broadcast_tensors(x1, x2, weights)
 
-    batch_shape = x1.shape[:-1]
-    N = x1.shape[-1]
+    vector_shape = x1.shape[:-1]
+    n_particles = x1.shape[-1]
 
-    x1_flat = x1.reshape(-1, N).contiguous()
-    x2_flat = x2.reshape(-1, N).contiguous()
+    x1_flat = x1.reshape(-1, n_particles).contiguous()
+    x2_flat = x2.reshape(-1, n_particles).contiguous()
 
-    B = x1_flat.shape[0]
+    b_size = x1_flat.shape[0]
     device = x1_flat.device
     dtype = x1_flat.dtype
 
@@ -50,22 +53,26 @@ def vectorized_histogram_2d(
     bins_x1 = x1_edges.numel() - 1
     bins_x2 = x2_edges.numel() - 1
 
-    ix1 = (
-        (torch.bucketize(x1_flat, x1_edges) - 1).clamp(0, bins_x1 - 1).long()
-    )  # (B, N)
-    ix2 = (
-        (torch.bucketize(x2_flat, x2_edges) - 1).clamp(0, bins_x2 - 1).long()
-    )  # (B, N)
+    total_bins = b_size * bins_x1 * bins_x2
+    use_int32 = total_bins < 2_147_483_647
 
-    idx_flat = ix1 * bins_x2 + ix2  # (B, N)
+    ix1 = (torch.bucketize(x1_flat, x1_edges, out_int32=use_int32) - 1).clamp(
+        0, bins_x1 - 1
+    )
+    ix2 = (torch.bucketize(x2_flat, x2_edges, out_int32=use_int32) - 1).clamp(
+        0, bins_x2 - 1
+    )
 
-    # Offset each batch so all histograms can be accumulated with one bincount.
-    offset = torch.arange(B, device=device, dtype=idx_flat.dtype) * (bins_x1 * bins_x2)
+    idx = ix1 * bins_x2 + ix2
+    if b_size > 1:
+        # Offset each beam so all histograms can be accumulated with one bincount
+        offset = torch.arange(b_size, device=device, dtype=idx.dtype) * (
+            bins_x1 * bins_x2
+        )
+        idx = idx + offset.unsqueeze(1)
+    idx_flat = idx.reshape(-1)
 
-    idx_flat_offset = (idx_flat + offset.unsqueeze(1)).reshape(-1)
-
-    weights_flat = weights.reshape(-1).to(dtype)
-
+    # Filter out-of-bounds particles without dynamically sized tensor allocations
     valid = (
         (x1_flat >= x1_edges[0])
         & (x1_flat <= x1_edges[-1])
@@ -73,12 +80,12 @@ def vectorized_histogram_2d(
         & (x2_flat <= x2_edges[-1])
     ).reshape(-1)
 
+    weights_flat = weights.reshape(-1).to(dtype) * valid
+
     hist_flat = torch.bincount(
-        idx_flat_offset[valid],
-        weights=weights_flat[valid],
-        minlength=B * bins_x1 * bins_x2,
+        idx_flat,
+        weights=weights_flat,
+        minlength=total_bins,
     ).to(dtype)
 
-    hist = hist_flat.view(*batch_shape, bins_x1, bins_x2)
-
-    return hist
+    return hist_flat.view(*vector_shape, bins_x1, bins_x2)
