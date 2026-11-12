@@ -293,12 +293,11 @@ class Screen(Element):
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
                 )
-                bin_centers_x, bin_centers_y = self.pixel_bin_centers
                 image = vectorized_histogram_2d(
                     x1=read_beam.x,
                     x2=read_beam.y,
-                    bins1=bin_centers_x,
-                    bins2=bin_centers_y,
+                    bins=self.effective_resolution,
+                    extent=self.extent.reshape(2, 2),
                     weights=weights,
                 ).mT
             elif self.method == "kde":

@@ -1,11 +1,13 @@
+from typing import Sequence
+
 import torch
 
 
 def vectorized_histogram_2d(
     x1: torch.Tensor,
     x2: torch.Tensor,
-    bins1: torch.Tensor,
-    bins2: torch.Tensor,
+    bins: int | Sequence[int],
+    extent: torch.Tensor | None = None,
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
@@ -13,34 +15,47 @@ def vectorized_histogram_2d(
 
     :param x1: First coordinate tensor with shape ``(*vector_shape, num_particles)``.
     :param x2: Second coordinate tensor with shape ``(*vector_shape, num_particles)``.
-    :param bins1: Bin centers for the first axis, shape ``(num_bins_x1,)``.
-    :param bins2: Bin centers for the second axis, shape ``(num_bins_x2,)``.
+    :param bins: Single int or sequence of two ints specifying the number of
+        bins along the ``x1`` and ``x2`` axes.
+    :param extent: Tensor of shape ``(..., 2, 2)`` or ``(..., 4)`` specifying
+        ``[[x1_min, x1_max], [x2_min, x2_max]]``. If `None`, the extent is inferred
+        from the minimum and maximum of ``x1`` and ``x2``.
     :param weights: Optional weights, broadcastable with ``x1``.
     :returns: Histogram of shape
         ``(*vector_shape, num_bins_x1, num_bins_x2)``.
     """
     vector_shape = x1.shape[:-1]
 
-    x1 = x1.contiguous()
-    x2 = x2.contiguous()
+    if isinstance(bins, int):
+        num_bins_x1 = num_bins_x2 = bins
+    else:
+        num_bins_x1, num_bins_x2 = bins[0], bins[1]
 
-    x1_edges = _bin_centers_to_edges(bins1)
-    x2_edges = _bin_centers_to_edges(bins2)
-    num_bins_x1 = x1_edges.numel() - 1
-    num_bins_x2 = x2_edges.numel() - 1
+    if extent is None:
+        extent = torch.stack(
+            [
+                torch.stack([x1.amin(dim=-1), x1.amax(dim=-1)], dim=-1),
+                torch.stack([x2.amin(dim=-1), x2.amax(dim=-1)], dim=-1),
+            ],
+            dim=-2,
+        )
+    elif extent.shape[-1] == 4:
+        extent = extent.unflatten(-1, (2, 2))
 
-    ix1 = (torch.bucketize(x1, x1_edges) - 1).clamp(0, num_bins_x1 - 1)
-    ix2 = (torch.bucketize(x2, x2_edges) - 1).clamp(0, num_bins_x2 - 1)
+    x1_min = extent[..., 0, 0].unsqueeze(-1)
+    x1_max = extent[..., 0, 1].unsqueeze(-1)
+    x2_min = extent[..., 1, 0].unsqueeze(-1)
+    x2_max = extent[..., 1, 1].unsqueeze(-1)
+
+    inv_bin_width_x1 = num_bins_x1 / (x1_max - x1_min)
+    inv_bin_width_x2 = num_bins_x2 / (x2_max - x2_min)
+
+    ix1 = ((x1 - x1_min) * inv_bin_width_x1).floor().long().clamp(0, num_bins_x1 - 1)
+    ix2 = ((x2 - x2_min) * inv_bin_width_x2).floor().long().clamp(0, num_bins_x2 - 1)
 
     idx = ix1 * num_bins_x2 + ix2
 
-    # Filter out-of-bounds particles without dynamically sized tensor allocations
-    in_bounds_mask = (
-        (x1 >= x1_edges[0])
-        & (x1 <= x1_edges[-1])
-        & (x2 >= x2_edges[0])
-        & (x2 <= x2_edges[-1])
-    )
+    in_bounds_mask = (x1 >= x1_min) & (x1 <= x1_max) & (x2 >= x2_min) & (x2 <= x2_max)
     masked_weights = (
         in_bounds_mask.to(x1.dtype) if weights is None else weights * in_bounds_mask
     )
@@ -52,18 +67,3 @@ def vectorized_histogram_2d(
     )
 
     return histogram
-
-
-def _bin_centers_to_edges(centers: torch.Tensor) -> torch.Tensor:
-    """Convert a 1D tensor of evenly-spaced bin centers to bin edges."""
-    if centers.numel() < 2:
-        raise ValueError("Need at least 2 bin centers to infer edges.")
-
-    step = centers[1] - centers[0]
-    return torch.linspace(
-        centers[0] - step / 2.0,
-        centers[-1] + step / 2.0,
-        centers.numel() + 1,
-        device=centers.device,
-        dtype=centers.dtype,
-    )
