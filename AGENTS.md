@@ -42,3 +42,4 @@ Never cut: validation at trust boundaries, error handling that prevents data los
 - **Code References**: Docstrings, comments, changelog entries, and documentation should try to put class names and similar code elements in backticks (`...`) to apply code style.
 - **Simulations**: All simulations must be as fast as possible (and optimised to achieve that), and they must be fully differentiable and have usable smooth gradients.
 - **Docstrings**: All function, method and class definitions must have a docstring. If they are only for internal use and the arguments' meanings are reasonably obvious, a short docstring suffices; otherwise, a proper docstring with argument and return descriptions is needed.
+- **Variable Naming for Quantities**: Always use `num` (e.g. `num_particles`, `num_bins`) rather than `n` or other abbreviations in variable names representing counts or quantities.
