@@ -37,7 +37,7 @@ def test_compare_sextupole_particle_beam_to_ocelot():
     outgoing_ocelot = cheetah.ParticleBeam.from_ocelot(outgoing_p_array)
 
     # Compare the results
-    assert torch.allclose(
+    torch.testing.assert_close(
         outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
     )
 
@@ -77,8 +77,11 @@ def test_compare_sextupole_particle_beam_to_ocelot_vectorized():
     outgoing_ocelot = cheetah.ParticleBeam.from_ocelot(outgoing_p_array)
 
     # Compare the results
-    assert torch.allclose(
-        outgoing_cheetah.particles, outgoing_ocelot.particles, atol=1e-5, rtol=1e-6
+    torch.testing.assert_close(
+        outgoing_cheetah.particles,
+        torch.broadcast_to(outgoing_ocelot.particles, outgoing_cheetah.particles.shape),
+        atol=1e-5,
+        rtol=1e-6,
     )
 
 
@@ -116,8 +119,10 @@ def test_compare_sextupole_parameter_beam_to_ocelot():
     outgoing_ocelot = cheetah.ParameterBeam.from_ocelot(outgoing_p_array)
 
     # Compare the results
-    assert torch.allclose(outgoing_cheetah.mu, outgoing_ocelot.mu, atol=1e-5, rtol=1e-6)
-    assert torch.allclose(
+    torch.testing.assert_close(
+        outgoing_cheetah.mu, outgoing_ocelot.mu, atol=1e-5, rtol=1e-6
+    )
+    torch.testing.assert_close(
         outgoing_cheetah.cov, outgoing_ocelot.cov, atol=1e-5, rtol=1e-6
     )
 
@@ -136,7 +141,7 @@ def test_sextupole_as_drift():
     drift_outgoing = drift.track(incoming)
 
     # Check that the results are the same
-    assert torch.allclose(
+    torch.testing.assert_close(
         sextupole_outgoing.particles, drift_outgoing.particles, atol=1e-5, rtol=1e-6
     )
 
@@ -182,7 +187,7 @@ def test_sextupole_with_misalignments():
     shifted_misaligned_through_centered_outgoing_beam.x += horizontal_misalignment
 
     # Check that the results are the same
-    assert torch.allclose(
+    torch.testing.assert_close(
         centered_through_misaligned_outgoing_beam.particles,
         shifted_misaligned_through_centered_outgoing_beam.particles,
     )

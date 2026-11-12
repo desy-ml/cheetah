@@ -281,7 +281,7 @@ def test_transfer_map_cache_dtype_conversion():
 
     assert id(original_transfer_map) != id(converted_transfer_map)
     assert converted_transfer_map.dtype == torch.float64
-    assert torch.allclose(
+    torch.testing.assert_close(
         original_transfer_map.to(torch.float64), converted_transfer_map
     )
 
@@ -408,23 +408,25 @@ def test_consistency(element, beam_cls):
     #     pickle.dump(actual_outgoing_beam, f)
 
     assert actual_outgoing_beam.species.name == expected_outgoing_beam.species.name
-    assert torch.allclose(actual_outgoing_beam.energy, expected_outgoing_beam.energy)
-    assert torch.allclose(actual_outgoing_beam.s, expected_outgoing_beam.s)
+    torch.testing.assert_close(
+        actual_outgoing_beam.energy, expected_outgoing_beam.energy
+    )
+    torch.testing.assert_close(actual_outgoing_beam.s, expected_outgoing_beam.s)
     if isinstance(actual_outgoing_beam, cheetah.ParameterBeam):
-        assert torch.allclose(actual_outgoing_beam.mu, expected_outgoing_beam.mu)
-        assert torch.allclose(actual_outgoing_beam.cov, expected_outgoing_beam.cov)
-        assert torch.allclose(
+        torch.testing.assert_close(actual_outgoing_beam.mu, expected_outgoing_beam.mu)
+        torch.testing.assert_close(actual_outgoing_beam.cov, expected_outgoing_beam.cov)
+        torch.testing.assert_close(
             actual_outgoing_beam.total_charge, expected_outgoing_beam.total_charge
         )
     else:  # ParticleBeam
-        assert torch.allclose(
+        torch.testing.assert_close(
             actual_outgoing_beam.particles, expected_outgoing_beam.particles
         )
-        assert torch.allclose(
+        torch.testing.assert_close(
             actual_outgoing_beam.particle_charges,
             expected_outgoing_beam.particle_charges,
         )
-        assert torch.allclose(
+        torch.testing.assert_close(
             actual_outgoing_beam.survival_probabilities,
             expected_outgoing_beam.survival_probabilities,
         )

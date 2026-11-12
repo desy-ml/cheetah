@@ -18,7 +18,7 @@ The phase space coordinates are defined in the curvelinear coordinate system wit
 
 The new variables are
 
-$$ px = P_x / p_0  $$
+$$ px = P_x / p_0 $$
 
 $P_x$ is the horizontal momentum and $p_0$ is the _reference momentum_.
 
@@ -32,7 +32,17 @@ $$ \delta= \frac{E-E_0}{p_0 c} = \frac{E}{p_0 c} - \frac{1}{\beta_0} $$
 
 Here, $E$ is the energy of a particle. $E_0$ is the energy of the reference particle, i.e. _reference energy_. $p_0$ is the reference momentum.
 
-## Relation with coordinates in other simulation tools
+## Interactive 3D Coordinate Frame Visualisation
+
+The interactive visualization below illustrates the relationship between the global laboratory Cartesian axes and the curvilinear Frenet-Serret reference frame along a bending trajectory $s$:
+
+<iframe src="../_static/coordinate_frame_3d.html" width="100%" height="460px" frameborder="0" style="border-radius: 8px; border: 1px solid rgba(127, 127, 127, 0.2);"></iframe>
+
+<p style="text-align: center; font-size: 0.85em; color: gray; margin-top: 6px;">
+    <em>Interactive 3D view: click and drag to orbit, scroll to zoom, right-click to pan. Use the button to pause or resume trajectory animation.</em>
+</p>
+
+## Relation with Coordinates in Other Simulation Tools
 
 ### OCELOT
 
@@ -40,7 +50,7 @@ Here, $E$ is the energy of a particle. $E_0$ is the energy of the reference part
 
 The coordinates are identical as the ones used in OCELOT.
 
-Note that in OCELOT the energy has the unit of GeV, while in Cheetah the energy is in eV.
+**NOTE** that in OCELOT the energy has the unit of GeV, while in Cheetah the energy is in eV.
 
 ### Bmad
 
@@ -50,12 +60,15 @@ The transverse coordinates $(x, px, y, py)$ are identical to the Bmad coordinate
 
 The longitudinal coordinate in Bmad is defined as
 
+<!-- prettier-ignore -->
 $$ z_\text{(Bmad)} = -\beta c \Delta t $$
 
+<!-- prettier-ignore -->
 $$ \tau_\text{(Cheetah)} = -\frac{1}{\beta} z_\text{(Bmad)} $$
 
 In Bmad, the sixth dimension (longitudinal momentum) is defined as the momentum offset over the reference momentum
 
+<!-- prettier-ignore -->
 $$ p_{z, \text{(Bmad)}} = \frac{p-p_0}{p_0}$$
 
 ### Mad-X
@@ -64,13 +77,15 @@ $$ p_{z, \text{(Bmad)}} = \frac{p-p_0}{p_0}$$
 
 The longidutinal coordinate has an opposite sign
 
+<!-- prettier-ignore -->
 $$ \tau_\text{(Cheetah)} = - z_\text{(MAD)} $$
 
 The longitudinal momentum is identical
 
+<!-- prettier-ignore -->
 $$ \delta_\text{(Cheetah)} = p_{t,\text{(MAD)}} $$
 
-## Conversion to trace space notation
+## Conversion to Trace Space Notation
 
 In many literatures, the trace space, or _slope_ notation is used.
 
@@ -82,4 +97,55 @@ In general
 
 $$ x' = \frac{p_x}{\sqrt{p^2 - p_x^2 - p_y^2}} (1+gx) $$
 
-Note that $p_s := \sqrt{p^2 - p_x^2 - p_y^2}$ is the longitudinal momentum, $g = 1/\rho$ is the curvature of the trajectory.
+**NOTE** that $p_s := \sqrt{p^2 - p_x^2 - p_y^2}$ is the longitudinal momentum, $g = 1/\rho$ is the curvature of the trajectory.
+
+## Particle Species
+
+Beams in Cheetah have an associated `Species` that defines the charge and mass of the particles being simulated. This is used to calculate relativistic factors and track physics updates.
+
+### Predefined Species
+
+Cheetah provides several predefined species that can be resolved automatically by name:
+
+- `"electron"`
+- `"positron"`
+- `"proton"`
+- `"antiproton"`
+- `"deuteron"`
+
+When creating a beam, pass the species name to populate its mass and charge:
+
+```python
+import torch
+import cheetah
+
+beam = cheetah.ParameterBeam.from_twiss(
+    beta_x=torch.tensor(3.14),
+    beta_y=torch.tensor(3.14),
+    energy=torch.tensor(1e7),
+    species=cheetah.Species("electron"),
+)
+```
+
+### Custom Species
+
+For custom particle species (such as heavy ions), you can define a custom `Species` object by specifying its name, charge, and mass:
+
+```python
+import torch
+import cheetah
+
+# Define a custom carbon ion species
+carbon_ion = cheetah.Species(
+    name="carbon_ion",
+    num_elementary_charges=torch.tensor(6.0),
+    mass_eV=torch.tensor(11.178e9),
+)
+
+beam = cheetah.ParameterBeam.from_twiss(
+    beta_x=torch.tensor(3.14),
+    beta_y=torch.tensor(3.14),
+    energy=torch.tensor(1e7),
+    species=carbon_ion,
+)
+```

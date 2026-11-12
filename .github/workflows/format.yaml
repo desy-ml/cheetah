@@ -17,8 +17,10 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Install black and isort
-        run: pip install black isort
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade "pip>=25.1.1"
+          pip install --group lint
 
       - name: Run black
         run: black . --check --verbose --diff --color --exclude="/*.ipynb/"
@@ -27,7 +29,4 @@ jobs:
         run: isort . --check --diff --profile black
 
       - name: flake8 lint
-        uses: py-actions/flake8@v2
-        with:
-          max-line-length: "88"
-          plugins: "flake8-bugbear flake8-black"
+        run: flake8 .
