@@ -45,9 +45,10 @@ def vectorized_histogram_2d(
         in_bounds_mask.to(x1.dtype) if weights is None else weights * in_bounds_mask
     )
 
-    histogram = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
-    histogram.view(*vector_shape, -1).scatter_add_(
-        dim=-1, index=idx, src=masked_weights
+    histogram = (
+        x1.new_zeros(*vector_shape, num_bins_x1 * num_bins_x2)
+        .scatter_add_(-1, idx, masked_weights)
+        .view(*vector_shape, num_bins_x1, num_bins_x2)
     )
 
     return histogram
