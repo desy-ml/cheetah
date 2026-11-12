@@ -25,7 +25,6 @@ def vectorized_histogram_2d(
     x1, x2, weights = torch.broadcast_tensors(x1, x2, weights)
 
     vector_shape = x1.shape[:-1]
-    dtype = x1.dtype
 
     x1 = x1.contiguous()
     x2 = x2.contiguous()
@@ -47,7 +46,7 @@ def vectorized_histogram_2d(
         & (x2 >= x2_edges[0])
         & (x2 <= x2_edges[-1])
     )
-    masked_weights = (weights * in_bounds_mask).to(dtype)
+    masked_weights = weights * in_bounds_mask
 
     histogram = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
     histogram.view(*vector_shape, -1).scatter_add_(
