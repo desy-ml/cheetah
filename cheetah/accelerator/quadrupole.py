@@ -331,10 +331,10 @@ class Quadrupole(Element):
         )
 
         alpha = 1.0 if self.is_active else 0.2
-        height = 0.8 * float(plot_k1.sign().item() if self.is_active else 1.0)
+        height = 0.8 * (plot_k1.sign().item() if self.is_active else 1.0)
         patch = Rectangle(
             (plot_s.item(), 0.0),
-            float(plot_length),
+            plot_length.item(),
             height,
             color="tab:red",
             alpha=alpha,

@@ -148,7 +148,7 @@ class Undulator(Element):
 
         patch = Rectangle(
             (plot_s.item(), 0.0),
-            float(plot_length),
+            plot_length.item(),
             height,
             color="tab:purple",
             alpha=alpha,
