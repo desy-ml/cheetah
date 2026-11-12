@@ -1,4 +1,5 @@
 import warnings
+from pathlib import Path
 
 import pytest
 import torch
@@ -152,3 +153,145 @@ def test_lattice_json_sanitize_name_warning(tmp_path, sanitize_names):
             _ = cheetah.Segment.from_lattice_json(
                 tmp_path / "dirty_lattice.json", sanitize_names=sanitize_names
             )
+
+
+def test_save_and_reload_overlay_with_simple_rules(tmp_path):
+    """Test that saving and reloading a segment with overlay works correctly."""
+    # Define rules as lambda expressions
+    rule1 = lambda vars: vars["base_length"]
+    rule2 = lambda vars: vars["base_length"] * 1.5
+
+    # Create elements
+    drift1 = cheetah.Drift(length=torch.tensor(1.0), name="drift1")
+    drift2 = cheetah.Drift(length=torch.tensor(2.0), name="drift2")
+
+    # Create overlay
+    overlay = cheetah.Overlay(
+        name="length_control",
+        variables={"base_length": 2.0},
+        targets={
+            ("drift1", "length"): rule1,
+            ("drift2", "length"): rule2,
+        },
+    )
+
+    # Create segment with overlay
+    original_segment = cheetah.Segment(
+        [drift1, drift2], name="test_segment", overlays=[overlay]
+    )
+
+    # Verify overlay works before saving
+    assert original_segment.drift1.length == torch.tensor(2.0)
+    assert original_segment.drift2.length == torch.tensor(3.0)
+
+    # Save to JSON
+    original_segment.to_lattice_json(str("overlay_lattice.json"))
+
+    # Reload from JSON
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str("overlay_lattice.json")
+    )
+
+    # Verify structure
+    assert reloaded_segment.name == original_segment.name
+    assert len(reloaded_segment.elements) == len(original_segment.elements)
+    assert "length_control" in reloaded_segment.overlay_names
+
+    # Verify overlay is functional
+    assert reloaded_segment.drift1.length == torch.tensor(2.0)
+    assert reloaded_segment.drift2.length == torch.tensor(3.0)
+
+    # Test updating overlay variable
+    reloaded_segment.length_control.base_length = 3.0
+    assert torch.allclose(reloaded_segment.drift1.length, torch.tensor(3.0))
+    assert torch.allclose(reloaded_segment.drift2.length, torch.tensor(4.5))
+
+
+def test_overlay_json_format(tmp_path):
+    """Verify the JSON format for overlays is correct."""
+    drift = cheetah.Drift(length=torch.tensor(1.0), name="drift1")
+
+    overlay = cheetah.Overlay(
+        name="test_overlay",
+        variables={"var1": 2.5},
+        targets={("drift1", "length"): lambda vars: vars["var1"] * 2},
+    )
+    segment = cheetah.Segment([drift], name="seg", overlays=[overlay])
+    filepath = str("format_check.json")
+    segment.to_lattice_json(filepath)
+
+    # Load JSON and verify structure
+    import json
+
+    with open(filepath) as f:
+        data = json.load(f)
+
+    # Verify overlays section exists
+    assert "overlays" in data
+    assert "test_overlay" in data["overlays"]
+
+    overlay_data = data["overlays"]["test_overlay"]
+    assert "variables" in overlay_data
+    assert "targets" in overlay_data
+    assert overlay_data["variables"]["var1"] == 2.5
+    assert "drift1.length" in overlay_data["targets"]
+    # Rule expression should be serialized as string
+    assert isinstance(overlay_data["targets"]["drift1.length"], str)
+
+
+def test_save_and_reload_nested_overlays(tmp_path):
+    """Test segment with nested overlays that reference each other's variables."""
+    # Define rules that reference each other's overlays
+    rule1 = lambda vars: vars["base_value"]
+    rule2 = lambda vars: vars["overlay1_base_value"] * 2
+
+    # Create elements
+    drift1 = cheetah.Drift(length=torch.tensor(1.0), name="drift1")
+    drift2 = cheetah.Drift(length=torch.tensor(2.0), name="drift2")
+
+    # First overlay sets a base value
+    overlay1 = cheetah.Overlay(
+        name="overlay1",
+        variables={"base_value": 2.0},
+        targets={("drift1", "length"): rule1},
+    )
+
+    # Second overlay references first overlay's variables
+    overlay2 = cheetah.Overlay(
+        name="overlay2",
+        variables={"dummy": 1.0},
+        targets={("drift2", "length"): rule2},
+    )
+
+    # Create segment with nested overlays
+    original_segment = cheetah.Segment(
+        [drift1, drift2], name="nested_segment", overlays=[overlay1, overlay2]
+    )
+
+    # Verify nested overlays work before saving
+    assert torch.allclose(original_segment.drift1.length, torch.tensor(2.0))
+    assert torch.allclose(original_segment.drift2.length, torch.tensor(4.0))
+
+    # Save to JSON
+    original_segment.to_lattice_json(str(tmp_path / "nested_overlay.json"))
+
+    # Reload from JSON
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        str(tmp_path / "nested_overlay.json")
+    )
+
+    # Verify both overlays exist
+    assert len(reloaded_segment.overlay_names) == 2
+    assert "overlay1" in reloaded_segment.overlay_names
+    assert "overlay2" in reloaded_segment.overlay_names
+
+    # Verify nested overlays still work after reload
+    assert torch.allclose(reloaded_segment.drift1.length, torch.tensor(2.0))
+    assert torch.allclose(reloaded_segment.drift2.length, torch.tensor(4.0))
+
+    # Test updating overlay1's variable updates its own target
+    reloaded_segment.overlay1.base_value = 3.0
+    assert torch.allclose(reloaded_segment.drift1.length, torch.tensor(3.0))
+    # Note: overlay2 won't automatically update since it's a separate overlay
+    # The nested reference is evaluated when overlay2's variables change, not when overlay1 changes
+

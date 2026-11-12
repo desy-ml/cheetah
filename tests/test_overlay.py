@@ -525,9 +525,9 @@ class TestOverlayErrorHandling:
             targets={("nonexistent", "length"): lambda vars: vars["var1"]},
         )
 
-        # This should work at overlay creation time,
-        # but fail when bound to a segment (if that method exists)
-        segment.add_overlay(overlay)
+        # Should raise ValueError when adding overlay to segment (binding fails)
+        with pytest.raises(ValueError, match="Overlay target element.*not found"):
+            segment.add_overlay(overlay)
 
     def test_variable_name_conflicts_with_methods(self):
         """Test that variable names can't conflict with nn.Module methods."""

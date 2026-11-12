@@ -77,6 +77,8 @@ class Segment(Element):
 
         self.overlays = overlays if overlays is not None else []
         for overlay in self.overlays:
+            # Bind overlay to segment so it can reference elements and other overlays
+            overlay._bind(self)
             # Make overlays accessible via .name attribute like elements
             if overlay.name in self.__dict__:
                 if isinstance(self.__dict__[overlay.name], list):
@@ -114,6 +116,8 @@ class Segment(Element):
         if overlay.name in self.overlay_names:
             raise ValueError(f"Overlay with name '{overlay.name}' already exists.")
         self.overlays.append(overlay)
+        # Bind overlay to segment so it can reference elements and other overlays
+        overlay._bind(self)
         # Make overlay accessible via .name attribute
         if overlay.name in self.__dict__:
             if isinstance(self.__dict__[overlay.name], list):
