@@ -908,7 +908,7 @@ class Segment(Element):
             vector_idx=vector_idx,
         )
 
-        _ = self.plot(ax=axs[2], s=0.0, vector_idx=vector_idx)
+        _ = self.plot(ax=axs[2], s=torch.tensor(0.0), vector_idx=vector_idx)
 
         return fig
 
@@ -998,7 +998,7 @@ class Segment(Element):
             vector_idx=vector_idx,
             ax=axs[0],
         )
-        self.plot(s=0.0, ax=axs[1], vector_idx=vector_idx)
+        self.plot(s=torch.tensor(0.0), ax=axs[1], vector_idx=vector_idx)
 
         return fig
 
@@ -1067,7 +1067,7 @@ class Segment(Element):
         assert isinstance(axs, np.ndarray)
 
         self.plot_twiss(incoming, vector_idx=vector_idx, ax=axs[0])
-        self.plot(s=0.0, vector_idx=vector_idx, ax=axs[1])
+        self.plot(s=torch.tensor(0.0), vector_idx=vector_idx, ax=axs[1])
 
         return fig
 
