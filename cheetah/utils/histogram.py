@@ -25,54 +25,40 @@ def vectorized_histogram_2d(
     x1, x2, weights = torch.broadcast_tensors(x1, x2, weights)
 
     vector_shape = x1.shape[:-1]
-    num_particles = x1.shape[-1]
+    dtype = x1.dtype
 
-    x1_flat = x1.reshape(-1, num_particles).contiguous()
-    x2_flat = x2.reshape(-1, num_particles).contiguous()
-
-    num_beams = x1_flat.shape[0]
-    device = x1_flat.device
-    dtype = x1_flat.dtype
+    x1 = x1.contiguous()
+    x2 = x2.contiguous()
 
     x1_edges = _bin_centers_to_edges(bins1)
     x2_edges = _bin_centers_to_edges(bins2)
     num_bins_x1 = x1_edges.numel() - 1
     num_bins_x2 = x2_edges.numel() - 1
 
-    total_bins = num_beams * num_bins_x1 * num_bins_x2
-    use_int32 = total_bins < 2_147_483_647
+    use_int32 = (num_bins_x1 * num_bins_x2) < 2_147_483_647
 
-    ix1 = (torch.bucketize(x1_flat, x1_edges, out_int32=use_int32) - 1).clamp(
+    ix1 = (torch.bucketize(x1, x1_edges, out_int32=use_int32) - 1).clamp(
         0, num_bins_x1 - 1
     )
-    ix2 = (torch.bucketize(x2_flat, x2_edges, out_int32=use_int32) - 1).clamp(
+    ix2 = (torch.bucketize(x2, x2_edges, out_int32=use_int32) - 1).clamp(
         0, num_bins_x2 - 1
     )
 
     idx = ix1 * num_bins_x2 + ix2
-    if num_beams > 1:
-        # Offset each beam so all histograms can be accumulated with one bincount
-        offset = torch.arange(num_beams, device=device, dtype=idx.dtype) * (
-            num_bins_x1 * num_bins_x2
-        )
-        idx = idx + offset.unsqueeze(1)
-    idx_flat = idx.reshape(-1)
 
     # Filter out-of-bounds particles without dynamically sized tensor allocations
     valid = (
-        (x1_flat >= x1_edges[0])
-        & (x1_flat <= x1_edges[-1])
-        & (x2_flat >= x2_edges[0])
-        & (x2_flat <= x2_edges[-1])
-    ).reshape(-1)
-
-    weights_flat = weights.reshape(-1).to(dtype) * valid
-
-    hist_flat = torch.bincount(idx_flat, weights=weights_flat, minlength=total_bins).to(
-        dtype
+        (x1 >= x1_edges[0])
+        & (x1 <= x1_edges[-1])
+        & (x2 >= x2_edges[0])
+        & (x2 <= x2_edges[-1])
     )
+    masked_weights = (weights * valid).to(dtype)
 
-    return hist_flat.view(*vector_shape, num_bins_x1, num_bins_x2)
+    hist = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
+    hist.view(*vector_shape, -1).scatter_add_(dim=-1, index=idx, src=masked_weights)
+
+    return hist
 
 
 def _bin_centers_to_edges(centers: torch.Tensor) -> torch.Tensor:
