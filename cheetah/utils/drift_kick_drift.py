@@ -74,7 +74,7 @@ def low_energy_z_correction(
     ds: torch.Tensor,
 ) -> torch.Tensor:
     """
-    Calculates the longitudinal coordinate correction for particles with speed < c.
+    Computes the longitudinal coordinate correction for particles with speed < c.
 
     For small momentum deviations `pz`, a Taylor expansion is used to avoid
     loss of precision from catastrophic cancellation when computing `beta - beta0`.
