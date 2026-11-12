@@ -1,21 +1,6 @@
 import torch
 
 
-def _bin_centers_to_edges(centers: torch.Tensor) -> torch.Tensor:
-    """Convert a 1D tensor of evenly-spaced bin centers to bin edges."""
-    if centers.numel() < 2:
-        raise ValueError("Need at least 2 bin centers to infer edges.")
-
-    step = centers[1] - centers[0]
-    return torch.linspace(
-        centers[0] - step / 2.0,
-        centers[-1] + step / 2.0,
-        centers.numel() + 1,
-        device=centers.device,
-        dtype=centers.dtype,
-    )
-
-
 def vectorized_histogram_2d(
     x1: torch.Tensor,
     x2: torch.Tensor,
@@ -88,3 +73,18 @@ def vectorized_histogram_2d(
     )
 
     return hist_flat.view(*vector_shape, num_bins_x1, num_bins_x2)
+
+
+def _bin_centers_to_edges(centers: torch.Tensor) -> torch.Tensor:
+    """Convert a 1D tensor of evenly-spaced bin centers to bin edges."""
+    if centers.numel() < 2:
+        raise ValueError("Need at least 2 bin centers to infer edges.")
+
+    step = centers[1] - centers[0]
+    return torch.linspace(
+        centers[0] - step / 2.0,
+        centers[-1] + step / 2.0,
+        centers.numel() + 1,
+        device=centers.device,
+        dtype=centers.dtype,
+    )
