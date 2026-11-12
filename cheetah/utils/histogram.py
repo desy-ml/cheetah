@@ -3,7 +3,7 @@ from typing import Sequence
 import torch
 
 
-def vectorized_histogram_2d(
+def histogram_2d(
     x1: torch.Tensor,
     x2: torch.Tensor,
     bins: int | Sequence[int],
