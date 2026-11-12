@@ -9,7 +9,7 @@
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
-- Perform physics computations directly in Cheetah coordinates for `drift_kick_drift` tracking in `Drift`, `Quadrupole`, `TransverseDeflectingCavity`, and `Dipole`, removing redundant coordinate transformations that were a holdover from the Bmad-X port.
+- Perform physics computations directly in Cheetah coordinates for `drift_kick_drift` tracking in `Drift`, `Quadrupole`, `TransverseDeflectingCavity` and `Dipole`, removing redundant coordinate transformations that were a holdover from the Bmad-X port.
 
 ### 🐛 Bug fixes
 
@@ -31,7 +31,6 @@
 - Migrate package configuration from `setup.py` to `pyproject.toml` (see #716, #723) (@jank324, @Hespe, @cr-xu)
 - Add `all` optional dependencies extra and recommend it in developer setup instructions (see #723) (@jank324, @cr-xu, @Hespe)
 - Update pre-commit hook versions to latest releases (see #723) (@jank324, @cr-xu, @Hespe)
-- Remove unused coordinate transformation functions, rename `cheetah.utils.bmadx` to `cheetah.utils.drift_kick_drift`, and pre-convert Bmad test fixtures directly to Cheetah coordinates.
 
 ### 🌟 First Time Contributors
 
