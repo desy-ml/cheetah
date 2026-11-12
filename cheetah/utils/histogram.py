@@ -35,14 +35,8 @@ def vectorized_histogram_2d(
     num_bins_x1 = x1_edges.numel() - 1
     num_bins_x2 = x2_edges.numel() - 1
 
-    use_int32 = (num_bins_x1 * num_bins_x2) < 2_147_483_647
-
-    ix1 = (torch.bucketize(x1, x1_edges, out_int32=use_int32) - 1).clamp(
-        0, num_bins_x1 - 1
-    )
-    ix2 = (torch.bucketize(x2, x2_edges, out_int32=use_int32) - 1).clamp(
-        0, num_bins_x2 - 1
-    )
+    ix1 = (torch.bucketize(x1, x1_edges) - 1).clamp(0, num_bins_x1 - 1)
+    ix2 = (torch.bucketize(x2, x2_edges) - 1).clamp(0, num_bins_x2 - 1)
 
     idx = ix1 * num_bins_x2 + ix2
 
