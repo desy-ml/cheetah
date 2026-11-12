@@ -95,8 +95,8 @@ def low_energy_z_correction(
     mass_ratio_sq = (mc2 / e_tot_expanded).square()
 
     # Relativistic beta for each particle
-    p_particle = (1.0 + pz) * p0c_expanded
-    beta = p_particle / (p_particle.square() + mc2.square()).sqrt()
+    pc = (1.0 + pz) * p0c_expanded
+    beta = pc / (pc.square() + mc2.square()).sqrt()
 
     # Threshold criterion for Taylor expansion regime
     criterion = mc2 * (beta0_expanded * pz).square()
