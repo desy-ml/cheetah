@@ -85,33 +85,32 @@ def low_energy_z_correction(
     :param ds: Step length along the reference trajectory [m].
     :return: Longitudinal position change dz [m].
     """
-    p0c_expanded = p0c.unsqueeze(-1)
-    beta0 = p0c / (p0c.square() + mc2.square()).sqrt()
-    e_tot = (p0c.square() + mc2.square()).sqrt()
-
-    beta0_expanded = beta0.unsqueeze(-1)
-    beta0_sq = beta0_expanded.square()
-    e_tot_expanded = e_tot.unsqueeze(-1)
-    mass_ratio_sq = (mc2 / e_tot_expanded).square()
+    p0c = p0c.unsqueeze(-1)
+    energy0 = (p0c.square() + mc2.square()).sqrt()
+    beta0 = p0c / energy0
+    beta0_squared = beta0.square()
+    inverse_gamma0_squared = (mc2 / energy0).square()
 
     # Relativistic beta for each particle
-    pc = (1.0 + pz) * p0c_expanded
+    pc = (1.0 + pz) * p0c
     beta = pc / (pc.square() + mc2.square()).sqrt()
 
     # Threshold criterion for Taylor expansion regime
-    criterion = mc2 * (beta0_expanded * pz).square()
-    threshold = 3.0e-7 * e_tot_expanded
+    criterion = mc2 * (beta0 * pz).square()
+    threshold = 3.0e-7 * energy0
 
     dz_taylor = (
         pz
         * (
             1.0
-            - 1.5 * pz * beta0_sq
-            + pz.square() * beta0_sq * (2.0 * beta0_sq - 0.5 * mass_ratio_sq)
+            - 1.5 * pz * beta0_squared
+            + pz.square()
+            * beta0_squared
+            * (2.0 * beta0_squared - 0.5 * inverse_gamma0_squared)
         )
-        * mass_ratio_sq
+        * inverse_gamma0_squared
     )
-    dz_exact = (beta - beta0_expanded) / beta0_expanded
+    dz_exact = (beta - beta0) / beta0
 
     return ds.unsqueeze(-1) * torch.where(criterion < threshold, dz_taylor, dz_exact)
 
