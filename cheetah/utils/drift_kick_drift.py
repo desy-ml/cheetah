@@ -150,17 +150,17 @@ def quadrupole_coefficients(
     return [[a11, a12], [a21, a22]], [c1, c2, c3]
 
 
-def sqrt_one(x: torch.Tensor) -> torch.Tensor:
+def sqrt1pm1(x: torch.Tensor) -> torch.Tensor:
     """
-    Calculate `sqrt(1 + x) - 1` to machine precision.
+    Calculates `sqrt(1 + x) - 1` to machine precision.
+
+    Uses the rationalized form `x / (sqrt(1 + x) + 1)` to prevent catastrophic
+    cancellation when `|x| << 1`.
 
     :param x: Input tensor.
-    :return: Resulting tensor.
+    :return: Evaluated `sqrt(1 + x) - 1`.
     """
-    sq = (1.0 + x).sqrt()
-    rad = sq + 1.0
-
-    return x / rad
+    return x / ((1.0 + x).sqrt() + 1.0)
 
 
 def track_a_drift(
@@ -201,11 +201,11 @@ def track_a_drift(
     Pl = (1.0 - Pxy2).sqrt()
 
     dz = length.unsqueeze(-1) * (
-        sqrt_one(
+        sqrt1pm1(
             (mc2.square() * (2.0 * pz + pz.square()))
             / ((p0c.unsqueeze(-1) * p_norm).square() + mc2.square())
         )
-        + sqrt_one(-Pxy2) / Pl
+        + sqrt1pm1(-Pxy2) / Pl
     )
 
     x_out = x_in + length.unsqueeze(-1) * Px / Pl
