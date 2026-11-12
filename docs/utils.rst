@@ -3,11 +3,11 @@
 Utils
 =====
 
-.. automodule:: utils.bmadx
+.. automodule:: utils.device
     :members:
     :undoc-members:
 
-.. automodule:: utils.device
+.. automodule:: utils.drift_kick_drift
     :members:
     :undoc-members:
 

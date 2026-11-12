@@ -152,7 +152,7 @@ def test_dipole_drift_kick_drift_tracking(dtype):
 
 def test_drift_kick_drift_zero_angle():
     """
-    Test that a dipole with zero angle using the drift_kick_drift tracking method works
+    Test that a dipole with zero angle using the drift-kick-drift tracking method works
     at all.
 
     There was a bug in the past where a division by zero due to the angle being zero
