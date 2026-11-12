@@ -83,10 +83,8 @@ def vectorized_histogram_2d(
 
     weights_flat = weights.reshape(-1).to(dtype) * valid
 
-    hist_flat = torch.bincount(
-        idx_flat,
-        weights=weights_flat,
-        minlength=total_bins,
-    ).to(dtype)
+    hist_flat = torch.bincount(idx_flat, weights=weights_flat, minlength=total_bins).to(
+        dtype
+    )
 
     return hist_flat.view(*vector_shape, num_bins_x1, num_bins_x2)
