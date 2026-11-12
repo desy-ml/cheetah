@@ -11,18 +11,17 @@ def vectorized_histogram_2d(
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    Compute vectorised 2D histograms for coordinate pairs ``(x1, x2)``.
+    Compute vectorised 2D histograms for coordinate pairs `(x1, x2)`.
 
-    :param x1: First coordinate tensor with shape ``(*vector_shape, num_particles)``.
-    :param x2: Second coordinate tensor with shape ``(*vector_shape, num_particles)``.
+    :param x1: First coordinate tensor with shape `(*vector_shape, num_particles)`.
+    :param x2: Second coordinate tensor with shape `(*vector_shape, num_particles)`.
     :param bins: Single int or sequence of two ints specifying the number of
-        bins along the ``x1`` and ``x2`` axes.
-    :param extent: Tensor of shape ``(..., 2, 2)`` or ``(..., 4)`` specifying
-        ``[[x1_min, x1_max], [x2_min, x2_max]]``. If `None`, the extent is inferred
-        from the minimum and maximum of ``x1`` and ``x2``.
-    :param weights: Optional weights, broadcastable with ``x1``.
-    :returns: Histogram of shape
-        ``(*vector_shape, num_bins_x1, num_bins_x2)``.
+        bins along the `x1` and `x2` axes.
+    :param extent: Tensor of shape `(..., 2, 2)` or `(..., 4)` specifying
+        `[[x1_min, x1_max], [x2_min, x2_max]]`. If `None`, the extent is inferred from
+        the minimum and maximum of `x1` and `x2`.
+    :param weights: Optional weights, broadcastable with `x1`.
+    :return: Histogram of shape `(*vector_shape, num_bins_x1, num_bins_x2)`.
     """
     vector_shape = x1.shape[:-1]
 
@@ -50,10 +49,14 @@ def vectorized_histogram_2d(
     inv_bin_width_x1 = num_bins_x1 / (x1_max - x1_min)
     inv_bin_width_x2 = num_bins_x2 / (x2_max - x2_min)
 
-    ix1 = ((x1 - x1_min) * inv_bin_width_x1).floor().long().clamp(0, num_bins_x1 - 1)
-    ix2 = ((x2 - x2_min) * inv_bin_width_x2).floor().long().clamp(0, num_bins_x2 - 1)
+    bin_idx_x1 = (
+        ((x1 - x1_min) * inv_bin_width_x1).floor().long().clamp(0, num_bins_x1 - 1)
+    )
+    bin_idx_x2 = (
+        ((x2 - x2_min) * inv_bin_width_x2).floor().long().clamp(0, num_bins_x2 - 1)
+    )
 
-    idx = ix1 * num_bins_x2 + ix2
+    flat_bin_idx = bin_idx_x1 * num_bins_x2 + bin_idx_x2
 
     in_bounds_mask = (x1 >= x1_min) & (x1 <= x1_max) & (x2 >= x2_min) & (x2 <= x2_max)
     masked_weights = (
@@ -62,7 +65,7 @@ def vectorized_histogram_2d(
 
     histogram = (
         x1.new_zeros(*vector_shape, num_bins_x1 * num_bins_x2)
-        .scatter_add_(-1, idx, masked_weights)
+        .scatter_add_(-1, flat_bin_idx, masked_weights)
         .view(*vector_shape, num_bins_x1, num_bins_x2)
     )
 
