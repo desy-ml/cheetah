@@ -144,7 +144,7 @@ class Aperture(Element):
 
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
-        alpha = 1 if self.is_active else 0.2
+        alpha = 1.0 if self.is_active else 0.2
         height = 0.4
 
         dummy_length = 0.0

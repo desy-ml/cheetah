@@ -98,7 +98,7 @@ class BPM(Element):
 
         plot_s = s[vector_idx] if s.dim() > 0 else s
 
-        alpha = 1 if self.is_active else 0.2
+        alpha = 1.0 if self.is_active else 0.2
         patch = Rectangle(
             (plot_s.item(), -0.3),
             0.0,

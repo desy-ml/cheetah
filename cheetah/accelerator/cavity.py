@@ -382,7 +382,7 @@ class Cavity(Element):
         plot_s = s[vector_idx] if s.dim() > 0 else s
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
 
-        alpha = 1 if self.is_active else 0.2
+        alpha = 1.0 if self.is_active else 0.2
         height = 0.4
 
         patch = Rectangle(
