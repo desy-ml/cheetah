@@ -189,7 +189,7 @@ class TransverseDeflectingCavity(Element):
         )
 
         half_length = self.length / 2.0
-        x, y, tau = drift_kick_drift.track_a_drift(
+        x, y, tau = drift_kick_drift.track_drift(
             half_length, x, px, y, py, tau, delta, p0c, mc2
         )
 
@@ -208,7 +208,7 @@ class TransverseDeflectingCavity(Element):
         px = px + voltage.unsqueeze(-1) * phase.sin()
         delta = delta + voltage.unsqueeze(-1) * phase.cos() * k_rf.unsqueeze(-1) * x
 
-        x, y, tau = drift_kick_drift.track_a_drift(
+        x, y, tau = drift_kick_drift.track_drift(
             half_length, x, px, y, py, tau, delta, p0c, mc2
         )
 

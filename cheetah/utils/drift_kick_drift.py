@@ -163,53 +163,53 @@ def sqrt1pm1(x: torch.Tensor) -> torch.Tensor:
     return x / ((1.0 + x).sqrt() + 1.0)
 
 
-def track_a_drift(
+def track_drift(
     length: torch.Tensor,
-    x_in: torch.Tensor,
-    px_in: torch.Tensor,
-    y_in: torch.Tensor,
-    py_in: torch.Tensor,
-    tau_in: torch.Tensor,
-    delta_in: torch.Tensor,
+    x: torch.Tensor,
+    px: torch.Tensor,
+    y: torch.Tensor,
+    py: torch.Tensor,
+    tau: torch.Tensor,
+    delta: torch.Tensor,
     p0c: torch.Tensor,
     mc2: float | torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    Exact drift tracking in Cheetah coordinates.
+    Exact drift tracking in Cheetah canonical coordinates.
 
-    :param length: Drift length.
-    :param x_in: Input x-coordinate.
-    :param px_in: Input x-momentum.
-    :param y_in: Input y-coordinate.
-    :param py_in: Input y-momentum.
-    :param tau_in: Input tau coordinate.
-    :param delta_in: Input delta momentum.
-    :param p0c: Reference particle momentum in eV.
-    :param mc2: Particle mass in eV.
-    :return: Output x, y, and tau coordinates.
+    :param length: Drift length [m].
+    :param x: Horizontal position [m].
+    :param px: Normalized horizontal momentum.
+    :param y: Vertical position [m].
+    :param py: Normalized vertical momentum.
+    :param tau: Longitudinal time-like position tau = -c * dt [m].
+    :param delta: Relative momentum deviation delta = (p - p0) / p0.
+    :param p0c: Reference particle momentum times speed of light [eV].
+    :param mc2: Particle rest mass energy [eV].
+    :return: Updated coordinates (x, y, tau) [m].
     """
-    e_tot = (p0c.square() + mc2.square()).sqrt()
-    energy = e_tot.unsqueeze(-1) + delta_in * p0c.unsqueeze(-1)
-    p = (energy.square() - mc2.square()).sqrt()
-    beta = p / energy
-    p_norm = p / p0c.unsqueeze(-1)
+    length = length.unsqueeze(-1)
+    p0c = p0c.unsqueeze(-1)
+
+    energy0 = (p0c.square() + mc2.square()).sqrt()
+    energy = energy0 + delta * p0c
+    pc = (energy.square() - mc2.square()).sqrt()
+    beta = pc / energy
+    p_norm = pc / p0c
     pz = p_norm - 1.0
 
-    Px = px_in / p_norm
-    Py = py_in / p_norm
-    Pxy2 = Px.square() + Py.square()
-    Pl = (1.0 - Pxy2).sqrt()
+    px_dir = px / p_norm
+    py_dir = py / p_norm
+    pxy_squared = px_dir.square() + py_dir.square()
+    pl = (1.0 - pxy_squared).sqrt()
 
-    dz = length.unsqueeze(-1) * (
-        sqrt1pm1(
-            (mc2.square() * (2.0 * pz + pz.square()))
-            / ((p0c.unsqueeze(-1) * p_norm).square() + mc2.square())
-        )
-        + sqrt1pm1(-Pxy2) / Pl
+    dz = length * (
+        sqrt1pm1((mc2.square() * (2.0 * pz + pz.square())) / energy.square())
+        + sqrt1pm1(-pxy_squared) / pl
     )
 
-    x_out = x_in + length.unsqueeze(-1) * Px / Pl
-    y_out = y_in + length.unsqueeze(-1) * Py / Pl
-    tau_out = tau_in - dz / beta
+    x_out = x + length * px_dir / pl
+    y_out = y + length * py_dir / pl
+    tau_out = tau - dz / beta
 
     return x_out, y_out, tau_out

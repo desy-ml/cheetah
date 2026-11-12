@@ -121,7 +121,7 @@ class Drift(Element):
 
         p0c = (incoming.energy.square() - mc2.square()).sqrt()
 
-        x, y, tau = drift_kick_drift.track_a_drift(
+        x, y, tau = drift_kick_drift.track_drift(
             self.length, x, px, y, py, tau, delta, p0c, mc2
         )
 
