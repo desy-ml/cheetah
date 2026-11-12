@@ -5,64 +5,64 @@ def lab_to_element_coordinates(
     x_offset: torch.Tensor,
     y_offset: torch.Tensor,
     tilt: torch.Tensor,
-    x_lab: torch.Tensor,
-    px_lab: torch.Tensor,
-    y_lab: torch.Tensor,
-    py_lab: torch.Tensor,
+    x: torch.Tensor,
+    px: torch.Tensor,
+    y: torch.Tensor,
+    py: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms particle coordinates from lab to element frame.
 
-    :param x_offset: Element x-coordinate offset.
-    :param y_offset: Element y-coordinate offset.
-    :param tilt: Tilt angle (rad).
-    :param x_lab: x-coordinate in lab frame.
-    :param px_lab: x-momentum in lab frame.
-    :param y_lab: y-coordinate in lab frame.
-    :param py_lab: y-momentum in lab frame.
-    :return: x, px, y, py coordinates in element frame.
+    :param x_offset: Element horizontal offset [m].
+    :param y_offset: Element vertical offset [m].
+    :param tilt: Tilt angle [rad].
+    :param x: Horizontal coordinate in lab frame [m].
+    :param px: Horizontal momentum in lab frame.
+    :param y: Vertical coordinate in lab frame [m].
+    :param py: Vertical momentum in lab frame.
+    :return: Transformed coordinates (x, px, y, py) in element frame.
     """
-    s = tilt.sin()
-    c = tilt.cos()
-    x_ele_int = x_lab - x_offset.unsqueeze(-1)
-    y_ele_int = y_lab - y_offset.unsqueeze(-1)
-    x_ele = x_ele_int * c.unsqueeze(-1) + y_ele_int * s.unsqueeze(-1)
-    y_ele = -x_ele_int * s.unsqueeze(-1) + y_ele_int * c.unsqueeze(-1)
-    px_ele = px_lab * c.unsqueeze(-1) + py_lab * s.unsqueeze(-1)
-    py_ele = -px_lab * s.unsqueeze(-1) + py_lab * c.unsqueeze(-1)
+    sin_tilt = tilt.sin().unsqueeze(-1)
+    cos_tilt = tilt.cos().unsqueeze(-1)
+    x_shifted = x - x_offset.unsqueeze(-1)
+    y_shifted = y - y_offset.unsqueeze(-1)
 
-    return x_ele, px_ele, y_ele, py_ele
+    x_element = x_shifted * cos_tilt + y_shifted * sin_tilt
+    y_element = -x_shifted * sin_tilt + y_shifted * cos_tilt
+    px_element = px * cos_tilt + py * sin_tilt
+    py_element = -px * sin_tilt + py * cos_tilt
+
+    return x_element, px_element, y_element, py_element
 
 
 def element_to_lab_coordinates(
     x_offset: torch.Tensor,
     y_offset: torch.Tensor,
     tilt: torch.Tensor,
-    x_ele: torch.Tensor,
-    px_ele: torch.Tensor,
-    y_ele: torch.Tensor,
-    py_ele: torch.Tensor,
+    x: torch.Tensor,
+    px: torch.Tensor,
+    y: torch.Tensor,
+    py: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Transforms particle coordinates from element to lab frame.
 
-    :param x_offset: Element x-coordinate offset.
-    :param y_offset: Element y-coordinate offset.
-    :param tilt: Tilt angle (rad).
-    :param x_ele: x-coordinate in element frame.
-    :param px_ele: x-momentum in element frame.
-    :param y_ele: y-coordinate in element frame.
-    :param py_ele: y-momentum in element frame.
-    :return: x, px, y, py coordinates in lab frame.
+    :param x_offset: Element horizontal offset [m].
+    :param y_offset: Element vertical offset [m].
+    :param tilt: Tilt angle [rad].
+    :param x: Horizontal coordinate in element frame [m].
+    :param px: Horizontal momentum in element frame.
+    :param y: Vertical coordinate in element frame [m].
+    :param py: Vertical momentum in element frame.
+    :return: Transformed coordinates (x, px, y, py) in lab frame.
     """
-    s = tilt.sin()
-    c = tilt.cos()
-    x_lab_int = x_ele * c.unsqueeze(-1) - y_ele * s.unsqueeze(-1)
-    y_lab_int = x_ele * s.unsqueeze(-1) + y_ele * c.unsqueeze(-1)
-    x_lab = x_lab_int + x_offset.unsqueeze(-1)
-    y_lab = y_lab_int + y_offset.unsqueeze(-1)
-    px_lab = px_ele * c.unsqueeze(-1) - py_ele * s.unsqueeze(-1)
-    py_lab = px_ele * s.unsqueeze(-1) + py_ele * c.unsqueeze(-1)
+    sin_tilt = tilt.sin().unsqueeze(-1)
+    cos_tilt = tilt.cos().unsqueeze(-1)
+
+    x_lab = x * cos_tilt - y * sin_tilt + x_offset.unsqueeze(-1)
+    y_lab = x * sin_tilt + y * cos_tilt + y_offset.unsqueeze(-1)
+    px_lab = px * cos_tilt - py * sin_tilt
+    py_lab = px * sin_tilt + py * cos_tilt
 
     return x_lab, px_lab, y_lab, py_lab
 
