@@ -21,12 +21,11 @@ def cache_transfer_map(func):
         ):
             return func(self, energy, species)
 
-        if "_cache" not in self.__dict__:
-            self.__dict__["_cache"] = {}
-        cache_dict: dict[str, dict[str, Any]] = self.__dict__["_cache"]
-        if func.__name__ not in cache_dict:
-            cache_dict[func.__name__] = {}
-        cache: dict[str, Any] = cache_dict[func.__name__]
+        if not hasattr(self, "_cache"):
+            self._cache = {}
+        if func.__name__ not in self._cache:
+            self._cache[func.__name__] = {}
+        cache: dict[str, Any] = self._cache[func.__name__]
 
         # Build a validity key to check if element features have changed
         feature_validity_key = tuple()
