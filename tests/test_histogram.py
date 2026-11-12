@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from cheetah.utils import histogram_2d
+from cheetah.utils import vectorized_histogram_2d
 
 
 @pytest.mark.parametrize(
@@ -10,7 +10,7 @@ from cheetah.utils import histogram_2d
 )
 def test_compare_torch_histogramdd(bins):
     """
-    Test that `histogram_2d` matches `torch.histogramdd` for 1D batch.
+    Test that `vectorized_histogram_2d` matches `torch.histogramdd` for 1D batch.
     """
     num_particles = 1_000
     extent = torch.tensor([[-1.0, 1.0], [-2.0, 2.0]])
@@ -26,7 +26,7 @@ def test_compare_torch_histogramdd(bins):
         weight=weights,
     )
 
-    actual = histogram_2d(x1, x2, bins=bins, extent=extent, weights=weights)
+    actual = vectorized_histogram_2d(x1, x2, bins=bins, extent=extent, weights=weights)
 
     assert actual.shape == tuple(num_bins)
     assert torch.allclose(actual, expected)
@@ -34,7 +34,7 @@ def test_compare_torch_histogramdd(bins):
 
 def test_vectorized_shapes_and_broadcasting():
     """
-    Test `histogram_2d` with multidimensional batch and broadcasting weights.
+    Test `vectorized_histogram_2d` with multidimensional batch and broadcasting weights.
     """
     num_particles = 500
     bins = (8, 6)
@@ -45,17 +45,21 @@ def test_vectorized_shapes_and_broadcasting():
     x2 = torch.randn(2, 3, num_particles)
 
     # 1. Without weights
-    hist_noweights = histogram_2d(x1, x2, bins=bins, extent=extent)
+    hist_noweights = vectorized_histogram_2d(x1, x2, bins=bins, extent=extent)
     assert hist_noweights.shape == (2, 3, 8, 6)
 
     # 2. Unvectorised weights (num_particles,)
     weights_unvec = torch.rand(num_particles)
-    hist_unvec = histogram_2d(x1, x2, bins=bins, extent=extent, weights=weights_unvec)
+    hist_unvec = vectorized_histogram_2d(
+        x1, x2, bins=bins, extent=extent, weights=weights_unvec
+    )
     assert hist_unvec.shape == (2, 3, 8, 6)
 
     # 3. Vectorised weights (2, 3, num_particles)
     weights_vec = torch.rand(2, 3, num_particles)
-    hist_vec = histogram_2d(x1, x2, bins=bins, extent=extent, weights=weights_vec)
+    hist_vec = vectorized_histogram_2d(
+        x1, x2, bins=bins, extent=extent, weights=weights_vec
+    )
     assert hist_vec.shape == (2, 3, 8, 6)
 
 
@@ -65,6 +69,6 @@ def test_out_of_bounds_particles():
     x2 = torch.tensor([-2.0, -1.0, 0.0, 1.0, 2.0])
     extent = torch.tensor([[-1.0, 1.0], [-1.0, 1.0]])
 
-    hist = histogram_2d(x1, x2, bins=2, extent=extent)
+    hist = vectorized_histogram_2d(x1, x2, bins=2, extent=extent)
     # 5 particles: 2 out of bounds (-2 and +2), 3 in bounds (-1, 0, 1)
     assert hist.sum().item() == 3.0

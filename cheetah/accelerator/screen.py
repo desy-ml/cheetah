@@ -11,8 +11,8 @@ from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
     cloud_in_cell_charge_deposition,
-    histogram_2d,
     kde_histogram_2d,
+    vectorized_histogram_2d,
 )
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
@@ -293,7 +293,7 @@ class Screen(Element):
                 weights = (
                     read_beam.particle_charges.abs() * read_beam.survival_probabilities
                 )
-                image = histogram_2d(
+                image = vectorized_histogram_2d(
                     x1=read_beam.x,
                     x2=read_beam.y,
                     bins=self.effective_resolution,
