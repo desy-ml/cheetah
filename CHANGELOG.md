@@ -30,6 +30,7 @@
 - Migrate package configuration from `setup.py` to `pyproject.toml` (see #716, #723) (@jank324, @Hespe, @cr-xu)
 - Add `all` optional dependencies extra and recommend it in developer setup instructions (see #723) (@jank324, @cr-xu, @Hespe)
 - Update pre-commit hook versions to latest releases (see #723) (@jank324, @cr-xu, @Hespe)
+- Add type checking with Pyrefly in CI, and resolve core type annotations across Beam and Element classes. (see #715) (@jank324)
 
 ### 🌟 First Time Contributors
 

@@ -30,6 +30,8 @@ class CustomTransferMap(Element):
 
     supported_tracking_methods = ["linear"]
 
+    predefined_transfer_map: torch.Tensor
+
     def __init__(
         self,
         predefined_transfer_map: torch.Tensor,
@@ -96,7 +98,9 @@ class CustomTransferMap(Element):
             )
             incoming_beam = element.track(incoming_beam)
 
-        combined_length = sum(element.length for element in elements)
+        combined_length = sum(
+            (element.length for element in elements[1:]), start=elements[0].length
+        )
 
         combined_name = "combined_" + "_".join(element.name for element in elements)
 
@@ -122,7 +126,10 @@ class CustomTransferMap(Element):
         return super().defining_features + ["length", "predefined_transfer_map"]
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
@@ -131,5 +138,13 @@ class CustomTransferMap(Element):
 
         height = 0.4
 
-        patch = Rectangle((plot_s, 0), plot_length, height, color="tab:olive", zorder=2)
+        patch = Rectangle(
+            (plot_s.item(), 0.0),
+            float(plot_length),
+            height,
+            color="tab:olive",
+            zorder=2,
+        )
         ax.add_patch(patch)
+
+        return ax

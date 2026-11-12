@@ -36,6 +36,8 @@ class HorizontalCorrector(Element):
 
     supported_tracking_methods = ["linear"]
 
+    angle: torch.Tensor
+
     def __init__(
         self,
         length: torch.Tensor,
@@ -83,10 +85,13 @@ class HorizontalCorrector(Element):
 
     @property
     def is_active(self) -> bool:
-        return (self.angle != 0).any().item()
+        return bool((self.angle != 0).any().item())
 
     def plot(
-        self, s: float, vector_idx: tuple | None = None, ax: plt.Axes | None = None
+        self,
+        s: torch.Tensor,
+        vector_idx: tuple | None = None,
+        ax: plt.Axes | None = None,
     ) -> plt.Axes:
         ax = ax or plt.subplot(111)
 
@@ -94,13 +99,20 @@ class HorizontalCorrector(Element):
         plot_length = self.length[vector_idx] if self.length.dim() > 0 else self.length
         plot_angle = self.angle[vector_idx] if self.angle.dim() > 0 else self.angle
 
-        alpha = 1 if self.is_active else 0.2
-        height = 0.8 * (plot_angle.sign() if self.is_active else 1)
+        alpha = 1.0 if self.is_active else 0.2
+        height = 0.8 * float(plot_angle.sign() if self.is_active else 1.0)
 
         patch = Rectangle(
-            (plot_s, 0), plot_length, height, color="tab:blue", alpha=alpha, zorder=2
+            (plot_s.item(), 0.0),
+            float(plot_length),
+            height,
+            color="tab:blue",
+            alpha=alpha,
+            zorder=2,
         )
         ax.add_patch(patch)
+
+        return ax
 
     @property
     def defining_features(self) -> list[str]:

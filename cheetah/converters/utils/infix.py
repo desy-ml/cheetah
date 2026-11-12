@@ -1,7 +1,7 @@
 import math
 from typing import Any
 
-operators = {
+operators: dict[str, dict[str, Any]] = {
     "+": {"precedence": 1, "inputs": 2, "func": lambda a, b: a + b},
     "-": {"precedence": 1, "inputs": 2, "func": lambda a, b: a - b},
     "*": {"precedence": 2, "inputs": 2, "func": lambda a, b: a * b},
