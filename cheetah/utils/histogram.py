@@ -49,10 +49,12 @@ def vectorized_histogram_2d(
     )
     masked_weights = (weights * in_bounds_mask).to(dtype)
 
-    hist = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
-    hist.view(*vector_shape, -1).scatter_add_(dim=-1, index=idx, src=masked_weights)
+    histogram = x1.new_zeros(*vector_shape, num_bins_x1, num_bins_x2)
+    histogram.view(*vector_shape, -1).scatter_add_(
+        dim=-1, index=idx, src=masked_weights
+    )
 
-    return hist
+    return histogram
 
 
 def _bin_centers_to_edges(centers: torch.Tensor) -> torch.Tensor:
