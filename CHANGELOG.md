@@ -9,8 +9,8 @@
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
-- Add compact inspection and summary APIs `Segment.summary` and `Beam.summary` supporting dictionary and string representations
-- Add Cheetah agent skill and stdio Model Context Protocol (MCP) server for automated beamline inspection and tuning
+- Add compact inspection and summary APIs `Segment.summary` and `Beam.summary` supporting dictionary and string representations (see #721) (@jank324)
+- Add Cheetah agent skill and stdio Model Context Protocol (MCP) server for automated beamline inspection and tuning (see #721) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -28,10 +28,14 @@
 - Add additional MPS functionality probe in `is_mps_available_and_functional` to detect Metal compiler issues on CI runners running PyTorch 2.14 (see #690) (@jank324)
 - Add guidelines for AI agents, an AI policy, issue form templates, an updated PR template, and a PR validation workflow. (see #693, #694, #695) (@jank324)
 - Update Ponytail to version 5.3.2 (see #711) (@jank324)
-- Add llms.txt documentation file for AI agent context discovery
-- Add PEP 561 py.typed marker to Cheetah package for static type checking
-- Expand AGENTS.md with core physics and differentiability invariants for AI agents
-- Add universal element verification fixture and tests in tests/test_elements.py for clone independence, autograd gradient flow, and symplecticity
+- Use `torch.testing.assert_close` in the test suite for clearer failure descriptions (see #712) (@jank324, @Hespe)
+- Migrate package configuration from `setup.py` to `pyproject.toml` (see #716, #723) (@jank324, @Hespe, @cr-xu)
+- Add `all` optional dependencies extra and recommend it in developer setup instructions (see #723) (@jank324, @cr-xu, @Hespe)
+- Update pre-commit hook versions to latest releases (see #723) (@jank324, @cr-xu, @Hespe)
+- Add llms.txt documentation file for AI agent context discovery (see #721) (@jank324)
+- Add PEP 561 py.typed marker to Cheetah package for static type checking (see #721) (@jank324)
+- Expand AGENTS.md with core physics and differentiability invariants for AI agents (see #721) (@jank324)
+- Add universal element verification fixture and tests in `tests/test_elements.py` for clone independence, autograd gradient flow, and symplecticity (see #721) (@jank324)
 
 ### 🌟 First Time Contributors
 
@@ -60,6 +64,7 @@
 
 - Non-deterministic torch features now raise a warning in tests instead of a failure. This also fixes a test failure introduced by changes on the MPS backend in PyTorch 2.13. (see #655) (@Hespe, @jank324)
 - Add example notebook on implementing custom elements to documentation (see #522) (@jank324)
+- New _Getting Started_ guide in the documentation with a more comprehensive overview of Cheetah's features and capabilities etc. (see #651) (@jank324)
 
 ## [v0.8.3](https://github.com/desy-ml/cheetah/releases/tag/v0.8.3) (2026-07-03)
 

@@ -29,6 +29,8 @@ extensions = [
     "sphinx.ext.autodoc",  # To generate documentation from docstrings
     "sphinx.ext.autosummary",  # To automatically generate recursively
     "myst_parser",  # To parse markdown files
+    "sphinx_copybutton",  # To add copy buttons to code blocks
+    "sphinx_design",  # To create grid cards and responsive UI components
 ]
 myst_enable_extensions = ["dollarmath", "amsmath"]  # Enable math typesetting
 
@@ -51,3 +53,12 @@ html_logo = "_static/logo.png"
 
 html_static_path = ["_static"]
 html_extra_path = ["llms.txt"]
+
+html_css_files = ["custom.css"]
+
+html_js_files = [
+    (
+        "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js",
+        {"type": "module"},
+    ),
+]

@@ -62,6 +62,6 @@ print(outgoing_beam.summary(as_string=True))
 ## Documentation & References
 
 - [Full Documentation](https://cheetah-accelerator.readthedocs.io/)
-- [Coordinate System](https://cheetah-accelerator.readthedocs.io/en/latest/coordinate_system.html)
+- [Coordinate System](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/coordinate_system.html)
 - [PRAB Paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601)
 - [GitHub Repository](https://github.com/desy-ml/cheetah)
