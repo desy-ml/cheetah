@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator, Literal, overload
+from typing import Any, Iterator, Literal
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -1080,21 +1080,6 @@ class Segment(Element):
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
-
-    @overload
-    def summary(self, as_string: Literal[False] = False) -> dict[str, Any]:
-        """Return the structured segment summary."""
-        ...
-
-    @overload
-    def summary(self, as_string: Literal[True]) -> str:
-        """Return the formatted segment summary."""
-        ...
-
-    @overload
-    def summary(self, as_string: bool) -> dict[str, Any] | str:
-        """Return the segment summary in the selected format."""
-        ...
 
     @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Literal, overload
+from typing import Any
 
 import torch
 from torch import nn
@@ -588,21 +588,6 @@ class Beam(ABC, nn.Module):
             self.register_parameter(name, value)
         else:
             self.register_buffer(name, value)
-
-    @overload
-    def summary(self, as_string: Literal[False] = False) -> dict[str, Any]:
-        """Return the structured beam summary."""
-        ...
-
-    @overload
-    def summary(self, as_string: Literal[True]) -> str:
-        """Return the formatted beam summary."""
-        ...
-
-    @overload
-    def summary(self, as_string: bool) -> dict[str, Any] | str:
-        """Return the beam summary in the selected format."""
-        ...
 
     @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:

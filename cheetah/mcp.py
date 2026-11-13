@@ -1,7 +1,7 @@
 """Local stdio MCP tools for inspecting, tracking, and matching Cheetah models."""
 
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 import torch
 
@@ -85,7 +85,8 @@ def cheetah_inspect_lattice(
     Provide exactly one of lattice_path (a local file) and lattice_dict (the inline
     LatticeJSON object). Nested segments are expanded in tracking order.
     """
-    return _load_lattice(lattice_path, lattice_dict).flattened().summary()
+    segment = _load_lattice(lattice_path, lattice_dict).flattened()
+    return cast(dict[str, Any], segment.summary())
 
 
 @server.tool()
@@ -117,7 +118,7 @@ def cheetah_track_beam(
         if beam_type == "particle"
         else cheetah.ParameterBeam.from_twiss(**twiss)
     )
-    return segment.track(beam).summary()
+    return cast(dict[str, Any], segment.track(beam).summary())
 
 
 @server.tool()
