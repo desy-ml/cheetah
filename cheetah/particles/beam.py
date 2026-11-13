@@ -589,7 +589,6 @@ class Beam(ABC, nn.Module):
         else:
             self.register_buffer(name, value)
 
-    @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
         Summarise the beam type, species, reference energy (eV), longitudinal
