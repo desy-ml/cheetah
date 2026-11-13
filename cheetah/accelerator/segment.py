@@ -1084,12 +1084,15 @@ class Segment(Element):
     @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
-        Return the immediate elements and their entrance positions relative to the
-        segment start. Vectorised tensors are represented as nested lists.
+        Summarise the segment's name, total length, and immediate element count.
+        Each row gives the element's index, name, type, entrance position relative to
+        the segment start, length, and selected settings such as magnet strengths and
+        cavity voltages. Positions and lengths are in metres. Nested segments appear
+        as single rows. Tensor values are converted to Python scalars or lists.
 
-        :param as_string: Whether to return a formatted table string instead of a
-            dictionary.
-        :return: A dictionary describing the segment or a formatted string table.
+        :param as_string: Return a formatted table when `True`.
+        :return: A dictionary with `name`, `total_length`, `num_elements`, and
+            `elements`, or a formatted table.
         """
         elements_info: list[dict[str, Any]] = []
         current_s: float | torch.Tensor = 0.0

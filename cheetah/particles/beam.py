@@ -592,14 +592,17 @@ class Beam(ABC, nn.Module):
     @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
-        Return key beam properties. Vectorised tensors are represented as nested lists.
+        Summarise the beam type, species, reference energy (eV), longitudinal
+        position (m), and total charge (C). Include the transverse centroids, RMS
+        sizes, Twiss alpha and beta functions, and geometric emittances, along with
+        the RMS bunch length and RMS energy deviation normalised by reference momentum
+        times the speed of light. A `ParticleBeam` summary also includes the total
+        macroparticle count and the sum of their survival probabilities. Tensor
+        values are converted to Python scalars or lists.
 
-        :param as_string: Whether to return a formatted string instead of a
-            dictionary.
-        :return: A dictionary of key beam properties or a formatted string
-            representation.
+        :param as_string: Return a formatted report when `True`.
+        :return: A dictionary of the listed beam properties or a formatted report.
         """
-
         data = {
             "type": self.__class__.__name__,
             "species": self.species.name,
