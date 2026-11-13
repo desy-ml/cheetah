@@ -104,6 +104,7 @@ def cheetah_track_beam(
     emittance_x: PositiveFloat = 1e-6,
     emittance_y: PositiveFloat = 1e-6,
     num_particles: Annotated[int, Field(ge=7)] = 1000,
+    end_element: str | None = None,
 ) -> dict[str, Any]:
     """
     Track an electron beam from entrance Twiss parameters. Provide exactly one
@@ -120,9 +121,16 @@ def cheetah_track_beam(
     :param emittance_x: Horizontal geometric emittance in metre-radians.
     :param emittance_y: Vertical geometric emittance in metre-radians.
     :param num_particles: Number of macroparticles for a `ParticleBeam`.
+    :param end_element: Unique element name from the flattened lattice inspection.
+        Track through that element, or through the full lattice if omitted.
     :return: Summary of the outgoing beam.
     """
     segment = _load_lattice(lattice_path, lattice_dict)
+    if end_element is not None:
+        segment = segment.flattened()
+        if segment.element_names.count(end_element) != 1:
+            raise ToolError(f"'{end_element}' must identify exactly one element.")
+        segment = segment.subcell(end=end_element)
     twiss = _twiss(energy, beta_x, beta_y, alpha_x, alpha_y, emittance_x, emittance_y)
     incoming_beam: cheetah.Beam
     if beam_type == "particle":

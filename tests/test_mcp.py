@@ -60,6 +60,27 @@ def test_mcp_stdio(tmp_path, mode):
             assert not initial.is_error, initial.content
             initial_beam = initial.structured_content
             assert initial_beam["s"] == pytest.approx(1.2)
+            observation = await client.call_tool(
+                "cheetah_track_beam", {**beam_args, "end_element": "q1"}
+            )
+            assert not observation.is_error, observation.content
+            assert observation.structured_content["s"] == pytest.approx(0.7)
+
+            duplicate_lattice = {
+                **lattice,
+                "lattices": {**lattice["lattices"], "cell": ["q1", "q1"]},
+            }
+            for end_element in ("missing", "q1"):
+                invalid_endpoint = await client.call_tool(
+                    "cheetah_track_beam",
+                    {
+                        **beam_args,
+                        "lattice_dict": duplicate_lattice,
+                        "end_element": end_element,
+                    },
+                )
+                assert invalid_endpoint.is_error
+
             particle = await client.call_tool(
                 "cheetah_track_beam",
                 {**beam_args, "beam_type": "particle", "num_particles": 50},

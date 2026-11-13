@@ -11,6 +11,7 @@
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
 - Add compact inspection and summary APIs `Segment.summary` and `Beam.summary` supporting dictionary and string representations (see #721) (@jank324)
 - Add a Cheetah agent skill and optional `mcp` extra for local beamline inspection, tracking, and matching. (see #721) (@jank324)
+- Allow the MCP tracking tool to report beam properties at a named element (see #721) (@jank324)
 
 ### 🐛 Bug fixes
 

@@ -117,13 +117,13 @@ for step in range(50):
 
 Install the optional server with `python -m pip install "cheetah-accelerator[mcp]"`.
 The [AI assistant guide](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/ai_assistants.html)
-has a client configuration example. Each tool takes either a local `lattice_path`
+has client configuration and a runnable matching example. Each tool takes either a local `lattice_path`
 or an inline `lattice_dict`.
 
 - **Command**: `python -m cheetah.mcp`
 - **Available Tools**:
   - `cheetah_inspect_lattice`: Inspects element list, types, cumulative $s$, and parameters.
-  - `cheetah_track_beam`: Tracks a beam through a LatticeJSON lattice and returns `beam.summary()`.
+  - `cheetah_track_beam`: Returns beam properties after the named `end_element` or at the lattice exit.
   - `cheetah_match_beam`: Uses PyTorch autograd to tune specified quadrupoles to target beam sizes.
 
 Compare the final simulated beam sizes with the targets before using the fitted

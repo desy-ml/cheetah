@@ -63,5 +63,5 @@ Never cut: validation at trust boundaries, error handling that prevents data los
   - Transfer map methods should be decorated with `@cache_transfer_map`.
   - Supported tracking methods must be listed in class attribute `supported_tracking_methods`.
 - **Testing & Verification**:
-  - When modifying an element, test it directly via `pytest tests/test_<element_name>.py` to keep agent feedback loops fast.
+  - Follow [the element verification workflow](CONTRIBUTING.md#verify-an-element-change) for focused tests, seed reproduction, shared test cases, and gradient checks.
   - Hamiltonian beamline elements with linear transfer maps must satisfy $R^T J R = J$. In the Cheetah coordinate convention, the longitudinal block of $J$ has the opposite sign to the transverse blocks.
