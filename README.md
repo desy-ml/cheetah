@@ -26,6 +26,9 @@ Simply install _Cheetah_ from PyPI by running the following command.
 pip install cheetah-accelerator
 ```
 
+For compact simulation summaries, the Cheetah agent skill, and MCP setup, see the
+[AI assistant guide](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/ai_assistants.html).
+
 ## How To Use
 
 **You can run the following example in Binder by clicking [here](https://mybinder.org/v2/gh/desy-ml/cheetah.git/HEAD?urlpath=%2Fdoc%2Ftree%2Fdocs%2Fexamples%2Fsimple.ipynb) or on the badge above.**

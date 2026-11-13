@@ -9,6 +9,9 @@
 - `TransverseDeflectingCavity` now supports `linear` as a `tracking_method`. (see #678) (@cr-xu)
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
+- Add compact inspection and summary APIs `Segment.summary` and `Beam.summary` supporting dictionary and string representations (see #721) (@jank324)
+- Add a Cheetah agent skill and optional `mcp` extra for local beamline inspection, tracking, and matching. (see #721) (@jank324)
+- Allow the MCP tracking tool to report beam properties at a named element (see #721) (@jank324)
 
 ### 🐛 Bug fixes
 
@@ -18,6 +21,7 @@
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
 - Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
 - Fix NX Tables converter creating 1D drift lengths instead of scalar tensors (see #713) (@jank324)
+- Fix linear quadrupole strength gradients at zero field (see #721) (@jank324)
 
 ### 🐆 Other
 
@@ -30,6 +34,10 @@
 - Migrate package configuration from `setup.py` to `pyproject.toml` (see #716, #723) (@jank324, @Hespe, @cr-xu)
 - Add `all` optional dependencies extra and recommend it in developer setup instructions (see #723) (@jank324, @cr-xu, @Hespe)
 - Update pre-commit hook versions to latest releases (see #723) (@jank324, @cr-xu, @Hespe)
+- Add an AI assistant setup guide and `llms.txt` documentation index (see #721) (@jank324)
+- Add PEP 561 `py.typed` marker to Cheetah package for static type checking (see #721) (@jank324)
+- Expand `AGENTS.md` with core physics and differentiability invariants for AI agents (see #721) (@jank324)
+- Check beam gradients for element test cases and symplecticity for selected transfer maps (see #721) (@jank324)
 
 ### 🌟 First Time Contributors
 

@@ -27,6 +27,22 @@ def test_quadrupole_off():
     )
 
 
+def test_linear_quadrupole_gradient_at_zero_strength():
+    """Check the strength gradient against a centred difference at zero."""
+    k1 = torch.tensor(0.0, dtype=torch.float64, requires_grad=True)
+    quad = cheetah.Quadrupole(length=k1.new_tensor(0.2), k1=k1, dtype=k1.dtype)
+    beam = cheetah.ParameterBeam.from_twiss(
+        energy=k1.new_tensor(1e8), beta_x=k1.new_tensor(2.0), dtype=k1.dtype
+    )
+    gradient = torch.autograd.grad(quad.track(beam).sigma_x, k1)[0]
+    step = 1e-5
+    quad.k1 = k1.new_tensor(step)
+    upper = quad.track(beam).sigma_x
+    quad.k1 = k1.new_tensor(-step)
+    lower = quad.track(beam).sigma_x
+    torch.testing.assert_close(gradient, (upper - lower) / (2.0 * step))
+
+
 def test_quadrupole_with_misalignments_vectorized():
     """Test that a quadrupole with misalignments behaves as expected."""
     quad_with_misalignment = cheetah.Quadrupole(

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 import torch
 from torch import nn
@@ -587,6 +588,84 @@ class Beam(ABC, nn.Module):
             self.register_parameter(name, value)
         else:
             self.register_buffer(name, value)
+
+    def summary(self, as_string: bool = False) -> dict[str, Any] | str:
+        """
+        Summarise the beam type, species, reference energy (eV), longitudinal
+        position (m), and total charge (C). Include the transverse centroids, RMS
+        sizes, Twiss alpha and beta functions, and geometric emittances, along with
+        the RMS bunch length and RMS energy deviation normalised by reference momentum
+        times the speed of light. A `ParticleBeam` summary also includes the total
+        macroparticle count and the sum of their survival probabilities. Tensor
+        values are converted to Python scalars or lists.
+
+        :param as_string: Return a formatted report when `True`.
+        :return: A dictionary of the listed beam properties or a formatted report.
+        """
+        data = {
+            "type": self.__class__.__name__,
+            "species": self.species.name,
+            "energy": self.energy.tolist(),
+            "s": self.s.tolist(),
+            "total_charge": self.total_charge.tolist(),
+            "mu_x": self.mu_x.tolist(),
+            "sigma_x": self.sigma_x.tolist(),
+            "mu_y": self.mu_y.tolist(),
+            "sigma_y": self.sigma_y.tolist(),
+            "sigma_tau": self.sigma_tau.tolist(),
+            "sigma_p": self.sigma_p.tolist(),
+            "beta_x": self.beta_x.tolist(),
+            "alpha_x": self.alpha_x.tolist(),
+            "beta_y": self.beta_y.tolist(),
+            "alpha_y": self.alpha_y.tolist(),
+            "emittance_x": self.emittance_x.tolist(),
+            "emittance_y": self.emittance_y.tolist(),
+        }
+        if hasattr(self, "num_particles"):
+            data["num_particles"] = self.num_particles
+        if hasattr(self, "num_particles_survived"):
+            data["num_particles_survived"] = self.num_particles_survived.tolist()
+
+        if not as_string:
+            return data
+
+        def format_value(value: float | list) -> str:
+            """Format scalar values in scientific notation."""
+            return f"{value:.4e}" if isinstance(value, float) else str(value)
+
+        particles_str = ""
+        if "num_particles" in data:
+            survived = data.get("num_particles_survived", data["num_particles"])
+            particles_str = f" | Particles: {survived} / {data['num_particles']}"
+
+        lines = [
+            f"Beam Summary ({data['type']}):",
+            (
+                f"  Species: {data['species']} | "
+                f"Energy: {format_value(data['energy'])} eV | "
+                f"s: {format_value(data['s'])} m"
+            ),
+            f"  Charge: {format_value(data['total_charge'])} C{particles_str}",
+            (
+                f"  Horizontal: mu_x = {format_value(data['mu_x'])} m, "
+                f"sigma_x = {format_value(data['sigma_x'])} m, "
+                f"beta_x = {format_value(data['beta_x'])} m, "
+                f"alpha_x = {format_value(data['alpha_x'])}, "
+                f"eps_x = {format_value(data['emittance_x'])} m*rad"
+            ),
+            (
+                f"  Vertical:   mu_y = {format_value(data['mu_y'])} m, "
+                f"sigma_y = {format_value(data['sigma_y'])} m, "
+                f"beta_y = {format_value(data['beta_y'])} m, "
+                f"alpha_y = {format_value(data['alpha_y'])}, "
+                f"eps_y = {format_value(data['emittance_y'])} m*rad"
+            ),
+            (
+                f"  Longitudinal: sigma_tau = {format_value(data['sigma_tau'])} m, "
+                f"sigma_p = {format_value(data['sigma_p'])}"
+            ),
+        ]
+        return "\n".join(lines)
 
     def __repr__(self) -> str:
         raise NotImplementedError

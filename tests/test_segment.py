@@ -377,3 +377,49 @@ def test_partition_at_preserves_metadata():
 
     assert pre_cell.metadata == metadata
     assert post_cell.metadata == metadata
+
+
+def test_segment_summary():
+    """Test that `Segment.summary` returns expected dict and string representations."""
+    segment = cheetah.Segment(
+        elements=[
+            cheetah.Drift(length=torch.tensor(0.5)),
+            cheetah.Quadrupole(
+                length=torch.tensor(0.2), k1=torch.tensor(5.0), name="Q1"
+            ),
+        ],
+        name="test_seg",
+    )
+
+    data = segment.summary(as_string=False)
+    assert isinstance(data, dict)
+    assert data["name"] == "test_seg"
+    assert data["num_elements"] == 2
+    assert pytest.approx(data["total_length"]) == 0.7
+    assert data["elements"][0]["type"] == "Drift"
+    assert pytest.approx(data["elements"][1]["s"]) == 0.5
+    assert pytest.approx(data["elements"][1]["k1"]) == 5.0
+
+    string_summary = segment.summary(as_string=True)
+    assert isinstance(string_summary, str)
+    assert "test_seg" in string_summary
+    assert "Q1" in string_summary
+    assert "Total length: 0.7000 m" in string_summary
+
+
+def test_segment_summary_with_vectorised_lengths():
+    """Preserve broadcast positions and vectorised element settings."""
+    segment = cheetah.Segment(
+        [
+            cheetah.Drift(length=torch.tensor([0.5])),
+            cheetah.Quadrupole(length=torch.tensor(0.25), k1=torch.tensor([1.0, 2.0])),
+            cheetah.Drift(length=torch.tensor([1.0, 2.0])),
+        ]
+    )
+    data = segment.summary()
+    assert data["elements"][1]["s"] == [0.5]
+    assert data["elements"][1]["k1"] == [1.0, 2.0]
+    assert data["elements"][2]["s"] == [0.75]
+    assert data["total_length"] == [1.75, 2.75]
+    assert "[1.75, 2.75]" in segment.summary(as_string=True)
+    assert cheetah.Segment([]).summary()["total_length"] == 0.0

@@ -197,8 +197,12 @@ def parse_element(
     :param device: Device to place the lattice elements on.
     :param dtype: Data type to use for the lattice elements.
     """
-    element_class = getattr(cheetah, lattice_dict["elements"][name][0])
-    params = lattice_dict["elements"][name][1]
+    class_name, params = lattice_dict["elements"][name]
+    element_class = getattr(cheetah, class_name, None)
+    if not isinstance(element_class, type) or not issubclass(
+        element_class, cheetah.Element
+    ):
+        raise ValueError(f"Unknown LatticeJSON element type '{class_name}'.")
 
     converted_params = {
         key: (

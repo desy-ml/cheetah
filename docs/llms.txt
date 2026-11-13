@@ -1,0 +1,26 @@
+# Cheetah
+
+> Differentiable particle accelerator optics simulation in PyTorch. Cheetah tracks macroparticles with ParticleBeam and distribution moments with ParameterBeam through beamlines built from Elements and Segments.
+
+Use electronvolts for reference energy and metres for positions. Use Segment.summary() and Beam.summary() to inspect simulations.
+
+## Getting started
+
+- [Quickstart](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/simple.html): Build a lattice and track a beam.
+- [Beam representations](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/beam_representations.html): Choose between ParticleBeam and ParameterBeam.
+- [Coordinate system](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/coordinate_system.html): Coordinate conventions, units, and particle species.
+- [Gradient-based optimisation](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/gradientbased.html): Tune beamline settings with PyTorch autograd.
+- [AI assistants](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/ai_assistants.html): Summary APIs, agent skill installation, and MCP setup.
+
+## Reference
+
+- [Accelerator API](https://cheetah-accelerator.readthedocs.io/en/latest/accelerator.html): Segments and accelerator elements.
+- [Particle API](https://cheetah-accelerator.readthedocs.io/en/latest/particles.html): Beams and species.
+- [LatticeJSON](https://cheetah-accelerator.readthedocs.io/en/latest/latticejson.html): Load and save lattice models.
+- [Custom elements](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/custom_elements.html): Implement and test an element.
+
+## Optional
+
+- [Repository](https://github.com/desy-ml/cheetah): Source code, tests, and contributor guidance.
+- [Agent skill](https://github.com/desy-ml/cheetah/tree/master/skills/cheetah): Tracking and matching workflow for agents.
+- [Cheetah paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601): Simulation methods and benchmarks.

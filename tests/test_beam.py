@@ -43,3 +43,37 @@ def test_transformed_beam_dtype(BeamClass):
 
     for feature in non_module_features:
         assert getattr(transformed_beam, feature).dtype == torch.float64
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+def test_beam_summary(BeamClass):
+    """Test that `Beam.summary` returns expected dict and string representations."""
+    beam = BeamClass.from_parameters()
+    data = beam.summary(as_string=False)
+    assert isinstance(data, dict)
+    assert data["type"] == BeamClass.__name__
+    assert "species" in data
+    assert "energy" in data
+    assert "sigma_x" in data
+
+    string_summary = beam.summary(as_string=True)
+    assert isinstance(string_summary, str)
+    assert f"Beam Summary ({BeamClass.__name__}):" in string_summary
+    assert "Species:" in string_summary
+
+
+@pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
+def test_beam_summary_preserves_singleton_vector_dimensions(BeamClass):
+    """Keep singleton dimensions in the structured optics summary."""
+    beam = BeamClass.from_twiss(
+        energy=torch.tensor([1e8]),
+        beta_x=torch.tensor([1.0]),
+        beta_y=torch.tensor([1.0]),
+        alpha_x=torch.tensor([0.5]),
+        emittance_x=torch.tensor([1e-6]),
+        emittance_y=torch.tensor([1e-6]),
+    )
+    data = beam.summary()
+    assert data["energy"] == [1e8]
+    assert data["alpha_x"] == [beam.alpha_x.item()]
+    assert len(data["sigma_tau"]) == 1
