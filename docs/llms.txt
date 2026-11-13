@@ -1,67 +1,26 @@
 # Cheetah
 
-> Fast and differentiable particle accelerator optics simulation in PyTorch for machine learning, reinforcement learning, and Bayesian optimization.
+> Differentiable particle accelerator optics simulation in PyTorch. Cheetah tracks macroparticles with ParticleBeam and distribution moments with ParameterBeam through beamlines built from Elements and Segments.
 
-Cheetah provides high-speed differentiable beam tracking through particle accelerator beamlines. It models accelerator lattices as `Segment` objects containing `Element`s, and beams as `ParticleBeam` (macroparticle tracking) or `ParameterBeam` (distribution moments tracking).
+Use electronvolts for reference energy and metres for positions. Use Segment.summary() and Beam.summary() to inspect simulations.
 
-## Core Concepts & Invariants
+## Getting started
 
-- **Coordinate System**: 7D phase space vector $\vec{x} = (x, px, y, py, \tau, \delta, 1)$
-  - $x$: Horizontal position in meters ($m$)
-  - $px = P_x / p_0$: Normalized horizontal momentum (dimensionless)
-  - $y$: Vertical position in meters ($m$)
-  - $py = P_y / p_0$: Normalized vertical momentum (dimensionless)
-  - $\tau = ct - s/\beta_0$: Longitudinal position relative to reference particle in meters ($m$); bunch head has $\tau < 0$
-  - $\delta = (E - E_0) / (p_0 c)$: Relative energy deviation (dimensionless)
-  - $1$: Affine translation dimension for dipole kicks and misalignments
-  - Reference Energy: Always expressed in electronvolts ($eV$)
-- **Differentiability**: All elements and transfer maps preserve PyTorch autograd gradients. Avoid in-place operations that break backward graph tracking.
-- **Tensors**: Element parameters (lengths, strengths, angles) are `torch.Tensor` objects with consistent `dtype` and `device`.
+- [Quickstart](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/simple.html): Build a lattice and track a beam.
+- [Beam representations](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/beam_representations.html): Choose between ParticleBeam and ParameterBeam.
+- [Coordinate system](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/coordinate_system.html): Coordinate conventions, units, and particle species.
+- [Gradient-based optimisation](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/gradientbased.html): Tune beamline settings with PyTorch autograd.
+- [AI assistants](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/ai_assistants.html): Summary APIs, agent skill installation, and MCP setup.
 
-## Key Classes & APIs
+## Reference
 
-- `cheetah.Segment`: An ordered collection of beamline elements (`cheetah.Drift`, `cheetah.Quadrupole`, `cheetah.Dipole`, etc.)
-  - `segment.track(beam) -> Beam`: Tracks a beam through all elements in sequence.
-  - `segment.summary(as_string=False)`: Returns compact dictionary or formatted table of elements and positions.
-  - `segment.from_lattice_json(filepath)`: Loads from LatticeJSON format.
-  - `segment.from_ocelot(cell)`: Converts an Ocelot cell.
-  - `segment.from_bmad(lattice)`: Converts a Bmad lattice.
-- `cheetah.ParticleBeam`: High-fidelity macroparticle beam (`particles` tensor of shape `(..., N, 7)`).
-- `cheetah.ParameterBeam`: Fast statistical beam tracking beam distribution mean `mu` (7,) and covariance `cov` (7, 7).
-  - `beam.summary(as_string=False)`: Returns key beam parameters ($\sigma_x, \sigma_y, \beta_x, \beta_y, \varepsilon_n$, etc.).
-  - `beam.from_twiss(beta_x, beta_y, alpha_x, alpha_y, emittance_x, emittance_y, energy)`: Constructs beam from Twiss parameters.
+- [Accelerator API](https://cheetah-accelerator.readthedocs.io/en/latest/accelerator.html): Segments and accelerator elements.
+- [Particle API](https://cheetah-accelerator.readthedocs.io/en/latest/particles.html): Beams and species.
+- [LatticeJSON](https://cheetah-accelerator.readthedocs.io/en/latest/latticejson.html): Load and save lattice models.
+- [Custom elements](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/custom_elements.html): Implement and test an element.
 
-## Quickstart Example
+## Optional
 
-```python
-import cheetah
-import torch
-
-# Build beamline segment
-segment = cheetah.Segment(
-    elements=[
-        cheetah.Drift(length=torch.tensor(0.5)),
-        cheetah.Quadrupole(length=torch.tensor(0.2), k1=torch.tensor(5.0), name="Q1"),
-        cheetah.Drift(length=torch.tensor(0.5)),
-        cheetah.Screen(name="SCR1"),
-    ]
-)
-
-# Create beam from Twiss parameters
-beam = cheetah.ParameterBeam.from_twiss(
-    beta_x=torch.tensor(3.0),
-    beta_y=torch.tensor(5.0),
-    energy=torch.tensor(1e8),  # 100 MeV in eV
-)
-
-# Track beam
-outgoing_beam = segment.track(beam)
-print(outgoing_beam.summary(as_string=True))
-```
-
-## Documentation & References
-
-- [Full Documentation](https://cheetah-accelerator.readthedocs.io/)
-- [Coordinate System](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/coordinate_system.html)
-- [PRAB Paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601)
-- [GitHub Repository](https://github.com/desy-ml/cheetah)
+- [Repository](https://github.com/desy-ml/cheetah): Source code, tests, and contributor guidance.
+- [Agent skill](https://github.com/desy-ml/cheetah/tree/master/skills/cheetah): Tracking and matching workflow for agents.
+- [Cheetah paper](https://doi.org/10.1103/PhysRevAccelBeams.27.054601): Simulation methods and benchmarks.

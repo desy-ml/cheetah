@@ -1,121 +1,115 @@
+import asyncio
 import json
+import os
+import sys
+from pathlib import Path
 
 import pytest
 
-from cheetah.mcp import handle_request
+pytest.importorskip("mcp")
+
+from mcp import Client, StdioServerParameters  # noqa: E402
 
 
-@pytest.fixture
-def sample_lattice_dict():
-    """Return a minimal valid LatticeJSON dictionary."""
-    return {
+@pytest.mark.parametrize("mode", ["auto", "legacy"])
+def test_mcp_stdio(tmp_path, mode):
+    """Discover and use all three tools through a real stdio client."""
+    lattice = {
         "root": "line",
-        "lattices": {"line": ["d1", "q1", "d2"]},
+        "lattices": {"line": ["d1", "cell", "d2"], "cell": ["q1"]},
         "elements": {
             "d1": ["Drift", {"length": 0.5}],
-            "q1": ["Quadrupole", {"length": 0.2, "k1": 5.0}],
+            "q1": ["Quadrupole", {"length": 0.2, "k1": 0.0}],
             "d2": ["Drift", {"length": 0.5}],
         },
     }
+    path = tmp_path / "lattice.json"
+    path.write_text(json.dumps(lattice), encoding="utf-8")
 
+    async def exercise_tools():
+        """Check discovery, tracking, matching, and error reporting."""
+        env = {
+            name: os.environ[name]
+            for name in ("PYTHONPATH", "MPLCONFIGDIR")
+            if name in os.environ
+        }
+        server = StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "cheetah.mcp"],
+            cwd=Path(__file__).resolve().parents[1],
+            env=env,
+        )
+        async with Client(server, mode=mode) as client:
+            tools = {tool.name for tool in (await client.list_tools()).tools}
+            assert tools == {
+                "cheetah_inspect_lattice",
+                "cheetah_track_beam",
+                "cheetah_match_beam",
+            }
+            inspect = await client.call_tool(
+                "cheetah_inspect_lattice", {"lattice_path": str(path)}
+            )
+            assert not inspect.is_error, inspect.content
+            data = inspect.structured_content
+            assert data["num_elements"] == 3
+            assert data["total_length"] == pytest.approx(1.2)
+            assert data["elements"][1]["name"] == "q1"
 
-def test_mcp_initialize():
-    """Test MCP initialize handshake."""
-    request = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "initialize",
-        "params": {},
-    }
-    response = handle_request(request)
-    assert response is not None
-    assert response["id"] == 1
-    assert response["result"]["serverInfo"]["name"] == "cheetah-mcp"
+            beam_args = {"lattice_dict": lattice, "beta_x": 2.0, "alpha_y": -0.5}
+            initial = await client.call_tool("cheetah_track_beam", beam_args)
+            assert not initial.is_error, initial.content
+            initial_beam = initial.structured_content
+            assert initial_beam["s"] == pytest.approx(1.2)
+            particle = await client.call_tool(
+                "cheetah_track_beam",
+                {**beam_args, "beam_type": "particle", "num_particles": 50},
+            )
+            assert not particle.is_error, particle.content
+            assert particle.structured_content["num_particles"] == 50
 
+            lattice["elements"]["q1"][1]["k1"] = 2.0
+            target = await client.call_tool("cheetah_track_beam", beam_args)
+            assert not target.is_error, target.content
+            target_x = target.structured_content["sigma_x"]
+            target_y = target.structured_content["sigma_y"]
+            lattice["elements"]["q1"][1]["k1"] = 0.0
 
-def test_mcp_tools_list():
-    """Test MCP tools/list returns registered tools."""
-    request = {
-        "jsonrpc": "2.0",
-        "id": 2,
-        "method": "tools/list",
-        "params": {},
-    }
-    response = handle_request(request)
-    assert response is not None
-    tools = response["result"]["tools"]
-    tool_names = [tool["name"] for tool in tools]
-    assert "cheetah_inspect_lattice" in tool_names
-    assert "cheetah_track_beam" in tool_names
-    assert "cheetah_match_beam" in tool_names
+            match = await client.call_tool(
+                "cheetah_match_beam",
+                {
+                    **beam_args,
+                    "target_sigma_x": target_x,
+                    "target_sigma_y": target_y,
+                    "quad_names": ["q1"],
+                },
+            )
+            assert not match.is_error, match.content
+            result = match.structured_content
+            lattice["elements"]["q1"][1]["k1"] = result["optimized_parameters"]["q1"]
+            tracked = await client.call_tool("cheetah_track_beam", beam_args)
+            assert not tracked.is_error, tracked.content
+            final = tracked.structured_content
+            assert result["final_beam"]["sigma_x"] == pytest.approx(final["sigma_x"])
+            assert result["final_beam"]["sigma_y"] == pytest.approx(final["sigma_y"])
+            expected_loss = (final["sigma_x"] - target_x) ** 2 + (
+                final["sigma_y"] - target_y
+            ) ** 2
+            assert result["loss"] == pytest.approx(expected_loss, rel=1e-5, abs=1e-16)
+            initial_loss = (initial_beam["sigma_x"] - target_x) ** 2 + (
+                initial_beam["sigma_y"] - target_y
+            ) ** 2
+            assert result["loss"] < initial_loss / 100
 
+            bad_source = await client.call_tool("cheetah_inspect_lattice", {})
+            assert bad_source.is_error
+            bad_beam = await client.call_tool(
+                "cheetah_track_beam", {**beam_args, "beta_x": -1.0}
+            )
+            assert bad_beam.is_error
+            lattice["elements"]["q1"][0] = "Species"
+            bad_lattice = await client.call_tool(
+                "cheetah_inspect_lattice", {"lattice_dict": lattice}
+            )
+            assert bad_lattice.is_error
 
-def test_mcp_inspect_lattice(sample_lattice_dict):
-    """Test cheetah_inspect_lattice tool call."""
-    request = {
-        "jsonrpc": "2.0",
-        "id": 3,
-        "method": "tools/call",
-        "params": {
-            "name": "cheetah_inspect_lattice",
-            "arguments": {"lattice_dict": sample_lattice_dict},
-        },
-    }
-    response = handle_request(request)
-    assert response is not None
-    content = response["result"]["content"]
-    assert len(content) > 0
-    data = json.loads(content[0]["text"])
-    assert data["num_elements"] == 3
-    assert pytest.approx(data["total_length"]) == 1.2
-
-
-def test_mcp_track_beam(sample_lattice_dict):
-    """Test cheetah_track_beam tool call."""
-    request = {
-        "jsonrpc": "2.0",
-        "id": 4,
-        "method": "tools/call",
-        "params": {
-            "name": "cheetah_track_beam",
-            "arguments": {
-                "lattice_dict": sample_lattice_dict,
-                "beam_type": "parameter",
-                "energy": 1e8,
-                "beta_x": 2.0,
-                "beta_y": 2.0,
-            },
-        },
-    }
-    response = handle_request(request)
-    assert response is not None
-    content = response["result"]["content"]
-    data = json.loads(content[0]["text"])
-    assert "sigma_x" in data
-    assert "sigma_y" in data
-
-
-def test_mcp_match_beam(sample_lattice_dict):
-    """Test cheetah_match_beam optimization tool call."""
-    request = {
-        "jsonrpc": "2.0",
-        "id": 5,
-        "method": "tools/call",
-        "params": {
-            "name": "cheetah_match_beam",
-            "arguments": {
-                "lattice_dict": sample_lattice_dict,
-                "target_sigma_x": 0.0001,
-                "target_sigma_y": 0.0001,
-                "quad_names": ["q1"],
-                "steps": 5,
-                "lr": 0.05,
-            },
-        },
-    }
-    response = handle_request(request)
-    assert response is not None
-    content = response["result"]["content"]
-    data = json.loads(content[0]["text"])
-    assert "optimized_parameters" in data
-    assert "q1" in data["optimized_parameters"]
+    asyncio.run(asyncio.wait_for(exercise_tools(), timeout=45))

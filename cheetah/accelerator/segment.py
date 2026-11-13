@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Any, Iterator, Literal
+from typing import Any, Iterator, Literal, overload
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -1081,55 +1081,58 @@ class Segment(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
 
+    @overload
+    def summary(self, as_string: Literal[False] = False) -> dict[str, Any]:
+        """Return the structured segment summary."""
+        ...
+
+    @overload
+    def summary(self, as_string: Literal[True]) -> str:
+        """Return the formatted segment summary."""
+        ...
+
+    @overload
+    def summary(self, as_string: bool) -> dict[str, Any] | str:
+        """Return the segment summary in the selected format."""
+        ...
+
+    @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
-        Return a compact summary of the segment elements and cumulative positions.
+        Return the immediate elements and their entrance positions relative to the
+        segment start. Batched tensors are represented as nested lists.
 
         :param as_string: Whether to return a formatted table string instead of a
             dictionary.
         :return: A dictionary describing the segment or a formatted string table.
         """
         elements_info: list[dict[str, Any]] = []
-        current_s = 0.0
-        for i, elem in enumerate(self.elements):
-            length = (
-                float(elem.length.item())
-                if hasattr(elem, "length") and isinstance(elem.length, torch.Tensor)
-                else 0.0
-            )
-            info: dict[str, Any] = {
+        current_s: float | torch.Tensor = 0.0
+        for i, element in enumerate(self.elements):
+            length = element.length
+            info = {
                 "index": i,
-                "name": elem.name,
-                "type": elem.__class__.__name__,
-                "s": current_s,
-                "length": length,
+                "name": element.name,
+                "type": type(element).__name__,
+                "s": latticejson.feature2nontorch(current_s),
+                "length": length.tolist(),
             }
-            if (
-                hasattr(elem, "k1")
-                and isinstance(elem.k1, torch.Tensor)
-                and elem.k1.numel() == 1
+            for setting in (
+                "k1",
+                "k2",
+                "angle",
+                "horizontal_angle",
+                "vertical_angle",
+                "voltage",
+                "phase",
             ):
-                info["k1"] = float(elem.k1.item())
-            if (
-                hasattr(elem, "angle")
-                and isinstance(elem.angle, torch.Tensor)
-                and elem.angle.numel() == 1
-            ):
-                info["angle"] = float(elem.angle.item())
-            if (
-                hasattr(elem, "voltage")
-                and isinstance(elem.voltage, torch.Tensor)
-                and elem.voltage.numel() == 1
-            ):
-                info["voltage"] = float(elem.voltage.item())
+                value = getattr(element, setting, None)
+                if isinstance(value, torch.Tensor):
+                    info[setting] = value.tolist()
             elements_info.append(info)
-            current_s += length
+            current_s = current_s + length
 
-        total_length = (
-            float(self.length.item())
-            if len(self.elements) > 0 and isinstance(self.length, torch.Tensor)
-            else 0.0
-        )
+        total_length = latticejson.feature2nontorch(current_s)
         data = {
             "name": self.name,
             "total_length": total_length,
@@ -1147,24 +1150,25 @@ class Segment(Element):
             ),
             "-" * 75,
         ]
+
+        def fmt(value: float | list, spec: str = ".4g") -> str:
+            """Format a scalar or a batch for the table."""
+            return format(value, spec) if isinstance(value, float) else str(value)
+
         for item in elements_info:
-            name_str = item["name"] if item["name"] is not None else "-"
-            details = []
-            if "k1" in item:
-                details.append(f"k1={item['k1']:.4g}")
-            if "angle" in item:
-                details.append(f"angle={item['angle']:.4g}")
-            if "voltage" in item:
-                details.append(f"voltage={item['voltage']:.4g}")
-            detail_str = ", ".join(details) if details else "-"
+            details = ", ".join(
+                f"{key}={fmt(value)}"
+                for key, value in item.items()
+                if key not in ("index", "name", "type", "s", "length")
+            )
             lines.append(
-                f"{item['index']:<6} {name_str:<20} {item['type']:<18} "
-                f"{item['s']:<10.4f} {item['length']:<12.4f} {detail_str}"
+                f"{item['index']:<6} {item['name']:<20} {item['type']:<18} "
+                f"{fmt(item['s'], '.4f'):<10} {fmt(item['length'], '.4f'):<12} "
+                f"{details or '-'}"
             )
         lines.append("-" * 75)
-        lines.append(
-            f"Total length: {total_length:.4f} m ({len(self.elements)} elements)"
-        )
+        length_str = fmt(total_length, ".4f")
+        lines.append(f"Total length: {length_str} m ({len(self.elements)} elements)")
         return "\n".join(lines)
 
     def __repr__(self) -> str:

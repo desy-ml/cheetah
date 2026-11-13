@@ -1,50 +1,70 @@
-"""
-Model Context Protocol (MCP) server for Cheetah accelerator physics simulations.
+"""Local stdio MCP tools for inspecting, tracking, and matching Cheetah models."""
 
-Provides stdio-based MCP tools for:
-- cheetah_inspect_lattice: Inspects lattice elements, cumulative positions,
-  and properties.
-- cheetah_track_beam: Tracks a parameter or particle beam through an
-  accelerator lattice.
-- cheetah_match_beam: Optimizes quadrupole strengths using PyTorch autograd
-  gradients.
-"""
-
-import json
-import sys
-from typing import Any
+from pathlib import Path
+from typing import Annotated, Any, Literal
 
 import torch
 
 import cheetah
 from cheetah import latticejson
+from cheetah.particles.species import electron_mass_eV
+
+try:
+    from mcp.server import MCPServer
+    from mcp.server.mcpserver.exceptions import ToolError
+    from pydantic import Field
+except ImportError as exc:
+    raise ImportError(
+        'Install MCP with pip install "cheetah-accelerator[mcp]".'
+    ) from exc
+
+server = MCPServer("cheetah-mcp", version=cheetah.__version__)
+
+PositiveFloat = Annotated[float, Field(gt=0, allow_inf_nan=False)]
+ElectronEnergy = Annotated[float, Field(gt=electron_mass_eV, allow_inf_nan=False)]
+FiniteFloat = Annotated[float, Field(allow_inf_nan=False)]
 
 
-def load_lattice(
-    lattice_path: str | None = None, lattice_dict: dict | None = None
+def _load_lattice(
+    lattice_path: str | None, lattice_dict: dict[str, Any] | None
 ) -> cheetah.Segment:
-    """Load a Cheetah segment from either a file path or a lattice dictionary."""
-    if lattice_path is not None:
-        return cheetah.Segment.from_lattice_json(lattice_path)
-    if lattice_dict is not None:
-        root_lattice = lattice_dict.get("root", next(iter(lattice_dict["lattices"])))
-        return latticejson.parse_segment(root_lattice, lattice_dict)
-    raise ValueError("Either lattice_path or lattice_dict must be provided.")
+    """Load a segment from exactly one LatticeJSON source."""
+    if lattice_path is not None and lattice_dict is not None:
+        raise ToolError("Provide exactly one of lattice_path and lattice_dict.")
+    try:
+        if lattice_path is not None:
+            if not Path(lattice_path).is_file():
+                raise ToolError(
+                    "lattice_path must point to a regular LatticeJSON file."
+                )
+            return cheetah.Segment.from_lattice_json(lattice_path, sanitize_names=False)
+        if lattice_dict is not None:
+            return latticejson.parse_segment(
+                lattice_dict["root"], lattice_dict, sanitize_names=False
+            )
+    except (
+        AttributeError,
+        KeyError,
+        OSError,
+        RecursionError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        raise ToolError(f"Could not load LatticeJSON: {exc}") from exc
+    raise ToolError("Provide exactly one of lattice_path and lattice_dict.")
 
 
-def create_beam(
-    beam_type: str = "parameter",
-    energy: float = 1e8,
-    beta_x: float = 1.0,
-    beta_y: float = 1.0,
-    alpha_x: float = 0.0,
-    alpha_y: float = 0.0,
-    emittance_x: float = 1e-6,
-    emittance_y: float = 1e-6,
-    num_particles: int = 1000,
-) -> cheetah.Beam:
-    """Create a beam object from Twiss parameters."""
-    kwargs = {
+def _twiss(
+    energy: float,
+    beta_x: float,
+    beta_y: float,
+    alpha_x: float,
+    alpha_y: float,
+    emittance_x: float,
+    emittance_y: float,
+) -> dict[str, torch.Tensor]:
+    """Convert scalar beam inputs to tensors for the beam constructors."""
+    return {
         "energy": torch.tensor(energy),
         "beta_x": torch.tensor(beta_x),
         "beta_y": torch.tensor(beta_y),
@@ -53,294 +73,124 @@ def create_beam(
         "emittance_x": torch.tensor(emittance_x),
         "emittance_y": torch.tensor(emittance_y),
     }
-    if beam_type.lower() == "particle":
-        return cheetah.ParticleBeam.from_twiss(num_particles=num_particles, **kwargs)
-    return cheetah.ParameterBeam.from_twiss(**kwargs)
 
 
-def tool_inspect_lattice(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Inspect elements and properties of a lattice."""
-    segment = load_lattice(
-        lattice_path=arguments.get("lattice_path"),
-        lattice_dict=arguments.get("lattice_dict"),
+@server.tool()
+def cheetah_inspect_lattice(
+    lattice_path: str | None = None,
+    lattice_dict: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Inspect element names, positions in metres, and settings in a LatticeJSON model.
+
+    Provide exactly one of lattice_path (a local file) and lattice_dict (the inline
+    LatticeJSON object). Nested segments are expanded in tracking order.
+    """
+    return _load_lattice(lattice_path, lattice_dict).flattened().summary()
+
+
+@server.tool()
+@torch.no_grad()
+def cheetah_track_beam(
+    lattice_path: str | None = None,
+    lattice_dict: dict[str, Any] | None = None,
+    beam_type: Literal["parameter", "particle"] = "parameter",
+    energy: ElectronEnergy = 1e8,
+    beta_x: PositiveFloat = 1.0,
+    beta_y: PositiveFloat = 1.0,
+    alpha_x: FiniteFloat = 0.0,
+    alpha_y: FiniteFloat = 0.0,
+    emittance_x: PositiveFloat = 1e-6,
+    emittance_y: PositiveFloat = 1e-6,
+    num_particles: Annotated[int, Field(ge=7)] = 1000,
+) -> dict[str, Any]:
+    """Track an electron beam from entrance Twiss parameters and report exit optics.
+
+    Provide exactly one LatticeJSON source, a local lattice_path or inline lattice_dict.
+    Energy is total reference energy in eV, beta functions are in metres, alpha
+    functions are dimensionless, and geometric emittances are in metre-radians.
+    num_particles applies to particle beams.
+    """
+    segment = _load_lattice(lattice_path, lattice_dict)
+    twiss = _twiss(energy, beta_x, beta_y, alpha_x, alpha_y, emittance_x, emittance_y)
+    beam = (
+        cheetah.ParticleBeam.from_twiss(num_particles=num_particles, **twiss)
+        if beam_type == "particle"
+        else cheetah.ParameterBeam.from_twiss(**twiss)
     )
-    return segment.summary(as_string=False)
+    return segment.track(beam).summary()
 
 
-def tool_track_beam(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Track a beam through a lattice and return the beam summary."""
-    segment = load_lattice(
-        lattice_path=arguments.get("lattice_path"),
-        lattice_dict=arguments.get("lattice_dict"),
+@server.tool()
+def cheetah_match_beam(
+    target_sigma_x: PositiveFloat,
+    target_sigma_y: PositiveFloat,
+    quad_names: Annotated[list[str], Field(min_length=1)],
+    lattice_path: str | None = None,
+    lattice_dict: dict[str, Any] | None = None,
+    energy: ElectronEnergy = 1e8,
+    beta_x: PositiveFloat = 1.0,
+    beta_y: PositiveFloat = 1.0,
+    alpha_x: FiniteFloat = 0.0,
+    alpha_y: FiniteFloat = 0.0,
+    emittance_x: PositiveFloat = 1e-6,
+    emittance_y: PositiveFloat = 1e-6,
+    steps: Annotated[int, Field(gt=0)] = 50,
+    lr: PositiveFloat = 0.1,
+) -> dict[str, Any]:
+    """Tune uniquely named scalar quadrupoles to approach exit RMS sizes in metres.
+
+    Provide exactly one LatticeJSON source, a local lattice_path or inline lattice_dict.
+    The incoming electron beam uses the same energy and Twiss units as tracking.
+    Return the fitted k1 values in 1/m², final beam summary, and squared error in m².
+    """
+    segment = _load_lattice(lattice_path, lattice_dict)
+    elements = segment.flattened().elements
+    params = {}
+    for name in dict.fromkeys(quad_names):
+        matches = [element for element in elements if element.name == name]
+        if len(matches) != 1 or not isinstance(matches[0], cheetah.Quadrupole):
+            raise ToolError(f"'{name}' must identify exactly one quadrupole.")
+        quad = matches[0]
+        if quad.k1.ndim != 0:
+            raise ToolError(f"'{name}' must have a scalar k1.")
+        quad.k1 = torch.nn.Parameter(quad.k1)
+        params[name] = quad.k1
+
+    beam = cheetah.ParameterBeam.from_twiss(
+        **_twiss(energy, beta_x, beta_y, alpha_x, alpha_y, emittance_x, emittance_y)
     )
-    beam = create_beam(
-        beam_type=arguments.get("beam_type", "parameter"),
-        energy=float(arguments.get("energy", 1e8)),
-        beta_x=float(arguments.get("beta_x", 1.0)),
-        beta_y=float(arguments.get("beta_y", 1.0)),
-        alpha_x=float(arguments.get("alpha_x", 0.0)),
-        alpha_y=float(arguments.get("alpha_y", 0.0)),
-        emittance_x=float(arguments.get("emittance_x", 1e-6)),
-        emittance_y=float(arguments.get("emittance_y", 1e-6)),
-        num_particles=int(arguments.get("num_particles", 1000)),
-    )
-    outgoing_beam = segment.track(beam)
-    return outgoing_beam.summary(as_string=False)
-
-
-def tool_match_beam(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Optimize quadrupole strengths to match target beam sizes."""
-    segment = load_lattice(
-        lattice_path=arguments.get("lattice_path"),
-        lattice_dict=arguments.get("lattice_dict"),
-    )
-    target_sigma_x = float(arguments["target_sigma_x"])
-    target_sigma_y = float(arguments["target_sigma_y"])
-    quad_names = arguments["quad_names"]
-    steps = int(arguments.get("steps", 50))
-    lr = float(arguments.get("lr", 0.1))
-
-    # Collect parameters to optimize
-    params = []
-    for name in quad_names:
-        quad = getattr(segment, name)
-        quad.k1 = torch.nn.Parameter(quad.k1.clone())
-        params.append(quad.k1)
-
-    optimizer = torch.optim.Adam(params, lr=lr)
-
-    loss_val = 0.0
+    target_scale = max(target_sigma_x, target_sigma_y)
+    optimizer = torch.optim.Adam(list(params.values()), lr=lr)
     for _ in range(steps):
         optimizer.zero_grad()
-        beam = create_beam(
-            beam_type="parameter",
-            energy=float(arguments.get("energy", 1e8)),
-            beta_x=float(arguments.get("beta_x", 1.0)),
-            beta_y=float(arguments.get("beta_y", 1.0)),
-            alpha_x=float(arguments.get("alpha_x", 0.0)),
-            alpha_y=float(arguments.get("alpha_y", 0.0)),
-            emittance_x=float(arguments.get("emittance_x", 1e-6)),
-            emittance_y=float(arguments.get("emittance_y", 1e-6)),
-        )
         out = segment.track(beam)
-        loss = (out.sigma_x - target_sigma_x) ** 2 + (out.sigma_y - target_sigma_y) ** 2
+        if out.sigma_x.ndim != 0 or out.sigma_y.ndim != 0:
+            raise ToolError("Matching requires an unbatched lattice.")
+        loss = ((out.sigma_x - target_sigma_x) / target_scale).square() + (
+            (out.sigma_y - target_sigma_y) / target_scale
+        ).square()
+        if not loss.isfinite() or not loss.requires_grad:
+            raise ToolError(
+                "Matching requires finite beam sizes and a differentiable lattice."
+            )
         loss.backward()
         optimizer.step()
-        loss_val = float(loss.item())
 
-    final_k1 = {name: float(getattr(segment, name).k1.item()) for name in quad_names}
-    eval_beam = create_beam(
-        beam_type="parameter",
-        energy=float(arguments.get("energy", 1e8)),
-        beta_x=float(arguments.get("beta_x", 1.0)),
-        beta_y=float(arguments.get("beta_y", 1.0)),
-        alpha_x=float(arguments.get("alpha_x", 0.0)),
-        alpha_y=float(arguments.get("alpha_y", 0.0)),
-        emittance_x=float(arguments.get("emittance_x", 1e-6)),
-        emittance_y=float(arguments.get("emittance_y", 1e-6)),
-    )
-    final_beam = segment.track(eval_beam)
-    return {
-        "optimized_parameters": final_k1,
-        "loss": loss_val,
-        "final_beam": final_beam.summary(as_string=False),
-    }
-
-
-TOOLS = [
-    {
-        "name": "cheetah_inspect_lattice",
-        "description": (
-            "Inspects lattice elements, cumulative positions, and properties of an "
-            "accelerator beamline."
-        ),
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "lattice_path": {
-                    "type": "string",
-                    "description": "Path to a LatticeJSON file.",
-                },
-                "lattice_dict": {
-                    "type": "object",
-                    "description": "LatticeJSON dictionary definition.",
-                },
-            },
-        },
-    },
-    {
-        "name": "cheetah_track_beam",
-        "description": (
-            "Tracks a particle or parameter beam through a Cheetah accelerator "
-            "lattice and returns beam properties."
-        ),
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "lattice_path": {
-                    "type": "string",
-                    "description": "Path to LatticeJSON file.",
-                },
-                "lattice_dict": {
-                    "type": "object",
-                    "description": "LatticeJSON dictionary definition.",
-                },
-                "beam_type": {
-                    "type": "string",
-                    "enum": ["parameter", "particle"],
-                    "default": "parameter",
-                },
-                "energy": {
-                    "type": "number",
-                    "default": 1e8,
-                    "description": "Beam energy in eV.",
-                },
-                "beta_x": {"type": "number", "default": 1.0},
-                "beta_y": {"type": "number", "default": 1.0},
-                "alpha_x": {"type": "number", "default": 0.0},
-                "alpha_y": {"type": "number", "default": 0.0},
-                "emittance_x": {"type": "number", "default": 1e-6},
-                "emittance_y": {"type": "number", "default": 1e-6},
-                "num_particles": {"type": "integer", "default": 1000},
-            },
-        },
-    },
-    {
-        "name": "cheetah_match_beam",
-        "description": (
-            "Optimizes quadrupole strengths via PyTorch automatic differentiation "
-            "to match target beam sizes."
-        ),
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "lattice_path": {
-                    "type": "string",
-                    "description": "Path to LatticeJSON file.",
-                },
-                "lattice_dict": {
-                    "type": "object",
-                    "description": "LatticeJSON dictionary definition.",
-                },
-                "target_sigma_x": {
-                    "type": "number",
-                    "description": ("Target horizontal beam size sigma_x in meters."),
-                },
-                "target_sigma_y": {
-                    "type": "number",
-                    "description": ("Target vertical beam size sigma_y in meters."),
-                },
-                "quad_names": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "List of quadrupole element names to tune.",
-                },
-                "energy": {
-                    "type": "number",
-                    "default": 1e8,
-                    "description": "Beam energy in eV.",
-                },
-                "steps": {"type": "integer", "default": 50},
-                "lr": {"type": "number", "default": 0.1},
-            },
-            "required": ["target_sigma_x", "target_sigma_y", "quad_names"],
-        },
-    },
-]
-
-TOOL_HANDLERS = {
-    "cheetah_inspect_lattice": tool_inspect_lattice,
-    "cheetah_track_beam": tool_track_beam,
-    "cheetah_match_beam": tool_match_beam,
-}
-
-
-def handle_request(request: dict[str, Any]) -> dict[str, Any] | None:
-    """Process a JSON-RPC MCP request and return the JSON-RPC response."""
-    req_id = request.get("id")
-    method = request.get("method")
-
-    if method == "initialize":
+    with torch.no_grad():
+        final_beam = segment.track(beam)
+        final_loss = (final_beam.sigma_x - target_sigma_x).square() + (
+            final_beam.sigma_y - target_sigma_y
+        ).square()
+        if not final_loss.isfinite():
+            raise ToolError("Matching produced non-finite beam sizes.")
         return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "protocolVersion": "2024-11-05",
-                "serverInfo": {"name": "cheetah-mcp", "version": cheetah.__version__},
-                "capabilities": {"tools": {}},
+            "optimized_parameters": {
+                name: param.item() for name, param in params.items()
             },
+            "loss": final_loss.item(),
+            "final_beam": final_beam.summary(),
         }
-
-    if method == "notifications/initialized":
-        return None
-
-    if method == "tools/list":
-        return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {"tools": TOOLS},
-        }
-
-    if method == "tools/call":
-        params = request.get("params", {})
-        tool_name = params.get("name")
-        arguments = params.get("arguments", {})
-        handler = TOOL_HANDLERS.get(tool_name)
-        if handler is None:
-            return {
-                "jsonrpc": "2.0",
-                "id": req_id,
-                "error": {"code": -32601, "message": f"Tool '{tool_name}' not found."},
-            }
-        try:
-            result = handler(arguments)
-            return {
-                "jsonrpc": "2.0",
-                "id": req_id,
-                "result": {
-                    "content": [{"type": "text", "text": json.dumps(result, indent=2)}]
-                },
-            }
-        except Exception as exc:
-            return {
-                "jsonrpc": "2.0",
-                "id": req_id,
-                "result": {
-                    "isError": True,
-                    "content": [{"type": "text", "text": f"Error: {exc}"}],
-                },
-            }
-
-    if req_id is not None:
-        return {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "error": {"code": -32601, "message": f"Method '{method}' not supported."},
-        }
-    return None
-
-
-def run_stdio_server() -> None:
-    """Run the stdio MCP server loop."""
-    for line in sys.stdin:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            request = json.loads(line)
-            response = handle_request(request)
-            if response is not None:
-                sys.stdout.write(json.dumps(response) + "\n")
-                sys.stdout.flush()
-        except Exception as exc:
-            err_resp = {
-                "jsonrpc": "2.0",
-                "id": None,
-                "error": {"code": -32700, "message": str(exc)},
-            }
-            sys.stdout.write(json.dumps(err_resp) + "\n")
-            sys.stdout.flush()
 
 
 if __name__ == "__main__":
-    run_stdio_server()
+    server.run(transport="stdio")

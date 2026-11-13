@@ -183,6 +183,7 @@ These guides explain how to use *Cheetah* and provide an overview of its feature
     getting_started/beam_representations.md
     getting_started/plotting_visualization
     getting_started/coordinate_system.md
+    getting_started/ai_assistants.md
 
 .. toctree::
     :maxdepth: 1

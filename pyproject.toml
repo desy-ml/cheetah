@@ -36,7 +36,8 @@ Repository = "https://github.com/desy-ml/cheetah"
 3d-visualization = ["trimesh>=4.4.0", "requests>=2.32.2", "tqdm>=4.66.0"]
 openpmd = ["openpmd-beamphysics>=0.14.0"]
 sdds = ["soliday.sdds>=5.7.0"]
-all = ["cheetah-accelerator[3d-visualization,openpmd,sdds]"]
+mcp = ["mcp>=2.3,<3"]
+all = ["cheetah-accelerator[3d-visualization,openpmd,sdds,mcp]"]
 
 [dependency-groups]
 lint = ["black", "flake8", "flake8-bugbear", "flake8-black", "isort"]

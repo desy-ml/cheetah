@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Literal, overload
 
 import torch
 from torch import nn
@@ -589,9 +589,25 @@ class Beam(ABC, nn.Module):
         else:
             self.register_buffer(name, value)
 
+    @overload
+    def summary(self, as_string: Literal[False] = False) -> dict[str, Any]:
+        """Return the structured beam summary."""
+        ...
+
+    @overload
+    def summary(self, as_string: Literal[True]) -> str:
+        """Return the formatted beam summary."""
+        ...
+
+    @overload
+    def summary(self, as_string: bool) -> dict[str, Any] | str:
+        """Return the beam summary in the selected format."""
+        ...
+
+    @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
-        Return a compact summary of the beam properties.
+        Return key beam properties. Batched tensors are represented as nested lists.
 
         :param as_string: Whether to return a formatted string instead of a
             dictionary.
@@ -599,35 +615,32 @@ class Beam(ABC, nn.Module):
             representation.
         """
 
-        def _to_scalar_or_list(val: Any) -> Any:
-            if isinstance(val, torch.Tensor):
-                val = val.detach().cpu()
-                if val.numel() == 1:
-                    return float(val.item())
-                return val.tolist()
-            return val
-
         data: dict[str, Any] = {
-            "type": self.__class__.__name__,
+            "type": type(self).__name__,
             "species": self.species.name,
-            "energy": _to_scalar_or_list(self.energy),
-            "s": _to_scalar_or_list(self.s),
-            "total_charge": _to_scalar_or_list(self.total_charge),
-            "mu_x": _to_scalar_or_list(self.mu_x),
-            "sigma_x": _to_scalar_or_list(self.sigma_x),
-            "mu_y": _to_scalar_or_list(self.mu_y),
-            "sigma_y": _to_scalar_or_list(self.sigma_y),
-            "beta_x": _to_scalar_or_list(self.beta_x),
-            "beta_y": _to_scalar_or_list(self.beta_y),
-            "emittance_x": _to_scalar_or_list(self.emittance_x),
-            "emittance_y": _to_scalar_or_list(self.emittance_y),
         }
+        for key in (
+            "energy",
+            "s",
+            "total_charge",
+            "mu_x",
+            "sigma_x",
+            "mu_y",
+            "sigma_y",
+            "sigma_tau",
+            "sigma_p",
+            "beta_x",
+            "alpha_x",
+            "beta_y",
+            "alpha_y",
+            "emittance_x",
+            "emittance_y",
+        ):
+            data[key] = getattr(self, key).tolist()
         if hasattr(self, "num_particles"):
             data["num_particles"] = self.num_particles
         if hasattr(self, "num_particles_survived"):
-            data["num_particles_survived"] = _to_scalar_or_list(
-                self.num_particles_survived
-            )
+            data["num_particles_survived"] = self.num_particles_survived.tolist()
 
         if not as_string:
             return data
@@ -653,13 +666,19 @@ class Beam(ABC, nn.Module):
                 f"  Horizontal: mu_x = {_fmt(data['mu_x'])} m, "
                 f"sigma_x = {_fmt(data['sigma_x'])} m, "
                 f"beta_x = {_fmt(data['beta_x'])} m, "
+                f"alpha_x = {_fmt(data['alpha_x'])}, "
                 f"eps_x = {_fmt(data['emittance_x'])} m*rad"
             ),
             (
                 f"  Vertical:   mu_y = {_fmt(data['mu_y'])} m, "
                 f"sigma_y = {_fmt(data['sigma_y'])} m, "
                 f"beta_y = {_fmt(data['beta_y'])} m, "
+                f"alpha_y = {_fmt(data['alpha_y'])}, "
                 f"eps_y = {_fmt(data['emittance_y'])} m*rad"
+            ),
+            (
+                f"  Longitudinal: sigma_tau = {_fmt(data['sigma_tau'])} m, "
+                f"sigma_p = {_fmt(data['sigma_p'])}"
             ),
         ]
         return "\n".join(lines)

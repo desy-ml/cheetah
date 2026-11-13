@@ -485,72 +485,54 @@ def test_element_merging_metadata(original):
         assert merged_element.metadata == {"original": None, "other": None}
 
 
-@pytest.fixture
-def element_verifier():
-    """
-    Fixture providing a universal verification callable for any Cheetah `Element`.
-
-    Verifies:
-    1. Clone independence (clone is not identical instance).
-    2. Autograd gradient flow (tracking through element computes finite gradients).
-    3. Symplectic invariance for linear conservative beamline elements.
-    """
-
-    def _verify(element: cheetah.Element) -> None:
-        # Clone check
-        clone = element.clone()
-        assert clone is not element
-
-        # Gradient flow check
-        needs_particle = (
-            isinstance(element, cheetah.Aperture)
-            or getattr(element, "tracking_method", "linear") != "linear"
-        )
-        if needs_particle:
-            beam = cheetah.ParticleBeam.from_parameters(
-                num_particles=50, energy=torch.tensor(1e8)
-            )
-            beam.particles = torch.nn.Parameter(beam.particles.clone())
-            out = element.track(beam)
-            loss = out.particles.sum()
-            loss.backward()
-            assert beam.particles.grad is not None
-            assert torch.all(torch.isfinite(beam.particles.grad))
-        else:
-            beam = cheetah.ParameterBeam.from_parameters(energy=torch.tensor(1e8))
-            beam.mu = torch.nn.Parameter(beam.mu.clone())
-            out = element.track(beam)
-            loss = out.mu.sum()
-            loss.backward()
-            assert beam.mu.grad is not None
-            assert torch.all(torch.isfinite(beam.mu.grad))
-
-        # Symplectic condition check for conservative linear elements
-        conservative_types = (
-            cheetah.Drift,
-            cheetah.Quadrupole,
-            cheetah.Solenoid,
-            cheetah.Marker,
-            cheetah.HorizontalCorrector,
-            cheetah.VerticalCorrector,
-        )
-        if isinstance(element, conservative_types):
-            R = element.first_order_transfer_map(
-                torch.tensor(1e8), cheetah.Species("electron")
-            )[..., :6, :6]
-            J = torch.zeros((6, 6), dtype=R.dtype, device=R.device)
-            for i in range(3):
-                J[2 * i, 2 * i + 1] = 1.0
-                J[2 * i + 1, 2 * i] = -1.0
-            diff = R.mT @ J @ R
-            torch.testing.assert_close(diff, J.expand_as(diff), atol=1e-4, rtol=1e-4)
-
-    return _verify
-
-
 @pytest.mark.for_every_element("element")
-def test_universal_element_verification(element, element_verifier):
-    """
-    Test universal element invariants across all element subclasses and configurations.
-    """
-    element_verifier(element)
+def test_element_invariants(element):
+    """Check beam gradients and symplecticity of selected linear transfer maps."""
+    # Gradient flow check
+    needs_particle = (
+        isinstance(element, cheetah.Aperture)
+        or getattr(element, "tracking_method", "linear") != "linear"
+    )
+    if needs_particle:
+        beam = cheetah.ParticleBeam.from_parameters(
+            num_particles=50, energy=torch.tensor(1e8)
+        )
+        beam.particles = torch.nn.Parameter(beam.particles.clone())
+        out = element.track(beam)
+        loss = out.particles.sum()
+        loss.backward()
+        assert beam.particles.grad is not None
+        assert torch.all(torch.isfinite(beam.particles.grad))
+    else:
+        beam = cheetah.ParameterBeam.from_parameters(energy=torch.tensor(1e8))
+        beam.mu = torch.nn.Parameter(beam.mu.clone())
+        out = element.track(beam)
+        loss = out.mu.sum()
+        loss.backward()
+        assert beam.mu.grad is not None
+        assert torch.all(torch.isfinite(beam.mu.grad))
+
+    # Symplectic condition check for conservative linear elements
+    conservative_types = (
+        cheetah.Dipole,
+        cheetah.Drift,
+        cheetah.Quadrupole,
+        cheetah.Sextupole,
+        cheetah.Undulator,
+        cheetah.CombinedCorrector,
+        cheetah.Solenoid,
+        cheetah.Marker,
+        cheetah.HorizontalCorrector,
+        cheetah.VerticalCorrector,
+    )
+    if isinstance(element, conservative_types) and element.tracking_method == "linear":
+        R = element.first_order_transfer_map(
+            torch.tensor(1e8), cheetah.Species("electron")
+        )[..., :6, :6]
+        J = torch.zeros((6, 6), dtype=R.dtype, device=R.device)
+        # The canonical momentum paired with arrival time has the opposite sign
+        for i, sign in enumerate((1.0, 1.0, -1.0)):
+            J[2 * i, 2 * i + 1] = sign
+            J[2 * i + 1, 2 * i] = -sign
+        diff = R.mT @ J @ R
+        torch.testing.assert_close(diff, J.expand_as(diff), atol=1e-4, rtol=1e-4)

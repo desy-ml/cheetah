@@ -405,3 +405,21 @@ def test_segment_summary():
     assert "test_seg" in string_summary
     assert "Q1" in string_summary
     assert "Total length: 0.7000 m" in string_summary
+
+
+def test_segment_summary_with_vectorized_lengths():
+    """Preserve broadcast positions and vectorized element settings."""
+    segment = cheetah.Segment(
+        [
+            cheetah.Drift(length=torch.tensor([0.5])),
+            cheetah.Quadrupole(length=torch.tensor(0.25), k1=torch.tensor([1.0, 2.0])),
+            cheetah.Drift(length=torch.tensor([1.0, 2.0])),
+        ]
+    )
+    data = segment.summary()
+    assert data["elements"][1]["s"] == [0.5]
+    assert data["elements"][1]["k1"] == [1.0, 2.0]
+    assert data["elements"][2]["s"] == [0.75]
+    assert data["total_length"] == [1.75, 2.75]
+    assert "[1.75, 2.75]" in segment.summary(as_string=True)
+    assert cheetah.Segment([]).summary()["total_length"] == 0.0

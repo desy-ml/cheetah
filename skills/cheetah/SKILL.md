@@ -11,10 +11,11 @@ license: GPL-3.0
 Cheetah is a high-speed, fully differentiable particle accelerator optics simulation engine written in PyTorch.
 
 Use this skill when:
+
 - Designing, modeling, or evaluating particle accelerator beamlines.
 - Tracking particles (`ParticleBeam`) or distribution moments (`ParameterBeam`) through lattices (`Segment`).
 - Matching Twiss parameters or optimizing magnet settings (quadrupoles, steerers, RF cavities) using PyTorch autograd gradients.
-- Reading or writing lattices in LatticeJSON, Ocelot, Bmad, or Elegant formats.
+- Loading lattices from LatticeJSON, Ocelot, Bmad, or Elegant and saving them as LatticeJSON.
 - Running the Cheetah Model Context Protocol (MCP) server for automated beamline tuning.
 
 ---
@@ -22,6 +23,7 @@ Use this skill when:
 ## 1. Core Physics & Coordinate System
 
 Cheetah uses a 7D vector $\vec{x} = (x, px, y, py, \tau, \delta, 1)$:
+
 - $x, y$: Horizontal and vertical positions in meters ($m$).
 - $px = P_x / p_0, py = P_y / p_0$: Normalized transverse momenta (dimensionless).
 - $\tau = ct - s/\beta_0$: Longitudinal position relative to reference particle ($m$); $\tau < 0$ is bunch head.
@@ -92,16 +94,17 @@ segment = cheetah.Segment(
 segment.Q1.k1 = torch.nn.Parameter(segment.Q1.k1.clone())
 segment.Q2.k1 = torch.nn.Parameter(segment.Q2.k1.clone())
 
+initial_beam = cheetah.ParameterBeam.from_twiss(
+    beta_x=torch.tensor(2.0),
+    beta_y=torch.tensor(2.0),
+    energy=torch.tensor(1e8),
+)
+
 optimizer = torch.optim.Adam([segment.Q1.k1, segment.Q2.k1], lr=0.1)
 target_sigma_x = 1.5e-4
 
 for step in range(50):
     optimizer.zero_grad()
-    initial_beam = cheetah.ParameterBeam.from_twiss(
-        beta_x=torch.tensor(2.0),
-        beta_y=torch.tensor(2.0),
-        energy=torch.tensor(1e8),
-    )
     outgoing = segment.track(initial_beam)
     loss = (outgoing.sigma_x - target_sigma_x) ** 2
     loss.backward()
@@ -112,9 +115,16 @@ for step in range(50):
 
 ## 4. Cheetah MCP Server Integration
 
-Cheetah provides a built-in stdio MCP server for agent tool use:
+Install the optional server with `python -m pip install "cheetah-accelerator[mcp]"`.
+The [AI assistant guide](https://cheetah-accelerator.readthedocs.io/en/latest/getting_started/ai_assistants.html)
+has a client configuration example. Each tool takes either a local `lattice_path`
+or an inline `lattice_dict`.
+
 - **Command**: `python -m cheetah.mcp`
 - **Available Tools**:
   - `cheetah_inspect_lattice`: Inspects element list, types, cumulative $s$, and parameters.
   - `cheetah_track_beam`: Tracks a beam through a LatticeJSON lattice and returns `beam.summary()`.
   - `cheetah_match_beam`: Uses PyTorch autograd to tune specified quadrupoles to target beam sizes.
+
+Compare the final simulated beam sizes with the targets before using the fitted
+strengths. The server keeps the original LatticeJSON file intact.
