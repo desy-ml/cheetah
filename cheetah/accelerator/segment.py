@@ -1081,7 +1081,6 @@ class Segment(Element):
     def defining_features(self) -> list[str]:
         return super().defining_features + ["elements"]
 
-    @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
         Summarise the segment's name, total length, and immediate element count.
