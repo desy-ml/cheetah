@@ -25,11 +25,15 @@ def test_tracking_speed():
         sigma_y=torch.tensor(175e-6),
     )
 
-    t1 = time.time()
+    # Use a fixed thread count so thread-pool overhead is comparable across runners
+    num_threads = torch.get_num_threads()
+    torch.set_num_threads(2)
+    try:
+        start = time.perf_counter()
+        _ = segment.track(particles)
+        _ = segment.AREABSCR1.reading
+        elapsed = time.perf_counter() - start
+    finally:
+        torch.set_num_threads(num_threads)
 
-    _ = segment.track(particles)
-    _ = segment.AREABSCR1.reading
-
-    t2 = time.time()
-
-    assert (t2 - t1) < 0.1
+    assert elapsed < 0.1
