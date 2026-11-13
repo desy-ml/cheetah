@@ -63,7 +63,7 @@ def test_beam_summary(BeamClass):
 
 
 @pytest.mark.parametrize("BeamClass", [cheetah.ParameterBeam, cheetah.ParticleBeam])
-def test_beam_summary_preserves_singleton_batches(BeamClass):
+def test_beam_summary_preserves_singleton_vector_dimensions(BeamClass):
     """Keep singleton dimensions in the structured optics summary."""
     beam = BeamClass.from_twiss(
         energy=torch.tensor([1e8]),

@@ -1085,7 +1085,7 @@ class Segment(Element):
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
         Return the immediate elements and their entrance positions relative to the
-        segment start. Batched tensors are represented as nested lists.
+        segment start. Vectorised tensors are represented as nested lists.
 
         :param as_string: Whether to return a formatted table string instead of a
             dictionary.
@@ -1137,7 +1137,7 @@ class Segment(Element):
         ]
 
         def fmt(value: float | list, spec: str = ".4g") -> str:
-            """Format a scalar or a batch for the table."""
+            """Format a scalar or a list for the table."""
             return format(value, spec) if isinstance(value, float) else str(value)
 
         for item in elements_info:

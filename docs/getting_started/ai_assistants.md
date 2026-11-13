@@ -1,7 +1,7 @@
 # Using Cheetah with AI assistants
 
 Use `segment.summary()` and `beam.summary()` to inspect a simulation in Python.
-They return dictionaries with scalar values or nested lists for batched tensors.
+They return dictionaries with scalar values or nested lists for vectorised tensors.
 Pass `as_string=True` for a readable report. Use `segment.flattened().summary()`
 to see individual elements inside nested segments.
 
@@ -46,6 +46,6 @@ files and only share files you intend to make available to the MCP client.
    reference energy. Use `beam_type: "particle"` for macroparticle tracking.
 3. Call `cheetah_match_beam` with the same entrance parameters, the unique
    `quad_names` to tune, and `target_sigma_x` and `target_sigma_y` in metres.
-   Matching requires an unbatched lattice. Compare the returned beam sizes with
-   your targets and use the fitted `k1` values to update the simulation in Python.
+   Matching requires a non-vectorised lattice. Compare the returned beam sizes
+   with your targets and use the fitted `k1` values to update the simulation in Python.
    The optimizer works on an in-memory model and does not write to the lattice file.

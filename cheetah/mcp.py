@@ -166,7 +166,7 @@ def cheetah_match_beam(
         optimizer.zero_grad()
         out = segment.track(beam)
         if out.sigma_x.ndim != 0 or out.sigma_y.ndim != 0:
-            raise ToolError("Matching requires an unbatched lattice.")
+            raise ToolError("Matching requires a non-vectorised lattice.")
         loss = ((out.sigma_x - target_sigma_x) / target_scale).square() + (
             (out.sigma_y - target_sigma_y) / target_scale
         ).square()

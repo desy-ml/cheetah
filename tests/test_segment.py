@@ -407,8 +407,8 @@ def test_segment_summary():
     assert "Total length: 0.7000 m" in string_summary
 
 
-def test_segment_summary_with_vectorized_lengths():
-    """Preserve broadcast positions and vectorized element settings."""
+def test_segment_summary_with_vectorised_lengths():
+    """Preserve broadcast positions and vectorised element settings."""
     segment = cheetah.Segment(
         [
             cheetah.Drift(length=torch.tensor([0.5])),

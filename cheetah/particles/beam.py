@@ -592,7 +592,7 @@ class Beam(ABC, nn.Module):
     @torch.no_grad()
     def summary(self, as_string: bool = False) -> dict[str, Any] | str:
         """
-        Return key beam properties. Batched tensors are represented as nested lists.
+        Return key beam properties. Vectorised tensors are represented as nested lists.
 
         :param as_string: Whether to return a formatted string instead of a
             dictionary.
