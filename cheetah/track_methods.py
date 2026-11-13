@@ -41,6 +41,8 @@ def base_rmatrix(
 
     kx2 = k1 + hx.square()
     ky2 = -k1
+    length_squared = length.square()
+
     # Use the series at zero strength to avoid the singular square-root gradient
     zero_kx = kx2 == 0.0
     zero_ky = ky2 == 0.0
@@ -48,15 +50,15 @@ def base_rmatrix(
     ky = torch.complex(ky2.masked_fill(zero_ky, 1.0), zero).sqrt()
     x = kx * length
     y = ky * length
-    x_squared = kx2 * length.square()
-    y_squared = ky2 * length.square()
+    x_squared = kx2 * length_squared
+    y_squared = ky2 * length_squared
     cx = x.cos().real.where(~zero_kx, 1.0 - x_squared / 2.0)
     cy = y.cos().real.where(~zero_ky, 1.0 - y_squared / 2.0)
     sx = (x / torch.pi).sinc().real.where(~zero_kx, 1.0 - x_squared / 6.0) * length
     sy = (y / torch.pi).sinc().real.where(~zero_ky, 1.0 - y_squared / 6.0) * length
 
     r_squared = (0.5 * x / torch.pi).sinc().square().real
-    dx = hx * 0.5 * length.square() * r_squared.where(~zero_kx, 1.0 - x_squared / 12.0)
+    dx = hx * 0.5 * length_squared * r_squared.where(~zero_kx, 1.0 - x_squared / 12.0)
 
     r56 = (
         hx.square() * length.pow(3) * si1mdiv(x_squared) / beta.square()

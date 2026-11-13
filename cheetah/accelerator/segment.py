@@ -1093,12 +1093,12 @@ class Segment(Element):
         """
         elements_info: list[dict[str, Any]] = []
         current_s: float | torch.Tensor = 0.0
-        for i, element in enumerate(self.elements):
+        for index, element in enumerate(self.elements):
             length = element.length
-            info = {
-                "index": i,
+            element_info = {
+                "index": index,
                 "name": element.name,
-                "type": type(element).__name__,
+                "type": element.__class__.__name__,
                 "s": latticejson.feature2nontorch(current_s),
                 "length": length.tolist(),
             }
@@ -1113,8 +1113,8 @@ class Segment(Element):
             ):
                 value = getattr(element, setting, None)
                 if isinstance(value, torch.Tensor):
-                    info[setting] = value.tolist()
-            elements_info.append(info)
+                    element_info[setting] = value.tolist()
+            elements_info.append(element_info)
             current_s = current_s + length
 
         total_length = latticejson.feature2nontorch(current_s)
@@ -1127,8 +1127,9 @@ class Segment(Element):
         if not as_string:
             return data
 
+        name = self.name if self.name is not None else "Unnamed"
         lines = [
-            f"Segment Summary: {self.name if self.name is not None else 'Unnamed'}",
+            f"Segment Summary: {name}",
             (
                 f"{'Index':<6} {'Name':<20} {'Type':<18} {'s [m]':<10} "
                 f"{'Length [m]':<12} Details"
@@ -1136,23 +1137,24 @@ class Segment(Element):
             "-" * 75,
         ]
 
-        def fmt(value: float | list, spec: str = ".4g") -> str:
+        def format_value(value: float | list, spec: str = ".4g") -> str:
             """Format a scalar or a list for the table."""
             return format(value, spec) if isinstance(value, float) else str(value)
 
         for item in elements_info:
             details = ", ".join(
-                f"{key}={fmt(value)}"
+                f"{key}={format_value(value)}"
                 for key, value in item.items()
                 if key not in ("index", "name", "type", "s", "length")
             )
+            position = format_value(item["s"], ".4f")
+            formatted_length = format_value(item["length"], ".4f")
             lines.append(
                 f"{item['index']:<6} {item['name']:<20} {item['type']:<18} "
-                f"{fmt(item['s'], '.4f'):<10} {fmt(item['length'], '.4f'):<12} "
-                f"{details or '-'}"
+                f"{position:<10} {formatted_length:<12} {details or '-'}"
             )
         lines.append("-" * 75)
-        length_str = fmt(total_length, ".4f")
+        length_str = format_value(total_length, ".4f")
         lines.append(f"Total length: {length_str} m ({len(self.elements)} elements)")
         return "\n".join(lines)
 

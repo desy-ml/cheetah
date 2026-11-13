@@ -486,53 +486,57 @@ def test_element_merging_metadata(original):
 
 
 @pytest.mark.for_every_element("element")
-def test_element_invariants(element):
-    """Check beam gradients and symplecticity of selected linear transfer maps."""
-    # Gradient flow check
-    needs_particle = (
-        isinstance(element, cheetah.Aperture)
-        or getattr(element, "tracking_method", "linear") != "linear"
-    )
-    if needs_particle:
-        beam = cheetah.ParticleBeam.from_parameters(
-            num_particles=50, energy=torch.tensor(1e8)
+def test_element_tracking_preserves_beam_gradients(element):
+    """Test that tracking gives finite gradients with respect to the incoming beam."""
+    energy = torch.tensor(1e8)
+    if isinstance(element, cheetah.Aperture) or element.tracking_method != "linear":
+        incoming_beam = cheetah.ParticleBeam.from_parameters(
+            num_particles=50, energy=energy
         )
-        beam.particles = torch.nn.Parameter(beam.particles.clone())
-        out = element.track(beam)
-        loss = out.particles.sum()
-        loss.backward()
-        assert beam.particles.grad is not None
-        assert torch.all(torch.isfinite(beam.particles.grad))
+        incoming = incoming_beam.particles.requires_grad_()
+        outgoing = element.track(incoming_beam).particles
     else:
-        beam = cheetah.ParameterBeam.from_parameters(energy=torch.tensor(1e8))
-        beam.mu = torch.nn.Parameter(beam.mu.clone())
-        out = element.track(beam)
-        loss = out.mu.sum()
-        loss.backward()
-        assert beam.mu.grad is not None
-        assert torch.all(torch.isfinite(beam.mu.grad))
+        incoming_beam = cheetah.ParameterBeam.from_parameters(energy=energy)
+        incoming = incoming_beam.mu.requires_grad_()
+        outgoing = element.track(incoming_beam).mu
 
-    # Symplectic condition check for conservative linear elements
-    conservative_types = (
-        cheetah.Dipole,
-        cheetah.Drift,
-        cheetah.Quadrupole,
-        cheetah.Sextupole,
-        cheetah.Undulator,
-        cheetah.CombinedCorrector,
-        cheetah.Solenoid,
-        cheetah.Marker,
-        cheetah.HorizontalCorrector,
-        cheetah.VerticalCorrector,
+    (gradient,) = torch.autograd.grad(outgoing.sum(), incoming)
+    assert gradient.isfinite().all()
+
+
+@pytest.mark.for_every_element(
+    "element",
+    except_if=lambda element: element.tracking_method != "linear"
+    or not isinstance(
+        element,
+        (
+            cheetah.CombinedCorrector,
+            cheetah.Dipole,
+            cheetah.Drift,
+            cheetah.HorizontalCorrector,
+            cheetah.Marker,
+            cheetah.Quadrupole,
+            cheetah.Sextupole,
+            cheetah.Solenoid,
+            cheetah.Undulator,
+            cheetah.VerticalCorrector,
+        ),
+    ),
+)
+def test_linear_transfer_map_is_symplectic(element):
+    """Test symplecticity for linear maps of the selected conservative elements."""
+    transfer_map = element.first_order_transfer_map(
+        torch.tensor(1e8), cheetah.Species("electron")
+    )[..., :6, :6]
+
+    # Arrival time is canonically paired with the negative energy deviation
+    upper_diagonal = transfer_map.new_tensor([1.0, 0.0, 1.0, 0.0, -1.0]).diag(1)
+    symplectic_form = upper_diagonal - upper_diagonal.mT
+    transformed_form = transfer_map.mT @ symplectic_form @ transfer_map
+
+    torch.testing.assert_close(
+        transformed_form,
+        symplectic_form.expand_as(transformed_form),
+        atol=1e-4,
+        rtol=1e-4,
     )
-    if isinstance(element, conservative_types) and element.tracking_method == "linear":
-        R = element.first_order_transfer_map(
-            torch.tensor(1e8), cheetah.Species("electron")
-        )[..., :6, :6]
-        J = torch.zeros((6, 6), dtype=R.dtype, device=R.device)
-        # The canonical momentum paired with arrival time has the opposite sign
-        for i, sign in enumerate((1.0, 1.0, -1.0)):
-            J[2 * i, 2 * i + 1] = sign
-            J[2 * i + 1, 2 * i] = -sign
-        diff = R.mT @ J @ R
-        torch.testing.assert_close(diff, J.expand_as(diff), atol=1e-4, rtol=1e-4)

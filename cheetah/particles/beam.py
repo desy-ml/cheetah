@@ -600,28 +600,25 @@ class Beam(ABC, nn.Module):
             representation.
         """
 
-        data: dict[str, Any] = {
-            "type": type(self).__name__,
+        data = {
+            "type": self.__class__.__name__,
             "species": self.species.name,
+            "energy": self.energy.tolist(),
+            "s": self.s.tolist(),
+            "total_charge": self.total_charge.tolist(),
+            "mu_x": self.mu_x.tolist(),
+            "sigma_x": self.sigma_x.tolist(),
+            "mu_y": self.mu_y.tolist(),
+            "sigma_y": self.sigma_y.tolist(),
+            "sigma_tau": self.sigma_tau.tolist(),
+            "sigma_p": self.sigma_p.tolist(),
+            "beta_x": self.beta_x.tolist(),
+            "alpha_x": self.alpha_x.tolist(),
+            "beta_y": self.beta_y.tolist(),
+            "alpha_y": self.alpha_y.tolist(),
+            "emittance_x": self.emittance_x.tolist(),
+            "emittance_y": self.emittance_y.tolist(),
         }
-        for key in (
-            "energy",
-            "s",
-            "total_charge",
-            "mu_x",
-            "sigma_x",
-            "mu_y",
-            "sigma_y",
-            "sigma_tau",
-            "sigma_p",
-            "beta_x",
-            "alpha_x",
-            "beta_y",
-            "alpha_y",
-            "emittance_x",
-            "emittance_y",
-        ):
-            data[key] = getattr(self, key).tolist()
         if hasattr(self, "num_particles"):
             data["num_particles"] = self.num_particles
         if hasattr(self, "num_particles_survived"):
@@ -630,10 +627,9 @@ class Beam(ABC, nn.Module):
         if not as_string:
             return data
 
-        def _fmt(val: Any) -> str:
-            if isinstance(val, float):
-                return f"{val:.4e}"
-            return str(val)
+        def format_value(value: float | list) -> str:
+            """Format scalar values in scientific notation."""
+            return f"{value:.4e}" if isinstance(value, float) else str(value)
 
         particles_str = ""
         if "num_particles" in data:
@@ -643,27 +639,28 @@ class Beam(ABC, nn.Module):
         lines = [
             f"Beam Summary ({data['type']}):",
             (
-                f"  Species: {data['species']} | Energy: {_fmt(data['energy'])} eV "
-                f"| s: {_fmt(data['s'])} m"
+                f"  Species: {data['species']} | "
+                f"Energy: {format_value(data['energy'])} eV | "
+                f"s: {format_value(data['s'])} m"
             ),
-            f"  Charge: {_fmt(data['total_charge'])} C{particles_str}",
+            f"  Charge: {format_value(data['total_charge'])} C{particles_str}",
             (
-                f"  Horizontal: mu_x = {_fmt(data['mu_x'])} m, "
-                f"sigma_x = {_fmt(data['sigma_x'])} m, "
-                f"beta_x = {_fmt(data['beta_x'])} m, "
-                f"alpha_x = {_fmt(data['alpha_x'])}, "
-                f"eps_x = {_fmt(data['emittance_x'])} m*rad"
-            ),
-            (
-                f"  Vertical:   mu_y = {_fmt(data['mu_y'])} m, "
-                f"sigma_y = {_fmt(data['sigma_y'])} m, "
-                f"beta_y = {_fmt(data['beta_y'])} m, "
-                f"alpha_y = {_fmt(data['alpha_y'])}, "
-                f"eps_y = {_fmt(data['emittance_y'])} m*rad"
+                f"  Horizontal: mu_x = {format_value(data['mu_x'])} m, "
+                f"sigma_x = {format_value(data['sigma_x'])} m, "
+                f"beta_x = {format_value(data['beta_x'])} m, "
+                f"alpha_x = {format_value(data['alpha_x'])}, "
+                f"eps_x = {format_value(data['emittance_x'])} m*rad"
             ),
             (
-                f"  Longitudinal: sigma_tau = {_fmt(data['sigma_tau'])} m, "
-                f"sigma_p = {_fmt(data['sigma_p'])}"
+                f"  Vertical:   mu_y = {format_value(data['mu_y'])} m, "
+                f"sigma_y = {format_value(data['sigma_y'])} m, "
+                f"beta_y = {format_value(data['beta_y'])} m, "
+                f"alpha_y = {format_value(data['alpha_y'])}, "
+                f"eps_y = {format_value(data['emittance_y'])} m*rad"
+            ),
+            (
+                f"  Longitudinal: sigma_tau = {format_value(data['sigma_tau'])} m, "
+                f"sigma_p = {format_value(data['sigma_p'])}"
             ),
         ]
         return "\n".join(lines)
