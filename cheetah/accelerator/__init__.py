@@ -7,7 +7,6 @@ from .dipole import Dipole  # noqa: F401
 from .drift import Drift  # noqa: F401
 from .element import Element  # noqa: F401
 from .horizontal_corrector import HorizontalCorrector  # noqa: F401
-from .longitudinal_wake import LongitudinalCosineWake  # noqa: F401 - wakes
 from .marker import Marker  # noqa: F401
 from .quadrupole import Quadrupole  # noqa: F401
 from .rbend import RBend  # noqa: F401

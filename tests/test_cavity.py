@@ -3,7 +3,6 @@ import pytest
 import torch
 
 import cheetah
-from cheetah import LongitudinalCosineWake
 from cheetah.accelerator.wakefields import (
     SPEED_OF_LIGHT,
     gaussian_resonant_wake_potential,
@@ -96,7 +95,6 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
 # 2. RF chirp with the wake off, vs the analytic V k_rf / p0c
 # 3. RF and wake together: beam loading, spread, and nothing else moving
 #
-# Reference throughout: Ferrario, Migliorati & Palumbo, CERN-2014-009.
 # The kernel-level tests live in test_wakefields.py.
 # ---------------------------------------------------------------------------
 
@@ -112,9 +110,6 @@ TOTAL_CHARGE = 1e-9
 # ones -- i.e. 1e4 coulombs -- so the absolute numbers there are not physical;
 # only the shape was.  Here the same amplitude acts on a real 1 nC bunch.
 WAKE_STRENGTH = 35_000.0
-
-# TESLA-like 1.3 GHz structure, as used throughout the other tests.
-TESLA_GEOMETRY = dict(iris_radius=35e-3, cell_gap=0.100, cell_period=0.1153)
 
 
 def make_beam(sigma_tau, *, total_charge=TOTAL_CHARGE, num_particles=200_000, seed=0):
@@ -164,10 +159,11 @@ def slice_means(tau, values, n_bins=100, min_count=50):
 def test_slice_statistics_match_the_analytical_gaussian_wake():
     """Slice-averaged wake kick matches the closed-form Gaussian wake potential."""
     beam = make_beam(3e-2)
-    element = LongitudinalCosineWake(
+    element = cheetah.Cavity(
+        length=torch.tensor(0.0, dtype=DTYPE),
+        frequency=torch.tensor(FREQUENCY, dtype=DTYPE),
+        wake=True,
         wake_strength=WAKE_STRENGTH,
-        wavelength=WAVELENGTH,
-        sign_convention="legacy",  # +W, the sign the notebook used
         dtype=DTYPE,
     )
     outgoing = element.track(beam)
@@ -180,7 +176,7 @@ def test_slice_statistics_match_the_analytical_gaussian_wake():
 
     # The closed form wants the bunch's actual sigma, not the requested one.
     sigma_tau = float(beam.tau.std())
-    analytic = gaussian_resonant_wake_potential(
+    analytic = -gaussian_resonant_wake_potential(
         centres,
         sigma_tau=sigma_tau,
         wavelength=WAVELENGTH,
@@ -199,8 +195,8 @@ def test_slice_statistics_match_the_analytical_gaussian_wake():
     assert measured.min() < 0.0 < measured.max()
 
     # And the FFT grid the element actually convolved on must agree too.
-    diagnostics = element.cached_diagnostics[0]
-    on_grid = np.interp(
+    diagnostics = element.cached_wake_diagnostics
+    on_grid = -np.interp(
         centres,
         diagnostics["z_grid"].detach().numpy(),
         diagnostics["W_grid"].detach().numpy(),
@@ -243,15 +239,15 @@ def test_rf_chirp_slope_matches_v_k_over_p0c():
 
 
 def test_rf_plus_wake_loads_the_beam_and_adds_spread():
-    """RF plus wake loads the beam by about `k Q` and adds energy spread."""
+    """RF plus wake loads the beam and adds energy spread."""
     beam = make_beam(3e-4)
     rf_only = cavity(wake=False).track(beam)
-    rf_wake = cavity(wake=True, wake_model="periodic", **TESLA_GEOMETRY).track(beam)
+    rf_wake = cavity(wake=True, wake_strength=35e12).track(beam)
 
     # The RF accelerates: the reference energy goes up.
     assert float(rf_only.energy) > float(beam.energy)
 
-    # The wake takes energy back out -- beam loading, Ferrario Eq. 4.  This is
+    # The wake takes energy back out -- beam loading.  This is
     # the sign that was previously wrong.
     assert float(rf_wake.p.mean()) < float(rf_only.p.mean())
 
@@ -270,16 +266,3 @@ def test_rf_plus_wake_loads_the_beam_and_adds_spread():
     assert torch.allclose(rf_wake.y, rf_only.y)
     assert torch.allclose(rf_wake.py, rf_only.py)
     assert float(rf_wake.energy) == float(rf_only.energy)
-
-    # Magnitude: for a bunch short against s1 the mean loading approaches -kQ
-    # (Eq. 28).  The kernel still decays appreciably across this bunch, so the
-    # measured loss is a fraction of that -- bracket it rather than pin it.
-    element = cavity(wake=True, wake_model="periodic", **TESLA_GEOMETRY)
-    p0c = float(reference_momentum(rf_only.energy, beam.species.mass_eV))
-    mean_loss = float((rf_wake.p - rf_only.p).mean()) * p0c
-    k_q = element.loss_factor_for(beam) * float(beam.particle_charges.sum())
-
-    assert (
-        -k_q < mean_loss < -0.5 * k_q
-    ), f"mean loading {mean_loss:.1f} eV vs kQ {k_q:.1f}"
-

@@ -14,15 +14,12 @@ ELEMENT_SUBCLASSES_ARGS = {
     cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.Cavity: {
         "default": {"length": torch.tensor(1.0)},
-        #TESLA-like 1.3 GHz cell (b, g, p)
         # No test_consistency pickle exists for this case yet
         "wake_on": {
             "length": torch.tensor(1.0),
+            "frequency": torch.tensor(1.3e9),
             "wake": True,
-            "wake_model": "periodic",
-            "iris_radius": torch.tensor(35e-3),
-            "cell_gap": torch.tensor(0.1),
-            "cell_period": torch.tensor(0.1153),
+            "wake_strength": torch.tensor(35e12),
         },
     },
     cheetah.CombinedCorrector: {
@@ -66,13 +63,6 @@ ELEMENT_SUBCLASSES_ARGS = {
     },
     cheetah.HorizontalCorrector: {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
-    },
-    # No test_consistency pickle exists for this yet
-    cheetah.LongitudinalCosineWake: {
-        "default": {
-            "wake_strength": torch.tensor(35e3),
-            "wavelength": torch.tensor(0.2306),
-        }
     },
     cheetah.Marker: {"default": {}},
     cheetah.Quadrupole: {
