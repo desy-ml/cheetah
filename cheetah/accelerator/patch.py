@@ -96,7 +96,7 @@ class Patch(Element):
     @property
     def is_skippable(self) -> bool:
         """Whether the `Patch` can be skipped during tracking."""
-        return not self.is_active
+        return (self.energy_offset == 0.0).all().item()
 
     @property
     def length(self) -> torch.Tensor:

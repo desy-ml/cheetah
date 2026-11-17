@@ -15,6 +15,7 @@ def test_transform_particle_positions():
 
     patch = cheetah.Patch(position_offset=torch.tensor([0.1, 0.2, 0.3]))
 
+    assert patch.is_skippable
     torch.testing.assert_close(patch.length, torch.tensor(0.3))
 
     outgoing = patch.track(incoming)
@@ -106,6 +107,7 @@ def test_energy_offset():
     incoming.particles[..., 5] = 0.05  # Give initial delta of 0.05
 
     patch = cheetah.Patch(energy_offset=torch.tensor(2.0e8))
+    assert not patch.is_skippable
 
     outgoing = patch.track(incoming)
 
