@@ -1964,7 +1964,7 @@ class ParticleBeam(Beam):
         ]
 
     def clone(self) -> "ParticleBeam":
-        return self.__class__(
+        cloned = self.__class__(
             particles=self.particles.clone(),
             energy=self.energy.clone(),
             particle_charges=self.particle_charges.clone(),
@@ -1972,6 +1972,11 @@ class ParticleBeam(Beam):
             s=self.s.clone(),
             species=self.species.clone(),
         )
+        if hasattr(self, "radiation") and self.radiation is not None:
+            cloned.radiation = self.radiation.clone()
+        if hasattr(self, "_fel_particles") and self._fel_particles is not None:
+            cloned._fel_particles = tuple(t.clone() for t in self._fel_particles)
+        return cloned
 
     def __getitem__(self, item: int | slice | torch.Tensor) -> "ParticleBeam":
         vector_shape = torch.broadcast_shapes(

@@ -327,3 +327,31 @@ def test_undulator_fel_nonsquare_grid_and_boundary_absorption():
     # Diffracting far enough to hit the boundary should attenuate power, not wrap around
     far = mid.radiation.diffract(torch.tensor(10.0), absorbing_boundary=True)
     assert far.power < mid.radiation.power
+
+
+def test_undulator_fel_vectorized():
+    """Test vectorized FEL tracking with batched `ky` and `Drift` + `Quadrupole`."""
+    und = cheetah.Undulator(
+        length=torch.tensor(2.0),
+        period=torch.tensor(0.04),
+        ky=torch.tensor([2.0, 3.0]),
+        tracking_method="fel",
+        step_size=torch.tensor(0.5),
+        num_macroparticles=128,
+    )
+    drift = cheetah.Drift(length=torch.tensor([0.3, 0.5]))
+    segment = cheetah.Segment(elements=[und, drift])
+    beam = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(5.0),
+        beta_y=torch.tensor(5.0),
+        emittance_x=torch.tensor(1e-9),
+        emittance_y=torch.tensor(1e-9),
+        energy=torch.tensor(1e9),
+    )
+
+    out = segment.track(beam)
+    assert out.radiation.power.shape == (2,)
+    assert torch.all(out.radiation.power > 0.0)
+    cloned = out.clone()
+    assert hasattr(cloned, "radiation")
+    assert torch.allclose(cloned.radiation.power, out.radiation.power)

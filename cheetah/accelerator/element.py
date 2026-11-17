@@ -193,20 +193,29 @@ class Element(ABC, nn.Module):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
         if hasattr(incoming, "radiation") and incoming.radiation is not None:
-            if self.length > 0.0:
+            if (self.length > 0.0).any():
                 new_beam.radiation = incoming.radiation.diffract(self.length)
             else:
                 new_beam.radiation = incoming.radiation
 
         if hasattr(incoming, "_fel_particles") and incoming._fel_particles is not None:
             x, px, y, py, gammas, theta = incoming._fel_particles
-            x_new = tm[..., 0, 0] * x + tm[..., 0, 1] * px + tm[..., 0, 6]
-            px_new = tm[..., 1, 0] * x + tm[..., 1, 1] * px + tm[..., 1, 6]
-            y_new = tm[..., 2, 2] * y + tm[..., 2, 3] * py + tm[..., 2, 6]
-            py_new = tm[..., 3, 2] * y + tm[..., 3, 3] * py + tm[..., 3, 6]
+            gamma0 = incoming.energy / incoming.species.mass_eV
+            p = (gammas - gamma0.unsqueeze(-1)) / gamma0.unsqueeze(-1)
+            zeros = torch.zeros_like(x)
+            ones = torch.ones_like(x)
+            fel_vec = torch.stack([x, px, y, py, zeros, p, ones], dim=-1)
+            out_vec = fel_vec @ tm.mT
             # In an undulator line, drifts and quadrupoles are autophased relative to
             # the ponderomotive reference wave matching Genesis 1.3 v4 conventions.
-            new_beam._fel_particles = (x_new, px_new, y_new, py_new, gammas, theta)
+            new_beam._fel_particles = (
+                out_vec[..., 0],
+                out_vec[..., 1],
+                out_vec[..., 2],
+                out_vec[..., 3],
+                gammas,
+                theta,
+            )
 
         return new_beam
 

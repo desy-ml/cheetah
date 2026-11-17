@@ -759,7 +759,7 @@ class ParameterBeam(Beam):
         ]
 
     def clone(self) -> "ParameterBeam":
-        return self.__class__(
+        cloned = self.__class__(
             mu=self.mu.clone(),
             cov=self.cov.clone(),
             energy=self.energy.clone(),
@@ -767,6 +767,11 @@ class ParameterBeam(Beam):
             s=self.s.clone(),
             species=self.species.clone(),
         )
+        if hasattr(self, "radiation") and self.radiation is not None:
+            cloned.radiation = self.radiation.clone()
+        if hasattr(self, "_fel_particles") and self._fel_particles is not None:
+            cloned._fel_particles = tuple(t.clone() for t in self._fel_particles)
+        return cloned
 
     def __repr__(self) -> str:
         return (

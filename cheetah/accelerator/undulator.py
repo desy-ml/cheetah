@@ -66,11 +66,23 @@ class RadiationField:
         dy = 2.0 * self.extent / (ny - 1)
         k_r = 2.0 * torch.pi / self.wavelength
 
-        kx = 2.0 * torch.pi * torch.fft.fftfreq(nx, d=dx, device=self.field.device)
-        ky = 2.0 * torch.pi * torch.fft.fftfreq(ny, d=dy, device=self.field.device)
-        k_perp2 = ky[:, None].square() + kx[None, :].square()
+        kx = (
+            2.0
+            * torch.pi
+            * torch.fft.fftfreq(nx, d=1.0, device=self.field.device)
+            / dx[..., None]
+        )
+        ky = (
+            2.0
+            * torch.pi
+            * torch.fft.fftfreq(ny, d=1.0, device=self.field.device)
+            / dy[..., None]
+        )
+        k_perp2 = ky[..., :, None].square() + kx[..., None, :].square()
 
-        phase = torch.exp(-0.5j * (k_perp2 / k_r) * distance)
+        phase = torch.exp(
+            -0.5j * (k_perp2 / k_r[..., None, None]) * distance[..., None, None]
+        )
         new_field = torch.fft.ifft2(torch.fft.fft2(self.field) * phase)
         if absorbing_boundary:
             new_field = new_field * self._absorbing_mask(
@@ -302,10 +314,25 @@ class Undulator(Element):
         )
 
         # Radiation field and transverse grid setup
+        beam_vector_shape = (
+            incoming.mu.shape[:-1]
+            if isinstance(incoming, ParameterBeam)
+            else incoming.particles.shape[:-2]
+        )
+        vector_shape = torch.broadcast_shapes(
+            beam_vector_shape,
+            incoming.energy.shape,
+            self.length.shape,
+            self.period.shape,
+            self.kx.shape,
+            self.ky.shape,
+        )
+
         if hasattr(incoming, "radiation") and incoming.radiation is not None:
-            grid_extent = incoming.radiation.extent
-            field = incoming.radiation.field.to(dtype=complex_dtype).clone()
+            grid_extent = incoming.radiation.extent.expand(vector_shape)
+            field = incoming.radiation.field.to(dtype=complex_dtype)
             ny, nx = field.shape[-2:]
+            field = field.expand(*vector_shape, ny, nx).clone()
             dx = 2.0 * grid_extent / (nx - 1)
             dy = 2.0 * grid_extent / (ny - 1)
             radiation = RadiationField(
@@ -316,7 +343,7 @@ class Undulator(Element):
                 self.grid_extent
                 if self.grid_extent is not None
                 else torch.tensor(2e-4, **factory_kwargs)
-            )
+            ).expand(vector_shape)
             ny, nx = self.grid_shape
             dx = 2.0 * grid_extent / (nx - 1)
             dy = 2.0 * grid_extent / (ny - 1)
@@ -328,11 +355,16 @@ class Undulator(Element):
             w0 = grid_extent / 4.0
             e0 = torch.sqrt(4.0 * z0 * seed_power / (math.pi * w0.square()))
 
-            x_coords = torch.linspace(-grid_extent, grid_extent, nx, **factory_kwargs)
-            y_coords = torch.linspace(-grid_extent, grid_extent, ny, **factory_kwargs)
-            grid_y, grid_x = torch.meshgrid(y_coords, x_coords, indexing="ij")
+            ux = torch.linspace(-1.0, 1.0, nx, **factory_kwargs)
+            uy = torch.linspace(-1.0, 1.0, ny, **factory_kwargs)
+            grid_uy, grid_ux = torch.meshgrid(uy, ux, indexing="ij")
+            grid_x = grid_ux * grid_extent[..., None, None]
+            grid_y = grid_uy * grid_extent[..., None, None]
             field = (
-                e0 * torch.exp(-(grid_x.square() + grid_y.square()) / w0.square())
+                e0[..., None, None]
+                * torch.exp(
+                    -(grid_x.square() + grid_y.square()) / w0[..., None, None].square()
+                )
             ).to(dtype=complex_dtype)
             radiation = RadiationField(
                 field=field, wavelength=lambda0, extent=grid_extent
@@ -357,77 +389,102 @@ class Undulator(Element):
         if hasattr(incoming, "_fel_particles") and incoming._fel_particles is not None:
             x, px, y, py, gammas, theta = incoming._fel_particles
         elif isinstance(incoming, ParticleBeam):
-            x = incoming.particles[..., 0].contiguous()
-            px = incoming.particles[..., 1].contiguous()
-            y = incoming.particles[..., 2].contiguous()
-            py = incoming.particles[..., 3].contiguous()
-            gammas = gamma0 * (1.0 + incoming.particles[..., 5].contiguous())
+            x = incoming.particles[..., 0].expand(*vector_shape, -1).contiguous()
+            px = incoming.particles[..., 1].expand(*vector_shape, -1).contiguous()
+            y = incoming.particles[..., 2].expand(*vector_shape, -1).contiguous()
+            py = incoming.particles[..., 3].expand(*vector_shape, -1).contiguous()
+            gammas = (
+                gamma0.unsqueeze(-1) * (1.0 + incoming.particles[..., 5].contiguous())
+            ).expand(*vector_shape, -1)
             num_parts = x.shape[-1]
             theta0 = torch.linspace(
                 0.0, 2.0 * math.pi, num_parts + 1, **factory_kwargs
             )[:-1]
-            theta = theta0 + 2.0 * bunch * torch.sin(theta0)
+            theta = (theta0 + 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
+                *vector_shape, -1
+            )
+            num_particles = num_parts
         elif isinstance(incoming, ParameterBeam):
-            cov_x = incoming.cov[..., :2, :2].squeeze()
-            cov_y = incoming.cov[..., 2:4, 2:4].squeeze()
+            cov_x = incoming.cov[..., :2, :2].expand(*vector_shape, 2, 2)
+            cov_y = incoming.cov[..., 2:4, 2:4].expand(*vector_shape, 2, 2)
+            mu_x = incoming.mu[..., :2].expand(*vector_shape, 2)
+            mu_y = incoming.mu[..., 2:4].expand(*vector_shape, 2)
 
             gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
-            z_x = torch.randn(num_transverse, 2, generator=gen, **factory_kwargs)
-            z_y = torch.randn(num_transverse, 2, generator=gen, **factory_kwargs)
+            z_x = torch.randn(
+                *vector_shape, num_transverse, 2, generator=gen, **factory_kwargs
+            )
+            z_y = torch.randn(
+                *vector_shape, num_transverse, 2, generator=gen, **factory_kwargs
+            )
             l_x = torch.linalg.cholesky(cov_x)
             l_y = torch.linalg.cholesky(cov_y)
-            sample_x = incoming.mu[..., :2] + z_x @ l_x.mT
-            sample_y = incoming.mu[..., 2:4] + z_y @ l_y.mT
+            sample_x = mu_x.unsqueeze(-2) + z_x @ l_x.mT
+            sample_y = mu_y.unsqueeze(-2) + z_y @ l_y.mT
 
-            x = sample_x[:, 0].repeat_interleave(nbins)
-            px = sample_x[:, 1].repeat_interleave(nbins)
-            y = sample_y[:, 0].repeat_interleave(nbins)
-            py = sample_y[:, 1].repeat_interleave(nbins)
+            x = sample_x[..., 0].repeat_interleave(nbins, dim=-1)
+            px = sample_x[..., 1].repeat_interleave(nbins, dim=-1)
+            y = sample_y[..., 0].repeat_interleave(nbins, dim=-1)
+            py = sample_y[..., 1].repeat_interleave(nbins, dim=-1)
 
-            delgam = incoming.sigma_p * gamma0
-            gammas_trans = (
-                gamma0 * (1.0 + incoming.mu[..., 5])
-                + torch.randn(num_transverse, generator=gen, **factory_kwargs) * delgam
-            )
-            gammas = gammas_trans.repeat_interleave(nbins)
+            delgam = (incoming.sigma_p * gamma0).expand(vector_shape)
+            mu_gamma = (gamma0 * (1.0 + incoming.mu[..., 5])).expand(vector_shape)
+            gammas_trans = mu_gamma.unsqueeze(-1) + torch.randn(
+                *vector_shape, num_transverse, generator=gen, **factory_kwargs
+            ) * delgam.unsqueeze(-1)
+            gammas = gammas_trans.repeat_interleave(nbins, dim=-1)
 
             theta_bins = torch.linspace(
                 0.0, 2.0 * math.pi, nbins + 1, **factory_kwargs
             )[:-1]
             theta0 = theta_bins.repeat(num_transverse)
-            theta = theta0 + 2.0 * bunch * torch.sin(theta0)
+            theta = (theta0 + 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
+                *vector_shape, -1
+            )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
         # Spectral grid for diffraction
-        kx = 2.0 * torch.pi * torch.fft.fftfreq(nx, d=dx, device=field.device)
-        ky = 2.0 * torch.pi * torch.fft.fftfreq(ny, d=dy, device=field.device)
-        grid_ky, grid_kx = torch.meshgrid(ky, kx, indexing="ij")
-        k_perp2 = grid_kx.square() + grid_ky.square()
+        kx = (
+            2.0
+            * torch.pi
+            * torch.fft.fftfreq(nx, d=1.0, device=field.device)
+            / dx[..., None]
+        )
+        ky = (
+            2.0
+            * torch.pi
+            * torch.fft.fftfreq(ny, d=1.0, device=field.device)
+            / dy[..., None]
+        )
+        k_perp2 = ky[..., :, None].square() + kx[..., None, :].square()
         absorbing_mask = RadiationField._absorbing_mask(
             ny, nx, device=field.device, dtype=field.real.dtype
         )
+        batch_size = math.prod(vector_shape) if len(vector_shape) > 0 else 1
 
         def diffract_half(fld: torch.Tensor, dist: torch.Tensor) -> torch.Tensor:
-            phase = torch.exp(-0.5j * (k_perp2 / k_r) * dist)
+            phase = torch.exp(
+                -0.5j * (k_perp2 / k_r[..., None, None]) * dist[..., None, None]
+            )
             return torch.fft.ifft2(torch.fft.fft2(fld) * phase) * absorbing_mask
 
         def interp_field(
             fld: torch.Tensor, x_p: torch.Tensor, y_p: torch.Tensor
         ) -> torch.Tensor:
-            norm_x = (x_p / grid_extent).to(dtype=fld.real.dtype)
-            norm_y = (y_p / grid_extent).to(dtype=fld.real.dtype)
-            grid_sample_coords = (
-                torch.stack([norm_x, norm_y], dim=-1).unsqueeze(0).unsqueeze(0)
+            norm_x = (x_p / grid_extent[..., None]).to(dtype=fld.real.dtype)
+            norm_y = (y_p / grid_extent[..., None]).to(dtype=fld.real.dtype)
+            grid_sample_coords = torch.stack([norm_x, norm_y], dim=-1).reshape(
+                batch_size, 1, -1, 2
             )
-            real_part = fld.real.unsqueeze(0).unsqueeze(0)
-            imag_part = fld.imag.unsqueeze(0).unsqueeze(0)
+            real_part = fld.real.reshape(batch_size, 1, ny, nx)
+            imag_part = fld.imag.reshape(batch_size, 1, ny, nx)
             e_real = torch.nn.functional.grid_sample(
                 real_part, grid_sample_coords, align_corners=True, mode="bilinear"
-            ).squeeze()
+            ).reshape(*vector_shape, -1)
             e_imag = torch.nn.functional.grid_sample(
                 imag_part, grid_sample_coords, align_corners=True, mode="bilinear"
-            ).squeeze()
+            ).reshape(*vector_shape, -1)
             return torch.complex(e_real, e_imag)
 
         def deposit_source(
@@ -436,11 +493,16 @@ class Undulator(Element):
             gammas_p: torch.Tensor,
             theta_p: torch.Tensor,
         ) -> torch.Tensor:
-            weight = (gamma0 / gammas_p).to(dtype=complex_dtype) * torch.exp(
+            weight = (gamma0[..., None] / gammas_p).to(dtype=complex_dtype) * torch.exp(
                 -1.0j * theta_p.to(dtype=complex_dtype)
             )
-            gx = (x_p + grid_extent) / dx
-            gy = (y_p + grid_extent) / dy
+            gx = ((x_p + grid_extent[..., None]) / dx[..., None]).reshape(
+                batch_size, -1
+            )
+            gy = ((y_p + grid_extent[..., None]) / dy[..., None]).reshape(
+                batch_size, -1
+            )
+            weight_flat = weight.reshape(batch_size, -1)
 
             gx0 = gx.floor().long()
             gy0 = gy.floor().long()
@@ -454,13 +516,13 @@ class Undulator(Element):
 
             mask = (gx0 >= 0) & (gx1 < nx) & (gy0 >= 0) & (gy1 < ny)
             flat_grid_bunch = torch.zeros(
-                ny * nx, dtype=complex_dtype, device=field.device
+                batch_size, ny * nx, dtype=complex_dtype, device=field.device
             )
 
-            w00 = (fx0 * fy0).to(dtype=complex_dtype) * weight
-            w01 = (fx1 * fy0).to(dtype=complex_dtype) * weight
-            w10 = (fx0 * fy1).to(dtype=complex_dtype) * weight
-            w11 = (fx1 * fy1).to(dtype=complex_dtype) * weight
+            w00 = (fx0 * fy0).to(dtype=complex_dtype) * weight_flat * mask
+            w01 = (fx1 * fy0).to(dtype=complex_dtype) * weight_flat * mask
+            w10 = (fx0 * fy1).to(dtype=complex_dtype) * weight_flat * mask
+            w11 = (fx1 * fy1).to(dtype=complex_dtype) * weight_flat * mask
 
             for w, ix, iy in [
                 (w00, gx0, gy0),
@@ -468,49 +530,58 @@ class Undulator(Element):
                 (w10, gx0, gy1),
                 (w11, gx1, gy1),
             ]:
-                idx = iy[mask] * nx + ix[mask]
-                flat_grid_bunch.scatter_add_(0, idx, w[mask])
+                idx = iy.clamp(0, ny - 1) * nx + ix.clamp(0, nx - 1)
+                flat_grid_bunch.scatter_add_(1, idx, w)
 
-            j_bunch = flat_grid_bunch.reshape(ny, nx) * (
-                current / (num_particles * dx * dy)
+            j_bunch = (
+                flat_grid_bunch.reshape(*vector_shape, ny, nx)
+                * (current / (num_particles * dx * dy))[..., None, None]
             )
-            return (z0 * aw * jj / (math.sqrt(2.0) * gamma0)) * j_bunch
+            return (z0 * aw * jj / (math.sqrt(2.0) * gamma0))[..., None, None] * j_bunch
 
         step_size = (
             self.step_size
             if self.step_size is not None
             else torch.tensor(0.12, **factory_kwargs)
         )
-        n_steps = max(1, int(round((self.length / step_size).item())))
+        n_steps = max(1, int(round((self.length / step_size).max().item())))
         dz = self.length / n_steps
 
         k_beta_x = (self.ky / math.sqrt(2.0)) * k_u / gamma0
         k_beta_y = (self.kx / math.sqrt(2.0)) * k_u / gamma0
-        cos_bx = torch.cos(k_beta_x * dz)
-        sinc_bx = (k_beta_x * dz / torch.pi).sinc() * dz
-        k_sin_bx = k_beta_x * torch.sin(k_beta_x * dz)
-        cos_by = torch.cos(k_beta_y * dz)
-        sinc_by = (k_beta_y * dz / torch.pi).sinc() * dz
-        k_sin_by = k_beta_y * torch.sin(k_beta_y * dz)
+        cos_bx = torch.cos(k_beta_x * dz)[..., None]
+        sinc_bx = ((k_beta_x * dz / torch.pi).sinc() * dz)[..., None]
+        k_sin_bx = (k_beta_x * torch.sin(k_beta_x * dz))[..., None]
+        cos_by = torch.cos(k_beta_y * dz)[..., None]
+        sinc_by = ((k_beta_y * dz / torch.pi).sinc() * dz)[..., None]
+        k_sin_by = (k_beta_y * torch.sin(k_beta_y * dz))[..., None]
+
+        e_charge_over_mc2 = elementary_charge / (electron_mass * speed_of_light**2)
+        aw_jj = (aw * jj)[..., None]
+        k_u_b = k_u[..., None]
+        k_r_b = k_r[..., None]
+        aw2_b = aw.square()[..., None]
+        dz_p = dz[..., None]
+        dz_f = dz[..., None, None]
 
         for _ in range(n_steps):
             field = diffract_half(field, 0.5 * dz)
             e_p = interp_field(field, x, y)
 
             dgamma_dz = (
-                -(elementary_charge / (electron_mass * speed_of_light**2))
-                * (aw * jj / (math.sqrt(2.0) * gammas))
+                -e_charge_over_mc2
+                * (aw_jj / (math.sqrt(2.0) * gammas))
                 * (e_p * torch.exp(1.0j * theta)).real
             )
-            dtheta_dz = k_u - (k_r / (2.0 * gammas.square())) * (
-                1.0 + aw.square() + gammas.square() * (px.square() + py.square())
+            dtheta_dz = k_u_b - (k_r_b / (2.0 * gammas.square())) * (
+                1.0 + aw2_b + gammas.square() * (px.square() + py.square())
             )
 
             s_source = deposit_source(x, y, gammas, theta)
 
-            gammas = gammas + dgamma_dz * dz
-            theta = theta + dtheta_dz * dz
-            field = field + s_source * dz
+            gammas = gammas + dgamma_dz * dz_p
+            theta = theta + dtheta_dz * dz_p
+            field = field + s_source * dz_f
 
             field = diffract_half(field, 0.5 * dz)
 
@@ -526,9 +597,9 @@ class Undulator(Element):
         self.radiation = radiation
 
         if isinstance(incoming, ParameterBeam):
-            new_mu = incoming.mu.clone()
-            new_cov = incoming.cov.clone()
-            delta_p = (gammas - gamma0) / gamma0
+            new_mu = incoming.mu.expand(*vector_shape, 7).clone()
+            new_cov = incoming.cov.expand(*vector_shape, 7, 7).clone()
+            delta_p = (gammas - gamma0[..., None]) / gamma0[..., None]
             coords = torch.stack([x, px, y, py, delta_p], dim=-1)
             mean_coords = coords.mean(dim=-2)
             centered = coords - mean_coords.unsqueeze(-2)
@@ -551,12 +622,12 @@ class Undulator(Element):
                 species=incoming.species.clone(),
             )
         elif isinstance(incoming, ParticleBeam):
-            new_particles = incoming.particles.clone()
-            new_particles[..., : len(x), 0] = x
-            new_particles[..., : len(px), 1] = px
-            new_particles[..., : len(y), 2] = y
-            new_particles[..., : len(py), 3] = py
-            new_particles[..., : len(gammas), 5] = (gammas - gamma0) / gamma0
+            new_particles = incoming.particles.expand(*vector_shape, -1, 7).clone()
+            new_particles[..., 0] = x
+            new_particles[..., 1] = px
+            new_particles[..., 2] = y
+            new_particles[..., 3] = py
+            new_particles[..., 5] = (gammas - gamma0[..., None]) / gamma0[..., None]
             new_s = incoming.s + self.length
             outgoing = ParticleBeam(
                 new_particles,
