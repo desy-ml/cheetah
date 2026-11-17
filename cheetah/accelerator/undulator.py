@@ -53,33 +53,43 @@ class RadiationField:
         z0 = mu_0 * speed_of_light
         return (0.5 / z0) * self.field.abs().square().amax(dim=(-2, -1))
 
-    def diffract(self, distance: torch.Tensor) -> "RadiationField":
+    def diffract(
+        self, distance: torch.Tensor, absorbing_boundary: bool = True
+    ) -> "RadiationField":
         """
         Propagate the radiation field in free space over `distance` in meters using
         paraxial diffraction in Fourier space.
         """
         grid_shape = self.field.shape[-2:]
-        dx = 2.0 * self.extent / (grid_shape[-1] - 1)
-        dy = 2.0 * self.extent / (grid_shape[-2] - 1)
+        ny, nx = grid_shape
+        dx = 2.0 * self.extent / (nx - 1)
+        dy = 2.0 * self.extent / (ny - 1)
         k_r = 2.0 * torch.pi / self.wavelength
 
-        kx = (
-            2.0
-            * torch.pi
-            * torch.fft.fftfreq(grid_shape[-1], d=dx, device=self.field.device)
-        )
-        ky = (
-            2.0
-            * torch.pi
-            * torch.fft.fftfreq(grid_shape[-2], d=dy, device=self.field.device)
-        )
+        kx = 2.0 * torch.pi * torch.fft.fftfreq(nx, d=dx, device=self.field.device)
+        ky = 2.0 * torch.pi * torch.fft.fftfreq(ny, d=dy, device=self.field.device)
         k_perp2 = ky[:, None].square() + kx[None, :].square()
 
         phase = torch.exp(-0.5j * (k_perp2 / k_r) * distance)
         new_field = torch.fft.ifft2(torch.fft.fft2(self.field) * phase)
+        if absorbing_boundary:
+            new_field = new_field * self._absorbing_mask(
+                ny, nx, device=self.field.device, dtype=self.field.real.dtype
+            )
         return RadiationField(
             field=new_field, wavelength=self.wavelength, extent=self.extent
         )
+
+    @staticmethod
+    def _absorbing_mask(
+        ny: int, nx: int, device: torch.device, dtype: torch.dtype
+    ) -> torch.Tensor:
+        """Smooth super-Gaussian boundary absorber to suppress FFT wrap-around."""
+        ux = torch.linspace(-1.0, 1.0, nx, device=device, dtype=dtype)
+        uy = torch.linspace(-1.0, 1.0, ny, device=device, dtype=dtype)
+        mask_x = torch.exp(-((ux / 0.95) ** 32))
+        mask_y = torch.exp(-((uy / 0.95) ** 32))
+        return mask_y[:, None] * mask_x[None, :]
 
     def clone(self) -> "RadiationField":
         """Create a clone of the radiation field."""
@@ -285,27 +295,31 @@ class Undulator(Element):
 
         k_r = 2.0 * torch.pi / lambda0
 
-        # Transverse grid setup
-        grid_extent = (
-            self.grid_extent
-            if self.grid_extent is not None
-            else torch.tensor(2e-4, **factory_kwargs)
-        )
-        ngrid = self.grid_shape[0]
-        dx = 2.0 * grid_extent / (ngrid - 1)
-        dy = dx
-
         complex_dtype = (
             torch.complex128
             if incoming.energy.dtype == torch.float64
             else torch.complex64
         )
 
-        # Radiation field initialization
+        # Radiation field and transverse grid setup
         if hasattr(incoming, "radiation") and incoming.radiation is not None:
-            radiation = incoming.radiation.diffract(torch.tensor(0.0, **factory_kwargs))
-            field = radiation.field.to(dtype=complex_dtype)
+            grid_extent = incoming.radiation.extent
+            field = incoming.radiation.field.to(dtype=complex_dtype).clone()
+            ny, nx = field.shape[-2:]
+            dx = 2.0 * grid_extent / (nx - 1)
+            dy = 2.0 * grid_extent / (ny - 1)
+            radiation = RadiationField(
+                field=field, wavelength=lambda0, extent=grid_extent
+            )
         else:
+            grid_extent = (
+                self.grid_extent
+                if self.grid_extent is not None
+                else torch.tensor(2e-4, **factory_kwargs)
+            )
+            ny, nx = self.grid_shape
+            dx = 2.0 * grid_extent / (nx - 1)
+            dy = 2.0 * grid_extent / (ny - 1)
             seed_power = (
                 self.seed_power
                 if self.seed_power is not None
@@ -314,12 +328,8 @@ class Undulator(Element):
             w0 = grid_extent / 4.0
             e0 = torch.sqrt(4.0 * z0 * seed_power / (math.pi * w0.square()))
 
-            x_coords = torch.linspace(
-                -grid_extent, grid_extent, ngrid, **factory_kwargs
-            )
-            y_coords = torch.linspace(
-                -grid_extent, grid_extent, ngrid, **factory_kwargs
-            )
+            x_coords = torch.linspace(-grid_extent, grid_extent, nx, **factory_kwargs)
+            y_coords = torch.linspace(-grid_extent, grid_extent, ny, **factory_kwargs)
             grid_y, grid_x = torch.meshgrid(y_coords, x_coords, indexing="ij")
             field = (
                 e0 * torch.exp(-(grid_x.square() + grid_y.square()) / w0.square())
@@ -390,14 +400,17 @@ class Undulator(Element):
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
 
         # Spectral grid for diffraction
-        kx = 2.0 * torch.pi * torch.fft.fftfreq(ngrid, d=dx, device=field.device)
-        ky = 2.0 * torch.pi * torch.fft.fftfreq(ngrid, d=dy, device=field.device)
+        kx = 2.0 * torch.pi * torch.fft.fftfreq(nx, d=dx, device=field.device)
+        ky = 2.0 * torch.pi * torch.fft.fftfreq(ny, d=dy, device=field.device)
         grid_ky, grid_kx = torch.meshgrid(ky, kx, indexing="ij")
         k_perp2 = grid_kx.square() + grid_ky.square()
+        absorbing_mask = RadiationField._absorbing_mask(
+            ny, nx, device=field.device, dtype=field.real.dtype
+        )
 
         def diffract_half(fld: torch.Tensor, dist: torch.Tensor) -> torch.Tensor:
             phase = torch.exp(-0.5j * (k_perp2 / k_r) * dist)
-            return torch.fft.ifft2(torch.fft.fft2(fld) * phase)
+            return torch.fft.ifft2(torch.fft.fft2(fld) * phase) * absorbing_mask
 
         def interp_field(
             fld: torch.Tensor, x_p: torch.Tensor, y_p: torch.Tensor
@@ -439,9 +452,9 @@ class Undulator(Element):
             fy1 = (gy - gy0).to(dtype=factory_kwargs["dtype"])
             fy0 = 1.0 - fy1
 
-            mask = (gx0 >= 0) & (gx1 < ngrid) & (gy0 >= 0) & (gy1 < ngrid)
+            mask = (gx0 >= 0) & (gx1 < nx) & (gy0 >= 0) & (gy1 < ny)
             flat_grid_bunch = torch.zeros(
-                ngrid * ngrid, dtype=complex_dtype, device=field.device
+                ny * nx, dtype=complex_dtype, device=field.device
             )
 
             w00 = (fx0 * fy0).to(dtype=complex_dtype) * weight
@@ -455,10 +468,10 @@ class Undulator(Element):
                 (w10, gx0, gy1),
                 (w11, gx1, gy1),
             ]:
-                idx = iy[mask] * ngrid + ix[mask]
+                idx = iy[mask] * nx + ix[mask]
                 flat_grid_bunch.scatter_add_(0, idx, w[mask])
 
-            j_bunch = flat_grid_bunch.reshape(ngrid, ngrid) * (
+            j_bunch = flat_grid_bunch.reshape(ny, nx) * (
                 current / (num_particles * dx * dy)
             )
             return (z0 * aw * jj / (math.sqrt(2.0) * gamma0)) * j_bunch

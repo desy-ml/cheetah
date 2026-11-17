@@ -283,3 +283,47 @@ def test_undulator_fel_upstream_autograd_and_moments():
     assert k1.grad is not None
     assert k1.grad.abs() > 0.0
     assert not torch.allclose(outgoing.sigma_x, incoming.sigma_x)
+
+
+def test_undulator_fel_nonsquare_grid_and_boundary_absorption():
+    """
+    Test non-square `grid_shape`, preservation of `incoming.radiation.extent`,
+    and boundary absorption in `RadiationField.diffract`.
+    """
+    und1 = cheetah.Undulator(
+        length=torch.tensor(0.5),
+        period=torch.tensor(0.04),
+        ky=torch.tensor(2.0),
+        tracking_method="fel",
+        grid_shape=(33, 65),
+        grid_extent=torch.tensor(4e-4),
+        step_size=torch.tensor(0.25),
+        num_macroparticles=128,
+    )
+    und2 = cheetah.Undulator(
+        length=torch.tensor(0.5),
+        period=torch.tensor(0.04),
+        ky=torch.tensor(2.0),
+        tracking_method="fel",
+        grid_shape=(17, 17),
+        grid_extent=torch.tensor(1e-4),
+        step_size=torch.tensor(0.25),
+        num_macroparticles=128,
+    )
+    beam = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(5.0),
+        beta_y=torch.tensor(5.0),
+        emittance_x=torch.tensor(1e-9),
+        emittance_y=torch.tensor(1e-9),
+        energy=torch.tensor(1e9),
+    )
+
+    mid = und1.track(beam)
+    assert mid.radiation.field.shape[-2:] == (33, 65)
+    out = und2.track(mid)
+    assert out.radiation.field.shape[-2:] == (33, 65)
+    assert torch.isclose(out.radiation.extent, torch.tensor(4e-4))
+
+    # Diffracting far enough to hit the boundary should attenuate power, not wrap around
+    far = mid.radiation.diffract(torch.tensor(10.0), absorbing_boundary=True)
+    assert far.power < mid.radiation.power
