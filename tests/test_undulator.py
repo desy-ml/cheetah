@@ -247,3 +247,39 @@ def test_undulator_fel_focusing_axes_and_zero_k():
 
     assert torch.allclose(out_ky_fel.sigma_x, out_ky_lin.sigma_x, rtol=1e-4)
     assert torch.allclose(out_ky_fel.sigma_y, out_ky_lin.sigma_y, rtol=1e-4)
+
+
+def test_undulator_fel_upstream_autograd_and_moments():
+    """
+    Test that gradients flow from FEL power back through `ParameterBeam` covariance
+    to an upstream `Quadrupole`, and that exit transverse moments are updated.
+    """
+    k1 = torch.tensor(1.5, requires_grad=True)
+    quad = cheetah.Quadrupole(length=torch.tensor(0.2), k1=k1)
+    drift = cheetah.Drift(length=torch.tensor(0.5))
+    und = cheetah.Undulator(
+        length=torch.tensor(2.0),
+        period=torch.tensor(0.04),
+        kx=torch.tensor(0.0),
+        ky=torch.tensor(3.36),
+        tracking_method="fel",
+        step_size=torch.tensor(0.25),
+        num_macroparticles=256,
+    )
+    segment = cheetah.Segment(elements=[quad, drift, und])
+
+    energy = torch.tensor(1e9)
+    incoming = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(5.0),
+        beta_y=torch.tensor(5.0),
+        emittance_x=torch.tensor(1e-9),
+        emittance_y=torch.tensor(1e-9),
+        energy=energy,
+    )
+
+    outgoing = segment.track(incoming)
+    outgoing.radiation.power.backward()
+
+    assert k1.grad is not None
+    assert k1.grad.abs() > 0.0
+    assert not torch.allclose(outgoing.sigma_x, incoming.sigma_x)

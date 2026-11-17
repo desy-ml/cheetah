@@ -362,28 +362,21 @@ class Undulator(Element):
             cov_y = incoming.cov[..., 2:4, 2:4].squeeze()
 
             gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
-            mvn_x = torch.distributions.MultivariateNormal(
-                torch.zeros(2, **factory_kwargs), cov_x
-            )
-            mvn_y = torch.distributions.MultivariateNormal(
-                torch.zeros(2, **factory_kwargs), cov_y
-            )
-
-            sample_x = mvn_x.sample((num_transverse,))
-            sample_y = mvn_y.sample((num_transverse,))
+            z_x = torch.randn(num_transverse, 2, generator=gen, **factory_kwargs)
+            z_y = torch.randn(num_transverse, 2, generator=gen, **factory_kwargs)
+            l_x = torch.linalg.cholesky(cov_x)
+            l_y = torch.linalg.cholesky(cov_y)
+            sample_x = incoming.mu[..., :2] + z_x @ l_x.mT
+            sample_y = incoming.mu[..., 2:4] + z_y @ l_y.mT
 
             x = sample_x[:, 0].repeat_interleave(nbins)
             px = sample_x[:, 1].repeat_interleave(nbins)
             y = sample_y[:, 0].repeat_interleave(nbins)
             py = sample_y[:, 1].repeat_interleave(nbins)
 
-            delgam = (
-                incoming.sigma_p * gamma0
-                if hasattr(incoming, "sigma_p")
-                else torch.tensor(5.0, **factory_kwargs)
-            )
+            delgam = incoming.sigma_p * gamma0
             gammas_trans = (
-                gamma0
+                gamma0 * (1.0 + incoming.mu[..., 5])
                 + torch.randn(num_transverse, generator=gen, **factory_kwargs) * delgam
             )
             gammas = gammas_trans.repeat_interleave(nbins)
@@ -522,12 +515,18 @@ class Undulator(Element):
         if isinstance(incoming, ParameterBeam):
             new_mu = incoming.mu.clone()
             new_cov = incoming.cov.clone()
-            delta_gamma = gammas - gamma0
-            mean_delta = delta_gamma.mean()
-            std_delta = delta_gamma.std()
+            delta_p = (gammas - gamma0) / gamma0
+            coords = torch.stack([x, px, y, py, delta_p], dim=-1)
+            mean_coords = coords.mean(dim=-2)
+            centered = coords - mean_coords.unsqueeze(-2)
+            cov_5 = (centered.mT @ centered) / max(1, coords.shape[-2] - 1)
 
-            new_mu[..., 5] = mean_delta / gamma0
-            new_cov[..., 5, 5] = (std_delta / gamma0).square()
+            new_mu[..., :4] = mean_coords[..., :4]
+            new_mu[..., 5] = mean_coords[..., 4]
+            new_cov[..., :4, :4] = cov_5[..., :4, :4]
+            new_cov[..., :4, 5] = cov_5[..., :4, 4]
+            new_cov[..., 5, :4] = cov_5[..., 4, :4]
+            new_cov[..., 5, 5] = cov_5[..., 4, 4]
             new_s = incoming.s + self.length
 
             outgoing = ParameterBeam(
