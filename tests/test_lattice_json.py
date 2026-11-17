@@ -75,6 +75,42 @@ def test_save_and_reload_custom_transfer_map(tmp_path):
     assert custom_transfer_map_element.name == reloaded_custom_transfer_map_element.name
 
 
+def test_save_and_reload_patch(tmp_path):
+    """
+    Test that saving and reloading a `Patch` works. `Patch` never appears in the ARES
+    lattice and must therefore be tested separately.
+    """
+    original_patch = cheetah.Patch(
+        position_offset=torch.tensor([0.1, 0.2, 0.3]),
+        time_offset=torch.tensor(1.0e-9),
+        pitch=torch.tensor([0.05, -0.05]),
+        tilt=torch.tensor(0.2),
+        energy_offset=torch.tensor(1.0e6),
+        drift_to_exit=False,
+        name="my_patch",
+    )
+    original_segment = cheetah.Segment([original_patch], name="test_segment")
+    original_segment.to_lattice_json(tmp_path / "patch_lattice.json")
+
+    reloaded_segment = cheetah.Segment.from_lattice_json(
+        tmp_path / "patch_lattice.json"
+    )
+    reloaded_patch = reloaded_segment.my_patch
+
+    assert isinstance(reloaded_patch, cheetah.Patch)
+    assert reloaded_patch.name == original_patch.name
+    torch.testing.assert_close(
+        reloaded_patch.position_offset, original_patch.position_offset
+    )
+    torch.testing.assert_close(reloaded_patch.time_offset, original_patch.time_offset)
+    torch.testing.assert_close(reloaded_patch.pitch, original_patch.pitch)
+    torch.testing.assert_close(reloaded_patch.tilt, original_patch.tilt)
+    torch.testing.assert_close(
+        reloaded_patch.energy_offset, original_patch.energy_offset
+    )
+    assert reloaded_patch.drift_to_exit == original_patch.drift_to_exit
+
+
 def test_save_and_reload_metadata(tmp_path):
     """
     Test that saving and reloading an element with metadata correctly preserves the
