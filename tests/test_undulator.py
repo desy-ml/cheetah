@@ -205,3 +205,45 @@ def test_undulator_fel_energy_conservation():
 
     assert delta_p_rad > 0.0
     assert torch.isclose(delta_p_rad, -delta_p_beam, rtol=0.05)
+
+
+def test_undulator_fel_focusing_axes_and_zero_k():
+    """
+    Test that FEL natural focusing matches `first_order_transfer_map` axes (`ky` focuses
+    `x`, `kx` focuses `y`) and that `kx=ky=0` produces finite results.
+    """
+    energy = torch.tensor(1e8)
+    beam = cheetah.ParticleBeam.from_parameters(
+        num_particles=64,
+        sigma_x=torch.tensor(1e-4),
+        sigma_y=torch.tensor(1e-4),
+        energy=energy,
+    )
+
+    und_off = cheetah.Undulator(
+        length=torch.tensor(1.0),
+        period=torch.tensor(0.04),
+        kx=torch.tensor(0.0),
+        ky=torch.tensor(0.0),
+        tracking_method="fel",
+        wavelength=torch.tensor(1e-6),
+        step_size=torch.tensor(0.5),
+    )
+    out_off = und_off.track(beam)
+    assert torch.isfinite(out_off.particles).all()
+    assert torch.isfinite(out_off.radiation.power)
+
+    und_ky = cheetah.Undulator(
+        length=torch.tensor(2.0),
+        period=torch.tensor(0.04),
+        kx=torch.tensor(0.0),
+        ky=torch.tensor(3.0),
+        tracking_method="fel",
+        step_size=torch.tensor(0.5),
+    )
+    out_ky_fel = und_ky.track(beam)
+    und_ky.tracking_method = "linear"
+    out_ky_lin = und_ky.track(beam)
+
+    assert torch.allclose(out_ky_fel.sigma_x, out_ky_lin.sigma_x, rtol=1e-4)
+    assert torch.allclose(out_ky_fel.sigma_y, out_ky_lin.sigma_y, rtol=1e-4)

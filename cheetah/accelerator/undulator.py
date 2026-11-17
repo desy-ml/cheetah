@@ -478,7 +478,14 @@ class Undulator(Element):
         n_steps = max(1, int(round((self.length / step_size).item())))
         dz = self.length / n_steps
 
-        k_beta = aw * k_u / gamma0
+        k_beta_x = (self.ky / math.sqrt(2.0)) * k_u / gamma0
+        k_beta_y = (self.kx / math.sqrt(2.0)) * k_u / gamma0
+        cos_bx = torch.cos(k_beta_x * dz)
+        sinc_bx = (k_beta_x * dz / torch.pi).sinc() * dz
+        k_sin_bx = k_beta_x * torch.sin(k_beta_x * dz)
+        cos_by = torch.cos(k_beta_y * dz)
+        sinc_by = (k_beta_y * dz / torch.pi).sinc() * dz
+        k_sin_by = k_beta_y * torch.sin(k_beta_y * dz)
 
         for _ in range(n_steps):
             field = diffract_half(field, 0.5 * dz)
@@ -501,11 +508,12 @@ class Undulator(Element):
 
             field = diffract_half(field, 0.5 * dz)
 
-            x = x + px * dz
-            cos_b = torch.cos(k_beta * dz)
-            sin_b = torch.sin(k_beta * dz)
-            y_new = y * cos_b + (py / k_beta) * sin_b
-            py = -y * k_beta * sin_b + py * cos_b
+            x_new = x * cos_bx + px * sinc_bx
+            px = -x * k_sin_bx + px * cos_bx
+            x = x_new
+
+            y_new = y * cos_by + py * sinc_by
+            py = -y * k_sin_by + py * cos_by
             y = y_new
 
         radiation = RadiationField(field=field, wavelength=lambda0, extent=grid_extent)
