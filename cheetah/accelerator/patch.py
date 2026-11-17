@@ -358,8 +358,7 @@ class Patch(Element):
         """
         Plot a representation of this element into a `matplotlib` Axes at position `s`.
         """
-        ax = ax or plt.subplot(111)
-        return ax
+        return ax or plt.subplot(111)
 
     def to_mesh(
         self,
