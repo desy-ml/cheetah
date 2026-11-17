@@ -99,8 +99,10 @@ def test_transform_parameters():
     )
 
 
-def test_energy_offset():
-    """Test that energy offset scales momentum deviations properly."""
+def test_energy_offset_particle_beam():
+    """
+    Test that energy offset scales momentum deviations properly for `ParticleBeam`.
+    """
     incoming = cheetah.ParticleBeam(
         particles=torch.zeros(10, 7), energy=torch.tensor(1.0e9)
     )
@@ -120,6 +122,28 @@ def test_energy_offset():
     torch.testing.assert_close(
         outgoing.particles[..., 5], expected_delta.expand_as(outgoing.particles[..., 5])
     )
+
+
+def test_energy_offset_parameter_beam():
+    """
+    Test that energy offset scales momentum deviations properly for `ParameterBeam`.
+    """
+    incoming = cheetah.ParameterBeam(
+        mu=torch.tensor([0.0, 0.0, 0.0, 0.0, 0.0, 0.05, 1.0]),
+        cov=torch.zeros(7, 7),
+        energy=torch.tensor(1.0e9),
+    )
+
+    patch = cheetah.Patch(energy_offset=torch.tensor(2.0e8))
+    outgoing = patch.track(incoming)
+
+    momentum_ratio = (incoming.energy * incoming.relativistic_beta) / (
+        outgoing.energy * outgoing.relativistic_beta
+    )
+    expected_delta = 0.05 * momentum_ratio + (momentum_ratio - 1.0)
+
+    torch.testing.assert_close(outgoing.energy, torch.tensor(1.2e9))
+    torch.testing.assert_close(outgoing.mu[5], expected_delta)
 
 
 def test_vectorized():
