@@ -266,7 +266,12 @@ class Undulator(Element):
         k_param = (self.kx.square() + self.ky.square()).sqrt()
         aw = k_param / math.sqrt(2.0)
         xi = aw.square() / (2.0 * (1.0 + aw.square()))
-        jj = torch.special.bessel_j0(xi) - torch.special.bessel_j1(xi)
+        is_helical = torch.isclose(self.kx.abs(), self.ky.abs()) & (k_param > 0.0)
+        jj = torch.where(
+            is_helical,
+            torch.ones_like(xi),
+            torch.special.bessel_j0(xi) - torch.special.bessel_j1(xi),
+        )
         lambdau = self.period
         k_u = 2.0 * torch.pi / lambdau
 
@@ -463,7 +468,7 @@ class Undulator(Element):
             j_bunch = flat_grid_bunch.reshape(ngrid, ngrid) * (
                 current / (num_particles * dx * dy)
             )
-            return (0.5j * z0 * aw * jj / gamma0) * j_bunch
+            return (z0 * aw * jj / (math.sqrt(2.0) * gamma0)) * j_bunch
 
         step_size = (
             self.step_size
@@ -481,7 +486,7 @@ class Undulator(Element):
 
             dgamma_dz = (
                 -(elementary_charge / (electron_mass * speed_of_light**2))
-                * (aw * jj / gammas)
+                * (aw * jj / (math.sqrt(2.0) * gammas))
                 * (e_p * torch.exp(1.0j * theta)).real
             )
             dtheta_dz = k_u - (k_r / (2.0 * gammas.square())) * (

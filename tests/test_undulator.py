@@ -161,3 +161,47 @@ def test_undulator_fel_particle_beam():
     assert isinstance(outgoing_beam, cheetah.ParticleBeam)
     assert hasattr(outgoing_beam, "radiation")
     assert outgoing_beam.radiation.power > 0.0
+
+
+def test_undulator_fel_energy_conservation():
+    """Test energy conservation between electron beam and radiation field."""
+    from scipy.constants import electron_mass, elementary_charge, speed_of_light
+
+    seed_power = torch.tensor(1e6, dtype=torch.float64)
+    current = torch.tensor(3000.0, dtype=torch.float64)
+    undulator = cheetah.Undulator(
+        length=torch.tensor(0.5, dtype=torch.float64),
+        period=torch.tensor(0.04, dtype=torch.float64),
+        kx=torch.tensor(0.0, dtype=torch.float64),
+        ky=torch.tensor(2.0, dtype=torch.float64),
+        tracking_method="fel",
+        seed_power=seed_power,
+        bunching=torch.tensor(0.1, dtype=torch.float64),
+        current=current,
+        step_size=torch.tensor(0.01, dtype=torch.float64),
+        grid_extent=torch.tensor(5e-4, dtype=torch.float64),
+        grid_shape=(65, 65),
+        num_macroparticles=1024,
+    )
+
+    energy = torch.tensor(1e9, dtype=torch.float64)
+    incoming_beam = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(5.0, dtype=torch.float64),
+        beta_y=torch.tensor(5.0, dtype=torch.float64),
+        emittance_x=torch.tensor(1e-10, dtype=torch.float64),
+        emittance_y=torch.tensor(1e-10, dtype=torch.float64),
+        energy=energy,
+        dtype=torch.float64,
+    )
+
+    outgoing_beam = undulator.track(incoming_beam)
+    delta_p_rad = outgoing_beam.radiation.power - seed_power
+    mean_delta_p = outgoing_beam.mu[..., 5]
+    p_beam_conversion = current * (
+        electron_mass * speed_of_light**2 / elementary_charge
+    )
+    gamma0 = energy / cheetah.Species("electron", dtype=torch.float64).mass_eV
+    delta_p_beam = p_beam_conversion * gamma0 * mean_delta_p
+
+    assert delta_p_rad > 0.0
+    assert torch.isclose(delta_p_rad, -delta_p_beam, rtol=0.05)
