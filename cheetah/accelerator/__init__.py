@@ -9,6 +9,7 @@ from .element import Element  # noqa: F401
 from .horizontal_corrector import HorizontalCorrector  # noqa: F401
 from .marker import Marker  # noqa: F401
 from .overlay import Overlay  # noqa: F401
+from .patch import Patch  # noqa: F401
 from .quadrupole import Quadrupole  # noqa: F401
 from .rbend import RBend  # noqa: F401
 from .screen import Screen  # noqa: F401
