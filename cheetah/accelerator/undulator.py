@@ -534,13 +534,20 @@ class Undulator(Element):
                 mu_y = mu_y.unsqueeze(-2).expand(*field_batch_shape, 2)
 
             gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
-            # Share normalized draws across vector_shape (common random numbers)
+            # Share whitened normalized draws across vector_shape (CRN)
             z_x = torch.randn(
                 *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
             )
             z_y = torch.randn(
                 *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
             )
+            if num_transverse > 2:
+                z_x = z_x - z_x.mean(dim=-2, keepdim=True)
+                z_y = z_y - z_y.mean(dim=-2, keepdim=True)
+                cov_zx = (z_x.mT @ z_x) / num_transverse
+                cov_zy = (z_y.mT @ z_y) / num_transverse
+                z_x = z_x @ torch.linalg.inv(torch.linalg.cholesky(cov_zx)).mT
+                z_y = z_y @ torch.linalg.inv(torch.linalg.cholesky(cov_zy)).mT
             l_x = torch.linalg.cholesky(cov_x)
             l_y = torch.linalg.cholesky(cov_y)
             sample_x = mu_x.unsqueeze(-2) + z_x @ l_x.mT
@@ -559,6 +566,9 @@ class Undulator(Element):
             z_gamma = torch.randn(
                 *slice_shape, num_transverse, generator=gen, **factory_kwargs
             )
+            if num_transverse > 2:
+                z_gamma = z_gamma - z_gamma.mean(dim=-1, keepdim=True)
+                z_gamma = z_gamma / z_gamma.std(dim=-1, unbiased=False, keepdim=True)
             gammas_trans = mu_gamma.unsqueeze(-1) + z_gamma * delgam.unsqueeze(-1)
             gammas = gammas_trans.repeat_interleave(nbins, dim=-1)
 
