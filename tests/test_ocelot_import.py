@@ -110,7 +110,6 @@ def test_beam_desired_dtype(BeamClass: cheetah.Beam, desired_dtype: torch.dtype)
 
 def test_ocelot_lattice_import(demo_cell):
     """Tests if a lattice is correctly imported from Ocelot."""
-
     segment = cheetah.Segment.from_ocelot(demo_cell)
 
     assert isinstance(segment.elements[0], cheetah.Drift)
