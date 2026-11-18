@@ -52,7 +52,7 @@ class Cavity(Element):
     :param active_length: Active RF length in meters. If provided, it must be positive
         and no greater than `length`. The remaining length is split into equal entrance
         and exit drifts. If `None`, the full `length` is active, preserving the existing
-        model. For Bmad comparisons, use `length=L` and `active_length=L_ACTIVE`.
+        model.
     """
 
     def __init__(
