@@ -24,9 +24,11 @@ class RadiationField:
     Representation of a transverse optical or X-ray radiation field in an FEL.
 
     :param field: Complex transverse electric field envelope on a 2D grid with shape
-        `(H, W)` in V/m.
+        `(..., H, W)` or time-dependent 3D grid `(..., num_slices, H, W)` in V/m.
     :param wavelength: Radiation wavelength in meters.
     :param extent: Transverse half-size of the grid in meters.
+    :param slice_spacing: Longitudinal spacing between radiation slices in meters for
+        time-dependent simulations, or `None` for steady-state.
     """
 
     def __init__(
@@ -34,19 +36,39 @@ class RadiationField:
         field: torch.Tensor,
         wavelength: torch.Tensor,
         extent: torch.Tensor,
+        slice_spacing: torch.Tensor | None = None,
     ) -> None:
         self.field = field
         self.wavelength = wavelength
         self.extent = extent
+        self.slice_spacing = slice_spacing
 
     @property
-    def power(self) -> torch.Tensor:
-        """Total radiation power in Watts integrated over the transverse grid."""
+    def slice_power(self) -> torch.Tensor:
+        """Radiation power in Watts for each slice (or total for steady-state)."""
         grid_shape = self.field.shape[-2:]
         dx = 2.0 * self.extent / (grid_shape[-1] - 1)
         dy = 2.0 * self.extent / (grid_shape[-2] - 1)
+        if self.slice_spacing is not None:
+            dx = dx[..., None]
+            dy = dy[..., None]
         z0 = mu_0 * speed_of_light
         return (0.5 / z0) * self.field.abs().square().sum(dim=(-2, -1)) * dx * dy
+
+    @property
+    def power(self) -> torch.Tensor:
+        """Mean radiation power in Watts across slices (or total for steady-state)."""
+        sp = self.slice_power
+        if self.slice_spacing is not None:
+            return sp.mean(dim=-1)
+        return sp
+
+    @property
+    def pulse_energy(self) -> torch.Tensor | None:
+        """Total pulse energy in Joules for time-dependent fields, else `None`."""
+        if self.slice_spacing is None:
+            return None
+        return self.slice_power.sum(dim=-1) * (self.slice_spacing / speed_of_light)
 
     @property
     def peak_intensity(self) -> torch.Tensor:
@@ -81,16 +103,20 @@ class RadiationField:
         )
         k_perp2 = ky[..., :, None].square() + kx[..., None, :].square()
 
-        phase = torch.exp(
-            -0.5j * (k_perp2 / k_r[..., None, None]) * distance[..., None, None]
-        )
+        phase_arg = -0.5j * (k_perp2 / k_r[..., None, None]) * distance[..., None, None]
+        if self.slice_spacing is not None:
+            phase_arg = phase_arg.unsqueeze(-3)
+        phase = torch.exp(phase_arg)
         new_field = torch.fft.ifft2(torch.fft.fft2(self.field) * phase)
         if absorbing_boundary:
             new_field = new_field * self._absorbing_mask(
                 ny, nx, device=self.field.device, dtype=self.field.real.dtype
             )
         return RadiationField(
-            field=new_field, wavelength=self.wavelength, extent=self.extent
+            field=new_field,
+            wavelength=self.wavelength,
+            extent=self.extent,
+            slice_spacing=self.slice_spacing,
         )
 
     @staticmethod
@@ -110,6 +136,9 @@ class RadiationField:
             field=self.field.clone(),
             wavelength=self.wavelength.clone(),
             extent=self.extent.clone(),
+            slice_spacing=(
+                self.slice_spacing.clone() if self.slice_spacing is not None else None
+            ),
         )
 
 
@@ -138,6 +167,12 @@ class Undulator(Element):
     :param grid_shape: Grid resolution tuple `(num_y, num_x)`.
     :param num_macroparticles: Number of macroparticles used for FEL slice tracking.
     :param nbins: Number of quiet-start phase bins per slice.
+    :param num_slices: Number of longitudinal slices (`1` for steady-state, `> 1` for
+        time-dependent SASE simulation with slippage).
+    :param slice_spacing: Longitudinal spacing between slices in meters for
+        time-dependent simulations.
+    :param shot_noise: Whether to add Penman-McNeil shot-noise phase perturbations in
+        time-dependent (`num_slices > 1`) simulations.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -169,6 +204,9 @@ class Undulator(Element):
         grid_shape: tuple[int, int] = (65, 65),
         num_macroparticles: int = 2048,
         nbins: int = 8,
+        num_slices: int = 1,
+        slice_spacing: torch.Tensor | None = None,
+        shot_noise: bool = True,
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
@@ -202,6 +240,9 @@ class Undulator(Element):
         self.grid_shape = grid_shape
         self.num_macroparticles = num_macroparticles
         self.nbins = nbins
+        self.num_slices = num_slices
+        self.register_buffer_or_parameter("slice_spacing", slice_spacing)
+        self.shot_noise = shot_noise
 
         self.radiation: RadiationField | None = None
         self.tracking_method = tracking_method
@@ -329,16 +370,38 @@ class Undulator(Element):
             self.ky.shape,
         )
 
-        if hasattr(incoming, "radiation") and incoming.radiation is not None:
+        has_in_rad = hasattr(incoming, "radiation") and incoming.radiation is not None
+        is_time_dependent = (self.num_slices > 1) or (
+            has_in_rad and incoming.radiation.slice_spacing is not None
+        )
+        if has_in_rad and incoming.radiation.slice_spacing is not None:
+            num_slices = incoming.radiation.field.shape[-3]
+            slice_spacing = incoming.radiation.slice_spacing.expand(vector_shape)
+        elif is_time_dependent:
+            num_slices = self.num_slices
+            if self.slice_spacing is not None:
+                slice_spacing = self.slice_spacing.expand(vector_shape)
+            else:
+                has_sigma_tau = incoming.sigma_tau > 0.0
+                slice_spacing = torch.where(
+                    has_sigma_tau,
+                    6.0 * incoming.sigma_tau / num_slices,
+                    10.0 * lambda0,
+                ).expand(vector_shape)
+        else:
+            num_slices = 1
+            slice_spacing = None
+
+        slice_shape = (num_slices,) if is_time_dependent else ()
+        field_batch_shape = (*vector_shape, *slice_shape)
+
+        if has_in_rad:
             grid_extent = incoming.radiation.extent.expand(vector_shape)
             field = incoming.radiation.field.to(dtype=complex_dtype)
             ny, nx = field.shape[-2:]
-            field = field.expand(*vector_shape, ny, nx).clone()
+            field = field.expand(*field_batch_shape, ny, nx).clone()
             dx = 2.0 * grid_extent / (nx - 1)
             dy = 2.0 * grid_extent / (ny - 1)
-            radiation = RadiationField(
-                field=field, wavelength=lambda0, extent=grid_extent
-            )
         else:
             if self.grid_extent is not None:
                 grid_extent = self.grid_extent.expand(vector_shape)
@@ -350,10 +413,11 @@ class Undulator(Element):
             ny, nx = self.grid_shape
             dx = 2.0 * grid_extent / (nx - 1)
             dy = 2.0 * grid_extent / (ny - 1)
+            default_seed = 0.0 if (is_time_dependent and self.shot_noise) else 1.0
             seed_power = (
                 self.seed_power
                 if self.seed_power is not None
-                else torch.tensor(1.0, **factory_kwargs)
+                else torch.tensor(default_seed, **factory_kwargs)
             )
             w0 = grid_extent / 4.0
             e0 = torch.sqrt(4.0 * z0 * seed_power / (math.pi * w0.square()))
@@ -363,15 +427,18 @@ class Undulator(Element):
             grid_uy, grid_ux = torch.meshgrid(uy, ux, indexing="ij")
             grid_x = grid_ux * grid_extent[..., None, None]
             grid_y = grid_uy * grid_extent[..., None, None]
-            field = (
+            field_2d = (
                 e0[..., None, None]
                 * torch.exp(
                     -(grid_x.square() + grid_y.square()) / w0[..., None, None].square()
                 )
             ).to(dtype=complex_dtype)
-            radiation = RadiationField(
-                field=field, wavelength=lambda0, extent=grid_extent
-            )
+            if is_time_dependent:
+                field = (
+                    field_2d.unsqueeze(-3).expand(*field_batch_shape, ny, nx).clone()
+                )
+            else:
+                field = field_2d
 
         # Macroparticles setup
         nbins = self.nbins
@@ -399,6 +466,32 @@ class Undulator(Element):
                 beam_peak_current,
                 torch.tensor(1000.0, **factory_kwargs),
             )
+
+        if is_time_dependent:
+            s_idx = torch.linspace(
+                -0.5 * (num_slices - 1),
+                0.5 * (num_slices - 1),
+                num_slices,
+                **factory_kwargs,
+            )
+            s_coords = s_idx * slice_spacing[..., None]
+            if self.current is None and (incoming.sigma_tau > 0.0).any():
+                safe_st = torch.where(
+                    incoming.sigma_tau > 0.0,
+                    incoming.sigma_tau,
+                    torch.ones_like(incoming.sigma_tau),
+                )
+                gauss_env = torch.exp(-0.5 * (s_coords / safe_st[..., None]).square())
+                current_profile = torch.where(
+                    (incoming.sigma_tau > 0.0)[..., None],
+                    current[..., None] * gauss_env,
+                    current[..., None].expand(*field_batch_shape),
+                )
+            else:
+                current_profile = current[..., None].expand(*field_batch_shape)
+        else:
+            current_profile = current
+
         bunch = (
             self.bunching
             if self.bunching is not None
@@ -415,12 +508,18 @@ class Undulator(Element):
             gammas = (
                 gamma0.unsqueeze(-1) * (1.0 + incoming.particles[..., 5].contiguous())
             ).expand(*vector_shape, -1)
+            if is_time_dependent:
+                x = x.unsqueeze(-2).expand(*field_batch_shape, -1).clone()
+                px = px.unsqueeze(-2).expand(*field_batch_shape, -1).clone()
+                y = y.unsqueeze(-2).expand(*field_batch_shape, -1).clone()
+                py = py.unsqueeze(-2).expand(*field_batch_shape, -1).clone()
+                gammas = gammas.unsqueeze(-2).expand(*field_batch_shape, -1).clone()
             num_parts = x.shape[-1]
             theta0 = torch.linspace(
                 0.0, 2.0 * math.pi, num_parts + 1, **factory_kwargs
             )[:-1]
             theta = (theta0 - 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
-                *vector_shape, -1
+                *field_batch_shape, -1
             )
             num_particles = num_parts
         elif isinstance(incoming, ParameterBeam):
@@ -428,13 +527,18 @@ class Undulator(Element):
             cov_y = incoming.cov[..., 2:4, 2:4].expand(*vector_shape, 2, 2)
             mu_x = incoming.mu[..., :2].expand(*vector_shape, 2)
             mu_y = incoming.mu[..., 2:4].expand(*vector_shape, 2)
+            if is_time_dependent:
+                cov_x = cov_x.unsqueeze(-3).expand(*field_batch_shape, 2, 2)
+                cov_y = cov_y.unsqueeze(-3).expand(*field_batch_shape, 2, 2)
+                mu_x = mu_x.unsqueeze(-2).expand(*field_batch_shape, 2)
+                mu_y = mu_y.unsqueeze(-2).expand(*field_batch_shape, 2)
 
             gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
             z_x = torch.randn(
-                *vector_shape, num_transverse, 2, generator=gen, **factory_kwargs
+                *field_batch_shape, num_transverse, 2, generator=gen, **factory_kwargs
             )
             z_y = torch.randn(
-                *vector_shape, num_transverse, 2, generator=gen, **factory_kwargs
+                *field_batch_shape, num_transverse, 2, generator=gen, **factory_kwargs
             )
             l_x = torch.linalg.cholesky(cov_x)
             l_y = torch.linalg.cholesky(cov_y)
@@ -448,8 +552,11 @@ class Undulator(Element):
 
             delgam = (incoming.sigma_p * gamma0).expand(vector_shape)
             mu_gamma = (gamma0 * (1.0 + incoming.mu[..., 5])).expand(vector_shape)
+            if is_time_dependent:
+                delgam = delgam.unsqueeze(-1).expand(field_batch_shape)
+                mu_gamma = mu_gamma.unsqueeze(-1).expand(field_batch_shape)
             gammas_trans = mu_gamma.unsqueeze(-1) + torch.randn(
-                *vector_shape, num_transverse, generator=gen, **factory_kwargs
+                *field_batch_shape, num_transverse, generator=gen, **factory_kwargs
             ) * delgam.unsqueeze(-1)
             gammas = gammas_trans.repeat_interleave(nbins, dim=-1)
 
@@ -457,11 +564,31 @@ class Undulator(Element):
                 0.0, 2.0 * math.pi, nbins + 1, **factory_kwargs
             )[:-1]
             theta0 = theta_bins.repeat(num_transverse)
-            theta = (theta0 - 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
-                *vector_shape, -1
+            bunch_b = bunch[..., None] if is_time_dependent else bunch
+            theta = (theta0 - 2.0 * bunch_b[..., None] * torch.sin(theta0)).expand(
+                *field_batch_shape, -1
             )
         else:
             raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
+        if is_time_dependent and self.shot_noise and not has_in_rad:
+            gen_sn = torch.Generator(device=incoming.energy.device).manual_seed(137)
+            n_e = (
+                current_profile
+                * slice_spacing[..., None]
+                / (elementary_charge * speed_of_light)
+            ).clamp(min=1.0)
+            sigma_theta = torch.sqrt(num_particles / n_e).clamp(max=math.pi)
+            theta = (
+                theta
+                + torch.randn(
+                    *field_batch_shape,
+                    num_particles,
+                    generator=gen_sn,
+                    **factory_kwargs,
+                )
+                * sigma_theta[..., None]
+            )
 
         # Spectral grid for diffraction
         kx = (
@@ -480,13 +607,18 @@ class Undulator(Element):
         absorbing_mask = RadiationField._absorbing_mask(
             ny, nx, device=field.device, dtype=field.real.dtype
         )
-        batch_size = math.prod(vector_shape) if len(vector_shape) > 0 else 1
+        batch_size = math.prod(field_batch_shape) if len(field_batch_shape) > 0 else 1
+
+        grid_extent_p = grid_extent.unsqueeze(-1) if is_time_dependent else grid_extent
+        dx_f = dx.unsqueeze(-1) if is_time_dependent else dx
+        dy_f = dy.unsqueeze(-1) if is_time_dependent else dy
+        gamma0_p = gamma0.unsqueeze(-1) if is_time_dependent else gamma0
 
         def interp_field(
             fld: torch.Tensor, x_p: torch.Tensor, y_p: torch.Tensor
         ) -> torch.Tensor:
-            norm_x = (x_p / grid_extent[..., None]).to(dtype=fld.real.dtype)
-            norm_y = (y_p / grid_extent[..., None]).to(dtype=fld.real.dtype)
+            norm_x = (x_p / grid_extent_p[..., None]).to(dtype=fld.real.dtype)
+            norm_y = (y_p / grid_extent_p[..., None]).to(dtype=fld.real.dtype)
             grid_sample_coords = torch.stack([norm_x, norm_y], dim=-1).reshape(
                 batch_size, 1, -1, 2
             )
@@ -497,15 +629,15 @@ class Undulator(Element):
                 fld_2c, grid_sample_coords, align_corners=True, mode="bilinear"
             )
             return torch.complex(
-                e_both[:, 0].reshape(*vector_shape, -1),
-                e_both[:, 1].reshape(*vector_shape, -1),
+                e_both[:, 0].reshape(*field_batch_shape, -1),
+                e_both[:, 1].reshape(*field_batch_shape, -1),
             )
 
         cic_extent_y = torch.stack(
-            [-grid_extent - 0.5 * dy, grid_extent + 0.5 * dy], dim=-1
+            [-grid_extent_p - 0.5 * dy_f, grid_extent_p + 0.5 * dy_f], dim=-1
         )
         cic_extent_x = torch.stack(
-            [-grid_extent - 0.5 * dx, grid_extent + 0.5 * dx], dim=-1
+            [-grid_extent_p - 0.5 * dx_f, grid_extent_p + 0.5 * dx_f], dim=-1
         )
         cic_extent = torch.stack([cic_extent_y, cic_extent_x], dim=-2).unsqueeze(-3)
 
@@ -515,14 +647,14 @@ class Undulator(Element):
             gammas_p: torch.Tensor,
             theta_p: torch.Tensor,
         ) -> torch.Tensor:
-            amp = gamma0[..., None] / gammas_p
+            amp = gamma0_p[..., None] / gammas_p
             charges_2 = torch.stack(
                 [amp * torch.cos(theta_p), -amp * torch.sin(theta_p)], dim=-2
             )
             pos_2 = (
                 torch.stack([y_p, x_p], dim=-1)
                 .unsqueeze(-3)
-                .expand(*vector_shape, 2, -1, 2)
+                .expand(*field_batch_shape, 2, -1, 2)
             )
             grid_2 = cloud_in_cell_charge_deposition(
                 pos_2,
@@ -532,17 +664,22 @@ class Undulator(Element):
             )
             j_bunch = (
                 torch.complex(grid_2[..., 0, :, :], grid_2[..., 1, :, :])
-                * (current / (num_particles * dx * dy))[..., None, None]
+                * (current_profile / (num_particles * dx_f * dy_f))[..., None, None]
             )
-            return (z0 * aw * jj / (math.sqrt(2.0) * gamma0))[..., None, None] * j_bunch
+            return (z0 * aw * jj / (math.sqrt(2.0) * gamma0))[..., None, None] * (
+                j_bunch if not is_time_dependent else j_bunch
+            )
 
         step_size = self.step_size if self.step_size is not None else 2.0 * self.period
         n_steps = max(1, int(round((self.length / step_size).max().item())))
         dz = self.length / n_steps
 
-        phase_half = torch.exp(
+        phase_half_arg = (
             -0.5j * (k_perp2 / k_r[..., None, None]) * (0.5 * dz)[..., None, None]
         )
+        if is_time_dependent:
+            phase_half_arg = phase_half_arg.unsqueeze(-3)
+        phase_half = torch.exp(phase_half_arg)
         phase_full = phase_half * phase_half
 
         k_beta_x = (self.ky / math.sqrt(2.0)) * k_u / gamma0
@@ -567,6 +704,23 @@ class Undulator(Element):
         aw2_b = aw.square()[..., None]
         dz_p = dz[..., None]
         dz_f = dz[..., None, None]
+        if is_time_dependent:
+            cos_bx_half = cos_bx_half.unsqueeze(-2)
+            sinc_bx_half = sinc_bx_half.unsqueeze(-2)
+            cos_by_half = cos_by_half.unsqueeze(-2)
+            sinc_by_half = sinc_by_half.unsqueeze(-2)
+            cos_bx = cos_bx.unsqueeze(-2)
+            sinc_bx = sinc_bx.unsqueeze(-2)
+            k_sin_bx = k_sin_bx.unsqueeze(-2)
+            cos_by = cos_by.unsqueeze(-2)
+            sinc_by = sinc_by.unsqueeze(-2)
+            k_sin_by = k_sin_by.unsqueeze(-2)
+            aw_jj = aw_jj.unsqueeze(-2)
+            k_u_b = k_u_b.unsqueeze(-2)
+            k_r_b = k_r_b.unsqueeze(-2)
+            aw2_b = aw2_b.unsqueeze(-2)
+            dz_p = dz_p.unsqueeze(-2)
+            dz_f = dz_f.unsqueeze(-3)
 
         def compute_rhs(
             fld: torch.Tensor,
@@ -588,6 +742,13 @@ class Undulator(Element):
             )
             s_source = deposit_source(x_p, y_p, gammas_p, theta_p)
             return dgamma_dz, dtheta_dz, s_source
+
+        slip_accum = 0.0
+        slip_per_step = (
+            (dz * lambda0 / (lambdau * slice_spacing)).max().item()
+            if is_time_dependent
+            else 0.0
+        )
 
         field = torch.fft.ifft2(torch.fft.fft2(field) * phase_half)
         for step in range(n_steps):
@@ -611,6 +772,18 @@ class Undulator(Element):
             phase = phase_full if step < n_steps - 1 else phase_half
             field = torch.fft.ifft2(torch.fft.fft2(field) * phase) * absorbing_mask
 
+            if is_time_dependent:
+                slip_accum += slip_per_step
+                if slip_accum >= 1.0:
+                    shift = int(slip_accum)
+                    slip_accum -= shift
+                    if shift < num_slices:
+                        field = torch.nn.functional.pad(
+                            field[..., :-shift, :, :], (0, 0, 0, 0, shift, 0)
+                        )
+                    else:
+                        field = torch.zeros_like(field)
+
             x_new = x * cos_bx + px * sinc_bx
             px = -x * k_sin_bx + px * cos_bx
             x = x_new
@@ -619,14 +792,24 @@ class Undulator(Element):
             py = -y * k_sin_by + py * cos_by
             y = y_new
 
-        radiation = RadiationField(field=field, wavelength=lambda0, extent=grid_extent)
+        radiation = RadiationField(
+            field=field,
+            wavelength=lambda0,
+            extent=grid_extent,
+            slice_spacing=slice_spacing,
+        )
         self.radiation = radiation
 
         if isinstance(incoming, ParameterBeam):
             new_mu = incoming.mu.expand(*vector_shape, 7).clone()
             new_cov = incoming.cov.expand(*vector_shape, 7, 7).clone()
-            delta_p = (gammas - gamma0[..., None]) / gamma0[..., None]
-            coords = torch.stack([x, px, y, py, delta_p], dim=-1)
+            delta_p = (gammas - gamma0_p[..., None]) / gamma0_p[..., None]
+            if is_time_dependent:
+                coords = torch.stack([x, px, y, py, delta_p], dim=-1).reshape(
+                    *vector_shape, num_slices * num_particles, 5
+                )
+            else:
+                coords = torch.stack([x, px, y, py, delta_p], dim=-1)
             mean_coords = coords.mean(dim=-2)
             centered = coords - mean_coords.unsqueeze(-2)
             cov_5 = (centered.mT @ centered) / max(1, coords.shape[-2] - 1)
@@ -649,11 +832,13 @@ class Undulator(Element):
             )
         elif isinstance(incoming, ParticleBeam):
             new_particles = incoming.particles.expand(*vector_shape, -1, 7).clone()
-            new_particles[..., 0] = x
-            new_particles[..., 1] = px
-            new_particles[..., 2] = y
-            new_particles[..., 3] = py
-            new_particles[..., 5] = (gammas - gamma0[..., None]) / gamma0[..., None]
+            idx_s = num_slices // 2 if is_time_dependent else None
+            new_particles[..., 0] = x[..., idx_s, :] if is_time_dependent else x
+            new_particles[..., 1] = px[..., idx_s, :] if is_time_dependent else px
+            new_particles[..., 2] = y[..., idx_s, :] if is_time_dependent else y
+            new_particles[..., 3] = py[..., idx_s, :] if is_time_dependent else py
+            p_out = (gammas - gamma0_p[..., None]) / gamma0_p[..., None]
+            new_particles[..., 5] = p_out[..., idx_s, :] if is_time_dependent else p_out
             new_s = incoming.s + self.length
             outgoing = ParticleBeam(
                 new_particles,

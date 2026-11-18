@@ -433,3 +433,41 @@ def test_phase_shifter():
     out.radiation.power.backward()
     assert phase_shift.grad is not None
     assert phase_shift.grad.abs() > 0.0
+
+
+def test_undulator_fel_sase_multislice():
+    """
+    Test time-dependent multi-slice SASE simulation starting from shot noise
+    (zero seed power) with slippage and Gaussian current profile.
+    """
+    ky = torch.tensor(3.36, requires_grad=True)
+    und = cheetah.Undulator(
+        length=torch.tensor(4.0),
+        period=torch.tensor(0.04),
+        ky=ky,
+        tracking_method="fel",
+        step_size=torch.tensor(0.2),
+        num_macroparticles=128,
+        num_slices=8,
+        slice_spacing=torch.tensor(1e-7),
+        shot_noise=True,
+    )
+    beam = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(2.0),
+        beta_y=torch.tensor(2.0),
+        emittance_x=torch.tensor(1e-10),
+        emittance_y=torch.tensor(1e-10),
+        sigma_tau=torch.tensor(2e-7),
+        sigma_p=torch.tensor(1e-5),
+        total_charge=torch.tensor(250e-12),
+        energy=torch.tensor(5e9),
+    )
+
+    out = und.track(beam)
+    assert out.radiation.slice_power.shape == (8,)
+    assert out.radiation.power > 0.0
+    assert out.radiation.pulse_energy > 0.0
+
+    out.radiation.pulse_energy.backward()
+    assert ky.grad is not None
+    assert ky.grad.abs() > 0.0
