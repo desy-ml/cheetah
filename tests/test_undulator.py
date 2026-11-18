@@ -204,7 +204,7 @@ def test_undulator_fel_energy_conservation():
     delta_p_beam = p_beam_conversion * gamma0 * mean_delta_p
 
     assert delta_p_rad > 0.0
-    assert torch.isclose(delta_p_rad, -delta_p_beam, rtol=0.05)
+    assert torch.isclose(delta_p_rad, -delta_p_beam, rtol=1e-2)
 
 
 def test_undulator_fel_focusing_axes_and_zero_k():
@@ -355,3 +355,44 @@ def test_undulator_fel_vectorized():
     cloned = out.clone()
     assert hasattr(cloned, "radiation")
     assert torch.allclose(cloned.radiation.power, out.radiation.power)
+
+
+def test_undulator_fel_adaptive_defaults():
+    """
+    Test adaptive `grid_extent` for large beams and peak `current` inferred from
+    `total_charge` and `sigma_tau`.
+    """
+    und = cheetah.Undulator(
+        length=torch.tensor(12.0),
+        period=torch.tensor(0.04),
+        ky=torch.tensor(2.0),
+        tracking_method="fel",
+        step_size=torch.tensor(0.4),
+        num_macroparticles=256,
+    )
+    beam = cheetah.ParameterBeam.from_parameters(
+        sigma_x=torch.tensor(1e-4),
+        sigma_y=torch.tensor(1e-4),
+        sigma_px=torch.tensor(1e-7),
+        sigma_py=torch.tensor(1e-7),
+        sigma_tau=torch.tensor(2e-6),
+        sigma_p=torch.tensor(1e-5),
+        total_charge=torch.tensor(250e-12),
+        energy=torch.tensor(5e9),
+    )
+
+    out_high_q = und.track(beam)
+    beam_low_q = cheetah.ParameterBeam.from_parameters(
+        sigma_x=torch.tensor(1e-4),
+        sigma_y=torch.tensor(1e-4),
+        sigma_px=torch.tensor(1e-7),
+        sigma_py=torch.tensor(1e-7),
+        sigma_tau=torch.tensor(2e-6),
+        sigma_p=torch.tensor(1e-5),
+        total_charge=torch.tensor(10e-12),
+        energy=torch.tensor(5e9),
+    )
+    out_low_q = und.track(beam_low_q)
+
+    assert torch.isclose(out_high_q.radiation.extent, torch.tensor(6.0 * 1e-4))
+    assert out_high_q.radiation.power > out_low_q.radiation.power

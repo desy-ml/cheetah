@@ -340,18 +340,20 @@ class Undulator(Element):
                 field=field, wavelength=lambda0, extent=grid_extent
             )
         else:
-            grid_extent = (
-                self.grid_extent
-                if self.grid_extent is not None
-                else torch.tensor(2e-4, **factory_kwargs)
-            ).expand(vector_shape)
+            if self.grid_extent is not None:
+                grid_extent = self.grid_extent.expand(vector_shape)
+            else:
+                sigma_max = torch.maximum(incoming.sigma_x, incoming.sigma_y)
+                grid_extent = torch.clamp(6.0 * sigma_max, min=3e-4).expand(
+                    vector_shape
+                )
             ny, nx = self.grid_shape
             dx = 2.0 * grid_extent / (nx - 1)
             dy = 2.0 * grid_extent / (ny - 1)
             seed_power = (
                 self.seed_power
                 if self.seed_power is not None
-                else torch.tensor(1.090578e5, **factory_kwargs)
+                else torch.tensor(1.0, **factory_kwargs)
             )
             w0 = grid_extent / 4.0
             e0 = torch.sqrt(4.0 * z0 * seed_power / (math.pi * w0.square()))
@@ -376,11 +378,27 @@ class Undulator(Element):
         num_transverse = max(1, self.num_macroparticles // nbins)
         num_particles = num_transverse * nbins
 
-        current = (
-            self.current
-            if self.current is not None
-            else torch.tensor(5000.0, **factory_kwargs)
-        )
+        if self.current is not None:
+            current = self.current
+        else:
+            has_beam_current = (incoming.total_charge > 0.0) & (
+                incoming.sigma_tau > 0.0
+            )
+            safe_sigma_tau = torch.where(
+                has_beam_current,
+                incoming.sigma_tau,
+                torch.ones_like(incoming.sigma_tau),
+            )
+            beam_peak_current = (
+                incoming.total_charge
+                * speed_of_light
+                / (math.sqrt(2.0 * math.pi) * safe_sigma_tau)
+            )
+            current = torch.where(
+                has_beam_current,
+                beam_peak_current,
+                torch.tensor(1000.0, **factory_kwargs),
+            )
         bunch = (
             self.bunching
             if self.bunching is not None
@@ -401,7 +419,7 @@ class Undulator(Element):
             theta0 = torch.linspace(
                 0.0, 2.0 * math.pi, num_parts + 1, **factory_kwargs
             )[:-1]
-            theta = (theta0 + 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
+            theta = (theta0 - 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
                 *vector_shape, -1
             )
             num_particles = num_parts
@@ -439,7 +457,7 @@ class Undulator(Element):
                 0.0, 2.0 * math.pi, nbins + 1, **factory_kwargs
             )[:-1]
             theta0 = theta_bins.repeat(num_transverse)
-            theta = (theta0 + 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
+            theta = (theta0 - 2.0 * bunch[..., None] * torch.sin(theta0)).expand(
                 *vector_shape, -1
             )
         else:
@@ -518,11 +536,7 @@ class Undulator(Element):
             )
             return (z0 * aw * jj / (math.sqrt(2.0) * gamma0))[..., None, None] * j_bunch
 
-        step_size = (
-            self.step_size
-            if self.step_size is not None
-            else torch.tensor(0.12, **factory_kwargs)
-        )
+        step_size = self.step_size if self.step_size is not None else 2.0 * self.period
         n_steps = max(1, int(round((self.length / step_size).max().item())))
         dz = self.length / n_steps
 
@@ -533,6 +547,12 @@ class Undulator(Element):
 
         k_beta_x = (self.ky / math.sqrt(2.0)) * k_u / gamma0
         k_beta_y = (self.kx / math.sqrt(2.0)) * k_u / gamma0
+        half_dz = 0.5 * dz
+        cos_bx_half = torch.cos(k_beta_x * half_dz)[..., None]
+        sinc_bx_half = ((k_beta_x * half_dz / torch.pi).sinc() * half_dz)[..., None]
+        cos_by_half = torch.cos(k_beta_y * half_dz)[..., None]
+        sinc_by_half = ((k_beta_y * half_dz / torch.pi).sinc() * half_dz)[..., None]
+
         cos_bx = torch.cos(k_beta_x * dz)[..., None]
         sinc_bx = ((k_beta_x * dz / torch.pi).sinc() * dz)[..., None]
         k_sin_bx = (k_beta_x * torch.sin(k_beta_x * dz))[..., None]
@@ -548,24 +568,45 @@ class Undulator(Element):
         dz_p = dz[..., None]
         dz_f = dz[..., None, None]
 
-        field = torch.fft.ifft2(torch.fft.fft2(field) * phase_half)
-        for step in range(n_steps):
-            e_p = interp_field(field, x, y)
-
+        def compute_rhs(
+            fld: torch.Tensor,
+            x_p: torch.Tensor,
+            px_p: torch.Tensor,
+            y_p: torch.Tensor,
+            py_p: torch.Tensor,
+            gammas_p: torch.Tensor,
+            theta_p: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            e_p = interp_field(fld, x_p, y_p)
             dgamma_dz = (
                 -e_charge_over_mc2
-                * (aw_jj / (math.sqrt(2.0) * gammas))
-                * (e_p * torch.exp(1.0j * theta)).real
+                * (aw_jj / (math.sqrt(2.0) * gammas_p))
+                * (e_p * torch.exp(1.0j * theta_p)).real
             )
-            dtheta_dz = k_u_b - (k_r_b / (2.0 * gammas.square())) * (
-                1.0 + aw2_b + gammas.square() * (px.square() + py.square())
+            dtheta_dz = k_u_b - (k_r_b / (2.0 * gammas_p.square())) * (
+                1.0 + aw2_b + gammas_p.square() * (px_p.square() + py_p.square())
+            )
+            s_source = deposit_source(x_p, y_p, gammas_p, theta_p)
+            return dgamma_dz, dtheta_dz, s_source
+
+        field = torch.fft.ifft2(torch.fft.fft2(field) * phase_half)
+        for step in range(n_steps):
+            # 2nd-order midpoint (RK2) integration for particles and field source
+            dg1, dt1, s1 = compute_rhs(field, x, px, y, py, gammas, theta)
+
+            x_mid = x * cos_bx_half + px * sinc_bx_half
+            y_mid = y * cos_by_half + py * sinc_by_half
+            gammas_mid = gammas + 0.5 * dg1 * dz_p
+            theta_mid = theta + 0.5 * dt1 * dz_p
+            field_mid = field + 0.5 * s1 * dz_f
+
+            dg2, dt2, s2 = compute_rhs(
+                field_mid, x_mid, px, y_mid, py, gammas_mid, theta_mid
             )
 
-            s_source = deposit_source(x, y, gammas, theta)
-
-            gammas = gammas + dgamma_dz * dz_p
-            theta = theta + dtheta_dz * dz_p
-            field = field + s_source * dz_f
+            gammas = gammas + dg2 * dz_p
+            theta = theta + dt2 * dz_p
+            field = field + s2 * dz_f
 
             phase = phase_full if step < n_steps - 1 else phase_half
             field = torch.fft.ifft2(torch.fft.fft2(field) * phase) * absorbing_mask
