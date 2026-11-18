@@ -663,7 +663,8 @@ def test_asymmetric_bend(default_torch_dtype):
 def test_cavity(cavity_type, phase):
     """
     Test that tracking a particle through different types of cavities at different
-    phases in Cheetah agrees with Ocelot results.
+    phases in Cheetah agrees with Ocelot results. Traveling-wave agreement is tested
+    in the ultrarelativistic regime assumed by Ocelot.
     """
     # Ocelot
     tws = ocelot.Twiss(
@@ -673,7 +674,7 @@ def test_cavity(cavity_type, phase):
         alpha_y=3.55631308,
         emit_x=3.494768647122823e-09,
         emit_y=3.497810737006068e-09,
-        E=6e-3,
+        E=1.0 if cavity_type == "traveling_wave" else 6e-3,
     )
 
     p_array = ocelot.generate_parray(tws=tws, charge=5e-9)

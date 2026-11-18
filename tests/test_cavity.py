@@ -81,3 +81,73 @@ def test_vectorized_inactive_cavity(cavity_type, voltage, phase):
     assert not outgoing.sigma_y.isnan().any()
     assert not outgoing.beta_x.isnan().any()
     assert not outgoing.beta_y.isnan().any()
+
+
+def test_traveling_wave_conserves_normalized_transverse_emittance():
+    """Exact-momentum damping must conserve normalized emittance at low energy."""
+    incoming = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(25.4731864, dtype=torch.float64),
+        alpha_x=torch.tensor(-4.2158781, dtype=torch.float64),
+        beta_y=torch.tensor(5.5114672, dtype=torch.float64),
+        alpha_y=torch.tensor(-3.8090071, dtype=torch.float64),
+        emittance_x=torch.tensor(1e-6, dtype=torch.float64),
+        emittance_y=torch.tensor(2e-6, dtype=torch.float64),
+        energy=torch.tensor(6e6, dtype=torch.float64),
+        dtype=torch.float64,
+    )
+    cavity = cheetah.Cavity(
+        length=torch.tensor(3.0441111, dtype=torch.float64),
+        voltage=torch.tensor([-2e6, 0.0, 58e6], dtype=torch.float64),
+        phase=torch.tensor([[0.0], [20.0]], dtype=torch.float64),
+        frequency=torch.tensor(2.856e9, dtype=torch.float64),
+        cavity_type="traveling_wave",
+    )
+    outgoing = cavity.track(incoming)
+    for name in ("normalized_emittance_x", "normalized_emittance_y"):
+        expected = getattr(incoming, name).expand(2, 3)
+        torch.testing.assert_close(
+            getattr(outgoing, name), expected, rtol=1e-10, atol=0.0
+        )
+
+
+@pytest.mark.parametrize("voltage_MV", [-2.0, 0.0, 58.0])
+def test_traveling_wave_transverse_gradients(voltage_MV):
+    """Transverse transport must have correct gradients through zero energy gain."""
+    species = cheetah.Species("electron", dtype=torch.float64)
+
+    def transverse_matrix(parameters):
+        """Use MeV-scaled parameters for well-conditioned finite-difference checks."""
+        length, voltage, energy, phase = parameters.unbind()
+        cavity = cheetah.Cavity(
+            length=length,
+            voltage=voltage * 1e6,
+            phase=phase,
+            frequency=torch.tensor(2.856e9, dtype=torch.float64),
+            cavity_type="traveling_wave",
+        )
+        return cavity.first_order_transfer_map(energy * 1e6, species)[:2, :2]
+
+    parameters = torch.tensor(
+        [3.0441111, voltage_MV, 6.0, 1.1], dtype=torch.float64, requires_grad=True
+    )
+    assert torch.autograd.gradcheck(transverse_matrix, (parameters,))
+    if voltage_MV == 0.0:
+        torch.testing.assert_close(
+            transverse_matrix(parameters),
+            torch.tensor([[1.0, 3.0441111], [0.0, 1.0]], dtype=torch.float64),
+        )
+
+
+@pytest.mark.parametrize(("energy", "voltage"), [(0.5e6, 1e6), (6e6, -5.5e6)])
+def test_traveling_wave_rejects_energies_below_rest_energy(energy, voltage):
+    """Entrance and exit momenta must both correspond to propagating particles."""
+    cavity = cheetah.Cavity(
+        length=torch.tensor(1.0, dtype=torch.float64),
+        voltage=torch.tensor(voltage, dtype=torch.float64),
+        cavity_type="traveling_wave",
+    )
+    with pytest.raises(AssertionError, match="must exceed the rest energy"):
+        cavity.first_order_transfer_map(
+            torch.tensor(energy, dtype=torch.float64),
+            cheetah.Species("electron", dtype=torch.float64),
+        )

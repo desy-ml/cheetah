@@ -27,14 +27,16 @@ class Cavity(Element):
         (therefore do not hesitate to have cavities with zero voltage in your lattice),
         but this note is here to make you aware of this possibility.
 
-    :param length: Length in meters.
+    :param length: Length in meters. For traveling-wave cavities this is the active
+        RF length; represent inactive end regions with separate `Drift` elements.
     :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
         voltage. Positive voltage will accelerate electron-like particles.
         For particle with charge `n * e`, the energy gain on crest will be
         `n * voltage`.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
-    :param cavity_type: Type of the cavity.
+    :param cavity_type: Type of the cavity. Traveling-wave transverse transport uses
+        exact reference momenta, including at non-ultrarelativistic energies.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -309,19 +311,28 @@ class Cavity(Element):
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
+            assert torch.all(Ei > 1.0) and torch.all(
+                Ef > 1.0
+            ), "Traveling-wave entrance and exit energies must exceed the rest energy"
+            Pi = (Ei.square() - 1.0).sqrt()
+            Pf = (Ef.square() - 1.0).sqrt()
+            log_ratio_slope = (1.0 + (Ei + Ef) / (Pi + Pf)) / (Ei + Pi)
             vector_shape = torch.broadcast_shapes(
                 self.length.shape, dE.shape, Ei.shape, Ef.shape
             )
 
             M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_body[..., 0, 1] = self.length * log1pdiv(dE / Ei)
-            M_body[..., 1, 1] = Ei / Ef
+            # Stable form of `L * Pi * log((Ef + Pf) / (Ei + Pi)) / dE`
+            M_body[..., 0, 1] = (
+                self.length * Pi * log_ratio_slope * log1pdiv(dE * log_ratio_slope)
+            )
+            M_body[..., 1, 1] = Pi / Pf
 
             M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_entry[..., 1, 0] = -Ep / (2 * Ei)
+            M_f_entry[..., 1, 0] = -Ep / (2 * Pi)
 
             M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_exit[..., 1, 0] = Ep / (2 * Ef)
+            M_f_exit[..., 1, 0] = Ep / (2 * Pf)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
 
@@ -332,7 +343,8 @@ class Cavity(Element):
             r55 = self.length.new_ones(())
             r56 = self.length.new_zeros(())
             r65 = k * torch.sin(phi) * effective_voltage / (energy + delta_energy)
-            r66 = r22
+            # Preserve the existing longitudinal model
+            r66 = Ei / Ef * (1.0 + 0.5 * (dE / Ei).log1p())
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 

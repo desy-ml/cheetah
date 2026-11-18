@@ -1,0 +1,23 @@
+! Standalone cu_hxr L0A reference settings with no external lattice dependencies
+! Run: tao -lat l0a_cavity.bmad -noinit -noplot
+! The lcavity includes inactive end drifts determined by Bmad's L_ACTIVE
+
+parameter[geometry] = open
+parameter[particle] = electron
+parameter[e_tot] = 6e6
+
+beginning[beta_a] = 25.4731863965434
+beginning[alpha_a] = -4.21587806112534
+beginning[beta_b] = 5.51146715069871
+beginning[alpha_b] = -3.80900709179
+
+bmad_com[radiation_damping_on] = F
+bmad_com[radiation_fluctuations_on] = F
+
+L0A: lcavity, l = 3.095244, voltage = 58010690.667105,
+    rf_frequency = 2.856e9, phi0 = -1.1/360.0,
+    cavity_type = traveling_wave, fringe_type = full, fringe_at = both_ends,
+    tracking_method = bmad_standard, n_rf_steps = 50000
+
+benchmark_line: line = (L0A)
+use, benchmark_line
