@@ -20,7 +20,9 @@
 - Fix `Segment` methods that return new segments to preserve the segment's metadata (see #703) (@Hespe)
 - Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
 - Fix NX Tables converter creating 1D drift lengths instead of scalar tensors (see #713) (@jank324)
+- Fix `dtype` and `device` of default attributes in Bmad, Elegant, and Ocelot imports. (see #698) (@Hespe)
 - Use exact reference momenta for traveling-wave `Cavity` transverse transport and fringe focusing at low energies
+
 
 ### 🐆 Other
 
