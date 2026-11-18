@@ -56,6 +56,17 @@ ELEMENT_SUBCLASSES_ARGS = {
         "default": {"length": torch.tensor(1.0), "angle": torch.tensor([1.0, -2.0])}
     },
     cheetah.Marker: {"default": {}},
+    cheetah.Patch: {
+        "default": {},
+        "with_offsets": {"position_offset": torch.tensor([1.0, -1.0, 0.5])},
+        "vectorized": {
+            "position_offset": torch.tensor([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]),
+            "pitch": torch.tensor([[0.0, 0.1], [0.2, 0.3]]),
+            "tilt": torch.tensor([0.0, 0.1]),
+            "time_offset": torch.tensor([0.0, 1.0e-9]),
+            "energy_offset": torch.tensor([0.0, 1.0e6]),
+        },
+    },
     cheetah.Quadrupole: {
         "linear": {
             "length": torch.tensor(1.0),
