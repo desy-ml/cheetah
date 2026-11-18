@@ -6,8 +6,8 @@ from matplotlib.patches import Rectangle
 
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, Species
-from cheetah.utils import UniqueNameGenerator, cache_transfer_map
 from cheetah.track_methods import drift_matrix
+from cheetah.utils import UniqueNameGenerator, cache_transfer_map
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 

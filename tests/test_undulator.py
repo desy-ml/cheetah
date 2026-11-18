@@ -471,3 +471,32 @@ def test_undulator_fel_sase_multislice():
     out.radiation.pulse_energy.backward()
     assert ky.grad is not None
     assert ky.grad.abs() > 0.0
+
+
+def test_undulator_fel_mps_if_available():
+    """Test FEL tracking on Apple Silicon MPS when available."""
+    if not torch.backends.mps.is_available():
+        return
+
+    device = torch.device("mps")
+    und = cheetah.Undulator(
+        length=torch.tensor(1.0, device=device),
+        period=torch.tensor(0.04, device=device),
+        ky=torch.tensor(2.0, device=device),
+        tracking_method="fel",
+        step_size=torch.tensor(0.5, device=device),
+        num_macroparticles=128,
+        device=device,
+    )
+    beam = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(2.0, device=device),
+        beta_y=torch.tensor(2.0, device=device),
+        emittance_x=torch.tensor(1e-9, device=device),
+        emittance_y=torch.tensor(1e-9, device=device),
+        energy=torch.tensor(1e9, device=device),
+        device=device,
+    )
+
+    out = und.track(beam)
+    assert out.radiation.power.device.type == "mps"
+    assert torch.isfinite(out.radiation.power)
