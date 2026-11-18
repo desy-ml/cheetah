@@ -534,11 +534,12 @@ class Undulator(Element):
                 mu_y = mu_y.unsqueeze(-2).expand(*field_batch_shape, 2)
 
             gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
+            # Share normalized draws across vector_shape (common random numbers)
             z_x = torch.randn(
-                *field_batch_shape, num_transverse, 2, generator=gen, **factory_kwargs
+                *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
             )
             z_y = torch.randn(
-                *field_batch_shape, num_transverse, 2, generator=gen, **factory_kwargs
+                *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
             )
             l_x = torch.linalg.cholesky(cov_x)
             l_y = torch.linalg.cholesky(cov_y)
@@ -555,9 +556,10 @@ class Undulator(Element):
             if is_time_dependent:
                 delgam = delgam.unsqueeze(-1).expand(field_batch_shape)
                 mu_gamma = mu_gamma.unsqueeze(-1).expand(field_batch_shape)
-            gammas_trans = mu_gamma.unsqueeze(-1) + torch.randn(
-                *field_batch_shape, num_transverse, generator=gen, **factory_kwargs
-            ) * delgam.unsqueeze(-1)
+            z_gamma = torch.randn(
+                *slice_shape, num_transverse, generator=gen, **factory_kwargs
+            )
+            gammas_trans = mu_gamma.unsqueeze(-1) + z_gamma * delgam.unsqueeze(-1)
             gammas = gammas_trans.repeat_interleave(nbins, dim=-1)
 
             theta_bins = torch.linspace(
