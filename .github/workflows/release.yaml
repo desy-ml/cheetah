@@ -20,11 +20,20 @@ jobs:
       contents: write
 
     steps:
+      - name: Check RELEASE_TOKEN
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "Error: secrets.RELEASE_TOKEN is not set." >&2
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,7 +46,7 @@ jobs:
 
       - name: Commit, tag and publish release
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           VERSION: ${{ inputs.version }}
           NOTES: ${{ steps.changelog.outputs.release_notes }}
         run: |
