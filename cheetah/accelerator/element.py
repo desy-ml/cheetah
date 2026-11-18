@@ -207,7 +207,28 @@ class Element(ABC, nn.Module):
             fel_vec = torch.stack([x, px, y, py, zeros, p, ones], dim=-1)
             out_vec = fel_vec @ tm.mT
             # In an undulator line, drifts and quadrupoles are autophased relative to
-            # the ponderomotive reference wave matching Genesis 1.3 v4 conventions.
+            # the reference particle (gamma0, px=py=0), while off-energy and off-axis
+            # particles still experience relative ponderomotive phase slip.
+            if (
+                hasattr(new_beam, "radiation")
+                and new_beam.radiation is not None
+                and (self.length > 0.0).any()
+            ):
+                k_r = 2.0 * torch.pi / new_beam.radiation.wavelength
+                px_mid2 = 0.5 * (px.square() + out_vec[..., 1].square())
+                py_mid2 = 0.5 * (py.square() + out_vec[..., 3].square())
+                if new_beam.radiation.slice_spacing is not None:
+                    k_r = k_r[..., None, None]
+                    gamma0_b = gamma0[..., None, None]
+                    length_b = self.length[..., None, None]
+                else:
+                    k_r = k_r[..., None]
+                    gamma0_b = gamma0[..., None]
+                    length_b = self.length[..., None]
+                dtheta_dz = (k_r / (2.0 * gamma0_b.square())) - (
+                    k_r / (2.0 * gammas.square())
+                ) * (1.0 + gammas.square() * (px_mid2 + py_mid2))
+                theta = theta + dtheta_dz * length_b
             new_beam._fel_particles = (
                 out_vec[..., 0],
                 out_vec[..., 1],
