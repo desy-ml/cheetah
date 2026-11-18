@@ -12,7 +12,16 @@ from cheetah.utils import is_mps_available_and_functional
 ELEMENT_SUBCLASSES_ARGS = {
     cheetah.Aperture: {"inactive": {"is_active": False}, "active": {"is_active": True}},
     cheetah.BPM: {"inactive": {"is_active": False}, "active": {"is_active": True}},
-    cheetah.Cavity: {"default": {"length": torch.tensor(1.0)}},
+    cheetah.Cavity: {
+        "default": {"length": torch.tensor(1.0)},
+        # No test_consistency pickle exists for this case yet
+        "wake_on": {
+            "length": torch.tensor(1.0),
+            "frequency": torch.tensor(1.3e9),
+            "wake": True,
+            "wake_strength": torch.tensor(35e12),
+        },
+    },
     cheetah.CombinedCorrector: {
         "default": {
             "length": torch.tensor(1.0),

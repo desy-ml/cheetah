@@ -130,7 +130,9 @@ def test_particle_beam_tracking_with_device_and_dtype(element, device, dtype):
 
 @pytest.mark.for_every_element(
     "element",
+    #Wake elements need a ParticleBeam
     xfail_if=lambda element: isinstance(element, cheetah.SpaceChargeKick)
+    or getattr(element, "wake", False)
     or (
         isinstance(
             element,

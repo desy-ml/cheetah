@@ -7,6 +7,13 @@ from matplotlib.patches import Rectangle
 from scipy import constants
 
 from cheetah.accelerator.element import Element
+
+#wake stuff
+from cheetah.accelerator.wakefields import (
+    ResonantModeWake,
+    longitudinal_energy_kick,
+    reference_momentum,
+)
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
 from cheetah.utils import (
     UniqueNameGenerator,
@@ -16,6 +23,8 @@ from cheetah.utils import (
 from cheetah.utils.autograd import log1pdiv
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
+
+WakePosition = Literal["entrance", "exit", "split"]
 
 
 class Cavity(Element):
@@ -46,6 +55,19 @@ class Cavity(Element):
         the lattice. See :doc:`/getting_started/control_systems` for more information.
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
+
+    The parameters below only matter when wake=True, which adds a longitudinal
+    wakefield kick to the RF tracking. With wake=False the cavity behaves exactly
+    as without them.
+
+    :param wake: Turn the wakefield on or off.
+    :param wake_strength: Wake amplitude `w(0+)` in V/C, e.g. from a measurement.
+    :param quality_factor: Mode quality factor `Q`. Infinite means no damping.
+    :param wake_position: Where the kick is applied: `"entrance"`, `"exit"` or
+        `"split"` (half at each end).
+    :param cells_per_feature: Grid cells per shortest length scale of the wake.
+    :param max_grid: Maximum number of grid cells.
+    :param cache_diagnostics: Keep the last wake diagnostics for plotting.
     """
 
     def __init__(
@@ -60,6 +82,15 @@ class Cavity(Element):
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
+        *,
+        wake: bool = False,
+        wake_strength: torch.Tensor | float | None = None,
+        quality_factor: torch.Tensor | float = math.inf,
+        wake_position: WakePosition = "exit",
+        #Grid defaults to try to get reasonable compute time
+        cells_per_feature: float = 8.0,
+        max_grid: int = 1 << 17,
+        cache_diagnostics: bool = True,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(
@@ -83,13 +114,34 @@ class Cavity(Element):
 
         self.cavity_type = cavity_type
 
+        self.wake = bool(wake)
+        self.wake_position: WakePosition = wake_position
+        self.cells_per_feature = float(cells_per_feature)
+        self.max_grid = int(max_grid)
+        # loops
+        self.cache_diagnostics = bool(cache_diagnostics)
+        self.quality_factor = quality_factor
+
+        if wake_strength is None:
+            self.wake_strength = None
+        else:
+            self.register_buffer_or_parameter(
+                "wake_strength", torch.as_tensor(wake_strength, **factory_kwargs)
+            )
+
+        self.cached_wake_diagnostics: dict | None = None
+
+        if self.wake:
+            self._validate_wake_configuration()
+
     @property
     def is_active(self) -> bool:
         return (self.voltage != 0).any().item()
 
     @property
     def is_skippable(self) -> bool:
-        return not self.is_active
+        # With the wake on, the cavity must never be merged into a transfer map, because that would silently drop the wake
+        return not self.is_active and not self.wake
 
     @cache_transfer_map
     def first_order_transfer_map(
@@ -98,6 +150,14 @@ class Cavity(Element):
         return self._cavity_rmatrix(energy, species)
 
     def track(self, incoming: Beam) -> Beam:
+        """Track through the cavity, including the wake if wake=True."""
+        if not self.wake:
+            return self._track_rf(incoming)
+        return self.track_with_wake(incoming)
+
+    #original rf tracking code
+    def _track_rf(self, incoming: Beam) -> Beam:
+        """RF tracking only, without the wake."""
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
@@ -373,6 +433,11 @@ class Cavity(Element):
         )
         ax.add_patch(patch)
 
+        # Mark cavities with the wake on, and return the axes
+        if self.wake:
+            ax.axvline(plot_s, ymin=0.01, ymax=0.99, color="teal", linestyle=":")
+        return ax
+
     @property
     def defining_features(self) -> list[str]:
         return super().defining_features + [
@@ -381,4 +446,134 @@ class Cavity(Element):
             "phase",
             "frequency",
             "cavity_type",
+            "wake",
+            "wake_strength",
+            "quality_factor",
+            "wake_position",
+            "cells_per_feature",
+            "max_grid",
+            "cache_diagnostics",
         ]
+
+    # ---------------------------------------------------------------- wakefields
+
+    def _validate_wake_configuration(self) -> None:
+        """Fail at construction if the wake is on but under-specified."""
+        if self.wake_strength is None:
+            raise ValueError("wake=True requires wake_strength.")
+        # `Cavity` defaults the frequency to 0, which would otherwise surface as a
+        # `ZeroDivisionError` deep inside the grid sizer
+        if not bool((self.frequency != 0.0).all()):
+            raise ValueError(
+                "wake=True requires a non-zero frequency, which sets the wake "
+                "wavelength. Pass frequency=... ."
+            )
+
+    def track_with_wake(self, incoming: Beam) -> Beam:
+        """
+        RF tracking plus the thin wake kick, placed according to `wake_position`.
+
+        Call `track` from lattices, not this. `Segment` only ever calls `track`, and
+        decides from `is_skippable` whether to visit the element at all.
+        """
+        if isinstance(incoming, ParameterBeam):
+            raise AssertionError(
+                "Wakefield tracking is currently only supported for `ParticleBeam`, "
+                "because a wake needs the longitudinal charge distribution. Set "
+                "wake=False to track a `ParameterBeam`."
+            )
+
+        if self.wake_position == "entrance":
+            return self._track_rf(self._apply_wake(incoming))
+
+        if self.wake_position == "exit":
+            return self._apply_wake(self._track_rf(incoming))
+
+        if self.wake_position == "split":
+            outgoing = self._track_rf(self._apply_wake(incoming, scale=0.5))
+            return self._apply_wake(outgoing, scale=0.5)
+
+        raise ValueError(f"Unknown wake_position {self.wake_position!r}.")
+
+    def _apply_wake(self, beam: ParticleBeam, *, scale: float = 1.0) -> ParticleBeam:
+        """Add the wake's energy kick (times `scale`) to the momentum of `beam`."""
+        if not self._beam_is_charged(beam):
+            self.cached_wake_diagnostics = None
+            return beam
+
+        # NaN in, NaN out: a beam that is already invalid (e.g. below rest mass after
+        # the RF) has no distribution to deposit, so pass it through like upstream does
+        if not bool(torch.isfinite(beam.particles[..., 4]).all()):
+            self.cached_wake_diagnostics = None
+            return beam
+
+        particles = beam.particles
+        batch_shape = torch.broadcast_shapes(
+            particles.shape[:-2], self.frequency.shape, self.wake_strength.shape
+        )
+        num_particles = particles.shape[-2]
+        n_batch = math.prod(batch_shape) if batch_shape else 1
+
+        flat = torch.broadcast_to(particles, (*batch_shape, num_particles, 7)).reshape(
+            n_batch, num_particles, 7
+        )
+        #We need to deal with survival_probabilities at some point, rn we just ignore them and assume all particles survive
+        charges = torch.broadcast_to(
+            beam.particle_charges, (*batch_shape, num_particles)
+        ).reshape(n_batch, num_particles)
+
+        # The reference energy can be vector-shaped after RF tracking
+        # The reference energy can be vector-shaped after RF tracking
+        energy_flat = torch.broadcast_to(beam.energy, batch_shape).reshape(n_batch)
+        p0c = reference_momentum(energy_flat, beam.species.mass_eV)
+
+        num_charges = float(beam.species.num_elementary_charges)
+        frequency = torch.broadcast_to(self.frequency, batch_shape).reshape(n_batch)
+        wake_strength = torch.broadcast_to(self.wake_strength, batch_shape).reshape(
+            n_batch
+        )
+        out = flat.clone()
+        diagnostics: list[dict] = []
+
+        # We loop over the vector (batch) dimension, so large parameter scans are slower
+        for index in range(n_batch):
+            kernel = ResonantModeWake(
+                frequency=frequency[index],
+                wake_strength=wake_strength[index],
+                quality_factor=self.quality_factor,
+            )
+            tau = flat[index, :, 4]
+            charge = charges[index]
+
+            delta_energy, diagnostic = longitudinal_energy_kick(
+                tau,
+                charge,
+                kernel,
+                num_elementary_charges=num_charges,
+                cells_per_feature=self.cells_per_feature,
+                max_grid=self.max_grid,
+            )
+
+            out[index, :, 5] = flat[index, :, 5] + scale * delta_energy / p0c[index]
+
+            diagnostics.append(diagnostic)
+
+        if self.cache_diagnostics:
+            self.cached_wake_diagnostics = {
+                "per_batch": diagnostics,
+                **diagnostics[0],
+            }
+
+        return ParticleBeam(
+            particles=out.reshape(*batch_shape, num_particles, 7),
+            energy=beam.energy,
+            particle_charges=beam.particle_charges,
+            survival_probabilities=beam.survival_probabilities,
+            s=beam.s,
+            species=beam.species,
+        )
+
+    @staticmethod
+    def _beam_is_charged(beam: ParticleBeam) -> bool:
+        """Whether any particle in `beam` carries charge."""
+        return not bool(torch.all(beam.particle_charges == 0))
