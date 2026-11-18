@@ -396,3 +396,40 @@ def test_undulator_fel_adaptive_defaults():
 
     assert torch.isclose(out_high_q.radiation.extent, torch.tensor(6.0 * 1e-4))
     assert out_high_q.radiation.power > out_low_q.radiation.power
+
+
+def test_phase_shifter():
+    """Test `PhaseShifter` shifts FEL ponderomotive phase and supports autograd."""
+    phase_shift = torch.tensor(math.pi, requires_grad=True)
+    und1 = cheetah.Undulator(
+        length=torch.tensor(2.0),
+        period=torch.tensor(0.04),
+        ky=torch.tensor(3.36),
+        tracking_method="fel",
+        seed_power=torch.tensor(1e5),
+        step_size=torch.tensor(0.5),
+        num_macroparticles=128,
+    )
+    ps = cheetah.PhaseShifter(phase_shift=phase_shift)
+    und2 = cheetah.Undulator(
+        length=torch.tensor(2.0),
+        period=torch.tensor(0.04),
+        ky=torch.tensor(3.36),
+        tracking_method="fel",
+        step_size=torch.tensor(0.5),
+        num_macroparticles=128,
+    )
+    segment = cheetah.Segment(elements=[und1, ps, und2])
+
+    beam = cheetah.ParameterBeam.from_twiss(
+        beta_x=torch.tensor(2.0),
+        beta_y=torch.tensor(2.0),
+        emittance_x=torch.tensor(1e-10),
+        emittance_y=torch.tensor(1e-10),
+        energy=torch.tensor(5e9),
+    )
+
+    out = segment.track(beam)
+    out.radiation.power.backward()
+    assert phase_shift.grad is not None
+    assert phase_shift.grad.abs() > 0.0
