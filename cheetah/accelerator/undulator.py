@@ -126,8 +126,8 @@ class RadiationField:
         """Smooth super-Gaussian boundary absorber to suppress FFT wrap-around."""
         ux = torch.linspace(-1.0, 1.0, nx, device=device, dtype=dtype)
         uy = torch.linspace(-1.0, 1.0, ny, device=device, dtype=dtype)
-        mask_x = torch.exp(-((ux / 0.95) ** 32))
-        mask_y = torch.exp(-((uy / 0.95) ** 32))
+        mask_x = torch.exp(-((ux / 0.98) ** 64))
+        mask_y = torch.exp(-((uy / 0.98) ** 64))
         return mask_y[:, None] * mask_x[None, :]
 
     def clone(self) -> "RadiationField":
