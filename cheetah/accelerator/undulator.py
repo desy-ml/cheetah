@@ -14,6 +14,7 @@ from cheetah.utils import (
     cache_transfer_map,
     compute_relativistic_factors,
 )
+from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
 
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
@@ -463,12 +464,6 @@ class Undulator(Element):
         )
         batch_size = math.prod(vector_shape) if len(vector_shape) > 0 else 1
 
-        def diffract_half(fld: torch.Tensor, dist: torch.Tensor) -> torch.Tensor:
-            phase = torch.exp(
-                -0.5j * (k_perp2 / k_r[..., None, None]) * dist[..., None, None]
-            )
-            return torch.fft.ifft2(torch.fft.fft2(fld) * phase) * absorbing_mask
-
         def interp_field(
             fld: torch.Tensor, x_p: torch.Tensor, y_p: torch.Tensor
         ) -> torch.Tensor:
@@ -477,15 +472,24 @@ class Undulator(Element):
             grid_sample_coords = torch.stack([norm_x, norm_y], dim=-1).reshape(
                 batch_size, 1, -1, 2
             )
-            real_part = fld.real.reshape(batch_size, 1, ny, nx)
-            imag_part = fld.imag.reshape(batch_size, 1, ny, nx)
-            e_real = torch.nn.functional.grid_sample(
-                real_part, grid_sample_coords, align_corners=True, mode="bilinear"
-            ).reshape(*vector_shape, -1)
-            e_imag = torch.nn.functional.grid_sample(
-                imag_part, grid_sample_coords, align_corners=True, mode="bilinear"
-            ).reshape(*vector_shape, -1)
-            return torch.complex(e_real, e_imag)
+            fld_2c = torch.stack([fld.real, fld.imag], dim=-3).reshape(
+                batch_size, 2, ny, nx
+            )
+            e_both = torch.nn.functional.grid_sample(
+                fld_2c, grid_sample_coords, align_corners=True, mode="bilinear"
+            )
+            return torch.complex(
+                e_both[:, 0].reshape(*vector_shape, -1),
+                e_both[:, 1].reshape(*vector_shape, -1),
+            )
+
+        cic_extent_y = torch.stack(
+            [-grid_extent - 0.5 * dy, grid_extent + 0.5 * dy], dim=-1
+        )
+        cic_extent_x = torch.stack(
+            [-grid_extent - 0.5 * dx, grid_extent + 0.5 * dx], dim=-1
+        )
+        cic_extent = torch.stack([cic_extent_y, cic_extent_x], dim=-2).unsqueeze(-3)
 
         def deposit_source(
             x_p: torch.Tensor,
@@ -493,48 +497,23 @@ class Undulator(Element):
             gammas_p: torch.Tensor,
             theta_p: torch.Tensor,
         ) -> torch.Tensor:
-            weight = (gamma0[..., None] / gammas_p).to(dtype=complex_dtype) * torch.exp(
-                -1.0j * theta_p.to(dtype=complex_dtype)
+            amp = gamma0[..., None] / gammas_p
+            charges_2 = torch.stack(
+                [amp * torch.cos(theta_p), -amp * torch.sin(theta_p)], dim=-2
             )
-            gx = ((x_p + grid_extent[..., None]) / dx[..., None]).reshape(
-                batch_size, -1
+            pos_2 = (
+                torch.stack([y_p, x_p], dim=-1)
+                .unsqueeze(-3)
+                .expand(*vector_shape, 2, -1, 2)
             )
-            gy = ((y_p + grid_extent[..., None]) / dy[..., None]).reshape(
-                batch_size, -1
+            grid_2 = cloud_in_cell_charge_deposition(
+                pos_2,
+                bins=(ny, nx),
+                extent=cic_extent,
+                charges=charges_2,
             )
-            weight_flat = weight.reshape(batch_size, -1)
-
-            gx0 = gx.floor().long()
-            gy0 = gy.floor().long()
-            gx1 = gx0 + 1
-            gy1 = gy0 + 1
-
-            fx1 = (gx - gx0).to(dtype=factory_kwargs["dtype"])
-            fx0 = 1.0 - fx1
-            fy1 = (gy - gy0).to(dtype=factory_kwargs["dtype"])
-            fy0 = 1.0 - fy1
-
-            mask = (gx0 >= 0) & (gx1 < nx) & (gy0 >= 0) & (gy1 < ny)
-            flat_grid_bunch = torch.zeros(
-                batch_size, ny * nx, dtype=complex_dtype, device=field.device
-            )
-
-            w00 = (fx0 * fy0).to(dtype=complex_dtype) * weight_flat * mask
-            w01 = (fx1 * fy0).to(dtype=complex_dtype) * weight_flat * mask
-            w10 = (fx0 * fy1).to(dtype=complex_dtype) * weight_flat * mask
-            w11 = (fx1 * fy1).to(dtype=complex_dtype) * weight_flat * mask
-
-            for w, ix, iy in [
-                (w00, gx0, gy0),
-                (w01, gx1, gy0),
-                (w10, gx0, gy1),
-                (w11, gx1, gy1),
-            ]:
-                idx = iy.clamp(0, ny - 1) * nx + ix.clamp(0, nx - 1)
-                flat_grid_bunch.scatter_add_(1, idx, w)
-
             j_bunch = (
-                flat_grid_bunch.reshape(*vector_shape, ny, nx)
+                torch.complex(grid_2[..., 0, :, :], grid_2[..., 1, :, :])
                 * (current / (num_particles * dx * dy))[..., None, None]
             )
             return (z0 * aw * jj / (math.sqrt(2.0) * gamma0))[..., None, None] * j_bunch
@@ -546,6 +525,11 @@ class Undulator(Element):
         )
         n_steps = max(1, int(round((self.length / step_size).max().item())))
         dz = self.length / n_steps
+
+        phase_half = torch.exp(
+            -0.5j * (k_perp2 / k_r[..., None, None]) * (0.5 * dz)[..., None, None]
+        )
+        phase_full = phase_half * phase_half
 
         k_beta_x = (self.ky / math.sqrt(2.0)) * k_u / gamma0
         k_beta_y = (self.kx / math.sqrt(2.0)) * k_u / gamma0
@@ -564,8 +548,8 @@ class Undulator(Element):
         dz_p = dz[..., None]
         dz_f = dz[..., None, None]
 
-        for _ in range(n_steps):
-            field = diffract_half(field, 0.5 * dz)
+        field = torch.fft.ifft2(torch.fft.fft2(field) * phase_half)
+        for step in range(n_steps):
             e_p = interp_field(field, x, y)
 
             dgamma_dz = (
@@ -583,7 +567,8 @@ class Undulator(Element):
             theta = theta + dtheta_dz * dz_p
             field = field + s_source * dz_f
 
-            field = diffract_half(field, 0.5 * dz)
+            phase = phase_full if step < n_steps - 1 else phase_half
+            field = torch.fft.ifft2(torch.fft.fft2(field) * phase) * absorbing_mask
 
             x_new = x * cos_bx + px * sinc_bx
             px = -x * k_sin_bx + px * cos_bx
