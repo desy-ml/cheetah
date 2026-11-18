@@ -68,6 +68,7 @@ def test_undulator_fel_tracking():
         energy=energy,
     )
 
+    assert incoming_beam.bunching is None
     outgoing_beam = undulator.track(incoming_beam)
 
     assert hasattr(outgoing_beam, "radiation")
@@ -75,6 +76,8 @@ def test_undulator_fel_tracking():
     assert undulator.radiation is not None
     assert outgoing_beam.radiation.power > 0.0
     assert torch.allclose(outgoing_beam.radiation.power, undulator.radiation.power)
+    assert outgoing_beam.bunching is not None
+    assert 0.0 <= outgoing_beam.bunching <= 1.0
 
 
 def test_undulator_fel_lattice_and_autograd():

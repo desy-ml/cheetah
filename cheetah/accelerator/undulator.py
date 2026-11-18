@@ -123,12 +123,16 @@ class RadiationField:
     def _absorbing_mask(
         ny: int, nx: int, device: torch.device, dtype: torch.dtype
     ) -> torch.Tensor:
-        """Smooth super-Gaussian boundary absorber to suppress FFT wrap-around."""
-        ux = torch.linspace(-1.0, 1.0, nx, device=device, dtype=dtype)
-        uy = torch.linspace(-1.0, 1.0, ny, device=device, dtype=dtype)
-        mask_x = torch.exp(-((ux / 0.99) ** 128))
-        mask_y = torch.exp(-((uy / 0.99) ** 128))
-        return mask_y[:, None] * mask_x[None, :]
+        """
+        Dirichlet boundary mask zeroing the outermost grid ring to suppress FFT
+        wrap-around.
+        """
+        mask = torch.ones((ny, nx), device=device, dtype=dtype)
+        mask[0, :] = 0.0
+        mask[-1, :] = 0.0
+        mask[:, 0] = 0.0
+        mask[:, -1] = 0.0
+        return mask
 
     def clone(self) -> "RadiationField":
         """Create a clone of the radiation field."""

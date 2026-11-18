@@ -556,6 +556,17 @@ class Beam(ABC, nn.Module):
         return self.cov_pyp / self.sigma_p.square()
 
     @property
+    def bunching(self) -> torch.Tensor | None:
+        """
+        Microbunching factor :math:`|\\langle e^{-i \\theta} \\rangle|` from FEL
+        tracking, or `None` if no FEL particle phases are attached.
+        """
+        if not hasattr(self, "_fel_particles") or self._fel_particles is None:
+            return None
+        theta = self._fel_particles[-1]
+        return torch.exp(-1.0j * theta).mean(dim=-1).abs()
+
+    @property
     def defining_features(self) -> list[str]:
         """
         List of features that define the beam. Used to compare beams for equality and to
