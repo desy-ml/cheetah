@@ -5,13 +5,13 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import os
 import sys
+from pathlib import Path
 
 # Source code directory, relative to this file, for sphinx-autobuild
-sys.path.insert(0, os.path.abspath("../cheetah"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _version import __version__  # noqa: E402  # type: ignore
+from cheetah import __version__  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
