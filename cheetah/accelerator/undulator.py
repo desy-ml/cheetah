@@ -141,6 +141,66 @@ class RadiationField:
             ),
         )
 
+    @classmethod
+    def from_gaussian(
+        cls,
+        power: torch.Tensor,
+        wavelength: torch.Tensor,
+        extent: torch.Tensor,
+        waist: torch.Tensor | None = None,
+        grid_shape: tuple[int, int] = (65, 65),
+        slice_spacing: torch.Tensor | None = None,
+        num_slices: int = 1,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -> "RadiationField":
+        """
+        Create a Gaussian transverse radiation field mode.
+
+        :param power: Radiation power in Watts.
+        :param wavelength: Radiation wavelength in meters.
+        :param extent: Transverse half-size of the grid in meters.
+        :param waist: Gaussian :math:`1/e^2` intensity waist :math:`w_0` in meters.
+            Defaults to `extent / 4.0`.
+        :param grid_shape: Grid resolution `(ny, nx)`.
+        :param slice_spacing: Optional slice spacing in meters for multi-slice fields.
+        :param num_slices: Number of longitudinal slices when `slice_spacing` is set.
+        :param dtype: Real floating-point dtype for grid coordinates; complex dtype is
+            inferred automatically.
+        :param device: Device on which to create the field tensor.
+        :return: Initialized `RadiationField`.
+        """
+        real_dtype = dtype if dtype is not None else power.dtype
+        dev = device if device is not None else power.device
+        complex_dtype = (
+            torch.complex128 if real_dtype == torch.float64 else torch.complex64
+        )
+        z0 = mu_0 * speed_of_light
+        w0 = waist if waist is not None else extent / 4.0
+        e0 = torch.sqrt(4.0 * z0 * power / (math.pi * w0.square()))
+
+        ny, nx = grid_shape
+        ux = torch.linspace(-1.0, 1.0, nx, device=dev, dtype=real_dtype)
+        uy = torch.linspace(-1.0, 1.0, ny, device=dev, dtype=real_dtype)
+        grid_uy, grid_ux = torch.meshgrid(uy, ux, indexing="ij")
+        grid_x = grid_ux * extent[..., None, None]
+        grid_y = grid_uy * extent[..., None, None]
+        field = (
+            e0[..., None, None]
+            * torch.exp(
+                -(grid_x.square() + grid_y.square()) / w0[..., None, None].square()
+            )
+        ).to(dtype=complex_dtype)
+        if slice_spacing is not None and num_slices > 1:
+            field = field.unsqueeze(-3).expand(*field.shape[:-2], num_slices, ny, nx)
+            field = field.clone()
+        return cls(
+            field=field,
+            wavelength=wavelength,
+            extent=extent,
+            slice_spacing=slice_spacing,
+        )
+
 
 class Undulator(Element):
     """
