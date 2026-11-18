@@ -126,8 +126,8 @@ class RadiationField:
         """Smooth super-Gaussian boundary absorber to suppress FFT wrap-around."""
         ux = torch.linspace(-1.0, 1.0, nx, device=device, dtype=dtype)
         uy = torch.linspace(-1.0, 1.0, ny, device=device, dtype=dtype)
-        mask_x = torch.exp(-((ux / 0.98) ** 64))
-        mask_y = torch.exp(-((uy / 0.98) ** 64))
+        mask_x = torch.exp(-((ux / 0.99) ** 128))
+        mask_y = torch.exp(-((uy / 0.99) ** 128))
         return mask_y[:, None] * mask_x[None, :]
 
     def clone(self) -> "RadiationField":
@@ -759,8 +759,10 @@ class Undulator(Element):
         half_dz = 0.5 * dz
         cos_bx_half = torch.cos(k_beta_x * half_dz)[..., None]
         sinc_bx_half = ((k_beta_x * half_dz / torch.pi).sinc() * half_dz)[..., None]
+        k_sin_bx_half = (k_beta_x * torch.sin(k_beta_x * half_dz))[..., None]
         cos_by_half = torch.cos(k_beta_y * half_dz)[..., None]
         sinc_by_half = ((k_beta_y * half_dz / torch.pi).sinc() * half_dz)[..., None]
+        k_sin_by_half = (k_beta_y * torch.sin(k_beta_y * half_dz))[..., None]
 
         cos_bx = torch.cos(k_beta_x * dz)[..., None]
         sinc_bx = ((k_beta_x * dz / torch.pi).sinc() * dz)[..., None]
@@ -779,8 +781,10 @@ class Undulator(Element):
         if is_time_dependent:
             cos_bx_half = cos_bx_half.unsqueeze(-2)
             sinc_bx_half = sinc_bx_half.unsqueeze(-2)
+            k_sin_bx_half = k_sin_bx_half.unsqueeze(-2)
             cos_by_half = cos_by_half.unsqueeze(-2)
             sinc_by_half = sinc_by_half.unsqueeze(-2)
+            k_sin_by_half = k_sin_by_half.unsqueeze(-2)
             cos_bx = cos_bx.unsqueeze(-2)
             sinc_bx = sinc_bx.unsqueeze(-2)
             k_sin_bx = k_sin_bx.unsqueeze(-2)
@@ -828,13 +832,15 @@ class Undulator(Element):
             dg1, dt1, s1 = compute_rhs(field, x, px, y, py, gammas, theta)
 
             x_mid = x * cos_bx_half + px * sinc_bx_half
+            px_mid = -x * k_sin_bx_half + px * cos_bx_half
             y_mid = y * cos_by_half + py * sinc_by_half
+            py_mid = -y * k_sin_by_half + py * cos_by_half
             gammas_mid = gammas + 0.5 * dg1 * dz_p
             theta_mid = theta + 0.5 * dt1 * dz_p
             field_mid = field + 0.5 * s1 * dz_f
 
             dg2, dt2, s2 = compute_rhs(
-                field_mid, x_mid, px, y_mid, py, gammas_mid, theta_mid
+                field_mid, x_mid, px_mid, y_mid, py_mid, gammas_mid, theta_mid
             )
 
             gammas = gammas + dg2 * dz_p
