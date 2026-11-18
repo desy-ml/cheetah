@@ -564,13 +564,16 @@ class Segment(Element):
             return None
 
     def track(self, incoming: Beam) -> Beam:
-        if self.is_skippable:
+        has_fel = (
+            hasattr(incoming, "_fel_particles") and incoming._fel_particles is not None
+        )
+        if self.is_skippable and not has_fel:
             return super()._track_first_order(incoming)
         else:
             todos = []
             continuous_skippable_elements = []
             for element in self.elements:
-                if element.is_skippable:
+                if element.is_skippable and not has_fel:
                     # Collect skippable elements until a non-skippable element is found
                     continuous_skippable_elements.append(element)
                 else:
@@ -591,6 +594,11 @@ class Segment(Element):
 
             for todo in todos:
                 incoming = todo.track(incoming)
+                if not has_fel and (
+                    hasattr(incoming, "_fel_particles")
+                    and incoming._fel_particles is not None
+                ):
+                    has_fel = True
 
             return incoming
 
