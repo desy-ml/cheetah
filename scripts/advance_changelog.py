@@ -18,6 +18,8 @@ def advance_changelog(content: str, version: str, next_version: str) -> tuple[st
     :param next_version: Version for the new work-in-progress section
     :return: Tuple of (new `CHANGELOG.md` text, extracted release notes text)
     """
+    version = version.lstrip("v")
+    next_version = next_version.lstrip("v")
     wip_pattern = re.compile(
         r"(##\s+v?[0-9.]+\s+\[🚧 Work in Progress\]\s*\n)(.*?)(?=\n##\s|\Z)", re.DOTALL
     )

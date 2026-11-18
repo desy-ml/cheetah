@@ -58,3 +58,17 @@ def test_advance_changelog():
         "(2026-07-23)"
     )
     assert expected_older in new_content
+
+
+def test_advance_changelog_strips_leading_v():
+    """Test that leading `v` prefixes on versions are stripped."""
+    sample_changelog = "# Changelog\n\n## v0.8.5 [🚧 Work in Progress]\n\n"
+    with patch("scripts.advance_changelog.date") as mock_date:
+        mock_date.today.return_value = date(2026, 11, 6)
+        new_content, _ = advance_changelog(sample_changelog, "v0.8.5", "v0.8.6")
+
+    assert "## v0.8.6 [🚧 Work in Progress]" in new_content
+    assert (
+        "## [v0.8.5](https://github.com/desy-ml/cheetah/releases/tag/v0.8.5) "
+        "(2026-11-06)"
+    ) in new_content
