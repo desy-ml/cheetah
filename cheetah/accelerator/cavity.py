@@ -6,8 +6,10 @@ import torch
 from matplotlib.patches import Rectangle
 from scipy import constants
 
+from cheetah.accelerator.drift import Drift
 from cheetah.accelerator.element import Element
 from cheetah.particles import Beam, ParameterBeam, ParticleBeam, Species
+from cheetah.track_methods import drift_matrix
 from cheetah.utils import (
     UniqueNameGenerator,
     cache_transfer_map,
@@ -27,14 +29,15 @@ class Cavity(Element):
         (therefore do not hesitate to have cavities with zero voltage in your lattice),
         but this note is here to make you aware of this possibility.
 
-    :param length: Length in meters.
+    :param length: Total element length in meters, including inactive end regions.
     :param voltage: Voltage of the cavity in volts. NOTE: This assumes the physical
         voltage. Positive voltage will accelerate electron-like particles.
         For particle with charge `n * e`, the energy gain on crest will be
         `n * voltage`.
     :param phase: Phase of the cavity in degrees.
     :param frequency: Frequency of the cavity in Hz.
-    :param cavity_type: Type of the cavity.
+    :param cavity_type: Type of the cavity. Traveling-wave transverse transport uses
+        exact reference momenta, including at non-ultrarelativistic energies.
     :param name: Unique identifier of the element.
     :param sanitize_name: Whether to sanitise the name to be a valid Python variable
         name. This is needed if you want to use the `segment.element_name` syntax to
@@ -46,6 +49,10 @@ class Cavity(Element):
         the lattice. See :doc:`/getting_started/control_systems` for more information.
     :param device: Device on which to create the element's tensors.
     :param dtype: Data type of the element's tensors.
+    :param active_length: Active RF length in meters. If provided, it must be positive
+        and no greater than `length`. The remaining length is split into equal entrance
+        and exit drifts. If `None`, the full `length` is active, preserving the existing
+        model.
     """
 
     def __init__(
@@ -60,6 +67,7 @@ class Cavity(Element):
         metadata: dict | None = None,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
+        active_length: torch.Tensor | None = None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(
@@ -67,6 +75,10 @@ class Cavity(Element):
         )
 
         self.length = length
+        if active_length is None:
+            self.register_buffer("active_length", None)
+        else:
+            self.register_buffer_or_parameter("active_length", active_length)
 
         self.register_buffer_or_parameter(
             "voltage",
@@ -95,16 +107,43 @@ class Cavity(Element):
     def first_order_transfer_map(
         self, energy: torch.Tensor, species: Species
     ) -> torch.Tensor:
-        return self._cavity_rmatrix(energy, species)
+        matrix = self._cavity_rmatrix(energy, species)
+        if self.active_length is None:
+            return matrix
+        end_length = (self.length - self.active_length) / 2.0
+        outgoing_energy = (
+            energy
+            - self.voltage * self.phase.deg2rad().cos() * species.num_elementary_charges
+        )
+        return (
+            drift_matrix(end_length, outgoing_energy, species)
+            @ matrix
+            @ drift_matrix(end_length, energy, species)
+        )
 
     def track(self, incoming: Beam) -> Beam:
+        """Track through the active RF region and any symmetric inactive end drifts."""
+        if self.active_length is None:
+            return self._track_active(
+                incoming,
+                self.length,
+                self.first_order_transfer_map(incoming.energy, incoming.species),
+            )
+        matrix = self._cavity_rmatrix(incoming.energy, incoming.species)
+        drift = Drift(length=(self.length - self.active_length) / 2.0)
+        outgoing = self._track_active(drift.track(incoming), self.active_length, matrix)
+        return drift.track(outgoing)
+
+    def _track_active(
+        self, incoming: Beam, length: torch.Tensor, tm: torch.Tensor
+    ) -> Beam:
+        """Track the active RF region using its existing nonlinear cavity model."""
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
 
         phi = self.phase.deg2rad()
 
-        tm = self.first_order_transfer_map(incoming.energy, incoming.species)
         if isinstance(incoming, ParameterBeam):
             outgoing_mu = (tm @ incoming.mu.unsqueeze(-1)).squeeze(-1)
             outgoing_cov = tm @ incoming.cov @ tm.mT
@@ -114,7 +153,7 @@ class Cavity(Element):
             self.voltage * phi.cos() * incoming.species.num_elementary_charges * -1
         )
 
-        T566 = 1.5 * self.length * igamma2 / beta0.pow(3)
+        T566 = 1.5 * length * igamma2 / beta0.pow(3)
         T556 = self.length.new_zeros(())
         T555 = self.length.new_zeros(())
 
@@ -156,7 +195,7 @@ class Cavity(Element):
         # probably require a different model altogether.
         if (delta_energy > 0).any():
             T566 = (
-                self.length
+                length
                 * (beta0.pow(3) * gamma0.pow(3) - beta1.pow(3) * gamma1.pow(3))
                 / (
                     2.0
@@ -170,7 +209,7 @@ class Cavity(Element):
             T556 = (
                 beta0
                 * k
-                * self.length
+                * length
                 * dgamma
                 * gamma0
                 * (beta1.pow(3) * gamma1.pow(3) + beta0 * (gamma0 - gamma1.pow(3)))
@@ -180,7 +219,7 @@ class Cavity(Element):
             T555 = (
                 beta0.square()
                 * k.square()
-                * self.length
+                * length
                 * dgamma
                 / 2.0
                 * (
@@ -231,7 +270,7 @@ class Cavity(Element):
                 cov=outgoing_cov,
                 energy=outgoing_energy,
                 total_charge=incoming.total_charge,
-                s=incoming.s + self.length,
+                s=incoming.s + length,
                 species=incoming.species,
                 device=outgoing_mu.device,
                 dtype=outgoing_mu.dtype,
@@ -243,7 +282,7 @@ class Cavity(Element):
                 energy=outgoing_energy,
                 particle_charges=incoming.particle_charges,
                 survival_probabilities=incoming.survival_probabilities,
-                s=incoming.s + self.length,
+                s=incoming.s + length,
                 species=incoming.species,
                 device=outgoing_particles.device,
                 dtype=outgoing_particles.dtype,
@@ -254,6 +293,16 @@ class Cavity(Element):
         """Produces an R-matrix for a cavity when it is on, i.e. voltage > 0.0."""
         assert torch.all(energy > 0), "Initial energy must be larger than 0"
         factory_kwargs = {"device": self.length.device, "dtype": self.length.dtype}
+        length = self.length if self.active_length is None else self.active_length
+        if self.active_length is not None and not torch.all(
+            torch.isfinite(length)
+            & (length > 0.0)
+            & (length <= self.length)
+            & torch.isfinite(self.length)
+        ):
+            raise ValueError(
+                "active_length must be finite and satisfy 0 < active_length <= length"
+            )
 
         phi = self.phase.deg2rad()
         effective_voltage = -self.voltage * species.num_elementary_charges
@@ -262,7 +311,7 @@ class Cavity(Element):
         Ei = energy / species.mass_eV
         dE = delta_energy / species.mass_eV
         Ef = Ei + dE
-        Ep = dE / self.length  # Derivative of the energy
+        Ep = dE / length  # Derivative of the energy
 
         k = 2 * torch.pi * self.frequency / constants.speed_of_light
 
@@ -277,14 +326,10 @@ class Cavity(Element):
             beta1 = (1 - Ef.square().reciprocal()).sqrt()
 
             r11 = alpha.cos() - math.sqrt(2.0) * phi.cos() * alpha.sin()
-            r12 = (
-                (alpha / torch.pi).sinc()
-                * log1pdiv(delta_energy / energy)
-                * self.length
-            )
+            r12 = (alpha / torch.pi).sinc() * log1pdiv(delta_energy / energy) * length
             r21 = -(
                 effective_voltage
-                / ((energy + delta_energy) * math.sqrt(2.0) * self.length)
+                / ((energy + delta_energy) * math.sqrt(2.0) * length)
                 * (0.5 + phi.cos().square())
                 * alpha.sin()
             )
@@ -295,33 +340,40 @@ class Cavity(Element):
             # probably require a different model altogether.
             r55 = 1.0 + (
                 k
-                * self.length
+                * length
                 * beta0
                 * phi.tan()
                 * (Ei * Ef * (beta0 * beta1 - 1) + 1)
                 / (beta1 * Ef * dE)
             ).where(dE != 0.0, 0.0)
-            r56 = (
-                -self.length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
-            )
+            r56 = -length / (Ef.square() * Ei * beta1) * (Ef + Ei) / (beta1 + beta0)
             r65 = k * phi.sin() * effective_voltage / (beta1 * (energy + delta_energy))
             r66 = Ei / Ef * beta0 / beta1
 
         elif self.cavity_type == "traveling_wave":
             # Reference paper: Rosenzweig and Serafini, PhysRevE, Vol.49, p.1599,(1994)
+            assert torch.all(Ei > 1.0) and torch.all(
+                Ef > 1.0
+            ), "Traveling-wave entrance and exit energies must exceed the rest energy"
+            Pi = (Ei.square() - 1.0).sqrt()
+            Pf = (Ef.square() - 1.0).sqrt()
+            log_ratio_slope = (1.0 + (Ei + Ef) / (Pi + Pf)) / (Ei + Pi)
             vector_shape = torch.broadcast_shapes(
-                self.length.shape, dE.shape, Ei.shape, Ef.shape
+                length.shape, dE.shape, Ei.shape, Ef.shape
             )
 
             M_body = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_body[..., 0, 1] = self.length * log1pdiv(dE / Ei)
-            M_body[..., 1, 1] = Ei / Ef
+            # Stable form of `L * Pi * log((Ef + Pf) / (Ei + Pi)) / dE`
+            M_body[..., 0, 1] = (
+                length * Pi * log_ratio_slope * log1pdiv(dE * log_ratio_slope)
+            )
+            M_body[..., 1, 1] = Pi / Pf
 
             M_f_entry = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_entry[..., 1, 0] = -Ep / (2 * Ei)
+            M_f_entry[..., 1, 0] = -Ep / (2 * Pi)
 
             M_f_exit = torch.eye(2, **factory_kwargs).repeat((*vector_shape, 1, 1))
-            M_f_exit[..., 1, 0] = Ep / (2 * Ef)
+            M_f_exit[..., 1, 0] = Ep / (2 * Pf)
 
             M_combined = M_f_exit @ M_body @ M_f_entry
 
@@ -332,7 +384,8 @@ class Cavity(Element):
             r55 = self.length.new_ones(())
             r56 = self.length.new_zeros(())
             r65 = k * torch.sin(phi) * effective_voltage / (energy + delta_energy)
-            r66 = r22
+            # Preserve the existing longitudinal model
+            r66 = Ei / Ef * (1.0 + 0.5 * (dE / Ei).log1p())
         else:
             raise ValueError(f"Invalid cavity type: {self.cavity_type}")
 
@@ -381,4 +434,5 @@ class Cavity(Element):
             "phase",
             "frequency",
             "cavity_type",
+            "active_length",
         ]

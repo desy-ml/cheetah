@@ -10,6 +10,7 @@
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
 - Implement `Patch` element for coordinate transformations and orbit offsets, including import from Bmad. (see #578) (@roussel-ryan, @phys-cgarnier, @jank324)
+- Add optional `Cavity.active_length` with symmetric inactive end drifts while keeping `length` equal to the total element length
 
 ### 🐛 Bug fixes
 
@@ -20,6 +21,8 @@
 - Fix `sanitize_name` not being passed to all converted elements in `Segment.from_ocelot` (see #691) (@Hespe)
 - Fix NX Tables converter creating 1D drift lengths instead of scalar tensors (see #713) (@jank324)
 - Fix `dtype` and `device` of default attributes in Bmad, Elegant, and Ocelot imports. (see #698) (@Hespe)
+- Use exact reference momenta for traveling-wave `Cavity` transverse transport and fringe focusing at low energies
+
 
 ### 🐆 Other
 
