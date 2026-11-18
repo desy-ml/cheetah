@@ -19,6 +19,20 @@ from cheetah.utils.cloud_in_cell import cloud_in_cell_charge_deposition
 generate_unique_name = UniqueNameGenerator(prefix="unnamed_element")
 
 
+def _halton_normal(
+    n: int, base: int, device: torch.device, dtype: torch.dtype
+) -> torch.Tensor:
+    """Generate `n` standard-normal samples via a 1D Halton sequence in `base`."""
+    indices = torch.arange(1, n + 1, device=device, dtype=torch.int64)
+    u = torch.zeros(n, device=device, dtype=dtype)
+    factor = 1.0 / base
+    while (indices > 0).any():
+        u = u + (indices % base).to(dtype=dtype) * factor
+        indices = indices // base
+        factor = factor / base
+    return math.sqrt(2.0) * torch.erfinv(2.0 * u - 1.0)
+
+
 class RadiationField:
     """
     Representation of a transverse optical or X-ray radiation field in an FEL.
@@ -593,14 +607,35 @@ class Undulator(Element):
                 mu_x = mu_x.unsqueeze(-2).expand(*field_batch_shape, 2)
                 mu_y = mu_y.unsqueeze(-2).expand(*field_batch_shape, 2)
 
-            gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
-            # Share whitened normalized draws across vector_shape (CRN)
-            z_x = torch.randn(
-                *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
-            )
-            z_y = torch.randn(
-                *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
-            )
+            # Share whitened Halton quasi-random draws across vector_shape (matching
+            # Genesis 1.3 v4 quiet-start loading).
+            if is_time_dependent:
+                gen = torch.Generator(device=incoming.energy.device).manual_seed(42)
+                z_x = torch.randn(
+                    *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
+                )
+                z_y = torch.randn(
+                    *slice_shape, num_transverse, 2, generator=gen, **factory_kwargs
+                )
+                z_gamma = torch.randn(
+                    *slice_shape, num_transverse, generator=gen, **factory_kwargs
+                )
+            else:
+                z_x = torch.stack(
+                    [
+                        _halton_normal(num_transverse, 2, **factory_kwargs),
+                        _halton_normal(num_transverse, 3, **factory_kwargs),
+                    ],
+                    dim=-1,
+                )
+                z_y = torch.stack(
+                    [
+                        _halton_normal(num_transverse, 5, **factory_kwargs),
+                        _halton_normal(num_transverse, 7, **factory_kwargs),
+                    ],
+                    dim=-1,
+                )
+                z_gamma = _halton_normal(num_transverse, 11, **factory_kwargs)
             if num_transverse > 2:
                 z_x = z_x - z_x.mean(dim=-2, keepdim=True)
                 z_y = z_y - z_y.mean(dim=-2, keepdim=True)
@@ -623,9 +658,6 @@ class Undulator(Element):
             if is_time_dependent:
                 delgam = delgam.unsqueeze(-1).expand(field_batch_shape)
                 mu_gamma = mu_gamma.unsqueeze(-1).expand(field_batch_shape)
-            z_gamma = torch.randn(
-                *slice_shape, num_transverse, generator=gen, **factory_kwargs
-            )
             if num_transverse > 2:
                 z_gamma = z_gamma - z_gamma.mean(dim=-1, keepdim=True)
                 z_gamma = z_gamma / z_gamma.std(dim=-1, unbiased=False, keepdim=True)
