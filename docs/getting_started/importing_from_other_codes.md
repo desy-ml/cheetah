@@ -139,3 +139,15 @@ import cheetah
 
 beam = cheetah.ParticleBeam.from_ocelot(ocelot_beam)
 ```
+
+### distgen
+
+To generate a particle distribution using [`distgen`](https://github.com/ColwynGulliford/distgen), pass a `distgen` configuration dictionary, YAML/JSON file path, or `distgen.Generator` instance to `ParticleBeam.from_distgen()`:
+
+```python
+import cheetah
+
+beam = cheetah.ParticleBeam.from_distgen("path/to/distgen.yaml")
+```
+
+_Note: Using `from_distgen()` requires `distgen` and `openpmd-beamphysics` to be installed (e.g. via `conda install -c conda-forge distgen`)._

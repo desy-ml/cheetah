@@ -972,6 +972,64 @@ class ParticleBeam(Beam):
             dtype=dtype,
         )
 
+    @classmethod
+    def from_distgen(
+        cls,
+        distgen_input: dict | str | Path | "distgen.Generator",  # noqa: F821
+        energy: torch.Tensor | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> "ParticleBeam":
+        """
+        Generate a Cheetah `ParticleBeam` using `distgen`.
+
+        :param distgen_input: Input to `distgen.Generator` (a configuration `dict`,
+            path to a YAML/JSON file, raw YAML string), or an existing
+            `distgen.Generator` instance.
+        :param energy: Reference energy of the beam in eV. If `None`, the mean energy
+            of the generated `ParticleGroup` is used.
+        :param device: Device that the beam creates its tensors on.
+        :param dtype: Data type of the tensors created by the beam.
+        :return: Generated `ParticleBeam`.
+        """
+        try:
+            from distgen import Generator
+        except ImportError:
+            raise ImportError(
+                "To use `ParticleBeam.from_distgen`, `distgen` "
+                "(https://github.com/ColwynGulliford/distgen) must be installed "
+                "(e.g. via `conda install -c conda-forge distgen`)."
+            )
+
+        if isinstance(distgen_input, Generator):
+            generator = distgen_input
+        else:
+            if isinstance(distgen_input, Path):
+                distgen_input = str(distgen_input)
+            generator = Generator(distgen_input)
+
+        particle_group = generator.run()
+
+        # Drift z-distributed beams (e.g. `time` start) to a common z so `t` is set
+        if not np.all(particle_group.z == particle_group.z[0]):
+            particle_group.drift_to_z()
+
+        # Cathode-start beams use status 0 (`CATHODE`), which Cheetah treats as lost
+        if generator._input["start"]["type"] == "cathode":
+            particle_group.status = np.ones_like(particle_group.status)
+
+        energy = (
+            torch.as_tensor(energy, device=device, dtype=dtype)
+            if energy is not None
+            else torch.as_tensor(
+                particle_group["mean_energy"], device=device, dtype=dtype
+            )
+        )
+
+        return cls.from_openpmd_particlegroup(
+            particle_group, energy=energy, device=device, dtype=dtype
+        )
+
     def save_as_openpmd_h5(self, path: str) -> None:
         """
         Save the `ParticleBeam` as an openPMD particle group HDF5 file.
