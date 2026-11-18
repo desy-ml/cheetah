@@ -24,30 +24,23 @@ TWISS_PARAMETERS = {
 }
 
 
-def load_standalone_cavity() -> tuple[Tao, cheetah.Segment, cheetah.ParameterBeam]:
+def load_standalone_cavity() -> tuple[Tao, cheetah.Cavity, cheetah.ParameterBeam]:
     """Load matching models from the standalone Bmad fixture without `LCLS_LATTICE`.
 
-    :return: Tao, a Cheetah cavity with inactive end drifts, and entrance optics.
+    :return: Tao, a Cheetah cavity with matching geometry, and entrance optics.
     """
     pytao = pytest.importorskip("pytao")
     lattice = Path(__file__).resolve().parent / "resources/bmad/l0a_cavity.bmad"
     tao = pytao.Tao(lattice_file=lattice, noinit=True, nostartup=True, noplot=True)
     attributes = tao.ele_gen_attribs("L0A")
-    end_drift = (attributes["L"] - attributes["L_ACTIVE"]) / 2.0
     cavity = cheetah.Cavity(
-        length=torch.tensor(attributes["L_ACTIVE"], dtype=torch.float64),
+        length=torch.tensor(attributes["L"], dtype=torch.float64),
+        active_length=torch.tensor(attributes["L_ACTIVE"], dtype=torch.float64),
         voltage=torch.tensor(attributes["VOLTAGE"], dtype=torch.float64),
         frequency=torch.tensor(attributes["RF_FREQUENCY"], dtype=torch.float64),
         phase=torch.tensor(-360.0 * attributes["PHI0"], dtype=torch.float64),
         cavity_type="traveling_wave",
         name="L0A",
-    )
-    model = cheetah.Segment(
-        [
-            cheetah.Drift(length=torch.tensor(end_drift, dtype=torch.float64)),
-            cavity,
-            cheetah.Drift(length=torch.tensor(end_drift, dtype=torch.float64)),
-        ]
     )
     twiss = tao.ele_twiss("BEGINNING")
     incoming = cheetah.ParameterBeam.from_twiss(
@@ -58,7 +51,7 @@ def load_standalone_cavity() -> tuple[Tao, cheetah.Segment, cheetah.ParameterBea
         energy=torch.tensor(attributes["E_TOT_START"], dtype=torch.float64),
         dtype=torch.float64,
     )
-    return tao, model, incoming
+    return tao, cavity, incoming
 
 
 def track_bmad(tao: Tao, particles: torch.Tensor) -> np.ndarray:
@@ -154,20 +147,25 @@ def compare_transport_matrices(
     }
 
 
-@pytest.fixture
-def isolated_cavity():
-    """Create matching low-energy accelerating cavities for optics comparisons."""
-    return load_standalone_cavity()
+@pytest.fixture(params=["L0A", "L0B"])
+def isolated_cavity(request):
+    """Compare matching cavity models at the L0A and L0B operating energies."""
+    tao, cavity, incoming = load_standalone_cavity()
+    if request.param == "L0B":
+        tao.cmd("set ele BEGINNING e_tot = 64e6")
+        tao.cmd("set ele L0A voltage = 71013086.8511113")
+        attributes = tao.ele_gen_attribs("L0A")
+        cavity.voltage = cavity.voltage.new_tensor(attributes["VOLTAGE"])
+        incoming.energy = incoming.energy.new_tensor(attributes["E_TOT_START"])
+    return tao, cavity, incoming
 
 
 @pytest.mark.parametrize("phase_offset", [-20.0, -10.0, 0.0, 10.0, 20.0])
 def test_benchmark_bmad_cavity(benchmark, isolated_cavity, phase_offset):
-    """Benchmark Bmad R-matrix versus Cheetah tracking-Jacobian transverse agreement.
-
-    """
+    """Benchmark Bmad R-matrix versus Cheetah tracking-Jacobian transverse agreement."""
     tao, model, incoming = isolated_cavity
-    model.L0A.phase = model.L0A.phase - phase_offset
-    tao.cmd(f"set ele L0A phi0 = {-model.L0A.phase.item() / 360.0:.17g}")
+    model.phase = model.phase - phase_offset
+    tao.cmd(f"set ele L0A phi0 = {-model.phase.item() / 360.0:.17g}")
     matrices = benchmark(compare_transport_matrices, tao, model, incoming)
     torch.testing.assert_close(
         torch.from_numpy(matrices["cheetah"][:4, :4]),
@@ -181,8 +179,8 @@ def test_benchmark_bmad_cavity(benchmark, isolated_cavity, phase_offset):
 def test_transverse_tracking_matches_standalone_bmad(isolated_cavity, phase_offset):
     """Small transverse rays and exit Twiss must agree with standalone Bmad."""
     tao, model, incoming = isolated_cavity
-    model.L0A.phase = model.L0A.phase - phase_offset
-    tao.cmd(f"set ele L0A phi0 = {-model.L0A.phase.item() / 360.0:.17g}")
+    model.phase = model.phase - phase_offset
+    tao.cmd(f"set ele L0A phi0 = {-model.phase.item() / 360.0:.17g}")
     probes = torch.zeros((9, 6), dtype=torch.float64)
     probes[1:5, :4] = torch.diag(
         torch.tensor([1e-6, 1e-7, 1e-6, 1e-7], dtype=torch.float64)
@@ -233,7 +231,7 @@ def test_twiss_comparison_resets_bmad_reference_orbit(isolated_cavity):
 def test_bmad_transport_matrices_use_full_tracking_jacobian(isolated_cavity, phase):
     """Check both matrices against full tracking finite differences off crest."""
     tao, cavity, incoming = isolated_cavity
-    cavity.L0A.phase = torch.tensor(phase, dtype=torch.float64)
+    cavity.phase = torch.tensor(phase, dtype=torch.float64)
     tao.cmd(f"set ele L0A phi0 = {-phase / 360.0:.17g}")
     tao.cmd("set particle_start pz = 0.02")
     matrices = compare_transport_matrices(tao, cavity, incoming)
