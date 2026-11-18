@@ -47,5 +47,5 @@ jobs:
           git add CHANGELOG.md
           git commit -m "Prepare ${TAG} release"
           git tag -a "${TAG}" -m "Release ${TAG}"
-          git push origin master "${TAG}"
+          git push --atomic origin master "${TAG}"
           gh release create "${TAG}" --title "${TAG}" --notes "$NOTES"
