@@ -4,10 +4,7 @@ import torch
 from cheetah.utils import vectorized_histogram_2d
 
 
-@pytest.mark.parametrize(
-    "bins",
-    [10, (10, 15)],
-)
+@pytest.mark.parametrize("bins", [10, (10, 15)])
 def test_compare_torch_histogramdd(bins):
     """
     Test that `vectorized_histogram_2d` matches `torch.histogramdd` for 1D batch.
