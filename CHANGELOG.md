@@ -10,6 +10,7 @@
 - `Segment.from_lattice_json` now supports `sanitize_names` argument to control name sanitization (see #691) (@Hespe)
 - Support conversion of Bmad superimposed elements into Cheetah segments (see #664, #665) (@roussel-ryan, @jank324, @cr-xu)
 - Implement `Patch` element for coordinate transformations and orbit offsets, including import from Bmad. (see #578) (@roussel-ryan, @phys-cgarnier, @jank324)
+- Add support for vectorisation of `Screen` images when using `method="histogram"` by replacing PyTorch's `histogramdd` with Cheetah-native implementation (see #680) (@jp-ga, @jank324)
 
 ### 🐛 Bug fixes
 

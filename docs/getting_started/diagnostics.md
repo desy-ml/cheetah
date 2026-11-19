@@ -101,7 +101,7 @@ Cheetah supports three methods for generating the 2D image from a `ParticleBeam`
 | Method | Relative Speed | Differentiable? | Vectorisation | Best For |
 | :--- | :--- | :--- | :--- | :--- |
 | **`"cloud-in-cell"`** (default) | Fast (~1.5× slower than histogram) | **Yes** (smooth gradients) | Yes | Gradient-based tuning, profile matching, surrogate training |
-| **`"histogram"`** | Fastest | No (zero gradients almost everywhere) | No | Fast forward sweeps, non-differentiable evaluations |
+| **`"histogram"`** | Fastest | No (zero gradients almost everywhere) | Yes | Fast forward sweeps, non-differentiable evaluations |
 | **`"kde"`** | Slow (~280× slower than histogram) | **Yes** (smooth gradients) | Yes | High-resolution analytic smoothing with custom `kde_bandwidth` |
 
 > [!NOTE]
