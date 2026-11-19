@@ -53,7 +53,7 @@ def test_compare_torch_histogramdd(bins, device, dtype):
     assert actual.shape == tuple(num_bins)
     assert actual.dtype == dtype
     assert actual.device.type == device.type
-    assert torch.allclose(actual.cpu(), expected)
+    torch.testing.assert_close(actual.cpu(), expected)
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,7 @@ def test_inferred_extent():
     expected, _ = torch.histogramdd(torch.stack([x1, x2], dim=-1), bins=list(bins))
 
     assert actual.shape == bins
-    assert torch.allclose(actual, expected)
+    torch.testing.assert_close(actual, expected)
 
 
 def test_flat_extent():
@@ -126,7 +126,7 @@ def test_flat_extent():
     )
 
     assert actual.shape == bins
-    assert torch.allclose(actual, expected)
+    torch.testing.assert_close(actual, expected)
 
 
 def test_out_of_bounds_particles():
