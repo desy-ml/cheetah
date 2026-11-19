@@ -62,6 +62,13 @@ def test_vectorized_shapes_and_broadcasting():
     )
     assert hist_vec.shape == (2, 3, 8, 6)
 
+    # 4. Weights with larger broadcastable batch shape than x1/x2
+    weights_larger = torch.rand(2, 3, num_particles)
+    hist_larger = vectorized_histogram_2d(
+        x1[0, 0], x2[0, 0], bins=bins, extent=extent, weights=weights_larger
+    )
+    assert hist_larger.shape == (2, 3, 8, 6)
+
 
 def test_out_of_bounds_particles():
     """Test that particles outside extent are excluded and boundary points included."""

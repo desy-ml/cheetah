@@ -23,6 +23,11 @@ def vectorized_histogram_2d(
     :param weights: Optional weights, broadcastable with `x1`.
     :return: Histogram of shape `(*vector_shape, num_bins_x1, num_bins_x2)`.
     """
+    if weights is None:
+        x1, x2 = torch.broadcast_tensors(x1, x2)
+    else:
+        x1, x2, weights = torch.broadcast_tensors(x1, x2, weights)
+
     vector_shape = x1.shape[:-1]
 
     if isinstance(bins, int):
