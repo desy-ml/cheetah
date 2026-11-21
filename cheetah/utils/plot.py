@@ -1,9 +1,11 @@
+from collections.abc import Sequence
+
 import matplotlib.axis
 import numpy as np
 
 
 def format_axis_with_prefixed_unit(
-    axis: matplotlib.axis.Axis, base_unit: str, data: list[float]
+    axis: matplotlib.axis.Axis, base_unit: str, data: Sequence[float] | np.ndarray
 ) -> None:
     """
     Adds an appropriately prefixed unit to the axis label and sets the tick formatter
@@ -27,7 +29,7 @@ def format_axis_as_percentage(axis: matplotlib.axis.Axis) -> None:
 
 
 def determine_prefixed_unit_and_tick_formatter(
-    base_unit: str, data: list[float]
+    base_unit: str, data: Sequence[float] | np.ndarray
 ) -> tuple[str, matplotlib.ticker.FuncFormatter]:
     """
     Considering the order of magnitude of some data points and their base unit,

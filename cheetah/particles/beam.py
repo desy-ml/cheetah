@@ -35,6 +35,14 @@ class Beam(ABC, nn.Module):
     # others are assumed to be scalar (when not vectorised).
     UNVECTORIZED_NUM_ATTR_DIMS = {}
 
+    energy: torch.Tensor
+    species: Species
+    total_charge: torch.Tensor
+    s: torch.Tensor
+    survival_probabilities: torch.Tensor
+    mu: torch.Tensor
+    cov: torch.Tensor
+
     @classmethod
     @abstractmethod
     def from_parameters(
@@ -170,7 +178,10 @@ class Beam(ABC, nn.Module):
     @classmethod
     @abstractmethod
     def from_ocelot(
-        cls, parray, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        parray,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Beam":
         """Convert an Ocelot ParticleArray `parray` to a Cheetah Beam."""
         raise NotImplementedError
@@ -178,7 +189,10 @@ class Beam(ABC, nn.Module):
     @classmethod
     @abstractmethod
     def from_astra(
-        cls, path: str, device: torch.device = None, dtype: torch.dtype = None
+        cls,
+        path: str,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> "Beam":
         """Load an Astra particle distribution as a Cheetah Beam."""
         raise NotImplementedError
