@@ -85,13 +85,11 @@ def test_device_passing(device: torch.device):
     converted = cheetah.Segment.from_bmad(file_path, device=device)
 
     # Check that the properties of the loaded elements are on the correct device
-    assert converted.d.length.device.type == device.type
-    assert converted.b.length.device.type == device.type
-    assert converted.b.dipole_e1.device.type == device.type
-    assert converted.q.length.device.type == device.type
-    assert converted.q.k1.device.type == device.type
-    assert converted.s.length.device.type == device.type
-    assert converted.s.k2.device.type == device.type
+    for element in converted.elements:
+        for feature in element.defining_tensors:
+            assert (
+                getattr(element, feature).device.type == device.type
+            ), f"Wrong device in element {element.name}"
 
 
 @pytest.mark.filterwarnings(
@@ -108,13 +106,11 @@ def test_dtype_passing(dtype: torch.dtype):
     converted = cheetah.Segment.from_bmad(file_path, dtype=dtype)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    assert converted.d.length.dtype == dtype
-    assert converted.b.length.dtype == dtype
-    assert converted.b.dipole_e1.dtype == dtype
-    assert converted.q.length.dtype == dtype
-    assert converted.q.k1.dtype == dtype
-    assert converted.s.length.dtype == dtype
-    assert converted.s.k2.dtype == dtype
+    for element in converted.elements:
+        for feature in element.defining_tensors:
+            assert (
+                getattr(element, feature).dtype == dtype
+            ), f"Wrong dtype in element {element.name}"
 
 
 @pytest.mark.filterwarnings(
@@ -134,13 +130,11 @@ def test_default_dtype(default_torch_dtype):
     converted = cheetah.Segment.from_bmad(file_path)
 
     # Check that the properties of the loaded elements are of the correct dtype
-    assert converted.d.length.dtype == default_torch_dtype
-    assert converted.b.length.dtype == default_torch_dtype
-    assert converted.b.dipole_e1.dtype == default_torch_dtype
-    assert converted.q.length.dtype == default_torch_dtype
-    assert converted.q.k1.dtype == default_torch_dtype
-    assert converted.s.length.dtype == default_torch_dtype
-    assert converted.s.k2.dtype == default_torch_dtype
+    for element in converted.elements:
+        for feature in element.defining_tensors:
+            assert (
+                getattr(element, feature).dtype == default_torch_dtype
+            ), f"Wrong dtype in element {element.name}"
 
 
 def test_cu_hxr_lcls_fixture_conversion():
@@ -256,3 +250,42 @@ def test_superimpose_split_failure_falls_back_to_base(monkeypatch):
 
     assert isinstance(converted.gunl0a.qe01, cheetah.Quadrupole)
     assert isinstance(converted.gunl0a.qa02, cheetah.Quadrupole)
+
+
+def test_bmad_patch_conversion(tmp_path):
+    """Test importing a Bmad lattice containing a patch element."""
+    bmad_content = (
+        "p1: patch, x_offset = 0.01, y_offset = -0.02, z_offset = 0.5, &\n"
+        "    x_pitch = 0.003, y_pitch = -0.004, tilt = 0.1, &\n"
+        "    t_offset = 1.0e-9, e_tot_offset = 5.0e6\n"
+        "lat: line = (p1)\n"
+        "use, lat\n"
+    )
+    bmad_file = tmp_path / "patch_test.bmad"
+    bmad_file.write_text(bmad_content)
+
+    segment = cheetah.Segment.from_bmad(bmad_file)
+
+    assert len(segment.elements) == 1
+    assert isinstance(segment.p1, cheetah.Patch)
+    assert segment.p1.name == "p1"
+    torch.testing.assert_close(
+        segment.p1.position_offset, torch.tensor([0.01, -0.02, 0.5])
+    )
+    torch.testing.assert_close(segment.p1.pitch, torch.tensor([0.003, -0.004]))
+    torch.testing.assert_close(segment.p1.tilt, torch.tensor(0.1))
+    torch.testing.assert_close(segment.p1.time_offset, torch.tensor(1.0e-9))
+    torch.testing.assert_close(segment.p1.energy_offset, torch.tensor(5.0e6))
+
+
+def test_bmad_patch_conversion_warns_on_energy_setpoint(tmp_path):
+    """Test that a warning is raised when converting a patch with e_tot_set."""
+    bmad_content = "p1: patch, e_tot_set = 1.0e9\n" "lat: line = (p1)\n" "use, lat\n"
+    bmad_file = tmp_path / "patch_setpoint.bmad"
+    bmad_file.write_text(bmad_content)
+
+    with pytest.warns(NotUnderstoodPropertyWarning, match="e_tot_set"):
+        segment = cheetah.Segment.from_bmad(bmad_file)
+
+    assert len(segment.elements) == 1
+    assert isinstance(segment.p1, cheetah.Patch)

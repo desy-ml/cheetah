@@ -84,7 +84,10 @@ def convert_element(
                 shared_properties, bmad_parsed
             )
             return cheetah.Marker(
-                name=name, sanitize_name=sanitize_name, metadata=metadata
+                name=name,
+                sanitize_name=sanitize_name,
+                metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "monitor":
             fortran_namelist.validate_understood_properties(
@@ -96,10 +99,14 @@ def convert_element(
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
+                    **factory_kwargs,
                 )
             else:
                 return cheetah.Marker(
-                    name=name, sanitize_name=sanitize_name, metadata=metadata
+                    name=name,
+                    sanitize_name=sanitize_name,
+                    metadata=metadata,
+                    **factory_kwargs,
                 )
         elif bmad_parsed["element_type"] == "instrument":
             fortran_namelist.validate_understood_properties(
@@ -111,10 +118,14 @@ def convert_element(
                     name=name,
                     sanitize_name=sanitize_name,
                     metadata=metadata,
+                    **factory_kwargs,
                 )
             else:
                 return cheetah.Marker(
-                    name=name, sanitize_name=sanitize_name, metadata=metadata
+                    name=name,
+                    sanitize_name=sanitize_name,
+                    metadata=metadata,
+                    **factory_kwargs,
                 )
         elif bmad_parsed["element_type"] == "pipe":
             fortran_namelist.validate_understood_properties(
@@ -125,6 +136,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "drift":
             fortran_namelist.validate_understood_properties(
@@ -135,6 +147,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "hkicker":
             fortran_namelist.validate_understood_properties(
@@ -146,6 +159,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "vkicker":
             fortran_namelist.validate_understood_properties(
@@ -157,6 +171,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "sbend":
             fortran_namelist.validate_understood_properties(
@@ -182,6 +197,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "quadrupole":
             fortran_namelist.validate_understood_properties(
@@ -194,6 +210,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "sextupole":
             fortran_namelist.validate_understood_properties(
@@ -206,6 +223,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "solenoid":
             fortran_namelist.validate_understood_properties(
@@ -217,6 +235,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "lcavity":
             fortran_namelist.validate_understood_properties(
@@ -236,6 +255,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "crab_cavity":
             fortran_namelist.validate_understood_properties(
@@ -250,6 +270,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "rcollimator":
             fortran_namelist.validate_understood_properties(
@@ -264,6 +285,7 @@ def convert_element(
                         ),
                         name=name + "_drift",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -275,6 +297,7 @@ def convert_element(
                         shape="rectangular",
                         name=name + "_aperture",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                 ],
                 name=name,
@@ -294,6 +317,7 @@ def convert_element(
                         ),
                         name=name + "_drift",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                     cheetah.Aperture(
                         x_max=torch.tensor(
@@ -305,6 +329,7 @@ def convert_element(
                         shape="elliptical",
                         name=name + "_aperture",
                         sanitize_name=sanitize_name,
+                        **factory_kwargs,
                     ),
                 ],
                 name=name,
@@ -324,17 +349,47 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         elif bmad_parsed["element_type"] == "patch":
-            # TODO: Does this need to be implemented in Cheetah in a more proper way?
             fortran_namelist.validate_understood_properties(
-                shared_properties + ["l"], bmad_parsed
+                shared_properties
+                + [
+                    "x_offset",
+                    "y_offset",
+                    "z_offset",
+                    "x_pitch",
+                    "y_pitch",
+                    "tilt",
+                    "t_offset",
+                    "e_tot_offset",
+                ],
+                bmad_parsed,
             )
-            return cheetah.Drift(
-                length=torch.tensor(bmad_parsed.get("l", 0.0), **factory_kwargs),
+            return cheetah.Patch(
+                position_offset=torch.tensor(
+                    [
+                        bmad_parsed.get("x_offset", 0.0),
+                        bmad_parsed.get("y_offset", 0.0),
+                        bmad_parsed.get("z_offset", 0.0),
+                    ],
+                    **factory_kwargs,
+                ),
+                pitch=torch.tensor(
+                    [bmad_parsed.get("x_pitch", 0.0), bmad_parsed.get("y_pitch", 0.0)],
+                    **factory_kwargs,
+                ),
+                tilt=torch.tensor(bmad_parsed.get("tilt", 0.0), **factory_kwargs),
+                time_offset=torch.tensor(
+                    bmad_parsed.get("t_offset", 0.0), **factory_kwargs
+                ),
+                energy_offset=torch.tensor(
+                    bmad_parsed.get("e_tot_offset", 0.0), **factory_kwargs
+                ),
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
         else:
             warnings.warn(
@@ -348,6 +403,7 @@ def convert_element(
                 name=name,
                 sanitize_name=sanitize_name,
                 metadata=metadata,
+                **factory_kwargs,
             )
     else:
         raise ValueError(f"Unknown Bmad element type for {name = }")  # noqa: E202, E251
