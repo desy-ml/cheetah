@@ -1,0 +1,72 @@
+name: Release 🚀
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to publish (e.g. 0.8.5)"
+        required: true
+        type: string
+      next_version:
+        description: "Next version for WIP changelog (e.g. 0.8.6)"
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Prepare and publish release
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+
+    steps:
+      - name: Require master branch
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "Error: Release workflow must be run from master (got ${GITHUB_REF})." >&2
+          exit 1
+
+      - name: Check RELEASE_TOKEN
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "Error: secrets.RELEASE_TOKEN is not set." >&2
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Advance CHANGELOG.md and extract release notes
+        id: changelog
+        env:
+          VERSION: ${{ inputs.version }}
+          NEXT_VERSION: ${{ inputs.next_version }}
+        run: python scripts/advance_changelog.py "$VERSION" "$NEXT_VERSION"
+
+      - name: Commit, tag and publish release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          NOTES: ${{ steps.changelog.outputs.release_notes }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="v${VERSION#v}"
+          git add CHANGELOG.md
+          git commit -m "Prepare ${TAG} release"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push --atomic origin master "${TAG}"
+          gh release create "${TAG}" --title "${TAG}" --notes "$NOTES"
