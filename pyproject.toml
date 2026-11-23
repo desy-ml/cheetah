@@ -39,7 +39,7 @@ sdds = ["soliday.sdds>=5.7.0"]
 all = ["cheetah-accelerator[3d-visualization,openpmd,sdds]"]
 
 [dependency-groups]
-lint = ["black", "flake8", "flake8-bugbear", "flake8-black", "isort"]
+lint = ["black", "flake8", "flake8-bugbear", "flake8-black", "isort", "pyrefly"]
 test = ["ocelot-collab", "pytest", "pytest-benchmark", "pytest-cov"]
 dev = [{ include-group = "lint" }, { include-group = "test" }]
 
