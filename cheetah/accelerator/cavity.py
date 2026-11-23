@@ -102,7 +102,6 @@ class Cavity(Element):
         return self._cavity_rmatrix(energy, species)
 
     def track(self, incoming: Beam) -> Beam:
-        assert isinstance(incoming, (ParameterBeam, ParticleBeam))
         gamma0, igamma2, beta0 = compute_relativistic_factors(
             incoming.energy, incoming.species.mass_eV
         )
@@ -118,6 +117,9 @@ class Cavity(Element):
             outgoing_cov = tm @ incoming.cov @ tm.mT
         elif isinstance(incoming, ParticleBeam):
             outgoing_particles = incoming.particles @ tm.mT
+        else:
+            raise TypeError(f"Parameter incoming is of invalid type {type(incoming)}")
+
         delta_energy = (
             self.voltage * phi.cos() * incoming.species.num_elementary_charges * -1
         )
