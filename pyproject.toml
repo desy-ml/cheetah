@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80", "setuptools-scm>=8"]
+requires = ["setuptools>=80", "setuptools-scm[simple]>=9.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -42,8 +42,6 @@ all = ["cheetah-accelerator[3d-visualization,openpmd,sdds]"]
 lint = ["black", "flake8", "flake8-bugbear", "flake8-black", "isort"]
 test = ["ocelot-collab", "pytest", "pytest-benchmark", "pytest-cov"]
 dev = [{ include-group = "lint" }, { include-group = "test" }]
-
-[tool.setuptools_scm]
 
 [tool.setuptools.packages.find]
 where = ["."]
