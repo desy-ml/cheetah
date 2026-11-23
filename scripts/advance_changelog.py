@@ -5,6 +5,14 @@ from datetime import date
 from pathlib import Path
 
 
+def _normalise_version(raw: str) -> str:
+    """Strip optional leading `v` and validate `X.Y.Z` version format."""
+    version = raw.strip().removeprefix("v")
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ValueError(f"Invalid version {raw!r}; expected X.Y.Z (e.g. 0.8.5)")
+    return version
+
+
 def remove_empty_subsections(text: str) -> str:
     """Remove empty `###` subsections from markdown text."""
     return re.sub(r"###\s+[^\n]+\n+(?=\s*###|\s*$)", "", text).strip()
@@ -18,8 +26,8 @@ def advance_changelog(content: str, version: str, next_version: str) -> tuple[st
     :param next_version: Version for the new work-in-progress section
     :return: Tuple of (new `CHANGELOG.md` text, extracted release notes text)
     """
-    version = version.lstrip("v")
-    next_version = next_version.lstrip("v")
+    version = _normalise_version(version)
+    next_version = _normalise_version(next_version)
     wip_pattern = re.compile(
         r"(##\s+v?[0-9.]+\s+\[🚧 Work in Progress\]\s*\n)(.*?)(?=\n##\s|\Z)", re.DOTALL
     )
