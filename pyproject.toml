@@ -57,5 +57,6 @@ markers = [
 ]
 
 [tool.pyrefly]
+preset = "basic"
 project-includes = ["cheetah"]
 ignore-missing-imports = ["*"]
