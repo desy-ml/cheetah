@@ -36,5 +36,24 @@ jobs:
       - name: Build a binary wheel and a source tarball
         run: python -m build
 
+      - name: Verify built wheel version matches release tag
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          python -c '
+          import glob, os, zipfile
+          expected = os.environ["TAG_NAME"].removeprefix("v")
+          wheels = glob.glob("dist/*.whl")
+          assert len(wheels) == 1, f"Expected 1 wheel, found {wheels}"
+          with zipfile.ZipFile(wheels[0]) as zf:
+              meta = next(n for n in zf.namelist() if n.endswith(".dist-info/METADATA"))
+              actual = next(
+                  line.split(": ", 1)[1].strip()
+                  for line in zf.read(meta).decode().splitlines()
+                  if line.startswith("Version: ")
+              )
+          assert actual == expected, f"Wheel version {actual!r} != tag {expected!r}"
+          '
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
