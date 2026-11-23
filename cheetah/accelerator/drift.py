@@ -40,9 +40,9 @@ class Drift(Element):
     def __init__(
         self,
         length: torch.Tensor,
-        tracking_method: (
-            Literal["linear", "second_order", "drift_kick_drift"] | str
-        ) = "linear",
+        tracking_method: Literal[
+            "linear", "second_order", "drift_kick_drift"
+        ] = "linear",
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,

@@ -60,9 +60,9 @@ class Quadrupole(Element):
         misalignment: torch.Tensor | None = None,
         tilt: torch.Tensor | None = None,
         num_steps: int = 1,
-        tracking_method: (
-            Literal["linear", "second_order", "drift_kick_drift"] | str
-        ) = "linear",
+        tracking_method: Literal[
+            "linear", "second_order", "drift_kick_drift"
+        ] = "linear",
         name: str | None = None,
         sanitize_name: bool | None = None,
         metadata: dict | None = None,
