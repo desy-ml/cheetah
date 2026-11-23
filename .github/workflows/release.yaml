@@ -16,10 +16,19 @@ jobs:
   release:
     name: Prepare and publish release
     runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: false
     permissions:
       contents: write
 
     steps:
+      - name: Require master branch
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "Error: Release workflow must be run from master (got ${GITHUB_REF})." >&2
+          exit 1
+
       - name: Check RELEASE_TOKEN
         env:
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
