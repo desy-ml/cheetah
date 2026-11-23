@@ -42,7 +42,10 @@ jobs:
 
       - name: Advance CHANGELOG.md and extract release notes
         id: changelog
-        run: python scripts/advance_changelog.py ${{ inputs.version }} ${{ inputs.next_version }}
+        env:
+          VERSION: ${{ inputs.version }}
+          NEXT_VERSION: ${{ inputs.next_version }}
+        run: python scripts/advance_changelog.py "$VERSION" "$NEXT_VERSION"
 
       - name: Commit, tag and publish release
         env:
